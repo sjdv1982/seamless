@@ -1,4 +1,6 @@
 import asyncio
+
+from seamless import Checksum
 from . import Task
 from seamless.buffer.cached_compile import cached_compile
 
@@ -78,7 +80,7 @@ class ReactorUpdateTask(Task):
 
         for pinname, accessor in upstreams.items():
             assert not accessor._void, (reactor, pinname)
-            if accessor._checksum is None: #pending; a legitimate use case, but we can't proceed
+            if not Checksum(accessor._checksum): #pending; a legitimate use case, but we can't proceed
                 print_debug("ABORT", self.__class__.__name__, hex(id(self)), self.dependencies, " <= pinname", pinname)
                 reactor._pending = True
                 return
@@ -107,8 +109,10 @@ class ReactorUpdateTask(Task):
             new_inputs2[pinname] = wa.celltype, wa.subcelltype
         for pinname in editpins:
             old_checksum = old_checksums.get(pinname)
+            old_checksum = Checksum(old_checksum)
             new_checksum = editpin_checksums[pinname]
-            if new_checksum is not None:
+            new_checksum = Checksum(new_checksum)
+            if new_checksum:
                 if old_checksum != new_checksum:
                     updated.add(pinname)
                 new_inputs[pinname] = new_checksum
@@ -131,8 +135,9 @@ class ReactorUpdateTask(Task):
 
         for pinname in updated:
             checksum = new_inputs[pinname]
+            checksum = Checksum(checksum)
             celltype, subcelltype = new_inputs2[pinname]
-            if checksum is None:
+            if not checksum:
                 values[pinname] = None
                 continue
 
@@ -213,8 +218,9 @@ class ReactorResultTask(Task):
             except Exception as exc:
                 manager._set_reactor_exception(reactor, pinname, exc)
                 raise exc from None
-
-        if checksum is not None:
+        checksum = Checksum(checksum)
+        
+        if not checksum:
             buffer_cache.guarantee_buffer_info(checksum, celltype, sync_to_remote=True)
             validate_evaluation_subcelltype(
                 checksum, buffer, celltype, subcelltype,
@@ -225,13 +231,13 @@ class ReactorResultTask(Task):
         reactor._last_outputs[pinname] = checksum
         downstreams = livegraph.reactor_to_downstream[reactor][pinname]
 
-        if checksum is None:
+        if not checksum:
             manager.cancel_accessors(downstreams, True)
             return
 
         accessors_to_cancel = []
         for accessor in downstreams:
-            if accessor._void or accessor._checksum is not None:
+            if accessor._void or Checksum(accessor._checksum):
                 accessors_to_cancel.append(accessor)
             else:
                 manager.taskmanager.cancel_accessor(accessor)

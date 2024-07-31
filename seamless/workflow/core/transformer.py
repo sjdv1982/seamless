@@ -3,6 +3,8 @@ import asyncio
 from copy import deepcopy
 import traceback
 
+from seamless import Checksum
+
 from .worker import Worker, InputPin, OutputPin
 from .status import StatusReasonEnum
 
@@ -105,11 +107,8 @@ class Transformer(Worker):
         self._meta = meta
 
     @property
-    def checksum(self):
-        checksum = self._checksum
-        if checksum is not None:
-            checksum = checksum.hex()
-        return checksum
+    def checksum(self) -> Checksum:
+        return Checksum(self._checksum)
 
     @property
     def void(self):
@@ -132,7 +131,7 @@ class Transformer(Worker):
                     return True
         return False
 
-    def get_transformation_checksum(self):
+    def get_transformation_checksum(self) -> Checksum:
         from .manager.tasks.transformer_update import TransformerUpdateTask
         from .. import verify_sync_compute
         manager = self._get_manager()
@@ -153,11 +152,10 @@ class Transformer(Worker):
             asyncio.get_event_loop().run_until_complete(fut)
         tcache = manager.cachemanager.transformation_cache
         checksum = tcache.transformer_to_transformations.get(self)
-        if checksum is not None:
-            checksum = checksum.hex()
+        checksum = Checksum(checksum)
         return checksum
 
-    async def _get_transformation_checksum_async(self):
+    async def _get_transformation_checksum_async(self) -> Checksum:
         from .manager.tasks.transformer_update import TransformerUpdateTask
         manager = self._get_manager()
         taskmanager = manager.taskmanager
@@ -172,8 +170,7 @@ class Transformer(Worker):
             await asyncio.sleep(0.05)
         tcache = manager.cachemanager.transformation_cache
         checksum = tcache.transformer_to_transformations.get(self)
-        if checksum is not None:
-            checksum = checksum.hex()
+        checksum = Checksum(checksum)
         return checksum
 
     def clear_exception(self):
@@ -257,22 +254,22 @@ class Transformer(Worker):
     def void(self):
         return self._void
 
-    def _get_buffer_sync(self):
-        from .protocol.get_buffer import get_buffer
-        if self._checksum is None:
+    def _get_buffer_sync(self) -> bytes | None:
+        from seamless.buffer.get_buffer import get_buffer
+        if not Checksum(self._checksum):
             return None
         buffer = get_buffer(self._checksum, remote=True)
         return buffer
 
-    async def _get_buffer(self):
-        if self._checksum is None:
+    async def _get_buffer(self) -> bytes | None:
+        if not Checksum(self._checksum):
             return None
         cachemanager = self._get_manager().cachemanager
         buffer = await cachemanager.fingertip(self._checksum)
         return buffer
 
     async def _get_value(self):
-        from .protocol.deserialize import deserialize
+        from seamless.buffer.deserialize import deserialize
         manager = self._get_manager()
         livegraph = manager.livegraph
         downstreams = livegraph.transformer_to_downstream[self]
@@ -287,11 +284,12 @@ class Transformer(Worker):
         buffer = await self._get_buffer()
         if buffer is None:
             return None
+        print("BUF!", buffer, type(buffer))
         value = await deserialize(buffer, checksum, output_celltype, True)
         return value
 
     def _get_value_sync(self):
-        from .protocol.deserialize import deserialize_sync
+        from seamless import Buffer
         manager = self._get_manager()
         livegraph = manager.livegraph
         downstreams = livegraph.transformer_to_downstream[self]
@@ -306,7 +304,7 @@ class Transformer(Worker):
         buffer = self._get_buffer_sync()
         if buffer is None:
             return None
-        value = deserialize_sync(buffer, checksum, output_celltype, True)
+        value = Buffer(buffer, checksum=checksum).deserialize(output_celltype)
         return value
 
     @property

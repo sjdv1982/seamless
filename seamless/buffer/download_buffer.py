@@ -7,7 +7,7 @@ import bz2
 import sys
 from concurrent.futures import ThreadPoolExecutor
 from requests.exceptions import ConnectionError, ReadTimeout
-from seamless import CacheMissError
+from seamless import CacheMissError, Checksum
 
 from seamless import Buffer
 from seamless.buffer.get_buffer import get_buffer
@@ -133,8 +133,9 @@ def sort_mirrors_by_download_time(mirrorlist, buffer_length):
     result.sort(key=lambda r:r[2])
     return [(r[0], r[1]) for r in result]
 
-def get_buffer_length(checksum, mirrorlist):
-    if checksum is not None and buffer_cache is not None:
+def get_buffer_length(checksum:Checksum, mirrorlist):
+    checksum = Checksum(checksum)
+    if checksum and buffer_cache is not None:
         try:
             buffer_info = buffer_cache.get_buffer_info(
                 bytes.fromhex(checksum), 
@@ -172,7 +173,8 @@ def _get_url(url_info):
         url = url_info["url"]
     return url
 
-def download_buffer_sync(checksum, url_infos, celltype="bytes", *, verbose=False):
+def download_buffer_sync(checksum:Checksum, url_infos, celltype="bytes", *, verbose=False):
+    checksum = Checksum(checksum)
     mirrorlist = []
     for url_info in url_infos:
         url = _get_url(url_info)
@@ -273,7 +275,7 @@ def download_buffer_sync(checksum, url_infos, celltype="bytes", *, verbose=False
                     mirror.record_download(len(buf), download_time)
                     #print("BANDWIDTH2", mirror.bandwidth, len(buf), buffer_length)
             buf = decompress(buf)
-            if checksum is not None or source_celltype != celltype:
+            if checksum or source_celltype != celltype:
                 buf_checksum = Buffer(buf).get_checksum().value
             if source_celltype != celltype:
                 assert try_convert is not None
@@ -289,7 +291,7 @@ def download_buffer_sync(checksum, url_infos, celltype="bytes", *, verbose=False
                     buf_checksum = conv.hex()
                 else:
                     raise SeamlessConversionError
-            if checksum is not None and buf_checksum != checksum:
+            if checksum and buf_checksum != checksum:
                 print("WARNING: '{}' has the wrong checksum".format(url), file=sys.stderr)
                 continue
             return buf

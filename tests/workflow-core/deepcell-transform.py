@@ -41,10 +41,10 @@ print(ctx.d.checksum)
 print(transformation["d"][2])
 print()
 cs = man.cachemanager.transformer_to_result_checksum.get(ctx.func)
-if cs is not None:
+if cs:
     cs = cs.hex()
 print(cs)
-data = ctx._get_manager().resolve(cs, "plain") if cs is not None else None
+data = ctx._get_manager().resolve(cs, "plain") if cs else None
 print(ctx.result.checksum)
 print(data)
 print(ctx.result.data)

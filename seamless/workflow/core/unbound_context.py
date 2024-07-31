@@ -1,6 +1,8 @@
 import weakref
 import copy
 
+from seamless import Checksum
+
 from . import SeamlessBase
 
 class DummyTaskManager:
@@ -83,12 +85,13 @@ class UnboundManager:
         self.commands.append(("bilink", (cell, other)))
 
     def set_cell_checksum(self,
-        cell, checksum, initial, from_structured_cell, trigger_bilinks
+        cell, checksum:Checksum, initial, from_structured_cell, trigger_bilinks
     ):
+        checksum = Checksum(checksum)
         assert cell._get_manager() is self
         assert cell in self._registered
         if initial:
-            assert checksum is not None
+            assert checksum
         self.commands.append(
             ("set cell checksum",
                 (cell, checksum, initial,

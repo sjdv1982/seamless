@@ -62,7 +62,7 @@ async def _prepare(macro, manager, max_running_tasks):
         return
 
     for pinname, accessor in upstreams.items():
-        if accessor._checksum is None: #pending, a legitimate use case, but we can't proceed
+        if not Checksum(accessor._checksum): #pending, a legitimate use case, but we can't proceed
             print_debug("ABORT", macro, " <= pinname", pinname)
             manager.cancel_macro(macro, False)
             return
@@ -94,7 +94,7 @@ async def _prepare(macro, manager, max_running_tasks):
     values = {}
     modules_to_build = {}
     for pinname, accessor in sorted(upstreams.items(),key=lambda item: item[0]):
-        if accessor._checksum is None: #pending, a legitimate use case, but we can't proceed
+        if not Checksum(accessor._checksum): #pending, a legitimate use case, but we can't proceed
             print_debug("ABORT", macro, " <= pinname", pinname)
             manager.cancel_macro(macro, False)
             return

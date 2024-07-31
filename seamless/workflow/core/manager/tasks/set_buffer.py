@@ -1,15 +1,17 @@
 import traceback
 import asyncio
+
+from seamless import Checksum
 from . import Task
 
 class SetCellBufferTask(Task):
     # For buffers that come from an interactive modification
-    def __init__(self, manager, cell, buffer, checksum):
+    def __init__(self, manager, cell, buffer, checksum:Checksum):
         assert isinstance(buffer, bytes)
         super().__init__(manager)
         self.cell = cell
         self.buffer = buffer
-        self.checksum = checksum
+        self.checksum = Checksum(checksum)
         self._dependencies.append(cell)
 
     async def _run(self):
@@ -26,11 +28,12 @@ class SetCellBufferTask(Task):
         checksum = self.checksum
         await taskmanager.await_cell(cell, self.taskid, self._root())
         try:
-            if checksum is None and buffer is not None:
+            if not checksum and buffer is not None:
                 checksum = await CalculateChecksumTask(manager, buffer).run()
-            elif buffer is None and checksum is not None:
+                checksum = Checksum(checksum)
+            elif buffer is None and checksum:
                 buffer = get_buffer(checksum, remote=True)
-            if checksum is None or buffer is None:
+            if (checksum) or buffer is None:
                 manager.cancel_cell(cell, True, StatusReasonEnum.UNDEFINED, origin_task=self)
             else:
                 if not has_validated_evaluation(checksum, cell._celltype):

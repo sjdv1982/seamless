@@ -3,6 +3,8 @@ import glob
 import os
 from pathlib import Path
 
+from seamless import Checksum
+
 from .message import message as msg
 
 
@@ -76,7 +78,7 @@ def get_file_mapping(
             if argtype.get("mapping"):
                 path = argtype["mapping"]
                 fixed_mapping = argtype.get("fixed_mapping")
-            checksum = argtype.get("checksum")
+            checksum = Checksum(argtype.get("checksum"))
             argtype = argtype["type"]
 
         if argtype == "value":
@@ -157,7 +159,7 @@ To solve this problem:
 {result[new_path]} and {new_entry}"""
                 raise ValueError(errmsg)
         
-            if checksum is not None:
+            if checksum:
                 new_entry["checksum"] = checksum
 
             if fixed_mapping:

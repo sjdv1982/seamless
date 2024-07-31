@@ -21,15 +21,14 @@ def strip_textdata(data):
     return "\n".join(lines)
 
 
-def read_checksum_file(filename):
+def read_checksum_file(filename) -> Checksum:
     with open(filename) as f:
         checksum = f.read()
     checksum = strip_textdata(checksum)
     try:
-        checksum = Checksum(checksum)
-        return checksum.hex()
+        return Checksum(checksum)
     except Exception:
-        return None
+        return Checksum(None)
 
 def files_to_checksums(
     filelist: list[str],

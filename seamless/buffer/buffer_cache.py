@@ -284,11 +284,10 @@ class BufferCache:
         database.set_buffer_info(checksum, local_buffer_info)
         self.synced_buffer_info.add(checksum)
 
-    def get_buffer_info(self, checksum, *, sync_remote, buffer_from_remote, force_length):
-        if checksum is None:
+    def get_buffer_info(self, checksum:Checksum, *, sync_remote, buffer_from_remote, force_length) -> BufferInfo | None:
+        checksum = Checksum(checksum)
+        if not checksum:
             return None
-        assert isinstance(checksum, bytes)
-        assert len(checksum) == 32
         buffer_info = self.buffer_info.get(checksum)
         if buffer_info is None:
             buffer_info = BufferInfo(checksum)
@@ -432,10 +431,9 @@ class BufferCache:
         if sync_to_remote and checksum in self.buffer_info:
             self._sync_buffer_info_to_remote(checksum)
 
-    def buffer_check(self, checksum):
-        assert checksum is not None
-        assert isinstance(checksum, bytes)
-        assert len(checksum) == 32
+    def buffer_check(self, checksum:Checksum):
+        checksum = Checksum(checksum)
+        assert checksum
         if checksum in self.buffer_cache:
             return True
         return buffer_remote.can_read_buffer(checksum)

@@ -70,9 +70,13 @@ If the filename doesn't have a .CHECKSUM extension, it is added"""
         return manager.resolve(self.hex(), celltype=celltype, copy=True)
 
     def __str__(self):
+        if self.value is None:
+            return "<None>"
         return str(self.value)
 
     def __repr__(self):
+        if self.value is None:
+            return "<None>"
         return repr(self.value)
 
     def __hash__(self):

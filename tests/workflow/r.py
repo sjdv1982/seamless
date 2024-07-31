@@ -27,7 +27,7 @@ ctx.result.share("result.svg")
 ctx.compute()
 print(ctx.tf.status)
 print(ctx.tf.exception)
-print(ctx.result.checksum is not None)
+print(ctx.result.checksum.value is not None)
 print(ctx.result.status)
 
 ctx.result2 = ctx.tf.result
@@ -42,5 +42,5 @@ ctx.compute()
 
 print(ctx.tf.status)
 print(ctx.tf.exception)
-print(ctx.result2.checksum is not None)
+print(ctx.result2.checksum.value is not None)
 print(ctx.result2.status)

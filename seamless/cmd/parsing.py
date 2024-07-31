@@ -92,7 +92,7 @@ def guess_arguments_with_custom_error_messages(
                 item["type"] = "file"
                 msg(3, "Argument #{} '{}', .CHECKSUM file exists, read file checksum".format(argindex, arg))
             checksum = read_checksum_file(checksum_path.as_posix())
-            if checksum is None:
+            if not checksum:
                 err("Argument #{} '{}', .CHECKSUM file exists, but does not contain a valid checksum".format(argindex, arg))
             item["checksum"] = checksum
             result[arg] = item
@@ -111,7 +111,7 @@ def guess_arguments_with_custom_error_messages(
             except ValueError:
                 pass
 
-        if checksum is not None:
+        if checksum:
             if exists and not is_dir:
                 arg2 = os.path.expanduser(arg)
                 file_checksum = calculate_file_checksum(arg2)

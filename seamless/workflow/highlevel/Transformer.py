@@ -37,6 +37,8 @@ import json
 from copy import deepcopy
 
 from silk.mixed.get_form import get_form
+
+from seamless import Checksum
 from .Base import Base
 from .Cell import Cell, FolderCell
 from .Module import Module
@@ -1172,7 +1174,8 @@ an assistant is tried first and local execution is a fallback."""
         
         from seamless.workflow.core.cache.transformation_cache import transformation_cache
         checksum = self.get_transformation_checksum()
-        if checksum is None:
+        checksum = Checksum(checksum)
+        if not checksum:
             return None
         return transformation_cache.get_transformation_dict(checksum)
 
@@ -1271,7 +1274,8 @@ an assistant is tried first and local execution is a fallback."""
         else:
             tcache = transformation_cache
         tf_checksum = self.get_transformation_checksum()
-        if tf_checksum is None:
+        tf_checksum = Checksum(tf_checksum)
+        if not tf_checksum:
             raise RuntimeError("Transformer has no defined transformation")        
         result = tcache.undo(tf_checksum)
         if not isinstance(result, bytes):
@@ -1748,7 +1752,8 @@ This wrapper can be assigned to a new Context attribute,
         htf["UNTRANSLATED"] = True
         parent._translate()
 
-    def _observe_input(self, checksum):
+    def _observe_input(self, checksum:Checksum):
+        checksum = Checksum(checksum)
         if self._parent() is None:
             return
         try:
@@ -1760,10 +1765,11 @@ This wrapper can be assigned to a new Context attribute,
         htf["checksum"].pop("input_temp", None)
         htf["checksum"].pop("input", None)
         htf["checksum"].pop("input_buffer", None)
-        if checksum is not None:
+        if checksum:
             htf["checksum"]["input"] = checksum
 
-    def _observe_input_auth(self, checksum):
+    def _observe_input_auth(self, checksum:Checksum):
+        checksum = Checksum(checksum)
         if self._parent() is None:
             return
         try:
@@ -1774,10 +1780,11 @@ This wrapper can be assigned to a new Context attribute,
             htf["checksum"] = {}
         htf["checksum"].pop("input_temp", None)
         htf["checksum"].pop("input_auth", None)
-        if checksum is not None:
+        if checksum:
             htf["checksum"]["input_auth"] = checksum
 
-    def _observe_input_buffer(self, checksum):
+    def _observe_input_buffer(self, checksum:Checksum):
+        checksum = Checksum(checksum)
         if self._parent() is None:
             return
         try:
@@ -1787,14 +1794,15 @@ This wrapper can be assigned to a new Context attribute,
         if htf.get("checksum") is None:
             htf["checksum"] = {}
         htf["checksum"].pop("input_temp", None)
-        if checksum is None:
+        if not checksum:
             htf["checksum"].pop("input", None)
             htf["checksum"].pop("input_buffer", None)
         else:
             if "input" not in htf["checksum"]:
                 htf["checksum"]["input_buffer"] = checksum
 
-    def _observe_code(self, checksum):
+    def _observe_code(self, checksum:Checksum):
+        checksum = Checksum(checksum)
         if self._parent() is None:
             return
         try:
@@ -1804,7 +1812,7 @@ This wrapper can be assigned to a new Context attribute,
         if htf.get("checksum") is None:
             htf["checksum"] = {}
         htf["checksum"].pop("code", None)
-        if checksum is not None:
+        if checksum:
             htf["checksum"]["code"] = checksum
 
     def _observe_result(self, checksum):

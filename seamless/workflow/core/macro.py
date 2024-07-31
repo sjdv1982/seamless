@@ -1,6 +1,8 @@
 from collections import OrderedDict
 import traceback
 
+from seamless import Checksum
+
 class ExecError(Exception): pass
 
 class DummyContext:
@@ -422,10 +424,10 @@ class Path:
                     if not cell._void:
                         accessor._new_macropath = True
                         manager.cancel_accessor(accessor, void=False)
-                if cell._checksum is not None:
+                if not Checksum(cell._checksum):
                     CellUpdateTask(manager, cell).launch()
-            checksum = cell._checksum
-            if checksum is not None:
+            checksum = Checksum(cell._checksum)
+            if checksum:
                 livegraph.activate_bilink(self, checksum)
             else:
                 livegraph.rev_activate_bilink(self)
@@ -438,7 +440,7 @@ class Path:
                     up_accessor._new_macropath = True
                     manager.cancel_accessor(up_accessor, void=False)
                 assert isinstance(upstream_cell, Cell)
-                if upstream_cell._checksum is not None:
+                if Checksum(upstream_cell._checksum):
                     CellUpdateTask(manager, upstream_cell).launch()
         else:
             if cell_independence and not self_independence:  # bound cell loses independence

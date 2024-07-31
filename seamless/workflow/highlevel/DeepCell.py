@@ -89,9 +89,9 @@ the value may not be.
         checksum = Checksum(checksum)
         self.set_checksum(checksum)
     
-    def set_checksum(self, checksum: Checksum | str):
+    def set_checksum(self, checksum: Checksum):
         from ..core.cache.buffer_cache import empty_dict_checksum
-        checksum = Checksum(checksum).hex()
+        checksum = Checksum(checksum)
         hcell = self._get_hcell2()
         hcell.pop("metadata", None)
         if hcell.get("UNTRANSLATED"):
@@ -102,8 +102,8 @@ the value may not be.
             return
         ctx = self._get_context()
         origin_cell = ctx.origin
-        if checksum is None:
-            checksum = empty_dict_checksum
+        if not checksum:
+            checksum = Checksum(empty_dict_checksum)
         origin_cell.set_auth_checksum(checksum)
 
     @property
@@ -143,8 +143,9 @@ the value may not be.
         """Sets the keyorder checksum, as SHA3-256 hash"""
         self.set_keyorder_checksum(checksum)
 
-    def set_keyorder_checksum(self, checksum):
+    def set_keyorder_checksum(self, checksum:Checksum):
         from ..core.cache.buffer_cache import empty_list_checksum
+        checksum = Checksum(checksum)
         hcell = self._get_hcell2()
         hcell.pop("metadata", None)
         checksum = Checksum(checksum).hex()
@@ -155,8 +156,8 @@ the value may not be.
             return
         ctx = self._get_context()
         cell = ctx.keyorder
-        if checksum is None:
-            checksum = empty_list_checksum
+        if not checksum:
+            checksum = Checksum(empty_list_checksum)
         cell.set_checksum(checksum)
 
     def define(self, distribution:dict):
@@ -395,7 +396,8 @@ Use cell.data instead."""
             self._node = self._new_func(None)
         return self._node
 
-    def _observe(self, key, checksum):
+    def _observe(self, key, checksum:Checksum):
+        checksum = Checksum(checksum)
         if self._parent() is None:
             return
         if self._parent()._translating:
@@ -407,7 +409,7 @@ Use cell.data instead."""
         if hcell.get("checksum") is None:
             hcell["checksum"] = {}
         hcell["checksum"].pop(key, None)
-        if checksum is not None:
+        if checksum:
             hcell["checksum"][key] = checksum
 
     def _set_observers(self):

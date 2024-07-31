@@ -1,6 +1,7 @@
 import json, os
 import sys
 import urllib.parse
+from seamless import Checksum
 from seamless.buffer.download_buffer import download_buffer_sync, session
 from requests.exceptions import ConnectionError, ReadTimeout
 
@@ -30,9 +31,10 @@ def _classify(checksum:str, classification: str):
         raise ValueError(checksum)
     _classification[classification].add(checksum)
 
-def _download(checksum:str, template, *, checksum_content:bool, verbose:bool=False):
+def _download(checksum:Checksum, template, *, checksum_content:bool, verbose:bool=False):
     from seamless.workflow.core.protocol.get_buffer import get_buffer as get_buffer0
-    if checksum is None:
+    checksum = Checksum(checksum)
+    if not checksum:
         return None
     if isinstance(checksum, bytes):
         checksum = checksum.hex()
@@ -61,8 +63,9 @@ def get_dataset(dataset:str):
     if datasetbuffer is not None:
         return json.loads(datasetbuffer.decode())
 
-def find(checksum:str):
-    if checksum is None:
+def find(checksum:Checksum):
+    checksum = Checksum(checksum)
+    if not checksum:
         return None
     if isinstance(checksum, bytes):
         checksum = checksum.hex()
@@ -106,8 +109,9 @@ def access(checksum:str, celltype:str, *, verbose:bool=False):
         result = get_buffer0(checksum, remote=True)
     return result
 
-def get_buffer(checksum:str, deep=False):
-    if checksum is None:
+def get_buffer(checksum:Checksum, deep=False):
+    checksum = Checksum(checksum)
+    if not checksum:
         return None
     if isinstance(checksum, bytes):
         checksum = checksum.hex()

@@ -2,16 +2,15 @@ import sys
 import requests
 from requests.exceptions import ConnectionError, ReadTimeout
 
-from seamless import Buffer
-from seamless.util import parse_checksum
+from seamless import Buffer, Checksum
 
-def has(session, url, checksum):
+def has(session, url, checksum:Checksum):
     from seamless.workflow.util import is_forked
     sess = session
     if is_forked():
         sess = requests
-    checksum = parse_checksum(checksum)
-    assert checksum is not None
+    checksum = Checksum(checksum)
+    assert checksum
     try:
         path = url + "/has"
         with sess.get(path, json=[checksum]) as response:
@@ -30,13 +29,13 @@ def has(session, url, checksum):
         import traceback; traceback.print_exc()
         return
 
-def get(session, url, checksum):
+def get(session, url, checksum:Checksum):
     from seamless.workflow.util import is_forked
     sess = session
     if is_forked():
         sess = requests
-    checksum = parse_checksum(checksum)
-    assert checksum is not None
+    checksum = Checksum(checksum)
+    assert checksum
     curr_buf_checksum = None
     while 1:
         try:

@@ -4,17 +4,19 @@ import warnings
 
 text_validation_celltype_cache = set()
 
-def validate_text_celltype(text, checksum, celltype):
+def validate_text_celltype(text, checksum:Checksum, celltype):
     assert celltype in text_types2
-    if checksum is not None:
+    checksum = Checksum(checksum)
+    if checksum:
         if (checksum, celltype) in text_validation_celltype_cache:
             return
     validate_text(text, celltype, "evaluate")
-    if checksum is not None:
+    if checksum:
         text_validation_celltype_cache.add((checksum, celltype))
 
-def has_validated_evaluation(checksum, celltype):
-    if checksum is None:
+def has_validated_evaluation(checksum:Checksum, celltype):
+    checksum = Checksum(checksum)
+    if not checksum:
         return True
     if celltype == "bytes":
         return True
@@ -30,11 +32,12 @@ def has_validated_evaluation(checksum, celltype):
         
 text_subcelltype_validation_cache = set()
 
-def has_validated_evaluation_subcelltype(checksum, celltype, subcelltype):
+def has_validated_evaluation_subcelltype(checksum:Checksum, celltype, subcelltype):
+    checksum = Checksum(checksum)
     if not has_validated_evaluation(checksum, celltype):
         # Should never happen
         return False
-    if checksum is None:
+    if not checksum:
         return True
     if celltype != "python":
         return True

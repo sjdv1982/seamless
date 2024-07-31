@@ -4,6 +4,8 @@ import weakref
 from functools import update_wrapper
 from collections import deque
 import logging
+
+from seamless import Checksum
 from ..status import StatusReasonEnum
 
 logger = logging.getLogger(__name__)
@@ -219,7 +221,8 @@ class LiveGraph:
             for path in source._paths:
                 self._get_bilink_targets(path, targets)    
 
-    def activate_bilink(self, cell, checksum):
+    def activate_bilink(self, cell, checksum:Checksum):
+        checksum = Checksum(checksum)
         if isinstance(cell, Path):
             cell = cell._cell
             if cell is None:
@@ -233,7 +236,7 @@ class LiveGraph:
         for target in targets:
             if isinstance(target, Path):
                 continue
-            if checksum is not None:
+            if checksum:
                 if cell.celltype != target.celltype:
                     coro = do_bilink(
                         cell.buffer,
@@ -261,9 +264,9 @@ class LiveGraph:
         for target in targets:
             if isinstance(target, Path):
                 continue
-            if target._checksum is not None:
+            if Checksum(target._checksum):
                 manager.set_cell_checksum(
-                    cell, target._checksum,
+                    cell, Checksum(target._checksum),
                     initial=False,
                     from_structured_cell=False,
                     trigger_bilinks=False
@@ -290,14 +293,16 @@ class LiveGraph:
         self.cell_or_path_to_bilink[target].append(source)
         manager = self.manager()
         checksum = source._checksum
-        if checksum is not None:
+        checksum = Checksum(checksum)
+        if checksum:
             self.activate_bilink(source, checksum)
         else:
             if isinstance(target, Path):
                 target = target._cell
             if target is not None:
                 checksum = target._checksum
-                if checksum is not None:
+                checksum = Checksum(checksum)
+                if checksum:
                     self.activate_bilink(target, checksum)
 
     def connect_pin_cell(

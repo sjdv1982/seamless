@@ -1,3 +1,4 @@
+from seamless import Checksum
 from silk.mixed import _array_types
 
 def _set_subpath(value, path, subvalue):
@@ -78,10 +79,10 @@ def get_subpath_sync(value, hash_pattern, path):
             )
             buffer_dict = {}
             for checksum in checksums:
-                if checksum is None:
+                checksum = Checksum(checksum)
+                if not checksum:
                     continue
-                cs = bytes.fromhex(checksum)
-                buffer = get_buffer(cs, remote=True, deep=False)
+                buffer = get_buffer(checksum, remote=True, deep=False)
                 if buffer is None:
                     raise CacheMissError(checksum)
                 buffer_dict[checksum] = buffer
@@ -118,13 +119,13 @@ async def get_subpath(value, hash_pattern, path, *, manager=None, perform_finger
             )
             buffer_dict = {}
             for checksum in checksums: # TODO: optimize by running in parallel
-                if checksum is None:
+                checksum = Checksum(checksum)
+                if not checksum:
                     continue
-                cs = bytes.fromhex(checksum)
                 if perform_fingertip:
                     buffer = await manager.cachemanager.fingertip(checksum)
                 else:
-                    buffer = get_buffer(cs, remote=True, deep=False)
+                    buffer = get_buffer(checksum, remote=True, deep=False)
                 if buffer is None:
                     raise CacheMissError(checksum)
                 buffer_dict[checksum] = buffer
@@ -183,11 +184,11 @@ def set_subpath_sync(value, hash_pattern, path, subvalue):
 
     elif mode == 2:
         _, pre_path, curr_sub_checksum, post_path, is_raw  = result
+        curr_sub_checksum = Checksum(curr_sub_checksum)
 
         curr_sub_value = None
         if len(post_path):
-            if curr_sub_checksum is not None:
-                curr_sub_checksum = bytes.fromhex(curr_sub_checksum)
+            if curr_sub_checksum:
                 curr_sub_buffer = get_buffer(curr_sub_checksum, remote=True)
                 if is_raw:
                     curr_sub_value = deserialize_raw(curr_sub_buffer)
@@ -220,14 +221,15 @@ def set_subpath_sync(value, hash_pattern, path, subvalue):
         raise ValueError(result)
 
 
-async def set_subpath_checksum(value, hash_pattern, path, subchecksum, sub_buffer):
+async def set_subpath_checksum(value, hash_pattern, path, subchecksum:Checksum, sub_buffer):
     """Sets the subpath of a mixed cell by its subchecksum
     subchecksum must already be encoded with the correct sub-hash-pattern
     sub_buffer corresponds to the buffer of subchecksum
     If the path has the same depth as the hash pattern, then sub_buffer may be None
     """
+    subchecksum = Checksum(subchecksum)
     if hash_pattern is None or hash_pattern == "#" or hash_pattern == "##":
-        if subchecksum is not None:
+        if subchecksum:
             assert sub_buffer is not None
         if hash_pattern == "##":
             subvalue = deserialize_raw(sub_buffer)
@@ -236,18 +238,15 @@ async def set_subpath_checksum(value, hash_pattern, path, subchecksum, sub_buffe
         _set_subpath(value, path, subvalue)
         return
     deep_structure = value
-    cs = None
-    if subchecksum is not None:
-        cs = subchecksum.hex()
     result = write_deep_structure(
-        cs, deep_structure, hash_pattern, path
+        subchecksum, deep_structure, hash_pattern, path
     )
     mode = result[0]
     if mode == 0:
         pass
     elif mode == 1:
         _, sub_hash_pattern = result
-        if subchecksum is not None:
+        if subchecksum:
             assert sub_buffer is not None
         sub_structure = await deserialize(sub_buffer, subchecksum, "mixed", copy=True)
         if not len(path):
@@ -311,10 +310,10 @@ async def set_subpath(value, hash_pattern, path, subvalue):
     elif mode == 2:
         _, pre_path, curr_sub_checksum, post_path, is_raw = result
 
+        curr_sub_checksum = Checksum(curr_sub_checksum)
         curr_sub_value = None
         assert len(post_path)
-        if curr_sub_checksum is not None:
-            curr_sub_checksum = bytes.fromhex(curr_sub_checksum)
+        if curr_sub_checksum:
             curr_sub_buffer = get_buffer(curr_sub_checksum, remote=True)
             if is_raw:
                 curr_sub_value = deserialize_raw(curr_sub_buffer)    
@@ -361,4 +360,4 @@ from seamless.buffer.deserialize import deserialize, deserialize_sync
 from seamless.buffer.serialize import serialize, serialize_sync
 from seamless.buffer.get_buffer import get_buffer
 from seamless.buffer import buffer_cache
-from seamless import CacheMissError
+from seamless import CacheMissError, Checksum

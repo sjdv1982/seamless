@@ -5,6 +5,8 @@ from functools import partial
 import textwrap
 from types import LambdaType
 
+from seamless import Checksum
+
 def transformer(func=None, *, scratch=None, direct_print=None, local=None, return_transformation=False, in_process=False):
     """Wraps a function in a direct transformer
     Direct transformers can be called as normal functions, but
@@ -161,7 +163,8 @@ Attributes:
                 
             prepare_transformation_dict(transformation_dict)
             result_checksum = run_transformation_dict(transformation_dict, fingertip=False, scratch=self.scratch, in_process=self._in_process)
-            if result_checksum is None:
+            result_checksum = Checksum(result_checksum)
+            if not result_checksum:
                 raise RuntimeError("Result is empty")
             buf = get_buffer(result_checksum, remote=True)
             if buf is None:

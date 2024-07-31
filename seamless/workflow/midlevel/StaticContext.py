@@ -1,5 +1,7 @@
 from zipfile import ZipFile
 from io import BytesIO
+
+from seamless import Checksum
 from ..core import context, cell
 from .. import copying
 from copy import deepcopy
@@ -192,13 +194,13 @@ class WrapperBase:
 
 class SimpleCellWrapper(WrapperBase):
 
-    def __init__(self, manager, node, celltype, checksum):
+    def __init__(self, manager, node, celltype, checksum:Checksum):
         super().__init__(manager, node)
         root = self._manager.last_ctx()
         assert root is not None
         self._root = root
         self._celltype = celltype
-        assert checksum is None or isinstance(checksum, str)
+        checksum = Checksum(checksum)
         self._checksum = checksum
 
     @property
@@ -209,9 +211,8 @@ class SimpleCellWrapper(WrapperBase):
     def buffer(self):
         from ..core.protocol.get_buffer import get_buffer
         checksum = self._checksum
-        if checksum is None:
+        if not checksum:
             return None
-        checksum = bytes.fromhex(checksum)
         return get_buffer(checksum, remote=True,deep=True)
 
     @property
@@ -255,9 +256,7 @@ class SimpleCellWrapper(WrapperBase):
                 result = cell(celltype="text")
         else:
             result = cell(celltype=celltype)
-        checksum = None
-        if self._checksum is not None:
-            checksum = bytes.fromhex(self._checksum)
+        checksum = Checksum(self._checksum)
         result._initial_checksum = checksum, True, False
         return result
 

@@ -596,7 +596,7 @@ def set_deep_structure(substructure, deep_structure, hash_pattern, path):
         substructure, sub_deep_structure, sub_hash_pattern, path[1:]
     )
 
-def write_deep_structure(checksum, deep_structure, hash_pattern, path):
+def write_deep_structure(checksum:Checksum, deep_structure, hash_pattern, path):
     """Writes checksum into deep structure, at the given path.
     If the deep structure has missing values in path, they will be inserted as None values into the deep structure
 
@@ -622,9 +622,7 @@ def write_deep_structure(checksum, deep_structure, hash_pattern, path):
     """
 
     assert hash_pattern is not None
-    if checksum is not None:
-        assert isinstance(checksum, str)
-        bytes.fromhex(checksum)
+    checksum = Checksum(checksum)
 
     if hash_pattern in ("#", "##"):
         assert len(path)
@@ -679,7 +677,7 @@ def write_deep_structure(checksum, deep_structure, hash_pattern, path):
             old_checksum = deep_structure[attr]
         else:
             old_checksum = deep_structure.pop(attr, None)
-        if checksum is not None:
+        if checksum:
             deep_structure[attr] = checksum
         return 0, old_checksum
 

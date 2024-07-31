@@ -1,3 +1,4 @@
+from seamless import Checksum
 from . import Task
 
 class CellUpdateTask(Task):
@@ -47,7 +48,8 @@ class CellUpdateTask(Task):
                 checksum = fallback._checksum
             else:
                 checksum = cell._checksum
-            assert checksum is not None, cell
+            checksum = Checksum(checksum)
+            assert checksum, cell
             assert not cell._structured_cell # cell update is not for StructuredCell cells
             livegraph = manager.livegraph
             accessors = livegraph.cell_to_downstream[cell]
@@ -58,7 +60,7 @@ class CellUpdateTask(Task):
             accessors_to_cancel = []
 
             for accessor in accessors:
-                if accessor._void or accessor._checksum is not None:
+                if accessor._void or Checksum(accessor._checksum):
                     accessors_to_cancel.append(accessor)
                 else:
                     manager.taskmanager.cancel_accessor(accessor)

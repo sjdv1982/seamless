@@ -1,5 +1,7 @@
 import json
 from multiprocessing import current_process
+
+from seamless import Checksum
 try:
     from multiprocessing import parent_process
 except ImportError:
@@ -115,13 +117,14 @@ def is_forked():
             return True
     return False
 
-def verify_transformation_success(transformation_checksum, transformation_dict=None):
+def verify_transformation_success(transformation_checksum:Checksum, transformation_dict=None):
     from .highlevel import Checksum
     from .config import database
     from .core.cache.buffer_cache import buffer_cache
     from .core.manager.expression import Expression
     assert database.active
-    if transformation_checksum is None:
+    transformation_checksum = Checksum(transformation_checksum)
+    if not transformation_checksum:
         return None
     tf_checksum = Checksum(transformation_checksum)
     if transformation_dict is None:

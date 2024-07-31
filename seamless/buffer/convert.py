@@ -320,7 +320,8 @@ def _convert_reformat(checksum, buffer, source_celltype, target_celltype):
             raise AssertionError
     if target_buffer is None:
         target_buffer = serialize_sync(target_value, target_celltype)
-    if target_checksum is None:
+    target_checksum = Checksum(target_checksum)
+    if not target_checksum:
         target_checksum = Buffer(target_buffer).get_checksum()
     buffer_cache.cache_buffer(target_checksum, target_buffer)
     if conv_attr is not None:

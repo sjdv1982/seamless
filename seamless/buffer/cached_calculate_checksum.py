@@ -21,7 +21,8 @@ async def cached_calculate_checksum(buffer):
     assert isinstance(buffer, bytes)
     buf_id = id(buffer)
     cached_checksum, _ = calculate_checksum_cache.get(buf_id, (None, None))
-    if cached_checksum is not None:
+    cached_checksum = Checksum(cached_checksum)
+    if cached_checksum:
         checksum_cache[cached_checksum] = buffer
         return Checksum(cached_checksum)
     if 0:
@@ -46,7 +47,8 @@ def cached_calculate_checksum_sync(buffer):
     buf_id = id(buffer)
     assert isinstance(buffer, bytes)
     cached_checksum, _ = calculate_checksum_cache.get(buf_id, (None, None))
-    if cached_checksum is not None:
+    cached_checksum = Checksum(cached_checksum)
+    if cached_checksum:
         checksum_cache[cached_checksum] = buffer
         return Checksum(cached_checksum)
     checksum = Checksum(calculate_checksum_func(buffer))

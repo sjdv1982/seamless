@@ -1,5 +1,6 @@
 """Module for Context class."""
-from seamless import compiler
+from seamless import Checksum, compiler
+from seamless.buffer.json import json_dumps
 import weakref
 from weakref import WeakValueDictionary
 from collections import OrderedDict
@@ -279,7 +280,6 @@ languages: dict or None
         Returns a dictionary containing the status of all children that are not OK.
         If all children are OK, returns OK
         """
-        from seamless.workflow.core.protocol.json import json_dumps
         from .status import format_context_status
         status = self._get_status()
         statustxt = format_context_status(status)
@@ -331,8 +331,8 @@ languages: dict or None
             if skip_scratch and child._scratch:
                 continue
 
-            checksum = child.checksum
-            if checksum is None:
+            checksum = Checksum(child.checksum)
+            if not checksum:
                 continue
             
             if child.celltype == "plain":

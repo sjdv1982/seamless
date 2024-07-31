@@ -45,7 +45,8 @@ class Transformation:
             return
         try:
             tf_checksum = self._resolver_sync(self)
-            if tf_checksum is None:
+            tf_checksum = Checksum(tf_checksum)
+            if not tf_checksum:
                 raise ValueError("Cannot obtain transformation checksum")
             self._transformation_checksum = tf_checksum
         except Exception:
@@ -58,7 +59,8 @@ class Transformation:
             return
         try:
             tf_checksum = await self._resolver_async(self)
-            if tf_checksum is None:
+            tf_checksum = Checksum(tf_checksum)
+            if not tf_checksum:
                 raise ValueError("Cannot obtain transformation checksum")
             self._transformation_checksum = tf_checksum
         except Exception:
@@ -75,9 +77,9 @@ class Transformation:
             return
         try:
             result_checksum = self._evaluator_sync(self)
-            if result_checksum is None:
+            result_checksum = Checksum(result_checksum)
+            if not result_checksum:
                 raise ValueError("Result is empty")
-            Checksum(result_checksum)
             self._result_checksum = result_checksum
         except Exception:
             self._exception = traceback.format_exc(limit=0).strip("\n") + "\n"
@@ -93,9 +95,9 @@ class Transformation:
             return
         try:
             result_checksum = await self._evaluator_async(self)
-            if result_checksum is None:
+            result_checksum = Checksum(result_checksum)
+            if not result_checksum:
                 raise ValueError("Result is empty")
-            Checksum(result_checksum)
             self._result_checksum = result_checksum
         except Exception:
             self._exception = traceback.format_exc(limit=0).strip("\n") + "\n"
@@ -199,7 +201,8 @@ class Transformation:
         from ...core.protocol.deserialize import deserialize_sync
         self._resolve_sync()
         tf_checksum = self._transformation_checksum
-        if tf_checksum is None:
+        tf_checksum = Checksum(tf_checksum)
+        if not tf_checksum:
             return None
         buf = get_buffer(tf_checksum, remote=True)
         if buf is None:
@@ -225,7 +228,7 @@ class Transformation:
     @property
     def value(self):
         from ...core.protocol.deserialize import deserialize_sync
-        if self.checksum is None:
+        if not self.checksum:
             return None
         buf = self.buffer
         if buf is None:
@@ -253,8 +256,8 @@ class Transformation:
     @property
     def logs(self):
         from ...core.cache.transformation_cache import transformation_cache
-        checksum = self.as_checksum().bytes()
-        if checksum is None:
+        checksum = self.as_checksum()
+        if not checksum:
             return None
         logs = transformation_cache.transformation_logs.get(checksum)
         if logs is not None:
@@ -262,9 +265,9 @@ class Transformation:
 
     def clear_exception(self):
         self._exception = None
-        if self._resolved and self._transformation_checksum is None:
+        if self._resolved and not Checksum(self._transformation_checksum):
             self._resolved = False
-        elif self._evaluated and self._result_checksum is None:
+        elif self._evaluated and not Checksum(self._result_checksum ):
             self._evaluated = False
 
 
@@ -274,7 +277,7 @@ class Transformation:
             if self._exception is not None:
                 return "Status: exception"
             if self._evaluated:
-                assert self._result_checksum is not None
+                assert Checksum(self._result_checksum)
                 return "Status: OK"
             if self._future is not None:
                 return "Status: pending"
@@ -296,8 +299,9 @@ class Transformation:
         """
         from ...core.cache.transformation_cache import transformation_cache
         tf_checksum = self._transformation_checksum
-        
-        if tf_checksum is None:
+        tf_checksum = Checksum(tf_checksum)
+
+        if not tf_checksum:
             return
 
         transformation_cache.hard_cancel(tf_checksum=tf_checksum)
@@ -305,10 +309,10 @@ class Transformation:
     @property
     def execution_metadata(self) -> dict:
         from ...core.cache.database_client import database
-        cs = self.as_checksum().value
-        if cs is None:
+        checksum = self.as_checksum()
+        if not checksum:
             return None
-        return database.get_metadata(cs)
+        return database.get_metadata(checksum)
 
     def undo(self) -> str | None:
         """Attempt to undo a finished transformation.        
@@ -323,8 +327,8 @@ class Transformation:
         If the database returns an error message, that is returned as string.
         """
         from seamless.workflow.core.cache.transformation_cache import transformation_cache
-        result_checksum = self.checksum
-        if result_checksum is None:
+        result_checksum = Checksum(self.checksum)
+        if not result_checksum:
             raise RuntimeError("Not a completed transformation")
         self._evaluated = False
         self._result_checksum = None 

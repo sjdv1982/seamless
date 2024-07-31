@@ -8,7 +8,7 @@ import json
 import time
 import multiprocessing
 
-from seamless import CacheMissError
+from seamless import CacheMissError, Checksum
 
 from seamless.buffer.get_buffer import get_buffer as _get_buffer
 from ...core.cache.transformation_cache import (
@@ -169,7 +169,8 @@ def run_transformation_dict(transformation_dict, *, fingertip, scratch=False, in
         result_checksum, prelim = transformation_cache._get_transformation_result(
             transformation
         )
-        if result_checksum is not None and not prelim:
+        result_checksum = Checksum(result_checksum)
+        if result_checksum and not prelim:
             tf_dunder, syntactic_cache = None, []
         else:
             assert _parent_process_queue is not None
@@ -239,7 +240,8 @@ async def run_transformation_dict_async(transformation_dict, *, fingertip, scrat
     tf_dunder = extract_dunder(transformation_dict)
     transformation = calculate_checksum(transformation_buffer)
     result_checksum = await run_transformation_async(transformation, scratch=scratch, fingertip=fingertip, tf_dunder=tf_dunder, cache_only=True)
-    if result_checksum is not None:
+    result_checksum = Checksum(result_checksum)
+    if result_checksum:
         ###buffer_cache.decref(result_checksum) #TODO: look into this
         return result_checksum
     
@@ -278,7 +280,8 @@ def run_transformation_dict_in_process(transformation_dict, tf_checksum, tf_dund
     from seamless.highlevel.direct import transformer
 
     result_checksum = database.get_transformation_result(tf_checksum)
-    if result_checksum is not None:
+    result_checksum = Checksum(result_checksum)
+    if result_checksum:
         return result_checksum
     
     get_global_info()
@@ -357,7 +360,7 @@ def prepare_code(semantic_code_checksum, codebuf, code_checksum):
         assert isinstance(codebuf, bytes)
     semantic_code_checksum = Checksum(semantic_code_checksum).bytes()
     code_checksum = Checksum(code_checksum).bytes()
-    assert semantic_code_checksum is not None
+    assert semantic_code_checksum
     try:
         try:
             semcode = _sem_code_cache[semantic_code_checksum]
@@ -387,8 +390,9 @@ def prepare_transformation_pin_value(value, celltype):
     elif isinstance(value, Transformation):
         assert value.status == "Status: OK", value.status  # must have been checked before
         checksum = value.checksum
-        assert checksum is not None  # can't be true if status is OK
-        value = Checksum(checksum)
+        checksum = Checksum(checksum)
+        assert checksum  # can't be true if status is OK
+        value = checksum
     else:
         if isinstance(value, bytes):
             buf = value
@@ -430,7 +434,8 @@ Replaced buffers or values are properly registered and cached
             code = original_value if not isinstance(original_value, Checksum) else None
             code_checksum = value.bytes()
             semantic_code_checksum = _get_semantic(code, code_checksum)
-            if semantic_code_checksum is None:
+            semantic_code_checksum = Checksum(semantic_code_checksum)
+            if not semantic_code_checksum:
                 raise CacheMissError(code_checksum.hex())
             assert isinstance(semantic_code_checksum, bytes)
             codebuf = None
@@ -558,9 +563,10 @@ def direct_transformer_to_transformation_dict(
         if isinstance(value, Base):
             assert isinstance(value, (Cell, Module, DeepCellBase))
             checksum = value.checksum
-            if checksum is None:
+            checksum = Checksum(checksum)
+            if not checksum:
                 raise ValueError(f"Argument {pinname} (Cell {value}) has no checksum available")
-            v = Checksum(checksum)
+            v = checksum
         elif isinstance(value, Transformation):
             v = value
         else:
@@ -589,7 +595,8 @@ def _get_semantic(code, code_checksum):
     code_checksum = parse_checksum(code_checksum, as_bytes=True)
     synkey = (code_checksum, "python", "transformer")
     semantic_code_checksum = transformation_cache.syntactic_to_semantic_checksums.get(synkey)
-    if semantic_code_checksum is not None:
+    semantic_code_checksum = Checksum(semantic_code_checksum)
+    if semantic_code_checksum:
         return semantic_code_checksum
     
     if code is None:
@@ -735,9 +742,10 @@ def _node_to_transformation_dict(node):
             if isinstance(value, Base):
                 assert isinstance(value, (Cell, Module, DeepCellBase))
                 checksum = value.checksum
-                if checksum is None:
+                checksum = Checksum(checksum)
+                if not checksum:
                     raise ValueError(f"Argument {pinname} (Cell {value}) has no checksum available")
-                v = Checksum(checksum)
+                v = checksum
             elif isinstance(value, Transformation):
                 v = value
             else:
@@ -805,15 +813,14 @@ def _wait():
                             continue
                         _parent_process_response_queue.task_done()
                         break
-                    if result_checksum is not None:
-                        assert isinstance(result_checksum, bytes)
+                    result_checksum = Checksum(result_checksum)
+                    if result_checksum:
                         transformation_cache.register_known_transformation(tf_checksum, result_checksum)
                     transformation_cache.transformation_logs[tf_checksum] = logs
                 else:
                     running_event_loop = asyncio.get_event_loop().is_running()
                     result_checksum = run_transformation(transformation, fingertip=fingertip, new_event_loop=running_event_loop, scratch=scratch, tf_dunder=tf_dunder)
-                    if result_checksum is not None:
-                        assert isinstance(result_checksum, bytes)                        
+                    result_checksum = Checksum(result_checksum)
 
             finally:
                 # For some reason, the logic here is different than for the async version

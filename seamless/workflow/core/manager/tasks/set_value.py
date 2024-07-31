@@ -1,4 +1,6 @@
 import traceback
+
+from seamless import Checksum
 from . import Task
 import asyncio
 import numpy as np
@@ -50,7 +52,8 @@ class SetCellValueTask(Task):
                     raise exc from None
                 assert buffer is None or isinstance(buffer, bytes)
                 checksum = await CalculateChecksumTask(manager, buffer).run()
-            if checksum is not None:
+            checksum = Checksum(checksum)
+            if checksum:
                 if isinstance(value, np.ndarray):
                     buffer_cache.update_buffer_info(checksum, "shape", value.shape, sync_remote=False)
                     buffer_cache.update_buffer_info(checksum, "dtype", str(value.dtype), sync_remote=False)

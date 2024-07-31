@@ -2,6 +2,8 @@ import weakref
 import functools
 import pprint
 from copy import deepcopy
+
+from seamless import Checksum
 from .Cell import Cell
 from .Resource import Resource
 from .SelfWrapper import SelfWrapper
@@ -464,7 +466,8 @@ class Macro(Base):
     def _pull_source(self, attr, path):
         raise NotImplementedError # TODO: follow transformer
 
-    def _observe_param(self, checksum):
+    def _observe_param(self, checksum:Checksum):
+        checksum = Checksum(checksum)
         if self._parent() is None:
             return
         try:
@@ -475,10 +478,11 @@ class Macro(Base):
             node["checksum"] = {}
         node["checksum"].pop("param_temp", None)
         node["checksum"].pop("param", None)
-        if checksum is not None:
+        if checksum:
             node["checksum"]["param"] = checksum
 
-    def _observe_param_auth(self, checksum):
+    def _observe_param_auth(self, checksum:Checksum):
+        checksum = Checksum(checksum)
         if self._parent() is None:
             return
         try:
@@ -489,10 +493,11 @@ class Macro(Base):
             node["checksum"] = {}
         node["checksum"].pop("param_temp", None)
         node["checksum"].pop("param_auth", None)
-        if checksum is not None:
+        if checksum:
             node["checksum"]["param_auth"] = checksum
 
-    def _observe_param_buffer(self, checksum):
+    def _observe_param_buffer(self, checksum:Checksum):
+        checksum = Checksum(checksum)
         if self._parent() is None:
             return
         try:
@@ -503,10 +508,11 @@ class Macro(Base):
             node["checksum"] = {}
         node["checksum"].pop("param_temp", None)
         node["checksum"].pop("param_buffer", None)
-        if checksum is not None:
+        if checksum:
             node["checksum"]["param_buffer"] = checksum
 
-    def _observe_code(self, checksum):
+    def _observe_code(self, checksum:Checksum):
+        checksum = Checksum(checksum)
         if self._parent() is None:
             return
         try:
@@ -516,7 +522,7 @@ class Macro(Base):
         if node.get("checksum") is None:
             node["checksum"] = {}
         node["checksum"].pop("code", None)
-        if checksum is not None:
+        if checksum:
             node["checksum"]["code"] = checksum
 
     def _observe_schema(self, checksum):

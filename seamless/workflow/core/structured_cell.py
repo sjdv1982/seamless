@@ -1,5 +1,7 @@
 import weakref
 from copy import deepcopy
+
+from seamless import Checksum
 from . import SeamlessBase
 from .status import StatusReasonEnum
 from .utils import overlap_path
@@ -175,7 +177,7 @@ class StructuredCell(SeamlessBase):
         if self.auth._destroyed:
             return
         if self._auth_value is None:
-            return self.auth._checksum is None
+            return not Checksum(self.auth._checksum)
         return False
 
     def _get_auth_path(self, path):
@@ -184,7 +186,7 @@ class StructuredCell(SeamlessBase):
         if self.auth._destroyed:
             return
         if self._auth_value is None:
-            if self.auth._checksum is not None:
+            if Checksum(self.auth._checksum):
                 self._auth_value = deepcopy(self.auth.data)
         manager = self._get_manager()
         if manager._destroyed:
@@ -287,7 +289,7 @@ class StructuredCell(SeamlessBase):
         else:
             assert isinstance(path[0], str), path
             if self._schema_value is None:
-                if self.schema._checksum is not None:
+                if Checksum(self.schema._checksum):
                     schema = self.schema.value
                     self._schema_value = schema
                 else:
@@ -306,10 +308,9 @@ class StructuredCell(SeamlessBase):
             return
         buf = Buffer(self._schema_value, "plain")
         checksum = buf.checksum
+        checksum = Checksum(checksum)
         buffer_cache.cache_buffer(checksum, buf)
         buffer_cache.guarantee_buffer_info(checksum, "plain", sync_to_remote=False)
-        if checksum is not None:
-            checksum = checksum.hex()
         self.schema._set_checksum(checksum, from_structured_cell=True)
         manager = self._get_manager()
         manager.update_schemacell(
@@ -370,19 +371,20 @@ class StructuredCell(SeamlessBase):
     @property
     def checksum(self):
         checksum = self._data.checksum
-        if checksum is not None:
+        checksum = Checksum(checksum)
+        if checksum:
             return checksum
-        if self.schema is None or self.schema.checksum is None:
+        if self.schema is None or not Checksum(self.schema.checksum):
             checksum = self.buffer.checksum
-            if checksum is not None:
+            checksum = Checksum(checksum)
+            if checksum:
                 return checksum
             if len(self.inchannels):
                 return None
             return self.auth.checksum
-    def set_auth_checksum(self, checksum):
-        assert checksum is None or isinstance(checksum, str)
-        if isinstance(checksum, str):
-            checksum = bytes.fromhex(checksum)
+    def set_auth_checksum(self, checksum:Checksum):
+        checksum = Checksum(checksum)
+
         assert not self.no_auth
         self._auth_value = None
         self._auth_checksum = checksum
@@ -405,7 +407,7 @@ class StructuredCell(SeamlessBase):
             return None
         schema = self._schema_value
         if schema is None:
-            if self.schema._checksum is not None:
+            if Checksum(self.schema._checksum):
                 schema = self.schema.value
                 self._schema_value = schema
         return schema

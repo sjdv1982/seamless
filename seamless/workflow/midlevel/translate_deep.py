@@ -100,11 +100,11 @@ def _translate_deep(node, root, namespace, inchannels, outchannels, *, hash_patt
         hash_pattern=hash_pattern
     )
 
-    checksum = node.get("checksum")
-    if checksum is not None:
-        set_structured_cell_from_checksum(ctx.origin, checksum, is_deepcell=True)
+    checksum_item = node.get("checksum")
+    if checksum_item is not None:
+        set_structured_cell_from_checksum(ctx.origin, checksum_item, is_deepcell=True)
     else:
-        checksum = {}
+        checksum_item = {}
 
     keyorder = core_cell("plain").set_checksum(checksum.get("keyorder", empty_list_checksum))
     ctx.keyorder = keyorder

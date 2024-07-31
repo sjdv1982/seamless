@@ -1,5 +1,7 @@
 import asyncio
 
+from seamless import Checksum
+
 from . import Task
 
 class UponConnectionTask(Task):
@@ -259,14 +261,14 @@ Source %s; target %s, %s""" % (source, target, target_subpath)
                 if not source._void:
                     taskmanager = manager.taskmanager
                     unvoid_accessor(accessor, manager.livegraph)
-                    manager.cancel_accessor(accessor, void=False, origin_task=self)
+                    manager.cancel_accessor(accessor, void=False, origin_task=self)            
 
                     # Chance that the above lines cancels our own task
                     if self._canceled:
                         return
 
                     accessor.build_expression(manager.livegraph, source._checksum)
-                    if source._checksum is not None:
+                    if Checksum(source._checksum):
                         AccessorUpdateTask(manager, accessor).launch()
 
             elif isinstance(source, Transformer):
@@ -284,7 +286,7 @@ Source %s; target %s, %s""" % (source, target, target_subpath)
                     if self._canceled:
                         return
 
-                    if source._checksum is not None:
+                    if Checksum(source._checksum):
                         TransformerUpdateTask(manager, source).launch()
             elif isinstance(source, Reactor):
                 if source._void:
@@ -301,7 +303,7 @@ Source %s; target %s, %s""" % (source, target, target_subpath)
                     if self._canceled:
                         return
 
-                    if source._checksum is not None:
+                    if Checksum(source._checksum):
                         manager.cancel_reactor(source,void=False)
                         ReactorUpdateTask(manager, source).launch()
             else:

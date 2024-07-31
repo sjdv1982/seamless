@@ -4,6 +4,8 @@
 import weakref
 import json
 
+from seamless import Checksum
+
 elision_cache = {}
 
 class Elision:
@@ -68,12 +70,12 @@ class Elision:
         elision_cache[elision_checksum] = elision_result
 
 
-    def get_elision_checksum(self):
+    def get_elision_checksum(self) -> Checksum:
         for c in list(self.input_cells.keys()) + list(self.output_cells.keys()):
             if c._prelim:
-                return None
-            if c._checksum is None and not c._void:
-                return None
+                return Checksum(None)
+            if not Checksum(c._checksum) and not c._void:
+                return Checksum(None)
         elision_dict = {}
         elision_dict["params"] = {}
         for k,v in self.macro._last_inputs.items():
@@ -82,19 +84,18 @@ class Elision:
             elision_dict["params"][k] = v
         elision_dict["input_cells"] = {}
         for c,p in self.input_cells.items():
-            cs = c._checksum
-            if cs is not None:
-                cs = cs.hex()
+            checksum = Checksum(c._checksum)
             pp = json.dumps(tuple(p))
-            elision_dict["input_cells"][pp] = cs
+            elision_dict["input_cells"][pp] = checksum
         elision_checksum = calculate_dict_checksum(elision_dict)
         #print("ELISION DICT", self.macro, elision_checksum.hex(), elision_dict)
-        return elision_checksum
+        return Checksum(elision_checksum)
 
 
     def get_elision_result(self):
-        cs = self.get_elision_checksum()
-        if cs is None:
+        checksum = self.get_elision_checksum()
+        checksum = Checksum(checksum)
+        if not checksum:
             return None
             
         elision_result = {}
@@ -108,14 +109,14 @@ class Elision:
                 checksum = None
             else:
                 checksum = cc._checksum
-                if checksum is None and not cc._void:
+                checksum = Checksum(checksum)
+                if checksum  and not cc._void:
                     return
-            if checksum is not None:
+            checksum = Checksum(checksum)
+            if checksum:
                 celltype = cc._celltype
                 if celltype == "mixed":
                     hash_pattern = cc._hash_pattern
-            if checksum is not None:
-                checksum = checksum.hex()
             pp = json.dumps(tuple(p))
             elision_result[pp] = celltype, hash_pattern, checksum
         # TODO: record pseudo-connections

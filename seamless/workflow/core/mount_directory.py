@@ -6,6 +6,8 @@ import logging
 import os
 import shutil
 
+from seamless import Checksum
+
 def _validate_cell(cell):
     from .cell import Cell
     if not isinstance(cell, Cell):
@@ -51,7 +53,7 @@ Cell can be None.
                 result[key] = deserialize_raw(buf)
     result_buf = serialize_sync(result, "mixed")
     result_checksum = calculate_checksum_sync(result_buf)
-    assert result_checksum is not None
+    assert Checksum(result_checksum)
     buffer_cache.cache_buffer(result_checksum, result_buf)
     buffer_cache.guarantee_buffer_info(result_checksum, "plain", sync_to_remote=False)
     result_checksum = result_checksum.hex()
@@ -99,7 +101,8 @@ If there is no connected Seamless buffer storage, Seamless will hold all file bu
                 except (ValueError, UnicodeDecodeError):
                     continue
             checksum = calculate_checksum_sync(buf)
-            if checksum is None:   # shouldn't happen...
+            checksum = Checksum(checksum)
+            if not checksum:   # shouldn't happen...
                 continue
             if cell is not None or cache_buffers:
                 #buffer_cache.cache_buffer(checksum, buf)  
@@ -112,7 +115,7 @@ If there is no connected Seamless buffer storage, Seamless will hold all file bu
             result[key] = checksum.hex()
     result_buf = serialize_sync(result, "plain")
     result_checksum = calculate_checksum_sync(result_buf)
-    assert result_checksum is not None
+    assert Checksum(result_checksum)
     if cell is not None or cache_buffers:
         buffer_cache.cache_buffer(result_checksum, result_buf)
         buffer_cache.guarantee_buffer_info(result_checksum, "plain", sync_to_remote=False)

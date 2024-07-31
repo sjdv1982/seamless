@@ -171,7 +171,8 @@ async def build_transformation_namespace(transformation, semantic_cache, codenam
             # For now, assume that the first syntactic checksum gives a value
             semkey = sem_checksum, celltype, subcelltype
             checksum = semantic_cache[semkey][0]
-        if checksum is None:
+        checksum = Checksum(checksum)
+        if not checksum:
             continue
         from_filesystem = False
         hash_pattern = None
@@ -286,7 +287,8 @@ def build_transformation_namespace_sync(transformation, semantic_cache, codename
             # For now, assume that the first syntactic checksum gives a value
             semkey = sem_checksum, celltype, subcelltype
             checksum = semantic_cache[semkey][0]
-        if checksum is None:
+        checksum = Checksum(checksum)
+        if not checksum:
             continue
         from_filesystem = False
         hash_pattern = None
@@ -705,8 +707,8 @@ class TransformationJob:
         prelim_callback, progress_callback
     ):
         from .direct import set_parent_process_queue, set_parent_process_response_queue
-        from seamless.util import is_forked
-        from seamless.metalevel.unbashify import unbashify
+        from seamless.workflow.util import is_forked
+        from seamless.workflow.metalevel.unbashify import unbashify
         if self.cannot_be_local:
             raise SeamlessTransformationError("Local computation has been disabled for this Seamless instance")
         with_ipython_kernel = False
@@ -1003,10 +1005,12 @@ class TransformationJob:
             if lock is not None:
                 release_lock(lock)
         print_info(f"Finished local execution of transformation job: {self.checksum.hex()}")
-        if result_checksum is None:
+        result_checksum = Checksum(result_checksum)
+        if not result_checksum:
             assert result_buffer is not None
             result_checksum = await get_result_checksum(result_buffer)
-            assert result_checksum is not None
+            result_checksum = Checksum(result_checksum)
+            assert result_checksum
         if result_buffer is not None:
             buffer_cache.cache_buffer(result_checksum, result_buffer)
             try:
@@ -1066,11 +1070,11 @@ from .execute import execute
 from .injector import transformer_injector as injector
 from .build_module import build_all_modules
 from seamless.compiler import compilers as default_compilers, languages as default_languages
-from seamless.buffer import get_buffer
+from seamless.buffer.get_buffer import get_buffer
 from seamless.buffer.deserialize import deserialize, deserialize_sync
 from seamless.buffer.calculate_checksum import calculate_checksum
 from seamless.buffer.evaluate import validate_evaluation_subcelltype
-from seamless import CacheMissError
+from seamless import CacheMissError, Checksum
 from seamless.buffer.buffer_cache import buffer_cache
 from .cache.transformation_cache import transformation_cache, syntactic_is_semantic, syntactic_to_semantic
 from .status import SeamlessInvalidValueError

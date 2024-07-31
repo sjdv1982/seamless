@@ -18,7 +18,7 @@ tf = func(NSAMPLES)
 tf.compute()
 cs = tf.checksum
 print(cs)
-if cs is not None:
+if cs.value is not None:
     cs2 = cs.bytes()
     assert cs2 not in buffer_cache.buffer_refcount
     buffer_cache._uncache_buffer(cs2)
@@ -37,7 +37,7 @@ tf = func(NSAMPLES)
 tf.compute()
 cs = tf.checksum
 print(cs)
-if cs is not None:
+if cs.value is not None:
     cs2 = cs.bytes()
     assert cs2 not in buffer_cache.buffer_refcount
     buffer_cache._uncache_buffer(cs2)

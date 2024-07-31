@@ -1,9 +1,8 @@
 import requests
-from seamless.util import parse_checksum
 import os
 import time
 import traceback
-from seamless import Buffer
+from seamless import Buffer, Checksum
 from requests.exceptions import ConnectionError, ReadTimeout
 
 _read_servers:list[str]|None = None
@@ -48,9 +47,9 @@ def get_file_buffer(directory, checksum, timeout=10):
         return
     return buf
 
-def get_buffer(checksum):
-    checksum = parse_checksum(checksum, as_bytes=True)
-    if checksum is None:
+def get_buffer(checksum:Checksum) -> bytes | None:
+    checksum = Checksum(checksum)
+    if not checksum:
         return None
     if _read_servers is None and _read_folders is None:
         return None
@@ -70,9 +69,8 @@ def get_buffer(checksum):
             _known_buffers.add(checksum)
             return result
 
-def get_filename(checksum):
-    checksum = parse_checksum(checksum, as_bytes=True)
-    if checksum is None:
+def get_filename(checksum:Checksum) -> str | None:
+    if not checksum:
         return None
     if _read_folders is None:
         return None
@@ -82,9 +80,9 @@ def get_filename(checksum):
             return filename
     return None
 
-def get_directory(checksum):
-    checksum = parse_checksum(checksum, as_bytes=True)
-    if checksum is None:
+def get_directory(checksum:Checksum):
+    checksum = Checksum(checksum)
+    if not checksum:
         return None
     if _read_folders is None:
         return None
@@ -94,9 +92,9 @@ def get_directory(checksum):
             return dirname
     return None
 
-def write_buffer(checksum, buffer):
-    checksum = parse_checksum(checksum, as_bytes=True)
-    if checksum is None:
+def write_buffer(checksum: Checksum, buffer):
+    checksum = Checksum(checksum)
+    if not checksum:
         return None
     if _write_server is None:
         return
@@ -108,9 +106,9 @@ def write_buffer(checksum, buffer):
         return
     buffer_write_client.write(session, _write_server, checksum, buffer)
 
-def is_known(checksum):
-    checksum = parse_checksum(checksum, as_bytes=True)
-    if checksum is None:
+def is_known(checksum:Checksum):
+    checksum = Checksum(checksum)
+    if not checksum:
         return True
     return checksum in _known_buffers or checksum in _written_buffers
     

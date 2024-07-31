@@ -74,7 +74,9 @@ class AccessorUpdateTask(Task):
                 accessor.exception = None
             else:
                 reason = StatusReasonEnum.INVALID
-                accessor.exception = expression.exception                
+                accessor.exception = expression.exception
+            print("EXC", expression.exception, accessor.write_accessor.target(), expression_result_checksum, expression)
+            #exit(0)             
             manager.cancel_accessor(accessor, void=True, origin_task=self, reason=reason)
 
             target = accessor.write_accessor.target()

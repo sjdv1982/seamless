@@ -168,12 +168,12 @@ class Database:
         self._log("SET", request["type"], request["type"])
         self.send_put_request(request)
 
-    def contest(self, transformation_checksum:bytes, result_checksum:bytes):
+    def contest(self, transformation_checksum:Checksum, result_checksum:Checksum):
         """Contests a previously calculated transformation result"""
-        transformation_checksum = Checksum(transformation_checksum).value
-        assert transformation_checksum is not None
-        result_checksum = Checksum(result_checksum).value
-        assert result_checksum is not None
+        transformation_checksum = Checksum(transformation_checksum)
+        assert transformation_checksum
+        result_checksum = Checksum(result_checksum)
+        assert result_checksum
         request = {
             "type": "contest",
             "checksum": transformation_checksum,

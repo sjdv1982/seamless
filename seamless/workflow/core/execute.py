@@ -15,6 +15,7 @@ try:
 except ModuleNotFoundError:
     debugpy = None
 
+from seamless import Checksum
 from seamless.buffer.cached_compile import exec_code, check_function_like
 from seamless.buffer.serialize import _serialize as serialize
 from seamless.buffer.buffer_cache import buffer_cache
@@ -82,8 +83,8 @@ def _fast_pack(value, buffer, celltype, database, scratch, result_queue):
         buffer = serialize_sync(value, celltype, use_cache=False)
         if buffer is None:
             return None
-    checksum = calculate_checksum_func(buffer)
-    if checksum is None:
+    checksum = Checksum(calculate_checksum_func(buffer))
+    if not checksum:
         # shouldn't ever happen
         return None
     if database.active:
@@ -122,7 +123,8 @@ def fast_pack(unpacked_values, hash_pattern, *, scratch, result_queue):
                 buffer, _ = serialize_cache.get((id(value), celltype), (None, None))
             if buffer is not None:
                 checksum, _ = calculate_checksum_cache.get(id(buffer), (None, None))
-                if checksum is not None:
+                checksum = Checksum(checksum)
+                if checksum:
                     packing_checksums.append(checksum)
                     continue
             packing_checksum = pool.apply_async(func=_fast_pack, args = (value, buffer, celltype, database, scratch, result_queue))
@@ -136,14 +138,16 @@ def fast_pack(unpacked_values, hash_pattern, *, scratch, result_queue):
         else:
             raise AssertionError(hash_pattern)    
         for n, (key, packing_checksum) in enumerate(zip(keys, packing_checksums)):
-            if packing_checksum is None:
+            packing_checksum = Checksum(packing_checksum)
+            if not packing_checksum:
                 result_checksum = None
             elif isinstance(packing_checksum, bytes):
                 result_checksum = packing_checksum
             elif isinstance(packing_checksum, AsyncResult):
                 result_checksum = packing_checksum.get()
-                if result_checksum is None:                
+                if not result_checksum:                
                     raise Exception(key)
+            result_checksum = Checksum(result_checksum)
                 
             result[key] = result_checksum.hex()
     return result
@@ -188,7 +192,7 @@ def _execute(name, code,
       result_queue
     ):        
         from .transformation import SeamlessTransformationError, SeamlessStreamTransformationError
-        from seamless.highlevel.direct import transformer
+        from seamless.direct import transformer
         from .manager.expression import Expression
         assert identifier is not None
         namespace["return_preliminary"] = functools.partial(
@@ -270,6 +274,7 @@ or
                             #  are available in a buffer folder/server
 
                             result_checksum = calculate_checksum(result_buffer)
+                            result_checksum = Checksum(result_checksum)
                             if isinstance(result, list):
                                 deep_keys = list(range(len(result)))
                             elif isinstance(result, dict):
@@ -285,7 +290,8 @@ or
                             
                             for deep_key in deep_keys:
                                 deep_subchecksum = result[deep_key]
-                                if deep_subchecksum is None:
+                                deep_subchecksum = Checksum(deep_subchecksum)
+                                if not deep_subchecksum:
                                     continue
                                 expr = Expression(
                                     result_checksum, [deep_key],
@@ -296,7 +302,7 @@ or
                                 database.set_expression(expr, deep_subchecksum)
 
                         if buffer_remote.can_write() and not scratch:
-                            if result_checksum is None:
+                            if not result_checksum:
                                 result_checksum = calculate_checksum(result_buffer)
                             result_checksum2 = result_checksum.hex()
                             buffer_cache.guarantee_buffer_info(result_checksum, output_celltype, sync_to_remote=True)
@@ -355,17 +361,16 @@ def execute(name, code,
       scratch,
       result_queue,
       debug = None,
-      tf_checksum = None
+      tf_checksum:Checksum = None
     ):
-    from seamless.util import is_forked
+    from seamless.workflow.util import is_forked
     if is_forked():
         # This is in principle always True
         import seamless
         from .direct.run import TRANSFORMATION_STACK
-        if tf_checksum is not None:
-            if isinstance(tf_checksum, bytes):
-                tf_checksum = tf_checksum.hex()
-            TRANSFORMATION_STACK.append(tf_checksum)
+        tf_checksum = Checksum(tf_checksum)
+        if tf_checksum:
+            TRANSFORMATION_STACK.append(tf_checksum.hex())
         seamless.running_in_jupyter = False
         database_client.session = requests.Session()
         signal.signal(signal.SIGINT, signal.SIG_IGN)
@@ -547,7 +552,7 @@ Execution time: {:.1f} seconds
         kill_children(multiprocessing.current_process())
 
 
-from seamless import CacheMissError
+from seamless import CacheMissError, Checksum
 from silk import Silk
 from seamless.buffer import database_client
 from seamless.buffer.database_client import database

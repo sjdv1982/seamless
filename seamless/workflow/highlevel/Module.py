@@ -67,7 +67,8 @@ class Module(Base):
             self._node = get_new_module(None)
         return self._node
 
-    def _observe_codecell(self, checksum):
+    def _observe_codecell(self, checksum:Checksum):
+        checksum = Checksum(checksum)
         if self._parent() is None:
             return
         if self._parent()._translating:
@@ -76,7 +77,7 @@ class Module(Base):
             hnode = self._get_hnode()
         except Exception:
             return
-        if checksum is None:
+        if not checksum:
             hnode.pop("checksum", None)
         else:
             hnode["checksum"] = checksum

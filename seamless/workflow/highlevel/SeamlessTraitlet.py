@@ -133,10 +133,10 @@ class SeamlessTraitlet(traitlets.HasTraits):
                     link.unlink()
                     self.links.remove(link)
 
-    def receive_update(self, checksum):
+    def receive_update(self, checksum:Checksum):
         if self._destroyed:
             return
-        assert checksum is not None
+        checksum = Checksum(checksum)
         value = None
         cell = self.outcell()
         if cell._destroyed:

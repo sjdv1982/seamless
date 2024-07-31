@@ -170,7 +170,8 @@ class Cell(Base, HelpMixin):
             self._node = get_new_cell(None)
         return self._node
 
-    def _observe_cell(self, checksum):
+    def _observe_cell(self, checksum:Checksum):
+        checksum = Checksum(checksum)
         if self._parent() is None:
             return
         if self._parent()._translating:
@@ -187,11 +188,12 @@ class Cell(Base, HelpMixin):
         if hcell.get("checksum") is None:
             hcell["checksum"] = {}
         hcell["checksum"].pop("value", None)
-        if checksum is not None:
+        if checksum:
             hcell["checksum"]["value"] = checksum
             hcell["checksum"].pop("buffered", None)
 
-    def _observe_auth(self, checksum):
+    def _observe_auth(self, checksum:Checksum):
+        checksum = Checksum(checksum)
         if self._parent() is None:
             return
         if self._parent()._translating:
@@ -208,10 +210,11 @@ class Cell(Base, HelpMixin):
         if hcell.get("checksum") is None:
             hcell["checksum"] = {}
         hcell["checksum"].pop("auth", None)
-        if checksum is not None:
+        if checksum:
             hcell["checksum"]["auth"] = checksum
 
-    def _observe_buffer(self, checksum):
+    def _observe_buffer(self, checksum:Checksum):
+        checksum = Checksum(checksum)
         if self._parent() is None:
             return
         if self._parent()._translating:
@@ -227,14 +230,15 @@ class Cell(Base, HelpMixin):
             return
         if hcell.get("checksum") is None:
             hcell["checksum"] = {}
-        if checksum is None:
+        if not checksum:
             hcell["checksum"].pop("value", None)
             hcell["checksum"].pop("buffered", None)
         else:
             if "value" not in hcell["checksum"]:
                 hcell["checksum"]["buffered"] = checksum
 
-    def _observe_schema(self, checksum):
+    def _observe_schema(self, checksum:Checksum):
+        checksum = Checksum(checksum)
         if self._parent() is None:
             return
         if self._parent()._translating:
@@ -246,7 +250,7 @@ class Cell(Base, HelpMixin):
         if hcell.get("checksum") is None:
             hcell["checksum"] = {}
         hcell["checksum"].pop("schema", None)
-        if checksum is not None:
+        if checksum:
             hcell["checksum"]["schema"] = checksum
 
     def _cell(self):

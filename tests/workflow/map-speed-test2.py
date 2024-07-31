@@ -65,7 +65,7 @@ def run(count):
     t = time.time()
     ctx.compute(report=False)
     t2 = time.time() - t
-    if ctx.result.checksum is not None and ctx.result2.checksum is not None:
+    if ctx.result.checksum.value is not None and ctx.result2.checksum.value is not None:
         print(len(ctx.result.data.keys()))
         print(sum(ctx.result2.value.values()), count * (2*old + 1000 + 0.1) + 2 * count * (count/2+0.5))
     return t2

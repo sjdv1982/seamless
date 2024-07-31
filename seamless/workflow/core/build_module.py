@@ -10,7 +10,7 @@ import traceback
 from types import ModuleType
 from weakref import WeakKeyDictionary
 
-from seamless import Buffer
+from seamless import Buffer, Checksum
 from seamless.compiler.locks import dirlock
 from seamless.compiler import compile, complete
 from seamless.compiler.build_extension import build_extension_cffi
@@ -240,7 +240,8 @@ def build_compiled_module(full_module_name, original_checksum, checksum, module_
                 module_code_checksum, module_code = get_compiled_module_code(original_checksum)
                 if module_code is None:
                     module_code_checksum = database.get_compile_result(checksum)
-                    if module_code_checksum is not None:
+                    module_code_checksum = Checksum(module_code_checksum)
+                    if module_code_checksum:
                         module_code = get_buffer(module_code_checksum, remote=True)
                 source_files = {}
                 debug = (module_definition.get("target") == "debug")
@@ -256,7 +257,8 @@ def build_compiled_module(full_module_name, original_checksum, checksum, module_
                         object_checksum = Buffer(object_, "plain").checksum
                         binary_code = None
                         binary_code_checksum = database.get_compile_result(object_checksum)
-                        if binary_code_checksum is None:
+                        binary_code_checksum = Checksum(binary_code_checksum)
+                        if binary_code_checksum:
                             binary_code = get_buffer(binary_code_checksum, remote=True)
                         if binary_code is not None:
                             binary_objects[object_file] = binary_code

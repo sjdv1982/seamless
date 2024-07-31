@@ -15,6 +15,8 @@ class SeamlessUndefinedError(ValueError):
 import json
 from enum import Enum
 
+from seamless import Checksum
+
 class MyEnum(Enum):
     def __lt__(self, other):
         if other is None:
@@ -70,7 +72,7 @@ class WorkerStatus:
         return repr(self.__dict__)
 
 def status_cell(cell):
-    if cell._checksum is not None:
+    if Checksum(cell._checksum):
         return StatusEnum.OK, None, cell._prelim
     if not cell._void:
         return StatusEnum.PENDING, None, None
@@ -79,7 +81,7 @@ def status_cell(cell):
 def status_accessor(accessor):
     if accessor is None:
         return StatusEnum.VOID, StatusReasonEnum.UNCONNECTED, None
-    if accessor._checksum is not None:
+    if Checksum(accessor._checksum):
         return StatusEnum.OK, None, accessor._prelim
     if not accessor._void:
         return StatusEnum.PENDING, None, None
@@ -97,7 +99,8 @@ def status_transformer(transformer):
             return WorkerStatus(StatusEnum.OK)
     prelim = transformer.preliminary
     checksum = transformer._checksum
-    if checksum is not None and not prelim:
+    checksum = Checksum(checksum)
+    if checksum and not prelim:
         return WorkerStatus(StatusEnum.OK)
     manager = transformer._get_manager()
     tcache = manager.cachemanager.transformation_cache
@@ -107,11 +110,12 @@ def status_transformer(transformer):
         status = StatusEnum.PENDING
         reason = StatusReasonEnum.UPSTREAM
         tf_checksum = tcache.transformer_to_transformations.get(transformer)
-        if tf_checksum is not None:
+        tf_checksum = Checksum(tf_checksum)
+        if tf_checksum:
             if tf_checksum in tcache.transformation_jobs:
                 reason = StatusReasonEnum.EXECUTING
         if reason == StatusReasonEnum.UPSTREAM:
-            if checksum is not None:
+            if checksum:
                 assert prelim
                 return WorkerStatus(StatusEnum.OK, preliminary=True)
     else:

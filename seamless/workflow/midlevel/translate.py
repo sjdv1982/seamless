@@ -7,6 +7,7 @@ The mid-level is assumed to be correct; any errors should be caught there
 
 from collections import OrderedDict
 
+from seamless import Checksum
 from seamless.workflow.core import cell as core_cell, context, Context as core_context, StructuredCell
 from seamless.workflow.core.context import UnboundContext
 
@@ -198,27 +199,28 @@ def translate_cell(node, root, namespace, inchannels, outchannels):
         if scratch:
             child._scratch = True
     setattr(parent, name, child)
-    checksum = node.get("checksum")    
-    if checksum is not None:
+    checksum_item = node.get("checksum")    
+    if checksum_item is not None:
         if ct == "structured":
             if node["type"] == "foldercell":
-                cs = checksum.get("value")
-                if cs is None:
-                    cs = checksum.get("auth")
-                if cs is not None:
+                checksum = checksum_item.get("value")
+                checksum = Checksum(checksum)
+                if not checksum:
+                    checksum = Checksum(checksum_item.get("auth"))
+                if checksum:
                     if mount is not None and mount.get("mode") == "r":
-                        child_ctx.mountcell._set_checksum(cs, initial=True)
+                        child_ctx.mountcell._set_checksum(checksum, initial=True)
                     else:
-                        set_structured_cell_from_checksum(child, {"auth": cs})
+                        set_structured_cell_from_checksum(child, {"auth": checksum})
             else:
-                set_structured_cell_from_checksum(child, checksum)
+                set_structured_cell_from_checksum(child, checksum_item)
         else:
-            if "value" in checksum and not len(inchannels):
-                child._set_checksum(checksum["value"], initial=True)
+            if "value" in checksum_item and not len(inchannels):
+                child._set_checksum(checksum_item["value"], initial=True)
             """
-            if "temp" in checksum:
-                assert len(checksum) == 1, checksum.keys()
-                child._set_checksum(checksum["temp"], initial=True)
+            if "temp" in checksum_item:
+                assert len(checksum_item) == 1, checksum_item.keys()
+                child._set_checksum(checksum_item["temp"], initial=True)
             """
     if ct != "structured":
         if "file_extension" in node:

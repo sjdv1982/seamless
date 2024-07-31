@@ -2,6 +2,8 @@
 
 from copy import deepcopy
 
+from seamless import Checksum
+
 
 _bash_checksums:dict | None = None
 def get_bash_checksums():
@@ -103,10 +105,11 @@ def unbashify(transformation_dict:dict, semantic_cache, execution_metadata:dict)
     assert "pins_" not in transformation_dict
 
     env_checksum = transformation_dict.get("__env__")
+    env_checksum = Checksum(env_checksum)
     env = None
-    if env_checksum is not None:
+    if env_checksum:
         manager = Manager()
-        env = manager.resolve(bytes.fromhex(env_checksum), celltype="plain", copy=True)
+        env = manager.resolve(env_checksum, celltype="plain", copy=True)
 
     if env is not None and env.get("docker") is not None:
         ok1 = validate_conda_environment(env)[0]

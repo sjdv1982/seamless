@@ -4,7 +4,7 @@ code='''import traceback
 print("START")
 import seamless
 seamless.delegate(False)
-from seamless.core import context
+from seamless.workflow.core import context
 ctx = context(toplevel=True)
 
 try:

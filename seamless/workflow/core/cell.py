@@ -2,6 +2,8 @@ import inspect
 import textwrap
 from weakref import WeakSet
 
+from seamless import Checksum
+
 from . import SeamlessBase
 from copy import deepcopy
 from .status import StatusReasonEnum
@@ -9,12 +11,13 @@ from seamless.buffer.cell import text_types, text_types2
 
 cell_counter = 0
 
+NoneChecksum = Checksum(None)
 
 class Cell(SeamlessBase):
     """Default class for cells."""
     _celltype = None
     _subcelltype = None
-    _checksum = None
+    _checksum = NoneChecksum
     _void = True
     _status_reason = StatusReasonEnum.UNDEFINED
     _prelim = False
@@ -69,7 +72,7 @@ class Cell(SeamlessBase):
 
 
     def _set_context(self, ctx, name):
-        assert self._checksum is None
+        assert not self._checksum
         has_ctx = self._context is not None
         super()._set_context(ctx, name)
         assert self._context() is ctx
@@ -85,7 +88,7 @@ class Cell(SeamlessBase):
             self._initial_val = None
         elif self._initial_checksum is not None:
             checksum, initial, from_structured_cell = self._initial_checksum
-            self._set_checksum(checksum.hex(), initial, from_structured_cell)
+            self._set_checksum(checksum, initial, from_structured_cell)
             self._initial_checksum = None
         if not get_macro_mode():
             if self._mount is not None:
@@ -125,9 +128,7 @@ class Cell(SeamlessBase):
         if isinstance(manager, UnboundManager):
             raise Exception("Cannot ask the cell value of a context that is being constructed by a macro")
         checksum = manager.get_cell_checksum(self)
-        if checksum is None:
-            return None
-        return checksum.hex()
+        return checksum
 
     @property
     def void(self):
@@ -232,7 +233,7 @@ class Cell(SeamlessBase):
             )
         return self
 
-    def _set_checksum(self, checksum, initial=False, from_structured_cell=False):
+    def _set_checksum(self, checksum:Checksum, initial=False, from_structured_cell=False):
         """Specifies the checksum of the data (hex format)
 
         If "initial" is True, it is assumed that the context is being initialized (e.g. when created from a graph).
@@ -242,15 +243,10 @@ class Cell(SeamlessBase):
         """
         if self._context is None:
             self._initial_val = None
-            if checksum is not None:
-                if isinstance(checksum, str):
-                    checksum = bytes.fromhex(checksum)
+            if checksum:
                 self._initial_checksum = checksum, initial, from_structured_cell
         else:
             manager = self._get_manager()
-            if checksum is not None:
-                if isinstance(checksum, str):
-                    checksum = bytes.fromhex(checksum)
             manager.set_cell_checksum(
               self, checksum,
               initial=initial,
@@ -404,7 +400,7 @@ class Cell(SeamlessBase):
         from ..highlevel.SeamlessTraitlet import SeamlessTraitlet
         assert isinstance(traitlet, SeamlessTraitlet)
         self._traitlets.append(traitlet)
-        if trigger and self._checksum is not None:
+        if trigger and self._checksum:
             traitlet.receive_update(self._checksum)
 
 
@@ -412,8 +408,8 @@ class Cell(SeamlessBase):
         manager = self._get_manager()
         livegraph = manager.livegraph        
         self._observer = observer
-        if trigger and self._checksum is not None:
-            cs = self._checksum.hex()
+        if trigger and self._checksum:
+            cs = self._checksum
             if livegraph._hold_observations:
                 livegraph._observing.append((self, cs))
             else:

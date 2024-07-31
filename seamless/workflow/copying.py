@@ -11,8 +11,9 @@ from seamless.buffer.get_buffer import get_buffer
 from seamless.workflow.core.protocol.deep_structure import apply_hash_pattern_sync, deep_structure_to_checksums
 
 def get_checksums(nodes, connections, *, with_annotations, skip_scratch):
-    def add_checksum(node, dependent, checksum, subpath=None):
-        if checksum is None:
+    def add_checksum(node, dependent, checksum:Checksum, subpath=None):
+        checksum = Checksum(checksum)
+        if not checksum:
             return
         if with_annotations:
             checksums.add((checksum, dependent))
@@ -59,10 +60,10 @@ def get_checksums(nodes, connections, *, with_annotations, skip_scratch):
         untranslated = node.get("UNTRANSLATED")
         if untranslated:
             continue
-        checksum = node.get("checksum")
-        if checksum is None:
+        checksum_item = node.get("checksum")
+        if checksum_item is None:
             continue
-        checksum = deepcopy(checksum)
+        checksum_item = deepcopy(checksum_item)
         for connection in connections:
             if connection["type"] == "link":
                 continue
@@ -72,10 +73,11 @@ def get_checksums(nodes, connections, *, with_annotations, skip_scratch):
                 break
         else:
             dependent = False
-        if isinstance(checksum, str):
+        if isinstance(checksum_item, (str, Checksum)):
+            checksum = Checksum(checksum_item)
             add_checksum(node, dependent, checksum)
         else:
-            for k,v in checksum.items():
+            for k,v in checksum_item.items():
                 dependent2 = dependent
                 if node["type"] == "transformer":
                     if k.startswith("result"):
@@ -85,6 +87,7 @@ def get_checksums(nodes, connections, *, with_annotations, skip_scratch):
                         if k in ("buffered", "value"):
                             dependent2 = True
                 if v is not None:
+                    v = Checksum(v)
                     add_checksum(node, dependent2, v, k)
     return checksums
 
@@ -237,9 +240,9 @@ def fill_checksum(manager, node, temp_path, composite=True):
             str_temp_value = ""
         print(".{}: cannot serialize temporary value {} to {}".format("".join(node["path"]), str_temp_value, datatype))
         return
-    checksum = calculate_checksum(buf)
+    checksum = Buffer(buf).get_checksum()
 
-    if checksum is None:
+    if not checksum:
         return
     buffer_cache.cache_buffer(checksum, buf)
     buffer_cache.guarantee_buffer_info(checksum, datatype, sync_to_remote=False)
@@ -308,6 +311,8 @@ def fill_checksums(mgr, nodes, *, path=None):
                 assert "TEMP" not in node, (node["path"], str(node["TEMP"])[:80])
                 continue
             old_checksum = node.pop("checksum", None)
+            if isinstance(old_checksum, Checksum):
+                old_checksum = old_checksum.value
             if node["type"] == "transformer":
                 fill_checksum(mgr, node, "input_auth")
                 node2 = node.copy()

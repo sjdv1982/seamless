@@ -1,5 +1,7 @@
 import weakref
 
+from seamless import Checksum
+
 def set_fallback(cell, fallback_cell):
     try:
         core_cell = cell._get_cell()
@@ -26,7 +28,8 @@ def set_fallback(cell, fallback_cell):
         fallback_manager = fallback_core_cell._get_manager()
         fallback_manager.add_reverse_fallback(fallback_core_cell, core_cell)
         checksum = fallback_core_cell.checksum
-        if checksum is not None:
+        checksum = Checksum(checksum)
+        if checksum:
             fallback_manager.trigger_fallback(checksum, core_cell)
 
 

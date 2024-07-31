@@ -1,4 +1,6 @@
 from copy import deepcopy
+
+from seamless import Checksum
 from ..core import cell as core_cell, transformer, context
 from ..metalevel.stdgraph import load as load_stdgraph
 from .util import get_path
@@ -36,7 +38,8 @@ def translate_module(node, root, namespace, inchannels, outchannels):
     if node.get("fingertip_no_remote"):
         codecell._fingertip_remote = False
     checksum = node.get("checksum")
-    if checksum is not None:
+    checksum = Checksum(checksum)
+    if checksum:
         codecell._set_checksum(checksum, initial=True)
     if "mount" in node:
         mount = deepcopy(node["mount"])

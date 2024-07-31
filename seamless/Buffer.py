@@ -1,3 +1,6 @@
+from seamless import Checksum
+
+
 class Buffer:
     def __init__(self, value_or_buffer, celltype=None, *, checksum=None):
         from seamless import Checksum
@@ -39,20 +42,29 @@ class Buffer:
         return cls(buf)
 
     @property
-    def checksum(self):
+    def checksum(self) -> Checksum:
         """Returns the buffer's Checksum object, which must have been calculated already"""
-        from seamless import Checksum
         if self.value is not None and self._checksum is None:
             raise AttributeError("Checksum has not yet been calculated, use .get_checksum()")
         return Checksum(self._checksum)
 
-    def get_checksum(self):
+    def get_checksum(self) -> Checksum:
         """Returns the buffer's Checksum object, calculating it if needed"""
         from seamless.buffer.cached_calculate_checksum import cached_calculate_checksum_sync as cached_calculate_checksum
         if self._checksum is None:
             buf = self.value
             if buf is not None:
                 checksum = cached_calculate_checksum(buf)
+                self._checksum = checksum
+        return self.checksum
+
+    async def get_checksum_async(self) -> Checksum:
+        """Returns the buffer's Checksum object, calculating it asynchronously if needed"""
+        from seamless.buffer.cached_calculate_checksum import cached_calculate_checksum
+        if self._checksum is None:
+            buf = self.value
+            if buf is not None:
+                checksum = await cached_calculate_checksum(buf)
                 self._checksum = checksum
         return self.checksum
 

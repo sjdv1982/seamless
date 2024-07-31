@@ -24,7 +24,7 @@ import traceback
 import json
 import functools
 
-from seamless import Buffer
+from seamless import Buffer, Checksum
 
 import sys
 def log(*args, **kwargs):
@@ -64,7 +64,11 @@ class MountItem:
     parent = None
     _destroyed = False
     _initialized = False
-    _renounce = False  # checksum at the time of the last read or write. Refuse to write a checksum that is equal to this
+    _renounce = Checksum(None)  # checksum at the time of the last read or write. Refuse to write a checksum that is equal to this
+    last_checksum = Checksum(None)
+    cell_checksum = Checksum(None)
+    last_mtime = None
+    cell_buffer = None
     def __init__(self, parent, cell, path, mode, authority, persistent, *,
       dummy=False, as_directory=False, directory_text_only=False, **kwargs
     ):
@@ -90,11 +94,7 @@ class MountItem:
         self.as_directory = as_directory
         self.directory_text_only = directory_text_only
         self.kwargs = kwargs
-        self.last_checksum = None
-        self.last_mtime = None
         self.persistent = persistent
-        self.cell_checksum = None
-        self.cell_buffer = None
 
     def init(self):
         assert threading.current_thread() == threading.main_thread()
@@ -112,25 +112,25 @@ class MountItem:
         exists = self._exists()
         has_written = False
         if self.mode == "rw" and self.authority == "cell":
-            if cell._checksum is None and cell._void is not None and cell.has_independence():
+            if not Checksum(cell._checksum) and cell._void is not None and cell.has_independence():
                 # cell is being calculated. High risk for a conflict
                 # All we can do is wait a bit, if the event loop is not running...
                 if not get_macro_mode():
                     count = 0
-                    while cell._checksum is None and count < 100:
+                    while not Checksum(cell._checksum) and count < 100:
                         try:
                             asyncio.get_event_loop().run_until_complete(asyncio.sleep(0.01))
                         except Exception:
                             pass                    
                         count += 1
         cell_checksum = cell._checksum
-        cell_empty = (cell_checksum is None)
+        cell_empty = (not Checksum(cell_checksum))
         if not cell_empty:
             if cell_checksum in empty_checksums:
                 cell_empty = True
         from_cache = False
         cache_cell_checksum, cache_cell_buffer = self._from_cache()
-        if cache_cell_checksum is not None:
+        if Checksum(cache_cell_checksum):
             if cell_empty or cache_cell_checksum == cell_checksum:
                 from_cache = True
         from_garbage = (mountmanager.garbage.pop(self.path, None) is not None)
@@ -138,7 +138,7 @@ class MountItem:
             from_garbage = False
         if cell_empty:
             cell_checksum, cell_buffer = cache_cell_checksum, cache_cell_buffer
-            cell_empty = (cell_checksum is None)
+            cell_empty = (not Checksum(cell_checksum))
             if not cell_empty:
                 if cell_checksum in empty_checksums:
                     cell_empty = True
@@ -212,8 +212,9 @@ class MountItem:
                 self._write_as_directory(cell_buffer, with_none=False)
         self._initialized = True
 
-    def set(self, file_buffer, checksum, *, no_renounce=False):
-        if checksum is not None and checksum == self._renounce:
+    def set(self, file_buffer, checksum:Checksum, *, no_renounce=False):
+        checksum = Checksum(checksum)
+        if checksum == self._renounce:
             if not no_renounce:
                 return
         if self._destroyed:
@@ -233,15 +234,16 @@ class MountItem:
                     checksum = calculate_checksum(j1)
                     file_buffer = j1
                     if checksum != old_checksum:
-                        if checksum is not None and len(adjust_buffer(file_buffer, "plain")):
+                        if checksum and len(adjust_buffer(file_buffer, "plain")):
                             self._write(file_buffer)
                 except (ValueError, ParseError):
                     pass
         renounce = cell._checksum
         self.cell_checksum = None
         if cell._hash_pattern is not None:
-            if checksum is None:
+            if not checksum:
                 checksum = calculate_checksum(file_buffer)
+                checksum = Checksum(checksum)
             cell.set_checksum(checksum)
         else:
             cell.set_buffer(file_buffer, checksum)
@@ -337,7 +339,8 @@ class MountItem:
         except Exception:
             pass
 
-    def conditional_write(self, checksum, buffer, with_none=False):
+    def conditional_write(self, checksum:Checksum, buffer, with_none=False):
+        checksum = Checksum(checksum)
         if not self._initialized:
             return
         if self._destroyed:
@@ -345,7 +348,7 @@ class MountItem:
         cell = self.cell()
         if cell is None:
             return
-        if checksum is None:
+        if not checksum:
             if not with_none:
                 return
         self.cell_checksum = checksum
@@ -355,8 +358,8 @@ class MountItem:
             if checksum == self._renounce:
                 return
         self.cell_buffer = buffer
-        if checksum is None or self.last_checksum != checksum:
-            if not (buffer is None and checksum is not None): # local cache miss
+        if not checksum or self.last_checksum != checksum:
+            if not (buffer is None and not checksum): # local cache miss
                 with self.lock:
                     self._write(buffer, with_none=with_none)
                     self._renounce = None
@@ -386,6 +389,7 @@ class MountItem:
         if cell is None:
             return
         cell_checksum = self.cell_checksum
+        cell_checksum = Checksum(cell_checksum)
         if not self._exists():
             if cell_checksum and self.as_directory:
                 # Write a non-existing folder to disk, even if it was in read mode
@@ -405,13 +409,14 @@ class MountItem:
                     file_buffer = adjust_buffer(file_buffer0, cell._celltype)
                     file_checksum = calculate_checksum(file_buffer)
                 self._after_read(file_checksum, mtime=mtime)                
-        if "r" in self.mode:
-            if file_checksum is None and self.cell()._checksum is None and cell_checksum is not None and cell_checksum != self._renounce:
+        file_checksum = Checksum(file_checksum)
+        if "r" in self.mode:            
+            if not file_checksum and not Checksum(self.cell()._checksum) and cell_checksum and cell_checksum != self._renounce:
                 file_buffer = buffer_cache.get_buffer(cell_checksum)
                 if file_buffer is not None:
                     file_checksum = cell_checksum
                     cell_checksum = None
-        if file_checksum is not None and file_checksum != cell_checksum:
+        if file_checksum and file_checksum != cell_checksum:
             if "r" in self.mode:                
                 self.set(file_buffer, checksum=file_checksum, no_renounce=True)
             else:
@@ -428,7 +433,7 @@ class MountItem:
         if self.dummy:
             return
         now = time.time()
-        if self.cell_checksum is not None and not self.as_directory:
+        if Checksum(self.cell_checksum) and not self.as_directory:
             mountmanager.cached_checksums[self.path] = (now, self.cell_checksum)
         if self.persistent == False:
             mountmanager.garbage[self.path] = (now, False)
@@ -588,7 +593,8 @@ class MountManager:
 
 
     @lockmethod
-    def add_cell_update(self, cell, checksum, buffer):
+    def add_cell_update(self, cell, checksum:Checksum, buffer):
+        checksum = Checksum(checksum)
         if self._mounting:
             return
         root = cell._root()
@@ -598,7 +604,7 @@ class MountManager:
             # KLUDGE
             return
         #assert cell in self.mounts, (cell, hex(id(cell)))
-        if buffer is None and checksum is not None:
+        if buffer is None and checksum:
             buffer = cell._get_manager().resolve(checksum)
             if buffer is None:
                 print("mount.py CACHE MISS", checksum.hex())

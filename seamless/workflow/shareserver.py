@@ -61,6 +61,8 @@ import json
 import orjson
 import base64
 
+from seamless import Checksum
+
 from asyncio import CancelledError
 try:
     import aiohttp
@@ -163,7 +165,8 @@ class Share:
             await self._calc_checksum_task
         return self._checksum, self._marker
 
-    def set_checksum(self, checksum, marker=None):
+    def set_checksum(self, checksum:Checksum, marker=None):
+        checksum = Checksum(checksum)
         if marker is not None and marker <= self._marker:
             if marker == self._marker:
                 return None
@@ -171,7 +174,7 @@ class Share:
         if marker is None:
             marker = self._marker + 1
         if checksum == self._checksum:
-            if checksum is not None:
+            if checksum:
                 return self._marker
             else:
                 return None
@@ -180,7 +183,7 @@ class Share:
         if self.bound is None:
             raise AttributeError
         self.bound.update(checksum)
-        if checksum is not None:
+        if checksum:
             self._marker = marker
         send_checksum_task = self._send_checksum()
         send_checksum_task = asyncio.ensure_future(send_checksum_task)
@@ -327,12 +330,9 @@ class ShareNamespace:
                 raise Exception from None
             logging.debug(traceback.print_exc())
             raise CancelledError from None
-        if checksum is not None:
-            checksum2 = checksum.hex()
-        else:
-            checksum2 = None
+        checksum = Checksum(checksum)
         if mode == "checksum":
-            return checksum2, 'text/plain'
+            return checksum, 'text/plain'
 
         if share.mimetype is not None:
             content_type = share.mimetype
@@ -382,9 +382,7 @@ class ShareNamespace:
     async def _put(self, share, value, mode, marker):
         assert mode in ("checksum", "buffer")
         if mode == "checksum":
-            checksum = value
-            if checksum is not None:
-                checksum = bytes.fromhex(checksum)
+            checksum = Checksum(value)
             return share.set_checksum(checksum, marker)
         else:            
             if share.binary:
@@ -520,12 +518,12 @@ class ShareServer(object):
             logger.debug("shareserver._send_sharelist")
             logger.debug(traceback.format_exc())
 
-    async def _send_checksum(self, namespace, websocket, key, checksum, marker, prior=None):
+    async def _send_checksum(self, namespace, websocket, key, checksum:Checksum, marker, prior=None):
+        checksum = Checksum(checksum)
         if prior is not None:
             await prior
-        if checksum is None:
+        if not checksum:
             return
-        checksum = checksum.hex()
         try:
             return await self._send(websocket, ("update", (key, checksum, marker)))
         except ConnectionClosed:
@@ -715,9 +713,7 @@ class ShareServer(object):
                 charset=charset
             )
         except CacheMissError:
-            checksum = share._checksum
-            if checksum is not None:
-                checksum = checksum.hex()
+            checksum = Checksum(share._checksum)
             logger.debug("shareserver GET request, cache miss: {}".format(checksum))
             logger.debug(traceback.format_exc())
             err = "Cache miss"
@@ -932,7 +928,7 @@ Share {c} with readonly=False to allow HTTP PUT requests"""
 
 shareserver = ShareServer()
 
-from seamless import CacheMissError
+from seamless import CacheMissError, Checksum
 from seamless.buffer.buffer_cache import buffer_cache
 from seamless.buffer.deserialize import deserialize
 from seamless.buffer.serialize import serialize

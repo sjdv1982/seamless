@@ -32,7 +32,7 @@ def _deserialize_plain(buffer):
         raise ValueError(msg) from None
     return value
 
-def _deserialize(buffer:bytes, checksum:Checksum, celltype:str):    
+def _deserialize(buffer:bytes, checksum:Checksum, celltype:str):
     from .evaluate import validate_text_celltype
     from .convert import validate_checksum
 
@@ -43,7 +43,7 @@ def _deserialize(buffer:bytes, checksum:Checksum, celltype:str):
     if celltype in text_types2:
         s = buffer.decode()
         value = s.rstrip("\n")
-        if checksum is not None:
+        if checksum:
             validate_text_celltype(value, checksum, celltype)
     elif celltype == "plain":
         value = _deserialize_plain(buffer)
@@ -116,7 +116,7 @@ async def deserialize(buffer, checksum, celltype, copy):
         serialize_cache[id_value, celltype] = buffer, value
     return value
 
-def deserialize_sync(buffer, checksum, celltype, copy):
+def deserialize_sync(buffer, checksum:Checksum, celltype, copy):
     """Deserializes a buffer into a value
     First, it is attempted to retrieve the value from cache.
     In case of a cache hit, a copy is returned only if copy=True
@@ -127,6 +127,7 @@ def deserialize_sync(buffer, checksum, celltype, copy):
     This function can be executed if the asyncio event loop is already running"""
     if buffer is None:
         return None
+    checksum = Checksum(checksum)
     if celltype == "mixed":
         buffer_info:BufferInfo = buffer_cache.buffer_info.get(checksum)
         if buffer_info is not None:
@@ -138,7 +139,7 @@ def deserialize_sync(buffer, checksum, celltype, copy):
     copy = True # Apparently, sometimes the promise of not modifying the value is violated... for now, enforce a copy
     ###
     value = None
-    if checksum is not None:
+    if checksum:
         value = deserialize_cache.get((checksum, celltype))
     if value is not None:
         if copy:

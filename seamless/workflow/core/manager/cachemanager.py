@@ -3,6 +3,8 @@ import copy
 
 import logging
 
+from seamless import CacheMissError, Checksum
+from seamless.buffer.database_client import database
 from seamless.buffer.buffer_cache import buffer_cache
 
 logger = logging.getLogger(__name__)
@@ -59,14 +61,16 @@ class CacheManager:
         if expression in self.inactive_expressions:
             self.inactive_expressions.remove(expression)
             checksum = self.expression_to_ref.get(expression)
-            if checksum is not None:
+            checksum = Checksum(checksum)
+            if checksum:
                 self.incref_checksum(
                     checksum,
                     expression,
                     result=False
                 )
             checksum = self.expression_to_result_checksum.get(expression)
-            if checksum is not None and checksum != expression.checksum:
+            checksum = Checksum(checksum)
+            if checksum and checksum != expression.checksum:
                 self.incref_checksum(
                     checksum,
                     expression,
@@ -98,14 +102,15 @@ class CacheManager:
         self.reactor_to_refs[reactor] = refs
         self.reactor_exceptions[reactor] = None
 
-    def incref_checksum(self, checksum, refholder, *, result):
+    def incref_checksum(self, checksum:Checksum, refholder, *, result):
         """
         NOTE: incref/decref must happen within one async step
         Therefore, the direct or indirect call of _sync versions of coroutines
         (e.g. deserialize_sync, which launches coroutines and waits for them)
         IS NOT ALLOWED
         """
-        if checksum is None:
+        checksum = Checksum(checksum)
+        if not checksum:
             return
         #print("INCREF CHECKSUM", checksum.hex(), refholder, result)
         incref_hash_pattern = False
@@ -165,7 +170,7 @@ class CacheManager:
             subchecksums_persistent = cell._subchecksums_persistent
             deeprefmanager.incref_deep_buffer(checksum, cell._hash_pattern, cell=cell, subchecksums_persistent=subchecksums_persistent)
     
-    async def fingertip(self, checksum, *, dunder=None, must_have_cell=False):
+    async def fingertip(self, checksum, *, dunder=None, must_have_cell=False) -> bytes | None:
         """Tries to put the checksum's corresponding buffer 'at your fingertips'
         Normally, first reverse provenance (recompute) is tried,
          then remote download.
@@ -179,10 +184,7 @@ class CacheManager:
         """
         return await self._fingertip(checksum, dunder=dunder, must_have_cell=must_have_cell, done=set())
 
-    def _mine_database(self, checksum):
-        from seamless.config import database
-        from seamless import parse_checksum
-
+    def _mine_database(self, checksum:Checksum):
         result_expressions = []
         result_joins = []
         result_transformations = []
@@ -193,23 +195,22 @@ class CacheManager:
                 result = expression.pop("result")
                 assert result == checksum.hex(), (result, checksum.hex())
                 expression["target_subcelltype"] = expression.get("target_subcelltype")
-                expression["checksum"] = parse_checksum(expression["checksum"], as_bytes=True)
+                expression["checksum"] = Checksum(expression["checksum"])
                 expr = Expression(**expression)
                 result_expressions.append(expr)
 
         joins = database.get_rev_join(checksum)
         if joins is not None:
-            result_joins = [parse_checksum(join, as_bytes=True) for join in joins]
+            result_joins = [Checksum(join) for join in joins]
 
         tfs = database.get_rev_transformations(checksum)
         if tfs is not None:
-            result_transformations = [parse_checksum(tf, as_bytes=True) for tf in tfs]
+            result_transformations = [Checksum(tf) for tf in tfs]
 
         return result_expressions, result_joins, result_transformations
 
     async def _build_fingertipper(self, checksum, *, dunder=None, recompute, done):
         from .tasks.deserialize_buffer import DeserializeBufferTask
-        from seamless.config import database
         from ..direct.run import TRANSFORMATION_STACK
         from .fingertipper import FingerTipper
 
@@ -308,15 +309,11 @@ class CacheManager:
 
         return fingertipper
 
-    async def _fingertip(self, checksum, *, must_have_cell, done, dunder = None):
-        from ..cache import CacheMissError
-        from seamless.config import database
+    async def _fingertip(self, checksum:Checksum, *, must_have_cell, done, dunder = None) -> bytes | None :
 
-        if checksum is None:
+        checksum = Checksum(checksum)
+        if not checksum:
             return
-        if isinstance(checksum, str):
-            checksum = bytes.fromhex(checksum)
-        assert isinstance(checksum, bytes), checksum
 
         buffer = get_buffer(checksum, remote=True)
         if buffer is not None:
@@ -364,7 +361,7 @@ class CacheManager:
         raise CacheMissError(checksum.hex() + exc_str)
 
 
-    def decref_checksum(self, checksum, refholder, result, *, destroying=False):
+    def decref_checksum(self, checksum:Checksum, refholder, result, *, destroying=False):
         """
         NOTE: incref/decref must happen within one async step
         Therefore, the direct or indirect call of _sync versions of coroutines
@@ -372,8 +369,9 @@ class CacheManager:
         IS NOT ALLOWED
         """
         #print("DECREF", refholder, checksum.hex())
+        checksum = Checksum(checksum)
         if checksum not in self.checksum_refs:
-            if checksum is None:
+            if not checksum:
                 cs = "<None>"
             else:
                 cs = checksum.hex()

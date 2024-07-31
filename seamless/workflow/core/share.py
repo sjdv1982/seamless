@@ -6,13 +6,16 @@ import asyncio
 import logging
 logger = logging.getLogger("seamless")
 
-def get_fallback_checksum(cell):
+
+from seamless import Checksum
+
+def get_fallback_checksum(cell) -> Checksum:
     manager = cell._get_manager()
     fallback = manager.get_fallback(cell)
     if fallback is None:
-        return cell._checksum
+        return Checksum(cell._checksum)
     else:
-        return fallback._checksum
+        return Checksum(fallback._checksum)
 
 class ShareItem:
     last_exc = None
@@ -72,8 +75,9 @@ class ShareItem:
             self._namespace = name
 
             cell_checksum = get_fallback_checksum(cell)
+            cell_checksum = Checksum(cell_checksum)
             cell_pending = manager.taskmanager.is_pending(cell)
-            cell_empty = (cell_checksum is None)
+            cell_empty = (not cell_checksum)
             _, cached_share = sharemanager.cached_shares.get((name, self.path), (None, None))
             from_cache = False
             if cached_share is not None:
@@ -118,9 +122,9 @@ class ShareItem:
             else:
                 self.share.set_checksum(get_fallback_checksum(cell))
 
-    def update(self, checksum):
+    def update(self, checksum:Checksum):
         # called by shareserver, or from init
-        assert checksum is None or isinstance(checksum, bytes)
+        checksum = Checksum(checksum)
         if not self.readonly:
             sharemanager.share_value_updates[self] = checksum
 
@@ -225,7 +229,7 @@ class ShareManager:
                     )
                     self.shares[cell] = new_share_item
                     checksum = get_fallback_checksum(cell)
-                    if checksum is not None:
+                    if checksum:
                         self.cell_updates[cell] = checksum
             self.share_updates.clear()
 
@@ -242,6 +246,7 @@ class ShareManager:
             value_updates = list(self.share_value_updates.items())
             self.share_value_updates.clear()
             for share_item, checksum in value_updates:
+                checksum = Checksum(checksum)
                 cell = share_item.cell()
                 if cell is None:
                     continue
@@ -253,7 +258,7 @@ class ShareManager:
                     continue
                 from_buffer = False
                 if cell._structured_cell is not None and cell._structured_cell._data is cell:
-                    if checksum is None:
+                    if not checksum:
                         cell._structured_cell.set(None)
                         continue
                     buffer = get_buffer(checksum, True)
@@ -262,7 +267,7 @@ class ShareManager:
                         continue
                     from_buffer = True
                     cell = cell._structured_cell
-                elif checksum is not None and cell._celltype in ("plain", "mixed"):
+                elif checksum and cell._celltype in ("plain", "mixed"):
                     buffer = get_buffer(checksum, remote=True)
                     if buffer is not None:
                         try:
@@ -275,8 +280,6 @@ class ShareManager:
                 if from_buffer:
                     cell.set_buffer(buffer, checksum)
                 else:
-                    if checksum is not None:
-                        checksum = checksum.hex()
                     cell.set_checksum(checksum)
             self.share_value_updates.clear()
 
@@ -352,6 +355,6 @@ class ShareManager:
 sharemanager = ShareManager(0.2)
 
 from ..shareserver import shareserver
-from seamless import CacheMissError
+from seamless import CacheMissError, Checksum
 from seamless.buffer.get_buffer import get_buffer
 from seamless.buffer.evaluate import conversion

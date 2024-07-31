@@ -1,3 +1,4 @@
+from seamless import Checksum
 from . import Task
 
 import logging
@@ -73,7 +74,7 @@ class TransformerUpdateTask(Task):
         for pinname, accessor in upstreams.items():
             if pinname == "META" and accessor is None:
                 continue
-            if accessor._checksum is None: #pending; a legitimate use case, but we can't proceed
+            if not Checksum(accessor._checksum): #pending; a legitimate use case, but we can't proceed
                 print_debug("ABORT", self.__class__.__name__, hex(id(self)), self.dependencies, " <= pinname", pinname)
                 manager.cancel_transformer(transformer, False)
                 return
@@ -128,19 +129,20 @@ class TransformerResultUpdateTask(Task):
         livegraph = manager.livegraph
         downstreams = livegraph.transformer_to_downstream[transformer]
         checksum = transformer._checksum
+        checksum = Checksum(checksum)
 
         from ....metalevel.debugmount import debugmountmanager        
         if debugmountmanager.is_mounted(transformer):
             debugmountmanager.debug_result(transformer, checksum)
             return
 
-        if checksum is None:
+        if not checksum:
             manager.cancel_accessors(downstreams, True)
             return
 
         accessors_to_cancel = []
         for accessor in downstreams:
-            if accessor._void or accessor._checksum is not None:
+            if accessor._void or Checksum(accessor._checksum):
                 accessors_to_cancel.append(accessor)
             else:
                 manager.taskmanager.cancel_accessor(accessor)

@@ -13,24 +13,26 @@ from numpy import mod
 from sys import modules
 from seamless.workflow.core.manager import livegraph
 from seamless.buffer.cell import celltypes
+from seamless import Checksum
 
 SEAMLESS_DEBUGGING_DIRECTORY = os.environ.get("SEAMLESS_DEBUGGING_DIRECTORY")
 
 module_tag = "@@MODULE_"
 
-def checksum_to_code(checksum):
+def checksum_to_code(checksum:Checksum):
     from ..core.protocol.get_buffer import get_buffer
     code = None
-    if checksum is not None:
-        checksum2 = bytes.fromhex(checksum)
-        code_buf = get_buffer(checksum2, remote=False)
+    checksum = Checksum(checksum)
+    if checksum:
+        code_buf = get_buffer(checksum, remote=False)
         if code_buf is not None:
-            code = deserialize_sync(code_buf, checksum2, "text", True)
+            code = deserialize_sync(code_buf, checksum, "text", True)
     return code
 
-def parse_kwargs(checksum):
+def parse_kwargs(checksum:Checksum):
     from ..core.protocol.get_buffer import get_buffer
-    if checksum is None:
+    checksum = Checksum(checksum)
+    if not checksum:
         return {}
     buf = get_buffer(checksum, remote=False)
     if buf is None:
@@ -40,8 +42,7 @@ def parse_kwargs(checksum):
     for k,v in kwargs.items():
         vbuf = serialize_sync(v, "mixed")
         vchecksum = calculate_checksum_sync(vbuf)
-        if vchecksum is not None:
-            vchecksum = vchecksum.hex()
+        vchecksum = Checksum(vchecksum)
         result[k] = vchecksum
     return result
 
@@ -66,7 +67,8 @@ def integrate_kwargs(kwargs_checksums):
     from ..core.protocol.get_buffer import get_buffer
     result = {}
     for kwarg, kwarg_checksum in kwargs_checksums.items():
-        if kwarg_checksum is None:
+        kwarg_checksum = Checksum(kwarg_checksum)
+        if not kwarg_checksum:
             continue
         buf = get_buffer(kwarg_checksum, remote=False)
         if buf is not None:
@@ -82,10 +84,9 @@ def pull_module(pinname, upstreams, manager):
     accessor = upstreams.get(pinname)
     checksum = None
     if accessor is not None: #unconnected
-        checksum = accessor._checksum
-    if checksum is not None:
-        checksum2 = checksum.hex()
-        buffer = manager.resolve(checksum2)
+        checksum = Checksum(accessor._checksum)
+    if checksum:
+        buffer = manager.resolve(checksum)
         if buffer is not None:
             mod_def = deserialize_sync(buffer,checksum, "plain", True)
             mod_rest = None
@@ -182,7 +183,8 @@ class DebugMount:
                             authority="cell", persistent=False
                         )
                         kwargs_checksum = kwargs_checksums.get(kwargs_cell)
-                        if kwargs_checksum is not None:
+                        kwargs_checksum = Checksum(kwargs_checksum)
+                        if kwargs_checksum:
                             c.set_checksum(kwargs_checksum)                    
                     continue
                 if celltype is None:                
@@ -267,9 +269,9 @@ class DebugMount:
                     checksum = None
                     accessor = upstreams.get(pinname)
                     if accessor is not None:
-                        checksum = accessor._checksum
-                    if checksum is not None:
-                        c.set_checksum(checksum.hex())
+                        checksum = Checksum(accessor._checksum)
+                    if checksum:
+                        c.set_checksum(checksum)
         for pinname, pin in tf._pins.items():
             if pinname in skip_pins:
                 continue            
@@ -373,7 +375,7 @@ class DebugMount:
                 else:      
                     checksum = None
                     if accessor is not None: #unconnected
-                        checksum = accessor._checksum
+                        checksum = Checksum(accessor._checksum)
                     if pinname == "kwargs" and self.special == "compiled":
                         kwargs_checksums = parse_kwargs(checksum)
                         for k, cs in kwargs_checksums.items():
@@ -383,8 +385,6 @@ class DebugMount:
                             c = getattr(self.mount_ctx, kk)
                             c.set_checksum(cs)
                     else:
-                        if checksum is not None:
-                            checksum = checksum.hex()
                         c = getattr(self.mount_ctx, pinname)
                         c.set_checksum(checksum)
             self._pulling = False            
@@ -396,7 +396,8 @@ class DebugMount:
         try:
             self.mount_ctx.destroy()
             for _, _, _, checksum in self.modules.values():
-                if checksum is not None:
+                checksum = Checksum(checksum)
+                if checksum:
                     buffer_cache.decref(checksum)
         finally:
             shutil.rmtree(self.path, ignore_errors=True)
@@ -448,20 +449,20 @@ class DebugMountManager:
                 return True
         return False
 
-    def debug_result(self, transformer, checksum):
+    def debug_result(self, transformer, checksum:Checksum):
+        checksum = Checksum(checksum)
         mount = self._mounts[transformer]
         mount_ctx = mount.mount_ctx
         result = getattr(mount_ctx, mount.result_pinname)
-        checksum2 = checksum.hex() if checksum is not None else None
-        result.set_checksum(checksum2)
+        result.set_checksum(checksum)
 
-    def has_debug_result(self, transformer):
+    def has_debug_result(self, transformer) -> bool:
         if not self.is_mounted(transformer):
             return False
         mount = self._mounts[transformer]
         mount_ctx = mount.mount_ctx
         result = getattr(mount_ctx, mount.result_pinname)
-        return result.checksum is not None
+        return bool(Checksum(result.checksum))
 
     async def run(self, transformer):
         mount = self._mounts[transformer]
@@ -507,7 +508,8 @@ class DebugMountManager:
             input_pins[pinname] = checksum 
             celltypes[pinname] = celltype, subcelltype
 
-            if checksum is None:
+            checksum = Checksum(checksum)
+            if not checksum:
                 ok = False
                 break
         else:
