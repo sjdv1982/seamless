@@ -21,16 +21,19 @@ Since it is synchronous, it doesn't try everything possible to obtain it.
 If successful, add the buffer to local and/or database cache (with a tempref or a permanent ref).
 Else, return None
 """
-    from ...util import parse_checksum    
-    from ..convert import try_convert_single
-    checksum = parse_checksum(checksum, True)
-    if checksum is None:
+    from seamless import Checksum
+    from seamless.buffer.convert import try_convert_single
+    
+    checksum = Checksum(checksum)
+    if not checksum:
         return None
     if _done is not None and checksum in _done:
         return None
     buffer = buffer_cache.get_buffer(checksum, remote=remote, deep=deep)
     if buffer is not None:
         return buffer
+    
+    from seamless.workflow.core.cache.transformation_cache import transformation_cache, tf_get_buffer
     transformation = transformation_cache.transformations.get(checksum)
     if transformation is not None:
         buffer = tf_get_buffer(transformation)
@@ -67,6 +70,4 @@ Else, return None
     return None
 
 
-from ..cache import CacheMissError
-from ..cache.buffer_cache import buffer_cache
-from ..cache.transformation_cache import transformation_cache, tf_get_buffer
+from seamless.buffer.buffer_cache import buffer_cache

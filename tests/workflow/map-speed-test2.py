@@ -1,8 +1,8 @@
 import seamless
 seamless.delegate(False)
 
-from seamless.highlevel import Context, Cell, DeepCell
-from seamless.highlevel.stdlib import map
+from seamless.workflow import Context, Cell, DeepCell
+from seamless.stdlib import map
 
 DICT_CHUNKSIZE = 10
 

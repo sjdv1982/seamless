@@ -2,7 +2,7 @@ import seamless
 seamless.delegate(False)
 
 import math
-from seamless.highlevel import Context
+from seamless.workflow import Context
 import json
 ctx = Context()
 ctx.pi = math.pi

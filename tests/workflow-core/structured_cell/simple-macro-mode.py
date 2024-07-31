@@ -1,8 +1,8 @@
 import seamless
 seamless.delegate(False)
 
-from seamless.core import context, cell, StructuredCell
-from seamless.core import macro_mode_on 
+from seamless.workflow.core import context, cell, StructuredCell
+from seamless.workflow.core import macro_mode_on 
 with macro_mode_on():
     ctx = context(toplevel=True)
     ctx.data = cell("mixed")

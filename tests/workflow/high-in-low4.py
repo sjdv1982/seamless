@@ -1,7 +1,7 @@
 import seamless
 seamless.delegate(False)
 
-from seamless.highlevel import Context, Cell, Macro
+from seamless.workflow import Context, Cell, Macro
 
 sctx = Context()
 sctx.inp = Cell("mixed")
@@ -61,7 +61,7 @@ m.pins.cs_data.celltype = "checksum"
 m.graph = ctx.graph
 m.pins.result = {"io": "output", "celltype": "mixed", "hash_pattern": {"!": "#"}}
 def map_list(ctx, cs_data, graph):
-    from seamless.core import Cell as CoreCell
+    from seamless.workflow.core import Cell as CoreCell
     print("CS-DATA", cs_data)
     ctx.result = cell("mixed", hash_pattern = {"!": "#"})
 

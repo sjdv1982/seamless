@@ -63,7 +63,7 @@ class FingerTipper:
             cache = self.tf_cache.transformations_to_transformers
             if tf_checksum not in cache:
                 cache[tf_checksum] = []
-            from seamless.core.transformation import execution_metadata0
+            from seamless.workflow.core.transformation import execution_metadata0
             job = self.tf_cache.run_job(transformation, tf_checksum, scratch=True, fingertip=True)
             if job is not None:
                 await asyncio.shield(job.future)

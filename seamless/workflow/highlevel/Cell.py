@@ -37,9 +37,9 @@ from silk.SilkBase import binary_special_method_names
 from .Base import Base
 from .Resource import Resource
 from .SelfWrapper import SelfWrapper
-from ..mime import get_mime, language_to_mime, ext_to_mime
+from seamless.buffer.mime import get_mime, language_to_mime, ext_to_mime
 from .HelpMixin import HelpMixin
-from . import Checksum
+from seamless import Checksum
 
 celltypes = (
     "structured",

@@ -1,7 +1,7 @@
 import seamless
 seamless.delegate(False)
 
-from seamless.highlevel import Context, FolderCell, Cell
+from seamless.workflow import Context, FolderCell, Cell
 ctx = Context()
 f = ctx.folder = FolderCell()
 f.mount("./testfolder",mode="r")

@@ -2,7 +2,7 @@ print("START")
 import seamless
 seamless.delegate(level=3)
 
-from seamless.highlevel import Context
+from seamless.workflow import Context
 ctx = Context()
 
 from seamless import transformer

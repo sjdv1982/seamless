@@ -87,4 +87,4 @@ def check_function_like(code, identifier):
         return False
     return function_name, nstatements
 
-from ..ipython import execute as ipython_execute
+from seamless.util.ipython import execute as ipython_execute

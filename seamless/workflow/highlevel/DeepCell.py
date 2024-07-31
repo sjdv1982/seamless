@@ -1,7 +1,7 @@
 from copy import deepcopy
 from functools import partial
 
-from . import Checksum
+from seamless import Checksum
 
 def get_new_deepcell(path):
     from ..core.cache.buffer_cache import empty_list_checksum, empty_dict_checksum

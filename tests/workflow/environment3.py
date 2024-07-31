@@ -8,7 +8,7 @@ seamless.delegate(False)
 
 import traceback
 
-from seamless.highlevel import Context, Transformer
+from seamless.workflow import Context, Transformer
 ctx = Context()
 env = ctx.environment
 
@@ -112,7 +112,7 @@ result = transform(**PINS)
 env.set_ipy_template("cython", wrap_cython)
 
 # Define an environment for the Cython code generator
-from seamless.highlevel.Environment import Environment
+from seamless.Environment import Environment
 tmpl_env = Environment()
 tmpl_env.set_conda("""
 dependencies:

@@ -156,7 +156,7 @@ def set_subpath_sync(value, hash_pattern, path, subvalue):
             buffer = serialize_raw(subvalue)
         else:
             buffer = serialize_sync(subvalue, "mixed")
-        checksum = calculate_checksum_sync(buffer)
+        checksum = cached_calculate_checksum_sync(buffer)
         buffer_cache.cache_buffer(checksum, buffer)
         cs = checksum.hex()
     result = write_deep_structure(
@@ -208,7 +208,7 @@ def set_subpath_sync(value, hash_pattern, path, subvalue):
                 new_sub_buffer = serialize_sync(
                     new_sub_value, "mixed", use_cache=(len(post_path) == 0)
                 )
-            new_sub_checksum = calculate_checksum_sync(new_sub_buffer)
+            new_sub_checksum = cached_calculate_checksum_sync(new_sub_buffer)
             buffer_cache.cache_buffer(new_sub_checksum, new_sub_buffer)
             new_sub_cs = new_sub_checksum.hex()
 
@@ -283,7 +283,7 @@ async def set_subpath(value, hash_pattern, path, subvalue):
             buffer = serialize_raw(subvalue)
         else:
             buffer = await serialize(subvalue, "mixed")
-        checksum = await calculate_checksum(buffer)
+        checksum = await cached_calculate_checksum(buffer)
         buffer_cache.cache_buffer(checksum, buffer)
         cs = checksum.hex()
     result = write_deep_structure(
@@ -332,7 +332,7 @@ async def set_subpath(value, hash_pattern, path, subvalue):
                 new_sub_buffer = await serialize(
                     new_sub_value, "mixed", use_cache=False
                 )
-            new_sub_checksum = await calculate_checksum(new_sub_buffer)
+            new_sub_checksum = await cached_calculate_checksum(new_sub_buffer)
             buffer_cache.cache_buffer(new_sub_checksum, new_sub_buffer)
             # Don't write buffer_info for sub buffers, that would be too much...
             ## buffer_cache.guarantee_buffer_info(new_sub_checksum, "mixed", sync_to_remote=False)
@@ -356,9 +356,9 @@ from .deep_structure import (
     deep_structure_to_checksums, access_deep_structure,
     access_hash_pattern
 )
-from .calculate_checksum import calculate_checksum, calculate_checksum_sync
-from .deserialize import deserialize, deserialize_sync
-from .serialize import serialize, serialize_sync
-from .get_buffer import get_buffer
-from ..cache.buffer_cache import buffer_cache
-from ..cache import CacheMissError
+from seamless.buffer.cached_calculate_checksum import cached_calculate_checksum, cached_calculate_checksum_sync
+from seamless.buffer.deserialize import deserialize, deserialize_sync
+from seamless.buffer.serialize import serialize, serialize_sync
+from seamless.buffer.get_buffer import get_buffer
+from seamless.buffer import buffer_cache
+from seamless import CacheMissError

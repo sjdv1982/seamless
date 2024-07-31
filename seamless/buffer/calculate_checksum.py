@@ -27,6 +27,6 @@ def calculate_file_checksum(filename: str) -> str:
 
 def calculate_dict_checksum(d, hex=False):
     """This function is compatible with the checksum of a "plain" cell"""
-    from seamless.core.protocol.json import json_dumps
+    from seamless.workflow.core.protocol.json import json_dumps
     content = json_dumps(d, as_bytes=True) + b"\n"
     return calculate_checksum(content,hex=hex)

@@ -6,11 +6,10 @@ import sys
 import weakref
 import asyncio
 
-from ..buffer_info import BufferInfo
-
 session = requests.Session()
 sessions_async = weakref.WeakKeyDictionary()
 
+from seamless import Checksum, Buffer
 
 global Expression
 
@@ -79,8 +78,8 @@ class Database:
     def set_transformation_result(self, tf_checksum, checksum):   
         request = {
             "type": "transformation",
-            "checksum": parse_checksum(tf_checksum),
-            "value": parse_checksum(checksum),
+            "checksum": Checksum(tf_checksum).value,
+            "value": Checksum(checksum).value,
         }
         self._log("SET", request["type"], request["checksum"])
         self.send_put_request(request)
@@ -88,8 +87,8 @@ class Database:
     def set_elision_result(self, elision_checksum, elision_result_checksum):
         request = {
             "type": "elision",
-            "checksum": parse_checksum(elision_checksum),
-            "value": parse_checksum(elision_result_checksum),
+            "checksum": Checksum(elision_checksum).value,
+            "value": Checksum(elision_result_checksum).value,
         }
         self._log("SET", request["type"], request["checksum"])
         self.send_put_request(request)
@@ -98,17 +97,17 @@ class Database:
         sem_checksum, celltype, subcelltype = semkey
         request = {
             "type": "semantic_to_syntactic",
-            "checksum": parse_checksum(sem_checksum),
+            "checksum": Checksum(sem_checksum).value,
             "celltype": celltype,
             "subcelltype": subcelltype,
             "value": list({cs.hex() for cs in syn_checksums}),
         }
         self.send_put_request(request)
 
-    def set_buffer_info(self, checksum, buffer_info:BufferInfo):
+    def set_buffer_info(self, checksum, buffer_info:"BufferInfo"):
         request = {
-            "type": "buffer_info",
-            "checksum": parse_checksum(checksum),
+            "type": "buffer_info",  
+            "checksum": Checksum(checksum).value,
             "value": buffer_info.as_dict(),
         }
         self.send_put_request(request)
@@ -124,8 +123,8 @@ class Database:
             return
         request = {
             "type": "compilation",
-            "checksum": parse_checksum(checksum),
-            "value": parse_checksum(compile_checksum),
+            "checksum": Checksum(checksum).value,
+            "value": Checksum(compile_checksum).value,
         }
         self._log("SET", request["type"], request["checksum"])
         self.send_put_request(request)
@@ -134,10 +133,10 @@ class Database:
         assert result is not None
         request = {
             "type": "expression",
-            "checksum": parse_checksum(expression.checksum),
+            "checksum": Checksum(expression.checksum).value,
             "celltype": expression.celltype,
             "path": expression.path,        
-            "value": parse_checksum(result),
+            "value": Checksum(result).value,
             "target_celltype": expression.target_celltype,
         }
         if expression.hash_pattern is not None:
@@ -148,12 +147,12 @@ class Database:
         self.send_put_request(request)
 
     def set_metadata(self, tf_checksum,  metadata:dict):
-        tf_checksum = parse_checksum(tf_checksum) 
+        tf_checksum = Checksum(tf_checksum).value
         if not self.active:
             return
         request = {
             "type": "metadata",
-            "checksum": parse_checksum(tf_checksum),
+            "checksum": Checksum(tf_checksum).value,
             "value": json.dumps(metadata, sort_keys=True, indent=2) + "\n",
         }
         self._log("SET", request["type"], request["type"])
@@ -163,17 +162,17 @@ class Database:
     def set_structured_cell_join(self, checksum, join_checksum):
         request = {
             "type": "structured_cell_join",
-            "checksum": parse_checksum(join_checksum),
-            "value": parse_checksum(checksum)
+            "checksum": Checksum(join_checksum).value,
+            "value": Checksum(checksum).value
         }
         self._log("SET", request["type"], request["type"])
         self.send_put_request(request)
 
     def contest(self, transformation_checksum:bytes, result_checksum:bytes):
         """Contests a previously calculated transformation result"""
-        transformation_checksum = parse_checksum(transformation_checksum, as_bytes=False)
+        transformation_checksum = Checksum(transformation_checksum).value
         assert transformation_checksum is not None
-        result_checksum = parse_checksum(result_checksum, as_bytes=False)
+        result_checksum = Checksum(result_checksum).value
         assert result_checksum is not None
         request = {
             "type": "contest",
@@ -231,11 +230,11 @@ class Database:
     def get_transformation_result(self, checksum):
         request = {
             "type": "transformation",
-            "checksum": parse_checksum(checksum),
+            "checksum": Checksum(checksum).value,
         }
         response = self.send_get_request(request)
         if response is not None:
-            result = parse_checksum(response.content.decode(), as_bytes=True)
+            result = Checksum(response.content.decode())
             self._log("GET", request["type"], request["checksum"])
             return result
 
@@ -243,11 +242,11 @@ class Database:
     async def get_transformation_result_async(self, checksum):
         request = {
             "type": "transformation",
-            "checksum": parse_checksum(checksum),
+            "checksum": Checksum(checksum).value,
         }
         content = await self.send_get_request_async(request)
         if content is not None:
-            result = parse_checksum(content.decode(), as_bytes=True)
+            result = Checksum(content.decode())
             self._log("GET", request["type"], request["checksum"])
             return result
 
@@ -255,7 +254,7 @@ class Database:
         sem_checksum, celltype, subcelltype = semkey
         request = {
             "type": "semantic_to_syntactic",
-            "checksum": parse_checksum(sem_checksum),
+            "checksum": Checksum(sem_checksum).value,
             "celltype": celltype,
             "subcelltype": subcelltype,
         }
@@ -263,10 +262,10 @@ class Database:
         if response is not None:
             return [bytes.fromhex(cs.strip()) for cs in response.json()]
 
-    def get_buffer_info(self, checksum) -> BufferInfo:
+    def get_buffer_info(self, checksum) -> "BufferInfo":
         request = {
             "type": "buffer_info",
-            "checksum": parse_checksum(checksum),
+            "checksum": Checksum(checksum).value,
         }
         response = self.send_get_request(request)
         if response is not None:
@@ -281,29 +280,29 @@ class Database:
         return ###
         request = {
             "type": "compilation",
-            "checksum": parse_checksum(checksum),
+            "checksum": Checksum(checksum).value,
         }
         response = self.send_get_request(request)
         if response is not None:
-            result = parse_checksum(response.content.decode(), as_bytes=True)
+            result = Checksum(response.content.decode())
             self._log("GET", request["type"], request["checksum"])
             return result
 
     def get_elision_result(self, checksum):
         request = {
             "type": "elision",
-            "checksum": parse_checksum(checksum),
+            "checksum": Checksum(checksum).value,
         }
         response = self.send_get_request(request)
         if response is not None:
-            result = parse_checksum(response.content.decode(), as_bytes=True)
+            result = Checksum(response.content.decode())
             self._log("GET", request["type"], request["checksum"])
             return result
 
     def get_rev_expression(self, checksum):
         request = {
             "type": "rev_expression",
-            "checksum": parse_checksum(checksum),
+            "checksum": Checksum(checksum).value,
         }
         response = self.send_get_request(request)
         if response is not None:
@@ -320,7 +319,7 @@ class Database:
     def get_rev_join(self, checksum):
         request = {
             "type": "rev_join",
-            "checksum": parse_checksum(checksum),
+            "checksum": Checksum(checksum).value,
         }
         response = self.send_get_request(request)
         if response is not None:
@@ -337,7 +336,7 @@ class Database:
     def get_rev_transformations(self, checksum):
         request = {
             "type": "rev_transformations",
-            "checksum": parse_checksum(checksum),
+            "checksum": Checksum(checksum).value,
         }
         response = self.send_get_request(request)
         if response is not None:
@@ -354,7 +353,7 @@ class Database:
     def get_expression(self, expression: "Expression"):
         request = {
             "type": "expression",
-            "checksum": parse_checksum(expression.checksum),
+            "checksum": Checksum(expression.checksum).value,
             "celltype": expression.celltype,
             "path": expression.path,        
             "target_celltype": expression.target_celltype,
@@ -365,14 +364,14 @@ class Database:
             request["target_hash_pattern"] = expression.target_hash_pattern
         response = self.send_get_request(request)
         if response is not None:
-            result = parse_checksum(response.content.decode(), as_bytes=True)
+            result = Checksum(response.content.decode())
             self._log("GET", request["type"], request["checksum"])
             return result
 
     def get_metadata(self, tf_checksum) -> dict:
         request = {
             "type": "metadata",
-            "checksum": parse_checksum(tf_checksum)
+            "checksum": Checksum(tf_checksum).value
         }
         self._log("GET", request["type"], request["type"])
         response = self.send_get_request(request)
@@ -384,23 +383,20 @@ class Database:
                 raise exc from None
             return rj
 
-    def get_structured_cell_join(self, join_dict: dict):
-        checksum = calculate_dict_checksum(join_dict)
+    def get_structured_cell_join(self, join_dict: dict) -> Checksum | None:
+        checksum = Buffer(join_dict, "plain").checksum.value
         request = {
             "type": "structured_cell_join",
-            "checksum": parse_checksum(checksum)
+            "checksum": checksum
         }
         response = self.send_get_request(request)
         if response is not None:
-            result = parse_checksum(response.content.decode(), as_bytes=True)
+            result = Checksum(response.content.decode())
             self._log("GET", request["type"], request["checksum"])
             return result
 
 
 database = Database()
-
-from ...util import parse_checksum
-from ...calculate_checksum import calculate_dict_checksum
 
 def _close_async_sessions():
     for session_async in sessions_async.values():
@@ -408,3 +404,5 @@ def _close_async_sessions():
         
 import atexit
 atexit.register(_close_async_sessions)
+
+from seamless.buffer.buffer_info import BufferInfo

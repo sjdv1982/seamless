@@ -1,6 +1,6 @@
 from turtle import st
 import seamless
-from seamless.highlevel import Context, Transformer, Cell
+from seamless.workflow import Context, Transformer, Cell
 from silk.Silk import RichValue
 import json, os
 import numpy as np

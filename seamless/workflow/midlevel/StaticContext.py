@@ -20,7 +20,7 @@ class StaticContext(HelpMixin):
         return cls(nodes, connections, lib, params, manager=manager)
 
     def __init__(self, nodes, connections, lib={}, params={}, *, manager=None):
-        from seamless.core.manager import Manager
+        from seamless.workflow.core.manager import Manager
         self._nodes = deepcopy(nodes)
         self._connections = connections
         self._lib = lib

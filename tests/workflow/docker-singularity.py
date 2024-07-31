@@ -5,7 +5,7 @@ import os
 import seamless
 seamless.delegate(False)  # With delegation, singularity must be configured for the assistant!
 
-from seamless.highlevel import Context
+from seamless.workflow import Context
 
 ctx = Context()
 ctx.code = "head -$lines testdata > RESULT"

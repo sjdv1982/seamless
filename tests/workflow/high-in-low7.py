@@ -4,15 +4,15 @@ Version of high-in-low6 with nested invocation
 import seamless
 seamless.delegate(False)
 
-from seamless.highlevel import Context, Cell, Macro
+from seamless.workflow import Context, Cell, Macro
 from seamless.highlevel.library import LibraryContainer
 
 def map_list_N(ctx, inp_prefix, graph, inp):
-    from seamless.core import Cell as CoreCell
-    from seamless.core import cell
-    from seamless.core.structured_cell import StructuredCell
-    from seamless.core.HighLevelContext import HighLevelContext
-    from seamless.core.unbound_context import UnboundContext
+    from seamless.workflow.core import Cell as CoreCell
+    from seamless.workflow.core import cell
+    from seamless.workflow.core.structured_cell import StructuredCell
+    from seamless.workflow.core.HighLevelContext import HighLevelContext
+    from seamless.workflow.core.unbound_context import UnboundContext
 
     first_k = list(inp.keys())[0]
     length = len(inp[first_k])

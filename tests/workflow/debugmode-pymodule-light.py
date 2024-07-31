@@ -1,5 +1,5 @@
-from seamless.core.transformer import Transformer
-from seamless.highlevel import Context, Cell, Module, Transformer
+from seamless.workflow.core.transformer import Transformer
+from seamless.workflow import Context, Cell, Module, Transformer
 import traceback
 
 ctx = Context()

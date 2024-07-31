@@ -6,7 +6,7 @@
 import seamless
 seamless.delegate(False)
 
-from seamless.highlevel import load_graph
+from seamless import load_graph
 ctx = load_graph("environment3.seamless", zip="environment3.zip")
 ctx.compute()
 print(ctx.tf.result.value)

@@ -1,8 +1,7 @@
 class Buffer:
-    def __init__(self, value_or_buffer, celltype=None):
-        from ..core.protocol.serialize import serialize_sync as serialize
-        from ..core.protocol.calculate_checksum import calculate_checksum_sync as calculate_checksum
-        from ..core.cache.buffer_remote import write_buffer
+    def __init__(self, value_or_buffer, celltype=None, *, checksum=None):
+        from seamless import Checksum
+        from seamless.buffer.serialize import serialize_sync as serialize
         celltype = self._map_celltype(celltype)
         if celltype is None:
             if not isinstance(value_or_buffer, bytes):
@@ -10,14 +9,17 @@ class Buffer:
             buf = value_or_buffer
         else:
             buf = serialize(value_or_buffer, celltype)
-        checksum = calculate_checksum(buf)
-        write_buffer(checksum, buf)
         self._value = buf
-        self._checksum = checksum
+        self._checksum = None
+        if checksum:
+            self._checksum = Checksum(checksum)
 
     @staticmethod
     def _map_celltype(celltype):
-        from ..core.cell import celltypes
+        if celltype is None:
+            return None
+
+        from seamless.buffer.cell import celltypes
         allowed_celltypes = list(celltypes.keys()) + ["silk", "deepcell", "deepfolder", "folder", "module"]
         if celltype is not None and celltype not in allowed_celltypes:
             raise TypeError(celltype, allowed_celltypes)
@@ -36,8 +38,27 @@ class Buffer:
 
     @property
     def checksum(self):
-        from .Checksum import Checksum
+        """Returns the buffer's Checksum object, which must have been calculated already"""
+        from seamless import Checksum
+        if self.value is not None and self._checksum is None:
+            raise AttributeError("Checksum has not yet been calculated, use .get_checksum()")
         return Checksum(self._checksum)
+
+    def get_checksum(self):
+        """Returns the buffer's Checksum object, calculating it if needed"""
+        from seamless.buffer.cached_calculate_checksum import cached_calculate_checksum_sync as cached_calculate_checksum
+        if self._checksum is None:
+            buf = self.value
+            if buf is not None:
+                checksum = cached_calculate_checksum(buf)
+                self._checksum = checksum
+        return self.checksum
+
+    def upload(self):
+        """Upload buffer to buffer write server (if defined)"""
+        from seamless.buffer.buffer_remote import write_buffer
+        self.get_checksum()
+        write_buffer(self.checksum, self.value)
 
     @property
     def value(self):
@@ -61,3 +82,6 @@ class Buffer:
         if not isinstance(other, Buffer):
             other = Buffer(other)
         return self.checksum == other.checksum
+
+    def __len__(self):
+        return len(self.value)

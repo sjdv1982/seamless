@@ -1,6 +1,6 @@
 import seamless
 seamless.delegate(level=1)
-from seamless.highlevel import Context, FolderCell, Transformer, Cell
+from seamless.workflow import Context, FolderCell, Transformer, Cell
 ctx = Context()
 
 print("Stage 1")

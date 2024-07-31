@@ -1,7 +1,7 @@
 import os
 import traceback
 from .Base import Base
-from . import Checksum
+from seamless import Checksum
 
 def get_new_module(path):
     return {

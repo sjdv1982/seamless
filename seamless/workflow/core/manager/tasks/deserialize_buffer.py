@@ -2,7 +2,7 @@ import numpy as np
 from collections import namedtuple
 
 from . import BackgroundTask
-from ...protocol.deserialize import deserialize
+from seamless.buffer.deserialize import deserialize
 
 Deserialization = namedtuple("Deserialization",["checksum", "celltype", "copy"])
 
@@ -34,4 +34,4 @@ class DeserializeBufferTask(BackgroundTask):
         buffer_cache.guarantee_buffer_info(self.checksum, self.celltype, sync_to_remote=True)
         return result
 
-from ...cache.buffer_cache import buffer_cache
+from seamless.buffer.buffer_cache import buffer_cache

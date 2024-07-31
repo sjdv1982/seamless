@@ -43,7 +43,7 @@ def json_widget(data, **kwargs):
     return IPython.display.JSON(data, **kwargs)
     """
     import IPython.display
-    from seamless.core.protocol.json import json_dumps
+    from seamless.workflow.core.protocol.json import json_dumps
     txt = json_dumps(data)
     return IPython.display.Pretty(txt, **kwargs)
 

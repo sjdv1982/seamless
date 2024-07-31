@@ -1,6 +1,5 @@
-import asyncio
 from . import Task, BackgroundTask
-from ...protocol.calculate_checksum import calculate_checksum
+from seamless.buffer.cached_calculate_checksum import cached_calculate_checksum
 
 class CalculateChecksumTask(BackgroundTask):
     @property
@@ -15,7 +14,7 @@ class CalculateChecksumTask(BackgroundTask):
         manager = self.manager()
         if manager is None or manager._destroyed:
             return
-        result = await calculate_checksum(self.buffer)
+        result = await cached_calculate_checksum(self.buffer)
         return result
 
 

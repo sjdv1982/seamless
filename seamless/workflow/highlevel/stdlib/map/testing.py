@@ -1,5 +1,5 @@
-import seamless.core.execute
-seamless.core.execute.DIRECT_PRINT = True
+import seamless.workflow.core.execute
+seamless.workflow.core.execute.DIRECT_PRINT = True
 
 def test(mylib):
     print("test map_list")
@@ -31,7 +31,7 @@ def test(mylib):
     return ctx
 
 def test_map_list_N(mylib):
-    from seamless.highlevel import Context, Cell
+    from seamless.workflow import Context, Cell
     ctx = Context()
     ctx.include(mylib.map_list_N)
 
@@ -84,7 +84,7 @@ def test_map_list_N(mylib):
     return ctx
 
 def test_map_list_N_uniform(mylib):
-    from seamless.highlevel import Context, Cell
+    from seamless.workflow import Context, Cell
     ctx = Context()
     ctx.include(mylib.map_list_N)
 
@@ -130,7 +130,7 @@ def test_map_list_N_uniform(mylib):
     return ctx
 
 def test_map_list(mylib):
-    from seamless.highlevel import Context, Cell
+    from seamless.workflow import Context, Cell
     ctx = Context()
     ctx.include(mylib.map_list)
 
@@ -167,7 +167,7 @@ def test_map_list(mylib):
     return ctx
 
 def test_map_list_uniform(mylib):
-    from seamless.highlevel import Context, Cell
+    from seamless.workflow import Context, Cell
     ctx = Context()
     ctx.include(mylib.map_list)
 
@@ -210,7 +210,7 @@ def test_map_list_uniform(mylib):
     return ctx
 
 def test_map_dict(mylib):
-    from seamless.highlevel import Context, Cell
+    from seamless.workflow import Context, Cell
     ctx = Context()
     ctx.include(mylib.map_dict)
 
@@ -261,7 +261,7 @@ def test_map_dict(mylib):
     return ctx
 
 def test_map_dict_uniform(mylib):
-    from seamless.highlevel import Context, Cell
+    from seamless.workflow import Context, Cell
     ctx = Context()
     ctx.include(mylib.map_dict)
 
@@ -305,7 +305,7 @@ def test_map_dict_uniform(mylib):
     return ctx
 
 def test_map_dict_chunk(mylib, elision, merge_method):
-    from seamless.highlevel import Context, Cell
+    from seamless.workflow import Context, Cell
     ctx = Context()
     ctx.include(mylib.map_dict_chunk)
 
@@ -364,7 +364,7 @@ def test_map_dict_chunk(mylib, elision, merge_method):
     return ctx 
 
 def test_map_dict_chunk_uniform(mylib):
-    from seamless.highlevel import Context, Cell
+    from seamless.workflow import Context, Cell
     ctx = Context()
     ctx.include(mylib.map_dict_chunk)
 
@@ -412,7 +412,7 @@ def test_map_dict_chunk_uniform(mylib):
 
 
 def test_map_dict_chunk_list(mylib, elision):
-    from seamless.highlevel import Context, Cell
+    from seamless.workflow import Context, Cell
     ctx = Context()
     ctx.include(mylib.map_dict_chunk)
 

@@ -3,7 +3,7 @@ seamless.delegate(False)
 
 import inspect
 
-from seamless.highlevel import Context
+from seamless.workflow import Context
 
 def hhelp(obj):
     # Similar to doing obj? in IPython

@@ -19,7 +19,7 @@ def transformer(func=None, *, scratch=None, direct_print=None, local=None, retur
 
 def getsource(func):
     from seamless.util import strip_decorators
-    from seamless.core.lambdacode import lambdacode
+    from seamless.workflow.core.lambdacode import lambdacode
 
     if isinstance(func, LambdaType) and func.__name__ == "<lambda>":
         code = lambdacode(func)
@@ -78,7 +78,7 @@ Attributes:
 - environment  ...
 
 """    
-        from seamless.core.protocol.serialize import serialize_sync as serialize
+        from seamless.workflow.core.protocol.serialize import serialize_sync as serialize
         code = getsource(func)
         codebuf = serialize(code, "python")
         
@@ -262,7 +262,7 @@ class ModulesWrapper:
         return self._modules[attr]
     def __setattr__(self, attr, value):
         from types import ModuleType
-        from seamless.highlevel import Module
+        from seamless import Module
         if attr.startswith("_"):
             return super().__setattr__(attr, value)
         if isinstance(value, Module):

@@ -1,8 +1,8 @@
 import seamless
 seamless.delegate(False)
 
-from seamless.highlevel import Context, SimpleDeepCell, DeepCell
-from seamless.core.protocol.json import json_dumps
+from seamless.workflow import Context, SimpleDeepCell, DeepCell
+from seamless.workflow.core.protocol.json import json_dumps
 ctx = Context()
 ctx.d = SimpleDeepCell()
 ctx.d.set({"a":102, "b": 103})

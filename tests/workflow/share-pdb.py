@@ -1,7 +1,7 @@
 import seamless
 seamless.delegate(False)
 
-from seamless.highlevel import Context, Transformer, Cell
+from seamlessntext, Transformer, Cell
 
 ctx = Context()
 

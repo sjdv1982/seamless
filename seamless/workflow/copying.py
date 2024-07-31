@@ -1,15 +1,14 @@
 from copy import deepcopy
 import sys
 import textwrap
-from silk.mixed import MixedBase
 import inspect, asyncio
 
-from .core.cache.buffer_cache import buffer_cache
-from .core.protocol.deserialize import deserialize_sync as deserialize
-from .core.protocol.serialize import serialize_sync as serialize
-from .core.protocol.get_buffer import get_buffer
-from .core.protocol.calculate_checksum import calculate_checksum_sync as calculate_checksum
-from .core.protocol.deep_structure import apply_hash_pattern_sync, deep_structure_to_checksums
+from seamless import Checksum, Buffer
+from seamless.buffer.buffer_cache import buffer_cache
+from seamless.buffer.deserialize import deserialize_sync as deserialize
+from seamless.buffer.serialize import serialize_sync as serialize
+from seamless.buffer.get_buffer import get_buffer
+from seamless.workflow.core.protocol.deep_structure import apply_hash_pattern_sync, deep_structure_to_checksums
 
 def get_checksums(nodes, connections, *, with_annotations, skip_scratch):
     def add_checksum(node, dependent, checksum, subpath=None):
@@ -139,9 +138,9 @@ def add_zip(manager, zipfile, incref=False):
     for checksum in zipfile.namelist():
         if checksum in (empty_dict_checksum, empty_list_checksum):
             continue
-        checksum2 = bytes.fromhex(checksum)
+        checksum2 = Checksum(checksum)
         buffer = zipfile.read(checksum)
-        checksum3 = calculate_checksum(buffer)
+        checksum3 = Buffer(buffer).checksum
         if checksum3 != checksum2:
             raise ValueError("Incorrect checksum for zipped file '{}'".format(checksum))
         buffer_cache.cache_buffer(checksum2, buffer)

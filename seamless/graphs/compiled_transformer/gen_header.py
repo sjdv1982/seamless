@@ -1,5 +1,5 @@
 
-from seamless.core.transformation import SeamlessTransformationError
+from seamless.workflow.core.transformation import SeamlessTransformationError
 
 
 header = """

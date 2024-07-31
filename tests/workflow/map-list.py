@@ -1,8 +1,8 @@
 import seamless
 seamless.delegate(False)
 
-from seamless.highlevel import Context, Cell
-from seamless.highlevel.stdlib import map
+from seamless.workflow import Context, Cell
+from seamless.stdlib import map
 
 print(str(map.map_list.help.value)[:30])
 

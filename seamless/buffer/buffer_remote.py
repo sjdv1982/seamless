@@ -1,14 +1,14 @@
 import requests
-from typing import Optional
 from seamless.util import parse_checksum
 import os
 import time
 import traceback
+from seamless import Buffer
 from requests.exceptions import ConnectionError, ReadTimeout
 
-_read_servers:Optional[list[str]] = None
-_read_folders:Optional[list[str]] = None
-_write_server:Optional[str] = None
+_read_servers:list[str]|None = None
+_read_folders:list[str]|None = None
+_write_server:str|None = None
 
 _known_buffers = set()
 _written_buffers = set()
@@ -16,14 +16,13 @@ _written_buffers = set()
 session = requests.Session()
 
 def get_file_buffer(directory, checksum, timeout=10):
-    from seamless import calculate_checksum
     checksum = parse_checksum(checksum, as_bytes=True)
 
     filename = os.path.join(directory, checksum.hex())
     if os.path.exists(filename):
         with open(filename, "rb") as f:
             buf = f.read()
-        buf_checksum = calculate_checksum(buf)
+        buf_checksum = Buffer(buf).get_checksum().value
         if buf_checksum == checksum:
             return buf
 

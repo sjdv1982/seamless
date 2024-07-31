@@ -199,16 +199,16 @@ async def value_conversion(checksum, source_celltype, target_celltype):
     return target_checksum
     
 
-from ..convert import make_conversion_chain, try_convert, try_convert_single, SeamlessConversionError
-from ..cache import CacheMissError
-from ..cache.buffer_cache import buffer_cache
-from ..cell import text_types2
-from ..convert import validate_checksum, validate_text
-from ..conversion import conversion_values
-from ..cached_compile import analyze_code
-from ..buffer_info import verify_buffer_info
-from ..protocol.serialize import serialize
-from ..protocol.deserialize import deserialize
-from ..protocol.calculate_checksum import calculate_checksum
-from ..protocol.json import json_encode
-from ..protocol.get_buffer import get_buffer
+from .convert import make_conversion_chain, try_convert, try_convert_single, SeamlessConversionError
+from seamless import CacheMissError
+from .buffer_cache import buffer_cache
+from .cell import text_types2
+from .convert import validate_checksum, validate_text
+from .conversion import conversion_values
+from .cached_compile import analyze_code
+from .buffer_info import verify_buffer_info
+from .serialize import serialize
+from .deserialize import deserialize
+from .calculate_checksum import calculate_checksum
+from .json import json_encode
+from .get_buffer import get_buffer

@@ -7,7 +7,7 @@ With Seamless delegation level 3 available:
 """
 
 import seamless
-from seamless.core import context, cell, transformer, unilink
+from seamless.workflow.core import context, cell, transformer, unilink
 
 seamless.config.block_local() # Forbids Seamless to add 1 and 2 by itself
 

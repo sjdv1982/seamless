@@ -82,8 +82,8 @@ class SetCellValueTask(Task):
             taskmanager.cell_to_value.pop(cell, None)
         return None
 
-from ...protocol.evaluate import validate_evaluation_subcelltype, validate_text
-from ...protocol.calculate_checksum import checksum_cache
+from seamless.buffer.evaluate import validate_evaluation_subcelltype, validate_text
+from seamless.buffer.cached_calculate_checksum import checksum_cache
 from ...status import StatusReasonEnum
 from ...protocol.deep_structure import value_to_deep_structure
-from ...cache.buffer_cache import buffer_cache
+from seamless.buffer.buffer_cache import buffer_cache

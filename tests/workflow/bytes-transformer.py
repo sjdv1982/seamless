@@ -1,6 +1,6 @@
 import seamless
 seamless.delegate(False)
-from seamless.highlevel import Context, Cell
+from seamless.workflow import Context, Cell
 
 def func(a):
     print(type(a), a)

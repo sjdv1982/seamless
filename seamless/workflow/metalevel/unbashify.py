@@ -6,7 +6,7 @@ from copy import deepcopy
 _bash_checksums:dict | None = None
 def get_bash_checksums():
     from .stdgraph import load as load_stdgraph
-    from seamless.core.direct.run import _get_semantic
+    from seamless.workflow.core.direct.run import _get_semantic
     global _bash_checksums
     if _bash_checksums is None:        
         sctx = load_stdgraph("bash_transformer")
@@ -43,7 +43,7 @@ def get_bash_checksums():
     return _bash_checksums.copy()
 
 def unbashify_docker(transformation_dict, semantic_cache, env: dict, execution_metadata:dict):
-    from seamless.core.direct.run import prepare_code, prepare_transformation_pin_value
+    from seamless.workflow.core.direct.run import prepare_code, prepare_transformation_pin_value
     tdict = deepcopy(transformation_dict)
     tdict["__language__"] = "python"
     tdict["__output__"] = ("result",) + tuple(transformation_dict["__output__"][1:])
@@ -91,8 +91,8 @@ def unbashify_docker(transformation_dict, semantic_cache, env: dict, execution_m
     return tdict
 
 def unbashify(transformation_dict:dict, semantic_cache, execution_metadata:dict):
-    from seamless.core.direct.run import prepare_code, prepare_transformation_pin_value
-    from seamless.core.manager import Manager
+    from seamless.workflow.core.direct.run import prepare_code, prepare_transformation_pin_value
+    from seamless.workflow.core.manager import Manager
     from ..core.environment import (
         validate_conda_environment,
         validate_docker

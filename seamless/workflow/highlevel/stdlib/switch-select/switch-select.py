@@ -3,7 +3,7 @@ Switch: connect an input cell to one output cell, dynamically chosen from a dict
 Select: dynamically connect one input cell, dynamically chosen from a dict, to one output cell
 """
 
-from seamless.highlevel import Context, Cell
+from seamless.workflow import Context, Cell
 import sys
 
 # 1: Setup contexts

@@ -1,9 +1,9 @@
 def map_list(ctx, graph, inp, has_uniform, elision):
     #print("map_list", inp)
-    from seamless.core import Cell as CoreCell
-    from seamless.core import cell
-    from seamless.core.structured_cell import StructuredCell
-    from seamless.core.HighLevelContext import HighLevelContext
+    from seamless.workflow.core import Cell as CoreCell
+    from seamless.workflow.core import cell
+    from seamless.workflow.core.structured_cell import StructuredCell
+    from seamless.workflow.core.HighLevelContext import HighLevelContext
 
     length = len(inp)
     pseudo_connections = []
@@ -83,7 +83,7 @@ def map_list_nested(
   ctx, elision, elision_chunksize, graph, inp,
   *, lib_module_dict, lib_codeblock, lib, has_uniform
 ):
-    from seamless.core import cell, macro, context, path, transformer
+    from seamless.workflow.core import cell, macro, context, path, transformer
     length = len(inp)
     #print("NEST", length, inp[0])
 

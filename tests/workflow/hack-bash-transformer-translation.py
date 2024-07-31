@@ -1,4 +1,4 @@
-from seamless.highlevel import Context, Transformer
+from seamless.workflow import Context, Transformer
 from seamless.metalevel import stdgraph
 import asyncio
 

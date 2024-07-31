@@ -11,10 +11,10 @@ import os, tempfile, shutil, functools
 
 from numpy import mod
 from sys import modules
-from seamless.core.protocol.calculate_checksum import calculate_checksum_sync
-from seamless.core.protocol.serialize import serialize_sync
-from seamless.core.protocol.deserialize import deserialize_sync
-from seamless.core.manager import livegraph
+from seamless.workflow.core.protocol.calculate_checksum import calculate_checksum_sync
+from seamless.workflow.core.protocol.serialize import serialize_sync
+from seamless.workflow.core.protocol.deserialize import deserialize_sync
+from seamless.workflow.core.manager import livegraph
 
 SEAMLESS_DEBUGGING_DIRECTORY = os.environ.get("SEAMLESS_DEBUGGING_DIRECTORY")
 

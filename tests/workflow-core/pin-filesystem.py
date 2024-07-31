@@ -1,6 +1,6 @@
 import seamless
-from seamless.core import context, cell, transformer
-from seamless.core import macro_mode_on
+from seamless.workflow.core import context, cell, transformer
+from seamless.workflow.core import macro_mode_on
 from seamless.config import ConfigurationError
 
 import seamless
@@ -16,7 +16,7 @@ d1 = "/tmp/PIN-FILESYSTEM-FOLDER1"
 d2 = "/tmp/PIN-FILESYSTEM-FOLDER2"
 
 import os
-from seamless.core.mount_directory import deep_read_from_directory, write_to_directory
+from seamless.workflow.core.mount_directory import deep_read_from_directory, write_to_directory
 if not os.path.exists(d1):
     write_to_directory(d1, {"file1.txt": 2}, cleanup=False, deep=False, text_only=False)    
 if not os.path.exists(d2):

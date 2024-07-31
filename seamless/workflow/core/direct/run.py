@@ -8,11 +8,9 @@ import json
 import time
 import multiprocessing
 
-from seamless.core.cache import CacheMissError
+from seamless import CacheMissError
 
-from ...calculate_checksum import calculate_checksum
-from ...core.protocol.serialize import serialize_sync as serialize
-from ...core.protocol.get_buffer import get_buffer as _get_buffer
+from seamless.buffer.get_buffer import get_buffer as _get_buffer
 from ...core.cache.transformation_cache import (
     transformation_cache,
     tf_get_buffer,
@@ -20,10 +18,9 @@ from ...core.cache.transformation_cache import (
     syntactic_is_semantic,
     DummyTransformer,
 )
-from ...core.cache.tempref import temprefmanager
-from ...util import parse_checksum
-from ... import run_transformation, run_transformation_async
-from ...core.cache.buffer_remote import write_buffer
+from seamless.util.tempref import temprefmanager
+from seamless.direct import run_transformation, run_transformation_async
+from seamless.buffer.buffer_remote import write_buffer
 
 _queued_transformations = []
 
@@ -49,7 +46,7 @@ def set_dummy_manager():
     global _dummy_manager
     if _dummy_manager is not None:
         return
-    from seamless.core.manager import Manager
+    from seamless.workflow.core.manager import Manager
     _dummy_manager = Manager()
 
 def set_parent_process_queue(parent_process_queue):
@@ -234,7 +231,7 @@ async def run_transformation_dict_async(transformation_dict, *, fingertip, scrat
     such as returned by highlevel.Transformer.get_transformation_dict"""
     # TODO: add input schema and result schema validation...
     from seamless.util import is_forked
-    from seamless.core.cache.buffer_cache import buffer_cache
+    from seamless.workflow.core.cache.buffer_cache import buffer_cache
     from seamless.config import database
 
     assert not is_forked()
@@ -271,13 +268,13 @@ async def run_transformation_dict_async(transformation_dict, *, fingertip, scrat
     return result_checksum
 
 def run_transformation_dict_in_process(transformation_dict, tf_checksum, tf_dunder, scratch):
-    from seamless.core.transformation import execution_metadata0, get_global_info, get_transformation_inputs_output, build_transformation_namespace_sync, build_all_modules
+    from seamless.workflow.core.transformation import execution_metadata0, get_global_info, get_transformation_inputs_output, build_transformation_namespace_sync, build_all_modules
     from seamless.compiler import compilers as default_compilers, languages as default_languages
-    from seamless.core.cache.transformation_cache import transformation_cache
-    from seamless.core.injector import transformer_injector as injector
-    from seamless.core.cached_compile import exec_code
+    from seamless.workflow.core.cache.transformation_cache import transformation_cache
+    from seamless.workflow.core.injector import transformer_injector as injector
+    from seamless.workflow.core.cached_compile import exec_code
     from seamless.config import database
-    from seamless.core.cache.buffer_cache import buffer_cache, buffer_remote
+    from seamless.workflow.core.cache.buffer_cache import buffer_cache, buffer_remote
     from seamless.highlevel.direct import transformer
 
     result_checksum = database.get_transformation_result(tf_checksum)
@@ -355,7 +352,7 @@ def run_transformation_dict_in_process(transformation_dict, tf_checksum, tf_dund
     return result_checksum
 
 def prepare_code(semantic_code_checksum, codebuf, code_checksum):
-    from seamless.highlevel import Checksum
+    from seamless import Checksum
     if codebuf is not None:
         assert isinstance(codebuf, bytes)
     semantic_code_checksum = Checksum(semantic_code_checksum).bytes()
@@ -380,7 +377,7 @@ def prepare_code(semantic_code_checksum, codebuf, code_checksum):
     return value
 
 def prepare_transformation_pin_value(value, celltype):
-    from seamless.highlevel import Checksum, Transformation
+    from seamless import Checksum, Transformation
     from ...core.cache.buffer_remote import write_buffer as remote_write_buffer
 
     if isinstance(value, Checksum):
@@ -413,7 +410,7 @@ Replaced buffers or values are properly registered and cached
 (including their syntactic <=> semantic conversion).
 """
 
-    from seamless.highlevel import Checksum
+    from seamless import Checksum
     
     non_checksum_items = ("__output__", "__language__", "__meta__", "__env__", "__format__")
 
@@ -458,8 +455,8 @@ def direct_transformer_to_transformation_dict(
     arguments,
     env
 ):
-    from seamless.highlevel import Base, Cell, Module, Transformation, Checksum
-    from seamless.highlevel.DeepCell import DeepCellBase
+    from seamless import Base, Cell, Module, Transformation, Checksum
+    from seamless.DeepCell import DeepCellBase
 
     result_celltype = celltypes["result"]
     result_hash_pattern = None
@@ -615,7 +612,7 @@ def _get_semantic(code, code_checksum):
     return semantic_code_checksum
 
 def _get_node_transformation_dependencies(node):
-    from seamless.highlevel import Transformation
+    from seamless import Transformation
     deps = {}
     temp = node.get("TEMP", {}).get("input_auth", {})
     for pinname, value in temp.items():
@@ -631,8 +628,8 @@ def _node_to_transformation_dict(node):
     # - The result transformation dict cannot be submitted directly,
     #    it must still be prepared.
 
-    from seamless.highlevel import Base, Cell, Module, Transformation, Checksum
-    from seamless.highlevel.DeepCell import DeepCellBase
+    from seamless import Base, Cell, Module, Transformation, Checksum
+    from seamless.DeepCell import DeepCellBase
 
     language = node["language"]
     if language == "bash":
@@ -842,7 +839,7 @@ def _wait():
 
 
 def cleanup():
-    """is registered atexit by seamless.core, because it must run first"""
+    """is registered atexit by seamless.workflow.core, because it must run first"""
     for (
         _,
         transformation,

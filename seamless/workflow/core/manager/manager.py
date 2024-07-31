@@ -6,7 +6,7 @@ import traceback
 import sys
 from copy import deepcopy
 
-from seamless.core.cache import CacheMissError
+from seamless import CacheMissError
 
 from ..status import StatusReasonEnum
 
@@ -900,10 +900,10 @@ from .tasks import (
     CellUpdateTask
 )
 
-from ..protocol.calculate_checksum import checksum_cache
-from ..protocol.deserialize import deserialize_cache, deserialize_sync
-from ..protocol.get_buffer import get_buffer
-from ..cache.buffer_cache import buffer_cache, empty_dict_checksum, empty_list_checksum
+from seamless.buffer.cached_calculate_checksum import checksum_cache
+from seamless.buffer.deserialize import deserialize_cache, deserialize_sync
+from seamless.buffer.get_buffer import get_buffer
+from seamless.buffer.buffer_cache import buffer_cache, empty_dict_checksum, empty_list_checksum
 from .unvoid import unvoid_cell
 from ..cell import Cell
 from ..transformer import Transformer

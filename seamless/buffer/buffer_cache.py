@@ -3,9 +3,13 @@ import functools
 
 from silk.mixed import MAGIC_NUMPY, MAGIC_SEAMLESS_MIXED
 
-from seamless.core.buffer_info import BufferInfo
+from seamless.buffer.cached_calculate_checksum import checksum_cache
+from seamless.util.tempref import temprefmanager
+from seamless import CacheMissError
+from seamless import Buffer, Checksum
+from seamless.buffer.buffer_info import BufferInfo
 
-from . import buffer_remote
+from seamless.buffer import buffer_remote
 
 import logging
 logger = logging.getLogger(__name__)
@@ -59,10 +63,10 @@ class BufferCache:
         self.missing = {} # key: checksum, value: persistent (bool)
         self.persistent_buffers = set()  # only used if LOCAL_MODE_FULL_PERSISTENCE is False
 
-        self.incref_buffer(bytes.fromhex(empty_dict_checksum), b'{}\n', persistent=True)
-        self.incref_buffer(bytes.fromhex(empty_list_checksum), b'[]\n', persistent=True)
+        self.incref_buffer(Checksum(empty_dict_checksum), b'{}\n', persistent=True)
+        self.incref_buffer(Checksum(empty_list_checksum), b'[]\n', persistent=True)
 
-    def _check_delete_buffer(self, checksum):
+    def _check_delete_buffer(self, checksum:Checksum):
         if checksum not in self.last_time:
             return
         t = time.time()
@@ -77,7 +81,7 @@ class BufferCache:
             return
         self._uncache_buffer(checksum)
 
-    def _uncache_buffer(self, checksum):
+    def _uncache_buffer(self, checksum:Checksum):
         if checksum in self.buffer_refcount:
             can_delete = True
             if self.LOCAL_MODE_FULL_PERSISTENCE or checksum in self.persistent_buffers:
@@ -88,7 +92,7 @@ class BufferCache:
         self.buffer_cache.pop(checksum, None)
 
 
-    def _update_time(self, checksum, buffer_length=None):
+    def _update_time(self, checksum:Checksum, buffer_length:int|None=None):
         t = time.time()
         if buffer_length is None:
             buffer_length = 9999999
@@ -98,16 +102,15 @@ class BufferCache:
             temprefmanager.add_ref(func, delay, on_shutdown=False)
         self.last_time[checksum] = t
 
-    def cache_buffer(self, checksum, buffer):
+    def cache_buffer(self, checksum:Checksum, buffer:Buffer):
         """Caches a buffer locally for a short time, without incrementing its refcount
         Does not write it as remote server or buffer.
         The checksum can be incref'ed later, without the need to re-provide the buffer.
         """
-        if checksum is None:
+        if not checksum:
             return
-        assert isinstance(checksum, bytes)
-        assert len(checksum) == 32
-        assert isinstance(buffer, bytes)
+        checksum = Checksum(checksum)
+        buffer = Buffer(buffer)
         #print("LOCAL CACHE", checksum.hex())
         self._update_time(checksum, len(buffer))
         self.update_buffer_info(checksum, "length", len(buffer), sync_remote=False)
@@ -115,14 +118,13 @@ class BufferCache:
             self.buffer_cache[checksum] = buffer
         self.find_missing(checksum, buffer)
 
-    def incref_buffer(self, checksum, buffer, *, persistent):
+    def incref_buffer(self, checksum:Checksum, buffer:Buffer, *, persistent):
         """Increments the refcount of a known buffer.
         See the documentation of self.incref.
         """
-        assert checksum is not None
-        assert isinstance(checksum, bytes)
-        assert len(checksum) == 32
-        assert isinstance(buffer, bytes)
+        assert checksum
+        checksum = Checksum(checksum)
+        buffer = Buffer(buffer)
         l = len(buffer)
         self.update_buffer_info(checksum, "length", l, sync_remote=False)
         return self._incref([checksum], persistent, [buffer])
@@ -263,6 +265,7 @@ class BufferCache:
         return buffer
 
     def _sync_buffer_info_from_remote(self, checksum): 
+        from seamless.buffer.database_client import database
         local_buffer_info = self.buffer_info[checksum]       
         if checksum in self.synced_buffer_info:
             return
@@ -276,6 +279,7 @@ class BufferCache:
             self.synced_buffer_info.add(checksum)
 
     def _sync_buffer_info_to_remote(self, checksum):
+        from seamless.buffer.database_client import database
         local_buffer_info = self.buffer_info[checksum]        
         if checksum in self.synced_buffer_info:
             return
@@ -451,8 +455,3 @@ class BufferCache:
 
 
 buffer_cache = BufferCache()
-
-from ..protocol.calculate_checksum import checksum_cache
-from .tempref import temprefmanager
-from .database_client import database
-from . import CacheMissError

@@ -133,7 +133,7 @@ class ContextPool:
         self.graph = ctx.get_graph()
 
     def __enter__(self):
-        from seamless.highlevel import Context
+        from seamless.workflow import Context
 
         self._contexts = []
         if self.nparallel == 0:

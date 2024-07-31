@@ -4,8 +4,8 @@ Version of high-in-low5 that maps over N inputs, zipped
 
 import seamless
 
-import seamless.core.execute
-seamless.core.execute.DIRECT_PRINT = True
+import seamless.workflow.core.execute
+seamless.workflow.core.execute.DIRECT_PRINT = True
 
 if seamless.delegate(level=3):
     exit(1)
@@ -18,7 +18,7 @@ logging.basicConfig()
 logging.getLogger("seamless").setLevel(logging.DEBUG)
 """
 
-from seamless.highlevel import Context, Cell, Macro
+from seamless.workflow import Context, Cell, Macro
 from seamless.highlevel.library import LibraryContainer
 
 mylib = LibraryContainer("mylib")
@@ -52,8 +52,8 @@ def constructor(ctx, libctx, context_graph, inp, result):
                 err = "all cells in inp must have the same length, but '{}' has length {} while '{}' has length {}"
                 raise ValueError(err.format(k, len(inp[k0]), first_k, length))
 
-        from seamless.core import Cell as CoreCell
-        from seamless.core.unbound_context import UnboundContext
+        from seamless.workflow.core import Cell as CoreCell
+        from seamless.workflow.core.unbound_context import UnboundContext
         pseudo_connections = []
         ctx.result = cell("mixed", hash_pattern = {"!": "#"})
 

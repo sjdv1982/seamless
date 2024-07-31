@@ -1,7 +1,7 @@
 import seamless
 seamless.delegate(False)
-from seamless.core import macro_mode_on
-from seamless.core import context, cell, transformer
+from seamless.workflow.core import macro_mode_on
+from seamless.workflow.core import context, cell, transformer
 
 import os
 os.makedirs("/tmp/mount-test", exist_ok=True)

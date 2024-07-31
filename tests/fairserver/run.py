@@ -7,7 +7,7 @@ seamless.delegate(level=1)
 
 seamless.fair.add_server(FAIRSERVER)
 
-from seamless.highlevel import Context, DeepFolderCell, Cell
+from seamless.workflow import Context, DeepFolderCell, Cell
 distribution = DeepFolderCell.find_distribution("mydataset", version=1)
 print(json.dumps(distribution, indent=2))
 

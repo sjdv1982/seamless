@@ -1,4 +1,4 @@
-from seamless.highlevel import Context, Cell
+from seamlessntext, Cell
 
 ctx = Context()
 ctx.transform = lambda a,b: a + b

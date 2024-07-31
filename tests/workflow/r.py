@@ -1,7 +1,7 @@
 import seamless
 seamless.delegate(False)
 
-from seamless.highlevel import Context, Transformer, Cell
+from seamless.workflow import Context, Transformer, Cell
 
 ctx = Context()
 ctx.r_code = Cell("code").mount("example.R")

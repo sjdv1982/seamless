@@ -1,7 +1,7 @@
 """
 Dynamic workflow example
 """
-from seamless.highlevel import Context
+from seamless.workflow import Context
 
 def switch(input, which):
     return {which: input}

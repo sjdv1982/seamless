@@ -1,7 +1,7 @@
 import seamless
 seamless.delegate(False)
 
-from seamless.highlevel import Context, Cell
+from seamless.workflow import Context, Cell
 
 ctx = Context()
 ctx.bin1 = Cell()

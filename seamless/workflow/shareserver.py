@@ -78,7 +78,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 def get_subkey(buffer, subkey):
-    from seamless.core.protocol.json import json_dumps
+    from seamless.workflow.core.protocol.json import json_dumps
     value = orjson.loads(buffer)
     path = subkey.split("/")
     try:
@@ -315,7 +315,7 @@ class ShareNamespace:
             self._send_sharelist_task = None
 
     async def _get(self, key, mode, subkey=None):
-        from seamless.core.protocol.json import json_dumps
+        from seamless.workflow.core.protocol.json import json_dumps
         assert mode in ("checksum", "buffer", "value", "marker")
         if subkey is not None:
             assert mode in ("buffer", "value")
@@ -932,9 +932,9 @@ Share {c} with readonly=False to allow HTTP PUT requests"""
 
 shareserver = ShareServer()
 
-from .core.cache.buffer_cache import buffer_cache
-from .core.protocol.calculate_checksum import calculate_checksum
-from .core.protocol.deserialize import deserialize
-from .core.protocol.serialize import serialize
-from .core.protocol.get_buffer import get_buffer, CacheMissError
-from .mime import get_mime
+from seamless import CacheMissError
+from seamless.buffer.buffer_cache import buffer_cache
+from seamless.buffer.deserialize import deserialize
+from seamless.buffer.serialize import serialize
+from seamless.buffer.get_buffer import get_buffer
+from seamless.buffer.mime import get_mime

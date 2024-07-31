@@ -4,8 +4,8 @@ import numpy as np
 import json
 from io import BytesIO
 from silk import Silk
-from seamless.core.transformation import SeamlessStreamTransformationError
-from seamless.core.mount_directory import write_to_directory
+from seamless.workflow.core.transformation import SeamlessStreamTransformationError
+from seamless.workflow.core.mount_directory import write_to_directory
 from silk.mixed.get_form import get_form
 from seamless import subprocess_ as subprocess
 from subprocess import PIPE

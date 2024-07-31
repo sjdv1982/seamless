@@ -1,7 +1,7 @@
 import seamless
 seamless.delegate(False)
 
-from seamless.core import cell, context
+from seamless.workflow.core import cell, context
 
 ctx = context(toplevel=True)
 ctx.c1 = cell("int").set(12)
@@ -59,7 +59,7 @@ ctx.compute()
 print(ctx.t3.checksum, ctx.t3.buffer)
 print(ctx.tt3.buffer)
 
-from seamless.core.cache import CacheMissError
+from seamless.workflow.core.cache import CacheMissError
 try:
     print(ctx.tt3.value)
 except CacheMissError:

@@ -6,8 +6,6 @@ import logging
 import os
 import shutil
 
-from seamless.core.protocol.deserialize import deserialize_sync
-
 def _validate_cell(cell):
     from .cell import Cell
     if not isinstance(cell, Cell):
@@ -196,7 +194,5 @@ def get_directory_mtime(path):
         pass
     return mtime
 
-from .protocol.calculate_checksum import calculate_checksum, calculate_checksum_sync
-from ..util import parse_checksum
 from .protocol.deep_structure import deserialize_raw, serialize_raw
-from .protocol.get_buffer import get_buffer
+from seamless.buffer.get_buffer import get_buffer

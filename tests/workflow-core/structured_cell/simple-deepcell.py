@@ -1,8 +1,8 @@
 import seamless
 seamless.delegate(False)
 
-from seamless.core import context, cell, StructuredCell
-from seamless.core.protocol.deep_structure import DeepStructureError
+from seamless.workflow.core import context, cell, StructuredCell
+from seamless.workflow.core.protocol.deep_structure import DeepStructureError
 import traceback
 
 ctx = context(toplevel=True)

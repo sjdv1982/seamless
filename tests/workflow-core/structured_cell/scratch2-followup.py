@@ -1,5 +1,5 @@
 import seamless
-from seamless.core import context, cell
+from seamless.workflow.core import context, cell
 seamless.delegate(level=3)
 ctx = context(toplevel=True)
 ctx.result = cell("mixed")

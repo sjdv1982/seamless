@@ -9,7 +9,7 @@ from silk.mixed import MAGIC_NUMPY
 
 from typing import Optional
 
-from .calculate_checksum import lrucache2
+from seamless.util import lrucache2
 
 import logging
 logger = logging.getLogger(__name__)
@@ -34,6 +34,9 @@ def _deserialize_plain(buffer):
     return value
 
 def _deserialize(buffer:bytes, checksum:Optional[bytes], celltype:str):    
+    from .evaluate import validate_text_celltype
+    from .convert import validate_checksum
+
     if celltype == "silk":
         celltype = "mixed"
     if checksum is not None:
@@ -159,7 +162,5 @@ def deserialize_sync(buffer, checksum, celltype, copy):
 
 
 from .serialize import serialize_cache
-from ..cell import text_types2
-from .evaluate import validate_text_celltype
-from ..convert import validate_checksum
-from ..cache.buffer_cache import buffer_cache, BufferInfo
+from .cell import text_types2
+from .buffer_cache import buffer_cache, BufferInfo

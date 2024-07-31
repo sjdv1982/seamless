@@ -1,7 +1,7 @@
 import weakref
 from functools import wraps
 
-from seamless.core.macro import Path
+from seamless.workflow.core.macro import Path
 
 from .Cell import Cell
 from .SubContext import SubContext

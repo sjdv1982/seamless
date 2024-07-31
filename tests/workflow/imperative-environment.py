@@ -6,7 +6,7 @@ from seamless import transformer
 
 from types import ModuleType
 import sys
-from seamless.core.cached_compile import cached_compile
+from seamless.workflow.core.cached_compile import cached_compile
 
 testcode = ModuleType("testcode")
 testcode.__path__ = []

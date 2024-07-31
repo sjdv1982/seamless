@@ -53,8 +53,7 @@ def save_vault(dirname, annotated_checksums, buffer_dict):
                     if filename.startswith("."):
                         continue
                     try:
-                        checksum2 = bytes.fromhex(filename)
-                        parse_checksum(checksum2)
+                        Checksum(filename)
                         is_flat = True
                     except (TypeError, ValueError, AssertionError):
                         pass
@@ -129,5 +128,5 @@ def load_vault(dirname, incref=False):
         raise ValueError("{} does not seem to be a Seamless vault".format(dirname))
     return result
 
-from .core.cache.buffer_cache import buffer_cache
-from .util import parse_checksum
+from seamless import Checksum
+from seamless.buffer.buffer_cache import buffer_cache

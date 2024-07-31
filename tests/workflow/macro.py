@@ -1,7 +1,7 @@
 import seamless
 seamless.delegate(False)
 
-from seamless.highlevel import Context, Macro
+from seamless.workflow import Context, Macro
 ctx = Context()
 m = ctx.m = Macro()
 ctx.a = 10

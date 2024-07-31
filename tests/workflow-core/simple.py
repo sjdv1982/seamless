@@ -1,12 +1,12 @@
 import seamless
-from seamless.core import context, cell, transformer, unilink
+from seamless.workflow.core import context, cell, transformer, unilink
 import os
 
 if "DELEGATE" in os.environ:
     has_err = seamless.delegate(level=3)
     if has_err:
         exit(1)
-    from seamless.core.transformation import get_global_info
+    from seamless.workflow.core.transformation import get_global_info
     get_global_info()  # avoid timing errors
 else:
     seamless.delegate(False)

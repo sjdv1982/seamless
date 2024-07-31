@@ -8,8 +8,8 @@ class SeamlessWorkerPlugin(WorkerPlugin):
     def setup(self, worker):
         try:
             import seamless
-            from seamless.core.transformation import get_global_info, execution_metadata0
-            from seamless.core.cache.transformation_cache import transformation_cache
+            from seamless.workflow.core.transformation import get_global_info, execution_metadata0
+            from seamless.workflow.core.cache.transformation_cache import transformation_cache
             from seamless.util import set_unforked_process 
         except ImportError:
             raise RuntimeError("Seamless must be installed on your Dask cluster") from None   

@@ -1,8 +1,8 @@
 import seamless
 seamless.delegate(False)
 
-from seamless.core import context, transformer, cell
-from seamless.core.protocol.get_buffer import get_buffer
+from seamless.workflow.core import context, transformer, cell
+from seamless.workflow.core.protocol.get_buffer import get_buffer
 import json
 
 

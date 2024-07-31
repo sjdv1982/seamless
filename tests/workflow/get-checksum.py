@@ -12,7 +12,7 @@ def send(line):
 
 next()
 
-send("from seamless.highlevel import Context")
+send("from seamless.workflow import Context")
 send("ctx = Context()")
 send("ctx.a = 'MYVALUE'")
 send("ctx.translate()")

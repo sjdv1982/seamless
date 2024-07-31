@@ -7,7 +7,7 @@ if "DELEGATE" in os.environ:
 else:
     seamless.delegate(False)
 
-from seamless.core import context, cell, transformer
+from seamless.workflow.core import context, cell, transformer
 
 ctx = context(toplevel=True)
 ctx.cell1 = cell("int").set(1)

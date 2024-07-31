@@ -1,7 +1,7 @@
 import seamless
 seamless.delegate(False)
 
-from seamless.highlevel import Context
+from seamless.workflow import Context
 
 ctx = Context()
 def func(a):

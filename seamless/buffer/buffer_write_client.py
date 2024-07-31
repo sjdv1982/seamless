@@ -1,9 +1,10 @@
 import requests
 from requests.exceptions import ConnectionError, ChunkedEncodingError, JSONDecodeError
 
-from seamless.util import parse_checksum, is_forked
+from seamless.util import parse_checksum
 
 def has(session, url, checksum, *, timeout=None):
+    from seamless.workflow.util import is_forked
     sess = session
     if is_forked():
         sess = requests
@@ -36,6 +37,7 @@ def has(session, url, checksum, *, timeout=None):
     return result[0]
 
 def write(session, url, checksum, buffer:bytes):
+    from seamless.workflow.util import is_forked
     sess = session
     if is_forked():
         sess = requests

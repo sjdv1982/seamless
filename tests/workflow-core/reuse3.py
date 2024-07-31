@@ -1,5 +1,5 @@
 import seamless
-from seamless.core import context, cell, transformer
+from seamless.workflow.core import context, cell, transformer
 
 seamless.load_vault("./reuse-vault")
 seamless.delegate(level=0, force_database=True)

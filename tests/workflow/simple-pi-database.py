@@ -1,5 +1,5 @@
 import math
-from seamless.highlevel import Context, Cell
+from seamless.workflow import Context, Cell
 import json
 
 import seamless

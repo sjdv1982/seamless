@@ -3,7 +3,7 @@ import weakref, functools
 from ..proxy import Proxy, CodeProxy
 from ..Cell import Cell
 from ..Resource import Resource
-from ...mime import language_to_mime
+from seamless.buffer.mime import language_to_mime
 
 properties = [
     "language", "code", "extension", "compiler", "target",

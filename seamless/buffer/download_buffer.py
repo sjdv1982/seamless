@@ -7,14 +7,15 @@ import bz2
 import sys
 from concurrent.futures import ThreadPoolExecutor
 from requests.exceptions import ConnectionError, ReadTimeout
-from seamless.core.cache import CacheMissError
+from seamless import CacheMissError
 
-from seamless.util import parse_checksum
+from seamless import Buffer
+from seamless.buffer.get_buffer import get_buffer
 
 try:
-    from seamless.core.cache.buffer_cache import buffer_cache
-    from seamless.core.convert import try_convert, SeamlessConversionError
-except ImportError:
+    from seamless.buffer.buffer_cache import buffer_cache
+    from seamless.buffer.convert import try_convert, SeamlessConversionError
+except ImportError:   
     buffer_cache = None
     try_convert = None
 session = requests.Session()
@@ -273,8 +274,7 @@ def download_buffer_sync(checksum, url_infos, celltype="bytes", *, verbose=False
                     #print("BANDWIDTH2", mirror.bandwidth, len(buf), buffer_length)
             buf = decompress(buf)
             if checksum is not None or source_celltype != celltype:
-                from seamless import calculate_checksum
-                buf_checksum = calculate_checksum(buf, hex=True)
+                buf_checksum = Buffer(buf).get_checksum().value
             if source_celltype != celltype:
                 assert try_convert is not None
                 conv = try_convert(
@@ -395,5 +395,3 @@ if __name__ == "__main__":
     print(time.time()-t)
     print(fut.result())
     print()
-
-from .core.protocol.get_buffer import get_buffer

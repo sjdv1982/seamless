@@ -1,7 +1,7 @@
 raise NotImplementedError # TODO: use highlevel.direct.module
 
 from seamless.graphs.multi_module import mytestpackage
-from seamless.highlevel import Context, Cell, Module, Transformer, Resource, FolderCell
+from seamless.workflow import Context, Cell, Module, Transformer, Resource, FolderCell
 
 get_pypackage_dependencies_file = "get_pypackage_dependencies.py"
 pypackage_to_moduledict_file = "pypackage_to_moduledict.py"

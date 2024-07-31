@@ -2,7 +2,7 @@
 import seamless
 seamless.delegate(False)
 
-from seamless.core import context, cell, StructuredCell
+from seamless.workflow.core import context, cell, StructuredCell
 
 ctx = context(toplevel=True)
 ctx.upstream = cell("int")

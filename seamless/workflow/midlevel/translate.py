@@ -7,8 +7,8 @@ The mid-level is assumed to be correct; any errors should be caught there
 
 from collections import OrderedDict
 
-from seamless.core import cell as core_cell, context, Context as core_context, StructuredCell
-from seamless.core.context import UnboundContext
+from seamless.workflow.core import cell as core_cell, context, Context as core_context, StructuredCell
+from seamless.workflow.core.context import UnboundContext
 
 from .util import get_path, get_path_link, find_channels, build_structured_cell
 

@@ -1,4 +1,4 @@
-from seamless.highlevel import Context, Cell
+from seamless.workflow import Context, Cell
 from seamless.highlevel import set_resource
 
 # 1: Setup context

@@ -1,30 +1,20 @@
 import asyncio
 from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
 
-from ...pylru import lrucache
-from ...calculate_checksum import calculate_checksum as calculate_checksum_func
-
-class lrucache2(lrucache):
-    """Version of lrucache that can be disabled"""
-    _disabled = False
-    def disable(self):
-        self._disabled = True
-    def enable(self):
-        del self._disabled
-    def __setitem__(self, key, value):
-        if self._disabled:
-            return
-        super().__setitem__(key, value)
-
+from seamless.util.pylru import lrucache
+from seamless.buffer.calculate_checksum import calculate_checksum as calculate_checksum_func
 
 # calculate_checksum_cache: maps id(buffer) to (checksum, buffer).
 # Need to store (a ref to) buffer,
 #  because id(buffer) is only unique while buffer does not die!!!
+
+from seamless.util import lrucache2
+
 calculate_checksum_cache = lrucache2(10)
 
 checksum_cache = lrucache2(10)
 
-async def calculate_checksum(buffer):
+async def cached_calculate_checksum(buffer):
     if buffer is None:
         return None
     assert isinstance(buffer, bytes)
@@ -48,7 +38,7 @@ async def calculate_checksum(buffer):
     checksum_cache[checksum] = buffer
     return checksum
 
-def calculate_checksum_sync(buffer):
+def cached_calculate_checksum_sync(buffer):
     """This function can be executed if the asyncio event loop is already running"""
     if buffer is None:
         return None

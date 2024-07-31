@@ -2,7 +2,7 @@ import seamless
 seamless.delegate(False)
 
 import traceback
-from seamless.highlevel import Context, Cell, DeepFolderCell
+from seamless.workflow import Context, Cell, DeepFolderCell
 
 ctx = Context()
 ctx.a = DeepFolderCell()

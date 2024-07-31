@@ -12,7 +12,7 @@ print(q)
 result = q
 '''
 
-from seamless.highlevel import Transformer, Context, Module
+from seamless import Transformer, Context, Module
 ctx = Context()
 ctx.testmodule = Module()
 ctx.testmodule.multi = True

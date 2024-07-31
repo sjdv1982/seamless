@@ -2,8 +2,6 @@ import json
 import inspect
 import textwrap
 
-from seamless.highlevel.DeepCell import DeepCell
-
 def _get_value(name, value):
     from ...util import strip_decorators
     if callable(value):

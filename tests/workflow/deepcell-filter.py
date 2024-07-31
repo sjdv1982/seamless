@@ -1,7 +1,7 @@
 import seamless
 seamless.delegate(False)
 
-from seamless.highlevel import Context, Cell, DeepCell
+from seamless.workflow import Context, Cell, DeepCell
 
 ctx = Context()
 ctx.a = DeepCell()

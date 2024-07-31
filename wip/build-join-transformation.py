@@ -2,8 +2,8 @@
 import json
 import sys
 import seamless
-from seamless.highlevel import Checksum
-from seamless.core.cache.buffer_cache import buffer_cache
+from seamless import Checksum
+from seamless.workflow.core.cache.buffer_cache import buffer_cache
 from seamless import calculate_dict_checksum
 seamless.delegate(level=1)
 
@@ -23,7 +23,7 @@ print(json.dumps(transformation_dict, sort_keys=True, indent=2))
 print(calculate_dict_checksum(transformation_dict, hex=True))
 
 if len(sys.argv) > 2:
-    from seamless.core.protocol.json import json_dumps
+    from seamless.workflow.core.protocol.json import json_dumps
     content = json_dumps(transformation_dict, as_bytes=True) + b"\n"
     with open(sys.argv[2], "wb") as f:
         f.write(content)

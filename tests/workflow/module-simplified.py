@@ -17,7 +17,7 @@ print([m for m in sys.modules if m.find("testmodule") > -1])
 result = a + b
 '''
 
-from seamless.highlevel import Transformer, Cell, Context
+from seamlessansformer, Cell, Context
 ctx = Context()
 ctx.testmodule = Cell("plain").set({
     "type": "interpreted",

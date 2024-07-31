@@ -60,8 +60,8 @@ class SetCellBufferTask(Task):
             livegraph.cell_parsing_exceptions[cell] = exc
         return None
 
-from ...protocol.calculate_checksum import checksum_cache
-from ...protocol.evaluate import has_validated_evaluation, validate_text
+from seamless.buffer.cached_calculate_checksum import checksum_cache
+from seamless.buffer.evaluate import has_validated_evaluation, validate_text
 from ...status import StatusReasonEnum
-from ...cache.buffer_cache import buffer_cache
-from ...protocol.get_buffer import get_buffer
+from seamless.buffer.buffer_cache import buffer_cache
+from seamless.buffer.get_buffer import get_buffer

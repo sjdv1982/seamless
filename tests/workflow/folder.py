@@ -1,7 +1,7 @@
 import seamless
 seamless.delegate(False)
 
-from seamless.highlevel import Context, FolderCell
+from seamless.workflow import Context, FolderCell
 import numpy as np
 import shutil
 ctx = Context()

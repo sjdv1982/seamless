@@ -1,7 +1,6 @@
 
-from .. import subprocess_ as subprocess
+from seamless.util import subprocess_ as subprocess
 
-import numpy as np
 import os
 from copy import deepcopy
 import shutil

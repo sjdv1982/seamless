@@ -1,6 +1,6 @@
 import seamless
 seamless.delegate(level=2)
-from seamless.core import context, cell
+from seamless.workflow.core import context, cell
 
 ctx = context(toplevel=True)
 ctx.a = cell("mixed").set_checksum("31e9824583b780a3f5a3548ca3e94af0d6bd135c51523a6215c8dd76e99556a6")

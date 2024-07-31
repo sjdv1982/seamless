@@ -5,10 +5,10 @@ import os
 from aiohttp.client_exceptions import ServerDisconnectedError
     
 async def run_job(checksum, tf_dunder, *, fingertip, scratch):
-    from seamless.highlevel import Checksum
+    from seamless import Checksum
     from . import parse_checksum
     from seamless import calculate_checksum
-    from seamless.core.cache.buffer_cache import buffer_cache
+    from seamless.workflow.core.cache.buffer_cache import buffer_cache
     from .config import get_assistant, InProcessAssistant
 
     timeout = os.environ.get("SEAMLESS_ASSISTANT_JOB_TIMEOUT", None)

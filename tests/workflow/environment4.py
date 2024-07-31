@@ -4,7 +4,7 @@
 import seamless
 seamless.delegate(False)
 
-from seamless.highlevel import Context, Transformer
+from seamless.workflow import Context, Transformer
 ctx = Context()
 ctx.tf = Transformer()
 ctx.tf.code = "42"

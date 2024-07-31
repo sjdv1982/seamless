@@ -44,12 +44,12 @@ from .Resource import Resource
 from .SelfWrapper import SelfWrapper
 from .proxy import Proxy, CodeProxy, HeaderProxy
 from .pin import PinsWrapper
-from ..mime import language_to_mime
+from seamless.buffer.mime import language_to_mime
 from ..core.context import Context as CoreContext
 from . import parse_function_code
 from .SchemaWrapper import SchemaWrapper
 from .compiled import CompiledObjectDict
-from .Environment import Environment
+from seamless.Environment import Environment
 from .HelpMixin import HelpMixin
 
 default_pin = {
@@ -1170,7 +1170,7 @@ an assistant is tried first and local execution is a fallback."""
         - __compilers__: context-wide compiler definitions.
         - __languages__: context-wide language definition."""
         
-        from seamless.core.cache.transformation_cache import transformation_cache
+        from seamless.workflow.core.cache.transformation_cache import transformation_cache
         checksum = self.get_transformation_checksum()
         if checksum is None:
             return None
@@ -1265,7 +1265,7 @@ an assistant is tried first and local execution is a fallback."""
         If the database returns an error message, that is returned as string.
         """
 
-        from seamless.core.cache.transformation_cache import transformation_cache
+        from seamless.workflow.core.cache.transformation_cache import transformation_cache
         if self._parent() is not None:
             tcache = self._parent()._manager.cachemanager.transformation_cache
         else:

@@ -4,6 +4,7 @@
 # A job consists of a transformation together with all relevant entries
 #  from the semantic-to-syntactic checksum cache
 
+transformation_cache = None
 class HardCancelError(Exception):
     def __str__(self):
         return self.__class__.__name__
@@ -32,7 +33,8 @@ import traceback
 from copy import deepcopy
 
 
-from ...calculate_checksum import calculate_checksum as calculate_checksum_func
+from seamless.buffer.calculate_checksum import calculate_checksum
+from seamless.buffer.cached_calculate_checksum import cached_calculate_checksum as calculate_checksum_func
 
 # Keep transformations alive for 20 secs after the last ref has expired,
 #  but only if they have been running locally for at least 20 secs,
@@ -121,7 +123,7 @@ def incref_transformation(tf_checksum, tf_buffer, transformation):
             buffer_cache.incref(sem_checksum, persistent=(pinname == "__env__"))
 
 def tf_get_buffer(transformation):
-    from seamless.core.protocol.json import json_dumps
+    from seamless.workflow.core.protocol.json import json_dumps
     assert isinstance(transformation, dict)
     d = {}
     for k in transformation:
@@ -1318,17 +1320,17 @@ class TransformationCache:
 
 transformation_cache = TransformationCache()
 
-from .tempref import temprefmanager
-from .buffer_cache import buffer_cache
-from ..protocol.get_buffer import get_buffer, CacheMissError
-from ..protocol.deserialize import deserialize
-from ..protocol.calculate_checksum import calculate_checksum, calculate_checksum_sync
-from .database_client import database
+from seamless import CacheMissError
+from seamless.util.tempref import temprefmanager
+from seamless.buffer.buffer_cache import buffer_cache
+from seamless.buffer.get_buffer import get_buffer
+from seamless.buffer.deserialize import deserialize
+from seamless.buffer.database_client import database
 from ..transformation import (
     TransformationJob, SeamlessTransformationError, 
     SeamlessStreamTransformationError, RemoteJobError
 )
 from ..status import SeamlessInvalidValueError, SeamlessUndefinedError, StatusReasonEnum
 from ..transformer import Transformer
-from ..convert import try_convert
-from ..protocol.serialize import serialize
+from seamless.buffer.convert import try_convert
+from seamless.buffer.serialize import serialize

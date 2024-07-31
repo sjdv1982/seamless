@@ -2,7 +2,7 @@
 A demo stdlib library that shows how it is done
 """
 
-from seamless.highlevel import Context, Cell
+from seamless.workflow import Context, Cell
 import sys
 
 # 1: Setup context

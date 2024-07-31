@@ -1,7 +1,7 @@
 import seamless
 seamless.delegate(False)
 
-from seamless.core import context, cell, reactor, unilink
+from seamless.workflow.core import context, cell, reactor, unilink
 
 ctx = context(toplevel=True)
 ctx.cell1 = cell().set(1)

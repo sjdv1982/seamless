@@ -6,8 +6,8 @@ there is no such thing as NextFlow queue channels
 Work in progress!
 """
 
-from seamless.core.transformer import Transformer
-from seamless.highlevel import Context, Cell
+from seamless.workflow.core.transformer import Transformer
+from seamless.workflow import Context, Cell
 from seamless.highlevel.library import LibraryContainer
 from silk.Silk import Silk
 mylib = LibraryContainer("mylib")
@@ -52,7 +52,7 @@ def fromList(self, content):
 
 def _get_source(self, function):
     from seamless.highlevel import parse_function_code
-    from seamless.core.cached_compile import analyze_code
+    from seamless.workflow.core.cached_compile import analyze_code
     source, _, _ = parse_function_code(function)
     mode, func_name = analyze_code(source, "filter")
     if mode == "lambda":

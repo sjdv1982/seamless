@@ -192,7 +192,8 @@ class StructuredCell(SeamlessBase):
         return get_subpath(self._auth_value, self.hash_pattern, path)
 
     def set_buffer(self, buffer, checksum=None):
-        value = deserialize(buffer, checksum, "mixed")
+        from seamless import Buffer
+        value = Buffer(buffer, checksum=checksum).deserialize("mixed")
         self.set_no_inference(value)
 
     def set(self, value):
@@ -300,10 +301,11 @@ class StructuredCell(SeamlessBase):
         But there shouldn't be any risk of data loss (no async operations)
         and schemas are small and rarely updated
         """
+        from seamless import Buffer
         if self.schema._destroyed:
             return
-        buf = serialize(self._schema_value, "plain")
-        checksum = calculate_checksum(buf)
+        buf = Buffer(self._schema_value, "plain")
+        checksum = buf.checksum
         buffer_cache.cache_buffer(checksum, buf)
         buffer_cache.guarantee_buffer_info(checksum, "plain", sync_to_remote=False)
         if checksum is not None:
@@ -451,9 +453,6 @@ class PathDict(dict):
 
 from .cell import Cell
 from .unbound_context import UnboundManager
-from .protocol.serialize import _serialize as serialize
-from .protocol.deserialize import _deserialize as deserialize
-from .protocol.calculate_checksum import calculate_checksum_sync as calculate_checksum
 from .protocol.deep_structure import validate_hash_pattern
 from .protocol.expression import get_subpath_sync as get_subpath, set_subpath_sync as set_subpath
 from silk.mixed.Monitor import Monitor
@@ -464,4 +463,4 @@ from silk.policy import (
     default_policy as silk_default_policy,
     no_infer_policy as silk_no_infer_policy
 )
-from .cache.buffer_cache import buffer_cache
+from seamless.buffer.buffer_cache import buffer_cache

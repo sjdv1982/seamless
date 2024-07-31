@@ -1,8 +1,8 @@
 import seamless
 seamless.delegate(False)
 
-from seamless.core import macro_mode_on
-from seamless.core import context, cell, reactor, transformer
+from seamless.workflow.core import macro_mode_on
+from seamless.workflow.core import context, cell, reactor, transformer
 
 with open("cell-ipython.ipy", "w") as f:
     with open("cell-ipython-ORIGINAL.ipy", "r") as f2:

@@ -241,4 +241,4 @@ class OutputCellWrapper(CellWrapper):
         raise NotImplementedError ### TODO: support connections to the schema
 
 from ..Cell import Cell, celltypes
-from ...mime import get_mime, ext_to_mime, language_to_mime, language_to_ext
+from seamless.buffer.mime import get_mime, ext_to_mime, language_to_mime, language_to_ext

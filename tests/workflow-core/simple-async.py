@@ -1,7 +1,7 @@
 import seamless
 seamless.delegate(False)
 
-from seamless.core import context, cell, transformer, unilink
+from seamless.workflow.core import context, cell, transformer, unilink
 
 
 async def main():

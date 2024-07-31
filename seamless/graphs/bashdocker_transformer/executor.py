@@ -9,10 +9,10 @@ from silk import Silk
 from silk.mixed.get_form import get_form
 from requests.exceptions import ConnectionError
 from urllib3.exceptions import ProtocolError
-from seamless.core.transformation import SeamlessStreamTransformationError
-from seamless.core.mount_directory import write_to_directory
-from seamless.core.cache.buffer_remote import _read_folders
-from seamless.core.environment import validate_singularity, check_docker_power
+from seamless.workflow.core.transformation import SeamlessStreamTransformationError
+from seamless.workflow.core.mount_directory import write_to_directory
+from seamless.workflow.core.cache.buffer_remote import _read_folders
+from seamless.workflow.core.environment import validate_singularity, check_docker_power
 from seamless import subprocess_ as subprocess
 import signal
 

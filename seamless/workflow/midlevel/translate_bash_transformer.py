@@ -1,6 +1,6 @@
 import os, json
 from copy import deepcopy
-from seamless.core import cell, transformer, context
+from seamless.workflow.core import cell, transformer, context
 from ..metalevel.stdgraph import load as load_stdgraph
 
 

@@ -4,7 +4,7 @@ import weakref
 import numpy as np
 from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
 
-from .calculate_checksum import lrucache2
+from seamless.util import lrucache2
 
 from silk.mixed.io import serialize as mixed_serialize
 from silk.Silk import Silk
@@ -18,7 +18,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 def _serialize(value, celltype):
-    from seamless.core.protocol.json import json_dumps
+    from seamless.workflow.core.protocol.json import json_dumps
     if celltype == "str":
         if not isinstance(value, bool):
             value = str(value)
@@ -107,4 +107,4 @@ def serialize_sync(value, celltype, use_cache=True):
         serialize_cache[id_value, celltype] = buffer, value
     return buffer
 
-from ..cell import text_types
+from .cell import text_types

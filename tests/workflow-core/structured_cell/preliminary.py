@@ -1,10 +1,10 @@
 import seamless
 seamless.delegate(False)
 
-from seamless.core import (
+from seamless.workflow.core import (
     context, cell, transformer, macro_mode_on
 )
-from seamless.core.structured_cell import StructuredCell
+from seamless.workflow.core.structured_cell import StructuredCell
 from pprint import pprint
 import time
 

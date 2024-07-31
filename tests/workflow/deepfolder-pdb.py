@@ -3,7 +3,7 @@ seamless.fair.add_server("https://fair.rpbs.univ-paris-diderot.fr")
 seamless.delegate(level=1)
 seamless.config.add_buffer_server("https://buffer.rpbs.univ-paris-diderot.fr")
 
-from seamless.highlevel import Context, Cell, DeepFolderCell, FolderCell
+from seamless.workflow import Context, Cell, DeepFolderCell, FolderCell
 import shutil
 shutil.rmtree("/tmp/pdb_folder", ignore_errors=True)
 ctx = Context()

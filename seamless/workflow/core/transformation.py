@@ -1065,18 +1065,17 @@ from silk import Silk, Scalar
 from .execute import execute
 from .injector import transformer_injector as injector
 from .build_module import build_all_modules
-from ..compiler import compilers as default_compilers, languages as default_languages
-from .protocol.get_buffer import get_buffer
-from .protocol.deserialize import deserialize, deserialize_sync
-from .protocol.calculate_checksum import calculate_checksum, calculate_checksum_func
-from .protocol.evaluate import validate_evaluation_subcelltype
-from .cache import CacheMissError
-from .cache.buffer_cache import buffer_cache
+from seamless.compiler import compilers as default_compilers, languages as default_languages
+from seamless.buffer import get_buffer
+from seamless.buffer.deserialize import deserialize, deserialize_sync
+from seamless.buffer.calculate_checksum import calculate_checksum
+from seamless.buffer.evaluate import validate_evaluation_subcelltype
+from seamless import CacheMissError
+from seamless.buffer.buffer_cache import buffer_cache
 from .cache.transformation_cache import transformation_cache, syntactic_is_semantic, syntactic_to_semantic
 from .status import SeamlessInvalidValueError
-from .environment import validate_environment
-from ..subprocess_ import kill_children
-from .. import run_transformation_async
+from seamless.util.environment import validate_environment
+from seamless.util.subprocess_ import kill_children
 from seamless import __version__
 
 execution_metadata0 = {}
@@ -1109,7 +1108,7 @@ def get_global_info(global_info=None, force=False):
         info = subprocess.getoutput("conda env export")
         info = "\n".join([l for l in info.splitlines() if not l.startswith("name:")])
         info = info.encode()
-        conda_env_checksum = calculate_checksum_func(info, hex=True)
+        conda_env_checksum = Checksum(info).value
         execution_metadata0["Conda environment checksum"] = conda_env_checksum
         buffer_remote.write_buffer(conda_env_checksum, info)
         database.set_buffer_length(conda_env_checksum, len(info))
@@ -1152,5 +1151,7 @@ def get_global_info(global_info=None, force=False):
     _got_global_info = True
     return execution_metadata0.copy()
 
-from .cache import buffer_remote
-from .cache.database_client import database
+from seamless.buffer import buffer_remote
+from seamless.buffer.database_client import database
+from seamless.direct import run_transformation_async
+

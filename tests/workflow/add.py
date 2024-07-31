@@ -1,4 +1,4 @@
-from seamless.highlevel import Context
+from seamless.workflow import Context
 ctx = Context()
 
 def add(a, b):

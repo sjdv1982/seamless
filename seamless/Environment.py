@@ -8,9 +8,9 @@ import json
 
 yaml = ruamel.yaml.YAML(typ='safe')
 
-from ..core.protocol.cson import cson2json
-from ..core.environment import validate_conda_environment
-from ..compiler import languages_cson as languages_default, compilers_cson as compilers_default
+from seamless.util import cson2json
+from seamless.util.environment import validate_conda_environment
+from seamless.compiler import languages_cson as languages_default, compilers_cson as compilers_default
 
 class Environment:
     _props = ["_conda", "_conda_env_name", "_which", "_powers", "_docker"]

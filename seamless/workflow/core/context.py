@@ -62,15 +62,15 @@ name: str
 toplevel: bool
     whether the context is top-level or not
 
-manager: seamless.core.manager.Manager or None   
+manager: seamless.workflow.core.manager.Manager or None   
     Managers can be shared between contexts, which can be practical for various caches
     If None, create a new manager
 
 compilers: dict or None
-    Compiler specification. If None, workers will use seamless.core.compiler.compilers
+    Compiler specification. If None, workers will use seamless.workflow.core.compiler.compilers
 
 languages: dict or None
-    Languages specification. If None, workers will use seamless.core.compiler.languages
+    Languages specification. If None, workers will use seamless.workflow.core.compiler.languages
 """
         from seamless.config import check_delegation
         global Macro
@@ -279,7 +279,7 @@ languages: dict or None
         Returns a dictionary containing the status of all children that are not OK.
         If all children are OK, returns OK
         """
-        from seamless.core.protocol.json import json_dumps
+        from seamless.workflow.core.protocol.json import json_dumps
         from .status import format_context_status
         status = self._get_status()
         statustxt = format_context_status(status)

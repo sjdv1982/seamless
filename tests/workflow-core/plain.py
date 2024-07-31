@@ -2,8 +2,8 @@ import json
 import seamless
 seamless.delegate(False)
 
-from seamless.core import macro_mode_on
-from seamless.core import context, cell, transformer,  StructuredCell
+from seamless.workflow.core import macro_mode_on
+from seamless.workflow.core import context, cell, transformer,  StructuredCell
 import os
 os.makedirs("/tmp/mount-test", exist_ok=True)
 with macro_mode_on():

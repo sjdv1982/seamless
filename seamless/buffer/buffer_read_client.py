@@ -2,9 +2,11 @@ import sys
 import requests
 from requests.exceptions import ConnectionError, ReadTimeout
 
-from seamless.util import parse_checksum, is_forked
+from seamless import Buffer
+from seamless.util import parse_checksum
 
 def has(session, url, checksum):
+    from seamless.workflow.util import is_forked
     sess = session
     if is_forked():
         sess = requests
@@ -29,6 +31,7 @@ def has(session, url, checksum):
         return
 
 def get(session, url, checksum):
+    from seamless.workflow.util import is_forked
     sess = session
     if is_forked():
         sess = requests
@@ -45,8 +48,7 @@ def get(session, url, checksum):
                 for chunk in response.iter_content(100000):
                     result.append(chunk)
             buf = b"".join(result)
-            from seamless import calculate_checksum
-            buf_checksum = calculate_checksum(buf, hex=True)
+            buf_checksum = Buffer(buf).get_checksum().value
             if buf_checksum != checksum:
                 if buf_checksum != curr_buf_checksum:
                     curr_buf_checksum = buf_checksum

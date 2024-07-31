@@ -3,7 +3,7 @@ import asyncio
 import functools
 from concurrent.futures import ThreadPoolExecutor
 import seamless
-from seamless.highlevel import Context, Cell
+from seamless.workflow import Context, Cell
 from seamless.metalevel.bind_status_graph import bind_status_context
 
 seamless.delegate(False)

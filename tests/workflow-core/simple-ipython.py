@@ -1,7 +1,7 @@
 import seamless
 seamless.delegate(False)
 
-from seamless.core import context, cell, transformer, unilink
+from seamless.workflow.core import context, cell, transformer, unilink
 
 ctx = context(toplevel=True)
 ctx.cell1 = cell("int").set(1)

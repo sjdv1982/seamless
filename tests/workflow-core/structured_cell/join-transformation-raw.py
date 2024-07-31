@@ -7,7 +7,7 @@ import seamless
 seamless.delegate(False)
 
 from seamless import Checksum
-from seamless.core import context, cell, StructuredCell
+from seamless.workflow.core import context, cell, StructuredCell
 
 ctx = None
 hash_pattern = {"*": "#"}
@@ -55,8 +55,8 @@ except Exception:
 
 ctx.compute()
 
-from seamless.core.manager.tasks.structured_cell import build_join_transformation
-from seamless.core.cache.buffer_cache import buffer_cache
+from seamless.workflow.core.manager.tasks.structured_cell import build_join_transformation
+from seamless.workflow.core.cache.buffer_cache import buffer_cache
 tf_checksum = build_join_transformation(ctx.sc)
 tfd = json.loads(buffer_cache.get_buffer(tf_checksum).decode())
 pprint(tfd)

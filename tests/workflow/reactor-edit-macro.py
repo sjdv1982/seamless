@@ -1,7 +1,7 @@
 import seamless
 seamless.delegate(False)
 
-from seamless.highlevel import Context, Macro, Cell
+from seamless.workflow import Context, Macro, Cell
 ctx = Context()
 m = ctx.m = Macro()
 m.pins.x = {"io": "input", "celltype": "int"}

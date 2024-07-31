@@ -14,29 +14,6 @@ class Wrapper:
     def set(self, value):
         pass
 
-def parse_checksum(checksum, as_bytes=False):
-    """Parses checksum and returns it as string
-If as_bytes is True, return it as bytes instead."""
-    from seamless.highlevel import Checksum
-    if isinstance(checksum, Checksum):
-        checksum = checksum.bytes()
-    if isinstance(checksum, bytes):
-        checksum = checksum.hex()
-    if isinstance(checksum, str):
-        checksum = bytes.fromhex(checksum)
-
-    if isinstance(checksum, bytes):
-        if len(checksum) != 32:
-            raise ValueError(f"Incorrect length: {len(checksum)}, must be 32")
-        if as_bytes:
-            return checksum
-        else:
-            return checksum.hex()
-    
-    if checksum is None:
-        return
-    raise TypeError(type(checksum))
-
 def as_tuple(v):
     if isinstance(v, str):
         return (v,)
@@ -132,9 +109,6 @@ def set_unforked_process():
 def is_forked():
     if _unforked_process_name:
         if current_process().name != _unforked_process_name:
-            return True
-    elif parent_process is None:  # Python 3.7
-        if current_process().name != "MainProcess":  # forked process
             return True
     else:
         if parent_process() is not None:  # forked process

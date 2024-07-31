@@ -8,7 +8,7 @@ import traceback
 import seamless
 seamless.delegate(False)
 
-from seamless.highlevel import Context
+from seamless.workflow import Context
 
 ctx = Context()
 
@@ -95,7 +95,7 @@ print('/Nothing printed')
 # remove transformation from cache
 tf_cache = ctx._manager.cachemanager.transformation_cache
 result_cs, _ = tf_cache.transformation_results.pop(bytes.fromhex(cs))
-from seamless.core.cache.buffer_cache import buffer_cache
+from seamless.workflow.core.cache.buffer_cache import buffer_cache
 buffer_cache.decref(result_cs)
 
 # re-run

@@ -10,6 +10,8 @@ import orjson
 import numpy as np
 import builtins
 
+from seamless import Buffer
+
 def validate_text(text, celltype, code_filename):
     try:
         if text is None:
@@ -260,7 +262,7 @@ def _convert_reformat(checksum, buffer, source_celltype, target_celltype):
                             return checksum
                         except Exception:
                             target_buffer = serialize_sync(textvalue, "str")
-                            target_checksum = calculate_checksum_sync(target_buffer)
+                            target_checksum = Buffer(target_buffer).get_checksum()
                             conv_attr = ("text2str", "str2text")
                             buffer_cache.update_buffer_info(checksum, conv_attr[0], target_checksum, sync_remote=True)
                             buffer_cache.update_buffer_info(target_checksum, conv_attr[1], checksum, sync_remote=False)
@@ -315,7 +317,7 @@ def _convert_reformat(checksum, buffer, source_celltype, target_celltype):
     if target_buffer is None:
         target_buffer = serialize_sync(target_value, target_celltype)
     if target_checksum is None:
-        target_checksum = calculate_checksum_sync(target_buffer)
+        target_checksum = Buffer(target_buffer).get_checksum()
     buffer_cache.cache_buffer(target_checksum, target_buffer)
     if conv_attr is not None:
         buffer_cache.update_buffer_info(checksum, conv_attr[0], target_checksum, sync_remote=True)
@@ -346,7 +348,7 @@ def _convert_possible(checksum, buffer, source_celltype, target_celltype):
         raise SeamlessConversionError(full_msg) from None
 
     target_buffer = serialize_sync(target_value, target_celltype)
-    target_checksum = calculate_checksum_sync(target_buffer)
+    target_checksum = Buffer(target_buffer).get_checksum()
     buffer_cache.cache_buffer(target_checksum, target_buffer)
     buffer_cache.guarantee_buffer_info(target_checksum, target_celltype, sync_to_remote=True)
     return target_checksum
@@ -369,9 +371,9 @@ from silk.mixed import MAGIC_NUMPY, MAGIC_SEAMLESS_MIXED
 import ruamel.yaml
 yaml = ruamel.yaml.YAML(typ='safe')
 
-from .protocol.cson import cson2json
+from seamless.util.cson import cson2json
 
-from ..ipython import ipython2python
+from seamless.util.ipython import ipython2python
 
 from .conversion import (
     conversion_trivial,
@@ -385,8 +387,7 @@ from .conversion import (
     SeamlessConversionError
 )
 from .buffer_info import convert_from_buffer_info
-from .cache.buffer_cache import buffer_cache
-from .protocol.calculate_checksum import calculate_checksum, calculate_checksum_sync
-from .protocol.deserialize import deserialize_sync
-from .protocol.serialize import serialize_sync
-from .protocol.get_buffer import get_buffer
+from .buffer_cache import buffer_cache
+from .deserialize import deserialize_sync
+from .serialize import serialize_sync
+from .get_buffer import get_buffer

@@ -19,7 +19,7 @@ from silk.mixed import MixedBase
 from silk import Silk
 from silk.validation import _allowed_types
 from ..core.lambdacode import lambdacode
-from ..core.cached_compile import cached_compile
+from seamless.buffer.cached_compile import cached_compile
 
 ConstantTypes = _allowed_types + (Silk, MixedBase, tuple)
 

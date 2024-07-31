@@ -3,8 +3,8 @@
 
 import seamless
 
-import seamless.core.execute
-seamless.core.execute.DIRECT_PRINT = True
+import seamless.workflow.core.execute
+seamless.workflow.core.execute.DIRECT_PRINT = True
 
 if seamless.delegate(level=3):
     exit(1)
@@ -17,7 +17,7 @@ logging.basicConfig()
 logging.getLogger("seamless").setLevel(logging.DEBUG)
 """
 
-from seamless.highlevel import Context, Cell, Macro
+from seamless.workflow import Context, Cell, Macro
 
 sctx = Context()
 sctx.inp = Cell("mixed")
@@ -79,7 +79,7 @@ m.cs_data = ctx.cs_data
 m.graph = ctx.graph
 m.pins.result = {"io": "output", "celltype": "mixed", "hash_pattern": {"!": "#"}}
 def map_list(ctx, cs_data, graph):
-    from seamless.core import Cell as CoreCell
+    from seamless.workflow.core import Cell as CoreCell
     print("CS-DATA", cs_data)
     ctx.result = cell("mixed", hash_pattern = {"!": "#"})
 

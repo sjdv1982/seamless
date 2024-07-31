@@ -197,6 +197,6 @@ def run_transformation(transformation_dict, *, undo, fingertip=False, scratch=Fa
 
 
 from seamless.cmd.message import message as msg
-from seamless.highlevel import Checksum
+from seamless import Checksum
 from seamless.metalevel.unbashify import unbashify
 from seamless.config import database

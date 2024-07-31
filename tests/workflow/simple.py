@@ -1,7 +1,7 @@
 import json
 import os
 import seamless
-from seamless.highlevel import Context
+from seamless.workflow import Context
 
 if "DELEGATE" in os.environ:
     has_err = seamless.delegate()
@@ -9,7 +9,7 @@ if "DELEGATE" in os.environ:
         exit(1)
 else:
     seamless.delegate(False)
-    from seamless.core.transformation import get_global_info
+    from seamless.workflow.core.transformation import get_global_info
     get_global_info()  # avoid timing errors
 
 # 0

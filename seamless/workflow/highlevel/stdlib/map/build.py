@@ -48,7 +48,7 @@ def build_codeblock(module):
     return result
 
 if __name__ == "__main__":
-    from seamless.highlevel import Context, Cell
+    from seamless.workflow import Context, Cell
     import lib
     import constructors.map_list_N
     import constructors.map_list

@@ -1,4 +1,4 @@
-from seamless.highlevel import Context, Cell, Module
+from seamless.workflow import Context, Cell, Module
 import traceback
 
 ctx = Context()

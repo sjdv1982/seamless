@@ -3,12 +3,18 @@ import asyncio
 from weakref import WeakSet
 from contextlib import contextmanager
 
+from seamless.util.tempref import temprefmanager
+
 _toplevel_registered = WeakSet()
 _toplevel_managers = WeakSet()
 _toplevel_registrable = set()
 _toplevel_managers_temp = set()
 
 mountmanager = None # import later
+
+transformation_cache = None # import later
+
+buffer_cache = None # import later
 
 def register_toplevel(ctx):
     global mountmanager
@@ -28,8 +34,7 @@ def unregister_toplevel(ctx):
     _toplevel_managers_temp.discard(ctx._get_manager())
     _toplevel_registered.discard(ctx)
 
-def _destroy_toplevels():
-    from .cache.tempref import temprefmanager
+def _destroy_toplevels():    
     for manager in list(_toplevel_managers):
         manager.destroy(from_del=True)
         if not isinstance(manager, UnboundManager):
@@ -40,7 +45,8 @@ def _destroy_toplevels():
         manager = ctx._get_manager()
         if manager is not None:
             manager.destroy(from_del=True)
-    transformation_cache.destroy()
+    if transformation_cache is not None:
+        transformation_cache.destroy()
     if mountmanager is not None:
         mountmanager.clear()
     try:
@@ -53,7 +59,8 @@ def _destroy_toplevels():
             pass
         dummy_future = asyncio.ensure_future(dummy())
         asyncio.get_event_loop().run_until_complete(dummy_future)
-    buffer_cache.destroy()
+    if buffer_cache is not None:
+        buffer_cache.destroy()
 
 atexit.register(_destroy_toplevels)
 
@@ -151,8 +158,7 @@ def macro_mode_on(macro=None):
         _toplevel_registrable.clear()
         _macro_mode = False
 
-
 from .cache.transformation_cache import transformation_cache
 from .mount import mountmanager
 from .unbound_context import UnboundContext, UnboundManager
-from .cache.buffer_cache import buffer_cache
+from seamless.buffer.buffer_cache import buffer_cache

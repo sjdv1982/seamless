@@ -4,7 +4,7 @@ seamless.load_vault("./reuse-vault")
 seamless.delegate(level=0, force_database=True)
 seamless.config.block_local()
 
-from seamless.highlevel import Context, Cell
+from seamless.workflow import Context, Cell
 
 ctx = Context()
 ctx.transform = lambda a,b: a + b

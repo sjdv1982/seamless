@@ -322,7 +322,7 @@ class Transformation:
         The database is contacted in order to contest the result.
         If the database returns an error message, that is returned as string.
         """
-        from seamless.core.cache.transformation_cache import transformation_cache
+        from seamless.workflow.core.cache.transformation_cache import transformation_cache
         result_checksum = self.checksum
         if result_checksum is None:
             raise RuntimeError("Not a completed transformation")
@@ -335,8 +335,8 @@ class Transformation:
 
 
 def transformation_from_dict(transformation_dict, result_celltype, upstream_dependencies = None) -> Transformation:    
-    from seamless.core.direct.run import run_transformation_dict, run_transformation_dict_async, prepare_transformation_dict
-    from seamless.core.cache.transformation_cache import tf_get_buffer
+    from seamless.workflow.core.direct.run import run_transformation_dict, run_transformation_dict_async, prepare_transformation_dict
+    from seamless.workflow.core.cache.transformation_cache import tf_get_buffer
     from seamless import calculate_checksum
 
     transformation_dict_original = transformation_dict
@@ -350,7 +350,7 @@ def transformation_from_dict(transformation_dict, result_celltype, upstream_depe
         transformation_dict["__meta__"] = {}
 
     def resolver_sync(transformation_obj):
-        from seamless.core.cache.buffer_cache import buffer_cache
+        from seamless.workflow.core.cache.buffer_cache import buffer_cache
         prepare_transformation_dict(transformation_dict)
         transformation_buffer = tf_get_buffer(transformation_dict)
         transformation = calculate_checksum(transformation_buffer)

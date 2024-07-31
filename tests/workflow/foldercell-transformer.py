@@ -3,7 +3,7 @@ seamless.delegate(False)
 
 import os
 import numpy as np
-from seamless.highlevel import Context, FolderCell
+from seamless.workflow import Context, FolderCell
 os.system("""
 rm -rf /tmp/foldercell
 mkdir /tmp/foldercell

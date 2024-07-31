@@ -8,7 +8,7 @@ def func(x,y):
     return x * y + a
 """
 
-from seamless.highlevel import Context, Module
+from seamless.workflow import Context, Module
 
 ctx = Context()
 ctx.mod = Module()

@@ -1,10 +1,10 @@
 def map_list_N(ctx, graph, inp, has_uniform, elision):
     #print("map_list_N", inp)
-    from seamless.core import Cell as CoreCell
-    from seamless.core import cell
-    from seamless.core.structured_cell import StructuredCell
-    from seamless.core.HighLevelContext import HighLevelContext
-    from seamless.core.unbound_context import UnboundContext
+    from seamless.workflow.core import Cell as CoreCell
+    from seamless.workflow.core import cell
+    from seamless.workflow.core.structured_cell import StructuredCell
+    from seamless.workflow.core.HighLevelContext import HighLevelContext
+    from seamless.workflow.core.unbound_context import UnboundContext
     
     first_k = list(inp.keys())[0]
     length = len(inp[first_k])
@@ -97,7 +97,7 @@ def map_list_N_nested(
   ctx, elision, elision_chunksize, graph, inp,
   *, lib_module_dict, lib_codeblock, lib, has_uniform
 ):
-    from seamless.core import cell, macro, context, path, transformer
+    from seamless.workflow.core import cell, macro, context, path, transformer
     first_k = list(inp.keys())[0]
     length = len(inp[first_k])
     #print("NEST", length, inp[first_k][0])

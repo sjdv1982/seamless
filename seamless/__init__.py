@@ -16,11 +16,11 @@ class CacheMissError(Exception):
     pass
 
 from silk import Silk
+from .Checksum import Checksum
+from .Buffer import Buffer
 from . import config
 from . import multi
 from seamless.config import delegate
-from seamless.Checksum import Checksum
-from seamless.Buffer import Buffer
 from seamless.direct import transformer
 from seamless.util import fair
 __all__ = [

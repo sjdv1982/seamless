@@ -1,9 +1,9 @@
 import seamless
 seamless.delegate(False)
 
-from seamless.highlevel import Context, DeepCell, Cell
-from seamless.core.protocol.serialize import serialize_sync as serialize
-from seamless.core.cache.buffer_cache import buffer_cache
+from seamless.workflow import Context, DeepCell, Cell
+from seamless.workflow.core.protocol.serialize import serialize_sync as serialize
+from seamless.workflow.core.cache.buffer_cache import buffer_cache
 from seamless import calculate_checksum
 import json
 import requests

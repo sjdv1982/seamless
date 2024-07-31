@@ -1,8 +1,8 @@
 import seamless
 seamless.delegate(False)
 
-from seamless.core import macro_mode_on
-from seamless.core import context, cell, transformer, unilink
+from seamless.workflow.core import macro_mode_on
+from seamless.workflow.core import context, cell, transformer, unilink
 import sys
 
 code = "print('TEST'); raise Exception(a)"

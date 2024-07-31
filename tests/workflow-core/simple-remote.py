@@ -1,5 +1,5 @@
 import seamless
-from seamless.core import context, cell, transformer, unilink
+from seamless.workflow.core import context, cell, transformer, unilink
 import os
 
 seamless.delegate()

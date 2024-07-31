@@ -1,6 +1,6 @@
 import seamless
 seamless.delegate(False)
-from seamless.core import context, cell
+from seamless.workflow.core import context, cell
 
 ctx = context(toplevel=True)
 seamless.vault.load_vault("./reuse-vault")

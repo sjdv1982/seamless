@@ -1,6 +1,6 @@
 import asyncio
 from . import Task
-from ...cached_compile import cached_compile
+from seamless.buffer.cached_compile import cached_compile
 
 import logging
 logger = logging.getLogger(__name__)
@@ -254,7 +254,7 @@ from .deserialize_buffer import DeserializeBufferTask
 from .serialize_buffer import SerializeToBufferTask
 from .checksum import CalculateChecksumTask
 from .get_buffer import GetBufferTask
-from ...cache.buffer_cache import buffer_cache
-from ...protocol.evaluate import validate_evaluation_subcelltype
+from seamless.buffer.buffer_cache import buffer_cache
+from seamless.buffer.evaluate import validate_evaluation_subcelltype
 from ...build_module import build_all_modules
-from ....compiler import compilers as default_compilers, languages as default_languages
+from seamless.compiler import compilers as default_compilers, languages as default_languages

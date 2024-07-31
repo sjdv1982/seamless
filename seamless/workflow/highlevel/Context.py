@@ -79,7 +79,7 @@ from .assign import assign
 from .proxy import Pull
 from .. import copying
 from ..vault import save_vault, load_vault
-from . import Checksum
+from seamless import Checksum
 
 Graph = namedtuple("Graph", ("nodes", "connections", "params", "lib"))
 
@@ -189,7 +189,7 @@ class Context(Base, HelpMixin):
     or by changing celltypes) marks the context as "untranslated".
     Untranslated graphs can be translated explicitly, or implicitly
     (with the .compute method).
-    Upon translation, wraps a a low-level context object (seamless.core.context).
+    Upon translation, wraps a a low-level context object (seamless.workflow.core.context).
     This context does all the work and holds all the data. Most of the methods
     and properties of the Seamless high-level classes (Cell, Transformer, etc.)
     are wrappers that interact with their low-level counterparts. Seamless
@@ -529,7 +529,7 @@ class Context(Base, HelpMixin):
     def translate(self, force: bool = False):
         """(Re-)translate the graph.
         The graph is translated to a low-level, computable form
-        (seamless.core). After translation, return immediately,
+        (seamless.workflow.core). After translation, return immediately,
         although computation will start automatically.
 
         If force=True, translation will happen even though no
@@ -551,7 +551,7 @@ class Context(Base, HelpMixin):
     async def translation(self, force: bool = False):
         """(Re-)translate the graph.
         The graph is translated to a low-level, computable form
-        (seamless.core). After translation, return immediately,
+        (seamless.workflow.core). After translation, return immediately,
         although computation will start automatically.
 
         If force=True, translation will happen even though no
@@ -986,7 +986,7 @@ These modifications have been CANCELED.""" % (
           It is tabulated which nodes of the previous runtime graph are no
           longer there, but this matters only for debugging-mode transformers.
 
-        - The low-level representation (seamless.core.context.Context) is
+        - The low-level representation (seamless.workflow.core.context.Context) is
         stored in ._gen_context. Any previous representation is first
         completely destroyed. This must succeed.
 
@@ -1005,7 +1005,7 @@ These modifications have been CANCELED.""" % (
         - Macro mode terminates. There is now a "bound" context, that is now
         assigned to ._gen_context. This also receives a weakref to self, i.e. the
         high level context. This weakref is necessary if a (low-level) macro
-        adds an embedded high-level context (seamless.core.HighLevelContext)
+        adds an embedded high-level context (seamless.workflow.core.HighLevelContext)
         object. This embedded high-level context must link up with self to
         integrate itself temporarily into the children and (runtime) node graph.
 
@@ -1625,9 +1625,9 @@ from .SelfWrapper import SelfWrapper, ChildrenWrapper
 from .pin import PinWrapper
 from .library.libinstance import LibInstance
 from .PollingObserver import PollingObserver
-from .Environment import ContextEnvironment
+from seamless.Environment import ContextEnvironment
 
-from ..core.cache.buffer_cache import buffer_cache
+from seamless.buffer.buffer_cache import buffer_cache
 from .SubContext import SubContext
 from ..core.manager import Manager
 from .library import Library

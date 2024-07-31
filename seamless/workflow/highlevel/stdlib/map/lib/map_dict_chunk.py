@@ -10,10 +10,10 @@ def map_dict_chunk(
     lib_module_dict,
 ):
     # print("map_dict_chunk", inp)
-    from seamless.core import Cell as CoreCell
-    from seamless.core import cell, context, transformer
-    from seamless.core.structured_cell import StructuredCell
-    from seamless.core.HighLevelContext import HighLevelContext
+    from seamless.workflow.core import Cell as CoreCell
+    from seamless.workflow.core import cell, context, transformer
+    from seamless.workflow.core.structured_cell import StructuredCell
+    from seamless.workflow.core.HighLevelContext import HighLevelContext
     import math
 
     pseudo_connections = []
@@ -203,7 +203,7 @@ def map_dict_chunk_nested(
     has_uniform,
     merge_method
 ):
-    from seamless.core import cell, macro, context, path, transformer
+    from seamless.workflow.core import cell, macro, context, path, transformer
 
     assert len(inp) == len(keyorder)
     length = len(inp)

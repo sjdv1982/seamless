@@ -1,5 +1,5 @@
 import time
-from seamless.highlevel import Context
+from seamless.workflow import Context
 
 import seamless
 if seamless.delegate(level=3):

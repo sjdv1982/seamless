@@ -10,7 +10,7 @@ import seamless
 seamless.delegate(False)
 
 from silk import Silk, ValidationError
-from seamless.core import context, cell, StructuredCell
+from seamless.workflow.core import context, cell, StructuredCell
 
 ctx = None
 hash_pattern = {"*": "#"}

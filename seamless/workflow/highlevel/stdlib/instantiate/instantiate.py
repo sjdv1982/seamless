@@ -21,7 +21,7 @@ exits: same as "entries", but the keys are in "exports",
     - ...
 """
 
-from seamless.highlevel import Context, Cell
+from seamless.workflow import Context, Cell
 import sys
 
 # 1: Setup context

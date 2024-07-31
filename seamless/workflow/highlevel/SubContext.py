@@ -28,7 +28,7 @@ from typing import *
 import inspect
 from copy import deepcopy
 
-from seamless.core.context import StatusReport
+from seamless.workflow.core.context import StatusReport
 from .Base import Base
 from .HelpMixin import HelpMixin
 from .assign import assign

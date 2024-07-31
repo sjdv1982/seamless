@@ -1,5 +1,5 @@
 import os, json
-from seamless.core import cell, transformer, context
+from seamless.workflow.core import cell, transformer, context
 from ..metalevel.stdgraph import load as load_stdgraph
 
 def _init_from_graph(ctf, sctx):

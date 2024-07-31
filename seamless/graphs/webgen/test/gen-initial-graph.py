@@ -1,4 +1,4 @@
-from seamless.highlevel import Context, Cell, Transformer
+from seamless.workflow import Context, Cell, Transformer
 
 ctx = Context()
 

@@ -5,7 +5,7 @@ Library version of high-in-low4
 import seamless
 seamless.delegate(False)
 
-from seamless.highlevel import Context, Cell, Macro
+from seamless.workflow import Context, Cell, Macro
 from seamless.highlevel.library import LibraryContainer
 
 mylib = LibraryContainer("mylib")
@@ -23,7 +23,7 @@ def constructor(ctx, libctx, context_graph, data, result):
     m.graph = context_graph
     m.pins.result = {"io": "output", "celltype": "mixed", "hash_pattern": {"!": "#"}}
     def map_list(ctx, cs_data, graph):
-        from seamless.core import Cell as CoreCell
+        from seamless.workflow.core import Cell as CoreCell
         print("CS-DATA", cs_data)
         pseudo_connections = []
         ctx.result = cell("mixed", hash_pattern = {"!": "#"})

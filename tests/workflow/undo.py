@@ -9,10 +9,10 @@ else:
     has_err = seamless.delegate(level=3)
     if has_err:
         exit(1)
-    from seamless.core.transformation import get_global_info
+    from seamless.workflow.core.transformation import get_global_info
     get_global_info()  # avoid timing errors
 
-from seamless.highlevel import Context
+from seamless.workflow import Context
 
 def func(a,b,c):
     import time

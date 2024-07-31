@@ -1,6 +1,6 @@
 import os
 from ..calculate_checksum import calculate_checksum
-from seamless.core.protocol.json import json_dumps
+from seamless.workflow.core.protocol.json import json_dumps
 from ..core.cache.buffer_remote import write_buffer as remote_write_buffer, can_read_buffer as remote_can_read
 from ..core.cache.buffer_cache import buffer_cache
 from ..core.cache.database_client import database

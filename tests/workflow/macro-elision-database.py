@@ -6,7 +6,7 @@ if err:
 else:
     print("Database found")
 
-from seamless.highlevel import Context, Macro
+from seamless.workflow import Context, Macro
 ctx = Context()
 m = ctx.m = Macro()
 m.pins.a = {"io": "input", "celltype": "int"}

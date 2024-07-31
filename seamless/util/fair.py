@@ -1,7 +1,7 @@
 import json, os
 import sys
 import urllib.parse
-from seamless.download_buffer import download_buffer_sync, session
+from seamless.buffer.download_buffer import download_buffer_sync, session
 from requests.exceptions import ConnectionError, ReadTimeout
 
 _servers = []
@@ -31,7 +31,7 @@ def _classify(checksum:str, classification: str):
     _classification[classification].add(checksum)
 
 def _download(checksum:str, template, *, checksum_content:bool, verbose:bool=False):
-    from seamless.core.protocol.get_buffer import get_buffer as get_buffer0
+    from seamless.workflow.core.protocol.get_buffer import get_buffer as get_buffer0
     if checksum is None:
         return None
     if isinstance(checksum, bytes):
@@ -90,7 +90,7 @@ def keyorder(checksum:str, verbose:bool=False):
     return _download(checksum, "machine/keyorder/", checksum_content=False, verbose=verbose)
 
 def access(checksum:str, celltype:str, *, verbose:bool=False):
-    from seamless.core.protocol.get_buffer import get_buffer as get_buffer0
+    from seamless.workflow.core.protocol.get_buffer import get_buffer as get_buffer0
     result = get_buffer0(checksum, remote=False)
     if result is not None:
         return result

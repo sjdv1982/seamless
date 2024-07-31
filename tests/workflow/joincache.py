@@ -1,7 +1,7 @@
 # Disable LRU caches
-from seamless.core.protocol.calculate_checksum import calculate_checksum_cache, checksum_cache
-from seamless.core.protocol.deserialize import deserialize_cache
-from seamless.core.protocol.serialize import serialize_cache
+from seamless.workflow.core.protocol.calculate_checksum import calculate_checksum_cache, checksum_cache
+from seamless.workflow.core.protocol.deserialize import deserialize_cache
+from seamless.workflow.core.protocol.serialize import serialize_cache
 calculate_checksum_cache.disable()
 checksum_cache.disable()
 deserialize_cache.disable()
@@ -10,11 +10,11 @@ serialize_cache.disable()
 import seamless
 seamless.delegate(False)
 
-from seamless.core.cache.buffer_cache import buffer_cache
-from seamless.core.cache import CacheMissError
+from seamless.workflow.core.cache.buffer_cache import buffer_cache
+from seamless.workflow.core.cache import CacheMissError
 
-from seamless.highlevel import Context, Cell
-from seamless.core.manager.tasks.evaluate_expression import SerializeToBufferTask
+from seamless.workflow import Context, Cell
+from seamless.workflow.core.manager.tasks.evaluate_expression import SerializeToBufferTask
 
 old_run = SerializeToBufferTask._run
 async def _run(self):

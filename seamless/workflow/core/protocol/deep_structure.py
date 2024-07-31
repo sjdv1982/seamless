@@ -485,7 +485,7 @@ async def value_to_deep_structure(value, hash_pattern, *, cache_buffers=True, sy
             obj_buffer = await serialize_raw_async(obj)
         else:
             obj_buffer = await serialize(obj, "mixed")
-        obj_checksum = await calculate_checksum(obj_buffer)
+        obj_checksum = await cached_calculate_checksum(obj_buffer)
         new_checksums.add(obj_checksum.hex())
         if cache_buffers:
             buffer_cache.cache_buffer(obj_checksum, obj_buffer)
@@ -528,7 +528,7 @@ def value_to_deep_structure_sync(value, hash_pattern, *, cache_buffers=True, syn
     def conv_obj_id_to_checksum(obj_id):
         obj = objects[obj_id]
         obj_buffer = serialize_sync(obj, "mixed")
-        obj_checksum = calculate_checksum_sync(obj_buffer)
+        obj_checksum = cached_calculate_checksum_sync(obj_buffer)
         new_checksums.add(obj_checksum.hex())
         if cache_buffers:
             buffer_cache.cache_buffer(obj_checksum, obj_buffer)
@@ -718,7 +718,7 @@ async def apply_hash_pattern(checksum, hash_pattern):
         else:
             deep_structure, _ = await value_to_deep_structure(value, hash_pattern)
             deep_buffer = await serialize(deep_structure, "plain")
-    deep_checksum = await calculate_checksum(deep_buffer)
+    deep_checksum = await cached_calculate_checksum(deep_buffer)
     buffer_cache.cache_buffer(deep_checksum, deep_buffer)
     buffer_cache.guarantee_buffer_info(deep_checksum, "plain", sync_to_remote=False)
     return deep_checksum
@@ -740,14 +740,13 @@ def apply_hash_pattern_sync(checksum, hash_pattern):
     )
     deep_structure, _ = value_to_deep_structure_sync(value, hash_pattern)
     deep_buffer = serialize_sync(deep_structure, "plain")
-    deep_checksum = calculate_checksum_sync(deep_buffer)
+    deep_checksum = cached_calculate_checksum_sync(deep_buffer)
     buffer_cache.cache_buffer(deep_checksum, deep_buffer)
     return deep_checksum
 
 
-from .calculate_checksum import calculate_checksum, calculate_checksum_sync
-from .serialize import serialize, serialize_sync
-from .deserialize import deserialize, deserialize_sync
-from ..cache.buffer_cache import buffer_cache
-from ..protocol.get_buffer import get_buffer
-from ..protocol.expression import set_subpath_sync
+from seamless.buffer.cached_calculate_checksum import cached_calculate_checksum, cached_calculate_checksum_sync
+from seamless.buffer.serialize import serialize, serialize_sync
+from seamless.buffer.deserialize import deserialize, deserialize_sync
+from seamless.buffer.buffer_cache import buffer_cache
+from seamless.buffer.get_buffer import get_buffer

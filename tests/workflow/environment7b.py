@@ -8,7 +8,7 @@ import json
 import seamless
 seamless.delegate()
 
-from seamless.highlevel import Context, Transformer
+from seamless.workflow import Context, Transformer
 ctx = Context()
 ctx.tf = Transformer()
 ctx.tf.code = open("pytorch_test1.py").read()

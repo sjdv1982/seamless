@@ -1,4 +1,4 @@
-from seamless.highlevel import Context, Cell
+from seamless.workflow import Context, Cell
 
 ctx = Context()
 ctx.cow = Cell("bytes").set(open("cow.jpg", "rb").read())

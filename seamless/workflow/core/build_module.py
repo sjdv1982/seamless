@@ -9,10 +9,11 @@ import pprint
 import traceback
 from types import ModuleType
 from weakref import WeakKeyDictionary
-from ..calculate_checksum import calculate_checksum, calculate_dict_checksum
-from ..compiler.locks import dirlock
-from ..compiler import compile, complete
-from ..compiler.build_extension import build_extension_cffi
+
+from seamless import Buffer
+from seamless.compiler.locks import dirlock
+from seamless.compiler import compile, complete
+from seamless.compiler.build_extension import build_extension_cffi
 
 from concurrent.futures import ProcessPoolExecutor
 
@@ -27,7 +28,7 @@ SEAMLESS_EXTENSION_DIR = os.path.join(tempfile.gettempdir(), "seamless-extension
 COMPILE_VERBOSE = True
 CFFI_VERBOSE = False
 
-from ..pylru import lrucache
+from seamless.util.pylru import lrucache
 module_cache = lrucache(size=100)
 module_definition_cache = WeakKeyDictionary()
 
@@ -214,7 +215,6 @@ def _merge_objects(objects):
             curr["code_dict"][objname + "." + obj["extension"]] = obj["code"]                    
     return result
 
-from ..pylru import lrucache
 _compilation_buffers = lrucache(size=1000)
 
 def get_compiled_module_code(checksum):
@@ -253,7 +253,7 @@ def build_compiled_module(full_module_name, original_checksum, checksum, module_
                     remaining_objects = {}
                     object_checksums = {}
                     for object_file, object_ in objects.items():
-                        object_checksum = calculate_dict_checksum(object_)
+                        object_checksum = Buffer(object_, "plain").checksum
                         binary_code = None
                         binary_code_checksum = database.get_compile_result(object_checksum)
                         if binary_code_checksum is None:
@@ -279,7 +279,7 @@ def build_compiled_module(full_module_name, original_checksum, checksum, module_
                         for object_file, binary_code in new_binary_objects.items():
                             binary_objects[object_file] = binary_code
                             object_checksum = object_checksums[object_file]
-                            binary_code_checksum = calculate_checksum(binary_code)
+                            binary_code_checksum = Buffer(binary_code).checksum
                             # Disable writing of compiled code for now
                             """
                             buffer_remote.write_buffer(binary_code_checksum, binary_code)
@@ -301,7 +301,7 @@ def build_compiled_module(full_module_name, original_checksum, checksum, module_
                         "compiler_verbose", CFFI_VERBOSE
                     )
                     )
-                    module_code_checksum = calculate_checksum(module_code)
+                    module_code_checksum = Buffer(module_code).checksum
                     _compilation_buffers[original_checksum] = module_code_checksum, module_code
                     # Disable writing of compiled code for now
                     """
@@ -499,6 +499,5 @@ def unblock():
     global _blocked
     _blocked = False
 
-from .cache import buffer_remote    
-from .cache.database_client import database
-from .protocol.get_buffer import get_buffer
+from seamless.buffer.database_client import database
+from seamless.buffer.get_buffer import get_buffer

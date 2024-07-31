@@ -10,14 +10,14 @@ else:
     seamless.delegate(False)
 
 from seamless import calculate_checksum
-from seamless.core.cache.buffer_cache import buffer_cache
-from seamless.core.cache.buffer_remote import write_buffer as remote_write_buffer
-from seamless.core.cache.transformation_cache import (
+from seamless.workflow.core.cache.buffer_cache import buffer_cache
+from seamless.workflow.core.cache.buffer_remote import write_buffer as remote_write_buffer
+from seamless.workflow.core.cache.transformation_cache import (
     transformation_cache, tf_get_buffer, 
     transformation_cache
 )
 
-from seamless.core.protocol.serialize import serialize
+from seamless.workflow.core.protocol.serialize import serialize
 
 async def build_transformation():
     bash_code = "nginx -v >& RESULT"

@@ -69,7 +69,7 @@ class IncludedLibrary:
     def __doc__(self):
         return self.help.value
 
-from ...core.cached_compile import cached_compile
+from seamless.buffer.cached_compile import cached_compile
 from .libinstance import LibInstance
 from .argument import parse_argument
 from ..Context import Context

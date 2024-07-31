@@ -86,17 +86,15 @@ def check_original_event_loop():
 "The asyncio eventloop was changed (e.g. by asyncio.run) since seamless.workflow was imported"
         )
 
-from .vault import load_vault
-from .direct import run_transformation, run_transformation_async
-from .core.transformation import SeamlessTransformationError
 from .highlevel import Context, Transformer, Cell, SimpleDeepCell, FolderCell, DeepCell, DeepFolderCell, Module, load_graph, copy
-from .direct.Transformation import Transformation
+from .vault import load_vault
+from .core.transformation import SeamlessTransformationError
 
 __all__ = [
     "load_vault",
-    "check_original_event_loop", "run_transformation", "run_transformation_async",
+    "check_original_event_loop", 
     "activate_transformations", "deactivate_transformations", "SeamlessTransformationError",
     "Context", "Transformer",
-    "Cell", "SimpleDeepCell", "FolderCell", "DeepCell", "DeepFolderCell", "Transformation",
+    "Cell", "SimpleDeepCell", "FolderCell", "DeepCell", "DeepFolderCell",
     "Module", "load_graph", "copy"
 ]

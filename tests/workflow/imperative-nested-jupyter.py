@@ -1,8 +1,8 @@
 import seamless
 seamless.delegate(level=3)
 
-from seamless.highlevel import Context
-from seamless.core.transformation import SeamlessTransformationError
+from seamless.workflow import Context
+from seamless.workflow.core.transformation import SeamlessTransformationError
 import traceback
 ctx = Context()
 

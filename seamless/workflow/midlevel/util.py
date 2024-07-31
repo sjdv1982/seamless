@@ -1,4 +1,4 @@
-from seamless.core import cell as core_cell, \
+from seamless.workflow.core import cell as core_cell, \
  transformer, reactor, context, macro, StructuredCell, Inchannel
 import traceback
 STRUC_ID = "_STRUC"

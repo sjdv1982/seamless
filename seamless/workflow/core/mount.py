@@ -24,13 +24,13 @@ import traceback
 import json
 import functools
 
-from ..calculate_checksum import calculate_checksum as calculate_checksum_func
+from seamless import Buffer
 
 import sys
 def log(*args, **kwargs):
     print(*args, **kwargs, file=sys.stderr)
 
-empty_checksums = {calculate_checksum_func(json.dumps(v)+"\n",hex=True) for v in ("", {}, [])}
+empty_checksums = {Buffer((json.dumps(v)+"\n").encode()).get_checksum() for v in ("", {}, [])}
 
 def adjust_buffer(file_buffer, celltype):
     if celltype not in text_types:
@@ -826,12 +826,9 @@ mountmanager = MountManager(0.2) #TODO: latency in config file
 
 from .unilink import UniLink
 from .cell import Cell
-from .protocol.cson import cson2json
-from .protocol.calculate_checksum import calculate_checksum_sync as calculate_checksum
-from .cell import text_types
-from .cache.buffer_cache import buffer_cache
+from seamless.util.cson import cson2json
+from seamless.buffer.cell import text_types
+from seamless.buffer.buffer_cache import buffer_cache
 from .mount_directory import get_directory_mtime, deep_read_from_directory, read_from_directory, write_to_directory
-from .protocol.deserialize import deserialize_sync
-from .protocol.serialize import serialize_sync
-from .protocol.get_buffer import get_buffer
+from seamless.buffer.get_buffer import get_buffer
 from .macro_mode import get_macro_mode

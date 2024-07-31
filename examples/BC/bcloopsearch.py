@@ -13,7 +13,7 @@ async def main():
     # In[2]:
 
 
-    from seamless.highlevel import Context, Transformer, Cell
+    from seamless.workflow import Context, Transformer, Cell
     import numpy as np
 
     ctx = Context()

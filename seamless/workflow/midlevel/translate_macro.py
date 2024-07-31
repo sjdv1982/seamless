@@ -1,4 +1,4 @@
-from seamless.core import cell, path as core_path, \
+from seamless.workflow.core import cell, path as core_path, \
  macro, context
 
 def translate_macro(node, root, namespace, inchannels, outchannels):

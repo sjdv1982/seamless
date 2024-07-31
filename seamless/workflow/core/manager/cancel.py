@@ -1039,7 +1039,7 @@ class CancellationCycle:
             livegraph = manager.livegraph
             for scell in cyclic_scells:
                 """
-                from seamless.core.cache.buffer_cache import buffer_cache
+                from seamless.workflow.core.cache.buffer_cache import buffer_cache
                 print("CYCLIC", scell, buffer_cache.get_buffer(scell.checksum,remote=False), scell.exception)
                 get_scell_state(scell, True)
                 """

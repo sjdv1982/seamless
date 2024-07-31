@@ -1,5 +1,5 @@
 import seamless
-from seamless.highlevel import Context, Transformer
+from seamless.workflow import Context, Transformer
 
 seamless.delegate(False)
 

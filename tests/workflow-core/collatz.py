@@ -10,7 +10,7 @@ Overhead is terrible and space requirements are atrocious, but there could be
 import seamless
 seamless.delegate(False)
 
-from seamless.core import context, cell, macro, macro_mode_on
+from seamless.workflow.core import context, cell, macro, macro_mode_on
 import time
 ctx = context(toplevel=True)
 

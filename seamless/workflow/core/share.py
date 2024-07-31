@@ -352,5 +352,6 @@ class ShareManager:
 sharemanager = ShareManager(0.2)
 
 from ..shareserver import shareserver
-from .protocol.get_buffer import get_buffer, CacheMissError
-from ..core.protocol.evaluate import conversion
+from seamless import CacheMissError
+from seamless.buffer.get_buffer import get_buffer
+from seamless.buffer.evaluate import conversion

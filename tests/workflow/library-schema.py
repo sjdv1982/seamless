@@ -1,8 +1,8 @@
 import seamless
 seamless.delegate(False)
 
-from seamless.highlevel import Context, Cell
-from seamless.highlevel.library import LibraryContainer
+from seamless.workflow import Context, Cell
+from seamless.library import LibraryContainer
 from silk.Silk import Silk
 mylib = LibraryContainer("mylib")
 

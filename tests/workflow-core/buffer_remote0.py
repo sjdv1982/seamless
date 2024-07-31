@@ -1,4 +1,4 @@
-from seamless.core import context, cell
+from seamless.workflow.core import context, cell
 import numpy as np
 import sys
 import seamless

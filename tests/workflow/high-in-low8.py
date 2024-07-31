@@ -4,16 +4,16 @@ Version of high-in-low6 with nested invocation and elision
 import seamless
 seamless.delegate(False)
 
-from seamless.highlevel import Context, Cell, Macro
+from seamless.workflow import Context, Cell, Macro
 from seamless.highlevel.library import LibraryContainer
 
 def map_list_N(ctx, inp_prefix, graph, inp):
     print("map_list_N", inp)
-    from seamless.core import Cell as CoreCell
-    from seamless.core import cell
-    from seamless.core.structured_cell import StructuredCell
-    from seamless.core.HighLevelContext import HighLevelContext
-    from seamless.core.unbound_context import UnboundContext
+    from seamless.workflow.core import Cell as CoreCell
+    from seamless.workflow.core import cell
+    from seamless.workflow.core.structured_cell import StructuredCell
+    from seamless.workflow.core.HighLevelContext import HighLevelContext
+    from seamless.workflow.core.unbound_context import UnboundContext
 
     first_k = list(inp.keys())[0]
     length = len(inp[first_k])
@@ -84,7 +84,7 @@ def map_list_N_nested(
     global macro_code_lib
     if macro_code_lib0 is not None:
         macro_code_lib = macro_code_lib0
-    from seamless.core import cell, macro, context, path, transformer
+    from seamless.workflow.core import cell, macro, context, path, transformer
     first_k = list(inp.keys())[0]
     length = len(inp[first_k])
     print("NEST", length, inp[first_k][0])

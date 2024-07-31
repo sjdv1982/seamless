@@ -1,4 +1,4 @@
-from seamless.core.transformation import SeamlessStreamTransformationError, SeamlessTransformationError
+from seamless.workflow.core.transformation import SeamlessStreamTransformationError, SeamlessTransformationError
 from silk import Silk
 import numpy as np
 import operator, functools

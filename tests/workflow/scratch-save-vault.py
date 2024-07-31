@@ -2,7 +2,7 @@ import os
 import shutil
 import seamless
 seamless.delegate(False)
-from seamless.highlevel import Cell, Context
+from seamless.workflow import Cell, Context
 
 shutil.rmtree("TEMPVAULT", ignore_errors=True)
 

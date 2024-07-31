@@ -7,7 +7,7 @@ seamless.delegate(False)
 import sys
 from pprint import pprint
 from silk import Silk, ValidationError
-from seamless.core import context, cell, StructuredCell
+from seamless.workflow.core import context, cell, StructuredCell
 
 ctx = None
 #hash_pattern = {"*": "#"}

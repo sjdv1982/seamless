@@ -9,7 +9,7 @@ Current state: stub.
 """
 
 import os
-from ..core.protocol import cson2json
+from seamless.util import cson2json
 mydir = os.path.abspath(os.path.split(__file__)[0])
 compilers_cson_file = os.path.join(mydir, "compilers.cson")
 languages_cson_file = os.path.join(mydir, "languages.cson")

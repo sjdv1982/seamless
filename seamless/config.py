@@ -61,11 +61,11 @@ _delegating = False
 _delegation_level = None
 
 def get_delegation_level():
+    """Get current Seamless delegation level. See .delegate() for more information."""
     return _delegation_level
 
 def _init_database_from_env():
     """Configure database based on environment variables"""
-    global _delegation_level
     assert _delegating
 
     env = os.environ
@@ -182,6 +182,7 @@ calculated result.
 
 Return value: True if an error occurred, False if delegation was successful
 """
+    from seamless.workflow.config import block_local
 
     global _delegation_level, _delegating
     if _delegation_level is not None and _delegation_level != level:
@@ -258,10 +259,8 @@ def set_inprocess_assistant(assistant: InProcessAssistant):
     _assistant = assistant
     _delegation_level = 4
 
-from .core.cache.database_client import database
-from .core.manager import block, unblock, block_local, unblock_local
-from .core.manager.tasks import set_parallel_evaluations
-from .core.cache.buffer_remote import (
+from seamless.buffer.database_client import database
+from seamless.buffer.buffer_remote import (
     set_read_buffer_folders, set_read_buffer_servers, set_write_buffer_server,
     add_read_buffer_folder, add_read_buffer_server
 )

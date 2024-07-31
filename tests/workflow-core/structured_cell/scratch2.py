@@ -1,5 +1,5 @@
 import seamless
-from seamless.core import context, cell, StructuredCell
+from seamless.workflow.core import context, cell, StructuredCell
 
 seamless.delegate(level=3)
 

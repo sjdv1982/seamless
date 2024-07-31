@@ -1,10 +1,10 @@
 import seamless
 seamless.delegate(False)
 
-from seamless.highlevel import Context
+from seamless.workflow import Context
 
 def get_meta(tf):
-    from seamless.core.protocol.get_buffer import get_buffer
+    from seamless.workflow.core.protocol.get_buffer import get_buffer
     ctx = tf._root()
     tf_cache = ctx._get_manager().cachemanager.transformation_cache
     tf_checksum = tf_cache.transformer_to_transformations[tf]

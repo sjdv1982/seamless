@@ -4,7 +4,7 @@ The actual bridge is implemented using python-bond
 import seamless
 seamless.delegate(False)
 
-from seamless.highlevel import Cell, Context
+from seamless.workflow import Cell, Context
 from seamless.highlevel.Transformer import Transformer
 
 import traceback

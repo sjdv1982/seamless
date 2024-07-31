@@ -12,7 +12,7 @@ print([m for m in sys.modules if m.find("testmodule") > -1])
 result = a + b
 '''
 
-from seamless.highlevel import Transformer, Cell, Context, Module
+from seamless import Transformer, Cell, Context, Module
 ctx = Context()
 ctx.testmodule = Module()
 ctx.testmodule.code = "q = 10"

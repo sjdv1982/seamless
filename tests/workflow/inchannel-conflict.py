@@ -2,7 +2,7 @@ import seamless
 seamless.delegate(False)
 
 import traceback
-from seamless.highlevel import Context, Cell
+from seamless.workflow import Context, Cell
 ctx = Context()
 ctx.a = Cell("int").set(10)
 ctx.c = Cell("int").set(30)

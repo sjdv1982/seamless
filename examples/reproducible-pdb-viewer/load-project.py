@@ -38,7 +38,7 @@ using "seamless-upload"
 
 import os, sys, shutil
 import seamless, seamless.config
-from seamless.highlevel import (Context, Cell, Transformer, Module, Macro, 
+from seamless import (Context, Cell, Transformer, Module, Macro, 
                                 SimpleDeepCell, FolderCell, DeepCell, DeepFolderCell)
 
 def pr(*args):

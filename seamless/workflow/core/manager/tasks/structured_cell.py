@@ -645,10 +645,10 @@ from .get_buffer import GetBufferTask
 from .checksum import CalculateChecksumTask
 from .accessor_update import AccessorUpdateTask
 from .upon_connection import UponConnectionTask
-from ...cache import CacheMissError
-from ...cache.buffer_cache import buffer_cache
+from seamless import CacheMissError
+from seamless.buffer.buffer_cache import buffer_cache
 from silk.Silk import Silk, ValidationError
 from ..cancel import get_scell_state, SCModeEnum
 from ...protocol.expression import get_subpath, set_subpath_checksum, access_hash_pattern, value_to_deep_structure
 from . import acquire_evaluation_lock, release_evaluation_lock
-from ...cache.database_client import database
+from seamless.buffer.database_client import database

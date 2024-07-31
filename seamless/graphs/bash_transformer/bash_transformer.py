@@ -1,4 +1,4 @@
-from seamless.highlevel import Context, Cell
+from seamless.workflow import Context, Cell
 from seamless.highlevel import set_resource
 
 executor_file = "executor.py"
@@ -64,7 +64,7 @@ zip_filename=os.path.join(currdir,"../bash_transformer.zip")
 with open(zip_filename, "bw") as f:
     f.write(zip)
 
-from seamless.core.cache.transformation_cache import transformation_cache
+from seamless.workflow.core.cache.transformation_cache import transformation_cache
 sem_checksum = transformation_cache.syntactic_to_semantic(
     bytes.fromhex(ctx.executor.code.checksum), "python", "transformer", ""
 )

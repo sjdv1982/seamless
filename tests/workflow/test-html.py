@@ -1,7 +1,7 @@
 import seamless
 seamless.delegate(False)
 
-from seamless.highlevel import Context
+from seamlessntext
 ctx = Context()
 ctx.a = "<b>Hello world!</b>"
 ctx.a.celltype = "text"

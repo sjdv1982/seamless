@@ -12,7 +12,8 @@ disable=import-error,import-outside-toplevel,wrong-import-position,
   unnecessary-lambda-assignment,global-statement,
   use-implicit-booleaness-not-len,
   consider-using-f-string,too-many-branches,too-many-arguments,
+  logging-fstring-interpolation,
   no-member  #necessary, since ignored-classes is not quite working
 
 [TYPECHECK]
-ignored-classes=seamless.highlevel.Base.Base,seamless.highlevel.Context.Context,seamless.highlevel.Cell.Cell,seamless.highlevel.Transformer.Transformer
+ignored-classes=seamless.workflow.highlevel.Base.Base,seamless.workflow.highlevel.Context.Context,seamless.workflow.highlevel.Cell.Cell,seamless.workflow.highlevel.Transformer.Transformer

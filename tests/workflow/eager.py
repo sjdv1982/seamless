@@ -1,4 +1,4 @@
-from seamless.highlevel import Context, Cell
+from seamless.workflow import Context, Cell
 ctx = Context()
 ctx.a = Cell("int").set(10)
 ctx.b = Cell("int").set(20)

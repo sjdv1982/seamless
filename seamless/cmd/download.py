@@ -5,9 +5,9 @@ from concurrent.futures import ThreadPoolExecutor
 
 from seamless.cmd.exceptions import SeamlessSystemExit
 from seamless.cmd.confirm import confirm_yna
-from seamless.highlevel import Checksum
-from seamless.core.cache.database_client import database
-from seamless.core.cache.buffer_cache import buffer_cache
+from seamless import Checksum
+from seamless.workflow.core.cache.database_client import database
+from seamless.workflow.core.cache.buffer_cache import buffer_cache
 from seamless.cmd.message import message as msg, message_and_exit as err
 from seamless.cmd.bytes2human import bytes2human
 from seamless import CacheMissError

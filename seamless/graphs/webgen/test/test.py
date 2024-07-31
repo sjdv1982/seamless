@@ -1,4 +1,4 @@
-from seamless.highlevel import Context, Cell, Transformer, FolderCell, load_graph
+from seamless.workflow import Context, Cell, Transformer, FolderCell, load_graph
 from seamless.highlevel import stdlib
 import os
 

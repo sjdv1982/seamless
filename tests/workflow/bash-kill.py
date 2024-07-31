@@ -1,6 +1,6 @@
-from seamless.highlevel import Context
+from seamless.workflow import Context
 
-import seamless.core.execute
+import seamless.workflow.core.execute
 
 code = """
 sleep $delay &

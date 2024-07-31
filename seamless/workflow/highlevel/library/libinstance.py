@@ -480,7 +480,7 @@ from ...midlevel.StaticContext import StaticContext
 from ..Transformer import Transformer
 from ..Macro import Macro
 from ..Module import Module
-from ...core.cached_compile import exec_code
+from seamless.buffer.cached_compile import exec_code
 from ..proxy import Proxy
 from silk.Silk import Silk
 from silk.validation import ValidationError

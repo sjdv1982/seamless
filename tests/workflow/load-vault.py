@@ -1,6 +1,6 @@
 import json
 import seamless
-from seamless.highlevel import load_graph, Context
+from seamless import load_graph, Context
 
 seamless.delegate(False)
 

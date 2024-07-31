@@ -1,7 +1,7 @@
 import seamless
 seamless.delegate(False)
 
-from seamless.highlevel import Context, Cell, Transformer
+from seamless.workflow import Context, Cell, Transformer
 
 import inspect
 def hhelp(obj):

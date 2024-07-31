@@ -1,4 +1,4 @@
-from seamless.highlevel import Context, Transformer, Cell, FolderCell
+from seamless.workflow import Context, Transformer, Cell, FolderCell
 from seamless.highlevel import stdlib
 import json
 

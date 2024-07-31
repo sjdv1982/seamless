@@ -8,7 +8,7 @@ shutil.rmtree("/tmp/mount-test3",ignore_errors=True)
 shutil.rmtree("/tmp/mount-test4",ignore_errors=True)
 shutil.rmtree("/tmp/mount-test5",ignore_errors=True)
 
-from seamless.core import context, cell, macro_mode_on
+from seamless.workflow.core import context, cell, macro_mode_on
 
 print("Write, no deepfolder")
 with macro_mode_on():

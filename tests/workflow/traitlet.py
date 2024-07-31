@@ -1,7 +1,7 @@
 import seamless
 seamless.delegate(False)
 
-from seamless.highlevel import Context, Cell
+from seamless.workflow import Context, Cell
 import time
 
 ctx = Context()

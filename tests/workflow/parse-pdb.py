@@ -5,7 +5,7 @@ if err:
     if seamless.delegate(level=3):
         exit(1)
 
-from seamless.highlevel import Context
+from seamless.workflow import Context
 
 def count_atoms(pdbdata):
     from Bio.PDB import PDBParser

@@ -1,7 +1,7 @@
 import seamless
 seamless.delegate(level=3)
 
-from seamless.highlevel import Cell, Context
+from seamless.workflow import Cell, Context
 ctx = Context()
 ctx.a = Cell("int").set(2)
 ctx.b = Cell("int").set(3)

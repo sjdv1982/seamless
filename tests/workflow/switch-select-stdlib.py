@@ -2,8 +2,8 @@
 import seamless
 seamless.delegate(False)
 
-from seamless.highlevel import Context, Cell
-from seamless.highlevel import stdlib
+from seamless.workflow import Context, Cell
+from seamless import stdlib
 
 ctx = Context()
 ctx.include(stdlib.switch)

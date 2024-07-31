@@ -1,7 +1,7 @@
 import seamless
 seamless.delegate(level=3)
 
-from seamless.highlevel import Context, Cell
+from seamless.workflow import Context, Cell
 
 ctx = Context()
 ctx.result2 = Cell("str")

@@ -1,6 +1,6 @@
 import sys, os
 
-from seamless.highlevel import Context
+from seamless.workflow import Context
 import seamless
 
 currdir=os.path.dirname(os.path.abspath(__file__))

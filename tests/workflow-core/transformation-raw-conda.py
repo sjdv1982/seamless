@@ -1,14 +1,14 @@
 import inspect, textwrap
 
 from seamless import calculate_checksum
-from seamless.core.cache.buffer_cache import buffer_cache
-from seamless.core.cache.transformation_cache import (
+from seamless.workflow.core.cache.buffer_cache import buffer_cache
+from seamless.workflow.core.cache.transformation_cache import (
     transformation_cache, DummyTransformer, tf_get_buffer, 
     syntactic_is_semantic, syntactic_to_semantic, 
     transformation_cache
 )
 
-from seamless.core.protocol.serialize import serialize
+from seamless.workflow.core.protocol.serialize import serialize
 
 def func(a,b):
     import tensorflow as tf

@@ -1,6 +1,6 @@
 import seamless
 seamless.delegate(False)
-from seamless.highlevel import Context, Cell, Transformer
+from seamless.workflow import Context, Cell, Transformer
 import numpy as np
 
 ctx = Context()

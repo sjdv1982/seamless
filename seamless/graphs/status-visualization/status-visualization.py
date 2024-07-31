@@ -9,7 +9,7 @@ Input cells are filled by bind_status_graph.
 - webctx.graph_rt with the real-time workflow graph of ctx 
   (Unwrapping LibInstances, and including core.HighLevelContext instances)  
 """
-from seamless.highlevel import Context, Transformer, Cell
+from seamless.workflow import Context, Transformer, Cell
 
 webctx = Context()
 webctx.help = __doc__

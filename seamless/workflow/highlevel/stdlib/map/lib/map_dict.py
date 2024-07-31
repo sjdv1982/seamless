@@ -1,10 +1,10 @@
 def map_dict(ctx, graph, inp, has_uniform, elision):
     #print("map_dict", inp)
-    from seamless.core import Cell as CoreCell
-    from seamless.core import cell
-    from seamless.core.structured_cell import StructuredCell
-    from seamless.core.HighLevelContext import HighLevelContext
-    from seamless.core.unbound_context import UnboundContext
+    from seamless.workflow.core import Cell as CoreCell
+    from seamless.workflow.core import cell
+    from seamless.workflow.core.structured_cell import StructuredCell
+    from seamless.workflow.core.HighLevelContext import HighLevelContext
+    from seamless.workflow.core.unbound_context import UnboundContext
 
     pseudo_connections = []
     ctx.result = cell("mixed", hash_pattern = {"*": "#"})
@@ -86,7 +86,7 @@ def map_dict_nested(
   ctx, elision, elision_chunksize, graph, inp, keyorder,
   *, lib_module_dict, lib_codeblock, lib, has_uniform
 ):
-    from seamless.core import cell, macro, context, path, transformer
+    from seamless.workflow.core import cell, macro, context, path, transformer
     assert len(inp) == len(keyorder)
     length = len(inp)
     #print("NEST", length, keyorder[0])

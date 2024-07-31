@@ -3,7 +3,7 @@ seamless.delegate(False)
 
 import asyncio
 import json
-from seamless.core import context, cell
+from seamless.workflow.core import context, cell
 
 ctx = context(toplevel=True)
 

@@ -178,7 +178,7 @@ mounts and shares have the same meaning as in from_graph
 Additional zips can be provided.
 They will be passed to ctx.add_zip before the graph is loaded
 """
-    from seamless.highlevel import Context
+    from seamless.workflow import Context
     status_ctx = Context()
     if zips is not None:
         for zipf in zips:
@@ -211,7 +211,7 @@ mounts and shares have the same meaning as in from_graph
 Additional zips can be provided.
 They will be passed to ctx.add_zip before the graph is loaded
 """
-    from seamless.highlevel import Context
+    from seamless.workflow import Context
     status_ctx = Context()
     if zips is not None:
         for zipf in zips:
@@ -226,4 +226,4 @@ They will be passed to ctx.add_zip before the graph is loaded
     bind_status_context(ctx, status_ctx)
     return status_ctx
 
-from seamless.highlevel import Cell
+from seamless.workflow import Cell

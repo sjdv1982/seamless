@@ -1,4 +1,4 @@
-from ...calculate_checksum import calculate_checksum
+from seamless.buffer.calculate_checksum import calculate_checksum
 from weakref import WeakValueDictionary
 import json
 
@@ -103,7 +103,7 @@ class Expression:
         return d
 
     def __str__(self):
-        from seamless.core.protocol.json import json_dumps
+        from seamless.workflow.core.protocol.json import json_dumps
         d = self._hash_dict()
         return json_dumps(d)
 

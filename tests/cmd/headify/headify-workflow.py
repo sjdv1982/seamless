@@ -20,7 +20,7 @@ args = parser.parse_args()
 import seamless
 seamless.delegate()
 
-from seamless.highlevel import Transformer, Context, Cell
+from seamless import Transformer, Context, Cell
 
 try:
     Transformer.from_canonical_interface(

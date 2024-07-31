@@ -1,7 +1,7 @@
 import seamless
 seamless.delegate(False)
 
-from seamless.highlevel import Context, Cell, Macro
+from seamless.workflow import Context, Cell, Macro
 from seamless.highlevel.assign import _assign_context
 from seamless.highlevel.synth_context import SynthContext
 

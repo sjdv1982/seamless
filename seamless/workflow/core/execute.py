@@ -15,11 +15,10 @@ try:
 except ModuleNotFoundError:
     debugpy = None
 
-from .cached_compile import exec_code, check_function_like
-from .protocol.serialize import _serialize as serialize
-from ..calculate_checksum import calculate_checksum
-from .cache.buffer_cache import buffer_cache
-from .cache import buffer_remote
+from seamless.buffer.cached_compile import exec_code, check_function_like
+from seamless.buffer.serialize import _serialize as serialize
+from seamless.buffer.buffer_cache import buffer_cache
+from seamless.buffer import buffer_remote
 from multiprocessing.pool import ThreadPool, AsyncResult
 
 DIRECT_PRINT = False
@@ -548,11 +547,12 @@ Execution time: {:.1f} seconds
         kill_children(multiprocessing.current_process())
 
 
+from seamless import CacheMissError
 from silk import Silk
-from .cache import database_client, CacheMissError
-from .cache.database_client import database
+from seamless.buffer import database_client
+from seamless.buffer.database_client import database
 from .protocol.deep_structure import deep_structure_to_value, value_to_deep_structure_sync as value_to_deep_structure
-from .protocol.serialize import serialize_sync
-from .protocol.deserialize import deserialize_sync
-from .protocol.calculate_checksum import calculate_checksum_sync as calculate_checksum, calculate_checksum_func, calculate_checksum_cache
-from ..subprocess_ import kill_children
+from seamless.buffer.serialize import serialize_sync
+from seamless.buffer.deserialize import deserialize_sync
+from seamless.buffer.cached_calculate_checksum import cached_calculate_checksum_sync as calculate_checksum, calculate_checksum_func, calculate_checksum_cache
+from seamless.util.subprocess_ import kill_children

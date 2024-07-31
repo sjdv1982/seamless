@@ -10,9 +10,9 @@ and gathers the result. Much like a scattered_value CommandLineTool in CWL.
 Limitation: celltypes in a separate dict (ugly). No schema/example support.
 """
 
-from seamless.core.context import Macro
-from seamless.core.transformer import Transformer
-from seamless.highlevel import Context, Cell
+from seamless.workflow.core.context import Macro
+from seamless.workflow.core.transformer import Transformer
+from seamless.workflow import Context, Cell
 import sys
 
 # 1: Setup context

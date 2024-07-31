@@ -1,7 +1,7 @@
-from seamless.highlevel import Context, Transformer
+from seamless.workflow import Context, Transformer
 
-import seamless.core.execute
-seamless.core.execute.DIRECT_PRINT = True
+import seamless.workflow.core.execute
+seamless.workflow.core.execute.DIRECT_PRINT = True
 
 ctx = Context()
 def func():

@@ -4,7 +4,7 @@ import seamless
 import time
 import asyncio
 
-from seamless.core.transformation import get_global_info
+from seamless.workflow.core.transformation import get_global_info
 get_global_info()
     
 if "DELEGATE" in os.environ:

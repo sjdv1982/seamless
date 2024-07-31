@@ -1,7 +1,7 @@
 # run with https://codepen.io/sjdv1982/pen/MzNvJv
 # copy-paste seamless-client.js
 
-from seamless.highlevel import Context
+from seamless.workflow import Context
 ctx = Context()
 ctx.cell1 = "test!"
 ctx.cell1.share()

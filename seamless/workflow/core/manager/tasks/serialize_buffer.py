@@ -2,7 +2,7 @@ from collections import namedtuple
 import asyncio
 
 from . import BackgroundTask
-from ...protocol.serialize import serialize
+from seamless.buffer.serialize import serialize
 
 Serialization = namedtuple("Serialization",["value_id", "celltype"])
 

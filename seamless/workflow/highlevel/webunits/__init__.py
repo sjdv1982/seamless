@@ -12,8 +12,8 @@ from inspect import Signature, Parameter
 from typing import *
 
 def _add_webunit_instance(ctx, webunit_dict, **params):
-    from seamless.highlevel import Cell
-    from seamless.highlevel import Base
+    from seamless.workflow import Cell
+    from seamless import Base
     assert "@name" in webunit_dict
     name = webunit_dict["@name"]
 
