@@ -5,17 +5,10 @@ from weakref import WeakSet
 from . import SeamlessBase
 from copy import deepcopy
 from .status import StatusReasonEnum
+from seamless.buffer.cell import text_types, text_types2
 
 cell_counter = 0
 
-text_types = (
-    "text", "python", "ipython", "cson", "yaml",
-    "str", "int", "float", "bool",
-)
-
-text_types2 = (
-    "text", "python", "ipython", "cson", "yaml",
-)
 
 class Cell(SeamlessBase):
     """Default class for cells."""
@@ -688,7 +681,6 @@ extensions.update({
     BinaryCell: ".npy",
 })
 
-celltypes = {cellclass._celltype:cellclass for cellclass in _cellclasses if cellclass._celltype is not None}
 subcelltypes = {cellclass._subcelltype:cellclass for cellclass in _cellclasses if cellclass._subcelltype is not None}
 subcelltypes["module"] = None
 

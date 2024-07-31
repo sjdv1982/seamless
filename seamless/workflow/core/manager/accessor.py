@@ -105,7 +105,8 @@ class WriteAccessor(Accessor):
             assert celltype == "mixed"
         self.hash_pattern = hash_pattern
 
-from ...core.cell import Cell, celltypes, subcelltypes
+from seamless.buffer.cell import celltypes
+from ...core.cell import Cell, subcelltypes
 from ...core.worker import pin_celltypes
 from ...core.macro import Path as MacroPath
 from ...core.status import StatusReasonEnum

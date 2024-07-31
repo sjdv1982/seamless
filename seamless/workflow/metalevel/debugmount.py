@@ -12,6 +12,7 @@ import os, tempfile, shutil, functools
 from numpy import mod
 from sys import modules
 from seamless.workflow.core.manager import livegraph
+from seamless.buffer.cell import celltypes
 
 SEAMLESS_DEBUGGING_DIRECTORY = os.environ.get("SEAMLESS_DEBUGGING_DIRECTORY")
 
@@ -131,10 +132,10 @@ class DebugMount:
         self.kwargs_cells = {}
         self.pinname_to_cells = {}
 
-    def mount(self, skip_pins):
+    def mount(self, skip_pins):        
         from ..core.context import context
         from ..core.macro_mode import macro_mode_on
-        from ..core.cell import celltypes, subcelltypes, extensions, cell as core_cell
+        from ..core.cell import subcelltypes, extensions, cell as core_cell
         from ..mime import language_to_extension
         skip_pins = skip_pins.copy()
         self.skip_pins = skip_pins

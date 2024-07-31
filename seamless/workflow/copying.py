@@ -150,7 +150,7 @@ def add_zip(manager, zipfile, incref=False):
     return result
 
 def fill_checksum(manager, node, temp_path, composite=True):
-    from .core.cell import celltypes
+    from seamless.buffer.cell import celltypes
     checksum = None
     subcelltype = None
     hash_pattern = None
