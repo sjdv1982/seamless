@@ -17,7 +17,7 @@ from weakref import WeakKeyDictionary,  ref
 import threading
 from threading import Thread, RLock, Event
 from collections import deque
-from speg.peg import ParseError
+from seamless.util.speg import ParseError
 import sys, os
 import time
 import traceback
@@ -25,8 +25,8 @@ import json
 import functools
 
 from seamless import Buffer, Checksum
+from seamless.buffer.cell import text_types
 
-import sys
 def log(*args, **kwargs):
     print(*args, **kwargs, file=sys.stderr)
 
@@ -165,7 +165,7 @@ class MountItem:
                     update_file = True
                     file_checksum = None
                     if not cell_empty and file_buffer is not None:
-                        file_checksum = calculate_checksum(file_buffer)
+                        file_checksum = Buffer(file_buffer).get_checksum()
                         if file_checksum == cell_checksum:
                             update_file = False
                         else:
@@ -229,10 +229,10 @@ class MountItem:
             if "w" in self.mode:
                 try:
                     c = cson2json(file_buffer.decode())
-                    j1 = serialize_sync(c, "plain")
+                    j1 = Buffer(c, celltype="plain")
                     old_checksum = checksum
-                    checksum = calculate_checksum(j1)
-                    file_buffer = j1
+                    checksum = j1.get_checksum()
+                    file_buffer = j1.value
                     if checksum != old_checksum:
                         if checksum and len(adjust_buffer(file_buffer, "plain")):
                             self._write(file_buffer)
@@ -242,8 +242,7 @@ class MountItem:
         self.cell_checksum = None
         if cell._hash_pattern is not None:
             if not checksum:
-                checksum = calculate_checksum(file_buffer)
-                checksum = Checksum(checksum)
+                checksum = Buffer(file_buffer).get_checksum()
             cell.set_checksum(checksum)
         else:
             cell.set_buffer(file_buffer, checksum)
@@ -296,7 +295,7 @@ class MountItem:
         os.makedirs(self.path, exist_ok=True)
         if with_none and file_buffer is None:
             return
-        data = deserialize_sync(file_buffer, None, "plain", copy=False)
+        data = Buffer(file_buffer).deserialize("plain")
         if not isinstance(data, dict):
             return
         cleanup = (self.mode == "w" or self.authority == "cell")
@@ -407,7 +406,7 @@ class MountItem:
                 file_buffer0 = self._read()
                 if file_buffer0 is not None:
                     file_buffer = adjust_buffer(file_buffer0, cell._celltype)
-                    file_checksum = calculate_checksum(file_buffer)
+                    file_checksum = Buffer(file_buffer).get_checksum()
                 self._after_read(file_checksum, mtime=mtime)                
         file_checksum = Checksum(file_checksum)
         if "r" in self.mode:            
@@ -417,7 +416,7 @@ class MountItem:
                     file_checksum = cell_checksum
                     cell_checksum = None
         if file_checksum and file_checksum != cell_checksum:
-            if "r" in self.mode:                
+            if "r" in self.mode: 
                 self.set(file_buffer, checksum=file_checksum, no_renounce=True)
             else:
                 print("Warning: write-only file %s (%s) has changed on disk, overruling" % (self.path, self.cell()))
@@ -833,7 +832,6 @@ mountmanager = MountManager(0.2) #TODO: latency in config file
 from .unilink import UniLink
 from .cell import Cell
 from seamless.util.cson import cson2json
-from seamless.buffer.cell import text_types
 from seamless.buffer.buffer_cache import buffer_cache
 from .mount_directory import get_directory_mtime, deep_read_from_directory, read_from_directory, write_to_directory
 from seamless.buffer.get_buffer import get_buffer

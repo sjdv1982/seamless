@@ -33,8 +33,8 @@ class SetCellBufferTask(Task):
                 checksum = Checksum(checksum)
             elif buffer is None and checksum:
                 buffer = get_buffer(checksum, remote=True)
-            if (checksum) or buffer is None:
-                manager.cancel_cell(cell, True, StatusReasonEnum.UNDEFINED, origin_task=self)
+            if (not checksum) or buffer is None:
+                manager.cancel_cell(cell, True, reason=StatusReasonEnum.UNDEFINED, origin_task=self)
             else:
                 if not has_validated_evaluation(checksum, cell._celltype):
                     value = await DeserializeBufferTask(

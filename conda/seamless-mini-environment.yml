@@ -27,10 +27,8 @@ dependencies:
   - cython
   - commentjson
   - expandvars
-  - speg    
   - pip:
     - websockets
-    - cson
     - makefun
 variables:
   SEAMLESS_CONDA_ENVIRONMENT: 1

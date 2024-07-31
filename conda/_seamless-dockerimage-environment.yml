@@ -44,8 +44,6 @@ dependencies:
   - sympy
   - pip:
     - websockets==10.3.*
-    - cson==0.8.*
-    - speg    
     - docker==7.0.*
     - makefun
     - nglview
