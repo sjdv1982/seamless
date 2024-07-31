@@ -20,7 +20,7 @@ class Buffer:
             return None
 
         from seamless.buffer.cell import celltypes
-        allowed_celltypes = list(celltypes.keys()) + ["silk", "deepcell", "deepfolder", "folder", "module"]
+        allowed_celltypes = celltypes + ["silk", "deepcell", "deepfolder", "folder", "module"]
         if celltype is not None and celltype not in allowed_celltypes:
             raise TypeError(celltype, allowed_celltypes)
         if celltype == "silk":
@@ -72,7 +72,7 @@ class Buffer:
             f.write(self.value)
 
     def deserialize(self, celltype):
-        from ..core.protocol.deserialize import deserialize_sync as deserialize
+        from seamless.buffer.deserialize import deserialize_sync as deserialize
         if self.value is None:
             return None
         celltype = self._map_celltype(celltype)

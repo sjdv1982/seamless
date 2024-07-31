@@ -240,10 +240,10 @@ class CelltypesWrapper:
             return super().__setattr__(attr, value)
         return self.__setitem__(attr, value)
     def __setitem__(self, key, value):
-        from ...core.cell import celltypes
+        from seamless.buffer.cell import celltypes
         if key not in self._celltypes:
             raise AttributeError(key)
-        pin_celltypes = list(celltypes.keys()) + ["silk", "deepcell", "deepfolder", "folder", "module"]
+        pin_celltypes = celltypes + ["silk", "deepcell", "deepfolder", "folder", "module"]
         if value not in pin_celltypes:
             raise TypeError(value, pin_celltypes)
         self._celltypes[key] = value

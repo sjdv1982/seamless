@@ -305,8 +305,8 @@ def resolve(checksums:list["Checksum"], nparallel:int, *, celltype:str | None = 
     """
     from . import Checksum
     from .core.manager import Manager
-    from .core.cell import celltypes
-    allowed_celltypes = list(celltypes.keys()) + ["silk", "deepcell", "deepfolder", "folder", "module"]
+    from seamless.buffer.cell import celltypes
+    allowed_celltypes = celltypes + ["silk", "deepcell", "deepfolder", "folder", "module"]
     if celltype not in allowed_celltypes:
         raise TypeError(celltype, allowed_celltypes)
     

@@ -1,10 +1,5 @@
-text_types = ()
-text_types2 = ()
-celltypes = {}
+celltypes = ['binary', 'mixed', 'text', 'python', 'ipython', 'plain', 'cson', 'yaml', 'str', 'bytes', 'int', 'float', 'bool', 'checksum']
 
-#from seamless.workflow.core.cell import celltypes
-#print(list(celltypes.keys()))
-#raise NotImplementedError
 
 text_types = (
     "text", "python", "ipython", "cson", "yaml",
@@ -14,3 +9,4 @@ text_types = (
 text_types2 = (
     "text", "python", "ipython", "cson", "yaml",
 )
+
