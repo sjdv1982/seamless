@@ -1,5 +1,6 @@
 [MASTER]
 
+ignore-paths=.*/seamless/util/pylru.py,.*/seamless/util/speg/.*.py,.*/seamless/util/pycson/.*.py
 jobs=8
 # Pickle collected data for later comparisons.
 persistent=yes
