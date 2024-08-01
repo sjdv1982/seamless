@@ -1,13 +1,14 @@
 """Class for Seamless checksums. Seamless checksums are calculated as SHA3-256 hashes of buffers."""
 
+from typing import Union
 
 class Checksum:
     """Class for Seamless checksums.
     Seamless checksums are calculated as SHA3-256 hashes of buffers."""
 
-    _value: bytes | None = None  # pylint: disable=E0601
+    _value: Union[bytes, None] = None  # pylint: disable=E0601
 
-    def __init__(self, checksum: "Checksum" | str | bytes | None):
+    def __init__(self, checksum: Union["Checksum", str, bytes, None]):
         from seamless.util import parse_checksum
 
         if isinstance(checksum, Checksum):
