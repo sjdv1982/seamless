@@ -210,7 +210,7 @@ class OutputCellWrapper(CellWrapper):
         if celltype != "code":
             return self._setattr("language", value)
         parent = self._parent()
-        lang, language, extension = parent.environment.find_language(value)
+        lang, language, extension = parent.environment._find_language(value)
         old_language = hcell.get("language")
         hcell["language"] = lang
         hcell["file_extension"] = extension

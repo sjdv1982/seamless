@@ -1,7 +1,11 @@
 """Utilities for parallel execution. Syntax similar to multiprocessing.pool"""
 
 import asyncio
-import time
+import seamless
+
+from seamless import Checksum
+from seamless import Buffer
+
 
 class TransformationPool:
     """Execute a fixed number of transformations in parallel"""
@@ -24,9 +28,8 @@ class TransformationPool:
         finishes.
 
         """
-        import asyncio
-        from seamless.highlevel.direct.Transformation import Transformation
-        
+        from seamless.direct import Transformation
+
         if asyncio.get_event_loop().is_running():
             todo = list(range(nindices))
             results = [None] * nindices
@@ -34,7 +37,7 @@ class TransformationPool:
             transformation_indices = [None] * self.nparallel
             order = []
 
-            done = 0            
+            done = 0
             while done < nindices:
                 for n, transformation in list(enumerate(transformations)):
                     if transformation is not None:
@@ -46,13 +49,13 @@ class TransformationPool:
                         transformations[n] = None
                         if callback is not None:
                             callback(transformation_indices[n], transformation)
-                    
+
                     if len(todo):
                         new_index = todo.pop(0)
                         transformation = func(new_index)
                         if not isinstance(transformation, Transformation):
-                           raise TypeError(
-                                f"func({new_index}) returned a {type(transformation)} instead of a Seamless transformation"
+                            raise TypeError(
+                                f"func({new_index}) returned a {type(transformation)} instead of a Seamless transformation"  # pylint: disable=line-too-long
                             )
                         transformations[n] = transformation
                         transformation_indices[n] = new_index
@@ -64,10 +67,12 @@ class TransformationPool:
                         transformation = transformations[order[0]]
                         if transformation.status == "Status: pending":
                             transformation.compute()
-                
+
             return results
         else:
-            fut = asyncio.ensure_future(self.apply_async(func, nindices, callback=callback))
+            fut = asyncio.ensure_future(
+                self.apply_async(func, nindices, callback=callback)
+            )
             asyncio.get_event_loop().run_until_complete(fut)
             return fut.result()
 
@@ -86,14 +91,14 @@ class TransformationPool:
         finishes.
         """
 
-        from seamless.highlevel.direct.Transformation import Transformation
+        from seamless.direct import Transformation
 
         transformations = []
         for n in range(nindices):
             transformation = func(n)
             if not isinstance(transformation, Transformation):
                 raise TypeError(
-                    f"func({n}) returned a {type(transformation)} instead of a Seamless transformation"
+                    f"func({n}) returned a {type(transformation)} instead of a Seamless transformation"  # pylint: disable=line-too-long
                 )
             transformations.append(transformation)
 
@@ -117,7 +122,7 @@ class TransformationPool:
     def __enter__(self):
         return self
 
-    def __exit__(self, type, value, traceback):
+    def __exit__(self, type, value, traceback):  # pylint: disable=redefined-builtin
         pass
 
 
@@ -128,17 +133,18 @@ class ContextPool:
     - nparallel: number of contexts to be run in parallel.
     """
 
-    def __init__(self, ctx: "seamless.highlevel.Context", nparallel: int):
+    def __init__(self, ctx: "seamless.workflow.highlevel.Context", nparallel: int):
+        self._contexts = []
         self.nparallel = nparallel
         self.graph = ctx.get_graph()
 
     def __enter__(self):
         from seamless.workflow import Context
 
-        self._contexts = []
+        self._contexts[:] = []
         if self.nparallel == 0:
             return
-        
+
         ctx = Context()
         ctx.set_graph(self.graph)
         ctx.compute(report=10)
@@ -157,9 +163,10 @@ class ContextPool:
 
         return self
 
-    def __exit__(self, type, value, traceback):
-        for ctx in self._contexts:
-            del ctx
+    def __exit__(self, type, value, traceback):  # pylint: disable=redefined-builtin
+        for ctx in self._contexts.copy():
+            del ctx  # pylint: disable=modified-iterating-list
+        self._contexts[:] = []
 
     def apply(self, setup_func, nindices: int, result_func):
         """Runs a separate Seamless context for each index N between 0 and nindices.
@@ -174,7 +181,6 @@ class ContextPool:
 
         This is repeated until every N has been processed
         """
-        import asyncio
 
         if asyncio.get_event_loop().is_running():
             raise NotImplementedError
@@ -223,13 +229,13 @@ class ContextPool:
             assert len(tasks2) == nrunning
             done, _ = await asyncio.wait(tasks2, return_when=asyncio.FIRST_COMPLETED)
             for task in list(done):
-                for nn in range(len(tasks)):
-                    if tasks[nn] is task:
+                for nn, task2 in enumerate(tasks):
+                    if task2 is task:
                         done_task = nn
                         task_index = task_indices[done_task]
                         break
                 else:
-                    raise Exception  # shouldn't happen
+                    raise Exception  # shouldn't happen  # pylint: disable=broad-exception-raised
 
                 ctx = contexts[done_task]
                 result_func(ctx, task_index)
@@ -243,9 +249,8 @@ class ContextPool:
                     nrunning -= 1
                     tasks[done_task] = None
 
-async def _resolve_single(cachemanager, checksum:"Checksum", celltype):
-    from .core.protocol.deserialize import deserialize
-    from . import Checksum
+
+async def _resolve_single(cachemanager, checksum: "Checksum", celltype):
     buffer = await cachemanager.fingertip(checksum.bytes())
     if celltype is None:
         return buffer
@@ -253,7 +258,7 @@ async def _resolve_single(cachemanager, checksum:"Checksum", celltype):
         celltype = "mixed"
     elif celltype == "module":
         celltype = "plain"
-    
+
     outer_celltype = celltype
     inner_celltype = None
     if celltype in ("deepcell", "deepfolder", "folder"):
@@ -263,13 +268,16 @@ async def _resolve_single(cachemanager, checksum:"Checksum", celltype):
         else:
             inner_celltype = "bytes"
 
-    outer_value = await deserialize(buffer, checksum.bytes(), celltype=outer_celltype, copy=False)
+    outer_value = await Buffer(buffer, checksum=checksum).deserialize_async(
+        celltype=outer_celltype, copy=False
+    )
     if inner_celltype is None:
         return outer_value
     deep_keys = list(outer_value.keys())
     inner_checksums = [Checksum(outer_value[k]) for k in deep_keys]
     inner_values = await resolve(inner_checksums, nparallel=5, celltype=inner_celltype)
-    return {k:v for k,v in zip(deep_keys, inner_values)}
+    return {k: v for k, v in zip(deep_keys, inner_values)}
+
 
 async def _resolve(cachemanager, checksums, celltype, nparallel, callback):
 
@@ -282,16 +290,18 @@ async def _resolve(cachemanager, checksums, celltype, nparallel, callback):
                 callback(n, result)
             return result
 
-    runners = [
-        runner(n, checksum)
-        for n, checksum in enumerate(checksums)
-    ]
+    runners = [runner(n, checksum) for n, checksum in enumerate(checksums)]
 
-    return await asyncio.gather(
-        *runners
-    )
-    
-def resolve(checksums:list["Checksum"], nparallel:int, *, celltype:str | None = None, callback = None) -> list:
+    return await asyncio.gather(*runners)
+
+
+def resolve(
+    checksums: list["Checksum"],
+    nparallel: int,
+    *,
+    celltype: str | None = None,
+    callback=None,
+) -> list:
     """Resolve a fixed number of checksums in parallel.
     Parameters:
     - checksums: list of checksums
@@ -299,26 +309,32 @@ def resolve(checksums:list["Checksum"], nparallel:int, *, celltype:str | None = 
     - celltype (optional): the celltype to resolve to.
 
     It is possible to give a callback, which will be called
-    as callback(N, value) whenever a resolve finishes
-    finishes.
-
+    as callback(N, value) whenever a resolve finishes.
     """
-    from . import Checksum
-    from .core.manager import Manager
+    from seamless.workflow.core.manager import Manager
     from seamless.buffer.cell import celltypes
-    allowed_celltypes = celltypes + ["silk", "deepcell", "deepfolder", "folder", "module"]
+
+    allowed_celltypes = celltypes + [
+        "silk",
+        "deepcell",
+        "deepfolder",
+        "folder",
+        "module",
+    ]
     if celltype not in allowed_celltypes:
         raise TypeError(celltype, allowed_celltypes)
-    
+
     if asyncio.get_event_loop().is_running():
-        raise RuntimeError("seamless.multi.resolve does not work with a running event loop, e.g inside Jupyter")
-    
+        raise RuntimeError(
+            "seamless.multi.resolve does not work with a running event loop, e.g inside Jupyter"
+        )
+
     manager = Manager()
     cachemanager = manager.cachemanager
     checksums = [Checksum(v) for v in checksums]
     nparallel = int(nparallel)
     if celltype in ["deepcell", "deepfolder", "folder"]:
-        nparallel = int(nparallel/5+0.9999)
+        nparallel = int(nparallel / 5 + 0.9999)
     coro = _resolve(cachemanager, checksums, celltype, nparallel, callback)
     fut = asyncio.ensure_future(coro)
     asyncio.get_event_loop().run_until_complete(fut)

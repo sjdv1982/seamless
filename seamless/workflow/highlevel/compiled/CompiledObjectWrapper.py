@@ -147,7 +147,7 @@ class CompiledObjectWrapper:
             language = "c"
         file_extension = self._get_value("extension")
         if file_extension is None:
-            _, _, file_extension = parent.environment.find_language(language)
+            _, _, file_extension = parent.environment._find_language(language)
         value = self._get_value("code")
         cell = {
             "path": new_path,

@@ -988,7 +988,7 @@ For other use in HTTP requests, instead set mimetype to "text/plain".
             hcell.pop("language", None)
             hcell.pop("file_extension", None)
         else:
-            lang, _, extension = parent.environment.find_language(value)
+            lang, _, extension = parent.environment._find_language(value)
             hcell["language"] = lang
             hcell["file_extension"] = extension
         if lang != old_language:

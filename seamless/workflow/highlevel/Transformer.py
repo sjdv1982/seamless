@@ -460,7 +460,7 @@ an assistant is tried first and local execution is a fallback."""
                 raise ValueError("Unbound transformers can only have 'python', 'ipython' or 'bash' as their language")
             htf["language"] = value
             return   
-        lang, language, extension = parent.environment.find_language(value)
+        lang, language, extension = parent.environment._find_language(value)
         compiled = language["mode"] == "compiled"        
         old_language = htf.get("language")
         htf["language"] = lang

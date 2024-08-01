@@ -452,7 +452,7 @@ Or, it could use an internal package name like "spamalot" and do
         from ..compiler import find_language
         hnode = self._get_hnode2()
         parent = self._parent()
-        lang, _, _ = parent.environment.find_language(value)
+        lang, _, _ = parent.environment._find_language(value)
         hnode["language"] = lang
         if self._parent() is not None:
             self._parent()._translate()
