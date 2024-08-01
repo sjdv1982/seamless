@@ -1,24 +1,26 @@
-# Forked from Python's standard lib subprocess, but with mapping stdin and stdout
-# In addition, it kills all subprocesses spawned by the process
+"""Forked from Python's standard lib subprocess, but with mapping stdin and stdout
+In addition, it kills all subprocesses spawned by the process """
+
 from subprocess import *
 
 
 def kill_children(process):
+    """Kill all children of a process."""
     import psutil
 
     children = []
     try:
         children = psutil.Process(process.pid).children(recursive=True)
-    except:
+    except:  # pylint: disable=bare-except
         pass
     for child in children:
         try:
             child.kill()
-        except:
+        except:  # pylint: disable=bare-except
             pass
 
 
-def run(  # type: ignore
+def run(  # type: ignore  # pylint: disable=function-redefined,redefined-builtin
     *popenargs, input=None, capture_output=False, timeout=None, check=False, **kwargs
 ):
     """Run command with arguments and return a CompletedProcess instance.
@@ -50,7 +52,7 @@ def run(  # type: ignore
     if capture_output:
         if ("stdout" in kwargs) or ("stderr" in kwargs):
             raise ValueError(
-                "stdout and stderr arguments may not be used " "with capture_output."
+                "stdout and stderr arguments may not be used with capture_output."
             )
         kwargs["stdout"] = PIPE
         kwargs["stderr"] = PIPE
@@ -66,7 +68,9 @@ def run(  # type: ignore
             stdout, stderr = process.communicate()
             stdout = process._fileobj2output[process.stdout]
             stderr = process._fileobj2output[process.stderr]
-            raise TimeoutExpired(process.args, timeout, output=stdout, stderr=stderr)
+            raise TimeoutExpired(
+                process.args, timeout, output=stdout, stderr=stderr
+            ) from None
         except:  # Including KeyboardInterrupt, communicate handled that.
             kill_children(process)
             process.kill()

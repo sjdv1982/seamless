@@ -1,9 +1,12 @@
+"""Convert CoffeeScript Object Notation (CSON) to JSON"""
+
 from copy import deepcopy
 
 from . import pycson
-pycson.loads
+
 
 def cson2json(cson):
+    """Convert CoffeeScript Object Notation (CSON) to JSON"""
     if cson is None:
         return None
     result = pycson.loads(cson)

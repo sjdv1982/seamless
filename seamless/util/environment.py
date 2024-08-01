@@ -1,24 +1,38 @@
-import os, stat
+"""Low-level utilities for Seamless environments"""
+
+import os
+import stat
 import subprocess
 
 DOCKER_SOCKET = "/var/run/docker.sock"
 DOCKER_IMAGE = os.environ.get("DOCKER_IMAGE", "rpbs/seamless")
 
+
 def check_docker_power():
+    """Check if the environment has the Docker socket available"""
     d = os.environ.get("SEAMLESS_DOCKER_DISABLED")
     if d is not None and d.strip() not in ("False", "FALSE", "0"):
         return False
     if not os.path.exists(DOCKER_SOCKET):
-        return False    
+        return False
     mode = os.stat(DOCKER_SOCKET).st_mode
     if stat.S_ISSOCK(mode):
-        return os.access(DOCKER_SOCKET, os.R_OK | os.W_OK)  
+        return os.access(DOCKER_SOCKET, os.R_OK | os.W_OK)
+
 
 def check_conda_power():
+    """Check if the environment can create conda environments on the fly.
+    The Seamless library has no support for this.
+    An assistant may override this function."""
     return False  # Seamless has no support for creating conda environments on-the-fly
 
+
 def check_ipython_power():
+    """Check if the environment can access IPython.
+    The Seamless library always supports this.
+    An assistant may override this function."""
     return True
+
 
 """
 validate_XXX return a tuple
@@ -29,13 +43,19 @@ validate_XXX return a tuple
 - Element 1: error message
 """
 
+
 def validate_singularity():
-    result = subprocess.run("which singularity", shell=True, capture_output=True)
+    """Check if the environment has Singularity available"""
+    result = subprocess.run(
+        "which singularity", shell=True, check=False, capture_output=True
+    )
     if result.returncode:
         return False
     return True
 
+
 def validate_docker(environment):
+    """Check if the environment is running inside the required Docker environment"""
     docker = environment.get("docker")
     if docker is None:
         return None, None
@@ -49,13 +69,16 @@ def validate_docker(environment):
     if docker["name"] == DOCKER_IMAGE:
         return True, None
     else:
-        err = "Cannot execute code locally: current Docker image name is '{}', whereas '{}' is required"
+        err = """Cannot execute code locally:
+current Docker image name is '{}', whereas '{}' is required"""
         return None, err.format(DOCKER_IMAGE, docker["name"])
 
 
 def validate_conda_environment(environment):
+    """Check if the environment is running inside the required conda environment"""
     from conda.models.match_spec import MatchSpec
     from conda.cli.python_api import Commands, run_command as conda_run
+
     condenv = environment.get("conda")
     if condenv is None:
         return None, None
@@ -78,7 +101,7 @@ def validate_conda_environment(environment):
                     continue
                 if ms.version is None:
                     break
-                if ms.version.match(ll[1]):                
+                if ms.version.match(ll[1]):
                     break
                 else:
                     msg = "Conda package '{}': {} installed, but {} required"
@@ -92,8 +115,7 @@ def validate_conda_environment(environment):
         return None, err.rstrip("\n")
     else:
         return True, None
-        
-    
+
 
 power_checkers = {
     "ipython": check_ipython_power,
@@ -101,18 +123,29 @@ power_checkers = {
     "docker": check_docker_power,
 }
 
+
 def validate_environment(environment):
+    """Check if the environment is meeting requirements.
+    All binaries specified in "which" must be available
+    In addition, either the specified Docker image
+      OR the specified conda environment definition
+    must match.
+    """
     if not isinstance(environment, dict):
         raise TypeError("Malformed environment")
     for binary in environment.get("which", []):
-        result = subprocess.run("which " +  binary, shell=True, capture_output=True)
+        result = subprocess.run(
+            "which " + binary, shell=True, check=False, capture_output=True
+        )
         if result.returncode:
-            raise ValueError("which: '{}' is not available in command line path'".format(binary))
+            raise ValueError(
+                "which: '{}' is not available in command line path'".format(binary)
+            )
 
     result_conda = validate_conda_environment(environment)
     result_docker = validate_docker(environment)
     powers = environment.get("powers", [])
-    
+
     for power in powers:
         if power not in power_checkers:
             raise ValueError("Unknown environment power {}".format(power))
@@ -123,9 +156,9 @@ def validate_environment(environment):
             raise ValueError("Environment power cannot be granted: '{}'".format(power))
 
     err = ""
-    if result_docker[0] == False:
+    if result_docker[0] == False:  # pylint: disable=singleton-comparison
         err += "Docker:\n  " + str(result_docker[1]) + "\n"
-    if result_conda[0] == False:
+    if result_conda[0] == False:  # pylint: disable=singleton-comparison
         err += "Conda:\n  " + str(result_conda[1]) + "\n"
     if len(err):
         raise ValueError("Environment error:\n" + err)
@@ -134,14 +167,14 @@ def validate_environment(environment):
     if result_docker[0] in (None, True):
         if "docker" in powers:
             return
-        if result_docker[0] == True:
+        if result_docker[0] == True:  # pylint: disable=singleton-comparison
             return
         if result_docker[1] is not None:
             err += "Docker:\n  " + str(result_docker[1]) + "\n"
     if result_conda[0] in (None, True):
         if "conda" in powers:
             return
-        if result_conda[0] == True:
+        if result_conda[0] == True:  # pylint: disable=singleton-comparison
             return
         if result_conda[1] is not None:
             err += "Conda:\n  " + str(result_conda[1]) + "\n"

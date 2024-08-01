@@ -1,24 +1,44 @@
+"""Tools for interfacing with IPython"""
+
 import sys
+
 IPythonInputSplitter = None
 MyInProcessKernelManager = None
+
+
 def _imp():
     global IPythonInputSplitter, MyInProcessKernelManager
-    from IPython.core.inputsplitter import IPythonInputSplitter
+    from IPython.core.inputsplitter import (  # pylint: disable=redefined-outer-name
+        IPythonInputSplitter,
+    )
     from ipykernel.inprocess.ipkernel import InProcessKernel
     from ipykernel.inprocess.manager import InProcessKernelManager
     from ipykernel.zmqshell import ZMQInteractiveShell
 
     class MyInProcessKernel(InProcessKernel):
-        #get rid of singleton shell instance!
+        """Replacement for IPython's InProcessKernel"""
+
+        # get rid of singleton shell instance!
         class dummy:
+            """Dummy interactive shell class that is not a singleton"""
+
             def instance(self, *args, **kwargs):
+                """Get instance, but not singleton"""
                 shell = ZMQInteractiveShell(*args, **kwargs)
                 return shell
+
         shell_class = dummy()
 
-    class MyInProcessKernelManager(InProcessKernelManager):
-        def start_kernel(self, namespace):
-            self.kernel = MyInProcessKernel(parent=self, session=self.session, user_ns = namespace)
+    class MyInProcessKernelManager(  # pylint: disable=unused-variable
+        InProcessKernelManager
+    ):  # pylint: disable=redefined-outer-name
+        """Replacement for IPython's InProcessKernelManager"""
+
+        def start_kernel(self, namespace):  # pylint: disable=arguments-differ
+            self.kernel = MyInProcessKernel(
+                parent=self, session=self.session, user_ns=namespace
+            )
+
 
 def execute(code, namespace):
     """Executes Python code in an IPython kernel
@@ -28,7 +48,7 @@ def execute(code, namespace):
     """
     if MyInProcessKernelManager is None:
         _imp()
-    kernel_manager = MyInProcessKernelManager()
+    kernel_manager = MyInProcessKernelManager()  # pylint: disable=not-callable
     kernel_manager.start_kernel(namespace)
     kernel = kernel_manager.kernel
 
@@ -40,13 +60,15 @@ def execute(code, namespace):
     if not result.success:
         if kernel.shell._last_traceback:
             for tb in kernel.shell._last_traceback:
-                print(tb) #TODO: log
+                print(tb, file=sys.stderr)
     return namespace
 
+
 def ipython2python(code):
+    """Convert IPython code (including magics)to normal Python code"""
     if IPythonInputSplitter is None:
         _imp()
-    isp = IPythonInputSplitter()
+    isp = IPythonInputSplitter()  # pylint: disable=not-callable
     newcode = ""
     for line in code.splitlines():
         if isp.push_accepts_more():
