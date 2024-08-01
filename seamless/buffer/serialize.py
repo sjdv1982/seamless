@@ -1,8 +1,4 @@
-import asyncio
-import json
-import weakref
 import numpy as np
-from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
 
 from seamless.util import lrucache2
 

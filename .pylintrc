@@ -13,6 +13,8 @@ disable=import-error,import-outside-toplevel,wrong-import-position,
   use-implicit-booleaness-not-len,
   consider-using-f-string,too-many-branches,too-many-arguments,
   logging-fstring-interpolation,
+  logging-format-interpolation,
+  pointless-string-statement,
   no-member  #necessary, since ignored-classes is not quite working
 
 [TYPECHECK]

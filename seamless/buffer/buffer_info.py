@@ -65,7 +65,9 @@ class BufferInfo:
         "members",
     )
 
-    def __init__(self, checksum, params: dict = {}):
+    def __init__(self, checksum, params: dict = None):
+        if params is None:
+            params = {}
         for slot in self.__slots__:
             setattr(self, slot, params.get(slot))
         if isinstance(checksum, str):

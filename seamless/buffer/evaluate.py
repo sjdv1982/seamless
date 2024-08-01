@@ -262,7 +262,7 @@ from .convert import (
     try_convert_single,
     SeamlessConversionError,
 )
-from seamless import CacheMissError, Checksum
+from seamless import CacheMissError
 from .buffer_cache import buffer_cache
 from .cell import text_types2
 from .convert import validate_checksum, validate_text
