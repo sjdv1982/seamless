@@ -1,17 +1,25 @@
+"""Class for Seamless checksums. Seamless checksums are calculated as SHA3-256 hashes of buffers."""
+
+
 class Checksum:
-    _value = None
-    def __init__(self, checksum):
+    """Class for Seamless checksums.
+    Seamless checksums are calculated as SHA3-256 hashes of buffers."""
+
+    _value: bytes | None = None  # pylint: disable=E0601
+
+    def __init__(self, checksum: "Checksum" | str | bytes | None):
         from seamless.util import parse_checksum
+
         if isinstance(checksum, Checksum):
             self._value = checksum.bytes()
         else:
             self._value = parse_checksum(checksum, as_bytes=True)
 
     @classmethod
-    def load(cls, filename):
+    def load(cls, filename: str) -> "Checksum":
         """Loads the checksum from a .CHECKSUM file.
 
-If the filename doesn't have a .CHECKSUM extension, it is added"""
+        If the filename doesn't have a .CHECKSUM extension, it is added"""
         if not filename.endswith(".CHECKSUM"):
             filename2 = filename + ".CHECKSUM"
         else:
@@ -28,12 +36,15 @@ If the filename doesn't have a .CHECKSUM extension, it is added"""
 
     @property
     def value(self) -> str | None:
+        """Returns the checksum as a 64-byte hexadecimal string"""
         return self.hex()
-    
+
     def bytes(self) -> bytes | None:
+        """Returns the checksum as a 32-byte bytes object"""
         return self._value
 
     def hex(self) -> str | None:
+        """Returns the checksum as a 64-byte hexadecimal string"""
         if self._value is None:
             return None
         return self._value.hex()
@@ -46,11 +57,11 @@ If the filename doesn't have a .CHECKSUM extension, it is added"""
         if not isinstance(other, Checksum):
             other = Checksum(other)
         return self.bytes() == other.bytes()
-        
+
     def save(self, filename):
         """Saves the checksum to a .CHECKSUM file.
 
-If the filename doesn't have a .CHECKSUM extension, it is added"""
+        If the filename doesn't have a .CHECKSUM extension, it is added"""
         if self.value is None:
             raise ValueError("Checksum is None")
         if not filename.endswith(".CHECKSUM"):
@@ -62,17 +73,19 @@ If the filename doesn't have a .CHECKSUM extension, it is added"""
 
     def resolve(self, celltype=None):
         """Returns the data buffer that corresponds to the checksum.
-        If celltype is provided, a value is returned instead."""        
+        If celltype is provided, a value is returned instead."""
         from seamless.workflow.core.manager import Manager
+
         if celltype in (float, str, int, bool):
             celltype = celltype.__name__
         manager = Manager()
         return manager.resolve(self.hex(), celltype=celltype, copy=True)
 
-    def find(self, verbose:bool=False) -> list | None:
+    def find(self, verbose: bool = False) -> list | None:
         """Returns a list of URL infos to download the underlying buffer.
         An URL info can be an URL string, or a dict with additional information."""
         from seamless.util.fair import find_url_info
+
         return find_url_info(self, verbose=verbose)
 
     def __str__(self):
