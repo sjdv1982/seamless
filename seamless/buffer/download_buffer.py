@@ -1,4 +1,4 @@
-import os
+import asyncio
 import urllib.parse
 import requests
 import time
@@ -11,13 +11,9 @@ from seamless import CacheMissError, Checksum
 
 from seamless import Buffer
 from seamless.buffer.get_buffer import get_buffer
-
-try:
-    from seamless.buffer.buffer_cache import buffer_cache
-    from seamless.buffer.convert import try_convert, SeamlessConversionError
-except ImportError:
-    buffer_cache = None
-    try_convert = None
+from seamless.buffer.cell import celltypes
+from seamless.buffer.buffer_cache import buffer_cache
+from seamless.buffer.convert import try_convert, SeamlessConversionError
 session = requests.Session()
 
 MAX_DOWNLOADS = 10
@@ -70,6 +66,23 @@ class Mirror:
         self._download_time += download_time
         self._failure_count = 0
 
+
+def validate_url_info(url_info):
+    if isinstance(url_info, str):
+        get_host(url_info)
+    elif isinstance(url_info, dict):
+        allowed_keys = ("url", "celltype", "compression")
+        for k in url_info:
+            if k not in allowed_keys:
+                raise ValueError(url_info)
+        if "url" not in url_info:
+            raise ValueError("No 'url' field")
+        get_host(url_info["url"])
+        if "celltype" in url_info:
+            if url_info["celltype"] not in celltypes:
+                raise ValueError(url_info["celltype"])
+    else:
+        raise TypeError(url_info)
 
 def get_host(url):
     _, host, _, _, _ = urllib.parse.urlsplit(url)
@@ -392,7 +405,6 @@ if __name__ == "__main__":
     print(time.time() - t)
     print()
 
-    import asyncio
 
     print("Async download")
     coro = download_buffer(checksum3, urls3)

@@ -1,4 +1,4 @@
-from seamless import Checksum
+from seamless import Buffer, Checksum
 import numpy as np
 import warnings
 
@@ -162,7 +162,7 @@ async def value_conversion(checksum, source_celltype, target_celltype):
     Does not use the Task system, so no fine-grained coalescence/cancellation"""
     if target_celltype == "checksum":
         target_buffer = checksum.hex().encode()
-        target_checksum = await calculate_checksum(target_buffer)
+        target_checksum = await Buffer(target_buffer).get_checksum_async()
         buffer_cache.cache_buffer(target_checksum, target_buffer)
         return target_checksum
 
@@ -170,7 +170,7 @@ async def value_conversion(checksum, source_celltype, target_celltype):
         buffer = get_buffer(checksum, remote=True, deep=False)
         if buffer is None:
             raise CacheMissError(checksum)
-        checksum_text = await deserialize(buffer, "checksum", copy=False)
+        checksum_text = Checksum(buffer)
         validate_checksum(checksum_text)
         if not isinstance(checksum_text, str):
             if target_celltype == "plain":
@@ -189,7 +189,7 @@ async def value_conversion(checksum, source_celltype, target_celltype):
     msg = buffer
     if len(msg) > 1000:
         msg = msg[:920] + "..." + msg[-50:]
-    source_value = await deserialize(buffer, source_celltype, copy=False)
+    source_value = await Buffer(buffer, checksum=checksum).deserialize_async(source_celltype, copy=False)
     conv = (source_celltype, target_celltype)
     try:
         if conv == ("binary", "plain"):
@@ -226,7 +226,7 @@ async def value_conversion(checksum, source_celltype, target_celltype):
         full_msg = msg + "\n\nOriginal exception:\n\n" + str(exc)
         raise SeamlessConversionError(full_msg) from None
     target_buffer = await serialize(target_value, target_celltype)
-    target_checksum = await calculate_checksum(target_buffer)
+    target_checksum = await Buffer(target_buffer).get_checksum_async()
     buffer_cache.cache_buffer(target_checksum, target_buffer)
 
     if conv == ("plain", "binary"):
@@ -270,7 +270,5 @@ from .conversion import conversion_values
 from .cached_compile import analyze_code
 from .buffer_info import verify_buffer_info
 from .serialize import serialize
-from .deserialize import deserialize
-from .calculate_checksum import calculate_checksum
 from .json import json_encode
 from .get_buffer import get_buffer

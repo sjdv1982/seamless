@@ -1,0 +1,9 @@
+Iris data set checksum: d19eb55b00aff308295bfe175b70e9af602acd85101b027a514095eaf5ef581a
+Find...
+... None
+Initial try: cache miss...
+Find...
+... ['https://raw.githubusercontent.com/scikit-learn/scikit-learn/main/sklearn/datasets/data/iris.csv']
+Download successful
+150,4,setosa,versicolor,virginica
+(150., 4., 'setosa', 'versicolor', 'virginica')

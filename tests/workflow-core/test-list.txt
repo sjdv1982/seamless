@@ -2,7 +2,7 @@
 #   python3 -u TEST.py > test-outputs/TEST.out 2>&1
 #   Best also to test using "ipython3 TEST.py", since re-translation may work differently
 #   Before each release, the test set must be run:
-#   - under seamless-bash/seamless-run (within Docker)
+#   - under seamless-bash (within Docker)
 #   - under seamless-framework (bare-metal conda)
 jupyter.sh
 bytecell.py

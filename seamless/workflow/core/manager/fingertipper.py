@@ -2,12 +2,13 @@ import asyncio
 import json
 import traceback
 
-from ..cache.buffer_cache import buffer_cache
+from seamless import Buffer
+from seamless.buffer.buffer_cache import buffer_cache
 
 class FingerTipper:
     """Short-lived object to perform nested fingertipping"""
     def __init__(self, checksum, cachemanager, *, recompute, done, dunder=None):
-        from seamless.util import is_forked
+        from seamless.workflow.util import is_forked
         self.checksum = checksum
         self.cachemanager = cachemanager
         self.done = done
@@ -92,7 +93,7 @@ class FingerTipper:
 
     def _register(self, buf):
         if buf is not None:
-            checksum0 = calculate_checksum(buf)
+            checksum0 = Buffer(buf).get_checksum()
             if checksum0 == self.checksum:
                 buffer_cache.cache_buffer(self.checksum, buf)
             return checksum0
@@ -124,7 +125,7 @@ class FingerTipper:
                 self.manager, sub_buffer, sub_checksum, "mixed", copy=True
             ).run()
             if hash_pattern:
-                value = await value_to_deep_structure(value, hash_patyern)
+                value = await value_to_deep_structure(value, hash_pattern)
             paths = []
         else:
             if isinstance(paths[0], int):
@@ -223,6 +224,5 @@ class FingerTipper:
 
 
 from ..protocol.expression import set_subpath_checksum, access_hash_pattern, value_to_deep_structure
-from ..protocol.get_buffer import get_buffer
+from seamless.buffer.get_buffer import get_buffer
 from ..cache.transformation_cache import syntactic_to_semantic
-from ... import calculate_checksum

@@ -2,10 +2,11 @@ import json, os
 import sys
 import urllib.parse
 from seamless import Checksum
-from seamless.buffer.download_buffer import download_buffer_sync, session
+from seamless.buffer.download_buffer import download_buffer_sync, validate_url_info, session
 from requests.exceptions import ConnectionError, ReadTimeout
 
 _servers = []
+_direct_urls = {}
 
 def get_servers():
     return _servers.copy()
@@ -13,38 +14,38 @@ def get_servers():
 def add_server(url):
     _servers.append(url)
 
+def add_direct_urls(url_info_dict):
+    """A dict where the keys are checksums and the values are (a single or a list of) url infos.
+    An url info can be a URL string or a dict containing 'url' and optionally 'celltype', 'compression'
+    """
+    for cs, url_infos in url_info_dict.items():
+        if isinstance(url_infos, (dict, str)):
+            url_infos = [url_infos]
+        checksum = Checksum(cs)
+        for url_info in url_infos:
+            validate_url_info(url_info)
+            if checksum not in _direct_urls:
+                _direct_urls[checksum] = []
+            _direct_urls[checksum].append(url_info)
+
+
 _classification = {
     "bytes_item": set(),
     "mixed_item": set(),
     "keyorder": set(),
 }  
-def _classify(checksum:str, classification: str):
+def _classify(checksum:Checksum, classification: str):
+    checksum = Checksum(checksum)
     if classification not in ("bytes_item" , "mixed_item", "keyorder"):
         raise ValueError(classification)
-    if isinstance(checksum, bytes):
-        checksum = checksum.hex()
-    if len(checksum) != 64:
-        raise ValueError(checksum)
-    try:
-        bytes.fromhex(checksum)
-    except Exception:
-        raise ValueError(checksum)
     _classification[classification].add(checksum)
 
 def _download(checksum:Checksum, template, *, checksum_content:bool, verbose:bool=False):
-    from seamless.workflow.core.protocol.get_buffer import get_buffer as get_buffer0
+    from seamless.buffer.get_buffer import get_buffer as get_buffer0
     checksum = Checksum(checksum)
     if not checksum:
         return None
-    if isinstance(checksum, bytes):
-        checksum = checksum.hex()
-    if len(checksum) != 64:
-        raise ValueError(checksum)
-    try:
-        bytes.fromhex(checksum)
-    except Exception:
-        raise ValueError(checksum)
-    request = template + checksum
+    request = template + checksum.hex()
     urls = [urllib.parse.urljoin(server, request) for server in _servers]
     if checksum_content:
         result = get_buffer0(checksum, remote=False)
@@ -92,8 +93,9 @@ def find(checksum:Checksum):
 def keyorder(checksum:str, verbose:bool=False):
     return _download(checksum, "machine/keyorder/", checksum_content=False, verbose=verbose)
 
-def access(checksum:str, celltype:str, *, verbose:bool=False):
-    from seamless.workflow.core.protocol.get_buffer import get_buffer as get_buffer0
+def access(checksum:Checksum, celltype:str, *, verbose:bool=False):
+    from seamless.buffer.get_buffer import get_buffer as get_buffer0
+    checksum = Checksum(checksum)
     result = get_buffer0(checksum, remote=False)
     if result is not None:
         return result
@@ -113,16 +115,12 @@ def get_buffer(checksum:Checksum, deep=False):
     checksum = Checksum(checksum)
     if not checksum:
         return None
-    if isinstance(checksum, bytes):
-        checksum = checksum.hex()
-    if len(checksum) != 64:
-        raise ValueError(checksum)
-    try:
-        bytes.fromhex(checksum)
-    except Exception:
-        raise ValueError(checksum)
-    for c in _classification:
-        if checksum in _classification[c]:
+    if checksum in _direct_urls:
+        buffer = download_buffer_sync(checksum, _direct_urls[checksum])
+        if buffer is not None:
+            return buffer
+    for c,cc in _classification.items():
+        if checksum in cc:
             if c == "bytes_item":
                 return access(checksum, "bytes")
             elif c == "mixed_item":
@@ -135,6 +133,22 @@ def get_buffer(checksum:Checksum, deep=False):
             _classify(checksum, "keyorder")
             return result
     return None
+
+def find_url_info(checksum:Checksum, verbose:bool=False):
+    checksum = Checksum(checksum)
+    if not checksum:
+        return None
+    result = []
+    if checksum in _direct_urls:
+        result += _direct_urls[checksum]
+    url_infos_buf = _download(checksum, "machine/access/", checksum_content=False, verbose=verbose)
+    if url_infos_buf is not None:
+        url_infos = json.loads(url_infos_buf.decode())
+        result += url_infos
+    if not result:
+        return None
+    return result
+
 
 def _validate_params(type:str, version:str, date:str, format:str, compression:str):
     if type not in (None, "deepcell", "deepfolder"):
@@ -185,7 +199,7 @@ def find_distribution(dataset:str, *, type:str=None, version:str=None, date:str=
             continue
     raise ConnectionError("Cannot contact any FAIR server")        
 
-def find_checksum(dataset:str, *, type:str=None, version:str=None, date:str=None, format:str=None, compression:str=None):
+def find_distribution_checksum(dataset:str, *, type:str|None=None, version:str|None=None, date:str|None=None, format:str|None=None, compression:str|None=None):
     params = _validate_params(type, version, date, format, compression)
     params["dataset"] = dataset
     request = "/machine/find_checksum"
@@ -199,16 +213,13 @@ def find_checksum(dataset:str, *, type:str=None, version:str=None, date:str=None
             elif int(resp/100) in (4,5):
                 continue       
             else:
-                checksum = response.text.strip()
-                if len(checksum) != 64:
-                    raise ValueError(checksum)
-                bytes.fromhex(checksum)
+                checksum = Checksum(response.text.strip())
                 return checksum
         except (ConnectionError, ReadTimeout):
             continue
     raise ConnectionError("Cannot contact any FAIR server")        
 
-__all__ = ["get_dataset", "find", "get_buffer", "access", "keyorder", "find_distribution", "find_checksum"]
+__all__ = ["get_dataset", "find", "get_buffer", "access", "keyorder", "find_distribution", "find_distribution_checksum"]
 
 def __dir__():
     return sorted(__all__)

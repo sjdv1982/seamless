@@ -69,6 +69,12 @@ If the filename doesn't have a .CHECKSUM extension, it is added"""
         manager = Manager()
         return manager.resolve(self.hex(), celltype=celltype, copy=True)
 
+    def find(self, verbose:bool=False) -> list | None:
+        """Returns a list of URL infos to download the underlying buffer.
+        An URL info can be an URL string, or a dict with additional information."""
+        from seamless.util.fair import find_url_info
+        return find_url_info(self, verbose=verbose)
+
     def __str__(self):
         if self.value is None:
             return "<None>"

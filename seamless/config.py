@@ -269,3 +269,11 @@ def set_ncores(ncores):
     if ncores == 0:
         print(DeprecationWarning("set_ncores(0) is deprecated. Use seamless.config.block_local() instead"))
     return _set_ncores(ncores)
+
+def add_download_urls(download_url_dict):
+    """A dict where the keys are checksums and the values are (a single or a list of) url infos.
+    An url info can be a URL string, or a dict containing 'url' and optionally 'celltype', 'compression'
+    """
+    from seamless.util.fair import add_direct_urls
+    return add_direct_urls(download_url_dict)
+   

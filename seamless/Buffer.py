@@ -3,7 +3,6 @@ from seamless import Checksum
 
 class Buffer:
     def __init__(self, value_or_buffer, celltype=None, *, checksum=None):
-        from seamless import Checksum
         from seamless.buffer.serialize import serialize_sync as serialize
         celltype = self._map_celltype(celltype)
         if celltype is None:
@@ -85,13 +84,28 @@ class Buffer:
         with open(filename, "wb") as f:
             f.write(self.value)
 
-    def deserialize(self, celltype):
+    def deserialize(self, celltype:str):
+        """Converts the buffer to a value. 
+        The checksum must have been computed already."""
         from seamless.buffer.deserialize import deserialize_sync as deserialize
         if self.value is None:
             return None
         celltype = self._map_celltype(celltype)
         return deserialize(self.value, self.checksum.bytes(), celltype, copy=True)
-    
+
+    async def deserialize_async(self, celltype:str, *, copy:bool=True):
+        """Converts the buffer to a value. 
+        The checksum must have been computed already.
+        
+        If copy=False, the value can be returned from cache.
+        It must not be modified.
+        """
+        from seamless.buffer.deserialize import deserialize
+        if self.value is None:
+            return None
+        celltype = self._map_celltype(celltype)
+        return await deserialize(self.value, self.checksum.bytes(), celltype, copy=copy)
+
     def __eq__(self, other):
         if not isinstance(other, Buffer):
             other = Buffer(other)
