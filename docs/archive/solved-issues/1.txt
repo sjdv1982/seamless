@@ -1,9 +1,0 @@
-gdb debugging:
-
-It is not really possible to unload compiled extension modules in Python.
-    Right now, Seamless gets around this by marking every module with a different
-    name ("seamless-" + checksum). Still, the symbols in those modules point to
-     the same source files, which may have changed on disk.
-    I found that if multiple versions of the same module/file greatly confuses
-     gdb, so that breakpoints no longer work.
-    UPDATE: after some fiddling, it seems to work now.

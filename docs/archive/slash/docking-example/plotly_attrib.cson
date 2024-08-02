@@ -1,7 +1,0 @@
-[{
-type: 'histogram',
-  histnorm: 'probability'
-	marker: {
-    color: 'rgba(100,250,100,0.7)',
-	}
-}]

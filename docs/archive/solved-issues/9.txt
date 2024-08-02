@@ -1,4 +1,0 @@
-The collatz test is now slower than it used to be (~7 sec vs ~3 sec).
-This is still fast enough, but it would be good to look into.
-
-UPDATE: now up to speed again

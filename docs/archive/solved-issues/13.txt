@@ -1,1 +1,0 @@
-auto_translate is just too unstable for now and has been disabled.

@@ -1,6 +1,0 @@
-Conversion from structured cell to binary cell goes wrong
-The issue was partially fixed in commit 7c46d9c5a065397c4c014528c2eae8416dd6ef20.
-However, tests/highlink-cpp still needs to have a line disabled, in order to work.
-
-UPDATE: binary cells store their buffer wrong.
-The Numpy header part is lost, only the bytes are kept!
