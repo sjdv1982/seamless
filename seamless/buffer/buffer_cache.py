@@ -1,5 +1,8 @@
+"""Module for caching buffers in memory"""
+
 import time
 import functools
+import logging
 
 from silk.mixed import MAGIC_NUMPY, MAGIC_SEAMLESS_MIXED
 
@@ -10,27 +13,30 @@ from seamless.buffer.buffer_info import BufferInfo
 
 from seamless.buffer import buffer_remote
 
-import logging
 
 logger = logging.getLogger(__name__)
 
 
 def print_info(*args):
+    """Logging aid"""
     msg = " ".join([str(arg) for arg in args])
     logger.info(msg)
 
 
 def print_warning(*args):
+    """Logging aid"""
     msg = " ".join([str(arg) for arg in args])
     logger.warning(msg)
 
 
 def print_debug(*args):
+    """Logging aid"""
     msg = " ".join([str(arg) for arg in args])
     logger.debug(msg)
 
 
 def print_error(*args):
+    """Logging aid"""
     msg = " ".join([str(arg) for arg in args])
     logger.error(msg)
 
@@ -48,7 +54,8 @@ class BufferCache:
     Keys are straightforward buffer checksums.
 
     NOTE: if there is a database active, buffers are normally not maintained in local cache.
-    Refcounts are still maintained; a buffer with a refcount is sure to have been written into the database
+    Refcounts are still maintained; a buffer with a refcount is sure to have
+    been written into the database
 
     It is always possible to cache a buffer that has no refcount into local cache for a short while
     """
@@ -57,8 +64,13 @@ class BufferCache:
     LIFETIME_TEMP = (
         20.0  # buffer_cache keeps unreferenced buffer values alive for 20 secs
     )
-    LIFETIME_TEMP_SMALL = 600.0  # buffer_cache keeps unreferenced small buffer values (< SMALL_BUFFER_LIMIT bytes) alive for 10 minutes
-    LOCAL_MODE_FULL_PERSISTENCE = True  # in local mode (no delegation), buffer_cache keeps non-persistent buffers alive as long as they are referenced
+    LIFETIME_TEMP_SMALL = 600.0  # buffer_cache keeps unreferenced small buffer
+    #  values (< SMALL_BUFFER_LIMIT bytes) alive for 10 minutes
+
+    LOCAL_MODE_FULL_PERSISTENCE = (
+        True  # in local mode (no delegation), buffer_cache keeps
+    )
+    # non-persistent buffers alive as long as they are referenced
 
     def __init__(self):
         self.buffer_cache = {}  # local cache, checksum-to-buffer
@@ -152,6 +164,8 @@ class BufferCache:
         return self._incref([checksum], persistent, [buffer])
 
     def find_missing(self, checksum, buffer, persistent=False):
+        """If a checksum is among the missing buffers, try to find it
+        and remove it from the missing buffers."""
         if checksum in self.missing:
             if buffer is None:
                 buffer = self.buffer_cache.get(checksum)
@@ -176,7 +190,15 @@ class BufferCache:
             if buffers is not None:
                 buffer = buffers[n]
 
-            # print("INCREF     ", checksum.hex(), persistent, buffer is None, checksum in self.missing)
+            """
+            print(
+                "INCREF     ",
+                checksum.hex(),
+                persistent,
+                buffer is None,
+                checksum in self.missing,
+            )
+            """
             if persistent and not self.LOCAL_MODE_FULL_PERSISTENCE:
                 self.persistent_buffers.add(checksum)
             if checksum in self.buffer_refcount:
@@ -252,7 +274,17 @@ class BufferCache:
         # print("DECREF     ", checksum)
         return self._decref([checksum])
 
-    def get_buffer(self, checksum: Checksum, *, remote=True, deep=False):
+    def get_buffer(
+        self, checksum: Checksum, *, remote: bool = True, deep: bool = False
+    ):
+        """Retrieve a buffer from cache.
+        If remote=True:
+            - Try to download it from buffer read servers/folders
+            - Try to download it via the FAIR client or direct URLs.
+        If deep=True, the buffer is a deep buffer.
+          This does not affect the result, but it does affect how
+          FAIR servers are interrogated.
+        """
         from seamless import fair
 
         checksum = Checksum(checksum)
@@ -322,8 +354,21 @@ class BufferCache:
         self.synced_buffer_info.add(checksum)
 
     def get_buffer_info(
-        self, checksum: Checksum, *, sync_remote, buffer_from_remote, force_length
+        self,
+        checksum: Checksum,
+        *,
+        sync_remote: bool,
+        buffer_from_remote: bool,
+        force_length: bool
     ) -> BufferInfo | None:
+        """Try to retrieve BufferInfo from cache.
+        If sync_remote, bidirectionally synchronize the BufferInfo with the Seamless database.
+          BufferInfo from the database has precedence over locally known information.
+        If force_length, return a BufferInfo with at least the length, or raise an Exception.
+          To obtain the length, the buffer itself may be obtained.
+        If force_length and buffer_from_remote, try to download the buffer remotely
+          if its length is unknown and it cannot be obtained locally.
+        """
         checksum = Checksum(checksum)
         if not checksum:
             return None
@@ -367,6 +412,8 @@ class BufferCache:
         *,
         sync_remote
     ):
+        """Update BufferInfo, registering a conversion as possible.
+        If connected, update the database."""
         field = None
         if source_celltype == "str" and target_celltype == "text":
             field = "str2text"
@@ -400,6 +447,9 @@ class BufferCache:
     def update_buffer_info(
         self, checksum, attr, value, *, sync_remote, no_sync_from_remote=False
     ):
+        """Update BufferInfo.
+        If sync_remote, synchronize to the database.
+        If not no_sync_from_remote, synchronize from the database as well."""
         co_flags = {
             "is_json": ("is_utf8",),
             "json_type": ("is_json",),
@@ -432,7 +482,7 @@ class BufferCache:
                 self.update_buffer_info(checksum, f, True, sync_remote=False)
             for f in anti_flags.get(attr, []):
                 self.update_buffer_info(checksum, f, False, sync_remote=False)
-        elif value == False:
+        elif value == False:  # pylint: disable=singleton-comparison
             for f in co_flags.get(attr, []):
                 self.update_buffer_info(checksum, f, False, sync_remote=False)
         if sync_remote:
@@ -500,7 +550,9 @@ class BufferCache:
         if sync_to_remote and checksum in self.buffer_info:
             self._sync_buffer_info_to_remote(checksum)
 
-    def buffer_check(self, checksum: Checksum):
+    def buffer_check(self, checksum: Checksum) -> bool:
+        """Check if the buffer is available,
+        either in local cache or remotely."""
         checksum = Checksum(checksum)
         assert checksum
         if checksum in self.buffer_cache:
@@ -508,6 +560,7 @@ class BufferCache:
         return buffer_remote.can_read_buffer(checksum)
 
     def destroy(self):
+        """Uncache all cached buffers"""
         if self.buffer_cache is None:
             return
         self.buffer_refcount.pop(bytes.fromhex(empty_dict_checksum), None)

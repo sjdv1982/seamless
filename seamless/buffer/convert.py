@@ -5,7 +5,6 @@ Conversions involving paths or hash patterns are also out-of-scope
 """
 
 import ast
-import json
 import orjson
 import numpy as np
 import builtins

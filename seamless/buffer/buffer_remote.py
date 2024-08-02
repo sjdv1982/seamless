@@ -1,9 +1,17 @@
-import requests
+"""Module to obtain buffers from remote sources:
+- Buffer read servers
+- Buffer read folders
+"""
+
 import os
 import time
 import traceback
+import requests
+from requests.exceptions import (  # pylint: disable=redefined-builtin
+    ConnectionError,
+    ReadTimeout,
+)
 from seamless import Buffer, Checksum
-from requests.exceptions import ConnectionError, ReadTimeout
 
 _read_servers: list[str] | None = None
 _read_folders: list[str] | None = None
@@ -15,8 +23,10 @@ _written_buffers = set()
 session = requests.Session()
 
 
-def get_file_buffer(directory, checksum, timeout=10):
-    checksum = parse_checksum(checksum, as_bytes=True)
+def get_file_buffer(directory, checksum: Checksum, timeout=10) -> bytes | None:
+    """Read a buffer from a buffer folder directory.
+    Its filename must be equal to its checksum."""
+    checksum = Checksum(checksum)
 
     filename = os.path.join(directory, checksum.hex())
     if os.path.exists(filename):
@@ -42,7 +52,7 @@ def get_file_buffer(directory, checksum, timeout=10):
         return
     with open(filename, "rb") as f:
         buf = f.read()
-    buf_checksum = calculate_checksum(buf)
+    buf_checksum = Buffer(buf).get_checksum()
     if buf_checksum != checksum:
         # print("WARNING: '{}' has the wrong checksum".format(filename))
         return
@@ -50,6 +60,9 @@ def get_file_buffer(directory, checksum, timeout=10):
 
 
 def get_buffer(checksum: Checksum) -> bytes | None:
+    """Retrieve the buffer from remote sources.
+    First all buffer read folders are queried.
+    Then all buffer read servers are queried."""
     checksum = Checksum(checksum)
     if not checksum:
         return None
@@ -73,6 +86,10 @@ def get_buffer(checksum: Checksum) -> bytes | None:
 
 
 def get_filename(checksum: Checksum) -> str | None:
+    """Get the filename where a buffer is stored.
+    This can only be provided by a buffer read folder.
+    All buffer read folders are queried in order."""
+    checksum = Checksum(checksum)
     if not checksum:
         return None
     if _read_folders is None:
@@ -84,7 +101,13 @@ def get_filename(checksum: Checksum) -> str | None:
     return None
 
 
-def get_directory(checksum: Checksum):
+def get_directory(checksum: Checksum) -> str | None:
+    """Get the directory where a deep buffer is deployed.
+    This can only be provided by a buffer read folder.
+    Deployed deep buffers are assumed to be in:
+      <buffer_read_folder>/deployed/<checksum>.
+    All buffer read folders are queried in order."""
+
     checksum = Checksum(checksum)
     if not checksum:
         return None
@@ -97,7 +120,8 @@ def get_directory(checksum: Checksum):
     return None
 
 
-def write_buffer(checksum: Checksum, buffer):
+def write_buffer(checksum: Checksum, buffer: bytes) -> None:
+    """Write the buffer to the buffer write server, if one exists."""
     checksum = Checksum(checksum)
     if not checksum:
         return None
@@ -113,46 +137,61 @@ def write_buffer(checksum: Checksum, buffer):
 
 
 def is_known(checksum: Checksum):
+    """Returns if a buffer is known to be known remotely, from cache."""
     checksum = Checksum(checksum)
     if not checksum:
         return True
     return checksum in _known_buffers or checksum in _written_buffers
 
 
-def remote_has_checksum(checksum):
-    checksum = parse_checksum(checksum, as_bytes=True)
+def remote_has_checksum(checksum: Checksum):
+    """Returns if a buffer is known remotely. This is queried directly."""
+    checksum = Checksum(checksum)
     if _read_folders is not None:
         for folder in _read_folders:
             filename = os.path.join(folder, checksum.hex())
             if os.path.exists(filename):
+                _known_buffers.add(checksum)
                 return True
     if _read_servers is not None:
         for server in _read_servers:
             if buffer_read_client.has(session, server, checksum):
+                _known_buffers.add(checksum)
                 return True
     return False
 
 
-def can_read_buffer(checksum):
-    checksum = parse_checksum(checksum, as_bytes=True)
+def can_read_buffer(checksum: Checksum):
+    """Returns if a buffer is known remotely.
+    A local cache of buffers that are known to be known remotely
+     is also queried."""
+    checksum = Checksum(checksum)
     if is_known(checksum):
         return True
     return remote_has_checksum(checksum)
 
 
 def can_write():
+    """Returns if it is possible to write buffers remotely"""
     return _write_server is not None
 
 
 def set_read_buffer_folders(read_buffer_folders):
+    """Set all read buffer folders"""
     global _read_folders
     if read_buffer_folders:
+        if _read_folders:
+            for old_folder in _read_servers:
+                if old_folder not in read_buffer_folders:
+                    _known_buffers.clear()
+                    break
         _read_folders = [os.path.abspath(f) for f in read_buffer_folders]
     else:
         _read_folders = None
 
 
 def add_read_buffer_folder(read_buffer_folder):
+    """Add a read buffer folder"""
     global _read_folders
     f = os.path.abspath(read_buffer_folder)
     if _read_folders:
@@ -162,6 +201,7 @@ def add_read_buffer_folder(read_buffer_folder):
 
 
 def set_read_buffer_servers(read_buffer_servers):
+    """Set all read buffer servers"""
     global _read_servers
     if read_buffer_servers:
         if _read_servers:
@@ -176,6 +216,7 @@ def set_read_buffer_servers(read_buffer_servers):
 
 
 def add_read_buffer_server(read_buffer_server):
+    """Add a read buffer server"""
     global _read_servers
     if _read_servers:
         _read_servers.append(read_buffer_server)
@@ -184,6 +225,8 @@ def add_read_buffer_server(read_buffer_server):
 
 
 def set_write_buffer_server(write_buffer_server):
+    """Set the write buffer server.
+    There can only be one."""
     global _write_server
     if write_buffer_server:
         ntrials = 5
@@ -205,7 +248,8 @@ def set_write_buffer_server(write_buffer_server):
         write_buffer_server = None
 
 
-def has_readwrite_servers():
+def has_readwrite_servers() -> bool:
+    """Check if there is a write buffer server and at least one read buffer server"""
     return _write_server is not None and len(_read_servers)
 
 

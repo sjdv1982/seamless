@@ -1,3 +1,5 @@
+"""Compile Python code with built-in compile() and store it in linecache"""
+
 import linecache
 import functools
 from ast import PyCF_ONLY_AST, FunctionDef, Expr, Lambda, stmt as Statement
@@ -5,6 +7,7 @@ from ast import PyCF_ONLY_AST, FunctionDef, Expr, Lambda, stmt as Statement
 
 # @functools.lru_cache(maxsize=1000) disable LRU cache, because linecache identifiers are degenerate
 def cached_compile(code, identifier, mode="exec", flags=None, dont_inherit=0):
+    """Compile Python code with built-in compile() and store it in linecache"""
     if flags is not None:
         astree = compile(code, identifier, mode, flags, dont_inherit)
     else:
@@ -21,6 +24,9 @@ def cached_compile(code, identifier, mode="exec", flags=None, dont_inherit=0):
 
 @functools.lru_cache(maxsize=1000)
 def analyze_code(code, identifier):
+    """Determine if Python code is a block, function, expression or lambda.
+    Also reveals SyntaxErrors.
+    'identifier' is the filename that shows up in SyntaxErrors"""
     astree = cached_compile(code, identifier, "exec", PyCF_ONLY_AST)
     mode = "block"
     func_name = None
@@ -43,6 +49,11 @@ def analyze_code(code, identifier):
 def exec_code(
     code, identifier, namespace, inputs, output, *, with_ipython_kernel=False
 ):
+    """Execute Python code in a namespace.
+    If code is a function, provide it with input variable names.
+    If code is a function, expression or lambda, assign the result to an output variable name.
+
+    The code can be executed inside an IPython kernel."""
     mode, func_name = analyze_code(code, identifier)
     inputs2 = [inp for inp in sorted(list(inputs)) if not inp.endswith("_SCHEMA")]
     input_params = ",".join(["{0}={0}".format(inp) for inp in inputs2])
@@ -66,7 +77,7 @@ def exec_code(
         ipython_execute(code2, namespace)
     else:
         code_obj = cached_compile(code2, identifier)
-        exec(code_obj, namespace)
+        exec(code_obj, namespace)  # pylint: disable=exec-used
 
 
 def check_function_like(code, identifier):

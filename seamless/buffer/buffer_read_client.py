@@ -1,11 +1,20 @@
+"""Client to a remote buffer write server"""
+
 import sys
 import requests
-from requests.exceptions import ConnectionError, ReadTimeout
+from requests.exceptions import (  # pylint: disable=redefined-builtin
+    ConnectionError,
+    ReadTimeout,
+)
 
 from seamless import Buffer, Checksum
 
 
-def has(session, url, checksum: Checksum):
+def has(session, url, checksum: Checksum) -> bool:
+    """Check if a buffer is available at a remote URL.
+    URL is accessed using HTTP GET, with /has added to the URL,
+     and the checksum as parameter"""
+
     from seamless.workflow.util import is_forked
 
     sess = session
@@ -34,7 +43,9 @@ def has(session, url, checksum: Checksum):
         return
 
 
-def get(session, url, checksum: Checksum):
+def get(session: requests.Session, url, checksum: Checksum):
+    """Download a buffer from a remote URL.
+    URL is accessed using HTTP GET, with /<checksum> added to the URL"""
     from seamless.workflow.util import is_forked
 
     sess = session

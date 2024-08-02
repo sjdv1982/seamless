@@ -1,5 +1,11 @@
+"""Client to a remote buffer write server"""
+
 import requests
-from requests.exceptions import ConnectionError, ChunkedEncodingError, JSONDecodeError
+from requests.exceptions import (  # pylint: disable=redefined-builtin
+    ConnectionError,
+    ChunkedEncodingError,
+    JSONDecodeError,
+)
 from seamless import Checksum
 
 
@@ -13,7 +19,7 @@ def has(session, url, checksum: Checksum, *, timeout=None):
     assert checksum
     path = url + "/has"
     result = None
-    for trial in range(10):
+    for _trial in range(10):
         try:
             with sess.get(path, json=[checksum], timeout=timeout) as response:
                 if int(response.status_code / 100) in (4, 5):
@@ -47,7 +53,7 @@ def write(session, url, checksum: Checksum, buffer: bytes):
     checksum = Checksum(checksum)
     assert checksum
     path = url + "/" + checksum
-    for trial in range(10):
+    for _trial in range(10):
         try:
             with sess.put(path, data=buffer) as response:
                 if int(response.status_code / 100) in (4, 5):
