@@ -7,14 +7,37 @@ from types import LambdaType
 
 from seamless import Checksum
 
-def transformer(func=None, *, scratch=None, direct_print=None, local=None, return_transformation=False, in_process=False):
+
+def transformer(
+    func=None,
+    *,
+    scratch=None,
+    direct_print=None,
+    local=None,
+    return_transformation=False,
+    in_process=False
+):
     """Wraps a function in a direct transformer
     Direct transformers can be called as normal functions, but
     the source code of the function and the arguments are converted
     into a Seamless transformation."""
     if func is None:
-        return partial(transformer, scratch=scratch, direct_print=direct_print, local=local, return_transformation=return_transformation, in_process=in_process)
-    result = DirectTransformer(func, scratch=scratch, direct_print=direct_print, local=local, return_transformation=return_transformation, in_process=in_process)
+        return partial(
+            transformer,
+            scratch=scratch,
+            direct_print=direct_print,
+            local=local,
+            return_transformation=return_transformation,
+            in_process=in_process,
+        )
+    result = DirectTransformer(
+        func,
+        scratch=scratch,
+        direct_print=direct_print,
+        local=local,
+        return_transformation=return_transformation,
+        in_process=in_process,
+    )
     update_wrapper(result, func)
     return result
 
@@ -34,56 +57,62 @@ def getsource(func):
         code = strip_decorators(code)
         return code
 
+
 class DirectTransformer:
-    def __init__(self, func, *, scratch, direct_print, local, return_transformation, in_process):
+    def __init__(
+        self, func, *, scratch, direct_print, local, return_transformation, in_process
+    ):
         """Direct transformer.
-Direct transformers can be called as normal functions, but
-the source code of the function and the arguments are converted
-into a Seamless transformation
+        Direct transformers can be called as normal functions, but
+        the source code of the function and the arguments are converted
+        into a Seamless transformation
 
-Parameters:
-        
-- local. If True, transformations are executed in the local 
-            Seamless instance.
-        If False, they are delegated to the assistant, which must exist.
-        If None (default), the assistant tried first 
-        and local execution is a fallback for if there is no assistant.
+        Parameters:
 
-- return_transformation.
-        If False, calling the function executes it immediately,
-            returning its value.
-        If True, it returns a Transformation object.
-        Imperative transformations can be queried for their .value
-        or .logs. Doing so forces their execution.
-        As of Seamless 0.12, forcing one transformation also forces 
-            all other transformations. 
+        - local. If True, transformations are executed in the local
+                    Seamless instance.
+                If False, they are delegated to the assistant, which must exist.
+                If None (default), the assistant tried first
+                and local execution is a fallback for if there is no assistant.
 
-- scratch  ...
+        - return_transformation.
+                If False, calling the function executes it immediately,
+                    returning its value.
+                If True, it returns a Transformation object.
+                Imperative transformations can be queried for their .value
+                or .logs. Doing so forces their execution.
+                As of Seamless 0.12, forcing one transformation also forces
+                    all other transformations.
 
-- direct_print ...
+        - scratch  ...
 
-- in_process ...
+        - direct_print ...
 
-Attributes:            
+        - in_process ...
 
-- meta. Accesses all meta-information (including local)
+        Attributes:
 
-- celltypes. Returns a wrapper where you can set the celltypes
-        of the individual transformer pins. 
-    The syntax is: Transformer.celltypes.a = "text" 
-    (or Transformer.celltypes["a"] = "text") 
-    for pin "a".
-    
-- modules: Returns a wrapper where you can define Python modules
-    to be imported into the transformation
+        - meta. Accesses all meta-information (including local)
 
-- environment  ...
+        - celltypes. Returns a wrapper where you can set the celltypes
+                of the individual transformer pins.
+            The syntax is: Transformer.celltypes.a = "text"
+            (or Transformer.celltypes["a"] = "text")
+            for pin "a".
 
-"""    
-        from seamless.workflow.core.protocol.serialize import serialize_sync as serialize
+        - modules: Returns a wrapper where you can define Python modules
+            to be imported into the transformation
+
+        - environment  ...
+
+        """
+        from seamless.workflow.core.protocol.serialize import (
+            serialize_sync as serialize,
+        )
+
         code = getsource(func)
         codebuf = serialize(code, "python")
-        
+
         signature = inspect.signature(func)
         self._return_transformation = return_transformation
         self._signature = signature
@@ -115,7 +144,11 @@ Attributes:
 
     def __call__(self, *args, **kwargs):
         from .Transformation import Transformation, transformation_from_dict
-        from ...core.direct.run import run_transformation_dict, direct_transformer_to_transformation_dict, prepare_transformation_dict
+        from ...core.direct.run import (
+            run_transformation_dict,
+            direct_transformer_to_transformation_dict,
+            prepare_transformation_dict,
+        )
         from ...core.cache.database_client import database
         from ...core.cache.buffer_remote import has_readwrite_servers
         from ...core.protocol.get_buffer import get_buffer
@@ -128,7 +161,9 @@ Attributes:
         if is_forked():
             assert not self._in_process
             if not database.active or not has_readwrite_servers():
-                raise RuntimeError("Running @transformer inside a transformation requires a Seamless database and buffer servers")
+                raise RuntimeError(
+                    "Running @transformer inside a transformation requires a Seamless database and buffer servers"
+                )
 
         arguments = self._signature.bind(*args, **kwargs).arguments
         deps = {}
@@ -151,7 +186,9 @@ Attributes:
             self._codebuf, meta, self._celltypes, modules, arguments, env
         )
         if self._return_transformation:
-            tf = transformation_from_dict(transformation_dict, result_celltype, upstream_dependencies = deps)
+            tf = transformation_from_dict(
+                transformation_dict, result_celltype, upstream_dependencies=deps
+            )
             tf.scratch = self.scratch
             return tf
         else:
@@ -160,9 +197,14 @@ Attributes:
                 if dep.exception is not None:
                     msg = "Dependency '{}' has an exception: {}"
                     raise RuntimeError(msg.format(depname, dep.exception))
-                
+
             prepare_transformation_dict(transformation_dict)
-            result_checksum = run_transformation_dict(transformation_dict, fingertip=False, scratch=self.scratch, in_process=self._in_process)
+            result_checksum = run_transformation_dict(
+                transformation_dict,
+                fingertip=False,
+                scratch=self.scratch,
+                in_process=self._in_process,
+            )
             result_checksum = Checksum(result_checksum)
             if not result_checksum:
                 raise RuntimeError("Result is empty")
@@ -170,17 +212,15 @@ Attributes:
             if buf is None:
                 buf = fingertip(result_checksum)
             if buf is None:
-                raise CacheMissError(result_checksum.hex())            
+                raise CacheMissError(result_checksum.hex())
             return deserialize_sync(buf, result_checksum, result_celltype, copy=True)
-
-
 
     @property
     def meta(self):
         return self._meta
 
     @meta.setter
-    def meta(self, meta:dict):
+    def meta(self, meta: dict):
         self._meta.update(meta)
         for k in list(self._meta.keys()):
             if self._meta[k] is None and k != "local":
@@ -189,16 +229,16 @@ Attributes:
     @property
     def scratch(self) -> bool:
         return self._scratch
-    
+
     @scratch.setter
-    def scratch(self, value:bool):
+    def scratch(self, value: bool):
         self._scratch = value
 
     @property
     def direct_print(self):
         """Causes the transformer to directly print any messages,
-instead of buffering them and storing them in Transformer.logs.
-If this value is None, direct print is True if debugging is enabled."""
+        instead of buffering them and storing them in Transformer.logs.
+        If this value is None, direct print is True if debugging is enabled."""
         return self._meta.get("__direct_print__", False)
 
     @direct_print.setter
@@ -207,18 +247,17 @@ If this value is None, direct print is True if debugging is enabled."""
             raise TypeError(type(value))
         self.meta = {"__direct_print__": value}
 
-
     @property
     def local(self) -> bool | None:
         """Local execution.
-If True, transformations are executed in the local Seamless instance.
-If False, they are delegated to an assistant.
-If None (default), 
-an assistant is tried first and local execution is a fallback."""
+        If True, transformations are executed in the local Seamless instance.
+        If False, they are delegated to an assistant.
+        If None (default),
+        an assistant is tried first and local execution is a fallback."""
         return self.meta.get("local")
 
     @local.setter
-    def local(self, value:bool | None):
+    def local(self, value: bool | None):
         self.meta["local"] = value
 
     @property
@@ -226,46 +265,60 @@ an assistant is tried first and local execution is a fallback."""
         return self._return_transformation
 
     @return_transformation.setter
-    def return_transformation(self, value:bool):
+    def return_transformation(self, value: bool):
         self._return_transformation = value
 
-    
+
 class CelltypesWrapper:
     """Wrapper around an imperative transformer's celltypes."""
+
     def __init__(self, celltypes):
         self._celltypes = celltypes
+
     def __getattr__(self, attr):
         return self._celltypes[attr]
+
     def __getitem__(self, key):
         return self._celltypes[key]
+
     def __setattr__(self, attr, value):
         if attr.startswith("_"):
             return super().__setattr__(attr, value)
         return self.__setitem__(attr, value)
+
     def __setitem__(self, key, value):
         from seamless.buffer.cell import celltypes
+
         if key not in self._celltypes:
             raise AttributeError(key)
-        pin_celltypes = celltypes + ["silk", "deepcell", "deepfolder", "folder", "module"]
+        pin_celltypes = celltypes + ["deepcell", "deepfolder", "folder", "module"]
         if value not in pin_celltypes:
             raise TypeError(value, pin_celltypes)
         self._celltypes[key] = value
+
     def __dir__(self):
         return sorted(self._celltypes.keys())
+
     def __str__(self):
         return str(self._celltypes)
+
     def __repr__(self):
         return str(self)
 
+
 class ModulesWrapper:
     """Wrapper around an imperative transformer's imported modules."""
+
     def __init__(self, modules):
         self._modules = modules
+
     def __getattr__(self, attr):
         return self._modules[attr]
+
     def __setattr__(self, attr, value):
         from types import ModuleType
         from seamless import Module
+
         if attr.startswith("_"):
             return super().__setattr__(attr, value)
         if isinstance(value, Module):
@@ -277,11 +330,15 @@ class ModulesWrapper:
             if not isinstance(value, ModuleType):
                 raise TypeError(type(value))
             self._modules[attr] = value
+
     def __dir__(self):
         return sorted(self._modules.keys())
+
     def __str__(self):
         return str(self._modules)
+
     def __repr__(self):
         return str(self)
-    
+
+
 from ..Environment import Environment

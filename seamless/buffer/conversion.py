@@ -13,17 +13,17 @@ Type hierarchy:
 
 bytes: Buffer and value are the same.
  mixed: combination of plain and binary.
-  binary: value is Numpy array/struct. Buffer is value with np.save.
-   binary-bytes (1D array of dtype S). NOT a subtype of bytes!
-    If you convert them to bytes, do value.tobytes() .
-  plain: Buffer is JSON. Value is what is trivially JSON-serializable. 
-   str (with double quotes around *the buffer*), int, float, bool
+   binary: value is Numpy array/struct. Buffer is value with np.save.
+      binary-bytes (1D array of dtype S). NOT a subtype of bytes!
+        If you convert them to bytes, do value.tobytes() .
+   plain: Buffer is JSON. Value is what is trivially JSON-serializable. 
+     str (with double quotes around *the buffer*), int, float, bool
  text (with no double quotes around *the buffer*). 
  Buffer is UTF-8. Value is Python string (read buffer in text mode / buffer.decode())
-  cson: special case, as it is a superset of JSON, i.e "plain" is a subtype
-  yaml: also a superset of JSON
-  ipython
-    python 
+   cson: special case, as it is a superset of JSON, i.e "plain" is a subtype
+   yaml: also a superset of JSON
+   ipython
+     python 
 checksum. Special case: the *value* is a checksum string (checksum.hex())
   The *checksum* of a checksum cell is therefore the checksum-of a checksum string.
   Deep cells: when converted to a checksum cell, the checksum of a deep cell remains the same.
@@ -67,12 +67,12 @@ All of these promotions are value-based and therefore "forbidden"
 (handled by evaluate_expression)
 
 There is a limit of 1000 chars for buffers of int, float, bool
-
-TODO: high-level classes on top of deep cells. See https://github.com/sjdv1982/seamless/issues/108
 """
 
 
 class SeamlessConversionError(ValueError):
+    """Seamless celltype-to-celltype conversion error"""
+
     def __str__(self):
         args = [str(arg) for arg in self.args]
         return "\n".join(args)
@@ -81,8 +81,6 @@ class SeamlessConversionError(ValueError):
         args = [str(arg) for arg in self.args]
         return "\n".join(args)
 
-
-import numpy as np
 
 conversion_trivial = set(
     [
@@ -130,28 +128,36 @@ conversion_reformat = set(
         (
             "bytes",
             "binary",
-        ),  # for numpy buffer format (magic numpy string), trivial. Else, create np.dtype(S) array from bytes buffer.
+        ),  # for numpy buffer format (magic numpy string), trivial.
+        # Else, create np.dtype(S) array from bytes buffer.
+        #
         ("bytes", "mixed"),  # as above, but:
         #  - Seamless-mixed buffer format (MAGIC_SEAMLESS_MIXED string) is also trivial.
         #  - If buffer is text, value stays the same (text-to-str)
+        #
         ("binary", "bytes"),  # for np.dtype(S..), get value.tobytes(); else trivial
+        #
         (
             "mixed",
             "bytes",
         ),  # ("binary", "bytes") if binary (magic numpy string); else trivial
+        #
         (
             "plain",
             "text",
         ),  # if value is a string, value stays the same; else checksum stays the same
+        #
         (
             "text",
             "plain",
         ),  # if json.loads works, checksum stays the same; else value stays the same (becomes str).
+        #
         ("text", "str"),  # value stays the same
         ("str", "text"),  # value stays the same
         ("cson", "plain"),  # run CSON parser
         ("yaml", "plain"),  # run YAML parser
         ("ipython", "python"),  # convert to Python code
+        #
         # simple value conversions:
         ("int", "str"),
         ("float", "str"),
@@ -189,11 +195,13 @@ conversion_possible = set(
 
 conversion_equivalent = {  # equivalent conversions
     # special cases
+    #
     # 1. text_subtype-to-str. Do not promote to text-to-plain!
     ("cson", "str"): ("text", "str"),
     ("yaml", "str"): ("text", "str"),
     ("text", "mixed"): ("text", "str"),  # NOT text-to-plain.
     # But mixed => text does go mixed => plain => text
+    #
     ("cson", "mixed"): ("text", "str"),  # NOT cson-to-plain
     ("yaml", "mixed"): ("text", "str"),  # NOT yaml-to-plain
     ("python", "str"): ("text", "str"),
@@ -202,6 +210,7 @@ conversion_equivalent = {  # equivalent conversions
     ("ipython", "mixed"): ("text", "str"),
     ("python", "plain"): ("text", "str"),
     ("ipython", "plain"): ("text", "str"),
+    #
     # 2. str-to-text_subtype. Plain-to-text or str-to-text are the same here.
     ("str", "cson"): ("str", "text"),
     ("str", "yaml"): ("str", "text"),
@@ -286,6 +295,7 @@ conversion_values = set(
             "binary",
         ),  # value must be a list; parse with numpy, and dtype must not be "object"
         # or: value must be a scalar
+        #
         # conversions from/to checksum.
         ("checksum", "bytes"),
         ("checksum", "mixed"),
@@ -344,6 +354,7 @@ conversion_forbidden = set(
 
 
 def check_conversions():
+    """Check if all possible conversions are classified into categories"""
     categories = (
         conversion_trivial,
         conversion_reformat,
@@ -366,19 +377,25 @@ def check_conversions():
                     if conv in category:
                         covered += 1
                 if covered == 0:
-                    raise Exception("Missing conversion: %s" % str(conv))
+                    raise SeamlessConversionError("Missing conversion: %s" % str(conv))
                 elif covered > 1:
-                    raise Exception("Duplicate conversion: %s" % str(conv))
+                    raise SeamlessConversionError(
+                        "Duplicate conversion: %s" % str(conv)
+                    )
                 if conv not in conversion_equivalent and conv not in conversion_chain:
                     break
                 if conv in conversion_equivalent and conv in conversion_chain:
-                    raise Exception("Duplicate conversion mapping: %s" % str(conv))
+                    raise SeamlessConversionError(
+                        "Duplicate conversion mapping: %s" % str(conv)
+                    )
                 if conv in conversion_equivalent:
                     conv = conversion_equivalent[conv]
                 elif conv in conversion_chain:
                     conv = (conversion_chain[conv], conv[1])
                 if conv in done:
-                    raise Exception("Circular equivalence: %s" % str(conv))
+                    raise SeamlessConversionError(
+                        "Circular equivalence: %s" % str(conv)
+                    )
                 done.append(conv)
 
 

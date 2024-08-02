@@ -1,16 +1,20 @@
+"""Functions to serialize a value into a buffer"""
+
+import logging
+
 import numpy as np
 
-from seamless.util import lrucache2
-
-from silk.mixed.io import serialize as mixed_serialize
+from silk.mixed.io import (  # pylint: disable=no-name-in-module
+    serialize as mixed_serialize,
+)
 from silk.Silk import Silk
+
+from seamless.util import lrucache2
 
 # serialize_cache: maps id(value),celltype to (buffer, value).
 # Need to store (a ref to) value,
 #  because id(value) is only unique while value does not die!!!
 serialize_cache = lrucache2(10)
-
-import logging
 
 logger = logging.getLogger(__name__)
 
@@ -66,7 +70,11 @@ def _serialize(value, celltype):
     return buffer
 
 
-async def serialize(value, celltype, use_cache=True):
+async def serialize(value, celltype: str, use_cache=True):
+    """Serializes a value into a buffer
+    The celltype must be one of the allowed celltypes.
+    """
+
     assert value is not None
     if use_cache:
         id_value = id(value)
@@ -96,7 +104,9 @@ async def serialize(value, celltype, use_cache=True):
 
 
 def serialize_sync(value, celltype, use_cache=True):
-    """This function can be executed if the asyncio event loop is already running"""
+    """Serializes a value into a buffer
+    The celltype must be one of the allowed celltypes.
+    This function can be executed if the asyncio event loop is already running"""
     if use_cache:
         id_value = id(value)
         buffer, _ = serialize_cache.get((id_value, celltype), (None, None))

@@ -1,3 +1,5 @@
+"""Celltypes enumeration"""
+
 celltypes = [
     "binary",
     "mixed",
@@ -34,4 +36,5 @@ text_types2 = (
     "ipython",
     "cson",
     "yaml",
+    "silk",  # alias for "mixed"
 )

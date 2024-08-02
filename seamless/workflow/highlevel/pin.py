@@ -37,12 +37,20 @@ class PinWrapper:
     def celltype(self, value):
         from .Cell import celltypes
         from .Transformer import Transformer
+
         if self._pinname == "code":
             raise AttributeError
-        if value not in celltypes and value != "module" and (
-            (
-                not isinstance(self._parent(), Transformer)
-                or (value not in ("default", "silk", "deepfolder", "folder", "deepcell"))
+        if (
+            value not in celltypes
+            and value != "module"
+            and (
+                (
+                    not isinstance(self._parent(), Transformer)
+                    or (
+                        value
+                        not in ("default", "silk", "deepfolder", "folder", "deepcell")
+                    )
+                )
             )
         ):
             raise TypeError(value)

@@ -10,6 +10,10 @@ from seamless import Checksum
 
 
 def has(session, url, checksum: Checksum, *, timeout=None):
+    """Check if a buffer is available at a remote URL.
+    URL is accessed using HTTP GET, with /has added to the URL,
+     and the checksum as parameter"""
+
     from seamless.workflow.util import is_forked
 
     sess = session
@@ -45,6 +49,9 @@ def has(session, url, checksum: Checksum, *, timeout=None):
 
 
 def write(session, url, checksum: Checksum, buffer: bytes):
+    """Upload a buffer to a remote URL.
+    URL is accessed using HTTP PUT, with /<checksum> added to the URL,
+    and the buffer as the data."""
     from seamless.workflow.util import is_forked
 
     sess = session

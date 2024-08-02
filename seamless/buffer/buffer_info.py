@@ -1,49 +1,58 @@
-"""
-contents of the buffer info:
-- checksum
-- buffer length: note that float, int, bool have a max length of 1000.
-- is_utf8
-- is_json: json.loads will work (implies is_utf8, not is_numpy, not is_seamless_mixed)
-- json_type (dict, list, str, bool, float; implies is_json)
-- is_json_numeric_array: homogeneous numeric json array. implies json_type=list.
-- is_json_numeric_scalar: conversion to int/float/bool will work. implies json_type=str/int/float/bool.
-- is_numpy (implies not is_json, not is_seamless_mixed)
-- dtype, shape (implies is_numpy)
-- is_seamless_mixed (magic Seamless mixed string; implies not is_json, not is_numpy)
-- "str2text" conversion field. If the buffer can be a str, stores its checksum-as-text
-- "text2str" conversion field. If the buffer can be a text, stores its checksum-as-str
-- "binary2bytes" conversion field (see below)
-- "bytes2binary" conversion field (see below)
-- "binary2json" conversion field. Result of ("binary", "plain") conversion.
-- "json2binary" conversion field. Result of ("plain", "binary") conversion.
-For conversions ("valid" means "preserves checksum". "not valid" means a failure. "possible" means "changes checksum"):
-- is_utf8: bytes to text is valid. otherwise, not valid.
-- is_json: bytes/text/cson/yaml/mixed to plain is valid. otherwise, not valid.
-- json_type: bytes/text/cson/yaml/mixed to that particular type is valid.
-   if "dict" or "list", conversion to str/int/float/bool is not valid. 
-   otherwise, conversion to str is possible.
-- is_json_numeric_scalar: conversion to int, float, bool is possible.  
-- is_json_numeric_array: conversion to Numpy array is possible
-- is_numpy: mixed to binary is valid. Otherwise, not valid.
-  if dtype is S and empty shape:
-      bytes to mixed is valid. Otherwise (but is_numpy), it is possible.
-      Same for bytes to binary.
-      Reformatted checksum can be stored under "binary2bytes" field
-      This is just for caching, as this conversion is always possible.
-- is_seamless_mixed:
-   bytes to mixed is valid. Otherwise, (and not is_numpy, not is_json), invalid
-- bytes2binary: gives the checksum of the np.dtype(S...) array corresponding to the bytes.
-  This is just for caching, as this conversion is always possible.
-- members: the number of members for a deep buffer
+# pylint: disable=singleton-comparison
 
-buffer_info contains nothing about valid conversion to python/ipython/cson/yaml.
-This is stored in evaluate.py:text_validation_celltype_cache
-Likewise, nothing is stored about subcelltypes, this is also stored in evaluate.py
-Finally, celltype "checksum" is out-of-scope for buffer info; validate this elsewhere.
-"""
+"""BufferInfo class"""
 
 
 class BufferInfo:
+    """
+    contents of the buffer info:
+    - checksum
+    - buffer length: note that float, int, bool have a max length of 1000.
+    - is_utf8
+    - is_json: json.loads will work (implies is_utf8, not is_numpy, not is_seamless_mixed)
+    - json_type (dict, list, str, bool, float; implies is_json)
+    - is_json_numeric_array: homogeneous numeric json array. implies json_type=list.
+    - is_json_numeric_scalar: conversion to int/float/bool will work.
+      implies json_type=str/int/float/bool.
+    - is_numpy (implies not is_json, not is_seamless_mixed)
+    - dtype, shape (implies is_numpy)
+    - is_seamless_mixed (magic Seamless mixed string; implies not is_json, not is_numpy)
+    - "str2text" conversion field. If the buffer can be a str, stores its checksum-as-text
+    - "text2str" conversion field. If the buffer can be a text, stores its checksum-as-str
+    - "binary2bytes" conversion field (see below)
+    - "bytes2binary" conversion field (see below)
+    - "binary2json" conversion field. Result of ("binary", "plain") conversion.
+    - "json2binary" conversion field. Result of ("plain", "binary") conversion.
+    For conversions
+    ("valid" means "preserves checksum".
+    "not valid" means a failure.
+    "possible" means "changes checksum")
+    :
+    - is_utf8: bytes to text is valid. otherwise, not valid.
+    - is_json: bytes/text/cson/yaml/mixed to plain is valid. otherwise, not valid.
+    - json_type: bytes/text/cson/yaml/mixed to that particular type is valid.
+       if "dict" or "list", conversion to str/int/float/bool is not valid.
+       otherwise, conversion to str is possible.
+    - is_json_numeric_scalar: conversion to int, float, bool is possible.
+    - is_json_numeric_array: conversion to Numpy array is possible
+    - is_numpy: mixed to binary is valid. Otherwise, not valid.
+      if dtype is S and empty shape:
+          bytes to mixed is valid. Otherwise (but is_numpy), it is possible.
+          Same for bytes to binary.
+          Reformatted checksum can be stored under "binary2bytes" field
+          This is just for caching, as this conversion is always possible.
+    - is_seamless_mixed:
+       bytes to mixed is valid. Otherwise, (and not is_numpy, not is_json), invalid
+    - bytes2binary: gives the checksum of the np.dtype(S...) array corresponding to the bytes.
+      This is just for caching, as this conversion is always possible.
+    - members: the number of members for a deep buffer
+
+    buffer_info contains nothing about valid conversion to python/ipython/cson/yaml.
+    This is stored in evaluate.py:text_validation_celltype_cache
+    Likewise, nothing is stored about subcelltypes, this is also stored in evaluate.py
+    Finally, celltype "checksum" is out-of-scope for buffer info; validate this elsewhere.
+    """
+
     __slots__ = (
         "checksum",
         "length",
@@ -95,7 +104,8 @@ class BufferInfo:
     def __getitem__(self, item):
         return getattr(self, item)
 
-    def update(self, other):
+    def update(self, other: "BufferInfo"):
+        """Update BufferInfo from other BufferInfo"""
         if not isinstance(other, BufferInfo):
             raise TypeError
         for attr in self.__slots__:
@@ -104,6 +114,7 @@ class BufferInfo:
                 setattr(self, attr, v)
 
     def get(self, attr, default=None):
+        """Get a BufferInfo attribute"""
         value = getattr(self, attr)
         if value is None:
             return default
@@ -111,6 +122,7 @@ class BufferInfo:
             return value
 
     def as_dict(self):
+        """Return the BufferInfo as dict"""
         result = {}
         for attr in self.__slots__:
             if attr == "checksum":

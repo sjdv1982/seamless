@@ -19,8 +19,10 @@ SEAMLESS_DEBUGGING_DIRECTORY = os.environ.get("SEAMLESS_DEBUGGING_DIRECTORY")
 
 module_tag = "@@MODULE_"
 
-def checksum_to_code(checksum:Checksum):
+
+def checksum_to_code(checksum: Checksum):
     from ..core.protocol.get_buffer import get_buffer
+
     code = None
     checksum = Checksum(checksum)
     if checksum:
@@ -29,8 +31,10 @@ def checksum_to_code(checksum:Checksum):
             code = deserialize_sync(code_buf, checksum, "text", True)
     return code
 
-def parse_kwargs(checksum:Checksum):
+
+def parse_kwargs(checksum: Checksum):
     from ..core.protocol.get_buffer import get_buffer
+
     checksum = Checksum(checksum)
     if not checksum:
         return {}
@@ -39,12 +43,13 @@ def parse_kwargs(checksum:Checksum):
         return buf
     kwargs = deserialize_sync(buf, checksum, "mixed", True)
     result = {}
-    for k,v in kwargs.items():
+    for k, v in kwargs.items():
         vbuf = serialize_sync(v, "mixed")
         vchecksum = calculate_checksum_sync(vbuf)
         vchecksum = Checksum(vchecksum)
         result[k] = vchecksum
     return result
+
 
 def integrate_compiled_module(mod_lang, mod_rest, object_codes):
     new_value = deepcopy(mod_rest)
@@ -54,7 +59,7 @@ def integrate_compiled_module(mod_lang, mod_rest, object_codes):
     for obj_name in object_codes:
         obj_code = object_codes[obj_name]
         pos = obj_name.index(".")
-        obj_name2 = obj_name[pos+1:]
+        obj_name2 = obj_name[pos + 1 :]
         assert "objects" in new_value and obj_name2 in new_value["objects"], obj_name2
         new_value["objects"][obj_name2]["code"] = obj_code
     new_value_buffer = serialize_sync(new_value, "plain")
@@ -63,8 +68,10 @@ def integrate_compiled_module(mod_lang, mod_rest, object_codes):
     buffer_cache.guarantee_buffer_info(new_checksum, "plain", sync_to_remote=False)
     return new_checksum
 
+
 def integrate_kwargs(kwargs_checksums):
     from ..core.protocol.get_buffer import get_buffer
+
     result = {}
     for kwarg, kwarg_checksum in kwargs_checksums.items():
         kwarg_checksum = Checksum(kwarg_checksum)
@@ -73,22 +80,23 @@ def integrate_kwargs(kwargs_checksums):
         buf = get_buffer(kwarg_checksum, remote=False)
         if buf is not None:
             kwarg_value = deserialize_sync(buf, kwarg_checksum, "mixed", True)
-            result[kwarg] = kwarg_value        
+            result[kwarg] = kwarg_value
     result_buffer = serialize_sync(result, "mixed")
     result_checksum = calculate_checksum_sync(result_buffer)
     buffer_cache.cache_buffer(result_checksum, result_buffer)
     buffer_cache.guarantee_buffer_info(result_checksum, "mixed", sync_to_remote=False)
     return result_checksum
 
+
 def pull_module(pinname, upstreams, manager):
     accessor = upstreams.get(pinname)
     checksum = None
-    if accessor is not None: #unconnected
+    if accessor is not None:  # unconnected
         checksum = Checksum(accessor._checksum)
     if checksum:
         buffer = manager.resolve(checksum)
         if buffer is not None:
-            mod_def = deserialize_sync(buffer,checksum, "plain", True)
+            mod_def = deserialize_sync(buffer, checksum, "plain", True)
             mod_rest = None
             try:
                 mod_type = mod_def["type"]
@@ -100,7 +108,7 @@ def pull_module(pinname, upstreams, manager):
                     mod_code = {}
                     for objname in objects:
                         obj_code = objects[objname].pop("code", "")
-                        mod_code[objname] = obj_code 
+                        mod_code[objname] = obj_code
                 else:
                     mod_lang = mod_def["language"]
                     mod_code = mod_def["code"]
@@ -109,6 +117,7 @@ def pull_module(pinname, upstreams, manager):
     else:
         mod_type, mod_lang, mod_rest, mod_code = None, None, None, None
     return mod_type, mod_lang, mod_rest, mod_code, checksum
+
 
 def analyze_mod_code(mod_code, pinname):
     if mod_code is not None and not isinstance(mod_code, str):
@@ -120,30 +129,32 @@ def analyze_mod_code(mod_code, pinname):
         mod_code = None
     return mod_code
 
+
 class DebugMount:
     def __init__(self, tf, path, special):
         self.tf = tf
         self.path = path
         self.mount_ctx = None
         self.result_pinname = None
-        self.special = special # None, "compiled", "bash", "bashdocker"
+        self.special = special  # None, "compiled", "bash", "bashdocker"
         self.modules = {}
         self._pulling = False
         self._object_codes = {}
         self.kwargs_cells = {}
         self.pinname_to_cells = {}
 
-    def mount(self, skip_pins):        
+    def mount(self, skip_pins):
         from ..core.context import context
         from ..core.macro_mode import macro_mode_on
         from ..core.cell import subcelltypes, extensions, cell as core_cell
         from ..mime import language_to_extension
+
         skip_pins = skip_pins.copy()
         self.skip_pins = skip_pins
         if self.special is not None:
             skip_pins += ["code", "input_name", "result_name"]
             if self.special == "bash":
-                skip_pins.append("pins_")            
+                skip_pins.append("pins_")
         tf = self.tf
         manager = tf._get_manager()
         livegraph = manager.livegraph
@@ -175,19 +186,16 @@ class DebugMount:
                     for kwargs_cell in self.kwargs_cells:
                         c = core_cell("mixed")
                         filename = os.path.join(self.path, kwargs_cell) + ".mixed"
-                        cellname = "KWARGS_" + kwargs_cell                        
+                        cellname = "KWARGS_" + kwargs_cell
                         setattr(self.mount_ctx, cellname, c)
                         pinname_to_cells["kwargs"].append(cellname)
-                        c.mount(
-                            filename, mode="rw", 
-                            authority="cell", persistent=False
-                        )
+                        c.mount(filename, mode="rw", authority="cell", persistent=False)
                         kwargs_checksum = kwargs_checksums.get(kwargs_cell)
                         kwargs_checksum = Checksum(kwargs_checksum)
                         if kwargs_checksum:
-                            c.set_checksum(kwargs_checksum)                    
+                            c.set_checksum(kwargs_checksum)
                     continue
-                if celltype is None:                
+                if celltype is None:
                     pin_cells = manager.cell_from_pin(pin)
                     if isinstance(pin_cells, tuple):
                         pin_cells = [pin_cells]
@@ -205,7 +213,9 @@ class DebugMount:
                         mod_rest["target"] = "debug"
                         obj_rest = mod_rest["objects"]
                         pinname_to_cells[pinname] = []
-                        singleton = (pinname == "module" and list(mod_code.keys()) == ["main"])
+                        singleton = pinname == "module" and list(mod_code.keys()) == [
+                            "main"
+                        ]
                         for objname in mod_code:
                             obj_code = mod_code[objname]
                             if not singleton:
@@ -223,15 +233,16 @@ class DebugMount:
                             obj_path = os.path.join(obj_dir, objname) + ext
                             c = core_cell("text")
                             c.mount(
-                                obj_path, mode="rw", 
-                                authority="cell", persistent=False
+                                obj_path, mode="rw", authority="cell", persistent=False
                             )
                             cellname = module_tag + pinname + "." + objname
                             setattr(self.mount_ctx, cellname, c)
                             c.set(obj_code)
                             self._object_codes[cellname] = obj_code
                             pinname_to_cells[pinname].append(cellname)
-                            mod_cs = integrate_compiled_module(mod_lang, mod_rest, self._object_codes)
+                            mod_cs = integrate_compiled_module(
+                                mod_lang, mod_rest, self._object_codes
+                            )
                         if mod_cs is not None:
                             buffer_cache.incref(mod_cs, persistent=True)
                         self.modules[pinname] = mod_type, mod_lang, mod_rest, mod_cs
@@ -251,15 +262,13 @@ class DebugMount:
                     if subcelltype is not None:
                         cellclass = subcelltypes[subcelltype]
                     else:
+                        raise NotImplementedError
                         cellclass = celltypes[celltype]
                     c = cellclass()
                     ext = extensions[cellclass]
                 filename = os.path.join(self.path, pinname) + ext
                 mode = "w" if pinname == self.result_pinname else "rw"
-                c.mount(
-                    filename, mode=mode, 
-                    authority="cell", persistent=False
-                )
+                c.mount(filename, mode=mode, authority="cell", persistent=False)
                 setattr(self.mount_ctx, pinname, c)
                 pinname_to_cells[pinname] = [pinname]
                 if subcelltype == "module":
@@ -274,35 +283,37 @@ class DebugMount:
                         c.set_checksum(checksum)
         for pinname, pin in tf._pins.items():
             if pinname in skip_pins:
-                continue            
+                continue
             if pinname == self.result_pinname:
                 continue
             for cellname in pinname_to_cells[pinname]:
                 c = getattr(self.mount_ctx, cellname)
                 c._set_observer(functools.partial(self._observe, cellname), False)
 
-    def _observe(self, cellname:str, checksum):
+    def _observe(self, cellname: str, checksum):
         if self._pulling:
             return
         if cellname.startswith("KWARGS_"):
-            cellname2 = cellname[len("KWARGS_"):]
+            cellname2 = cellname[len("KWARGS_") :]
             if cellname2 in self.kwargs_cells:
                 self._transformer_update()
                 return
         if cellname.startswith(module_tag):
-            cellname2 = cellname[len(module_tag):]
+            cellname2 = cellname[len(module_tag) :]
             pos = cellname2.index(".")
             module_name = cellname2[:pos]
-            obj_name = cellname2[pos+1:]
+            obj_name = cellname2[pos + 1 :]
             mod_type, mod_lang, mod_rest, old_mod_cs = self.modules[module_name]
             assert mod_type == "compiled"
             code = checksum_to_code(checksum)
             self._object_codes[cellname] = code
-            new_checksum = integrate_compiled_module(mod_lang, mod_rest, self._object_codes)
+            new_checksum = integrate_compiled_module(
+                mod_lang, mod_rest, self._object_codes
+            )
             buffer_cache.incref(new_checksum, persistent=True)
             if old_mod_cs is not None:
                 buffer_cache.decref(old_mod_cs)
-            self.modules[module_name] = mod_type, mod_lang, mod_rest, new_checksum            
+            self.modules[module_name] = mod_type, mod_lang, mod_rest, new_checksum
         elif cellname in self.modules:
             code = checksum_to_code(checksum)
             mod_type, mod_lang, mod_rest, old_mod_cs = self.modules[cellname]
@@ -322,6 +333,7 @@ class DebugMount:
 
     def _transformer_update(self):
         from ..core.manager.tasks.transformer_update import TransformerUpdateTask
+
         transformer = self.tf
         manager = transformer._get_manager()
         manager.taskmanager.cancel_transformer(transformer)
@@ -335,7 +347,7 @@ class DebugMount:
             manager = transformer._get_manager()
             livegraph = manager.livegraph
             upstreams = livegraph.transformer_to_upstream[transformer]
-            
+
             for pinname, accessor in upstreams.items():
                 old_mod_cs = None
                 if pinname in self.skip_pins:
@@ -372,9 +384,9 @@ class DebugMount:
                     if mod_code is not None:
                         c = getattr(self.mount_ctx, pinname)
                         c.set(mod_code)
-                else:      
+                else:
                     checksum = None
-                    if accessor is not None: #unconnected
+                    if accessor is not None:  # unconnected
                         checksum = Checksum(accessor._checksum)
                     if pinname == "kwargs" and self.special == "compiled":
                         kwargs_checksums = parse_kwargs(checksum)
@@ -387,10 +399,10 @@ class DebugMount:
                     else:
                         c = getattr(self.mount_ctx, pinname)
                         c.set_checksum(checksum)
-            self._pulling = False            
+            self._pulling = False
             self._transformer_update()
         finally:
-            self._pulling = False            
+            self._pulling = False
 
     def destroy(self):
         try:
@@ -402,26 +414,29 @@ class DebugMount:
         finally:
             shutil.rmtree(self.path, ignore_errors=True)
 
+
 class DebugMountManager:
     def __init__(self):
         self._mounts = {}
 
     def add_mount(self, tf, skip_pins=[], *, special=None, prefix=None):
-        #print("ADD MOUNT", tf)
+        # print("ADD MOUNT", tf)
         if SEAMLESS_DEBUGGING_DIRECTORY is None:
             raise Exception("""SEAMLESS_DEBUGGING_DIRECTORY undefined.""")
         path = None
         if prefix is None:
             prefix = ""
         else:
-            first_dir = os.path.join(SEAMLESS_DEBUGGING_DIRECTORY, "sandbox-"+prefix)
+            first_dir = os.path.join(SEAMLESS_DEBUGGING_DIRECTORY, "sandbox-" + prefix)
             if not os.path.exists(first_dir):
                 path = first_dir
                 os.makedirs(path)
             else:
                 prefix += "-"
         if path is None:
-            path = tempfile.mkdtemp(dir=SEAMLESS_DEBUGGING_DIRECTORY, prefix="sandbox-"+prefix)
+            path = tempfile.mkdtemp(
+                dir=SEAMLESS_DEBUGGING_DIRECTORY, prefix="sandbox-" + prefix
+            )
         mount = DebugMount(tf, path, special=special)
         self._mounts[tf] = mount
         mount.mount(skip_pins=skip_pins)
@@ -436,7 +451,7 @@ class DebugMountManager:
         return tf in self._mounts
 
     def remove_mounts(self, ctx):
-        #print("REMOVE MOUNTS", hex(id(ctx)))
+        # print("REMOVE MOUNTS", hex(id(ctx)))
         for tf in list(self._mounts.keys()):
             if tf._root() is not ctx:
                 continue
@@ -449,7 +464,7 @@ class DebugMountManager:
                 return True
         return False
 
-    def debug_result(self, transformer, checksum:Checksum):
+    def debug_result(self, transformer, checksum: Checksum):
         checksum = Checksum(checksum)
         mount = self._mounts[transformer]
         mount_ctx = mount.mount_ctx
@@ -483,10 +498,10 @@ class DebugMountManager:
             if pinname in mount.skip_pins:
                 accessor = upstreams.get(pinname)
                 checksum = None
-                if accessor is not None: #unconnected
+                if accessor is not None:  # unconnected
                     checksum = accessor._checksum
                 if celltype is None:
-                    wa = accessor.write_accessor                
+                    wa = accessor.write_accessor
                     celltype, subcelltype = wa.celltype, wa.subcelltype
             else:
                 if pinname in mount.modules:
@@ -503,9 +518,9 @@ class DebugMountManager:
                     c = getattr(mount_ctx, pinname)
                     checksum = c._checksum
                 if celltype is None:
-                    celltype, subcelltype = c.celltype, c._subcelltype 
+                    celltype, subcelltype = c.celltype, c._subcelltype
 
-            input_pins[pinname] = checksum 
+            input_pins[pinname] = checksum
             celltypes[pinname] = celltype, subcelltype
 
             checksum = Checksum(checksum)
@@ -529,12 +544,14 @@ class DebugMountManager:
             )
         except Exception:
             pass
-            
+
     def destroy(self):
         for tf in list(self._mounts.keys()):
             self.remove_mount(self._mounts[tf])
 
-debugmountmanager = DebugMountManager()            
+
+debugmountmanager = DebugMountManager()
 from seamless.buffer.buffer_cache import buffer_cache
 import atexit
+
 atexit.register(debugmountmanager.destroy)

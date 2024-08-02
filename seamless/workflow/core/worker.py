@@ -2,6 +2,7 @@ import weakref
 from . import SeamlessBase
 from .status import StatusReasonEnum
 
+
 def _cell_from_pin(self, celltype):
     assert isinstance(self, (InputPin, EditPin))
     worker = self.worker_ref()
@@ -37,6 +38,7 @@ def _cell_from_pin(self, celltype):
 
 class Worker(SeamlessBase):
     """Base class for all workers."""
+
     _void = True
     _status_reason = StatusReasonEnum.UNCONNECTED
     _pins = None
@@ -56,13 +58,13 @@ class Worker(SeamlessBase):
 
 
 from seamless.buffer.cell import celltypes
-pin_celltypes = celltypes + ["silk"]
+
 
 class PinBase(SeamlessBase):
     def __init__(self, worker, name, celltype, subcelltype=None, *, as_=None):
         self.worker_ref = weakref.ref(worker)
         super().__init__()
-        assert celltype is None or celltype in pin_celltypes, (celltype, pin_celltypes)
+        assert celltype is None or celltype in celltypes, (celltype, celltypes)
         self.name = name
         self.celltype = celltype
         self.subcelltype = subcelltype
@@ -92,16 +94,20 @@ class PinBase(SeamlessBase):
 class InputPinBase(PinBase):
     def _set_context(self, context, childname):
         pass
+
     def __str__(self):
         ret = "Seamless input pin: " + self._format_path()
         return ret
 
+
 class OutputPinBase(PinBase):
     def _set_context(self, context, childname):
         pass
+
     def __str__(self):
         ret = "Seamless output pin: " + self._format_path()
         return ret
+
 
 class InputPin(InputPinBase):
     """Connects cells to workers (transformers and reactor)
@@ -109,6 +115,7 @@ class InputPin(InputPinBase):
     cell.connect(pin) connects a cell to an inputpin
     pin.cell() returns or creates a cell that is connected to the inputpin
     """
+
     io = "input"
     _hash_pattern = None
     _filesystem = None
@@ -121,10 +128,11 @@ class InputPin(InputPinBase):
         """Sets the value of the connected cell"""
         return self.cell().set(*args, **kwargs)
 
-    def filesystem(self, mode:str, *, optional:bool):
+    def filesystem(self, mode: str, *, optional: bool):
         assert mode in ("file", "directory")
         assert optional in (True, False), optional
         self._filesystem = {"mode": mode, "optional": optional}
+
 
 class OutputPin(OutputPinBase):
     """Connects the output of workers (transformers and reactors) to cells
@@ -132,6 +140,7 @@ class OutputPin(OutputPinBase):
     outputpin.connect(cell) connects an outputpin to a cell
     outputpin.cell() returns or creates a cell that is connected to the outputpin
     """
+
     io = "output"
     _hash_pattern = None
 
@@ -152,7 +161,9 @@ class OutputPin(OutputPinBase):
             target_subpath = target.subpath
             target = target.structured_cell().buffer
         elif isinstance(target, Outchannel):
-            raise TypeError("Outchannels must be the source of a connection, not the target")
+            raise TypeError(
+                "Outchannels must be the source of a connection, not the target"
+            )
 
         if isinstance(target, Path):
             raise TypeError("Workers may not connect to paths")
@@ -176,6 +187,7 @@ class OutputPin(OutputPinBase):
     def cell(self, celltype=None):
         """returns or creates a cell that is connected to the pin"""
         from .cell import cell
+
         manager = self._get_manager()
         my_cells = manager.cell_from_pin(self)
         celltype = self.celltype
@@ -221,6 +233,7 @@ class EditPinBase(PinBase):
         ret = "Seamless editpin: " + self._format_path()
         return ret
 
+
 class EditPin(EditPinBase):
     """Connects a cell as both the input and output of a reactor
 
@@ -231,7 +244,16 @@ class EditPin(EditPinBase):
 
     io = "edit"
 
-    def __init__(self, worker, name, celltype, subcelltype=None, *, as_=None, must_be_defined=False):
+    def __init__(
+        self,
+        worker,
+        name,
+        celltype,
+        subcelltype=None,
+        *,
+        as_=None,
+        must_be_defined=False
+    ):
         super().__init__(worker, name, celltype, subcelltype=subcelltype, as_=as_)
         self._must_be_defined = must_be_defined
 
@@ -261,12 +283,16 @@ class EditPin(EditPinBase):
         if isinstance(target, UniLink):
             target = target.get_linked()
 
-        assert not isinstance(target, Path) #Edit pins cannot be connected to paths
+        assert not isinstance(target, Path)  # Edit pins cannot be connected to paths
 
         if isinstance(target, Inchannel):
-            raise TypeError("Inchannels cannot be connected to edit pins, only to output pins")
+            raise TypeError(
+                "Inchannels cannot be connected to edit pins, only to output pins"
+            )
         elif isinstance(target, Outchannel):
-            raise TypeError("Outchannels must be the source of a connection, not the target")
+            raise TypeError(
+                "Outchannels must be the source of a connection, not the target"
+            )
 
         if isinstance(target, Cell):
             assert not target._structured_cell
@@ -288,6 +314,7 @@ class EditPin(EditPinBase):
     def status(self):
         from .status import status_accessor, format_status
         from .transformer import Transformer
+
         manager = self._get_manager()
         livegraph = manager.livegraph
         worker = self.worker_ref()
@@ -295,9 +322,10 @@ class EditPin(EditPinBase):
             upstreams = livegraph.transformer_to_upstream[worker]
             accessor = upstreams[self.name]
         else:
-            raise NotImplementedError # reactor, macro accessor status
+            raise NotImplementedError  # reactor, macro accessor status
         stat = status_accessor(accessor)
         return format_status(stat)
+
 
 from .structured_cell import Inchannel, Outchannel
 from .cell import cell, Cell

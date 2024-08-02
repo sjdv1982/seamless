@@ -6,7 +6,9 @@ from seamless import Checksum
 class Buffer:
     """Class for Seamless buffers."""
 
-    def __init__(self, value_or_buffer, celltype:str|None=None, *, checksum:Checksum=None):
+    def __init__(
+        self, value_or_buffer, celltype: str | None = None, *, checksum: Checksum = None
+    ):
         from seamless.buffer.serialize import serialize_sync as serialize
 
         celltype = self._map_celltype(celltype)
@@ -33,7 +35,6 @@ class Buffer:
         from seamless.buffer.cell import celltypes
 
         allowed_celltypes = celltypes + [
-            "silk",
             "deepcell",
             "deepfolder",
             "folder",
@@ -99,7 +100,7 @@ class Buffer:
         """Return the buffer value"""
         return self._value
 
-    def save(self, filename:str) -> None:
+    def save(self, filename: str) -> None:
         """Saves the buffer to a file"""
         if self.value is None:
             raise ValueError("Buffer is None")

@@ -1,20 +1,25 @@
 import weakref
 
+
 class Accessor:
     pass
 
+
 class ReadAccessor(Accessor):
-    _checksum = None  # accessors do not hold references to their checksums. Expressions do.
+    _checksum = (
+        None  # accessors do not hold references to their checksums. Expressions do.
+    )
     _void = True
     _status_reason = None
-    _new_macropath = False # if source or target is a newly bound macropath
-    _prelim = False # if accessor represents a preliminary result
+    _new_macropath = False  # if source or target is a newly bound macropath
+    _prelim = False  # if accessor represents a preliminary result
     exception = None
+
     def __init__(self, source, manager, path, celltype, *, hash_pattern):
         self.source = source
         self.manager = weakref.ref(manager)
         self.path = path
-        assert celltype in celltypes or celltype in pin_celltypes or isinstance(celltype, MacroPath), celltype
+        assert celltype in celltypes or isinstance(celltype, MacroPath), celltype
         self.reactor_pinname = None
         self.celltype = celltype
         self.write_accessor = None
@@ -53,13 +58,17 @@ class ReadAccessor(Accessor):
             target_subcelltype = macropath._cell._subcelltype
         target = self.write_accessor.target()
         path = self.write_accessor.path
-        target_hash_pattern = access_hash_pattern(self.write_accessor.hash_pattern, path)
+        target_hash_pattern = access_hash_pattern(
+            self.write_accessor.hash_pattern, path
+        )
         expression = Expression(
-            checksum, self.path, celltype,
+            checksum,
+            self.path,
+            celltype,
             target_celltype,
             target_subcelltype,
             hash_pattern=hash_pattern,
-            target_hash_pattern=target_hash_pattern
+            target_hash_pattern=target_hash_pattern,
         )
         if self.expression is not None:
             if expression == self.expression:
@@ -83,19 +92,28 @@ class ReadAccessor(Accessor):
     def _root(self):
         return self.source._root()
 
+
 class WriteAccessor(Accessor):
-    def __init__(self, read_accessor,
-            target, celltype, subcelltype, pinname, path, *,
-            hash_pattern
-        ):
+    def __init__(
+        self,
+        read_accessor,
+        target,
+        celltype,
+        subcelltype,
+        pinname,
+        path,
+        *,
+        hash_pattern
+    ):
         from ...core.cell import Cell
         from ...core.worker import Worker
+
         assert isinstance(read_accessor, ReadAccessor)
         assert isinstance(target, (Cell, Worker, MacroPath))
         assert pinname is None or path is None
         self.read_accessor = weakref.ref(read_accessor)
         self.target = weakref.ref(target)
-        assert celltype in celltypes or celltype in pin_celltypes or isinstance(celltype, MacroPath), celltype
+        assert celltype in celltypes or isinstance(celltype, MacroPath), celltype
         self.celltype = celltype
         assert subcelltype is None or subcelltype in subcelltypes
         self.subcelltype = subcelltype
@@ -105,9 +123,9 @@ class WriteAccessor(Accessor):
             assert celltype == "mixed"
         self.hash_pattern = hash_pattern
 
+
 from seamless.buffer.cell import celltypes
 from ...core.cell import Cell, subcelltypes
-from ...core.worker import pin_celltypes
 from ...core.macro import Path as MacroPath
 from ...core.status import StatusReasonEnum
 from .expression import Expression

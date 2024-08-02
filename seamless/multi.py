@@ -315,7 +315,6 @@ def resolve(
     from seamless.buffer.cell import celltypes
 
     allowed_celltypes = celltypes + [
-        "silk",
         "deepcell",
         "deepfolder",
         "folder",

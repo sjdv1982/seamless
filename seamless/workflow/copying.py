@@ -8,10 +8,14 @@ from seamless.buffer.buffer_cache import buffer_cache
 from seamless.buffer.deserialize import deserialize_sync as deserialize
 from seamless.buffer.serialize import serialize_sync as serialize
 from seamless.buffer.get_buffer import get_buffer
-from seamless.workflow.core.protocol.deep_structure import apply_hash_pattern_sync, deep_structure_to_checksums
+from seamless.workflow.core.protocol.deep_structure import (
+    apply_hash_pattern_sync,
+    deep_structure_to_checksums,
+)
+
 
 def get_checksums(nodes, connections, *, with_annotations, skip_scratch):
-    def add_checksum(node, dependent, checksum:Checksum, subpath=None):
+    def add_checksum(node, dependent, checksum: Checksum, subpath=None):
         checksum = Checksum(checksum)
         if not checksum:
             return
@@ -34,11 +38,19 @@ def get_checksums(nodes, connections, *, with_annotations, skip_scratch):
             hash_pattern = {"*": "##"}
             get_deep_checksums = False
         elif node["type"] == "transformer":
-            if subpath is not None and subpath.startswith("input") and not subpath.endswith("schema"):
+            if (
+                subpath is not None
+                and subpath.startswith("input")
+                and not subpath.endswith("schema")
+            ):
                 hash_pattern = node.get("hash_pattern")
                 get_deep_checksums = True
         elif node["type"] == "macro":
-            if subpath is not None and subpath.startswith("param") and not subpath.endswith("schema"):
+            if (
+                subpath is not None
+                and subpath.startswith("param")
+                and not subpath.endswith("schema")
+            ):
                 hash_pattern = {"*": "#"}
                 get_deep_checksums = True
         else:
@@ -46,13 +58,20 @@ def get_checksums(nodes, connections, *, with_annotations, skip_scratch):
         if hash_pattern is not None and get_deep_checksums:
             buffer = get_buffer(bytes.fromhex(checksum), remote=True, deep=True)
             if buffer is None:
-                print("WARNING: could not get checksums for deep structures in {}".format(node["path"]))
+                print(
+                    "WARNING: could not get checksums for deep structures in {}".format(
+                        node["path"]
+                    )
+                )
                 return
-            deep_structure = deserialize(buffer, bytes.fromhex(checksum), "plain", copy=False)
+            deep_structure = deserialize(
+                buffer, bytes.fromhex(checksum), "plain", copy=False
+            )
             deep_checksums = deep_structure_to_checksums(deep_structure, hash_pattern)
             if with_annotations:
                 deep_checksums = [(c, dependent) for c in deep_checksums]
             checksums.update(deep_checksums)
+
     checksums = set()
     for node in nodes:
         if node["type"] in ("link", "context"):
@@ -77,7 +96,7 @@ def get_checksums(nodes, connections, *, with_annotations, skip_scratch):
             checksum = Checksum(checksum_item)
             add_checksum(node, dependent, checksum)
         else:
-            for k,v in checksum_item.items():
+            for k, v in checksum_item.items():
                 dependent2 = dependent
                 if node["type"] == "transformer":
                     if k.startswith("result"):
@@ -91,13 +110,16 @@ def get_checksums(nodes, connections, *, with_annotations, skip_scratch):
                     add_checksum(node, dependent2, v, k)
     return checksums
 
+
 async def get_buffer_dict(manager, checksums):
     result = {}
     cachemanager = manager.cachemanager
     coros = []
     checksums = list(checksums)
+
     async def get_buf(checksum):
         return await cachemanager.fingertip(checksum)
+
     for checksum in checksums:
         coro = get_buf(checksum)
         coros.append(coro)
@@ -107,14 +129,14 @@ async def get_buffer_dict(manager, checksums):
             result[checksum] = buffer
     return result
 
+
 def get_buffer_dict_sync(manager, checksums):
     """This function can be executed if the asyncio event loop is already running"""
 
     from .core.protocol.get_buffer import get_buffer
+
     if not asyncio.get_event_loop().is_running():
-        coro = get_buffer_dict(
-            manager, checksums
-        )
+        coro = get_buffer_dict(manager, checksums)
         fut = asyncio.ensure_future(coro)
         asyncio.get_event_loop().run_until_complete(fut)
         return fut.result()
@@ -122,10 +144,11 @@ def get_buffer_dict_sync(manager, checksums):
     result = {}
     checksums = list(checksums)
     for checksum in checksums:
-        buffer = get_buffer(bytes.fromhex(checksum),remote=True)
+        buffer = get_buffer(bytes.fromhex(checksum), remote=True)
         if buffer is not None:
             result[checksum] = buffer
     return result
+
 
 def add_zip(manager, zipfile, incref=False):
     """
@@ -137,6 +160,7 @@ def add_zip(manager, zipfile, incref=False):
     This can be overridden with "incref=True" (not recommended for long-living contexts)
     """
     from .core.cache.buffer_cache import empty_dict_checksum, empty_list_checksum
+
     result = []
     for checksum in zipfile.namelist():
         if checksum in (empty_dict_checksum, empty_list_checksum):
@@ -152,8 +176,10 @@ def add_zip(manager, zipfile, incref=False):
         result.append(checksum)
     return result
 
+
 def fill_checksum(manager, node, temp_path, composite=True):
     from seamless.buffer.cell import celltypes
+
     checksum = None
     subcelltype = None
     hash_pattern = None
@@ -199,10 +225,18 @@ def fill_checksum(manager, node, temp_path, composite=True):
     else:
         raise TypeError(node["type"])
     if celltype == "structured":
-        if node["type"] in ("transformer", "macro", "deepcell", "deepfoldercell", "foldercell"):
+        if node["type"] in (
+            "transformer",
+            "macro",
+            "deepcell",
+            "deepfoldercell",
+            "foldercell",
+        ):
             datatype = "mixed"
         else:
             datatype = node["datatype"]
+            if datatype == "silk":
+                datatype = "mixed"
             if datatype not in celltypes:
                 datatype = "text"
     else:
@@ -238,7 +272,11 @@ def fill_checksum(manager, node, temp_path, composite=True):
             str_temp_value = "'" + str_temp_value + "'"
         except Exception:
             str_temp_value = ""
-        print(".{}: cannot serialize temporary value {} to {}".format("".join(node["path"]), str_temp_value, datatype))
+        print(
+            ".{}: cannot serialize temporary value {} to {}".format(
+                "".join(node["path"]), str_temp_value, datatype
+            )
+        )
         return
     checksum = Buffer(buf).get_checksum()
 
@@ -248,9 +286,7 @@ def fill_checksum(manager, node, temp_path, composite=True):
     buffer_cache.guarantee_buffer_info(checksum, datatype, sync_to_remote=False)
     if hash_pattern is not None:
         try:
-            checksum = apply_hash_pattern_sync(
-                checksum, hash_pattern
-            )
+            checksum = apply_hash_pattern_sync(checksum, hash_pattern)
         except:
             msg = "WARNING {}:{} : hash pattern encoding expected, not found (legacy Seamless version?)"
             print(msg.format(node["path"], temp_path), file=sys.stderr)
@@ -263,15 +299,14 @@ def fill_checksum(manager, node, temp_path, composite=True):
         temp_path = temp_path.lstrip("_")
         node["checksum"][temp_path] = checksum
 
+
 def get_graph_checksums(graph, with_libraries, *, with_annotations, skip_scratch):
     nodes = graph["nodes"].copy()
     if skip_scratch:
         nodes = [node for node in nodes if "scratch" not in node]
     connections = graph.get("connections", [])
     checksums = get_checksums(
-        nodes, connections,
-        with_annotations=with_annotations,
-        skip_scratch=skip_scratch
+        nodes, connections, with_annotations=with_annotations, skip_scratch=skip_scratch
     )
     if with_libraries:
         for lib in graph.get("lib", []):
@@ -279,7 +314,7 @@ def get_graph_checksums(graph, with_libraries, *, with_annotations, skip_scratch
                 lib["graph"],
                 with_libraries=True,
                 with_annotations=with_annotations,
-                skip_scratch=True
+                skip_scratch=True,
             )
             checksums.update(lib_checksums)
     if with_annotations:
@@ -294,10 +329,11 @@ def get_graph_checksums(graph, with_libraries, *, with_annotations, skip_scratch
                     checksums.add((c, True))
     return checksums
 
+
 def fill_checksums(mgr, nodes, *, path=None):
-    """Fills checksums in the nodes from TEMP values, if untranslated
-    """
+    """Fills checksums in the nodes from TEMP values, if untranslated"""
     from .core.structured_cell import StructuredCell
+
     first_exc = None
     for p in nodes:
         node, old_checksum = None, None
@@ -359,6 +395,7 @@ def fill_checksums(mgr, nodes, *, path=None):
                 first_exc = exc
             else:
                 import traceback
+
                 traceback.print_exc()
             if node is not None and old_checksum is not None:
                 node["checksum"] = old_checksum
