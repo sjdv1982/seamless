@@ -30,6 +30,7 @@ NTHREADS_AFTER_FORK = 5
 # WARNING: uses threads. Use these functions only *after* forking!
 ###############################################################################
 
+
 def fast_unpack(deep_structure, hash_pattern):
     if hash_pattern == {"*": "#"}:
         deep_checksums = list(deep_structure.values())
@@ -50,12 +51,16 @@ def fast_unpack(deep_structure, hash_pattern):
             if unpacked_buffer is not None:
                 unpacked_buffers.append(unpacked_buffer)
             else:
-                unpacked_buffer = pool.apply_async(func=buffer_remote.get_buffer, args = (deep_checksum2,))
+                unpacked_buffer = pool.apply_async(
+                    func=buffer_remote.get_buffer, args=(deep_checksum2,)
+                )
                 if unpacked_buffer is None:
                     raise CacheMissError(deep_checksum)
                 unpacked_buffers.append(unpacked_buffer)
         unpacked_values = []
-        for n, (deep_checksum, unpacked_buffer0) in enumerate(zip(deep_checksums, unpacked_buffers)):
+        for n, (deep_checksum, unpacked_buffer0) in enumerate(
+            zip(deep_checksums, unpacked_buffers)
+        ):
             deep_checksum2 = bytes.fromhex(deep_checksum)
             if isinstance(unpacked_buffer0, AsyncResult):
                 unpacked_buffer = unpacked_buffer0.get()
@@ -66,20 +71,22 @@ def fast_unpack(deep_structure, hash_pattern):
             if celltype is None:
                 value = unpacked_buffer
             else:
-                value = deserialize_sync(unpacked_buffer, deep_checksum2, celltype, copy=False)
+                value = deserialize_sync(
+                    unpacked_buffer, deep_checksum2, celltype, copy=False
+                )
                 assert value is not None, deep_checksum
             unpacked_values.append(value)
 
     if hash_pattern == {"!": "#"}:
         return unpacked_values
     else:
-        return {k:v for k,v in zip(deep_structure.keys(), unpacked_values)}
+        return {k: v for k, v in zip(deep_structure.keys(), unpacked_values)}
 
 
 def _fast_pack(value, buffer, celltype, database, scratch, result_queue):
     if celltype is None:
         buffer = value
-    if buffer is None:        
+    if buffer is None:
         buffer = serialize_sync(value, celltype, use_cache=False)
         if buffer is None:
             return None
@@ -88,18 +95,22 @@ def _fast_pack(value, buffer, celltype, database, scratch, result_queue):
         # shouldn't ever happen
         return None
     if database.active:
-        buffer_cache.guarantee_buffer_info(checksum, celltype, buffer=buffer, sync_to_remote=True)
-    
+        buffer_cache.guarantee_buffer_info(
+            checksum, celltype, buffer=buffer, sync_to_remote=True
+        )
+
     if scratch:
         result_queue.put((8, (checksum, buffer)))
     else:
         buffer_remote.write_buffer(checksum, buffer)
     return checksum
 
+
 def fast_pack(unpacked_values, hash_pattern, *, scratch, result_queue):
     from .protocol.serialize import serialize_cache
+
     if hash_pattern == {"*": "#"}:
-        values = unpacked_values.values()  
+        values = unpacked_values.values()
         celltype = "mixed"
     elif hash_pattern == {"*": "##"}:
         values = unpacked_values.values()
@@ -109,7 +120,7 @@ def fast_pack(unpacked_values, hash_pattern, *, scratch, result_queue):
         celltype = "mixed"
     else:
         raise NotImplementedError(hash_pattern)
-    
+
     database = database_client.database
     packing_checksums = []
     with ThreadPool(NTHREADS_AFTER_FORK) as pool:
@@ -127,7 +138,10 @@ def fast_pack(unpacked_values, hash_pattern, *, scratch, result_queue):
                 if checksum:
                     packing_checksums.append(checksum)
                     continue
-            packing_checksum = pool.apply_async(func=_fast_pack, args = (value, buffer, celltype, database, scratch, result_queue))
+            packing_checksum = pool.apply_async(
+                func=_fast_pack,
+                args=(value, buffer, celltype, database, scratch, result_queue),
+            )
             packing_checksums.append(packing_checksum)
         if hash_pattern in ({"*": "#"}, {"*": "##"}):
             keys = unpacked_values.keys()
@@ -136,7 +150,7 @@ def fast_pack(unpacked_values, hash_pattern, *, scratch, result_queue):
             keys = range(len(unpacked_values))
             result = [None] * len(unpacked_values)
         else:
-            raise AssertionError(hash_pattern)    
+            raise AssertionError(hash_pattern)
         for n, (key, packing_checksum) in enumerate(zip(keys, packing_checksums)):
             packing_checksum = Checksum(packing_checksum)
             if not packing_checksum:
@@ -145,12 +159,13 @@ def fast_pack(unpacked_values, hash_pattern, *, scratch, result_queue):
                 result_checksum = packing_checksum
             elif isinstance(packing_checksum, AsyncResult):
                 result_checksum = packing_checksum.get()
-                if not result_checksum:                
+                if not result_checksum:
                     raise Exception(key)
             result_checksum = Checksum(result_checksum)
-                
+
             result[key] = result_checksum.hex()
     return result
+
 
 def unsilk(value):
     if isinstance(value, Silk):
@@ -167,78 +182,99 @@ def unsilk(value):
     else:
         return value
 
+
 def return_preliminary(result_queue, celltype, value):
-    #print("return_preliminary", value)
+    # print("return_preliminary", value)
     prelim_buffer = serialize(value, celltype)
     if buffer_remote.can_write():
         prelim_checksum = calculate_checksum(prelim_buffer)
         prelim_checksum2 = prelim_checksum.hex()
-        buffer_cache.guarantee_buffer_info(prelim_checksum, celltype, sync_to_remote=True)
+        buffer_cache.guarantee_buffer_info(
+            prelim_checksum, celltype, sync_to_remote=True
+        )
         buffer_remote.write_buffer(prelim_checksum, prelim_buffer)
         result_queue.put(((2, "checksum"), prelim_checksum2))
     else:
         result_queue.put((2, prelim_buffer))
 
+
 def set_progress(result_queue, value):
     assert value >= 0 and value <= 100
     result_queue.put((3, value))
 
-def _execute(name, code,
-      with_ipython_kernel,
-      injector, module_workspace,
-      identifier, namespace, deep_structures_to_unpack,
-      inputs, output_name, output_celltype, output_hash_pattern,
-      scratch,
-      result_queue
-    ):        
-        from .transformation import SeamlessTransformationError, SeamlessStreamTransformationError
-        from seamless.direct import transformer
-        from .manager.expression import Expression
-        assert identifier is not None
-        namespace["return_preliminary"] = functools.partial(
-            return_preliminary, result_queue, output_celltype
-        )
-        namespace["set_progress"] = functools.partial(
-            set_progress, result_queue
-        )
-        namespace["transformer"] = transformer
-        try:
-            namespace.pop(output_name, None)
-            for pinname, value in deep_structures_to_unpack.items():
-                deep_structure, hash_pattern = value 
-                unpacked_value = fast_unpack(deep_structure, hash_pattern)
-                namespace[pinname] = unpacked_value
-                namespace["PINS"][pinname] = unpacked_value
-            with injector.active_workspace(module_workspace, namespace):
-                exec_code(
-                    code, identifier, namespace, inputs, output_name, 
-                    with_ipython_kernel=with_ipython_kernel
-                )
-        except SeamlessTransformationError as exc:
-            exc = str(exc) + "\n"
-            return (2, exc)
-        except SeamlessStreamTransformationError as exc:
-            exc = str(exc) + "\n"
-            return (10, exc)
-        except Exception as exc:
-            _, _,  tb = sys.exc_info()
-            exc_len = len(traceback.extract_tb(tb))
-            exc = traceback.format_exc(limit=-(exc_len-2))
-            return (1, exc)
-        except SystemExit:
-            raise SystemExit() from None
+
+def _execute(
+    name,
+    code,
+    with_ipython_kernel,
+    injector,
+    module_workspace,
+    identifier,
+    namespace,
+    deep_structures_to_unpack,
+    inputs,
+    output_name,
+    output_celltype,
+    output_hash_pattern,
+    scratch,
+    result_queue,
+):
+    from .transformation import (
+        SeamlessTransformationError,
+        SeamlessStreamTransformationError,
+    )
+    from seamless.direct import transformer
+    from seamless.Expression import Expression
+
+    assert identifier is not None
+    namespace["return_preliminary"] = functools.partial(
+        return_preliminary, result_queue, output_celltype
+    )
+    namespace["set_progress"] = functools.partial(set_progress, result_queue)
+    namespace["transformer"] = transformer
+    try:
+        namespace.pop(output_name, None)
+        for pinname, value in deep_structures_to_unpack.items():
+            deep_structure, hash_pattern = value
+            unpacked_value = fast_unpack(deep_structure, hash_pattern)
+            namespace[pinname] = unpacked_value
+            namespace["PINS"][pinname] = unpacked_value
+        with injector.active_workspace(module_workspace, namespace):
+            exec_code(
+                code,
+                identifier,
+                namespace,
+                inputs,
+                output_name,
+                with_ipython_kernel=with_ipython_kernel,
+            )
+    except SeamlessTransformationError as exc:
+        exc = str(exc) + "\n"
+        return (2, exc)
+    except SeamlessStreamTransformationError as exc:
+        exc = str(exc) + "\n"
+        return (10, exc)
+    except Exception as exc:
+        _, _, tb = sys.exc_info()
+        exc_len = len(traceback.extract_tb(tb))
+        exc = traceback.format_exc(limit=-(exc_len - 2))
+        return (1, exc)
+    except SystemExit:
+        raise SystemExit() from None
+    else:
+        if output_name is None:
+            return (0, None)
         else:
-            if output_name is None:
-                return (0, None)
-            else:
-                try:
-                    result = namespace[output_name]
-                except KeyError:
-                    function_like = check_function_like(code, identifier)
-                    if function_like:
-                        f, d = function_like
-                        input_params = ",".join(["{0}={0}".format(inp) for inp in sorted(list(inputs))])
-                        msg = """The transformer code contains a single function "{f}" and {d} other statement(s).
+            try:
+                result = namespace[output_name]
+            except KeyError:
+                function_like = check_function_like(code, identifier)
+                if function_like:
+                    f, d = function_like
+                    input_params = ",".join(
+                        ["{0}={0}".format(inp) for inp in sorted(list(inputs))]
+                    )
+                    msg = """The transformer code contains a single function "{f}" and {d} other statement(s).
 Did you mean to:
 1. Define the transformer code as a single function "{f}"?
    In that case, you must put the other statements within "def {f}(...):  ".
@@ -246,77 +282,91 @@ or
 2. Define the transformer code as a code block?
    In that case, you must define the output variable "{output_name}", e.g. add a statement
    "{output_name} = {f}({input_params})" at the end
-                        """.format(f=f,d=d, output_name=output_name, input_params=input_params)
-                    else:
-                        msg = "Output variable name '%s' undefined" % output_name
-                    return (1, msg)
+                        """.format(
+                        f=f, d=d, output_name=output_name, input_params=input_params
+                    )
                 else:
-                    try:
-                        result = unsilk(result)
-                        if database.active:
-                            result_queue.put((5, "release lock"))
-                        if output_hash_pattern is not None:
-                            deep_structure = fast_pack(result, output_hash_pattern, scratch=scratch, result_queue=result_queue)
-                            result = deep_structure
-                            output_celltype = "mixed"
-                        result_buffer = serialize(result, output_celltype)
-                        result_checksum = None
+                    msg = "Output variable name '%s' undefined" % output_name
+                return (1, msg)
+            else:
+                try:
+                    result = unsilk(result)
+                    if database.active:
+                        result_queue.put((5, "release lock"))
+                    if output_hash_pattern is not None:
+                        deep_structure = fast_pack(
+                            result,
+                            output_hash_pattern,
+                            scratch=scratch,
+                            result_queue=result_queue,
+                        )
+                        result = deep_structure
+                        output_celltype = "mixed"
+                    result_buffer = serialize(result, output_celltype)
+                    result_checksum = None
 
-                        if output_hash_pattern is not None:
+                    if output_hash_pattern is not None:
 
-                            # For now, store deep cell members as expressions
-                            #  in all cases.
-                            # The alternative would be to do this only 
-                            #   when scratch=True
-                            # An Expression record takes ~400 bytes in the DB.
-                            # Some smart tool could purge the database from Expressions
-                            #  if both the deep buffer and the deep member buffer
-                            #  are available in a buffer folder/server
+                        # For now, store deep cell members as expressions
+                        #  in all cases.
+                        # The alternative would be to do this only
+                        #   when scratch=True
+                        # An Expression record takes ~400 bytes in the DB.
+                        # Some smart tool could purge the database from Expressions
+                        #  if both the deep buffer and the deep member buffer
+                        #  are available in a buffer folder/server
 
-                            result_checksum = calculate_checksum(result_buffer)
-                            result_checksum = Checksum(result_checksum)
-                            if isinstance(result, list):
-                                deep_keys = list(range(len(result)))
-                            elif isinstance(result, dict):
-                                deep_keys = list(result.keys())
-                            else:
-                                raise TypeError(result)
-                            if output_hash_pattern == {"*": "#"}:
-                                target_celltype = "mixed"
-                            elif output_hash_pattern == {"*": "##"}:
-                                target_celltype = "bytes"
-                            elif output_hash_pattern == {"!": "#"}:
-                                target_celltype = "mixed"
-                            
-                            for deep_key in deep_keys:
-                                deep_subchecksum = result[deep_key]
-                                deep_subchecksum = Checksum(deep_subchecksum)
-                                if not deep_subchecksum:
-                                    continue
-                                expr = Expression(
-                                    result_checksum, [deep_key],
-                                    "mixed", target_celltype,
-                                    None, hash_pattern=output_hash_pattern,
-                                    target_hash_pattern=None                                     
-                                )                                
-                                database.set_expression(expr, deep_subchecksum)
-
-                        if buffer_remote.can_write() and not scratch:
-                            if not result_checksum:
-                                result_checksum = calculate_checksum(result_buffer)
-                            result_checksum2 = result_checksum.hex()
-                            buffer_cache.guarantee_buffer_info(result_checksum, output_celltype, sync_to_remote=True)
-                            buffer_remote.write_buffer(result_checksum, result_buffer)
-                            return ((0, "checksum"), result_checksum2)
+                        result_checksum = calculate_checksum(result_buffer)
+                        result_checksum = Checksum(result_checksum)
+                        if isinstance(result, list):
+                            deep_keys = list(range(len(result)))
+                        elif isinstance(result, dict):
+                            deep_keys = list(result.keys())
                         else:
-                            return (0, result_buffer)
-                    except Exception as exc:
-                        exc = traceback.format_exc()
-                        return (1, exc)
+                            raise TypeError(result)
+                        if output_hash_pattern == {"*": "#"}:
+                            target_celltype = "mixed"
+                        elif output_hash_pattern == {"*": "##"}:
+                            target_celltype = "bytes"
+                        elif output_hash_pattern == {"!": "#"}:
+                            target_celltype = "mixed"
+
+                        for deep_key in deep_keys:
+                            deep_subchecksum = result[deep_key]
+                            deep_subchecksum = Checksum(deep_subchecksum)
+                            if not deep_subchecksum:
+                                continue
+                            expr = Expression(
+                                result_checksum,
+                                [deep_key],
+                                "mixed",
+                                target_celltype,
+                                None,
+                                hash_pattern=output_hash_pattern,
+                                target_hash_pattern=None,
+                            )
+                            database.set_expression(expr, deep_subchecksum)
+
+                    if buffer_remote.can_write() and not scratch:
+                        if not result_checksum:
+                            result_checksum = calculate_checksum(result_buffer)
+                        result_checksum2 = result_checksum.hex()
+                        buffer_cache.guarantee_buffer_info(
+                            result_checksum, output_celltype, sync_to_remote=True
+                        )
+                        buffer_remote.write_buffer(result_checksum, result_buffer)
+                        return ((0, "checksum"), result_checksum2)
+                    else:
+                        return (0, result_buffer)
+                except Exception as exc:
+                    exc = traceback.format_exc()
+                    return (1, exc)
+
 
 class FakeStdStreamBuf:
     def __init__(self, parent):
         self._parent = parent
+
     def write(self, v):
         if not isinstance(v, bytes):
             raise TypeError(type(v))
@@ -325,49 +375,67 @@ class FakeStdStreamBuf:
         if parent._direct_print:
             parent._real.buffer.write(v)
 
+
 class FakeStdStream:
     def __init__(self, real, direct_print):
         self._buf = b""
         self._real = real
         self._direct_print = direct_print
         self.buffer = FakeStdStreamBuf(self)
+
     def isatty(self):
         return False
-    def write(self, v):        
+
+    def write(self, v):
         self._buf += str(v).encode()
         if self._direct_print:
             self._real.write(v)
+
     def writelines(self, sequence):
         for s in sequence:
             self.write(s)
+
     def writeable(self):
         return True
+
     def flush(self):
         pass
+
     def read(self):
         try:
             return self._buf.decode()
         except UnicodeDecodeError:
             return self._buf
+
     def readable(self):
         return True
 
-def execute(name, code,
-      with_ipython_kernel,
-      injector, module_workspace,
-      identifier, namespace,
-      deep_structures_to_unpack, inputs,
-      output_name, output_celltype, output_hash_pattern,
-      scratch,
-      result_queue,
-      debug = None,
-      tf_checksum:Checksum = None
-    ):
+
+def execute(
+    name,
+    code,
+    with_ipython_kernel,
+    injector,
+    module_workspace,
+    identifier,
+    namespace,
+    deep_structures_to_unpack,
+    inputs,
+    output_name,
+    output_celltype,
+    output_hash_pattern,
+    scratch,
+    result_queue,
+    debug=None,
+    tf_checksum: Checksum = None,
+):
     from seamless.workflow.util import is_forked
+
     if is_forked():
         # This is in principle always True
         import seamless
         from .direct.run import TRANSFORMATION_STACK
+
         tf_checksum = Checksum(tf_checksum)
         if tf_checksum:
             TRANSFORMATION_STACK.append(tf_checksum.hex())
@@ -394,6 +462,7 @@ def execute(name, code,
         debug = {}
     if debug != {}:
         from ..metalevel.ide import debug_pre_hook, debug_post_hook
+
         debug_pre_hook(debug)
     if debug.get("exec-identifier"):
         identifier = debug["exec-identifier"]
@@ -413,10 +482,12 @@ def execute(name, code,
             msg = debug.get("python_attach_message")
             if msg is not None:
                 print(msg)
-            print("*" * 80) 
+            print("*" * 80)
             if debugpy is None:
                 raise ModuleNotFoundError("No module named 'debugpy'")
-            debugpy.listen(("0.0.0.0", port))  # listen for incoming DAP client connections
+            debugpy.listen(
+                ("0.0.0.0", port)
+            )  # listen for incoming DAP client connections
             debugpy.wait_for_client()  # wait for a client to connect
 
         if debug.get("generic_attach"):
@@ -427,12 +498,17 @@ def execute(name, code,
                 print(msg)
             else:
                 print("Process ID: %s" % os.getpid())
-                print("Transformer execution will pause until SIGUSR1 has been received")
+                print(
+                    "Transformer execution will pause until SIGUSR1 has been received"
+                )
             print("*" * 80)
+
             class DebuggerAttached(Exception):
                 pass
+
             def handler(*args, **kwargs):
                 raise DebuggerAttached
+
             signal.signal(signal.SIGUSR1, handler)
             try:
                 time.sleep(3600)
@@ -451,14 +527,21 @@ def execute(name, code,
                 stderr = FakeStdStream(sys.__stderr__, direct_print)
             sys.stdout, sys.stderr = stdout, stderr
             start_time = time.time()
-            result = _execute(name, code,
+            result = _execute(
+                name,
+                code,
                 with_ipython_kernel,
-                injector, module_workspace,
-                identifier, namespace,
+                injector,
+                module_workspace,
+                identifier,
+                namespace,
                 deep_structures_to_unpack,
-                inputs, output_name, output_celltype, output_hash_pattern,
+                inputs,
+                output_name,
+                output_celltype,
+                output_hash_pattern,
                 scratch,
-                result_queue
+                result_queue,
             )
         else:
             direct_print_filehandle = None
@@ -473,19 +556,26 @@ def execute(name, code,
                 stderr = FakeStdStream(sys.__stderr__, direct_print)
             sys.stdout, sys.stderr = stdout, stderr
             start_time = time.time()
-            result = _execute(name, code,
+            result = _execute(
+                name,
+                code,
                 with_ipython_kernel,
-                injector, module_workspace,
-                identifier, namespace,
+                injector,
+                module_workspace,
+                identifier,
+                namespace,
                 deep_structures_to_unpack,
-                inputs, output_name, output_celltype, output_hash_pattern,
+                inputs,
+                output_name,
+                output_celltype,
+                output_hash_pattern,
                 scratch,
-                result_queue
+                result_queue,
             )
         execution_time = time.time() - start_time
 
         msg_code, msg = result
-        if msg_code == 2: # SeamlessTransformationError, propagate
+        if msg_code == 2:  # SeamlessTransformationError, propagate
             result_queue.put((1, msg))
         elif msg_code in (1, 10):
             std = ""
@@ -499,22 +589,28 @@ def execute(name, code,
 *************************************************
 {}
 *************************************************
-""".format(sout)
+""".format(
+                    sout
+                )
             serr = stderr.read()
             if len(serr):
                 if not len(std):
                     std += "\n"
-                std +="""*************************************************
+                std += """*************************************************
 * Standard error
 *************************************************
 {}
 *************************************************
-""".format(serr)
+""".format(
+                    serr
+                )
             if len(std):
                 msg = msg + std
-            msg +="""*************************************************
+            msg += """*************************************************
 Execution time: {:.1f} seconds
-""".format(execution_time)
+""".format(
+                execution_time
+            )
             result_queue.put((1, msg))
         else:
             content = stdout.read()
@@ -541,7 +637,7 @@ Execution time: {:.1f} seconds
             try:
                 debug_post_hook(debug)
             except Exception:
-                traceback.print_exc()        
+                traceback.print_exc()
         if not _exiting:
             try:
                 result_queue.close()
@@ -556,8 +652,15 @@ from seamless import CacheMissError, Checksum
 from silk import Silk
 from seamless.buffer import database_client
 from seamless.buffer.database_client import database
-from .protocol.deep_structure import deep_structure_to_value, value_to_deep_structure_sync as value_to_deep_structure
+from .protocol.deep_structure import (
+    deep_structure_to_value,
+    value_to_deep_structure_sync as value_to_deep_structure,
+)
 from seamless.buffer.serialize import serialize_sync
 from seamless.buffer.deserialize import deserialize_sync
-from seamless.buffer.cached_calculate_checksum import cached_calculate_checksum_sync as calculate_checksum, calculate_checksum_func, calculate_checksum_cache
+from seamless.buffer.cached_calculate_checksum import (
+    cached_calculate_checksum_sync as calculate_checksum,
+    calculate_checksum_func,
+    calculate_checksum_cache,
+)
 from seamless.util.subprocess_ import kill_children

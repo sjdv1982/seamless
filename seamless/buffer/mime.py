@@ -1,4 +1,4 @@
-import os, warnings
+import os
 
 mimetypes_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), "mime.types")
 mimetypes = {}
@@ -40,7 +40,6 @@ language_to_ext = {
     "fortran": "f",
     "javascript": "js",
     "bash": "bash",
-    "opencl": None,  # TODO
 }
 celltype_to_ext = {
     "text": "txt",

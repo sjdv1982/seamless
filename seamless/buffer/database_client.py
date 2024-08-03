@@ -10,8 +10,7 @@ session = requests.Session()
 sessions_async = weakref.WeakKeyDictionary()
 
 from seamless import Checksum, Buffer
-
-global Expression
+from seamless.Expression import Expression
 
 
 class Database:
@@ -34,8 +33,6 @@ class Database:
         self._loghandle.write(logstr)
 
     def connect(self, host, port):
-        global Expression
-        from ..manager.expression import Expression
 
         self.host = host
         self.port = port
@@ -136,7 +133,7 @@ class Database:
         self._log("SET", request["type"], request["checksum"])
         self.send_put_request(request)
 
-    def set_expression(self, expression: "Expression", result):
+    def set_expression(self, expression: Expression, result):
         assert result is not None
         request = {
             "type": "expression",
@@ -357,7 +354,7 @@ class Database:
                 return None
             return rtf
 
-    def get_expression(self, expression: "Expression"):
+    def get_expression(self, expression: Expression):
         request = {
             "type": "expression",
             "checksum": Checksum(expression.checksum).value,

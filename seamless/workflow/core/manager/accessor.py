@@ -128,5 +128,5 @@ from seamless.buffer.cell import celltypes
 from ...core.cell import Cell, subcelltypes
 from ...core.macro import Path as MacroPath
 from ...core.status import StatusReasonEnum
-from .expression import Expression
+from seamless.Expression import Expression
 from ..protocol.deep_structure import access_hash_pattern

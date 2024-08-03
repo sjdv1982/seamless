@@ -1,8 +1,9 @@
-from seamless.buffer.calculate_checksum import calculate_checksum
+"""Seamless Expression class"""
+
+from seamless import Checksum, Buffer
+
 from weakref import WeakValueDictionary
 import json
-
-from seamless import Checksum
 
 _expressions = WeakValueDictionary()
 
@@ -13,10 +14,15 @@ _hash_slots = [
     "_hash_pattern",
     "_target_celltype",
     "_target_subcelltype",
-    "_target_hash_pattern"
+    "_target_hash_pattern",
 ]
+
+
 class Expression:
-    __slots__ = [ "__weakref__", "exception"] + _hash_slots
+    """Seamless Expression class"""
+
+    __slots__ = ["__weakref__", "exception"] + _hash_slots
+
     def __new__(cls, *args, **kwargs):
         expression = super().__new__(cls)
         cls.__init__(expression, *args, **kwargs)
@@ -29,9 +35,15 @@ class Expression:
             return expression
 
     def __init__(
-        self, checksum:Checksum, path, celltype,
-        target_celltype, target_subcelltype,
-        *, hash_pattern, target_hash_pattern
+        self,
+        checksum: Checksum,
+        path,
+        celltype,
+        target_celltype,
+        target_subcelltype,
+        *,
+        hash_pattern,
+        target_hash_pattern
     ):
         checksum = Checksum(checksum)
         if hash_pattern in ("", "#"):
@@ -90,6 +102,8 @@ class Expression:
 
     @property
     def result_hash_pattern(self):
+        from seamless.workflow.core.protocol.deep_structure import access_hash_pattern
+
         return access_hash_pattern(self.hash_pattern, self.path)
 
     def _hash_dict(self):
@@ -106,6 +120,7 @@ class Expression:
 
     def __str__(self):
         from seamless.buffer.json import json_dumps
+
         d = self._hash_dict()
         return json_dumps(d)
 
@@ -113,6 +128,5 @@ class Expression:
         return str(self)
 
     def _get_hash(self):
-        return calculate_checksum(str(self)+"\n").hex()
-
-from ..protocol.deep_structure import access_hash_pattern
+        strbuf = str(self) + "\n"
+        return Buffer(strbuf.encode()).get_checksum()

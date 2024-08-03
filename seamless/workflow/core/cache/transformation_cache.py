@@ -193,7 +193,7 @@ async def run_structured_cell_join(structured_cell_join_checksum, *, scratch, ca
 
 async def run_evaluate_expression(expression_dict, fingertip_mode, *, scratch, manager):
     from ..manager.fingertipper import FingerTipper
-    from ..manager.expression import Expression
+    from seamless.Expression import Expression
     from ..manager.tasks.evaluate_expression import evaluate_expression
     d = expression_dict.copy()
     d["target_subcelltype"] = None

@@ -9,21 +9,26 @@ from seamless.buffer.buffer_cache import buffer_cache
 
 logger = logging.getLogger(__name__)
 
+
 def print_info(*args):
     msg = " ".join([str(arg) for arg in args])
     logger.info(msg)
+
 
 def print_warning(*args):
     msg = " ".join([str(arg) for arg in args])
     logger.warning(msg)
 
+
 def print_debug(*args):
     msg = " ".join([str(arg) for arg in args])
     logger.debug(msg)
 
+
 def print_error(*args):
     msg = " ".join([str(arg) for arg in args])
     logger.error(msg)
+
 
 class CacheManager:
     def __init__(self, manager):
@@ -42,9 +47,10 @@ class CacheManager:
         self.reactor_exceptions = {}
         self.join_cache = {}
         self.rev_join_cache = {}
-        
+
         # for now, just a single global transformation cache
         from ..cache.transformation_cache import transformation_cache
+
         self.transformation_cache = transformation_cache
 
     def register_cell(self, cell):
@@ -63,19 +69,11 @@ class CacheManager:
             checksum = self.expression_to_ref.get(expression)
             checksum = Checksum(checksum)
             if checksum:
-                self.incref_checksum(
-                    checksum,
-                    expression,
-                    result=False
-                )
+                self.incref_checksum(checksum, expression, result=False)
             checksum = self.expression_to_result_checksum.get(expression)
             checksum = Checksum(checksum)
             if checksum and checksum != expression.checksum:
-                self.incref_checksum(
-                    checksum,
-                    expression,
-                    result=True
-                )
+                self.incref_checksum(checksum, expression, result=True)
             return True
         else:
             assert expression not in self.expression_to_ref
@@ -102,7 +100,7 @@ class CacheManager:
         self.reactor_to_refs[reactor] = refs
         self.reactor_exceptions[reactor] = None
 
-    def incref_checksum(self, checksum:Checksum, refholder, *, result):
+    def incref_checksum(self, checksum: Checksum, refholder, *, result):
         """
         NOTE: incref/decref must happen within one async step
         Therefore, the direct or indirect call of _sync versions of coroutines
@@ -112,7 +110,7 @@ class CacheManager:
         checksum = Checksum(checksum)
         if not checksum:
             return
-        #print("INCREF CHECKSUM", checksum.hex(), refholder, result)
+        # print("INCREF CHECKSUM", checksum.hex(), refholder, result)
         incref_hash_pattern = False
         if isinstance(refholder, Cell):
             assert not result
@@ -123,7 +121,7 @@ class CacheManager:
             if cell._hash_pattern is not None:
                 incref_hash_pattern = True
         elif isinstance(refholder, Expression):
-            #print("INCREF EXPRESSION", refholder, result)            
+            # print("INCREF EXPRESSION", refholder, result)
             assert refholder not in self.inactive_expressions
             persistent = False
             if not result:
@@ -145,7 +143,7 @@ class CacheManager:
             assert self.inchannel_to_ref[refholder] is None
             persistent = False
             self.inchannel_to_ref[refholder] = checksum
-        #elif isinstance(refholder, Library): # yagni??
+        # elif isinstance(refholder, Library): # yagni??
         #    pass
         else:
             raise TypeError(type(refholder))
@@ -164,13 +162,20 @@ class CacheManager:
         finally:
             item = (refh, result)
             self.checksum_refs[checksum].add(item)
-        #print("cachemanager INCREF", checksum.hex(), len(self.checksum_refs[checksum]))
+        # print("cachemanager INCREF", checksum.hex(), len(self.checksum_refs[checksum]))
         if incref_hash_pattern:
             cell = refholder
             subchecksums_persistent = cell._subchecksums_persistent
-            deeprefmanager.incref_deep_buffer(checksum, cell._hash_pattern, cell=cell, subchecksums_persistent=subchecksums_persistent)
-    
-    async def fingertip(self, checksum, *, dunder=None, must_have_cell=False) -> bytes | None:
+            deeprefmanager.incref_deep_buffer(
+                checksum,
+                cell._hash_pattern,
+                cell=cell,
+                subchecksums_persistent=subchecksums_persistent,
+            )
+
+    async def fingertip(
+        self, checksum, *, dunder=None, must_have_cell=False
+    ) -> bytes | None:
         """Tries to put the checksum's corresponding buffer 'at your fingertips'
         Normally, first reverse provenance (recompute) is tried,
          then remote download.
@@ -182,9 +187,11 @@ class CacheManager:
          the shareserver, which makes it safe to re-compute a checksum-to-buffer
          request dynamically, without allowing arbitrary computation
         """
-        return await self._fingertip(checksum, dunder=dunder, must_have_cell=must_have_cell, done=set())
+        return await self._fingertip(
+            checksum, dunder=dunder, must_have_cell=must_have_cell, done=set()
+        )
 
-    def _mine_database(self, checksum:Checksum):
+    def _mine_database(self, checksum: Checksum):
         result_expressions = []
         result_joins = []
         result_transformations = []
@@ -214,7 +221,9 @@ class CacheManager:
         from ..direct.run import TRANSFORMATION_STACK
         from .fingertipper import FingerTipper
 
-        fingertipper = FingerTipper(checksum, self, dunder=dunder, recompute=recompute, done=done)
+        fingertipper = FingerTipper(
+            checksum, self, dunder=dunder, recompute=recompute, done=done
+        )
 
         manager = self.manager()
         tf_cache = self.transformation_cache
@@ -234,7 +243,7 @@ class CacheManager:
                     if transformation is None:
                         continue
                 fingertipper.transformations.append((transformation, tf_checksum))
-            
+
         if recompute:
             tf_checksums = tf_cache.known_transformations_rev.get(checksum, [])
             tf_checksums += tf_cache.transformation_results_rev.get(checksum, [])
@@ -262,8 +271,12 @@ class CacheManager:
             syn_checksums = None
             semkeys = (checksum, "python", None), (checksum, "python", "transformer")
             for semkey in semkeys:
-                syn_checksums0 = self.transformation_cache.semantic_to_syntactic_checksums.get(semkey)
-                if syn_checksums0:                    
+                syn_checksums0 = (
+                    self.transformation_cache.semantic_to_syntactic_checksums.get(
+                        semkey
+                    )
+                )
+                if syn_checksums0:
                     break
                 syn_checksums0 = database.get_sem2syn(semkey)
                 if syn_checksums0:
@@ -273,11 +286,17 @@ class CacheManager:
 
             if not syn_checksums:
                 sem2syn = self.transformation_cache.semantic_to_syntactic_checksums
-                for (sem_checksum, celltype, subcelltype), syn_checksums0 in sem2syn.items():
+                for (
+                    sem_checksum,
+                    celltype,
+                    subcelltype,
+                ), syn_checksums0 in sem2syn.items():
                     if sem_checksum == checksum:
-                        syn_checksums = [(cs, celltype, subcelltype) for cs in syn_checksums0]
+                        syn_checksums = [
+                            (cs, celltype, subcelltype) for cs in syn_checksums0
+                        ]
                         break
-            
+
             if syn_checksums:
                 for syn_checksum, celltype, subcelltype in syn_checksums:
                     fingertipper.syn2sem.append((syn_checksum, celltype, subcelltype))
@@ -286,30 +305,45 @@ class CacheManager:
             # Heroic attempt to get a reverse conversion from any buffer_info
             # This extends a much simpler buffer_info effort in get_buffer.py
             attr_list = (
-                "str2text", "text2str", "binary2bytes", "bytes2binary",
-                "binary2json", "json2binary"
+                "str2text",
+                "text2str",
+                "binary2bytes",
+                "bytes2binary",
+                "binary2json",
+                "json2binary",
             )
             checksum_hex = checksum.hex()
             for source_checksum, buffer_info in buffer_cache.buffer_info.items():
                 for attr in attr_list:
                     if getattr(buffer_info, attr) == checksum_hex:
-                        expr_celltype, expr_target_celltype = attr.replace("json", "plain").split("2")
+                        expr_celltype, expr_target_celltype = attr.replace(
+                            "json", "plain"
+                        ).split("2")
                         expression = Expression(
-                            source_checksum, None, expr_celltype, expr_target_celltype, None,
-                            hash_pattern=None, target_hash_pattern=None
+                            source_checksum,
+                            None,
+                            expr_celltype,
+                            expr_target_celltype,
+                            None,
+                            hash_pattern=None,
+                            target_hash_pattern=None,
                         )
                         fingertipper.expressions.append(expression)
 
         if fingertipper.empty and database.active:
             # Extremely heroic effort to mine a database for expressions and structured cell joins
-            mined_expressions, mined_joins, mined_transformations = self._mine_database(checksum)
+            mined_expressions, mined_joins, mined_transformations = self._mine_database(
+                checksum
+            )
             fingertipper.expressions += mined_expressions
             fingertipper.joins2 += mined_joins
             await add_transformations(mined_transformations)
 
         return fingertipper
 
-    async def _fingertip(self, checksum:Checksum, *, must_have_cell, done, dunder = None) -> bytes | None :
+    async def _fingertip(
+        self, checksum: Checksum, *, must_have_cell, done, dunder=None
+    ) -> bytes | None:
 
         checksum = Checksum(checksum)
         if not checksum:
@@ -323,7 +357,7 @@ class CacheManager:
 
         done.add(checksum)
 
-        remote, recompute= True, True
+        remote, recompute = True, True
         is_deep = False
         has_cell = False
         for refholder, _ in self.checksum_refs.get(checksum, set()):
@@ -345,30 +379,32 @@ class CacheManager:
                 print("REMOT")
                 return buffer
 
-        fingertipper = await self._build_fingertipper(checksum, dunder=dunder, recompute=recompute, done=done)
+        fingertipper = await self._build_fingertipper(
+            checksum, dunder=dunder, recompute=recompute, done=done
+        )
 
         exc_str = None
         if not fingertipper.empty:
             exc_str = await fingertipper.run()
-            
-            buffer = get_buffer(checksum,remote=remote)
+
+            buffer = get_buffer(checksum, remote=remote)
             if buffer is not None:
                 return buffer
-
 
         if exc_str is None:
             exc_str = ""
         raise CacheMissError(checksum.hex() + exc_str)
 
-
-    def decref_checksum(self, checksum:Checksum, refholder, result, *, destroying=False):
+    def decref_checksum(
+        self, checksum: Checksum, refholder, result, *, destroying=False
+    ):
         """
         NOTE: incref/decref must happen within one async step
         Therefore, the direct or indirect call of _sync versions of coroutines
         (e.g. deserialize_sync, which launches coroutines and waits for them)
         IS NOT ALLOWED
         """
-        #print("DECREF", refholder, checksum.hex())
+        # print("DECREF", refholder, checksum.hex())
         checksum = Checksum(checksum)
         if checksum not in self.checksum_refs:
             if not checksum:
@@ -378,7 +414,7 @@ class CacheManager:
             print_warning("cachemanager: cannot decref unknown checksum {}".format(cs))
             return
         if isinstance(refholder, Cell):
-            assert self.cell_to_ref[refholder] is not None, refholder      
+            assert self.cell_to_ref[refholder] is not None, refholder
             self.cell_to_ref[refholder] = None
             cell = refholder
             if cell._hash_pattern is not None:
@@ -387,7 +423,7 @@ class CacheManager:
         elif isinstance(refholder, Expression):
             # Special case, since we never actually clear expression caches,
             #  we just inactivate them if not referenced
-            #print("DECREF EXPRESSION", refholder._get_hash(), result)
+            # print("DECREF EXPRESSION", refholder._get_hash(), result)
             if result:
                 assert self.expression_to_result_checksum[refholder] is not None
             else:
@@ -398,7 +434,7 @@ class CacheManager:
         elif isinstance(refholder, Inchannel):
             assert self.inchannel_to_ref[refholder] is not None
             self.inchannel_to_ref[refholder] = None
-        #elif isinstance(refholder, Library):  ## yagni??
+        # elif isinstance(refholder, Library):  ## yagni??
         #    pass
         else:
             raise TypeError(type(refholder))
@@ -406,19 +442,23 @@ class CacheManager:
             refh = refholder
             self.checksum_refs[checksum].remove((refh, result))
         except Exception:
-            print_warning("""cachemanager: cannot remove unknown checksum ref:
+            print_warning(
+                """cachemanager: cannot remove unknown checksum ref:
 checksum: {}
 refholder: {}
 is result checksum: {}
-""".format(checksum.hex(), refholder, result))
+""".format(
+                    checksum.hex(), refholder, result
+                )
+            )
             return
-        #print("cachemanager DECREF", checksum.hex(), len(self.checksum_refs[checksum]))
+        # print("cachemanager DECREF", checksum.hex(), len(self.checksum_refs[checksum]))
         if len(self.checksum_refs[checksum]) == 0:
             buffer_cache.decref(checksum)
             self.checksum_refs.pop(checksum)
             if checksum in self.persistent_checksums:
                 self.persistent_checksums.remove(checksum)
-        
+
     def destroy_cell(self, cell):
         checksum = self.cell_to_ref[cell]
         if checksum:
@@ -475,7 +515,7 @@ is result checksum: {}
             "expression_to_ref",
             "expression_to_result_checksum",
             "transformer_to_result_checksum",
-            "reactor_to_refs"
+            "reactor_to_refs",
         )
         ok = True
         name = self.__class__.__name__
@@ -486,7 +526,7 @@ is result checksum: {}
             elif attrib.startswith("expression_to"):
                 a = [aa for aa in a if aa not in self.inactive_expressions]
             if len(a):
-                print_warning(name + ", " + attrib + ": %d undestroyed"  % len(a))
+                print_warning(name + ", " + attrib + ": %d undestroyed" % len(a))
                 ok = False
 
     def get_join_cache(self, join_dict):
@@ -497,16 +537,19 @@ is result checksum: {}
         from ..protocol.serialize import serialize_sync as serialize
         from ...config import database
         from ..cache import buffer_remote
+
         if isinstance(result_checksum, str):
             result_checksum = bytes.fromhex(result_checksum)
-        if join_dict == {'inchannels': {'[]': result_checksum.hex()}}:
+        if join_dict == {"inchannels": {"[]": result_checksum.hex()}}:
             return
         join_dict_buf = serialize(join_dict, "plain", use_cache=True)
         checksum = calculate_checksum(join_dict_buf)
         self.join_cache[checksum] = result_checksum
         self.rev_join_cache[result_checksum] = join_dict
         buffer_cache.cache_buffer(checksum, join_dict_buf)
-        buffer_cache.guarantee_buffer_info(checksum, "plain", buffer=join_dict_buf, sync_to_remote=True)
+        buffer_cache.guarantee_buffer_info(
+            checksum, "plain", buffer=join_dict_buf, sync_to_remote=True
+        )
         if database.active:
             buffer_remote.write_buffer(checksum, join_dict_buf)
             database.set_structured_cell_join(result_checksum, checksum)
@@ -515,6 +558,6 @@ is result checksum: {}
 from ..cell import Cell
 from ..transformer import Transformer
 from ..structured_cell import Inchannel
-from .expression import Expression
+from seamless.Expression import Expression
 from seamless.buffer.get_buffer import get_buffer
 from ..cache.deeprefmanager import deeprefmanager

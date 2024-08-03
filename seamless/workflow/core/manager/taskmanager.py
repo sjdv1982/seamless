@@ -8,15 +8,19 @@ import traceback
 from bisect import bisect_left
 
 import logging
+
 logger = logging.getLogger(__name__)
+
 
 def print_info(*args):
     msg = " ".join([str(arg) for arg in args])
     logger.info(msg)
 
+
 def print_warning(*args):
     msg = " ".join([str(arg) for arg in args])
     logger.warning(msg)
+
 
 def print_debug(*args):
     if logger.level < logging.DEBUG:
@@ -24,9 +28,11 @@ def print_debug(*args):
     msg = " ".join([str(arg) for arg in args])
     logger.debug(msg)
 
+
 def print_error(*args):
     msg = " ".join([str(arg) for arg in args])
     logger.error(msg)
+
 
 def print_wait_for(wait_for):
     objs = []
@@ -40,8 +46,9 @@ def print_wait_for(wait_for):
         objs.append(str(obj))
     objs = " ".join(objs)
     if len(objs):
-        print("Waiting for:",end=" ")
-        print(objs)            
+        print("Waiting for:", end=" ")
+        print(objs)
+
 
 class TaskManager:
     _destroyed = False
@@ -54,23 +61,28 @@ class TaskManager:
         self.loop = asyncio.get_event_loop()
         self.tasks = []
         self.upon_connection_tasks = []
-        self.barriers = set()  # list of taskids. Only the tasks with an id up to the barrier taskid may execute.
-                               # Once all of them have been executed, the barrier is lifted
+        self.barriers = (
+            set()
+        )  # list of taskids. Only the tasks with an id up to the barrier taskid may execute.
+        # Once all of them have been executed, the barrier is lifted
         self.launching_tasks = set()
         self.task_ids = []
         self.upon_connection_task_ids = []
         self.synctasks = []
-        self.cell_to_task = {} # tasks that depend on cells
+        self.cell_to_task = {}  # tasks that depend on cells
         self.accessor_to_task = {}  # ...
         self.expression_to_task = {}
         self.transformer_to_task = {}
         self.reactor_to_task = {}
         self.macropath_to_task = {}
         self.structured_cell_to_task = {}
-        self.reftasks = {} # tasks that hold a reference to (are a link to) another task
-        self.rev_reftasks = {} # mapping of a task to their refholder tasks
-        self.cell_to_value = {} # very short term cache:
-                                # only while the checksum is being computed by a SetCellValueTask
+        self.reftasks = (
+            {}
+        )  # tasks that hold a reference to (are a link to) another task
+        self.rev_reftasks = {}  # mapping of a task to their refholder tasks
+        self.cell_to_value = {}  # very short term cache:
+        # only while the checksum is being computed by a SetCellValueTask
+
     def activate(self):
         self._active = True
 
@@ -148,7 +160,7 @@ class TaskManager:
                 result = None
                 print_error(traceback.format_exc())
             if event is not None:
-                event.custom_result_value = result # hackish
+                event.custom_result_value = result  # hackish
                 event.set()
 
     def run_all_synctasks(self):
@@ -190,9 +202,7 @@ class TaskManager:
             self.upon_connection_task_ids.append(task.taskid)
         else:
             self.task_ids.append(task.taskid)
-        task.future.add_done_callback(
-            partial(self._clean_task, task)
-        )
+        task.future.add_done_callback(partial(self._clean_task, task))
 
         for dep in task.dependencies:
             self._add_dep(dep, task)
@@ -220,9 +230,8 @@ class TaskManager:
 
         dd.append(task)
 
-
     # a lot of time is spent in the function below
-    async def await_upon_connection_tasks(self,taskid,root):
+    async def await_upon_connection_tasks(self, taskid, root):
         while 1:
             pos = bisect_left(self.upon_connection_task_ids, taskid)
             for task in reversed(self.upon_connection_tasks[:pos]):
@@ -234,11 +243,10 @@ class TaskManager:
                     continue
                 """
                 fut = asyncio.shield(task.future)
-                await fut                
+                await fut
                 break
             else:
                 break
-
 
     """
     # slower!
@@ -252,7 +260,7 @@ class TaskManager:
             await asyncio.wait(futs, return_when=asyncio.ALL_COMPLETED)
     """
 
-    async def await_cell(self,cell,taskid,root):
+    async def await_cell(self, cell, taskid, root):
         while 1:
             cell_tasks = self.cell_to_task[cell]
             if len(cell_tasks) == 0 or cell_tasks[0].taskid >= taskid:
@@ -265,6 +273,7 @@ class TaskManager:
         """
         from .tasks.set_buffer import SetCellBufferTask
         from .tasks.set_value import SetCellValueTask
+
         cell_tasks = self.cell_to_task[cell]
         for task in cell_tasks:
             if isinstance(task, (SetCellBufferTask, SetCellValueTask)):
@@ -276,20 +285,18 @@ class TaskManager:
         """Wait for taskmanager Tasks. Any cancel will raise CancelError, unless shield is True"""
         futures = []
         for task in tasks:
-            futures.append(
-                asyncio.shield(task.future)
-            )
+            futures.append(asyncio.shield(task.future))
         await asyncio.wait(futures)
         ok = True
         for task, fut in zip(tasks, futures):
             try:
-                fut.result() # to get rid of "Future exception was never retrieved (does not always work!)"
-                                # since the shield has its own exception
+                fut.result()  # to get rid of "Future exception was never retrieved (does not always work!)"
+                # since the shield has its own exception
             except Exception as exc:
                 pass
 
             try:
-                task.future.result() # This is the real future
+                task.future.result()  # This is the real future
             except Exception as exc:
                 if not isinstance(exc, CancelledError):
                     if task._awaiting:
@@ -341,6 +348,7 @@ class TaskManager:
 
     def compute(self, timeout, report, get_tasks_func=None):
         from ...metalevel.debugmount import debugmountmanager
+
         assert not asyncio.get_event_loop().is_running()
         manager = self.manager()
         manager.temprefmanager.purge()
@@ -365,9 +373,10 @@ class TaskManager:
         ptasks = select_pending_tasks()
         if not len(ptasks):
             ptasks = [None]  # enter the loop at least once
+
         def print_report(verbose=True):
             running = set()
-            #print("TASKS", ptasks)
+            # print("TASKS", ptasks)
             for task in ptasks:
                 if task.future is None:
                     continue
@@ -375,18 +384,27 @@ class TaskManager:
                     if logger.isEnabledFor(logging.DEBUG):
                         if task._runner is not None:
                             msg = "\n******\n"
-                            msg += "WAIT FOR {} {} {}\n".format(task.__class__.__name__, hex(id(task)), task.dependencies)
+                            msg += "WAIT FOR {} {} {}\n".format(
+                                task.__class__.__name__,
+                                hex(id(task)),
+                                task.dependencies,
+                            )
                             frame = task._runner.cr_frame
                             stack = "   " + "\n   ".join(traceback.format_stack(frame))
                             msg += stack
                             msg += "******"
                             print_debug(msg)
                     else:
-                        print_debug("WAIT FOR", task.__class__.__name__, hex(id(task)), task.dependencies)
+                        print_debug(
+                            "WAIT FOR",
+                            task.__class__.__name__,
+                            hex(id(task)),
+                            task.dependencies,
+                        )
                     for dep in task.dependencies:
                         if isinstance(dep, SeamlessBase) and not isinstance(dep, Macro):
                             running.add(dep)
-                            #print("TASK",task)
+                            # print("TASK",task)
             if not len(running):
                 if not len(ptasks):
                     return [], False
@@ -398,15 +416,22 @@ class TaskManager:
                 print_wait_for(result)
             return result, True
 
-        while len(ptasks) or len(self.launching_tasks) or len(self.synctasks) or \
-          manager.macromanager.queued or deeprefmanager.busy or sharemanager.busy or must_run_mount:
+        while (
+            len(ptasks)
+            or len(self.launching_tasks)
+            or len(self.synctasks)
+            or manager.macromanager.queued
+            or deeprefmanager.busy
+            or sharemanager.busy
+            or must_run_mount
+        ):
             mm = manager.mountmanager
             if must_run_mount:
                 if not len(mm.cell_updates) and mm.last_run != last_mount_run:
                     must_run_mount = False
             if timeout is not None:
                 if report is not None and report > 0:
-                    curr_timeout=min(remaining, report)
+                    curr_timeout = min(remaining, report)
                 else:
                     curr_timeout = remaining
             else:
@@ -430,18 +455,27 @@ class TaskManager:
                 if remaining < 0:
                     break
             if get_tasks_func is None:
-                if not (len(self.tasks) or len(self.upon_connection_tasks) or len(self.launching_tasks) or len(self.synctasks) or \
-                  manager.macromanager.queued or deeprefmanager.busy or sharemanager.busy):
+                if not (
+                    len(self.tasks)
+                    or len(self.upon_connection_tasks)
+                    or len(self.launching_tasks)
+                    or len(self.synctasks)
+                    or manager.macromanager.queued
+                    or deeprefmanager.busy
+                    or sharemanager.busy
+                ):
                     if not debugmountmanager.taskmanager_has_mounts(self):
                         cyclic_scells = manager.livegraph.get_cyclic()
                         if len(cyclic_scells):
                             changed = manager.force_join(cyclic_scells)
                             if changed:
                                 self.loop.run_until_complete(asyncio.sleep(0.1))
-                                ptasks = [None]  # just to prevent the loop from breaking
+                                ptasks = [
+                                    None
+                                ]  # just to prevent the loop from breaking
             if len(mm.cell_updates):
                 must_run_mount = True
-        
+
         if timeout is None and not manager.macromanager.queued:
             manager.macromanager._kludge()
             if manager.macromanager.queued:
@@ -457,6 +491,7 @@ class TaskManager:
 
     async def computation(self, timeout, report, get_tasks_func=None):
         from ...metalevel.debugmount import debugmountmanager
+
         manager = self.manager()
         manager.temprefmanager.purge()
         must_run_mount = True
@@ -480,9 +515,10 @@ class TaskManager:
         ptasks = select_pending_tasks()
         if not len(ptasks):
             ptasks = [None]  # enter the loop at least once
+
         def print_report(verbose=True):
             running = set()
-            #print("TASKS", ptasks)
+            # print("TASKS", ptasks)
             for task in ptasks:
                 if task.future is None:
                     continue
@@ -490,18 +526,27 @@ class TaskManager:
                     if logger.isEnabledFor(logging.DEBUG):
                         if task._runner is not None:
                             msg = "\n******\n"
-                            msg += "WAIT FOR {} {} {}\n".format(task.__class__.__name__, hex(id(task)), task.dependencies)
+                            msg += "WAIT FOR {} {} {}\n".format(
+                                task.__class__.__name__,
+                                hex(id(task)),
+                                task.dependencies,
+                            )
                             frame = task._runner.cr_frame
                             stack = "   " + "\n   ".join(traceback.format_stack(frame))
                             msg += stack
                             msg += "******"
                             print_debug(msg)
                     else:
-                        print_debug("WAIT FOR", task.__class__.__name__, hex(id(task)), task.dependencies)
+                        print_debug(
+                            "WAIT FOR",
+                            task.__class__.__name__,
+                            hex(id(task)),
+                            task.dependencies,
+                        )
                     for dep in task.dependencies:
                         if isinstance(dep, SeamlessBase) and not isinstance(dep, Macro):
                             running.add(dep)
-                            #print("TASK",task)
+                            # print("TASK",task)
             if not len(running):
                 if not len(ptasks):
                     return [], False
@@ -513,15 +558,22 @@ class TaskManager:
                 print_wait_for(result)
             return result, True
 
-        while len(ptasks) or len(self.launching_tasks) or len(self.synctasks) or \
-          manager.macromanager.queued or deeprefmanager.busy or sharemanager.busy or must_run_mount:
+        while (
+            len(ptasks)
+            or len(self.launching_tasks)
+            or len(self.synctasks)
+            or manager.macromanager.queued
+            or deeprefmanager.busy
+            or sharemanager.busy
+            or must_run_mount
+        ):
             mm = manager.mountmanager
             if must_run_mount:
                 if not len(mm.cell_updates) and mm.last_run != last_mount_run:
                     must_run_mount = False
             if timeout is not None:
                 if report is not None and report > 0:
-                    curr_timeout=min(remaining, report)
+                    curr_timeout = min(remaining, report)
                 else:
                     curr_timeout = remaining
             else:
@@ -532,7 +584,9 @@ class TaskManager:
             try:
                 if len(ptasks) and ptasks != [None]:
                     futures = [ptask.future for ptask in ptasks if ptask]
-                    await asyncio.wait(futures, timeout=0.05)  # this can go wrong, hence the timeout
+                    await asyncio.wait(
+                        futures, timeout=0.05
+                    )  # this can go wrong, hence the timeout
                 else:
                     await asyncio.sleep(0.001)
             except KeyboardInterrupt:
@@ -549,22 +603,33 @@ class TaskManager:
                 if remaining < 0:
                     break
             if get_tasks_func is None:
-                if not (len(self.tasks) or len(self.upon_connection_tasks) or len(self.launching_tasks) or len(self.synctasks) or \
-                  manager.macromanager.queued or deeprefmanager.busy or sharemanager.busy):
+                if not (
+                    len(self.tasks)
+                    or len(self.upon_connection_tasks)
+                    or len(self.launching_tasks)
+                    or len(self.synctasks)
+                    or manager.macromanager.queued
+                    or deeprefmanager.busy
+                    or sharemanager.busy
+                ):
                     if not debugmountmanager.taskmanager_has_mounts(self):
                         cyclic_scells = manager.livegraph.get_cyclic()
                         if len(cyclic_scells):
                             changed = manager.force_join(cyclic_scells)
                             if changed:
                                 await asyncio.sleep(0.1)
-                                ptasks = [None]  # just to prevent the loop from breaking
+                                ptasks = [
+                                    None
+                                ]  # just to prevent the loop from breaking
             if len(mm.cell_updates):
                 must_run_mount = True
 
         if timeout is None and not manager.macromanager.queued:
             manager.macromanager._kludge()
             if manager.macromanager.queued:
-                return await self.computation(None, report=report, get_tasks_func=get_tasks_func)
+                return await self.computation(
+                    None, report=report, get_tasks_func=get_tasks_func
+                )
 
         waitfor, background = print_report(verbose=False)
         manager.livegraph._flush_observations()
@@ -574,7 +639,6 @@ class TaskManager:
         else:
             return waitfor, background
 
-
     def cancel_task(self, task):
         self.barriers.discard(task.taskid)
         if task.future is None or task.future.cancelled():
@@ -583,7 +647,7 @@ class TaskManager:
         if task._realtask is not None:
             return self.cancel_task(task._realtask)
         else:
-            task.future.cancel() # will call _clean_task soon, but better do it now
+            task.future.cancel()  # will call _clean_task soon, but better do it now
             self._clean_task(task, task.future, manual=True)
 
     def _clean_task(self, task, future, manual=False):
@@ -601,8 +665,10 @@ class TaskManager:
                 self.task_ids.remove(task.taskid)
             task._cleaned = True
 
-            print_debug("FINISHED", task.__class__.__name__, task.taskid, task.dependencies)
-            
+            print_debug(
+                "FINISHED", task.__class__.__name__, task.taskid, task.dependencies
+            )
+
             for dep in task.dependencies:
                 try:
                     self._clean_dep(dep, task)
@@ -621,24 +687,23 @@ class TaskManager:
                     try:
                         assert task.future is fut
                         assert not task.future._log_traceback
-                        task.future.result() # to raise Exception. 
+                        task.future.result()  # to raise Exception.
                         # Normally, only CancelledErrors are propagated until here.
                         # All other errors should have been caught and logged
                         # (as expression exception, macro exception, etc.) earlier.
                     except CancelledError:
                         try:
-                            task.future._exception = None ### KLUDGE
+                            task.future._exception = None  ### KLUDGE
                         except AttributeError:
                             pass
                         pass
                     finally:
                         task._awaiting = True
 
-
     def cancel_cell(self, cell, *, origin_task=None, full=False):
         """Cancels all tasks depending on cell.
-If origin_task is provided, that task is not cancelled.
-If full = True, cancels all UponConnectionTasks as well"""
+        If origin_task is provided, that task is not cancelled.
+        If full = True, cancels all UponConnectionTasks as well"""
         for task in list(self.cell_to_task[cell]):
             if task is origin_task:
                 continue
@@ -648,7 +713,7 @@ If full = True, cancels all UponConnectionTasks as well"""
 
     def cancel_accessor(self, accessor, origin_task=None):
         """Cancels all tasks depending on accessor.
-If origin_task is provided, that task is not cancelled."""
+        If origin_task is provided, that task is not cancelled."""
         for task in list(self.accessor_to_task[accessor]):
             if task is origin_task:
                 continue
@@ -761,9 +826,15 @@ If origin_task is provided, that task is not cancelled."""
             if attrib == "rev_reftasks":
                 a = [aa for aa in a.keys() if not isinstance(aa, BackgroundTask)]
             a = [aa for aa in a if not hasattr(aa, "_canceled") or not aa._canceled]
-            a = [aa for aa in a if not hasattr(aa, "future") or aa.future is None or not aa.future.done()]
+            a = [
+                aa
+                for aa in a
+                if not hasattr(aa, "future")
+                or aa.future is None
+                or not aa.future.done()
+            ]
             if len(a):
-                print_error(name + ", " + attrib + ": %d undestroyed"  % len(a))
+                print_error(name + ", " + attrib + ": %d undestroyed" % len(a))
                 if attrib.endswith("tasks") and len(a) <= 5:
                     print_error("*" * 30)
                     for task in a:
@@ -771,7 +842,9 @@ If origin_task is provided, that task is not cancelled."""
                         for dep in task.dependencies:
                             if hasattr(dep, "_destroyed"):
                                 tag = "" if dep._destroyed else "not "
-                                print_error("Depends on:", dep, "({}destroyed)".format(tag))
+                                print_error(
+                                    "Depends on:", dep, "({}destroyed)".format(tag)
+                                )
                             else:
                                 print_error("Depends on:", dep)
                         print_error("*" * 30)
@@ -784,6 +857,7 @@ If origin_task is provided, that task is not cancelled."""
         # all items must be manually destroyed!
         self._destroyed = True
 
+
 from ..cell import Cell
 from ..structured_cell import StructuredCell
 from ..transformer import Transformer
@@ -791,7 +865,7 @@ from ..macro import Macro, Path as MacroPath
 from ..reactor import Reactor
 from .. import SeamlessBase
 from .accessor import ReadAccessor
-from .expression import Expression
+from seamless.Expression import Expression
 from .tasks.upon_connection import UponConnectionTask
 from .tasks.structured_cell import StructuredCellAuthTask
 from .tasks import BackgroundTask
