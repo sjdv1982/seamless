@@ -3,6 +3,7 @@
 import threading
 import json
 import sys
+from typing import Tuple
 import weakref
 import asyncio
 import atexit
@@ -114,9 +115,7 @@ class Database:
         self._log("SET", request["type"], request["checksum"])
         self.send_put_request(request)
 
-    def set_sem2syn(
-        self, semkey: tuple[str, str, str | None], syn_checksums: list[Checksum]
-    ):
+    def set_sem2syn(self, semkey: Tuple[str, str, str], syn_checksums: list[Checksum]):
         """Set <syn_checksums> as the origin checksums of a syntactic-to-semantic operation
         <semkey> is a tuple of semantic checksum, celltype and subcelltype."""
         sem_checksum, celltype, subcelltype = semkey
@@ -179,9 +178,7 @@ class Database:
         self._log("SET", request["type"], str(expression))
         self.send_put_request(request)
 
-    def set_metadata(self, tf_checksum: Checksum, metadata: dict):
-        """Set transformation metadata.
-        tf_checksum: transformation checksum"""
+    def set_metadata(self, tf_checksum, metadata: dict):
         tf_checksum = Checksum(tf_checksum).value
         if not self.active:
             return
@@ -193,15 +190,11 @@ class Database:
         self._log("SET", request["type"], request["type"])
         self.send_put_request(request)
 
-    def set_structured_cell_join(
-        self, *, result_checksum: Checksum, join_checksum: Checksum
-    ):
-        """Set the result of a structured cell join.
-        join_checksum is the checksum of the join dict (deep checksum)"""
+    def set_structured_cell_join(self, checksum, join_checksum):
         request = {
             "type": "structured_cell_join",
             "checksum": Checksum(join_checksum).value,
-            "value": Checksum(result_checksum).value,
+            "value": Checksum(checksum).value,
         }
         self._log("SET", request["type"], request["type"])
         self.send_put_request(request)
@@ -222,8 +215,7 @@ class Database:
         )
         return status_code, response_text
 
-    def send_get_request(self, request: dict | bytes):
-        """Send a GET request, which can be a parameter dict or raw data"""
+    def send_get_request(self, request):
         if not self.active:
             return
         url = "http://" + self.host + ":" + str(self.port)
@@ -238,8 +230,7 @@ class Database:
                 raise RuntimeError(response.text)
             return response
 
-    async def send_get_request_async(self, request: dict | bytes):
-        """Send a GET request, which can be a parameter dict or raw data"""
+    async def send_get_request_async(self, request):
         if not self.active:
             return
 
@@ -269,11 +260,10 @@ class Database:
                 raise RuntimeError(text)
             return await response.content.read()
 
-    def get_transformation_result(self, tf_checksum: Checksum) -> Checksum | None:
-        """Get transformation result"""
+    def get_transformation_result(self, checksum):
         request = {
             "type": "transformation",
-            "checksum": Checksum(tf_checksum).value,
+            "checksum": Checksum(checksum).value,
         }
         response = self.send_get_request(request)
         if response is not None:
@@ -281,13 +271,10 @@ class Database:
             self._log("GET", request["type"], request["checksum"])
             return result
 
-    async def get_transformation_result_async(
-        self, tf_checksum: Checksum
-    ) -> Checksum | None:
-        """Get transformation result"""
+    async def get_transformation_result_async(self, checksum):
         request = {
             "type": "transformation",
-            "checksum": Checksum(tf_checksum).value,
+            "checksum": Checksum(checksum).value,
         }
         content = await self.send_get_request_async(request)
         if content is not None:
@@ -295,10 +282,7 @@ class Database:
             self._log("GET", request["type"], request["checksum"])
             return result
 
-    def get_sem2syn(self, semkey: tuple[str, str, str | None]) -> list[Checksum]:
-        """Get the origin checksums of a syntactic-to-semantic operation
-        <semkey> is a tuple of semantic checksum, celltype and subcelltype."""
-
+    def get_sem2syn(self, semkey):
         sem_checksum, celltype, subcelltype = semkey
         request = {
             "type": "semantic_to_syntactic",
@@ -341,11 +325,10 @@ class Database:
             return result
         """
 
-    def get_elision_result(self, elision_checksum: Checksum):
-        """Get the elision result of <elision_checksum>"""
+    def get_elision_result(self, checksum):
         request = {
             "type": "elision",
-            "checksum": Checksum(elision_checksum).value,
+            "checksum": Checksum(checksum).value,
         }
         response = self.send_get_request(request)
         if response is not None:
@@ -353,11 +336,10 @@ class Database:
             self._log("GET", request["type"], request["checksum"])
             return result
 
-    def get_rev_expression(self, result_checksum: Checksum) -> list[Checksum]:
-        """Get the checksums of expressions that evaluate to <result_checksum>"""
+    def get_rev_expression(self, checksum):
         request = {
             "type": "rev_expression",
-            "checksum": Checksum(result_checksum).value,
+            "checksum": Checksum(checksum).value,
         }
         response = self.send_get_request(request)
         if response is not None:
@@ -371,11 +353,10 @@ class Database:
                 return None
             return rj
 
-    def get_rev_join(self, result_checksum: Checksum) -> list[Checksum]:
-        """Get the checksums of structured cell joins that evaluate to <result_checksum>"""
+    def get_rev_join(self, checksum):
         request = {
             "type": "rev_join",
-            "checksum": Checksum(result_checksum).value,
+            "checksum": Checksum(checksum).value,
         }
         response = self.send_get_request(request)
         if response is not None:
@@ -389,11 +370,10 @@ class Database:
                 return None
             return rj
 
-    def get_rev_transformations(self, result_checksum):
-        """Get the checksums of transformations that evaluate to <result_checksum>"""
+    def get_rev_transformations(self, checksum):
         request = {
             "type": "rev_transformations",
-            "checksum": Checksum(result_checksum).value,
+            "checksum": Checksum(checksum).value,
         }
         response = self.send_get_request(request)
         if response is not None:
@@ -407,8 +387,7 @@ class Database:
                 return None
             return rtf
 
-    def get_expression(self, expression: Expression) -> Checksum:
-        """Get the result of an expression"""
+    def get_expression(self, expression: Expression):
         request = {
             "type": "expression",
             "checksum": Checksum(expression.checksum).value,
@@ -426,9 +405,7 @@ class Database:
             self._log("GET", request["type"], request["checksum"])
             return result
 
-    def get_metadata(self, tf_checksum: Checksum) -> dict:
-        """Get transformation metadata.
-        tf_checksum: transformation checksum"""
+    def get_metadata(self, tf_checksum) -> dict:
         request = {"type": "metadata", "checksum": Checksum(tf_checksum).value}
         self._log("GET", request["type"], request["type"])
         response = self.send_get_request(request)
@@ -441,7 +418,6 @@ class Database:
             return rj
 
     def get_structured_cell_join(self, join_dict: dict) -> Checksum | None:
-        """Get the result of a structured cell join"""
         checksum = Buffer(join_dict, "plain").checksum.value
         request = {"type": "structured_cell_join", "checksum": checksum}
         response = self.send_get_request(request)

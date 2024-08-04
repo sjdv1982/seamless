@@ -119,7 +119,7 @@ class Expression:
         return d
 
     def __str__(self):
-        from seamless.buffer.json import json_dumps
+        from seamless.checksum.json import json_dumps
 
         d = self._hash_dict()
         return json_dumps(d)

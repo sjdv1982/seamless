@@ -287,7 +287,7 @@ class CelltypesWrapper:
         return self.__setitem__(attr, value)
 
     def __setitem__(self, key, value):
-        from seamless.buffer.cell import celltypes
+        from seamless.checksum.cell import celltypes
 
         if key not in self._celltypes:
             raise AttributeError(key)

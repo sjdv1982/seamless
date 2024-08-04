@@ -3,12 +3,19 @@ import weakref, functools
 from ..proxy import Proxy, CodeProxy
 from ..Cell import Cell
 from ..Resource import Resource
-from seamless.buffer.mime import language_to_mime
+from seamless.checksum.mime import language_to_mime
 
 properties = [
-    "language", "code", "extension", "compiler", "target",
-    "options", "profile_options", "debug_options"
+    "language",
+    "code",
+    "extension",
+    "compiler",
+    "target",
+    "options",
+    "profile_options",
+    "debug_options",
 ]
+
 
 class CompiledObjectWrapper:
     def __init__(self, worker, obj):
@@ -17,7 +24,7 @@ class CompiledObjectWrapper:
 
     @property
     def _path(self):
-        return self._worker()._path + ("_main_module" , self._obj)
+        return self._worker()._path + ("_main_module", self._obj)
 
     def __setattr__(self, attr, value):
         if attr in ("_worker", "_obj"):
@@ -29,8 +36,9 @@ class CompiledObjectWrapper:
         target_path = worker._path + ("_main_module", self._obj, attr)
         if isinstance(value, Cell):
             from ..assign import assign_connection
+
             assert value._parent() == parent
-            #TODO: check existing inchannel connections and links (cannot be the same or higher)
+            # TODO: check existing inchannel connections and links (cannot be the same or higher)
             exempt = worker._exempt()
             assign_connection(parent, value._path, target_path, False, exempt=exempt)
             parent._translate()
@@ -58,7 +66,7 @@ class CompiledObjectWrapper:
                 main_module = getattr(tf, "main_module")
                 handle = main_module.handle
                 if handle.data is None:
-                    handle.set({"objects":{}})
+                    handle.set({"objects": {}})
                 if "objects" not in handle:
                     handle["objects"] = {}
                 if objname not in handle["objects"]:
@@ -80,13 +88,15 @@ class CompiledObjectWrapper:
             getter = functools.partial(self._valuegetter, attr)
             dirs = ["value"]
             proxycls = Proxy
-        return proxycls(self, (attr,), "r", pull_source=pull_source, getter=getter, dirs=dirs)
+        return proxycls(
+            self, (attr,), "r", pull_source=pull_source, getter=getter, dirs=dirs
+        )
 
     def _codegetter(self, attr):
         if attr == "value":
             return self._get_value("code")
         elif attr == "mount":
-            raise NotImplementedError #maybe it should never...
+            raise NotImplementedError  # maybe it should never...
         elif attr == "mimetype":
             language = self._get_value("language")
             if language is None:
@@ -130,6 +140,7 @@ class CompiledObjectWrapper:
         from ..assign import assign_connection
         from ..Transformer import Transformer
         from ...compiler import find_language
+
         worker = self._worker()
         parent = worker._parent()
 
@@ -137,7 +148,7 @@ class CompiledObjectWrapper:
         target_path = worker._path + ("_main_module", self._obj, "code")
         language = None
         if isinstance(worker, Transformer):
-            m = getattr(worker.main_module,self._obj)
+            m = getattr(worker.main_module, self._obj)
             if m is not None:
                 language = m.language.value
         if language is None:
@@ -161,14 +172,13 @@ class CompiledObjectWrapper:
         if value is not None:
             assert isinstance(value, str), type(value)
             setattr(self, "code", value)
-        child = Cell(parent=parent, path=new_path) #inserts itself as child
+        child = Cell(parent=parent, path=new_path)  # inserts itself as child
         parent._graph[0][new_path] = cell
         mimetype = language_to_mime(language)
         child.mimetype = mimetype
         assign_connection(parent, new_path, target_path, False)
         self._delattr("code")
         parent._translate()
-
 
     def _delattr(self, attr):
         worker = self._worker()

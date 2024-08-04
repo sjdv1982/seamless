@@ -8,6 +8,7 @@ from seamless import Checksum
 from .worker import Worker, InputPin, OutputPin
 from .status import StatusReasonEnum
 
+
 class Transformer(Worker):
     _checksum = None
     _prelim_result = False
@@ -21,10 +22,10 @@ class Transformer(Worker):
     def __init__(self, transformer_params):
         self.code = InputPin(self, "code", "python", "transformer")
         self.META = InputPin(self, "META", "plain")
-        self._pins = {"code":self.code, "META": self.META}
+        self._pins = {"code": self.code, "META": self.META}
         self._output_name = None
         self._transformer_params = OrderedDict()
-        forbidden = ("code","META")
+        forbidden = ("code", "META")
         for p in sorted(transformer_params.keys()):
             if p in forbidden:
                 raise ValueError("Forbidden pin name: %s" % p)
@@ -134,10 +135,12 @@ class Transformer(Worker):
     def get_transformation_checksum(self) -> Checksum:
         from .manager.tasks.transformer_update import TransformerUpdateTask
         from .. import verify_sync_compute
+
         manager = self._get_manager()
         taskmanager = manager.taskmanager
         tasks = taskmanager.transformer_to_task[self]
         if len(tasks) and not asyncio.get_event_loop().is_running():
+
             async def await_transformer():
                 while 1:
                     for task in taskmanager.transformer_to_task[self]:
@@ -148,6 +151,7 @@ class Transformer(Worker):
                     else:
                         break
                     await asyncio.sleep(0.05)
+
             fut = asyncio.ensure_future(await_transformer())
             asyncio.get_event_loop().run_until_complete(fut)
         tcache = manager.cachemanager.transformation_cache
@@ -157,6 +161,7 @@ class Transformer(Worker):
 
     async def _get_transformation_checksum_async(self) -> Checksum:
         from .manager.tasks.transformer_update import TransformerUpdateTask
+
         manager = self._get_manager()
         taskmanager = manager.taskmanager
         while 1:
@@ -185,6 +190,7 @@ class Transformer(Worker):
 
     def _get_status(self):
         from .status import status_transformer
+
         status = status_transformer(self)
         return status
 
@@ -192,13 +198,19 @@ class Transformer(Worker):
     def status(self):
         """The computation status of the transformer"""
         from .status import format_worker_status
+
         status = self._get_status()
         statustxt = format_worker_status(status)
         return "Status: " + statustxt
 
     @property
     def exception(self):
-        from .transformation import RemoteJobError, SeamlessTransformationError, SeamlessStreamTransformationError
+        from .transformation import (
+            RemoteJobError,
+            SeamlessTransformationError,
+            SeamlessStreamTransformationError,
+        )
+
         if not self._void:
             return None
         if self._status_reason == StatusReasonEnum.INVALID:
@@ -207,7 +219,7 @@ class Transformer(Worker):
             exceptions = {}
             if upstreams is not None:
                 for pinname, accessor in upstreams.items():
-                    if accessor is None: #unconnected
+                    if accessor is None:  # unconnected
                         continue
                     exc = accessor.exception
                     if exc is not None:
@@ -241,6 +253,7 @@ class Transformer(Worker):
     @property
     def execution_metadata(self):
         from .cache.database_client import database
+
         if not database.active:
             return None
         manager = self._get_manager()
@@ -255,7 +268,8 @@ class Transformer(Worker):
         return self._void
 
     def _get_buffer_sync(self) -> bytes | None:
-        from seamless.buffer.get_buffer import get_buffer
+        from seamless.checksum.get_buffer import get_buffer
+
         if not Checksum(self._checksum):
             return None
         buffer = get_buffer(self._checksum, remote=True)
@@ -269,7 +283,8 @@ class Transformer(Worker):
         return buffer
 
     async def _get_value(self):
-        from seamless.buffer.deserialize import deserialize
+        from seamless.checksum.deserialize import deserialize
+
         manager = self._get_manager()
         livegraph = manager.livegraph
         downstreams = livegraph.transformer_to_downstream[self]
@@ -289,6 +304,7 @@ class Transformer(Worker):
 
     def _get_value_sync(self):
         from seamless import Buffer
+
         manager = self._get_manager()
         livegraph = manager.livegraph
         downstreams = livegraph.transformer_to_downstream[self]
@@ -336,58 +352,60 @@ class Transformer(Worker):
         ret = "Seamless transformer: " + self._format_path()
         return ret
 
+
 def transformer(params):
     """Defines a transformer.
 
-Transformers transform their input cells into an output result.
-Transformers are connected to their input cells via input pins, and their
-result is connected to an output cell via an output pin. There can be only one
-output pin. The pins are declared in the `params` parameter (see below).
+    Transformers transform their input cells into an output result.
+    Transformers are connected to their input cells via input pins, and their
+    result is connected to an output cell via an output pin. There can be only one
+    output pin. The pins are declared in the `params` parameter (see below).
 
-In addition, all transformers have an implicit input pin named "code",
-which must be connected to a Python cell.
-All input values are injected directly into the code's namespace. The variable
-name of the input is the same as its pin name.
+    In addition, all transformers have an implicit input pin named "code",
+    which must be connected to a Python cell.
+    All input values are injected directly into the code's namespace. The variable
+    name of the input is the same as its pin name.
 
-Transformers are asynchronous (non-blocking),
-and they carry out their computation in a separate process
-(using ``multiprocessing``).
+    Transformers are asynchronous (non-blocking),
+    and they carry out their computation in a separate process
+    (using ``multiprocessing``).
 
-Transformers start their computation as soon as all inputs
-(including the code) has been defined, even if no output cell has been connected.
-Whenever the input data or code changes, a new computation is performed. If the
-previous computation is still in progress, it is canceled.
+    Transformers start their computation as soon as all inputs
+    (including the code) has been defined, even if no output cell has been connected.
+    Whenever the input data or code changes, a new computation is performed. If the
+    previous computation is still in progress, it is canceled.
 
-Inside the transformer code, preliminary values can be returned using
-``return_preliminary(value)``.
+    Inside the transformer code, preliminary values can be returned using
+    ``return_preliminary(value)``.
 
-Invoke ``transformer.status()`` to get the current status of the transformer.
+    Invoke ``transformer.status()`` to get the current status of the transformer.
 
-``pin.connect(cell)`` connects an outputpin to a cell.
+    ``pin.connect(cell)`` connects an outputpin to a cell.
 
-``cell.connect(pin)`` connects a cell to an inputpin.
+    ``cell.connect(pin)`` connects a cell to an inputpin.
 
-``pin.cell()`` returns or creates a cell that is connected to that pin.
+    ``pin.cell()`` returns or creates a cell that is connected to that pin.
 
-Parameters
-----------
+    Parameters
+    ----------
 
-    params: dict
-        A dictionary containing the transformer parameters.
+        params: dict
+            A dictionary containing the transformer parameters.
 
-        Each (name,value) item represents a transformer pin:
+            Each (name,value) item represents a transformer pin:
 
-        -  name: string
-            name of the pin
+            -  name: string
+                name of the pin
 
-        -  value: dict
-            with the following items:
+            -  value: dict
+                with the following items:
 
-            - pin: string
-                must be "input" or "output". Only one output pin is allowed.
-            - dtype: string or tuple of strings
-                Describes the type of the cell(s) connected to the pin.
+                - pin: string
+                    must be "input" or "output". Only one output pin is allowed.
+                - dtype: string or tuple of strings
+                    Describes the type of the cell(s) connected to the pin.
     """
     return Transformer(params)
+
 
 from .unbound_context import UnboundManager

@@ -4,8 +4,8 @@ import copy
 import logging
 
 from seamless import CacheMissError, Checksum
-from seamless.buffer.database_client import database
-from seamless.buffer.buffer_cache import buffer_cache
+from seamless.checksum.database_client import database
+from seamless.checksum.buffer_cache import buffer_cache
 
 logger = logging.getLogger(__name__)
 
@@ -552,12 +552,14 @@ is result checksum: {}
         )
         if database.active:
             buffer_remote.write_buffer(checksum, join_dict_buf)
-            database.set_structured_cell_join(result_checksum, checksum)
+            database.set_structured_cell_join(
+                result_checksum=result_checksum, join_checksum=checksum
+            )
 
 
 from ..cell import Cell
 from ..transformer import Transformer
 from ..structured_cell import Inchannel
-from seamless.Expression import Expression
-from seamless.buffer.get_buffer import get_buffer
+from seamless.checksum import Expression
+from seamless.checksum.get_buffer import get_buffer
 from ..cache.deeprefmanager import deeprefmanager

@@ -4,10 +4,12 @@ import traceback
 import asyncio
 
 import logging
+
 logger = logging.getLogger("seamless")
 
 
 from seamless import Checksum
+
 
 def get_fallback_checksum(cell) -> Checksum:
     manager = cell._get_manager()
@@ -17,6 +19,7 @@ def get_fallback_checksum(cell) -> Checksum:
     else:
         return Checksum(fallback._checksum)
 
+
 class ShareItem:
     last_exc = None
     _destroyed = False
@@ -24,7 +27,13 @@ class ShareItem:
     _initializing = False
     _cellname = None
     share = None
-    def __init__(self, cell, path, readonly, *,
+
+    def __init__(
+        self,
+        cell,
+        path,
+        readonly,
+        *,
         mimetype=None,
         toplevel=False,  # if True, don't use the name of the namespace, but serve under the web root directly
         cellname=None
@@ -47,7 +56,6 @@ class ShareItem:
             return None
         return cell._format_path()
 
-
     def init(self):
         if self._initialized:
             return
@@ -61,10 +69,15 @@ class ShareItem:
         if cell._destroyed:
             return
         if not self.readonly:
-            if cell._structured_cell is not None and cell._structured_cell._data is cell:
+            if (
+                cell._structured_cell is not None
+                and cell._structured_cell._data is cell
+            ):
                 pass
             else:
-                assert cell.has_independence(), cell # mount read mode only for authoritative cells
+                assert (
+                    cell.has_independence()
+                ), cell  # mount read mode only for authoritative cells
         self._initializing = True
         try:
             manager = cell._get_manager()
@@ -77,8 +90,10 @@ class ShareItem:
             cell_checksum = get_fallback_checksum(cell)
             cell_checksum = Checksum(cell_checksum)
             cell_pending = manager.taskmanager.is_pending(cell)
-            cell_empty = (not cell_checksum)
-            _, cached_share = sharemanager.cached_shares.get((name, self.path), (None, None))
+            cell_empty = not cell_checksum
+            _, cached_share = sharemanager.cached_shares.get(
+                (name, self.path), (None, None)
+            )
             from_cache = False
             if cached_share is not None:
                 if cell_empty and not self.readonly:
@@ -94,8 +109,7 @@ class ShareItem:
             else:
                 namespace = shareserver.namespaces[name]
                 self.share = namespace.add_share(
-                    self.path, self.readonly,
-                    self.celltype, self.mimetype
+                    self.path, self.readonly, self.celltype, self.mimetype
                 )
             self.share.bind(self)
             if from_cache and not cell_pending:
@@ -122,7 +136,7 @@ class ShareItem:
             else:
                 self.share.set_checksum(get_fallback_checksum(cell))
 
-    def update(self, checksum:Checksum):
+    def update(self, checksum: Checksum):
         # called by shareserver, or from init
         checksum = Checksum(checksum)
         if not self.readonly:
@@ -142,7 +156,7 @@ class ShareItem:
             return
         self._destroyed = True
         logger.warning("undestroyed mount path %s" % self.path)
-        #self.destroy()
+        # self.destroy()
 
 
 class ShareManager:
@@ -152,6 +166,7 @@ class ShareManager:
     _stop = False
     _future_run = None
     _current_run = None
+
     def __init__(self, latency):
         self.latency = latency
         self.shares = {}
@@ -159,15 +174,17 @@ class ShareManager:
         self.share_updates = set()
         self.share_value_updates = {}
         self.paths = {}
-        self.cached_shares = {} # key: namespace, file path; value: (deletion time, share.Share)
+        self.cached_shares = (
+            {}
+        )  # key: namespace, file path; value: (deletion time, share.Share)
 
     def new_namespace(self, manager, share_evaluate, name=None):
         from .manager import Manager
+
         assert isinstance(manager, Manager)
         self.paths[manager] = set()
         name = shareserver._new_namespace(manager, share_evaluate, name)
         return name
-
 
     def unshare(self, cell, from_del=False):
         manager = cell._get_manager()
@@ -194,7 +211,11 @@ class ShareManager:
 
     @property
     def busy(self):
-        return len(self.share_updates) or len(self.cell_updates) or len(self.share_value_updates)
+        return (
+            len(self.share_updates)
+            or len(self.cell_updates)
+            or len(self.share_value_updates)
+        )
 
     async def run_once(self):
 
@@ -212,8 +233,7 @@ class ShareManager:
                         path = "/".join(cell.path)
                     readonly = share_params["readonly"]
                     if share_item is not None:
-                        if share_item.path == path and \
-                        share_item.readonly == readonly:
+                        if share_item.path == path and share_item.readonly == readonly:
                             continue
                 if share_item is not None:
                     self.shares.pop(cell)
@@ -223,9 +243,12 @@ class ShareManager:
                     toplevel = share_params.get("toplevel", False)
                     cellname = share_params.get("cellname")
                     new_share_item = ShareItem(
-                        cell, path, readonly, mimetype=mimetype,
+                        cell,
+                        path,
+                        readonly,
+                        mimetype=mimetype,
                         toplevel=toplevel,
-                        cellname=cellname
+                        cellname=cellname,
                     )
                     self.shares[cell] = new_share_item
                     checksum = get_fallback_checksum(cell)
@@ -239,8 +262,9 @@ class ShareManager:
                 except Exception:
                     traceback.print_exc()
 
-            cell_updates = {cell: checksum \
-                for cell, checksum in self.cell_updates.items()}
+            cell_updates = {
+                cell: checksum for cell, checksum in self.cell_updates.items()
+            }
             self.cell_updates.clear()
 
             value_updates = list(self.share_value_updates.items())
@@ -257,7 +281,10 @@ class ShareManager:
                 if cell._checksum == checksum:
                     continue
                 from_buffer = False
-                if cell._structured_cell is not None and cell._structured_cell._data is cell:
+                if (
+                    cell._structured_cell is not None
+                    and cell._structured_cell._data is cell
+                ):
                     if not checksum:
                         cell._structured_cell.set(None)
                         continue
@@ -272,8 +299,11 @@ class ShareManager:
                     if buffer is not None:
                         try:
                             checksum = await conversion(
-                                checksum, "cson", "plain", 
-                                buffer=buffer, perform_fingertip=False
+                                checksum,
+                                "cson",
+                                "plain",
+                                buffer=buffer,
+                                perform_fingertip=False,
                             )
                         except ValueError:
                             from_buffer = True
@@ -316,6 +346,7 @@ class ShareManager:
                     await self._current_run
                 except Exception:
                     import traceback
+
                     traceback.print_exc()
                 finally:
                     self._current_run = None
@@ -352,9 +383,10 @@ class ShareManager:
             self._current_run = asyncio.ensure_future(self.run_once())
         asyncio.get_event_loop().run_until_complete(self._current_run)
 
+
 sharemanager = ShareManager(0.2)
 
 from ..shareserver import shareserver
 from seamless import CacheMissError, Checksum
-from seamless.buffer.get_buffer import get_buffer
-from seamless.buffer.evaluate import conversion
+from seamless.checksum.get_buffer import get_buffer
+from seamless.checksum.evaluate import conversion

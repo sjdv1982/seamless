@@ -52,6 +52,7 @@ NOTE: The shareserver has a very liberal request size limit (i.e. file upload li
 In production, you will probably want to put Seamless behind a proxy server (e.g. nginx)
 that enforces more sensible values
 """
+
 import os
 import sys
 import asyncio
@@ -64,23 +65,30 @@ import base64
 from seamless import Checksum
 
 from asyncio import CancelledError
+
 try:
     import aiohttp
     import aiohttp_cors
     from websockets.exceptions import ConnectionClosed
+
     miss_http_lib = False
 except ImportError:
     miss_http_lib = True
 
+
 class UnboundShareError(AttributeError):
     pass
 
+
 DEBUG = False
 import logging
+
 logger = logging.getLogger(__name__)
+
 
 def get_subkey(buffer, subkey):
     from seamless.workflow.core.protocol.json import json_dumps
+
     value = orjson.loads(buffer)
     path = subkey.split("/")
     try:
@@ -94,6 +102,7 @@ def get_subkey(buffer, subkey):
         return None
     return json_dumps(value) + "\n"
 
+
 def is_bound_port_error(exc):
     args = exc.args
     if not len(args) == 2:
@@ -105,15 +114,18 @@ def is_bound_port_error(exc):
         return False
     return msg.endswith("address already in use")
 
+
 def tailsplit(tail):
     pos = tail.find("/")
     if pos == -1:
         return "", tail
     else:
-        return tail[:pos], tail[pos+1:]
+        return tail[:pos], tail[pos + 1 :]
+
 
 class Share:
     _destroyed = False
+
     def __init__(self, namespace, key, readonly, celltype, mimetype):
         assert isinstance(namespace, ShareNamespace)
         self.namespace = weakref.ref(namespace)
@@ -126,13 +138,15 @@ class Share:
         self._calc_checksum_task = None
         self._send_checksum_task = None
         self.requests = []
-        self.bound = None # bound ShareItem
+        self.bound = None  # bound ShareItem
 
     @property
     def binary(self):
         if self.celltype == "mixed":
             binary = "maybe"
-            if self.mimetype is not None and (self.mimetype.startswith("text") or self.mimetype == "application/json"):
+            if self.mimetype is not None and (
+                self.mimetype.startswith("text") or self.mimetype == "application/json"
+            ):
                 binary = False
         elif self.celltype in ("bytes", "binary"):
             binary = True
@@ -165,7 +179,7 @@ class Share:
             await self._calc_checksum_task
         return self._checksum, self._marker
 
-    def set_checksum(self, checksum:Checksum, marker=None):
+    def set_checksum(self, checksum: Checksum, marker=None):
         checksum = Checksum(checksum)
         if marker is not None and marker <= self._marker:
             if marker == self._marker:
@@ -193,6 +207,7 @@ class Share:
 
     async def set_buffer(self, buffer, marker=None, *, binary_buffer):
         from .core.share import sharemanager
+
         if marker is not None and marker <= self._marker:
             if marker == self._marker:
                 return marker
@@ -210,7 +225,7 @@ class Share:
         if not isinstance(buffer, bytes):
             raise TypeError(type(buffer))
         if not self.binary:
-            buffer = buffer.rstrip(b'\n') + b'\n'
+            buffer = buffer.rstrip(b"\n") + b"\n"
         task = self._calc_checksum(buffer)
         task = asyncio.ensure_future(task)
         self._calc_checksum_task = task
@@ -241,9 +256,7 @@ class Share:
     async def _send_checksum(self):
         init = self._send_checksum_task
         try:
-            await self.namespace().send_checksum(
-                self.key, self._checksum, self._marker
-            )
+            await self.namespace().send_checksum(self.key, self._checksum, self._marker)
         finally:
             if self._send_checksum is init:
                 self._send_checksum_task = None
@@ -266,6 +279,7 @@ class Share:
 class ShareNamespace:
     def __init__(self, name, manager, share_evaluate):
         from .core.manager import Manager
+
         if not isinstance(manager, Manager):
             raise TypeError(manager)
         self.name = name
@@ -275,7 +289,6 @@ class ShareNamespace:
         self.shares = dict()
         self.update_connections = []
         self._send_sharelist_task = None
-
 
     def add_share(self, key, readonly, celltype, mimetype):
         shareserver.start()
@@ -319,6 +332,7 @@ class ShareNamespace:
 
     async def _get(self, key, mode, subkey=None):
         from seamless.workflow.core.protocol.json import json_dumps
+
         assert mode in ("checksum", "buffer", "value", "marker")
         if subkey is not None:
             assert mode in ("buffer", "value")
@@ -332,7 +346,7 @@ class ShareNamespace:
             raise CancelledError from None
         checksum = Checksum(checksum)
         if mode == "checksum":
-            return checksum, 'text/plain'
+            return checksum, "text/plain"
 
         if share.mimetype is not None:
             content_type = share.mimetype
@@ -342,7 +356,7 @@ class ShareNamespace:
             manager = self.manager()
             buffer = await manager.cachemanager.fingertip(checksum, must_have_cell=True)
             if subkey is not None:
-                assert content_type == 'application/json'
+                assert content_type == "application/json"
                 buffer = get_subkey(buffer, subkey)
             if mode == "buffer":
                 if buffer is None:
@@ -370,7 +384,7 @@ class ShareNamespace:
             "content_type": content_type,
         }
         result = json_dumps(result)
-        return result, 'application/json'
+        return result, "application/json"
 
     async def get(self, key, mode, subkey=None):
         coro = self._get(key, mode, subkey)
@@ -384,7 +398,7 @@ class ShareNamespace:
         if mode == "checksum":
             checksum = Checksum(value)
             return share.set_checksum(checksum, marker)
-        else:            
+        else:
             if share.binary:
                 try:
                     buffer0 = value.encode("ascii")
@@ -396,12 +410,10 @@ class ShareNamespace:
                         binary_buffer = False
                     else:
                         raise exc from None
-            else:                
+            else:
                 buffer = value
                 binary_buffer = False
-            return await share.set_buffer(
-                buffer, marker, binary_buffer=binary_buffer
-            )
+            return await share.set_buffer(buffer, marker, binary_buffer=binary_buffer)
 
     async def put(self, key, value, mode, marker):
         share = self.shares[key]
@@ -443,8 +455,9 @@ class ShareNamespace:
             traceback.print_exc()
             raise exc from None
 
+
 class ShareServer(object):
-    DEFAULT_ADDRESS = '0.0.0.0'
+    DEFAULT_ADDRESS = "0.0.0.0"
     DEFAULT_SHARE_UPDATE_PORT = 5138
     DEFAULT_SHARE_REST_PORT = 5813
     DEFAULT_NAMESPACE = "ctx"
@@ -461,11 +474,7 @@ class ShareServer(object):
         self.namespaces = {}
         self.manager_to_ns = weakref.WeakKeyDictionary()
 
-    def _new_namespace(
-        self, manager,
-        share_evaluate,
-        name=None
-    ):
+    def _new_namespace(self, manager, share_evaluate, name=None):
         if name is None:
             name = self.DEFAULT_NAMESPACE
         if name in self.namespaces:
@@ -476,9 +485,7 @@ class ShareServer(object):
                 if name not in self.namespaces:
                     break
                 count += 1
-        self.namespaces[name] = ShareNamespace(
-            name, manager, share_evaluate
-        )
+        self.namespaces[name] = ShareNamespace(name, manager, share_evaluate)
         self.manager_to_ns[manager] = name
         return name
 
@@ -503,7 +510,11 @@ class ShareServer(object):
 
     async def _send_sharelist(self, namespace, websocket):
         sharelist = namespace.sharelist
-        binary = [cell for cell in sharelist if cell != "self" and namespace.shares[cell].binary]
+        binary = [
+            cell
+            for cell in sharelist
+            if cell != "self" and namespace.shares[cell].binary
+        ]
         try:
             await self._send(websocket, ("sharelist", sharelist))
             await self._send(websocket, ("binary", binary))
@@ -518,7 +529,9 @@ class ShareServer(object):
             logger.debug("shareserver._send_sharelist")
             logger.debug(traceback.format_exc())
 
-    async def _send_checksum(self, namespace, websocket, key, checksum:Checksum, marker, prior=None):
+    async def _send_checksum(
+        self, namespace, websocket, key, checksum: Checksum, marker, prior=None
+    ):
         checksum = Checksum(checksum)
         if prior is not None:
             await prior
@@ -535,9 +548,8 @@ class ShareServer(object):
             logger.debug("shareserver._send_checksum")
             logger.debug(traceback.format_exc())
 
-
     async def _serve_update_listen(self, websocket, path):
-        #keep connection open forever, ignore all messages
+        # keep connection open forever, ignore all messages
         try:
             async for message in websocket:
                 pass
@@ -545,12 +557,12 @@ class ShareServer(object):
             pass
 
     async def _serve_update_ping(self, websocket, path):
-        #keep connection open forever, periodically send a ping
+        # keep connection open forever, periodically send a ping
         # else, nginx will close the connection after a minute
         try:
             while 1:
                 await asyncio.sleep(10)
-                #await websocket.ping()   # is NOT sufficient!
+                # await websocket.ping()   # is NOT sufficient!
                 await self._send(websocket, ("ping",))
         except ConnectionClosed:
             pass
@@ -573,7 +585,9 @@ class ShareServer(object):
         except ConnectionClosed:
             return
         try:
-            task_listen = asyncio.ensure_future(self._serve_update_listen(websocket, path))
+            task_listen = asyncio.ensure_future(
+                self._serve_update_listen(websocket, path)
+            )
             task_ping = asyncio.ensure_future(self._serve_update_ping(websocket, path))
             done, pending = await asyncio.wait(
                 [task_listen, task_ping],
@@ -592,12 +606,11 @@ class ShareServer(object):
             return
         global websockets
         import websockets
+
         while 1:
             try:
                 server = await websockets.serve(
-                    self._serve_update,
-                    self.address,
-                    self.update_port
+                    self._serve_update, self.address, self.update_port
                 )
                 break
             except OSError as exc:
@@ -605,7 +618,12 @@ class ShareServer(object):
                     raise
                 self.update_port += 1
         if "SEAMLESS_SILENT" not in os.environ:
-            print("Opened the seamless share update server at port {0}".format(self.update_port), file=sys.stderr)
+            print(
+                "Opened the seamless share update server at port {0}".format(
+                    self.update_port
+                ),
+                file=sys.stderr,
+            )
         self._update_server_started = True
 
     def _find_toplevel(self, key):
@@ -617,11 +635,9 @@ class ShareServer(object):
 
     async def _handle_get(self, request):
         try:
-            tail = request.match_info.get('tail')
+            tail = request.match_info.get("tail")
             if tail == "favicon.ico":
-                return web.Response(
-                    status=404
-                )
+                return web.Response(status=404)
             ns, key = tailsplit(tail)
         except:
             logger.debug("shareserver._handle_get")
@@ -632,21 +648,21 @@ class ShareServer(object):
             )
         if ns == "":
             if key == "":
-                raise web.HTTPFound('/index.html')
+                raise web.HTTPFound("/index.html")
             namespace = self._find_toplevel(key)
             if namespace is None:
                 if key == "index.html" and "ctx" in self.namespaces:
                     await asyncio.sleep(2)
                     namespace = self._find_toplevel(key)
                     if namespace is None:
-                        raise web.HTTPFound('/ctx/index.html')
+                        raise web.HTTPFound("/ctx/index.html")
                     else:
                         return await self._handle_get(request)
                 else:
                     return web.Response(
                         status=404,
-                        body=json.dumps({'not found': 404}),
-                        content_type='application/json'
+                        body=json.dumps({"not found": 404}),
+                        content_type="application/json",
                     )
             share = namespace.shares[key]
             subkey = None
@@ -654,16 +670,16 @@ class ShareServer(object):
             try:
                 namespace = self.namespaces[ns]
                 if key == "":
-                    raise web.HTTPFound('/{}/index.html'.format(ns))
+                    raise web.HTTPFound("/{}/index.html".format(ns))
                 try:
                     share = namespace.shares[key]
                     subkey = None
                 except KeyError:
                     ok = False
-                    for pos in range(len(key)-1,0,-1):
+                    for pos in range(len(key) - 1, 0, -1):
                         if key[pos] != "/":
                             continue
-                        key2, subkey = key[:pos], key[pos+1:]
+                        key2, subkey = key[:pos], key[pos + 1 :]
                         try:
                             share = namespace.shares[key2]
                             ok = True
@@ -678,14 +694,16 @@ class ShareServer(object):
                 logger.debug(traceback.format_exc())
                 return web.Response(
                     status=404,
-                    body=json.dumps({'not found': 404}),
-                    content_type='application/json'
+                    body=json.dumps({"not found": 404}),
+                    content_type="application/json",
                 )
 
         mode = request.rel_url.query.get("mode", "value")
 
         if mode not in ("buffer", "checksum", "value", "marker"):
-            err = 'if specified, mode must be "buffer", "checksum", "value", or "marker"'
+            err = (
+                'if specified, mode must be "buffer", "checksum", "value", or "marker"'
+            )
             msg = "shareserver._handle_get", err, ns, key, mode
             logger.debug(" ".join([str(m) for m in msg]))
             logger.debug(traceback.format_exc())
@@ -707,10 +725,7 @@ class ShareServer(object):
             else:
                 charset = None
             return web.Response(
-                status=200,
-                body=body,
-                content_type=content_type,
-                charset=charset
+                status=200, body=body, content_type=content_type, charset=charset
             )
         except CacheMissError:
             checksum = Checksum(share._checksum)
@@ -725,10 +740,7 @@ class ShareServer(object):
             msg = "Share was destroyed", ns, key
             logger.debug(" ".join([str(m) for m in msg]))
             logger.debug(traceback.format_exc())
-            return web.Response(
-                status=404,
-                text="Share was destroyed"
-            )
+            return web.Response(status=404, text="Share was destroyed")
         except aiohttp.web_exceptions.HTTPClientError as exc:
             logger.debug("shareserver._handle_get")
             logger.debug(traceback.format_exc())
@@ -738,15 +750,11 @@ class ShareServer(object):
             )
         except:
             logger.debug(traceback.format_exc())
-            return web.Response(
-                status=500,
-                text="Unknown error"
-            )
-
+            return web.Response(status=500, text="Unknown error")
 
     async def _handle_put(self, request):
         try:
-            tail = request.match_info.get('tail')
+            tail = request.match_info.get("tail")
             ns, key = tailsplit(tail)
             text = await request.text()
             data = orjson.loads(text)
@@ -784,21 +792,21 @@ class ShareServer(object):
             mode = "checksum"
         marker = data.get("marker")
 
-        tail = request.match_info.get('tail')
+        tail = request.match_info.get("tail")
         ns, key = tailsplit(tail)
 
         if ns == "":
             if key == "":
-                raise web.HTTPFound('/index.html')
+                raise web.HTTPFound("/index.html")
             namespace = self._find_toplevel(key)
             if namespace is None:
                 if key == "index.html" and "ctx" in self.namespaces:
-                    raise web.HTTPFound('/ctx/index.html')
+                    raise web.HTTPFound("/ctx/index.html")
                 else:
                     return web.Response(
                         status=404,
-                        body=json.dumps({'not found': 404}),
-                        content_type='application/json'
+                        body=json.dumps({"not found": 404}),
+                        content_type="application/json",
                     )
             share = namespace.shares[key]
         else:
@@ -808,8 +816,8 @@ class ShareServer(object):
                 logger.debug(traceback.format_exc())
                 return web.Response(
                     status=404,
-                    body=json.dumps({'not found': 404}),
-                    content_type='application/json'
+                    body=json.dumps({"not found": 404}),
+                    content_type="application/json",
                 )
 
         try:
@@ -818,8 +826,8 @@ class ShareServer(object):
             logger.debug(traceback.format_exc())
             return web.Response(
                 status=404,
-                body=json.dumps({'not found': 404}),
-                content_type='application/json'
+                body=json.dumps({"not found": 404}),
+                content_type="application/json",
             )
 
         if share.readonly:
@@ -845,46 +853,40 @@ Share {c} with readonly=False to allow HTTP PUT requests"""
         except UnboundShareError as exc:
             msg = "Share was destroyed", ns, key
             logger.debug(" ".join([str(m) for m in msg]))
-            return web.Response(
-                status=404,
-                text="Share was destroyed"
-            )
+            return web.Response(status=404, text="Share was destroyed")
         except CancelledError:
             msg = "PUT was superseded", ns, key
             logger.debug(" ".join([str(m) for m in msg]))
-            return web.Response(
-                status=409,
-                text="PUT was superseded"
-            )
+            return web.Response(status=409, text="PUT was superseded")
         except:
             logger.debug(traceback.format_exc())
-            return web.Response(
-                status=500,
-                text="Unknown error"
-            )
+            return web.Response(status=500, text="Unknown error")
 
     async def serve_rest(self):
         global web
         from aiohttp import web
         import aiohttp_cors
-        app = web.Application(
-            client_max_size=1024**3,
-            debug=DEBUG
+
+        app = web.Application(client_max_size=1024**3, debug=DEBUG)
+        app.add_routes(
+            [
+                web.get("/{tail:.*}", self._handle_get),
+                web.put("/{tail:.*}", self._handle_put),
+            ]
         )
-        app.add_routes([
-            web.get('/{tail:.*}', self._handle_get),
-            web.put('/{tail:.*}', self._handle_put)
-        ])
 
         # Configure default CORS settings.
-        cors = aiohttp_cors.setup(app, defaults={
-            "*": aiohttp_cors.ResourceOptions(
+        cors = aiohttp_cors.setup(
+            app,
+            defaults={
+                "*": aiohttp_cors.ResourceOptions(
                     allow_credentials=True,
                     expose_headers="*",
                     allow_headers="*",
-                    allow_methods=["GET", "PUT"]
+                    allow_methods=["GET", "PUT"],
                 )
-        })
+            },
+        )
 
         # Configure CORS on all routes.
         for route in list(app.router.routes()):
@@ -902,7 +904,10 @@ Share {c} with readonly=False to allow HTTP PUT requests"""
                     raise
                 self.rest_port += 1
         if "SEAMLESS_SILENT" not in os.environ:
-            print("Opened the seamless REST server at port {0}".format(self.rest_port), file=sys.stderr)
+            print(
+                "Opened the seamless REST server at port {0}".format(self.rest_port),
+                file=sys.stderr,
+            )
 
     async def _start(self):
         s1 = self.serve_update()
@@ -926,11 +931,12 @@ Share {c} with readonly=False to allow HTTP PUT requests"""
                 self._future_start = asyncio.ensure_future(self._start())
         return self._future_start
 
+
 shareserver = ShareServer()
 
 from seamless import CacheMissError, Checksum
-from seamless.buffer.buffer_cache import buffer_cache
-from seamless.buffer.deserialize import deserialize
-from seamless.buffer.serialize import serialize
-from seamless.buffer.get_buffer import get_buffer
-from seamless.buffer.mime import get_mime
+from seamless.checksum.buffer_cache import buffer_cache
+from seamless.checksum.deserialize import deserialize
+from seamless.checksum.serialize import serialize
+from seamless.checksum.get_buffer import get_buffer
+from seamless.checksum.mime import get_mime

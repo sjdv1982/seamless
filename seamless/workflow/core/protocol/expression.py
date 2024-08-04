@@ -1,13 +1,13 @@
 from seamless import Checksum
 from silk.mixed import _array_types
 
+
 def _set_subpath(value, path, subvalue):
     head = path[0]
     if len(path) == 1:
         if isinstance(value, list) and head >= len(value):
             value.insert(head, subvalue)
-        elif isinstance(value, list) and \
-          subvalue is None and len(value) == head + 1:
+        elif isinstance(value, list) and subvalue is None and len(value) == head + 1:
             value.pop(-1)
         elif isinstance(value, dict) and subvalue is None:
             value.pop(path[0])
@@ -15,9 +15,9 @@ def _set_subpath(value, path, subvalue):
             value[head] = subvalue
         return
     if isinstance(value, dict):
-        in_value = (head in value)
+        in_value = head in value
     elif isinstance(value, list):
-        in_value = (len(value) > head)
+        in_value = len(value) > head
     else:
         raise TypeError(value)
     if not in_value:
@@ -32,6 +32,7 @@ def _set_subpath(value, path, subvalue):
             value[head] = item
     sub_curr_value = value[head]
     _set_subpath(sub_curr_value, path[1:], subvalue)
+
 
 def _get_subpath(value, path):
     if value is None:
@@ -52,21 +53,20 @@ def _get_subpath(value, path):
         return None
     return _get_subpath(sub_curr_value, path[1:])
 
+
 def get_subpath_sync(value, hash_pattern, path):
     """This function can be executed if the asyncio event loop is already running"""
     if hash_pattern is None:
         return _get_subpath(value, path)
     deep_structure = value
-    result, post_path = access_deep_structure(
-        deep_structure, hash_pattern, path
-    )
+    result, post_path = access_deep_structure(deep_structure, hash_pattern, path)
     if post_path is None:
         if result is None:
             return None
         elif isinstance(result, str):
             checksum = bytes.fromhex(result)
-            deep = (hash_pattern is not None)
-            buffer = get_buffer(checksum, remote=True,deep=deep)
+            deep = hash_pattern is not None
+            buffer = get_buffer(checksum, remote=True, deep=deep)
             if hash_pattern == {"*": "##"} and len(path) == 1:
                 value = deserialize_raw(buffer)
             else:
@@ -74,9 +74,7 @@ def get_subpath_sync(value, hash_pattern, path):
             return value
         else:
             sub_structure, sub_hash_pattern = result
-            checksums = deep_structure_to_checksums(
-               sub_structure, sub_hash_pattern
-            )
+            checksums = deep_structure_to_checksums(sub_structure, sub_hash_pattern)
             buffer_dict = {}
             for checksum in checksums:
                 checksum = Checksum(checksum)
@@ -87,25 +85,25 @@ def get_subpath_sync(value, hash_pattern, path):
                     raise CacheMissError(checksum)
                 buffer_dict[checksum] = buffer
             value = deep_structure_to_value_sync(
-                sub_structure, sub_hash_pattern,
-                buffer_dict, copy=True
+                sub_structure, sub_hash_pattern, buffer_dict, copy=True
             )
             return value
     else:
         checksum = bytes.fromhex(result)
-        buffer = get_buffer(checksum, remote=True,deep=False)
+        buffer = get_buffer(checksum, remote=True, deep=False)
         value = deserialize_sync(buffer, checksum, "mixed", copy=True)
         return _get_subpath(value, post_path)
 
-async def get_subpath(value, hash_pattern, path, *, manager=None, perform_fingertip=False):
+
+async def get_subpath(
+    value, hash_pattern, path, *, manager=None, perform_fingertip=False
+):
     if perform_fingertip:
         assert manager is not None
     if hash_pattern is None:
         return ("value", _get_subpath(value, path))
     deep_structure = value
-    result, post_path = access_deep_structure(
-        deep_structure, hash_pattern, path
-    )
+    result, post_path = access_deep_structure(deep_structure, hash_pattern, path)
     if post_path is None:
         if result is None:
             return "value", None
@@ -114,11 +112,9 @@ async def get_subpath(value, hash_pattern, path, *, manager=None, perform_finger
             return ("checksum", checksum)
         else:
             sub_structure, sub_hash_pattern = result
-            checksums = deep_structure_to_checksums(
-               sub_structure, sub_hash_pattern
-            )
+            checksums = deep_structure_to_checksums(sub_structure, sub_hash_pattern)
             buffer_dict = {}
-            for checksum in checksums: # TODO: optimize by running in parallel
+            for checksum in checksums:  # TODO: optimize by running in parallel
                 checksum = Checksum(checksum)
                 if not checksum:
                     continue
@@ -130,8 +126,7 @@ async def get_subpath(value, hash_pattern, path, *, manager=None, perform_finger
                     raise CacheMissError(checksum)
                 buffer_dict[checksum] = buffer
             value = await deep_structure_to_value(
-                sub_structure, sub_hash_pattern,
-                buffer_dict, copy=True
+                sub_structure, sub_hash_pattern, buffer_dict, copy=True
             )
             return ("value", value)
     else:
@@ -143,6 +138,7 @@ async def get_subpath(value, hash_pattern, path, *, manager=None, perform_finger
         value = await deserialize(buffer, checksum, "mixed", copy=True)
         value = _get_subpath(value, post_path)
         return ("value", value)
+
 
 def set_subpath_sync(value, hash_pattern, path, subvalue):
     """This function can be executed if the asyncio event loop is already running"""
@@ -160,17 +156,13 @@ def set_subpath_sync(value, hash_pattern, path, subvalue):
         checksum = cached_calculate_checksum_sync(buffer)
         buffer_cache.cache_buffer(checksum, buffer)
         cs = checksum.hex()
-    result = write_deep_structure(
-        cs, deep_structure, hash_pattern, path
-    )
+    result = write_deep_structure(cs, deep_structure, hash_pattern, path)
     mode = result[0]
     if mode == 0:
         pass
     elif mode == 1:
         _, sub_hash_pattern = result
-        sub_structure, _ = value_to_deep_structure_sync(
-            subvalue, sub_hash_pattern
-        )
+        sub_structure, _ = value_to_deep_structure_sync(subvalue, sub_hash_pattern)
         if not len(path):
             if isinstance(deep_structure, list):
                 deep_structure[:] = sub_structure
@@ -183,7 +175,7 @@ def set_subpath_sync(value, hash_pattern, path, subvalue):
             )
 
     elif mode == 2:
-        _, pre_path, curr_sub_checksum, post_path, is_raw  = result
+        _, pre_path, curr_sub_checksum, post_path, is_raw = result
         curr_sub_checksum = Checksum(curr_sub_checksum)
 
         curr_sub_value = None
@@ -221,7 +213,9 @@ def set_subpath_sync(value, hash_pattern, path, subvalue):
         raise ValueError(result)
 
 
-async def set_subpath_checksum(value, hash_pattern, path, subchecksum:Checksum, sub_buffer):
+async def set_subpath_checksum(
+    value, hash_pattern, path, subchecksum: Checksum, sub_buffer
+):
     """Sets the subpath of a mixed cell by its subchecksum
     subchecksum must already be encoded with the correct sub-hash-pattern
     sub_buffer corresponds to the buffer of subchecksum
@@ -238,9 +232,7 @@ async def set_subpath_checksum(value, hash_pattern, path, subchecksum:Checksum, 
         _set_subpath(value, path, subvalue)
         return
     deep_structure = value
-    result = write_deep_structure(
-        subchecksum, deep_structure, hash_pattern, path
-    )
+    result = write_deep_structure(subchecksum, deep_structure, hash_pattern, path)
     mode = result[0]
     if mode == 0:
         pass
@@ -256,19 +248,17 @@ async def set_subpath_checksum(value, hash_pattern, path, subchecksum:Checksum, 
                 deep_structure.clear()
                 deep_structure.update(sub_structure)
         else:
-            set_deep_structure(
-                sub_structure, deep_structure, sub_hash_pattern, path
-            )
+            set_deep_structure(sub_structure, deep_structure, sub_hash_pattern, path)
     elif mode == 2:
-        new_sub_cs = cs   # cs is already in correct hash pattern encoding
+        new_sub_cs = cs  # cs is already in correct hash pattern encoding
         _, pre_path, _, _ = result
         result = write_deep_structure(
-            new_sub_cs, deep_structure, hash_pattern, pre_path,
-            create=True
+            new_sub_cs, deep_structure, hash_pattern, pre_path, create=True
         )
         assert result[0] == 0, result
     else:
         raise ValueError(result)
+
 
 async def set_subpath(value, hash_pattern, path, subvalue):
     if hash_pattern is None:
@@ -285,17 +275,13 @@ async def set_subpath(value, hash_pattern, path, subvalue):
         checksum = await cached_calculate_checksum(buffer)
         buffer_cache.cache_buffer(checksum, buffer)
         cs = checksum.hex()
-    result = write_deep_structure(
-        cs, deep_structure, hash_pattern, path
-    )
+    result = write_deep_structure(cs, deep_structure, hash_pattern, path)
     mode = result[0]
     if mode == 0:
         pass
     elif mode == 1:
         _, sub_hash_pattern = result
-        sub_structure, _ = await value_to_deep_structure(
-            subvalue, sub_hash_pattern
-        )
+        sub_structure, _ = await value_to_deep_structure(subvalue, sub_hash_pattern)
         if not len(path):
             if isinstance(deep_structure, list):
                 deep_structure[:] = sub_structure
@@ -316,7 +302,7 @@ async def set_subpath(value, hash_pattern, path, subvalue):
         if curr_sub_checksum:
             curr_sub_buffer = get_buffer(curr_sub_checksum, remote=True)
             if is_raw:
-                curr_sub_value = deserialize_raw(curr_sub_buffer)    
+                curr_sub_value = deserialize_raw(curr_sub_buffer)
             else:
                 curr_sub_value = await deserialize(
                     curr_sub_buffer, curr_sub_checksum, "mixed", copy=True
@@ -326,7 +312,9 @@ async def set_subpath(value, hash_pattern, path, subvalue):
         new_sub_cs = None
         if new_sub_value is not None:
             if is_raw:
-                new_sub_buffer = await serialize_raw_async(new_sub_value, use_cache=False)
+                new_sub_buffer = await serialize_raw_async(
+                    new_sub_value, use_cache=False
+                )
             else:
                 new_sub_buffer = await serialize(
                     new_sub_value, "mixed", use_cache=False
@@ -337,10 +325,8 @@ async def set_subpath(value, hash_pattern, path, subvalue):
             ## buffer_cache.guarantee_buffer_info(new_sub_checksum, "mixed", sync_to_remote=False)
             new_sub_cs = new_sub_checksum.hex()
 
-
         result = write_deep_structure(
-            new_sub_cs, deep_structure, hash_pattern, pre_path,
-            create=True
+            new_sub_cs, deep_structure, hash_pattern, pre_path, create=True
         )
         assert result[0] == 0, result
     else:
@@ -348,16 +334,25 @@ async def set_subpath(value, hash_pattern, path, subvalue):
 
 
 from .deep_structure import (
-    deserialize_raw, serialize_raw, serialize_raw_async,
-    write_deep_structure, set_deep_structure,
-    value_to_deep_structure, value_to_deep_structure_sync,
-    deep_structure_to_value, deep_structure_to_value_sync,
-    deep_structure_to_checksums, access_deep_structure,
-    access_hash_pattern
+    deserialize_raw,
+    serialize_raw,
+    serialize_raw_async,
+    write_deep_structure,
+    set_deep_structure,
+    value_to_deep_structure,
+    value_to_deep_structure_sync,
+    deep_structure_to_value,
+    deep_structure_to_value_sync,
+    deep_structure_to_checksums,
+    access_deep_structure,
+    access_hash_pattern,
 )
-from seamless.buffer.cached_calculate_checksum import cached_calculate_checksum, cached_calculate_checksum_sync
-from seamless.buffer.deserialize import deserialize, deserialize_sync
-from seamless.buffer.serialize import serialize, serialize_sync
-from seamless.buffer.get_buffer import get_buffer
-from seamless.buffer import buffer_cache
+from seamless.checksum.cached_calculate_checksum import (
+    cached_calculate_checksum,
+    cached_calculate_checksum_sync,
+)
+from seamless.checksum.deserialize import deserialize, deserialize_sync
+from seamless.checksum.serialize import serialize, serialize_sync
+from seamless.checksum.get_buffer import get_buffer
+from seamless.checksum.buffer_cache import buffer_cache
 from seamless import CacheMissError, Checksum

@@ -9,7 +9,9 @@ from asyncio import CancelledError
 
 from ...utils import overlap_path
 
-empty_dict_checksum = 'd0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c'
+empty_dict_checksum = "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c"
+
+
 def is_empty(cell):
     if cell is None:
         return True
@@ -18,6 +20,7 @@ def is_empty(cell):
     if not checksum or checksum == empty_dict_checksum:
         return True
     return False
+
 
 def _build_join_dict(sc):
     any_prelim = False
@@ -46,26 +49,31 @@ def _build_join_dict(sc):
         join_dict["inchannels"] = jd_inchannels
     return join_dict, schema, any_prelim
 
+
 def build_join_transformation(structured_cell):
     """Creates a pseudo-transformation dict of the structured cell join
     A pseudo-transformation is a transformation with language "<structured cell join>"
     that in fact performs a structured cell join.
-    The main use case is to send data-intensive structured cell joins to remote locations 
+    The main use case is to send data-intensive structured cell joins to remote locations
     where the data is.
     """
     from ...protocol.serialize import serialize_sync as serialize
-    from ...protocol.calculate_checksum import calculate_checksum_sync as calculate_checksum
+    from ...protocol.calculate_checksum import (
+        calculate_checksum_sync as calculate_checksum,
+    )
+
     join_dict, _, _ = _build_join_dict(structured_cell)
     assert isinstance(join_dict, dict), join_dict
     transformation_dict = {
         "__language__": "<structured_cell_join>",
-        "structured_cell_join": join_dict
+        "structured_cell_join": join_dict,
     }
     transformation_dict_buffer = serialize(transformation_dict, "plain")
-    transformation = calculate_checksum(transformation_dict_buffer)    
+    transformation = calculate_checksum(transformation_dict_buffer)
     buffer_cache.cache_buffer(transformation, transformation_dict_buffer)
 
     return transformation
+
 
 def _join_dict_to_checksums(join_dict):
     hash_pattern = join_dict.get("hash_pattern")
@@ -77,17 +85,21 @@ def _join_dict_to_checksums(join_dict):
     inchannels = join_dict.get("inchannels", {})
     for path, checksum in inchannels.items():
         checksum = Checksum(checksum)
-        if hash_pattern is None or access_hash_pattern(hash_pattern, path) not in ("#", "##"):
+        if hash_pattern is None or access_hash_pattern(hash_pattern, path) not in (
+            "#",
+            "##",
+        ):
             checksums.append(checksum)
     return checksums
 
-    
+
 async def evaluate_join_transformation_remote(structured_cell) -> Checksum:
     from ....config import get_assistant
     from ....assistant_client import run_job
     from ...cache.buffer_remote import write_buffer
     from ...protocol.serialize import serialize
     from ...protocol.calculate_checksum import calculate_checksum
+
     if not get_assistant():
         return
     jtf_checksum = build_join_transformation(structured_cell)
@@ -100,25 +112,34 @@ async def evaluate_join_transformation_remote(structured_cell) -> Checksum:
     write_buffer(join_dict_checksum, join_dict_buf)
     try:
         result = await run_job(
-            jtf_checksum, tf_dunder=None,
-            scratch=structured_cell._data._scratch, fingertip=False
+            jtf_checksum,
+            tf_dunder=None,
+            scratch=structured_cell._data._scratch,
+            fingertip=False,
         )
         result = Checksum(result)
     except (CacheMissError, RuntimeError):
         result = None
     return result
 
+
 def _consider_local_evaluation(join_dict):
     """Checks if the structured cell join can easily (no fingertipping) be evaluated locally"""
     checksums = _join_dict_to_checksums(join_dict)
     for checksum in checksums:
         if buffer_cache.get_buffer(bytes.fromhex(checksum), remote=False) is None:
-            buffer_info = buffer_cache.get_buffer_info(bytes.fromhex(checksum), sync_remote=True, buffer_from_remote=False, force_length=False)
+            buffer_info = buffer_cache.get_buffer_info(
+                bytes.fromhex(checksum),
+                sync_remote=True,
+                buffer_from_remote=False,
+                force_length=False,
+            )
             length = buffer_info.get("length")
             if length is not None and length <= buffer_cache.SMALL_BUFFER_LIMIT:
                 continue
             return False
     return True
+
 
 def _consider_remote_evaluation(join_dict):
     """Checks if the structured cell join can easily (no fingertipping) be evaluated remotely.
@@ -126,6 +147,7 @@ def _consider_remote_evaluation(join_dict):
     """
     from ...cache.buffer_remote import remote_has_checksum
     from ....config import get_assistant
+
     if not get_assistant():
         return False
     checksums = _join_dict_to_checksums(join_dict)
@@ -134,10 +156,9 @@ def _consider_remote_evaluation(join_dict):
             return False
     return True
 
+
 def _update_structured_cell(
-    sc, checksum, manager, *,
-    check_canceled, 
-    prelim, from_fallback
+    sc, checksum, manager, *, check_canceled, prelim, from_fallback
 ):
     fallback = manager.get_fallback(sc._data)
     if len(sc.outchannels):
@@ -167,7 +188,7 @@ def _update_structured_cell(
 
         for out_path in sc.outchannels:
             for accessor in downstreams[out_path]:
-                #print("!SC VALUE", sc, out_path, accessor._void)
+                # print("!SC VALUE", sc, out_path, accessor._void)
                 #  manager.cancel_accessor(accessor)  # already done above
                 accessor.build_expression(livegraph, cs)
                 if prelim is not None:
@@ -185,12 +206,18 @@ def _update_structured_cell(
         manager.trigger_all_fallbacks(sc._data)
     sc._exception = None
 
+
 def update_structured_cell(sc, checksum, *, from_fallback):
     manager = sc._get_manager()
     return _update_structured_cell(
-        sc, checksum, manager,
-        check_canceled=lambda: False, prelim=None, from_fallback=from_fallback
+        sc,
+        checksum,
+        manager,
+        check_canceled=lambda: False,
+        prelim=None,
+        from_fallback=from_fallback,
     )
+
 
 class StructuredCellTask(Task):
     def __init__(self, manager, structured_cell):
@@ -225,14 +252,16 @@ class StructuredCellTask(Task):
             tasks.append(task)
         if len(tasks):
             if _iter == 10:
-                raise Exception(tasks[:10], self) # could not wait for tasks
+                raise Exception(tasks[:10], self)  # could not wait for tasks
             futures0 = [task.future for future in tasks]
             futures = [future for future in futures0 if future is not None]
             if not len(futures):
                 await asyncio.sleep(0.05)
             else:
-                await asyncio.wait(futures, timeout=0.2)  # sometimes, this goes wrong, which is why the timeout is needed
-            await self.await_sc_tasks(auth, _iter=_iter+1)
+                await asyncio.wait(
+                    futures, timeout=0.2
+                )  # sometimes, this goes wrong, which is why the timeout is needed
+            await self.await_sc_tasks(auth, _iter=_iter + 1)
 
 
 class StructuredCellAuthTask(StructuredCellTask):
@@ -243,7 +272,9 @@ class StructuredCellAuthTask(StructuredCellTask):
         sc = self.structured_cell
         await self.await_sc_tasks(auth=True)
 
-        data_value = sc._auth_value  # obeys hash pattern (if there is one), i.e. is a deep structure not a raw value
+        data_value = (
+            sc._auth_value
+        )  # obeys hash pattern (if there is one), i.e. is a deep structure not a raw value
         locknr = await acquire_evaluation_lock(self)
         try:
             if data_value is None:
@@ -260,8 +291,10 @@ class StructuredCellAuthTask(StructuredCellTask):
                 auth_checksum = None
             else:
                 auth_buf = await SerializeToBufferTask(
-                    manager, data_value, "mixed",
-                    use_cache=False  # the auth_value object can be modified by Silk at any time
+                    manager,
+                    data_value,
+                    "mixed",
+                    use_cache=False,  # the auth_value object can be modified by Silk at any time
                 ).run()
                 auth_checksum = await CalculateChecksumTask(manager, auth_buf).run()
                 auth_checksum = Checksum(auth_checksum)
@@ -288,17 +321,18 @@ class StructuredCellAuthTask(StructuredCellTask):
             release_evaluation_lock(locknr)
             if not self._canceled:
                 taskmanager = manager.taskmanager
-                ok = (not sc._auth_invalid)
+                ok = not sc._auth_invalid
+
                 def func():
-                    if ok != (not sc._auth_invalid): # BUG!
+                    if ok != (not sc._auth_invalid):  # BUG!
                         return
                     if self._canceled:
                         return
                     sc._auth_joining = False
                     manager.structured_cell_trigger(sc, void=(not ok))
-                taskmanager.add_synctask(
-                    func , (), {}, False
-                )
+
+                taskmanager.add_synctask(func, (), {}, False)
+
 
 def path_cleanup(value, path):
     head = path[0]
@@ -319,11 +353,11 @@ def path_cleanup(value, path):
             return True
 
     if isinstance(value, dict):
-        in_value = (head in value)
+        in_value = head in value
     elif isinstance(value, list):
         if not isinstance(head, int):
             return True
-        in_value = (len(value) > head)
+        in_value = len(value) > head
     else:
         return True
 
@@ -332,10 +366,12 @@ def path_cleanup(value, path):
     subvalue = value[head]
     return path_cleanup(subvalue, path[1:])
 
+
 class StructuredCellJoinTask(StructuredCellTask):
 
-    async def _run(self):        
+    async def _run(self):
         from ...status import StatusReasonEnum
+
         sc = self.structured_cell
         await self.await_sc_tasks(auth=False)
 
@@ -355,7 +391,7 @@ class StructuredCellJoinTask(StructuredCellTask):
         manager = self.manager()
         if manager is None or manager._destroyed:
             return
-        
+
         locknr = await acquire_evaluation_lock(self)
 
         join_dict, schema, any_prelim = _build_join_dict(sc)
@@ -384,7 +420,9 @@ class StructuredCellJoinTask(StructuredCellTask):
                     # Difficult decision. Let's try a remote pseudo-transformation anyway
                     remote_ok = True
                 if remote_ok:
-                    checksum = await evaluate_join_transformation_remote(self.structured_cell)
+                    checksum = await evaluate_join_transformation_remote(
+                        self.structured_cell
+                    )
                     checksum = Checksum(checksum)
                     if checksum:
                         from_cache = True
@@ -425,15 +463,23 @@ class StructuredCellJoinTask(StructuredCellTask):
                                         ok = False
                                     else:
                                         if auth_checksum:
-                                            buffer = await GetBufferTask(manager, auth_checksum).run()
+                                            buffer = await GetBufferTask(
+                                                manager, auth_checksum
+                                            ).run()
                                             if buffer is None:
-                                                raise CacheMissError(auth_checksum.hex())
+                                                raise CacheMissError(
+                                                    auth_checksum.hex()
+                                                )
                                             data_value = await DeserializeBufferTask(
-                                                manager, buffer, auth_checksum, "mixed", copy=True
+                                                manager,
+                                                buffer,
+                                                auth_checksum,
+                                                "mixed",
+                                                copy=True,
                                             ).run()
                                             if data_value is not None:
                                                 has_auth = True
-                                            
+
                                             # auth relic cleanup
                                             auth_relic_cleanup = False
                                             for path in paths:
@@ -448,18 +494,32 @@ class StructuredCellJoinTask(StructuredCellTask):
                                                     auth_checksum = None
                                                 else:
                                                     auth_buf = await SerializeToBufferTask(
-                                                        manager, data_value, "mixed",
-                                                        use_cache=False  # the data_value object changes all the time...
+                                                        manager,
+                                                        data_value,
+                                                        "mixed",
+                                                        use_cache=False,  # the data_value object changes all the time...
                                                     ).run()
-                                                    auth_checksum = await CalculateChecksumTask(manager, auth_buf).run()
-                                                    auth_checksum = Checksum(auth_checksum)
+                                                    auth_checksum = (
+                                                        await CalculateChecksumTask(
+                                                            manager, auth_buf
+                                                        ).run()
+                                                    )
+                                                    auth_checksum = Checksum(
+                                                        auth_checksum
+                                                    )
                                                     assert auth_checksum
-                                                    buffer_cache.cache_buffer(auth_checksum, auth_buf)
-                                                manager._set_cell_checksum(sc.auth, auth_checksum, False)
+                                                    buffer_cache.cache_buffer(
+                                                        auth_checksum, auth_buf
+                                                    )
+                                                manager._set_cell_checksum(
+                                                    sc.auth, auth_checksum, False
+                                                )
                                             # /auth relic cleanup
-                                            
+
                                         checksum = None  # needs to be re-computed after updating with inchannels
-                            except CacheMissError: # shouldn't happen; we keep refs-to-auth!
+                            except (
+                                CacheMissError
+                            ):  # shouldn't happen; we keep refs-to-auth!
                                 sc._exception = traceback.format_exc(limit=0)
                                 ok = False
                             except (TypeError, ValueError, KeyError):
@@ -478,7 +538,11 @@ class StructuredCellJoinTask(StructuredCellTask):
                                 if data_value is None:
                                     if isinstance(paths[0], int):
                                         data_value = []
-                                    elif isinstance(paths[0], (list, tuple)) and len(paths[0]) and isinstance(paths[0][0], int):
+                                    elif (
+                                        isinstance(paths[0], (list, tuple))
+                                        and len(paths[0])
+                                        and isinstance(paths[0][0], int)
+                                    ):
                                         data_value = []
                                     else:
                                         if sc.hash_pattern is not None:
@@ -500,21 +564,41 @@ class StructuredCellJoinTask(StructuredCellTask):
                                             # - the subchecksum has already the correct hash pattern (accessors make sure of this)
 
                                             sub_buffer = None
-                                            if sc.hash_pattern is None or access_hash_pattern(sc.hash_pattern, path) not in ("#", "##"):
-                                                sub_buffer = await GetBufferTask(manager, subchecksum).run()
-                                            await set_subpath_checksum(data_value, sc.hash_pattern, path, subchecksum, sub_buffer)
+                                            if (
+                                                sc.hash_pattern is None
+                                                or access_hash_pattern(
+                                                    sc.hash_pattern, path
+                                                )
+                                                not in ("#", "##")
+                                            ):
+                                                sub_buffer = await GetBufferTask(
+                                                    manager, subchecksum
+                                                ).run()
+                                            await set_subpath_checksum(
+                                                data_value,
+                                                sc.hash_pattern,
+                                                path,
+                                                subchecksum,
+                                                sub_buffer,
+                                            )
                                         except CancelledError as exc:
                                             if self._canceled:
                                                 raise exc from None
                                             ok = False
                                             break
                                         except CacheMissError:
-                                            sc._exception = traceback.format_exc(limit=0)
-                                            sc._data._status_reason = StatusReasonEnum.INVALID
+                                            sc._exception = traceback.format_exc(
+                                                limit=0
+                                            )
+                                            sc._data._status_reason = (
+                                                StatusReasonEnum.INVALID
+                                            )
                                             ok = False
                                             break
                                         except (TypeError, ValueError, KeyError):
-                                            sc._exception = traceback.format_exc(limit=0)
+                                            sc._exception = traceback.format_exc(
+                                                limit=0
+                                            )
                                             ok = False
                                             break
                                         except Exception:
@@ -523,14 +607,16 @@ class StructuredCellJoinTask(StructuredCellTask):
                                             break
                                     else:
                                         pass  # It is OK to have inchannels at None (undefined)
-                                            # Else, use required properties in the schema
+                                        # Else, use required properties in the schema
                     else:
                         checksum = sc.auth._checksum
                         checksum = Checksum(checksum)
                         if checksum:
                             try:
                                 buffer = await GetBufferTask(manager, checksum).run()
-                            except CacheMissError: # should not happen: we keep refs-to-auth!
+                            except (
+                                CacheMissError
+                            ):  # should not happen: we keep refs-to-auth!
                                 sc._exception = traceback.format_exc(limit=0)
                                 ok = False
                             else:
@@ -549,8 +635,10 @@ class StructuredCellJoinTask(StructuredCellTask):
                 if not checksum and data_value is not None:
                     try:
                         buf = await SerializeToBufferTask(
-                            manager, data_value, "mixed",
-                            use_cache=False  # the data_value object changes all the time...
+                            manager,
+                            data_value,
+                            "mixed",
+                            use_cache=False,  # the data_value object changes all the time...
                         ).run()
                         checksum = await CalculateChecksumTask(manager, buf).run()
                         assert checksum
@@ -577,25 +665,39 @@ class StructuredCellJoinTask(StructuredCellTask):
                         sc._exception = traceback.format_exc(limit=0)
                         ok = False
                     else:
-                        data_value = await DeserializeBufferTask(manager, buf, checksum, "mixed", copy=False).run()
-            
+                        data_value = await DeserializeBufferTask(
+                            manager, buf, checksum, "mixed", copy=False
+                        ).run()
 
             if ok and (not from_cache) and data_value is not None:
                 schema = sc.get_schema()
                 if schema == {}:
                     schema = None
-            if ok and (not from_cache) and data_value is not None and schema is not None:
+            if (
+                ok
+                and (not from_cache)
+                and data_value is not None
+                and schema is not None
+            ):
                 if sc.hash_pattern is None:
                     true_value = copy.deepcopy(data_value)
                 else:
                     try:
                         # This is very expensive!!
-                        mode, true_value = await get_subpath(data_value, sc.hash_pattern, ())
+                        mode, true_value = await get_subpath(
+                            data_value, sc.hash_pattern, ()
+                        )
                         assert mode == "value"
                     except Exception:
                         try:
                             # This is very very expensive!!
-                            mode, true_value = await get_subpath(data_value, sc.hash_pattern, (), perform_fingertip=True, manager=manager)
+                            mode, true_value = await get_subpath(
+                                data_value,
+                                sc.hash_pattern,
+                                (),
+                                perform_fingertip=True,
+                                manager=manager,
+                            )
                             assert mode == "value"
                         except Exception:
                             sc._exception = traceback.format_exc()
@@ -624,10 +726,16 @@ class StructuredCellJoinTask(StructuredCellTask):
                 checksum = Checksum(checksum)
                 if (not from_cache) and (has_auth or has_inchannel):
                     assert checksum
-                buffer_cache.guarantee_buffer_info(checksum, "mixed", sync_to_remote=False)
-                _update_structured_cell(sc, checksum, manager,
-                    check_canceled=lambda: self._canceled, 
-                    prelim=prelim, from_fallback=False
+                buffer_cache.guarantee_buffer_info(
+                    checksum, "mixed", sync_to_remote=False
+                )
+                _update_structured_cell(
+                    sc,
+                    checksum,
+                    manager,
+                    check_canceled=lambda: self._canceled,
+                    prelim=prelim,
+                    from_fallback=False,
                 )
                 if not from_cache and not any_prelim:
                     manager.cachemanager.set_join_cache(join_dict, checksum)
@@ -637,14 +745,15 @@ class StructuredCellJoinTask(StructuredCellTask):
             release_evaluation_lock(locknr)
             if not self._canceled:
                 taskmanager = manager.taskmanager
+
                 def func():
                     if self._canceled:
                         return
                     sc._joining = False
                     manager.structured_cell_trigger(sc, void=(not ok))
-                taskmanager.add_synctask(
-                    func , (), {}, False
-                )
+
+                taskmanager.add_synctask(func, (), {}, False)
+
 
 from .serialize_buffer import SerializeToBufferTask
 from .deserialize_buffer import DeserializeBufferTask
@@ -653,9 +762,14 @@ from .checksum import CalculateChecksumTask
 from .accessor_update import AccessorUpdateTask
 from .upon_connection import UponConnectionTask
 from seamless import CacheMissError, Checksum
-from seamless.buffer.buffer_cache import buffer_cache
+from seamless.checksum.buffer_cache import buffer_cache
 from silk.Silk import Silk, ValidationError
 from ..cancel import get_scell_state, SCModeEnum
-from ...protocol.expression import get_subpath, set_subpath_checksum, access_hash_pattern, value_to_deep_structure
+from ...protocol.expression import (
+    get_subpath,
+    set_subpath_checksum,
+    access_hash_pattern,
+    value_to_deep_structure,
+)
 from . import acquire_evaluation_lock, release_evaluation_lock
-from seamless.buffer.database_client import database
+from seamless.checksum.database_client import database

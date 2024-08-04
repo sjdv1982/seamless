@@ -221,7 +221,7 @@ def build_expression_transformation(expression: "Expression"):
 async def evaluate_expression_remote(expression, fingertip_mode):
     from seamless.config import get_assistant
     from seamless.assistant_client import run_job
-    from seamless.buffer.buffer_remote import write_buffer
+    from seamless.checksum.buffer_remote import write_buffer
 
     if not get_assistant():
         return
@@ -717,18 +717,18 @@ async def evaluate_expression(
 from .get_buffer import GetBufferTask
 from .deserialize_buffer import DeserializeBufferTask
 from .serialize_buffer import SerializeToBufferTask
-from seamless.Expression import Expression
-from seamless.buffer.evaluate import (
+from seamless.checksum import Expression
+from seamless.checksum.evaluate import (
     conversion,
     validate_checksum,
     try_convert,
     validate_evaluation_subcelltype,
 )
-from seamless.buffer.conversion import SeamlessConversionError, conversion_forbidden
+from seamless.checksum.conversion import SeamlessConversionError, conversion_forbidden
 from ...protocol.expression import get_subpath
 from .checksum import CalculateChecksumTask
-from seamless.buffer.buffer_cache import buffer_cache, CacheMissError
-from seamless.buffer.database_client import database
+from seamless.checksum.buffer_cache import buffer_cache, CacheMissError
+from seamless.checksum.database_client import database
 from . import acquire_evaluation_lock, release_evaluation_lock
 from ...protocol.deep_structure import apply_hash_pattern, validate_deep_structure
 from ...protocol.expression import get_subpath

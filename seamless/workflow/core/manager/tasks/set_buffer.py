@@ -4,9 +4,10 @@ import asyncio
 from seamless import Checksum
 from . import Task
 
+
 class SetCellBufferTask(Task):
     # For buffers that come from an interactive modification
-    def __init__(self, manager, cell, buffer, checksum:Checksum):
+    def __init__(self, manager, cell, buffer, checksum: Checksum):
         assert isinstance(buffer, bytes)
         super().__init__(manager)
         self.cell = cell
@@ -16,6 +17,7 @@ class SetCellBufferTask(Task):
 
     async def _run(self):
         from . import DeserializeBufferTask, CalculateChecksumTask, CellUpdateTask
+
         manager = self.manager()
         if manager is None or manager._destroyed:
             return
@@ -34,12 +36,13 @@ class SetCellBufferTask(Task):
             elif buffer is None and checksum:
                 buffer = get_buffer(checksum, remote=True)
             if (not checksum) or buffer is None:
-                manager.cancel_cell(cell, True, reason=StatusReasonEnum.UNDEFINED, origin_task=self)
+                manager.cancel_cell(
+                    cell, True, reason=StatusReasonEnum.UNDEFINED, origin_task=self
+                )
             else:
                 if not has_validated_evaluation(checksum, cell._celltype):
                     value = await DeserializeBufferTask(
-                        manager, buffer,
-                        checksum, cell._celltype, copy=False
+                        manager, buffer, checksum, cell._celltype, copy=False
                     ).run()
                     validate_text(value, cell._celltype, "".join(cell.path))
                 manager.cancel_cell(cell, void=False, origin_task=self)
@@ -52,19 +55,24 @@ class SetCellBufferTask(Task):
             if self._canceled:
                 raise exc from None
             exc = traceback.format_exc()
-            manager.cancel_cell(self.cell, void=True, origin_task=self, reason=StatusReasonEnum.INVALID)
+            manager.cancel_cell(
+                self.cell, void=True, origin_task=self, reason=StatusReasonEnum.INVALID
+            )
             livegraph.cell_parsing_exceptions[cell] = exc
         except Exception as exc:
             if isinstance(exc, ValueError):
                 exc = str(type(exc).__name__) + ": " + str(exc)
             else:
                 exc = traceback.format_exc()
-            manager.cancel_cell(self.cell, void=True, origin_task=self, reason=StatusReasonEnum.INVALID)
+            manager.cancel_cell(
+                self.cell, void=True, origin_task=self, reason=StatusReasonEnum.INVALID
+            )
             livegraph.cell_parsing_exceptions[cell] = exc
         return None
 
-from seamless.buffer.cached_calculate_checksum import checksum_cache
-from seamless.buffer.evaluate import has_validated_evaluation, validate_text
+
+from seamless.checksum.cached_calculate_checksum import checksum_cache
+from seamless.checksum.evaluate import has_validated_evaluation, validate_text
 from ...status import StatusReasonEnum
-from seamless.buffer.buffer_cache import buffer_cache
-from seamless.buffer.get_buffer import get_buffer
+from seamless.checksum.buffer_cache import buffer_cache
+from seamless.checksum.get_buffer import get_buffer

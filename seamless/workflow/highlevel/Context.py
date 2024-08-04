@@ -167,6 +167,7 @@ atexit.register(_destroy_contexts)
 
 def _get_zip(buffer_dict):
     from ..core.cache.buffer_cache import empty_dict_checksum, empty_list_checksum
+
     archive = BytesIO()
     with ZipFile(archive, mode="w", compression=ZIP_DEFLATED) as zipf:
         for checksum in sorted(list(buffer_dict.keys())):
@@ -253,7 +254,9 @@ class Context(Base, HelpMixin):
         mounts: bool = True,
         shares: bool = True,
         share_namespace: Optional[str] = None,
-        zip: Optional[str | bytes | ZipFile] = None  # pylint: disable=redefined-builtin
+        zip: Optional[
+            str | bytes | ZipFile
+        ] = None,  # pylint: disable=redefined-builtin
     ):
         """Construct a Context from a graph
 
@@ -354,6 +357,7 @@ class Context(Base, HelpMixin):
         The manager controls caching and execution.
         """
         from seamless.config import check_delegation
+
         check_delegation()
         super().__init__(None, ())
 
@@ -462,6 +466,7 @@ class Context(Base, HelpMixin):
 
     def _add_traitlet(self, path, trigger):
         from .SeamlessTraitlet import SeamlessTraitlet
+
         traitlet = self._traitlets.get(path)
         if traitlet is not None:
             return traitlet
@@ -699,7 +704,7 @@ class Context(Base, HelpMixin):
     async def _get_graph_async(self, *args, **kwargs):
         # Legacy method
         return self.get_graph()
-        
+
     def save_graph(self, filename: str):
         """Save the graph in JSON format."""
         graph = self.get_graph()
@@ -767,19 +772,23 @@ class Context(Base, HelpMixin):
         if self._gen_context is not None:
             # capture from the low level
             annotated_checksums_low = {}
-            self._gen_context._update_annotated_checksums(annotated_checksums_low, skip_scratch=True)
+            self._gen_context._update_annotated_checksums(
+                annotated_checksums_low, skip_scratch=True
+            )
 
         # update from the high level
         graph = self.get_graph()
         annotated_checksums_high = copying.get_graph_checksums(
             graph, with_libraries, with_annotations=True, skip_scratch=True
         )
-        
 
         annotated_checksums = {}
         annotated_checksums.update(annotated_checksums_low)
         annotated_checksums.update({c[0]: not c[1] for c in annotated_checksums_high})
-        annotated_checksums = [(checksum, not has_independence) for checksum, has_independence in annotated_checksums.items()]
+        annotated_checksums = [
+            (checksum, not has_independence)
+            for checksum, has_independence in annotated_checksums.items()
+        ]
 
         manager = self._manager
         checksums = [c[0] for c in annotated_checksums]
@@ -811,7 +820,7 @@ class Context(Base, HelpMixin):
                 lib["graph"]["nodes"],
                 lib["graph"]["connections"],
                 with_annotations=False,
-                skip_scratch=True
+                skip_scratch=True,
             )
             for checksum in checksums:
                 buffer_cache.incref(bytes.fromhex(checksum), persistent=True)
@@ -855,7 +864,6 @@ class Context(Base, HelpMixin):
         result = copying.add_zip(manager, zipfile, incref=incref)
         self._do_translate(force=True)
         return result
-    
 
     def load_vault(self, vault_directory: str, incref: bool = False):
         """Load the contents of a vault directory in the checksum-to-buffer cache.
@@ -903,7 +911,11 @@ class Context(Base, HelpMixin):
         It is assumed (and printed out) that any auth tasks that have not
         completed after 10 seconds will be canceled.
         """
-        if self._gen_context is not None and not self._libroot and not asyncio.get_event_loop().is_running():
+        if (
+            self._gen_context is not None
+            and not self._libroot
+            and not asyncio.get_event_loop().is_running()
+        ):
             taskmanager = self._gen_context._get_manager().taskmanager
             taskmanager.compute(timeout=10, report=2, get_tasks_func=_get_auth_tasks)
             auth_lost_cells = set()
@@ -1290,7 +1302,7 @@ These modifications have been CANCELED.""" % (
 
             ind = self._runtime_indices
             for pp in path[:-1]:
-                #print(pp, ind.keys())
+                # print(pp, ind.keys())
                 ind2 = ind.get(pp)
                 if ind2 is None:
                     ind = None
@@ -1304,7 +1316,7 @@ These modifications have been CANCELED.""" % (
                     nodes_to_remove.extend(nodes_to_remove0)
                     connections_to_remove.extend(connections_to_remove0)
                     walk(sub)
-        else:            
+        else:
             # The following line takes an enormous amount for complex graphs!
             nodes_to_remove = [p for p in nodes.keys() if p[:lp] == path]
         for p in nodes_to_remove:
@@ -1317,7 +1329,7 @@ These modifications have been CANCELED.""" % (
             nodes.pop(p, None)
             self._children.pop(p, None)
             self._traitlets.pop(p, None)
-        
+
         if not runtime and nodes_to_remove:
             self._translate()
 
@@ -1477,6 +1489,7 @@ These modifications have been CANCELED.""" % (
     @property
     def webunits(self):
         from .WebunitWrapper import WebunitWrapper
+
         return WebunitWrapper(self)
 
     def link(self, first, second):
@@ -1587,7 +1600,7 @@ These modifications have been CANCELED.""" % (
                 lib["graph"]["nodes"],
                 lib["graph"]["connections"],
                 with_annotations=False,
-                skip_scratch=True
+                skip_scratch=True,
             )
             for checksum in checksums:
                 buffer_cache.decref(bytes.fromhex(checksum))
@@ -1627,7 +1640,7 @@ from .library.libinstance import LibInstance
 from .PollingObserver import PollingObserver
 from seamless.Environment import ContextEnvironment
 
-from seamless.buffer.buffer_cache import buffer_cache
+from seamless.checksum.buffer_cache import buffer_cache
 from .SubContext import SubContext
 from ..core.manager import Manager
 from .library import Library

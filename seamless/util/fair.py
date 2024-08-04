@@ -14,7 +14,7 @@ from requests.exceptions import (  # pylint: disable=redefined-builtin
 )
 
 from seamless import Checksum
-from seamless.buffer.download_buffer import (
+from seamless.checksum.download_buffer import (
     download_buffer_sync,
     validate_url_info,
     session,
@@ -67,7 +67,7 @@ def _classify(checksum: Checksum, classification: str):
 def _download(
     checksum: Checksum, template, *, checksum_content: bool, verbose: bool = False
 ):
-    from seamless.buffer.get_buffer import get_buffer as get_buffer0
+    from seamless.checksum.get_buffer import get_buffer as get_buffer0
 
     checksum = Checksum(checksum)
     if not checksum:
@@ -127,7 +127,7 @@ def access(checksum: Checksum, celltype: str, *, verbose: bool = False) -> bytes
     First, retrieve  its associated URL info metadata.
     Use those URLs to download the content.
     The checksum of the content is verified."""
-    from seamless.buffer.get_buffer import get_buffer as get_buffer0
+    from seamless.checksum.get_buffer import get_buffer as get_buffer0
 
     checksum = Checksum(checksum)
     result = get_buffer0(checksum, remote=False)

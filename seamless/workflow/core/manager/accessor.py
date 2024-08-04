@@ -124,9 +124,9 @@ class WriteAccessor(Accessor):
         self.hash_pattern = hash_pattern
 
 
-from seamless.buffer.cell import celltypes
+from seamless.checksum.cell import celltypes
 from ...core.cell import Cell, subcelltypes
 from ...core.macro import Path as MacroPath
 from ...core.status import StatusReasonEnum
-from seamless.Expression import Expression
+from seamless.checksum import Expression
 from ..protocol.deep_structure import access_hash_pattern

@@ -19,7 +19,7 @@ def get_buffer(checksum, remote, _done=None, deep=False):
     Else, return None
     """
     from seamless import Checksum
-    from seamless.buffer.convert import try_convert_single
+    from seamless.checksum.convert import try_convert_single
 
     checksum = Checksum(checksum)
     if not checksum:
@@ -74,4 +74,4 @@ def get_buffer(checksum, remote, _done=None, deep=False):
     return None
 
 
-from seamless.buffer.buffer_cache import buffer_cache
+from seamless.checksum.buffer_cache import buffer_cache

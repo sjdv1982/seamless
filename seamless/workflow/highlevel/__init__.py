@@ -10,6 +10,7 @@ serialized any time to JSON (.seamless file).
 that is constantly being evaluated. Interrogate the low-level representation
 (asking for its status, checksums, etc.).
 """
+
 import inspect
 from types import LambdaType
 from ast import PyCF_ONLY_AST, FunctionDef, Expr, Lambda
@@ -19,7 +20,7 @@ from silk.mixed import MixedBase
 from silk import Silk
 from silk.validation import _allowed_types
 from ..core.lambdacode import lambdacode
-from seamless.buffer.cached_compile import cached_compile
+from seamless.checksum.cached_compile import cached_compile
 
 ConstantTypes = _allowed_types + (Silk, MixedBase, tuple)
 
@@ -41,8 +42,10 @@ def set_resource(f):
         data = open(ff).read()
         return data
 
+
 def parse_function_code(code_or_func, identifier="<None>"):
     from ..util import strip_decorators
+
     if callable(code_or_func):
         func = code_or_func
         code = inspect.getsource(func)
@@ -58,18 +61,18 @@ def parse_function_code(code_or_func, identifier="<None>"):
         code = code_or_func
 
     ast = cached_compile(code, identifier, "exec", PyCF_ONLY_AST)
-    is_function = (len(ast.body) == 1 and
-                   isinstance(ast.body[0], FunctionDef))
+    is_function = len(ast.body) == 1 and isinstance(ast.body[0], FunctionDef)
 
     if is_function:
         func_name = ast.body[0].name
         code_object = cached_compile(code, identifier, "exec")
     else:
-        assert (len(ast.body) == 1 and isinstance(ast.body[0], Expr))
+        assert len(ast.body) == 1 and isinstance(ast.body[0], Expr)
         assert isinstance(ast.body[0].value, Lambda)
         func_name = "<lambda>"
         code_object = cached_compile(code, identifier, "eval")
     return code, func_name, code_object
+
 
 from .Context import Context
 from .Transformer import Transformer
@@ -82,7 +85,10 @@ from .Resource import Resource
 from ..midlevel.StaticContext import StaticContext
 from .copy import copy
 
-def load_graph(graph, *, zip=None, cache_ctx=None, static=False, mounts=True, shares=True):
+
+def load_graph(
+    graph, *, zip=None, cache_ctx=None, static=False, mounts=True, shares=True
+):
     """Load a Context from graph.
 
     "graph" can be a file name or a JSON dict
@@ -103,6 +109,7 @@ def load_graph(graph, *, zip=None, cache_ctx=None, static=False, mounts=True, sh
     from ..core.context import Context as CoreContext
     from ..core.manager import Manager
     from ..core.unbound_context import UnboundManager
+
     if isinstance(graph, str):
         graph = json.load(open(graph))
     if isinstance(cache_ctx, Context):
@@ -122,13 +129,13 @@ def load_graph(graph, *, zip=None, cache_ctx=None, static=False, mounts=True, sh
         return StaticContext.from_graph(graph, manager=manager)
     else:
         return Context.from_graph(
-            graph, manager=manager,
-            mounts=mounts, shares=shares,
-            zip=zip
+            graph, manager=manager, mounts=mounts, shares=shares, zip=zip
         )
+
 
 from .SubContext import SubContext
 from .Base import Base
+
 nodeclasses = {
     "cell": Cell,
     "transformer": Transformer,
@@ -141,11 +148,22 @@ nodeclasses = {
 }
 
 __all__ = [
-    "Context", "Transformer", "Macro",
-    "Cell", "SimpleDeepCell", "FolderCell", "DeepCell", "DeepFolderCell",
-    "Link", "StaticContext", "Module",
-    "Resource", "load_graph", "copy"
+    "Context",
+    "Transformer",
+    "Macro",
+    "Cell",
+    "SimpleDeepCell",
+    "FolderCell",
+    "DeepCell",
+    "DeepFolderCell",
+    "Link",
+    "StaticContext",
+    "Module",
+    "Resource",
+    "load_graph",
+    "copy",
 ]
+
 
 def __dir__():
     return sorted(__all__)

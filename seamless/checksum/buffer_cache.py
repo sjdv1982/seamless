@@ -6,12 +6,12 @@ import logging
 
 from silk.mixed import MAGIC_NUMPY, MAGIC_SEAMLESS_MIXED
 
-from seamless.buffer.cached_calculate_checksum import checksum_cache
+from seamless.checksum.cached_calculate_checksum import checksum_cache
 from seamless import CacheMissError
 from seamless import Buffer, Checksum
-from seamless.buffer.buffer_info import BufferInfo
+from seamless.checksum.buffer_info import BufferInfo
 
-from seamless.buffer import buffer_remote
+from seamless.checksum import buffer_remote
 
 
 logger = logging.getLogger(__name__)
@@ -330,7 +330,7 @@ class BufferCache:
         return buffer
 
     def _sync_buffer_info_from_remote(self, checksum):
-        from seamless.buffer.database_client import database
+        from seamless.checksum.database_client import database
 
         local_buffer_info = self.buffer_info[checksum]
         if checksum in self.synced_buffer_info:
@@ -345,7 +345,7 @@ class BufferCache:
             self.synced_buffer_info.add(checksum)
 
     def _sync_buffer_info_to_remote(self, checksum):
-        from seamless.buffer.database_client import database
+        from seamless.checksum.database_client import database
 
         local_buffer_info = self.buffer_info[checksum]
         if checksum in self.synced_buffer_info:

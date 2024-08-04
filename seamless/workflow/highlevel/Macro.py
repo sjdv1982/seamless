@@ -10,7 +10,7 @@ from .SelfWrapper import SelfWrapper
 from .proxy import Proxy, CodeProxy, HeaderProxy
 from .pin import PinsWrapper
 from .Base import Base
-from seamless.buffer.mime import language_to_mime
+from seamless.checksum.mime import language_to_mime
 from ..core.context import Context as CoreContext
 from . import parse_function_code
 from .SchemaWrapper import SchemaWrapper
@@ -19,18 +19,21 @@ from .compiled import CompiledObjectDict
 from silk.mixed.get_form import get_form
 
 default_pin = {
-  "io": "parameter",
-  "celltype": "mixed",
+    "io": "parameter",
+    "celltype": "mixed",
 }
+
 
 def new_macro(ctx, path, code, pins):
     if pins is None:
         pins = []
     for pin in pins:
         if pin == "param":
-            print("WARNING: pin 'param' for a macro is NOT recommended (shadows the .param attribute)")
+            print(
+                "WARNING: pin 'param' for a macro is NOT recommended (shadows the .param attribute)"
+            )
     if isinstance(pins, (list, tuple)):
-        pins = {pin:default_pin.copy() for pin in pins}
+        pins = {pin: default_pin.copy() for pin in pins}
     else:
         pins = deepcopy(pins)
     macro = {
@@ -47,9 +50,11 @@ def new_macro(ctx, path, code, pins):
     ctx._graph[0][path] = macro
     return macro
 
+
 class Macro(Base):
     _temp_code = None
     _temp_pins = None
+
     def __init__(self, *, parent=None, path=None, code=None, pins=None):
         assert (parent is None) == (path is None)
         if parent is not None:
@@ -80,11 +85,11 @@ class Macro(Base):
     def self(self):
         """Returns a wrapper where the pins are not directly accessible.
 
-        By default, a pin called "compute" will cause "macro.status" 
+        By default, a pin called "compute" will cause "macro.status"
         to return the pin, and not the actual macro status.
-        
+
         To be sure to get the macro status, you can invoke macro.self.status.
-        
+
         NOTE: experimental, requires more testing
         """
         attributelist = [k for k in type(self).__dict__ if not k.startswith("_")]
@@ -105,7 +110,7 @@ class Macro(Base):
     def schema(self):
         node = self._get_node()
         param = node["PARAM"]
-        #TODO: self.self
+        # TODO: self.self
         return getattr(self, param).schema
 
     @property
@@ -136,7 +141,7 @@ class Macro(Base):
         """Adds a validator to the input, analogous to Cell.add_validator"""
         node = self._get_node()
         param = node["PARAM"]
-        #TODO: self.self
+        # TODO: self.self
         return getattr(self, param).add_validator(validator, name=name)
 
     def __setattr__(self, attr, value):
@@ -147,6 +152,7 @@ class Macro(Base):
 
     def _setattr(self, attr, value):
         from .assign import assign_connection
+
         translate = False
         parent = self._parent()
         node = self._get_node()
@@ -205,9 +211,7 @@ class Macro(Base):
         else:
             pin = node["pins"][attr]
             if pin["io"] == "output":
-                raise AttributeError(
-                  "Cannot assign to output pin '{}'".format(attr)
-                )
+                raise AttributeError("Cannot assign to output pin '{}'".format(attr))
             if isinstance(value, Cell):
                 if new_pin and value.celltype == "checksum":
                     pin["celltype"] = "checksum"
@@ -380,15 +384,24 @@ class Macro(Base):
         elif attr == node["PARAM"]:
             getter = self._paramgetter
             dirs = [
-              "value", "buffered", "data", "checksum",
-              "schema", "example", "status", "exception",
-              "add_validator", "handle"
+                "value",
+                "buffered",
+                "data",
+                "checksum",
+                "schema",
+                "example",
+                "status",
+                "exception",
+                "add_validator",
+                "handle",
             ] + list(node["pins"].keys())
             pull_source = None
             proxycls = Proxy
         else:
             raise AttributeError(attr)
-        return proxycls(self, (attr,), "r", pull_source=pull_source, getter=getter, dirs=dirs)
+        return proxycls(
+            self, (attr,), "r", pull_source=pull_source, getter=getter, dirs=dirs
+        )
 
     def _sub_mount(self, attr, path=None, mode="rw", authority="cell", persistent=True):
         node = self._get_node()
@@ -404,7 +417,7 @@ class Macro(Base):
             "path": path,
             "mode": mode,
             "authority": authority,
-            "persistent": persistent
+            "persistent": persistent,
         }
         if not "mount" in node:
             node["mount"] = {}
@@ -450,7 +463,9 @@ class Macro(Base):
         elif attr == "example":
             return self.example
         elif attr == "status":
-            return paramcell._data.status # TODO; take into account validation, inchannel status
+            return (
+                paramcell._data.status
+            )  # TODO; take into account validation, inchannel status
         elif attr == "exception":
             return paramcell.exception
         elif attr == "add_validator":
@@ -464,9 +479,9 @@ class Macro(Base):
         return self._get_value(attr)
 
     def _pull_source(self, attr, path):
-        raise NotImplementedError # TODO: follow transformer
+        raise NotImplementedError  # TODO: follow transformer
 
-    def _observe_param(self, checksum:Checksum):
+    def _observe_param(self, checksum: Checksum):
         checksum = Checksum(checksum)
         if self._parent() is None:
             return
@@ -481,7 +496,7 @@ class Macro(Base):
         if checksum:
             node["checksum"]["param"] = checksum
 
-    def _observe_param_auth(self, checksum:Checksum):
+    def _observe_param_auth(self, checksum: Checksum):
         checksum = Checksum(checksum)
         if self._parent() is None:
             return
@@ -496,7 +511,7 @@ class Macro(Base):
         if checksum:
             node["checksum"]["param_auth"] = checksum
 
-    def _observe_param_buffer(self, checksum:Checksum):
+    def _observe_param_buffer(self, checksum: Checksum):
         checksum = Checksum(checksum)
         if self._parent() is None:
             return
@@ -511,7 +526,7 @@ class Macro(Base):
         if checksum:
             node["checksum"]["param_buffer"] = checksum
 
-    def _observe_code(self, checksum:Checksum):
+    def _observe_code(self, checksum: Checksum):
         checksum = Checksum(checksum)
         if self._parent() is None:
             return
@@ -536,7 +551,6 @@ class Macro(Base):
             node["checksum"] = {}
         node["checksum"]["schema"] = checksum
 
-
     def _set_observers(self):
         node = self._get_node()
         mctx = self._get_mctx(force=True)
@@ -557,7 +571,7 @@ class Macro(Base):
         if attr.startswith("_"):
             return super().__delattr__(attr)
         node = self._get_node()
-        raise NotImplementedError #remove pin
+        raise NotImplementedError  # remove pin
 
     def __dir__(self):
         node = self._get_node()

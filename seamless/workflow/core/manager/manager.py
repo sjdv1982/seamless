@@ -11,36 +11,44 @@ from seamless import CacheMissError, Checksum
 from ..status import StatusReasonEnum
 
 import logging
+
 logger = logging.getLogger(__name__)
+
 
 def print_info(*args):
     msg = " ".join([str(arg) for arg in args])
     logger.info(msg)
 
+
 def print_warning(*args):
     msg = " ".join([str(arg) for arg in args])
     logger.warning(msg)
+
 
 def print_debug(*args):
     msg = " ".join([str(arg) for arg in args])
     logger.debug(msg)
 
+
 def print_error(*args):
     msg = " ".join([str(arg) for arg in args])
     logger.error(msg)
 
+
 def mainthread(func):
     def func2(*args, **kwargs):
-        if threading is None or threading.current_thread is None: # destruction at exit
+        if threading is None or threading.current_thread is None:  # destruction at exit
             return
         assert threading.current_thread() == threading.main_thread()
         return func(*args, **kwargs)
+
     functools.update_wrapper(func2, func)
     return func2
 
+
 def with_cancel_cycle(func):
     def func2(*args, **kwargs):
-        if threading.current_thread is None: # destruction at exit
+        if threading.current_thread is None:  # destruction at exit
             return
         assert threading.current_thread() == threading.main_thread()
         manager = args[0]
@@ -60,8 +68,10 @@ def with_cancel_cycle(func):
             manager.cancel_cycle._clear()
             taskmanager.run_all_synctasks()
         return result
+
     functools.update_wrapper(func2, func)
     return func2
+
 
 def _run_in_mainthread(func):
     def func2(*args, **kwargs):
@@ -70,8 +80,10 @@ def _run_in_mainthread(func):
             manager.taskmanager.add_synctask(func, args, kwargs, with_event=False)
         else:
             func(*args, **kwargs)
+
     functools.update_wrapper(func2, func)
     return func2
+
 
 class Manager:
     CLEAR_NEW_TRANSFORMER_EXCEPTIONS = True
@@ -79,9 +91,11 @@ class Manager:
     _highlevel_refs = 0
     _last_ctx = None
     _blocked = False
+
     def __init__(self):
         self._destroyed = True
         from seamless.workflow import check_original_event_loop
+
         check_original_event_loop()
         global is_dummy_mount
         from .livegraph import LiveGraph
@@ -89,6 +103,7 @@ class Manager:
         from .taskmanager import TaskManager
         from .macromanager import MacroManager
         from .cancel import CancellationCycle
+
         self.contexts = weakref.WeakSet()
         self.livegraph = LiveGraph(self)
         self.cachemanager = CacheManager(self)
@@ -101,25 +116,27 @@ class Manager:
 
         # for now, just a single global temprefmanager
         from seamless.workflow.tempref import temprefmanager
+
         self.temprefmanager = temprefmanager
 
         # for now, just a single global mountmanager
         from ..mount import mountmanager, is_dummy_mount
+
         self.mountmanager = mountmanager
         mountmanager.start()
 
         # for now, just a single global sharemanager
         from ..share import sharemanager, shareserver
+
         self.sharemanager = sharemanager
         self.shareserver = shareserver
         sharemanager.start()
-
 
     def add_context(self, ctx):
         assert ctx._toplevel
         self.contexts.add(ctx)
         self._last_ctx = weakref.ref(ctx)
-    
+
     def last_ctx(self):
         result = None
         if self._last_ctx is not None:
@@ -181,7 +198,7 @@ class Manager:
     # API section II: Actions
     ##########################################################################
 
-    def _upon_set_cell_checksum(self, cell, checksum:Checksum, void, trigger_bilinks):
+    def _upon_set_cell_checksum(self, cell, checksum: Checksum, void, trigger_bilinks):
         livegraph = self.livegraph
         checksum = Checksum(checksum)
         if checksum:
@@ -196,7 +213,7 @@ class Manager:
                 buffer = get_buffer(checksum, remote=True)  # not async, so OK
                 self.mountmanager.add_cell_update(cell, checksum, buffer)
             except Exception:
-                traceback.print_exc()            
+                traceback.print_exc()
         if cell._share is not None:
             try:
                 self.sharemanager.add_cell_update(cell, checksum)
@@ -211,36 +228,40 @@ class Manager:
             if cell in livegraph.cell_from_macro_elision:
                 elision = livegraph.cell_from_macro_elision[cell]
                 if elision.macro.ctx is not None and not elision.macro.ctx._destroyed:
-                    #print("UP!", cell, void, checksum.hex() if checksum else None)
+                    # print("UP!", cell, void, checksum.hex() if checksum else None)
                     elision.update()
 
-
     @_run_in_mainthread
-    def set_cell_checksum(self,
-        cell, checksum:Checksum, *,
-        initial, from_structured_cell, trigger_bilinks
+    def set_cell_checksum(
+        self,
+        cell,
+        checksum: Checksum,
+        *,
+        initial,
+        from_structured_cell,
+        trigger_bilinks
     ):
         """Setting a cell checksum.
-  (This is done from the command line, usually at graph loading)
-  initial=True in case of graph loading; from_structured_cell=True when triggered from StructuredCell)
+        (This is done from the command line, usually at graph loading)
+        initial=True in case of graph loading; from_structured_cell=True when triggered from StructuredCell)
 
-  NOTE: Seamless tasks must not call this function, unless they check afterwards that they were not cancelled because of it.
+        NOTE: Seamless tasks must not call this function, unless they check afterwards that they were not cancelled because of it.
 
-  If "initial" is True, it is assumed that the context is being initialized (e.g. when created from a graph)
-  If "from_structured_cell" is True, the function is triggered by StructuredCell state maintenance routines
-  This function takes care of the incref/decref of checksums inside a deep structure
+        If "initial" is True, it is assumed that the context is being initialized (e.g. when created from a graph)
+        If "from_structured_cell" is True, the function is triggered by StructuredCell state maintenance routines
+        This function takes care of the incref/decref of checksums inside a deep structure
 
-  If "initial" is true, but "from_structured_cell" is not, the cell must be a simple cell
+        If "initial" is true, but "from_structured_cell" is not, the cell must be a simple cell
 
-  If neither "initial" nor "from_structured_cell" is true, the cell:
-  - cannot be the .data or .buffer attribute of a StructuredCell
-  - cannot have any incoming connection.
-  - cannot be a deep cell (having a hash pattern)
+        If neither "initial" nor "from_structured_cell" is true, the cell:
+        - cannot be the .data or .buffer attribute of a StructuredCell
+        - cannot have any incoming connection.
+        - cannot be a deep cell (having a hash pattern)
 
-  If the new checksum is None, do a cell void cancellation.
-  Else:
-    If old checksum is not None, do a cell cancellation.
-    Set the cell as being non-void, set the checksum (direct attribute access), and launch a cell update task.
+        If the new checksum is None, do a cell void cancellation.
+        Else:
+          If old checksum is not None, do a cell cancellation.
+          Set the cell as being non-void, set the checksum (direct attribute access), and launch a cell update task.
         """
         checksum = Checksum(checksum)
         if self._destroyed or cell._destroyed:
@@ -271,25 +292,29 @@ class Manager:
                     self.cancel_cell(cell, void=True, reason=reason)
         else:
             reason = None
-            old_checksum = cell._checksum # avoid infinite task loop...
-        #and cell._context()._macro is None: # TODO: forbid
+            old_checksum = cell._checksum  # avoid infinite task loop...
+        # and cell._context()._macro is None: # TODO: forbid
         if not initial and not from_structured_cell:
             self.cancel_cell(cell, (not checksum))
         else:
             if cell._structured_cell is None:
                 unvoid_cell(cell, self.livegraph)
         self._set_cell_checksum(
-            cell, checksum,
-            (not checksum), status_reason=reason,
-            trigger_bilinks=trigger_bilinks
+            cell,
+            checksum,
+            (not checksum),
+            status_reason=reason,
+            trigger_bilinks=trigger_bilinks,
         )
         updated = False
-        if not from_structured_cell: # also for initial...
+        if not from_structured_cell:  # also for initial...
             if cell._structured_cell is not None and cell._structured_cell.auth is cell:
                 scell = cell._structured_cell
                 scell._modified_auth = True
                 if get_scell_state(scell) == "void" and scell.auth is not scell._data:
-                    self._set_cell_checksum(scell._data, None, void=True, status_reason=reason)
+                    self._set_cell_checksum(
+                        scell._data, None, void=True, status_reason=reason
+                    )
                 self.structured_cell_trigger(scell)
             else:
                 if checksum:
@@ -301,16 +326,24 @@ class Manager:
             if from_structured_cell and not updated:
                 CellUpdateTask(self, cell).launch()
                 updated = True
+
             def update_schema():
                 value = self.resolve(checksum, "plain")
                 self.update_schemacell(cell, value)
+
             self.taskmanager.add_synctask(update_schema, (), {}, False)
 
         if initial:
             self.trigger_all_fallbacks(cell)
 
-    def _set_cell_checksum(self,
-        cell, checksum:Checksum, void:bool, status_reason=None, prelim=False, trigger_bilinks=True
+    def _set_cell_checksum(
+        self,
+        cell,
+        checksum: Checksum,
+        void: bool,
+        status_reason=None,
+        prelim=False,
+        trigger_bilinks=True,
     ):
         """
         NOTE: Any cell task depending on the old checksum must have been canceled already
@@ -320,7 +353,7 @@ class Manager:
         IS NOT ALLOWED
 
         On the other hand, since cachemanager.incref_checksum is called,
-         deep structures have their contained checksums automatically incref'ed, 
+         deep structures have their contained checksums automatically incref'ed,
          and decref'ed for the old value
         NOTE: this function blindly assumes that the checksum is parseable
          for the cell's celltype, and in fact triggers a guarantee.
@@ -343,22 +376,26 @@ class Manager:
             independent = True
             value = None
             if checksum:
-                buf = self._get_buffer(checksum,deep=False)
+                buf = self._get_buffer(checksum, deep=False)
                 value = deserialize_sync(buf, checksum, "plain", copy=False)
             for sc in livegraph.schemacells[cell]:
                 sc._schema_value = deepcopy(value)
         elif cell._structured_cell is not None:
-            independent = (cell._structured_cell.auth is cell)
+            independent = cell._structured_cell.auth is cell
         else:
             independent = cell.has_independence()
         cachemanager = self.cachemanager
         old_checksum = cell._checksum
         if old_checksum and old_checksum != checksum:
             cachemanager.decref_checksum(old_checksum, cell, False)
-        
-        print_debug("SET CHECKSUM", cell, "None:", not checksum, checksum == old_checksum)
+
+        print_debug(
+            "SET CHECKSUM", cell, "None:", not checksum, checksum == old_checksum
+        )
         if checksum:
-            buffer_cache.guarantee_buffer_info(checksum, cell.celltype, sync_to_remote=False)
+            buffer_cache.guarantee_buffer_info(
+                checksum, cell.celltype, sync_to_remote=False
+            )
         cell._checksum = checksum
         cell._void = void
         cell._status_reason = status_reason
@@ -366,7 +403,9 @@ class Manager:
         if checksum != old_checksum:
             cachemanager.incref_checksum(checksum, cell, result=False)
             observer = cell._observer
-            if (observer is not None or livegraph._hold_observations) and (bool(checksum) or void):
+            if (observer is not None or livegraph._hold_observations) and (
+                bool(checksum) or void
+            ):
                 cs = checksum.hex() if checksum else None
                 if not livegraph._hold_observations and not len(livegraph._destroying):
                     try:
@@ -377,8 +416,15 @@ class Manager:
                     livegraph._observing.append((cell, cs))
             self._upon_set_cell_checksum(cell, checksum, void, trigger_bilinks)
 
-    def _set_inchannel_checksum(self, inchannel, checksum:Checksum, void:bool, status_reason=None, *,
-      prelim=False, from_cancel_system=False
+    def _set_inchannel_checksum(
+        self,
+        inchannel,
+        checksum: Checksum,
+        void: bool,
+        status_reason=None,
+        *,
+        prelim=False,
+        from_cancel_system=False
     ):
         ###import traceback; traceback.print_stack(limit=5)
         checksum = Checksum(checksum)
@@ -406,9 +452,8 @@ class Manager:
             if not from_cancel_system:
                 self.structured_cell_trigger(sc)
 
-    def _set_transformer_checksum(self,
-        transformer, checksum:Checksum, void:bool, *,
-        prelim, status_reason=None
+    def _set_transformer_checksum(
+        self, transformer, checksum: Checksum, void: bool, *, prelim, status_reason=None
     ):
         # NOTE: Any cell task depending on the old checksum must have been canceled already
         checksum = Checksum(checksum)
@@ -438,10 +483,7 @@ class Manager:
             self.cachemanager.macro_exceptions[macro] = None
             return
         exc = traceback.format_exception(
-            type(exception),
-            exception,
-            exception.__traceback__,
-            chain=False
+            type(exception), exception, exception.__traceback__, chain=False
         )
         exc = exc[4:]
         exc = "".join(exc)
@@ -512,7 +554,7 @@ class Manager:
         _, void = self._get_cell_checksum_and_void(cell)
         return void
 
-    def _get_buffer(self, checksum:Checksum, deep):
+    def _get_buffer(self, checksum: Checksum, deep):
         checksum = Checksum(checksum)
         if asyncio.get_event_loop().is_running():
             buffer = get_buffer(checksum, remote=True, deep=deep)
@@ -536,7 +578,7 @@ class Manager:
     def get_cell_buffer_and_checksum(self, cell):
         checksum = self.get_cell_checksum(cell)
         deep = cell._hash_pattern is not None
-        buffer = self._get_buffer(checksum,deep)
+        buffer = self._get_buffer(checksum, deep)
         return buffer, checksum
 
     @mainthread
@@ -553,22 +595,19 @@ class Manager:
                 return deepcopy(cached_value)
         return self.resolve(checksum, celltype, copy=copy)
 
-    def resolve(self, checksum:Checksum, celltype=None, copy=True):
+    def resolve(self, checksum: Checksum, celltype=None, copy=True):
         """Returns the data buffer that corresponds to the checksum.
         If celltype is provided, a value is returned instead"""
         checksum = Checksum(checksum)
         if not checksum:
             return None
         # set deep to True, since we do want to check the fairserver
-        buffer = self._get_buffer(checksum,deep=True)
+        buffer = self._get_buffer(checksum, deep=True)
         if celltype is None:
             return buffer
         if asyncio.get_event_loop().is_running():
             return deserialize_sync(buffer, checksum, celltype, copy=copy)
-        task = DeserializeBufferTask(
-            self, buffer, checksum, celltype,
-            copy=copy
-        )
+        task = DeserializeBufferTask(self, buffer, checksum, celltype, copy=copy)
         try:
             value = task.launch_and_await()
         except asyncio.CancelledError:
@@ -577,6 +616,7 @@ class Manager:
 
     def set_elision(self, macro, input_cells, output_cells):
         from ..cache.elision import Elision
+
         Elision(self.livegraph, macro, input_cells, output_cells)
 
     ##########################################################################
@@ -588,9 +628,11 @@ class Manager:
         if exception is None:
             self.cachemanager.reactor_exceptions[reactor] = None
             return
-        exc = traceback.format_exception(type(exception), exception, exception.__traceback__)
+        exc = traceback.format_exception(
+            type(exception), exception, exception.__traceback__
+        )
         exc = "".join(exc)
-        msg = "Exception in %s, code name %s:\n"% (str(reactor), codename) + exc
+        msg = "Exception in %s, code name %s:\n" % (str(reactor), codename) + exc
         stars = "*" * 60 + "\n"
         print(stars + msg + stars, file=sys.stderr)
         self.cachemanager.reactor_exceptions[reactor] = (codename, exc)
@@ -600,11 +642,13 @@ class Manager:
     @with_cancel_cycle
     def cancel_cell(self, cell, void, origin_task=None, reason=None):
         """Cancels all tasks depending on cell, and sets all dependencies to None.
-If void=True, all dependencies are set to void as well.
-If origin_task is provided, that task is not cancelled."""
+        If void=True, all dependencies are set to void as well.
+        If origin_task is provided, that task is not cancelled."""
         assert isinstance(cell, Cell)
         if cell._structured_cell is not None:
-            assert cell._structured_cell.schema is cell, cell # cancel_cell only on schema cells, else use cancel_scell_inpath
+            assert (
+                cell._structured_cell.schema is cell
+            ), cell  # cancel_cell only on schema cells, else use cancel_scell_inpath
         if cell._destroyed:
             return
 
@@ -628,10 +672,11 @@ If origin_task is provided, that task is not cancelled."""
             return
         self.cancel_cycle.trigger_scell(scell, update_schema=update_schema, void=void)
 
-
     @with_cancel_cycle
-    def cancel_accessor(self,
-        accessor, void,
+    def cancel_accessor(
+        self,
+        accessor,
+        void,
         reason=None,
         origin_task=None,
     ):
@@ -644,10 +689,11 @@ If origin_task is provided, that task is not cancelled."""
             self.cancel_cycle.origin_task = origin_task
         self.cancel_cycle.cancel_accessor(accessor, void=void, reason=reason)
 
-
     @with_cancel_cycle
-    def cancel_accessors(self,
-        accessors, void,
+    def cancel_accessors(
+        self,
+        accessors,
+        void,
         reason=None,
         origin_task=None,
     ):
@@ -671,7 +717,6 @@ If origin_task is provided, that task is not cancelled."""
             reason = None
         self.cancel_cycle.cancel_transformer(transformer, void=void, reason=reason)
 
-
     @with_cancel_cycle
     def cancel_reactor(self, reactor, void, reason=None):
         assert isinstance(reactor, Reactor)
@@ -691,7 +736,7 @@ If origin_task is provided, that task is not cancelled."""
         self.cancel_cycle.cancel_macro(macro, void=void, reason=reason)
 
     @with_cancel_cycle
-    def force_join(self,cyclic_scells):
+    def force_join(self, cyclic_scells):
         return self.cancel_cycle.force_join(cyclic_scells)
 
     ##########################################################################
@@ -701,33 +746,31 @@ If origin_task is provided, that task is not cancelled."""
     @mainthread
     def connect(self, source, source_subpath, target, target_subpath):
         from ..unilink import UniLink
+
         if isinstance(source, UniLink):
             source = source.get_linked()
         if isinstance(target, UniLink):
             target = target.get_linked()
-        task = UponConnectionTask(
-            self, source, source_subpath, target, target_subpath
-        )
+        task = UponConnectionTask(self, source, source_subpath, target, target_subpath)
         task.launch()
 
     @mainthread
     def bilink(self, source, target):
         from ..unilink import UniLink
+
         if isinstance(source, UniLink):
             source = source.get_linked()
         if isinstance(target, UniLink):
             target = target.get_linked()
-        task = UponBiLinkTask(
-            self, source, target
-        )
+        task = UponBiLinkTask(self, source, target)
         task.launch()
 
     def cell_from_pin(self, pin):
         return self.livegraph.cell_from_pin(pin)
 
-
     def _verify_connect(self, current_macro, source, target):
         from ..macro import Path
+
         assert source._get_manager() is self, source._get_manager()
         assert source._root() is target._root()
         source_macro = source._get_macro()
@@ -740,11 +783,13 @@ If origin_task is provided, that task is not cancelled."""
                 if not target_macro._context()._part_of2(current_macro._context()):
                     msg = "%s is not part of current %s"
                     raise Exception(msg % (target_macro, current_macro))
-        path_source = (source_macro is not current_macro or isinstance(source, Path))
-        path_target = (target_macro is not current_macro or isinstance(target, Path))
+        path_source = source_macro is not current_macro or isinstance(source, Path)
+        path_target = target_macro is not current_macro or isinstance(target, Path)
         if path_source and path_target:
             msg = "Neither %s (governing %s) nor %s (governing %s) was created by current macro %s"
-            raise Exception(msg % (source_macro, source, target_macro, target, current_macro))
+            raise Exception(
+                msg % (source_macro, source, target_macro, target, current_macro)
+            )
         return path_source, path_target
 
     def get_fallback(self, cell):
@@ -753,7 +798,7 @@ If origin_task is provided, that task is not cancelled."""
         return self.livegraph.cell_to_fallback[cell]
 
     def set_fallback(self, cell, fallback_cell):
-        #print("manager.set_fallback", cell, fallback_cell)
+        # print("manager.set_fallback", cell, fallback_cell)
         if isinstance(cell, StructuredCell):
             cell = cell._data
         if len(self.livegraph.cell_to_reverse_fallbacks[cell]):
@@ -789,6 +834,7 @@ If origin_task is provided, that task is not cancelled."""
 
     def clear_fallback(self, cell):
         from .tasks.structured_cell import update_structured_cell
+
         if cell._destroyed:
             return
         if isinstance(cell, StructuredCell):
@@ -806,6 +852,7 @@ If origin_task is provided, that task is not cancelled."""
 
     def trigger_fallback(self, checksum, reverse_fallback):
         from .tasks.structured_cell import update_structured_cell
+
         other_manager = reverse_fallback._get_manager()
         other_livegraph = other_manager.livegraph
         if isinstance(reverse_fallback, StructuredCell):
@@ -818,9 +865,7 @@ If origin_task is provided, that task is not cancelled."""
             update_structured_cell(sc, checksum, from_fallback=True)
         else:
             CellUpdateTask(other_manager, reverse_fallback).launch()
-        other_manager._upon_set_cell_checksum(
-            reverse_fallback, checksum, False, True
-        )
+        other_manager._upon_set_cell_checksum(reverse_fallback, checksum, False, True)
 
     def trigger_all_fallbacks(self, cell):
         checksum = cell._checksum
@@ -887,23 +932,33 @@ If origin_task is provided, that task is not cancelled."""
         self.shareserver.destroy_manager(self)
         if not from_del:
             from ..macro_mode import _toplevel_managers, _toplevel_managers_temp
+
             _toplevel_managers.discard(self)
             _toplevel_managers_temp.discard(self)
 
     def __del__(self):
         self.destroy(from_del=True)
 
+
 from .tasks import (
-    SetCellValueTask, SetCellBufferTask,
-    CellChecksumTask, GetBufferTask,
-    DeserializeBufferTask, UponConnectionTask, UponBiLinkTask,
-    CellUpdateTask
+    SetCellValueTask,
+    SetCellBufferTask,
+    CellChecksumTask,
+    GetBufferTask,
+    DeserializeBufferTask,
+    UponConnectionTask,
+    UponBiLinkTask,
+    CellUpdateTask,
 )
 
-from seamless.buffer.cached_calculate_checksum import checksum_cache
-from seamless.buffer.deserialize import deserialize_cache, deserialize_sync
-from seamless.buffer.get_buffer import get_buffer
-from seamless.buffer.buffer_cache import buffer_cache, empty_dict_checksum, empty_list_checksum
+from seamless.checksum.cached_calculate_checksum import checksum_cache
+from seamless.checksum.deserialize import deserialize_cache, deserialize_sync
+from seamless.checksum.get_buffer import get_buffer
+from seamless.checksum.buffer_cache import (
+    buffer_cache,
+    empty_dict_checksum,
+    empty_list_checksum,
+)
 from .unvoid import unvoid_cell
 from ..cell import Cell
 from ..transformer import Transformer

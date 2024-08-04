@@ -1,4 +1,5 @@
 """Schedules asynchronous (transformer) jobs"""
+
 from copy import deepcopy
 import weakref
 import asyncio
@@ -15,6 +16,7 @@ import logging
 import importlib
 import os
 import subprocess
+
 try:
     from prompt_toolkit.patch_stdout import StdoutProxy
 except ImportError:
@@ -26,11 +28,15 @@ from seamless import Buffer
 logger = logging.getLogger(__name__)
 
 forked_processes = weakref.WeakKeyDictionary()
+
+
 def _kill_processes():
     for process, termination_time in forked_processes.items():
         if not process.is_alive():
             continue
-        kill_time = termination_time + 15  # "docker stop" has 10 secs grace, add 5 secs margin
+        kill_time = (
+            termination_time + 15
+        )  # "docker stop" has 10 secs grace, add 5 secs margin
         ctime = time.time()
         while kill_time > ctime:
             print("Waiting for transformer process to terminate...", file=sys.stderr)
@@ -44,29 +50,37 @@ def _kill_processes():
         kill_children(process)
         process.kill()
 
+
 atexit.register(_kill_processes)
+
 
 def print_info(*args):
     msg = " ".join([str(arg) for arg in args])
     logger.info(msg)
 
+
 def print_warning(*args):
     msg = " ".join([str(arg) for arg in args])
     logger.warning(msg)
+
 
 def print_debug(*args):
     msg = " ".join([str(arg) for arg in args])
     logger.debug(msg)
 
+
 def print_error(*args):
     msg = " ".join([str(arg) for arg in args])
     logger.error(msg)
 
+
 class SeamlessTransformationError(Exception):
     pass
 
+
 class SeamlessStreamTransformationError(Exception):
     pass
+
 
 ###############################################################################
 # Local jobs
@@ -74,9 +88,8 @@ class SeamlessStreamTransformationError(Exception):
 
 _locks = [None] * multiprocessing.cpu_count()
 
-_python_attach_ports = {
-    port: None for port in range(5679, 5685)
-}
+_python_attach_ports = {port: None for port in range(5679, 5685)}
+
 
 def _set_ncores(ncores):
     if len(_locks) != ncores:
@@ -86,15 +99,21 @@ def _set_ncores(ncores):
         else:
             _locks[:] = [None] * ncores
 
+
 async def acquire_lock(tf_checksum, ncores):
     assert ncores == -1 or ncores > 0
     import random
+
     if not len(_locks):
-        raise SeamlessTransformationError("Local computation has been disabled for this Seamless instance (deprecated)")
+        raise SeamlessTransformationError(
+            "Local computation has been disabled for this Seamless instance (deprecated)"
+        )
     if ncores == -1:
         ncores = len(_locks)
     elif ncores > len(_locks):
-        raise SeamlessTransformationError(f"Transformation requires {ncores} cores, but only {len(_locks)} are available")
+        raise SeamlessTransformationError(
+            f"Transformation requires {ncores} cores, but only {len(_locks)} are available"
+        )
     while 1:
         result = []
         for locknr, lock in enumerate(_locks):
@@ -104,13 +123,15 @@ async def acquire_lock(tf_checksum, ncores):
                     for locknr in result:
                         _locks[locknr] = tf_checksum
                     return result
-        
+
         await asyncio.sleep(0.02 * random.random())
+
 
 def release_lock(lock):
     for locknr in lock:
         assert _locks[locknr] is not None
         _locks[locknr] = None
+
 
 async def acquire_python_attach_port(tf_checksum):
     while 1:
@@ -120,14 +141,23 @@ async def acquire_python_attach_port(tf_checksum):
                 return k
         await asyncio.sleep(0.01)
 
+
 def free_python_attach_port(port):
     _python_attach_ports[port] = None
+
 
 def get_transformation_inputs_output(transformation):
     inputs = []
     as_ = transformation.get("__as__", {})
     for pinname in sorted(transformation.keys()):
-        if pinname in ("__compilers__", "__languages__", "__env__", "__as__", "__meta__", "__format__"):
+        if pinname in (
+            "__compilers__",
+            "__languages__",
+            "__env__",
+            "__as__",
+            "__meta__",
+            "__format__",
+        ):
             continue
         if pinname in ("__language__", "__output__", "__code_checksum__"):
             continue
@@ -147,6 +177,7 @@ def get_transformation_inputs_output(transformation):
         outputname, output_celltype, output_subcelltype, output_hash_pattern = outputpin
     return inputs, outputname, output_celltype, output_subcelltype, output_hash_pattern
 
+
 async def build_transformation_namespace(transformation, semantic_cache, codename):
     namespace = {
         "__name__": "transformer",
@@ -156,13 +187,24 @@ async def build_transformation_namespace(transformation, semantic_cache, codenam
     deep_structures_to_unpack = {}
     inputs = []
     namespace["PINS"] = {}
-    output_hash_pattern = transformation["__output__"][3] if len(transformation["__output__"]) == 4 else None
+    output_hash_pattern = (
+        transformation["__output__"][3]
+        if len(transformation["__output__"]) == 4
+        else None
+    )
     namespace["OUTPUTPIN"] = transformation["__output__"][1], output_hash_pattern
     modules_to_build = {}
     as_ = transformation.get("__as__", {})
     FILESYSTEM = {}
     for pinname in sorted(transformation.keys()):
-        if pinname in ("__compilers__", "__languages__", "__env__", "__as__", "__meta__", "__format__"):
+        if pinname in (
+            "__compilers__",
+            "__languages__",
+            "__env__",
+            "__as__",
+            "__meta__",
+            "__format__",
+        ):
             continue
         if pinname in ("__language__", "__output__", "__code_checksum__"):
             continue
@@ -188,7 +230,7 @@ async def build_transformation_namespace(transformation, semantic_cache, codenam
                 mode = fs["mode"]
                 if mode == "file":
                     fs_result = buffer_remote.get_filename(checksum)
-                else: # mode == "directory"
+                else:  # mode == "directory"
                     fs_result = buffer_remote.get_directory(checksum)
                 fs_entry = deepcopy(fs)
                 if fs_result is None:
@@ -235,8 +277,15 @@ async def build_transformation_namespace(transformation, semantic_cache, codenam
             inputs.append(pinname_as)
     for pinname in transformation:
         if pinname in (
-            "__language__", "__output__", "__env__", "__compilers__",
-            "__languages__", "__as__", "__meta__", "__format__", "__code_checksum__"
+            "__language__",
+            "__output__",
+            "__env__",
+            "__compilers__",
+            "__languages__",
+            "__as__",
+            "__meta__",
+            "__format__",
+            "__code_checksum__",
         ):
             continue
         celltype, _, _ = transformation[pinname]
@@ -254,14 +303,12 @@ async def build_transformation_namespace(transformation, semantic_cache, codenam
             continue
         if schema is None:
             schema = {}
-        v = Silk(
-            data=namespace[pinname_as],
-            schema=schema
-        )
+        v = Silk(data=namespace[pinname_as], schema=schema)
         namespace["PINS"][pinname_as] = v
         namespace[pinname_as] = v
     namespace["FILESYSTEM"] = FILESYSTEM
     return code, namespace, modules_to_build, deep_structures_to_unpack
+
 
 def build_transformation_namespace_sync(transformation, semantic_cache, codename):
     namespace = {
@@ -272,18 +319,31 @@ def build_transformation_namespace_sync(transformation, semantic_cache, codename
     deep_structures_to_unpack = {}
     inputs = []
     namespace["PINS"] = {}
-    output_hash_pattern = transformation["__output__"][3] if len(transformation["__output__"]) == 4 else None
+    output_hash_pattern = (
+        transformation["__output__"][3]
+        if len(transformation["__output__"]) == 4
+        else None
+    )
     namespace["OUTPUTPIN"] = transformation["__output__"][1], output_hash_pattern
     modules_to_build = {}
     as_ = transformation.get("__as__", {})
     FILESYSTEM = {}
     for pinname in sorted(transformation.keys()):
-        if pinname in ("__compilers__", "__languages__", "__env__", "__as__", "__meta__", "__format__"):
+        if pinname in (
+            "__compilers__",
+            "__languages__",
+            "__env__",
+            "__as__",
+            "__meta__",
+            "__format__",
+        ):
             continue
         if pinname in ("__language__", "__output__", "__code_checksum__"):
             continue
         celltype, subcelltype, sem_checksum0 = transformation[pinname]
-        sem_checksum = bytes.fromhex(sem_checksum0) if sem_checksum0 is not None else None
+        sem_checksum = (
+            bytes.fromhex(sem_checksum0) if sem_checksum0 is not None else None
+        )
         if syntactic_is_semantic(celltype, subcelltype):
             checksum = sem_checksum
         else:
@@ -303,10 +363,10 @@ def build_transformation_namespace_sync(transformation, semantic_cache, codename
                 optional = fs["optional"]
                 mode = fs["mode"]
                 if mode == "file":
-                    fs_result = None # TODO
+                    fs_result = None  # TODO
                     ### fs_result = buffer_remote.get_filename(checksum)
-                else: # mode == "directory"
-                    fs_result = None # TODO
+                else:  # mode == "directory"
+                    fs_result = None  # TODO
                     ### fs_result = buffer_remote.get_directory(checksum)
                 fs_entry = deepcopy(fs)
                 if fs_result is None:
@@ -353,8 +413,15 @@ def build_transformation_namespace_sync(transformation, semantic_cache, codename
             inputs.append(pinname_as)
     for pinname in transformation:
         if pinname in (
-            "__language__", "__output__", "__env__", "__compilers__",
-            "__languages__", "__as__", "__meta__", "__format__", "__code_checksum__"
+            "__language__",
+            "__output__",
+            "__env__",
+            "__compilers__",
+            "__languages__",
+            "__as__",
+            "__meta__",
+            "__format__",
+            "__code_checksum__",
         ):
             continue
         celltype, _, _ = transformation[pinname]
@@ -372,14 +439,12 @@ def build_transformation_namespace_sync(transformation, semantic_cache, codename
             continue
         if schema is None:
             schema = {}
-        v = Silk(
-            data=namespace[pinname_as],
-            schema=schema
-        )
+        v = Silk(data=namespace[pinname_as], schema=schema)
         namespace["PINS"][pinname_as] = v
         namespace[pinname_as] = v
     namespace["FILESYSTEM"] = FILESYSTEM
     return code, namespace, modules_to_build, deep_structures_to_unpack
+
 
 ###############################################################################
 # Remote jobs
@@ -387,10 +452,13 @@ def build_transformation_namespace_sync(transformation, semantic_cache, codename
 
 REMOTE_TIMEOUT = 5.0
 
+
 class RemoteJobError(SeamlessTransformationError):
     pass
 
+
 ###############################################################################
+
 
 class TransformationJob:
     _job_id_counter = 0
@@ -402,12 +470,18 @@ class TransformationJob:
     remote_result = None
     start = None
     execution_metadata = None
-    def __init__(self,
-        checksum, codename,
+
+    def __init__(
+        self,
+        checksum,
+        codename,
         transformation,
-        semantic_cache, *, debug, fingertip,
+        semantic_cache,
+        *,
+        debug,
+        fingertip,
         scratch=False,
-        cannot_be_local=False
+        cannot_be_local=False,
     ):
         """
         Note: fingertip applies to the *result* checksum,
@@ -416,10 +490,19 @@ class TransformationJob:
         self.checksum = checksum
         assert codename is not None
         self.codename = codename
-        assert transformation.get("__language__") in ("python", "bash"), transformation.get("__language__")
+        assert transformation.get("__language__") in (
+            "python",
+            "bash",
+        ), transformation.get("__language__")
         assert "code" in transformation, transformation.keys()
         for pinname in transformation:
-            if pinname in ("__compilers__", "__languages__", "__as__", "__meta__", "__format__"):
+            if pinname in (
+                "__compilers__",
+                "__languages__",
+                "__as__",
+                "__meta__",
+                "__format__",
+            ):
                 continue
             if pinname != "__output__":
                 assert transformation[pinname][2] is not None, pinname
@@ -446,16 +529,14 @@ class TransformationJob:
             coro = client.status(self.checksum, meta)
             coros.append(coro)
         futures = [asyncio.ensure_future(coro) for coro in coros]
-        rev = {fut:n for n,fut in enumerate(futures)}
+        rev = {fut: n for n, fut in enumerate(futures)}
 
         best_client = None
         best_status = None
         self.remote_result = None
         while 1:
             done, pending = await asyncio.wait(
-                futures,
-                timeout=REMOTE_TIMEOUT,
-                return_when=asyncio.FIRST_COMPLETED
+                futures, timeout=REMOTE_TIMEOUT, return_when=asyncio.FIRST_COMPLETED
             )
             for fut in done:
                 if fut.exception() is not None:
@@ -463,7 +544,9 @@ class TransformationJob:
                         fut.result()
                     except Exception:
                         exc = traceback.format_exc()
-                        print_debug("Transformation {}: {}".format(self.checksum.hex(), exc))
+                        print_debug(
+                            "Transformation {}: {}".format(self.checksum.hex(), exc)
+                        )
                     continue
                 try:
                     result = "<unknown>"
@@ -495,7 +578,7 @@ class TransformationJob:
                         fut.cancel()
                     return
             if not len(pending) or not len(done):
-                #print("BEST STATUS", best_status)
+                # print("BEST STATUS", best_status)
                 if best_status is None:
                     return
                 self.remote = True
@@ -522,17 +605,13 @@ class TransformationJob:
                 self.remote_status = best_status
                 self.remote_clients = best_clients
                 break
-        #print("PROBE DONE", self.remote_status)
-
+        # print("PROBE DONE", self.remote_status)
 
     def execute(self, prelim_callback, progress_callback):
         coro = self._execute(prelim_callback, progress_callback)
         self.future = asyncio.ensure_future(coro)
         self.future.add_done_callback(
-            functools.partial(
-                transformation_cache.job_done,
-                self
-            )
+            functools.partial(transformation_cache.job_done, self)
         )
 
     async def _execute(self, prelim_callback, progress_callback):
@@ -541,35 +620,29 @@ class TransformationJob:
         meta = self.transformation.get("__meta__")
         meta = deepcopy(meta)
         from seamless.config import get_delegation_level
+
         if get_delegation_level() == 4:
-            self.remote = True # previous: call self._probe_remote ...
+            self.remote = True  # previous: call self._probe_remote ...
         if self.remote:
             try:
-                result = await self._execute_remote(
-                    prelim_callback, progress_callback
-                )
+                result = await self._execute_remote(prelim_callback, progress_callback)
                 logs = None
             finally:
                 self.remote_futures = None
-        
+
         if not self.remote:  # _execute_remote may set self.remote to False
-            result, logs = await self._execute_local(
-                prelim_callback, progress_callback
-            )
+            result, logs = await self._execute_local(prelim_callback, progress_callback)
         if self.restart:
             self.n_restarted += 1
             if self.n_restarted > 100:
                 raise SeamlessTransformationError("Restarted transformation 100 times")
             self.restart = False
-            result, logs = await self._execute(
-                prelim_callback, progress_callback
-            )
+            result, logs = await self._execute(prelim_callback, progress_callback)
         return result, logs
 
-    async def _execute_remote(self,
-        prelim_callback, progress_callback
-    ):
+    async def _execute_remote(self, prelim_callback, progress_callback):
         from seamless.assistant_client import run_job
+
         tf_dunder = {}
         tf = self.transformation
         for k in ("__compilers__", "__languages__", "__meta__", "__env__"):
@@ -582,14 +655,16 @@ class TransformationJob:
                 return
             tf_dunder["__meta__"] = meta
         try:
-            result = await run_job(self.checksum, tf_dunder, fingertip=self.fingertip, scratch=self.scratch)
+            result = await run_job(
+                self.checksum, tf_dunder, fingertip=self.fingertip, scratch=self.scratch
+            )
         except RuntimeError as exc:
             raise RemoteJobError(str(exc)) from None
         if result is None:
             self.remote = False
             return
         return bytes.fromhex(result)
-        '''
+        """
         # TODO, see TODO document. Probably rip this. 
         meta = self.transformation.get("__meta__")
         meta = deepcopy(meta)
@@ -703,17 +778,17 @@ class TransformationJob:
             raise RemoteJobError(exc_str)
         else:
             raise RemoteJobError()
-        '''
+        """
 
-
-    async def _execute_local(self,
-        prelim_callback, progress_callback
-    ):
+    async def _execute_local(self, prelim_callback, progress_callback):
         from .direct import set_parent_process_queue, set_parent_process_response_queue
         from seamless.workflow.util import is_forked
         from seamless.workflow.metalevel.unbashify import unbashify
+
         if self.cannot_be_local:
-            raise SeamlessTransformationError("Local computation has been disabled for this Seamless instance")
+            raise SeamlessTransformationError(
+                "Local computation has been disabled for this Seamless instance"
+            )
         with_ipython_kernel = False
 
         get_global_info()
@@ -723,12 +798,16 @@ class TransformationJob:
 
         transformation = self.transformation
         if transformation.get("__language__") == "bash":
-            transformation = unbashify(transformation, self.semantic_cache, self.execution_metadata)
- 
+            transformation = unbashify(
+                transformation, self.semantic_cache, self.execution_metadata
+            )
+
         meta = transformation.get("__meta__", {})
         meta = deepcopy(meta)
         if meta.get("local") == False:
-            raise RuntimeError("Local execution has been disabled for this transformation")
+            raise RuntimeError(
+                "Local execution has been disabled for this transformation"
+            )
         job_ncores = meta.get("ncores", 1)
 
         env_checksum0 = transformation.get("__env__")
@@ -744,10 +823,12 @@ class TransformationJob:
                 with_ipython_kernel = True
 
         logs = [None, None, None]
-        lock = await acquire_lock(self.checksum, job_ncores)    
+        lock = await acquire_lock(self.checksum, job_ncores)
 
         io = get_transformation_inputs_output(transformation)
-        inputs, outputname, output_celltype, output_subcelltype, output_hash_pattern = io
+        inputs, outputname, output_celltype, output_subcelltype, output_hash_pattern = (
+            io
+        )
         tf_namespace = await build_transformation_namespace(
             transformation, self.semantic_cache, self.codename
         )
@@ -765,9 +846,11 @@ class TransformationJob:
             module_debug_mounts = debug.get("module_mounts")
 
         full_module_names = build_all_modules(
-            modules_to_build, module_workspace,
-            compilers=compilers, languages=languages,
-            module_debug_mounts=module_debug_mounts
+            modules_to_build,
+            module_workspace,
+            compilers=compilers,
+            languages=languages,
+            module_debug_mounts=module_debug_mounts,
         )
         assert code is not None
 
@@ -778,14 +861,17 @@ class TransformationJob:
                 result_checksum = await Buffer(result_buffer).get_checksum_async()
                 # execute.py will have done a successful serialization for output_celltype
                 buffer_cache.guarantee_buffer_info(
-                    result_checksum, output_celltype,
-                    sync_to_remote=True
+                    result_checksum, output_celltype, sync_to_remote=True
                 )
-                output_celltype2 = "plain" if output_hash_pattern is not None else output_celltype
+                output_celltype2 = (
+                    "plain" if output_hash_pattern is not None else output_celltype
+                )
                 validate_evaluation_subcelltype(
-                    result_checksum, result_buffer,
-                    output_celltype2, output_subcelltype,
-                    self.codename
+                    result_checksum,
+                    result_buffer,
+                    output_celltype2,
+                    output_subcelltype,
+                    self.codename,
                 )
             except Exception:
                 raise SeamlessInvalidValueError(result) from None
@@ -805,12 +891,18 @@ class TransformationJob:
             rqueue = Queue()
 
             args = (
-                self.codename, code,
-                with_ipython_kernel,
-                injector, module_workspace,
                 self.codename,
-                namespace, deep_structures_to_unpack,
-                inputs, outputname, output_celltype, output_hash_pattern,
+                code,
+                with_ipython_kernel,
+                injector,
+                module_workspace,
+                self.codename,
+                namespace,
+                deep_structures_to_unpack,
+                inputs,
+                outputname,
+                output_celltype,
+                output_hash_pattern,
                 self.scratch,
                 queue,
             )
@@ -840,7 +932,7 @@ class TransformationJob:
                 # Looking at the source, daemon = False should have no impact,
                 #  but we must make sure to kill all transformer children
 
-                #if is_forked():
+                # if is_forked():
                 #    from .direct.run import _parent_process_queue, _parent_process_response_queue
                 #    assert _parent_process_queue is not None
                 #    assert _parent_process_response_queue is not None
@@ -849,8 +941,12 @@ class TransformationJob:
                 set_parent_process_queue(queue)
                 set_parent_process_response_queue(rqueue)
 
-                print_info(f"Local execution of transformation job: {self.checksum.hex()}, forked = {is_forked()}")
-                self.executor = Process(target=execute,args=args, kwargs=kwargs, daemon=False)
+                print_info(
+                    f"Local execution of transformation job: {self.checksum.hex()}, forked = {is_forked()}"
+                )
+                self.executor = Process(
+                    target=execute, args=args, kwargs=kwargs, daemon=False
+                )
                 self.executor.start()
             finally:
                 sys.stdout = stdout_orig
@@ -888,10 +984,15 @@ class TransformationJob:
                             except Exception:
                                 pass
                             else:
-                                if isinstance(content, (bytes, str)) and len(content) > 10000:
-                                    skipped = len(content)-5000-4960
+                                if (
+                                    isinstance(content, (bytes, str))
+                                    and len(content) > 10000
+                                ):
+                                    skipped = len(content) - 5000 - 4960
                                     content2 = content[:4960]
-                                    content2 += "\n...(skipped %d characters)...\n" % skipped
+                                    content2 += (
+                                        "\n...(skipped %d characters)...\n" % skipped
+                                    )
                                     content2 += content[-5000:]
                                     content = content2
                                 logs[code] = content
@@ -901,49 +1002,82 @@ class TransformationJob:
                                     release_lock(lock)
                                 lock = None
                             else:
-                                raise Exception("Unknown return message '{}'".format(msg))
+                                raise Exception(
+                                    "Unknown return message '{}'".format(msg)
+                                )
                         elif status == 6:
                             if msg == "acquire lock":
                                 assert lock is None
                                 lock = await acquire_lock(self.checksum, job_ncores)
                             else:
-                                raise Exception("Unknown return message '{}'".format(msg))
+                                raise Exception(
+                                    "Unknown return message '{}'".format(msg)
+                                )
                         elif status == 7:
                             # run_transformation
-                            tf_checksum, tf_dunder, syntactic_cache, fingertip, scratch = msg
+                            (
+                                tf_checksum,
+                                tf_dunder,
+                                syntactic_cache,
+                                fingertip,
+                                scratch,
+                            ) = msg
                             assert not is_forked()
                             for celltype, subcelltype, buf in syntactic_cache:
                                 # TODO: create a transformation_cache method and invoke it, common with other code
                                 syn_checksum = await Buffer(buf).get_checksum_async()
-                                buffer_cache.incref_buffer(syn_checksum, buf, persistent=False)
+                                buffer_cache.incref_buffer(
+                                    syn_checksum, buf, persistent=False
+                                )
                                 sem_checksum = await syntactic_to_semantic(
-                                    syn_checksum, celltype, subcelltype, 
-                                    self.codename + ":@transformer"
+                                    syn_checksum,
+                                    celltype,
+                                    subcelltype,
+                                    self.codename + ":@transformer",
                                 )
                                 key = (syn_checksum, celltype, subcelltype)
-                                transformation_cache.syntactic_to_semantic_checksums[key] = sem_checksum
+                                transformation_cache.syntactic_to_semantic_checksums[
+                                    key
+                                ] = sem_checksum
                                 semkey = (sem_checksum, celltype, subcelltype)
-                                s2s = transformation_cache.semantic_to_syntactic_checksums
+                                s2s = (
+                                    transformation_cache.semantic_to_syntactic_checksums
+                                )
                                 if semkey not in s2s:
                                     s2s[semkey] = []
                                 s2s[semkey].append(syn_checksum)
                                 database.set_sem2syn(semkey, s2s[semkey])
                                 buffer_cache.cache_buffer(syn_checksum, buf)
                                 buffer_cache.decref(syn_checksum)
-                            print_info(f"Nested local transformation job`: {tf_checksum}, forked = {is_forked()}")
-                            fut = asyncio.ensure_future(
-                                run_transformation_async(tf_checksum, tf_dunder=tf_dunder, fingertip=fingertip, scratch=scratch)
+                            print_info(
+                                f"Nested local transformation job`: {tf_checksum}, forked = {is_forked()}"
                             )
+                            fut = asyncio.ensure_future(
+                                run_transformation_async(
+                                    tf_checksum,
+                                    tf_dunder=tf_dunder,
+                                    fingertip=fingertip,
+                                    scratch=scratch,
+                                )
+                            )
+
                             def fut_done(fut):
-                                print_info(f"Finished nested local transformation job: {tf_checksum}")
+                                print_info(
+                                    f"Finished nested local transformation job: {tf_checksum}"
+                                )
                                 try:
                                     checksum = fut.result()
-                                    logs = transformation_cache.transformation_logs.get(bytes.fromhex(tf_checksum))
+                                    logs = transformation_cache.transformation_logs.get(
+                                        bytes.fromhex(tf_checksum)
+                                    )
                                 except Exception:
                                     checksum = None
                                     logs = None
                                 rqueue.put((tf_checksum, checksum, logs))
-                                print_info(f"FINISHED nested local transformation job: {tf_checksum}")
+                                print_info(
+                                    f"FINISHED nested local transformation job: {tf_checksum}"
+                                )
+
                             fut.add_done_callback(fut_done)
                             run_transformation_futures.append(fut)
                         elif status == 8:
@@ -952,7 +1086,11 @@ class TransformationJob:
                             buffer_cache.cache_buffer(sub_checksum, sub_buffer)
                         else:
                             raise Exception("Unknown return status {}".format(status))
-                    elif isinstance(status, tuple) and len(status) == 2 and status[1] == "checksum":
+                    elif (
+                        isinstance(status, tuple)
+                        and len(status) == 2
+                        and status[1] == "checksum"
+                    ):
                         status = status[0]
                         if status == 0:
                             result_checksum = bytes.fromhex(msg)
@@ -962,16 +1100,21 @@ class TransformationJob:
                             prelim_checksum = bytes.fromhex(msg)
                             prelim_callback(self, prelim_checksum)
                         else:
-                            raise Exception("Unknown return status ({}, 'checksum')".format(status))
+                            raise Exception(
+                                "Unknown return status ({}, 'checksum')".format(status)
+                            )
                     else:
                         raise Exception("Unknown return status {}".format(status))
                 if not self.executor.is_alive():
                     if self.executor.exitcode != 0:
                         raise SeamlessTransformationError(
-                          "Transformation exited with code %s\n" % self.executor.exitcode
+                            "Transformation exited with code %s\n"
+                            % self.executor.exitcode
                         )
                     if not done:
-                        raise SeamlessTransformationError("Transformation exited without result")
+                        raise SeamlessTransformationError(
+                            "Transformation exited without result"
+                        )
                 if done:
                     break
                 fut_done = []
@@ -1007,7 +1150,9 @@ class TransformationJob:
                     pass
             if lock is not None:
                 release_lock(lock)
-        print_info(f"Finished local execution of transformation job: {self.checksum.hex()}")
+        print_info(
+            f"Finished local execution of transformation job: {self.checksum.hex()}"
+        )
         result_checksum = Checksum(result_checksum)
         if not result_checksum:
             assert result_buffer is not None
@@ -1023,7 +1168,7 @@ class TransformationJob:
                 except Exception:
                     pass
                 if len(result_str) > 10000:
-                    skipped = len(result_str)-5000-4960
+                    skipped = len(result_str) - 5000 - 4960
                     result_str2 = result_str[:4960]
                     result_str2 += "\n...(skipped %d characters)...\n" % skipped
                     result_str2 += result_str[-5000:]
@@ -1039,19 +1184,25 @@ class TransformationJob:
 * Result
 *************************************************
 {}
-""".format(result_str)
+""".format(
+            result_str
+        )
         if logs[0] is not None:
             logstr += """*************************************************
 * Standard output
 *************************************************
 {}
-""".format(logs[0])
+""".format(
+                logs[0]
+            )
         if logs[1] is not None:
             logstr += """*************************************************
 * Standard error
 *************************************************
 {}
-""".format(logs[1])
+""".format(
+                logs[1]
+            )
 
         if logs[2] is not None:
             execution_time = logs[2]
@@ -1061,7 +1212,9 @@ class TransformationJob:
                 execution_time = str(execution_time)
             logstr += """*************************************************
 Execution time: {} seconds
-""".format(execution_time)
+""".format(
+                execution_time
+            )
 
         logstr += "*************************************************"
         self.execution_metadata["Execution time (seconds)"] = execution_time
@@ -1072,13 +1225,20 @@ from silk import Silk, Scalar
 from .execute import execute
 from .injector import transformer_injector as injector
 from .build_module import build_all_modules
-from seamless.compiler import compilers as default_compilers, languages as default_languages
-from seamless.buffer.get_buffer import get_buffer
-from seamless.buffer.deserialize import deserialize, deserialize_sync
-from seamless.buffer.evaluate import validate_evaluation_subcelltype
+from seamless.compiler import (
+    compilers as default_compilers,
+    languages as default_languages,
+)
+from seamless.checksum.get_buffer import get_buffer
+from seamless.checksum.deserialize import deserialize, deserialize_sync
+from seamless.checksum.evaluate import validate_evaluation_subcelltype
 from seamless import CacheMissError, Checksum
-from seamless.buffer.buffer_cache import buffer_cache
-from .cache.transformation_cache import transformation_cache, syntactic_is_semantic, syntactic_to_semantic
+from seamless.checksum.buffer_cache import buffer_cache
+from .cache.transformation_cache import (
+    transformation_cache,
+    syntactic_is_semantic,
+    syntactic_to_semantic,
+)
 from .status import SeamlessInvalidValueError
 from seamless.util.environment import validate_environment
 from seamless.util.subprocess_ import kill_children
@@ -1092,6 +1252,8 @@ if os.environ.get("DOCKER_IMAGE"):
         execution_metadata0["Docker version"] = os.environ["DOCKER_VERSION"]
 
 _got_global_info = False
+
+
 def get_global_info(global_info=None, force=False):
     global _got_global_info
     if _got_global_info:
@@ -1106,6 +1268,7 @@ def get_global_info(global_info=None, force=False):
     seamless_version = __version__
     try:
         import conda.cli.python_api
+
         conda.cli.python_api.run_command
         conda.cli.python_api.Commands.LIST
     except (ImportError, AttributeError):
@@ -1119,7 +1282,9 @@ def get_global_info(global_info=None, force=False):
         buffer_remote.write_buffer(conda_env_checksum, info)
         database.set_buffer_length(conda_env_checksum, len(info))
         buffer_cache.cache_buffer(bytes.fromhex(conda_env_checksum), info)
-        info = conda.cli.python_api.run_command(conda.cli.python_api.Commands.LIST, ["-f", "seamless-framework"])[0]
+        info = conda.cli.python_api.run_command(
+            conda.cli.python_api.Commands.LIST, ["-f", "seamless-framework"]
+        )[0]
         for l in info.split("\n"):
             l = l.strip()
             if l.startswith("#"):
@@ -1149,7 +1314,9 @@ def get_global_info(global_info=None, force=False):
             if "GPU" in result:
                 continue
             field = "GPU"
-        proc = subprocess.run(cmd, shell=True, check=False, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        proc = subprocess.run(
+            cmd, shell=True, check=False, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+        )
         if proc.returncode or not proc.stdout:
             continue
         result[field] = proc.stdout.decode()
@@ -1157,7 +1324,7 @@ def get_global_info(global_info=None, force=False):
     _got_global_info = True
     return execution_metadata0.copy()
 
-from seamless.buffer import buffer_remote
-from seamless.buffer.database_client import database
-from seamless.direct import run_transformation_async
 
+from seamless.checksum import buffer_remote
+from seamless.checksum.database_client import database
+from seamless.direct import run_transformation_async

@@ -1,21 +1,21 @@
 import seamless
+
 seamless.delegate(False)
 
 from seamless.workflow.core import context, cell
+
 ctx = context(toplevel=True)
 ctx.bytes1 = cell("bytes")
-ctx.bytes1.set(b'this is a bytes value')
+ctx.bytes1.set(b"this is a bytes value")
 ctx.compute()
 print(ctx.bytes1.buffer)
 print(ctx.bytes1.value, type(ctx.bytes1.value))
 print()
 
-from seamless.buffer.convert import try_convert
+from seamless.checksum.convert import try_convert
+
 binary_cs = try_convert(
-    ctx.bytes1.checksum,
-    "bytes",
-    "binary",
-    buffer=ctx.bytes1.buffer
+    ctx.bytes1.checksum, "bytes", "binary", buffer=ctx.bytes1.buffer
 )
 print(binary_cs)
 print()

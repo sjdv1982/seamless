@@ -10,7 +10,7 @@ import multiprocessing
 
 from seamless import CacheMissError, Checksum
 
-from seamless.buffer.get_buffer import get_buffer as _get_buffer
+from seamless.checksum.get_buffer import get_buffer as _get_buffer
 from ...core.cache.transformation_cache import (
     transformation_cache,
     tf_get_buffer,
@@ -20,7 +20,7 @@ from ...core.cache.transformation_cache import (
 )
 from seamless.workflow.tempref import temprefmanager
 from seamless.direct import run_transformation, run_transformation_async
-from seamless.buffer.buffer_remote import write_buffer
+from seamless.checksum.buffer_remote import write_buffer
 
 _queued_transformations = []
 
@@ -31,23 +31,27 @@ TRANSFORMATION_STACK = []
 import multiprocessing
 from typing import Optional
 
-_parent_process_queue:Optional[multiprocessing.JoinableQueue] = None
-_parent_process_response_queue:Optional[multiprocessing.JoinableQueue] = None
+_parent_process_queue: Optional[multiprocessing.JoinableQueue] = None
+_parent_process_response_queue: Optional[multiprocessing.JoinableQueue] = None
 _has_lock = True
 
 _dummy_manager = None
+
 
 def get_dummy_manager():
     if _dummy_manager is None:
         set_dummy_manager()
     return _dummy_manager
 
+
 def set_dummy_manager():
     global _dummy_manager
     if _dummy_manager is not None:
         return
     from seamless.workflow.core.manager import Manager
+
     _dummy_manager = Manager()
+
 
 def set_parent_process_queue(parent_process_queue):
     global _parent_process_queue
@@ -62,7 +66,7 @@ def set_parent_process_response_queue(parent_process_response_queue):
 def cache_buffer(checksum, buf):
     from ...core.cache.buffer_cache import buffer_cache
     from ...core.cache.buffer_remote import write_buffer as remote_write_buffer
-    
+
     checksum = parse_checksum(checksum, as_bytes=True)
     buffer_cache.cache_buffer(checksum, buf)
     remote_write_buffer(checksum, buf)
@@ -74,27 +78,31 @@ def get_buffer(checksum):
     if result is not None:
         return result
     return fingertip(checksum)
-    
+
+
 def fingertip(checksum, dunder=None):
     checksum = parse_checksum(checksum, as_bytes=True)
     result = _get_buffer(checksum, remote=True)
     if result is not None:
         return result
     set_dummy_manager()
+
     async def fingertip_coro():
         return await _dummy_manager.cachemanager.fingertip(checksum, dunder=dunder)
+
     event_loop = asyncio.get_event_loop()
     if event_loop.is_running():
         with ThreadPoolExecutor() as tp:
             result = tp.submit(lambda: asyncio.run(fingertip_coro())).result()
     else:
-        future = asyncio.ensure_future(_dummy_manager.cachemanager.fingertip(checksum, dunder=dunder))
+        future = asyncio.ensure_future(
+            _dummy_manager.cachemanager.fingertip(checksum, dunder=dunder)
+        )
         event_loop.run_until_complete(future)
         result = future.result()
     if result is None:
         raise CacheMissError(checksum.hex())
     return result
-    
 
 
 def _register_transformation_dict(
@@ -131,6 +139,7 @@ def _register_transformation_dict(
     transformation_cache.transformations[transformation_checksum] = transformation_dict
     return result
 
+
 def register_transformation_dict(transformation_dict, dry_run=False):
     transformation_buffer = tf_get_buffer(transformation_dict)
     transformation = calculate_checksum(transformation_buffer)
@@ -143,6 +152,7 @@ def register_transformation_dict(transformation_dict, dry_run=False):
         increfed = False
     return increfed, transformation
 
+
 def extract_dunder(transformation_dict):
     tf_dunder = {}
     for k in ("__compilers__", "__languages__", "__meta__", "__env__"):
@@ -153,7 +163,10 @@ def extract_dunder(transformation_dict):
 
     return tf_dunder
 
-def run_transformation_dict(transformation_dict, *, fingertip, scratch=False, in_process=False):
+
+def run_transformation_dict(
+    transformation_dict, *, fingertip, scratch=False, in_process=False
+):
     """Runs a transformation that is specified as a dict of checksums,
     such as returned by highlevel.Transformer.get_transformation_dict.
     """
@@ -188,9 +201,9 @@ def run_transformation_dict(transformation_dict, *, fingertip, scratch=False, in
                 syn_checksum = syn_checksums[0]
                 syn_buffer = get_buffer(syn_checksum)
                 assert syn_buffer is not None
-                syntactic_cache.append((celltype, subcelltype, syn_buffer))                
+                syntactic_cache.append((celltype, subcelltype, syn_buffer))
                 database.set_sem2syn(semkey, syn_checksums)
-                
+
                 if tf_dunder is None:
                     tf_dunder = {}
                 meta = tf_dunder.get("__meta__")
@@ -204,14 +217,16 @@ def run_transformation_dict(transformation_dict, *, fingertip, scratch=False, in
     else:
         syntactic_cache = []
 
-
     if in_process:
-        return run_transformation_dict_in_process(transformation_dict, transformation, tf_dunder, scratch)
+        return run_transformation_dict_in_process(
+            transformation_dict, transformation, tf_dunder, scratch
+        )
     result = None
+
     def result_callback(result2):
         nonlocal result
         result = result2
-    
+
     _queued_transformations.append(
         (
             result_callback,
@@ -221,13 +236,16 @@ def run_transformation_dict(transformation_dict, *, fingertip, scratch=False, in
             syntactic_cache,
             increfed,
             fingertip,
-            scratch
+            scratch,
         )
     )
     _wait()
     return result
 
-async def run_transformation_dict_async(transformation_dict, *, fingertip, scratch=False):
+
+async def run_transformation_dict_async(
+    transformation_dict, *, fingertip, scratch=False
+):
     """Runs a transformation that is specified as a dict of checksums,
     such as returned by highlevel.Transformer.get_transformation_dict"""
     # TODO: add input schema and result schema validation...
@@ -239,12 +257,18 @@ async def run_transformation_dict_async(transformation_dict, *, fingertip, scrat
     transformation_buffer = tf_get_buffer(transformation_dict)
     tf_dunder = extract_dunder(transformation_dict)
     transformation = calculate_checksum(transformation_buffer)
-    result_checksum = await run_transformation_async(transformation, scratch=scratch, fingertip=fingertip, tf_dunder=tf_dunder, cache_only=True)
+    result_checksum = await run_transformation_async(
+        transformation,
+        scratch=scratch,
+        fingertip=fingertip,
+        tf_dunder=tf_dunder,
+        cache_only=True,
+    )
     result_checksum = Checksum(result_checksum)
     if result_checksum:
         ###buffer_cache.decref(result_checksum) #TODO: look into this
         return result_checksum
-    
+
     if "__code_checksum__" in transformation_dict:
         semkey = (transformation_dict["code"][2], "python", "transformer")
         database.set_sem2syn(semkey, [transformation_dict["__code_checksum__"]])
@@ -254,7 +278,9 @@ async def run_transformation_dict_async(transformation_dict, *, fingertip, scrat
         transformation, transformation_buffer, transformation_dict
     )
     try:
-        result_checksum = await run_transformation_async(transformation, scratch=scratch, fingertip=fingertip, tf_dunder=tf_dunder)
+        result_checksum = await run_transformation_async(
+            transformation, scratch=scratch, fingertip=fingertip, tf_dunder=tf_dunder
+        )
     finally:
         # For some reason, the logic here is different than for the sync version (see _wait())
         if (
@@ -266,12 +292,24 @@ async def run_transformation_dict_async(transformation_dict, *, fingertip, scrat
         ):
             transformation_cache.decref_transformation(transformation_dict, increfed)
         temprefmanager.purge_group("imperative")
-    
+
     return result_checksum
 
-def run_transformation_dict_in_process(transformation_dict, tf_checksum, tf_dunder, scratch):
-    from seamless.workflow.core.transformation import execution_metadata0, get_global_info, get_transformation_inputs_output, build_transformation_namespace_sync, build_all_modules
-    from seamless.compiler import compilers as default_compilers, languages as default_languages
+
+def run_transformation_dict_in_process(
+    transformation_dict, tf_checksum, tf_dunder, scratch
+):
+    from seamless.workflow.core.transformation import (
+        execution_metadata0,
+        get_global_info,
+        get_transformation_inputs_output,
+        build_transformation_namespace_sync,
+        build_all_modules,
+    )
+    from seamless.compiler import (
+        compilers as default_compilers,
+        languages as default_languages,
+    )
     from seamless.workflow.core.cache.transformation_cache import transformation_cache
     from seamless.workflow.core.injector import transformer_injector as injector
     from seamless.workflow.core.cached_compile import exec_code
@@ -283,7 +321,7 @@ def run_transformation_dict_in_process(transformation_dict, tf_checksum, tf_dund
     result_checksum = Checksum(result_checksum)
     if result_checksum:
         return result_checksum
-    
+
     get_global_info()
     execution_metadata = deepcopy(execution_metadata0)
     if "Executor" not in execution_metadata:
@@ -300,7 +338,6 @@ def run_transformation_dict_in_process(transformation_dict, tf_checksum, tf_dund
     if env_checksum0 is not None:
         raise NotImplementedError
 
-
     semantic_cache = transformation_cache.build_semantic_cache(transformation)
 
     io = get_transformation_inputs_output(transformation)
@@ -309,7 +346,7 @@ def run_transformation_dict_in_process(transformation_dict, tf_checksum, tf_dund
         transformation, semantic_cache, "transformer-in-process"
     )
     code, namespace, modules_to_build, deep_structures_to_unpack = tf_namespace
-    
+
     if deep_structures_to_unpack:
         raise NotImplementedError
 
@@ -321,9 +358,11 @@ def run_transformation_dict_in_process(transformation_dict, tf_checksum, tf_dund
     languages = transformation.get("__languages__", default_languages)
 
     build_all_modules(
-        modules_to_build, module_workspace,
-        compilers=compilers, languages=languages,
-        module_debug_mounts=None
+        modules_to_build,
+        module_workspace,
+        compilers=compilers,
+        languages=languages,
+        module_debug_mounts=None,
     )
     assert code is not None
 
@@ -331,8 +370,12 @@ def run_transformation_dict_in_process(transformation_dict, tf_checksum, tf_dund
     namespace.pop(output_name, None)
     with injector.active_workspace(module_workspace, namespace):
         exec_code(
-            code, "transformer-in-process", namespace, inputs, output_name, 
-            with_ipython_kernel=False
+            code,
+            "transformer-in-process",
+            namespace,
+            inputs,
+            output_name,
+            with_ipython_kernel=False,
         )
         try:
             result = namespace[output_name]
@@ -348,14 +391,18 @@ def run_transformation_dict_in_process(transformation_dict, tf_checksum, tf_dund
 
     database.set_transformation_result(tf_checksum, result_checksum)
     if not scratch:
-        buffer_cache.guarantee_buffer_info(result_checksum, output_celltype, sync_to_remote=True)
+        buffer_cache.guarantee_buffer_info(
+            result_checksum, output_celltype, sync_to_remote=True
+        )
         buffer_cache.cache_buffer(result_checksum, result_buffer)
         buffer_remote.write_buffer(result_checksum, result_buffer)
 
     return result_checksum
 
+
 def prepare_code(semantic_code_checksum, codebuf, code_checksum):
     from seamless import Checksum
+
     if codebuf is not None:
         assert isinstance(codebuf, bytes)
     semantic_code_checksum = Checksum(semantic_code_checksum).bytes()
@@ -379,6 +426,7 @@ def prepare_code(semantic_code_checksum, codebuf, code_checksum):
     value = Checksum(semantic_code_checksum)
     return value
 
+
 def prepare_transformation_pin_value(value, celltype):
     from seamless import Checksum, Transformation
     from ...core.cache.buffer_remote import write_buffer as remote_write_buffer
@@ -388,7 +436,9 @@ def prepare_transformation_pin_value(value, celltype):
     elif value is None:
         value = Checksum(value)
     elif isinstance(value, Transformation):
-        assert value.status == "Status: OK", value.status  # must have been checked before
+        assert (
+            value.status == "Status: OK"
+        ), value.status  # must have been checked before
         checksum = value.checksum
         checksum = Checksum(checksum)
         assert checksum  # can't be true if status is OK
@@ -404,19 +454,26 @@ def prepare_transformation_pin_value(value, celltype):
         value = Checksum(checksum)
     return value
 
+
 def prepare_transformation_dict(transformation_dict):
     """Prepares transformation dict for submission.
-    
-Takes an "unprepared" transformation dict where some checksums have been replaced by
-(uncached) buffers or values, and replaces them back with proper (semantic) checksums.
-Checksum instances replaced with their hex values.
-Replaced buffers or values are properly registered and cached 
-(including their syntactic <=> semantic conversion).
-"""
+
+    Takes an "unprepared" transformation dict where some checksums have been replaced by
+    (uncached) buffers or values, and replaces them back with proper (semantic) checksums.
+    Checksum instances replaced with their hex values.
+    Replaced buffers or values are properly registered and cached
+    (including their syntactic <=> semantic conversion).
+    """
 
     from seamless import Checksum
-    
-    non_checksum_items = ("__output__", "__language__", "__meta__", "__env__", "__format__")
+
+    non_checksum_items = (
+        "__output__",
+        "__language__",
+        "__meta__",
+        "__env__",
+        "__format__",
+    )
 
     argnames = list(transformation_dict.keys())
     for argname in argnames:
@@ -451,14 +508,8 @@ Replaced buffers or values are properly registered and cached
         transformation_dict[argname] = arg
 
 
-
 def direct_transformer_to_transformation_dict(
-    codebuf,
-    meta,
-    celltypes,
-    modules,
-    arguments,
-    env
+    codebuf, meta, celltypes, modules, arguments, env
 ):
     from seamless import Base, Cell, Module, Transformation, Checksum
     from seamless.DeepCell import DeepCellBase
@@ -473,7 +524,7 @@ def direct_transformer_to_transformation_dict(
         result_hash_pattern = {"*": "##"}
     elif result_celltype == "structured":
         result_celltype = "mixed"
-    
+
     outputpin = ("result", result_celltype, None)
     if result_hash_pattern is not None:
         outputpin += (result_hash_pattern,)
@@ -488,22 +539,19 @@ def direct_transformer_to_transformation_dict(
         checksum = calculate_checksum(envbuf)
         cache_buffer(checksum, envbuf)
         transformation_dict["__env__"] = checksum.hex()
-    
+
     if meta:
         transformation_dict["__meta__"] = meta.copy()
-    
+
     tf_pins = {}
 
     arguments2 = arguments.copy()
     for pinname, module_code in modules.items():
         arguments2[pinname] = module_code
-        pin = {
-            "celltype": "plain",
-            "subcelltype": "module"
-        }
+        pin = {"celltype": "plain", "subcelltype": "module"}
         tf_pins[pinname] = pin
 
-    for pinname,celltype in celltypes.items():
+    for pinname, celltype in celltypes.items():
         if celltype is None or celltype == "default":
             if pinname.endswith("_SCHEMA"):
                 celltype = "plain"
@@ -516,12 +564,9 @@ def direct_transformer_to_transformation_dict(
 
         if celltype in ("cson", "yaml", "python"):
             raise NotImplementedError(pinname)
-                
+
         if celltype == "module":
-            pin = {
-                "celltype": "plain",
-                "subcelltype": "module"
-            }
+            pin = {"celltype": "plain", "subcelltype": "module"}
         elif celltype in ("folder", "deepfolder", "deepcell"):
             if celltype == "deepcell":
                 pin = {
@@ -532,19 +577,13 @@ def direct_transformer_to_transformation_dict(
                 pin = {
                     "celltype": "mixed",
                     "hash_pattern": {"*": "##"},
-                    "filesystem": {
-                        "mode": "directory",
-                        "optional": False
-                    },
+                    "filesystem": {"mode": "directory", "optional": False},
                 }
             elif celltype == "folder":
                 pin = {
                     "celltype": "mixed",
                     "hash_pattern": {"*": "##"},
-                    "filesystem": {
-                        "mode": "directory",
-                        "optional": True
-                    },
+                    "filesystem": {"mode": "directory", "optional": True},
                 }
         else:
             pin = {"celltype": celltype}
@@ -565,7 +604,9 @@ def direct_transformer_to_transformation_dict(
             checksum = value.checksum
             checksum = Checksum(checksum)
             if not checksum:
-                raise ValueError(f"Argument {pinname} (Cell {value}) has no checksum available")
+                raise ValueError(
+                    f"Argument {pinname} (Cell {value}) has no checksum available"
+                )
             v = checksum
         elif isinstance(value, Transformation):
             v = value
@@ -576,7 +617,7 @@ def direct_transformer_to_transformation_dict(
         hash_pattern = pin.get("hash_pattern")
         filesystem = pin.get("filesystem")
         if filesystem is not None or hash_pattern is not None:
-            FORMAT[pinname] = {}          
+            FORMAT[pinname] = {}
         if filesystem is not None:
             FORMAT[pinname]["filesystem"] = deepcopy(filesystem)
         if hash_pattern is not None:
@@ -588,17 +629,20 @@ def direct_transformer_to_transformation_dict(
         transformation_dict["__format__"] = FORMAT
     return transformation_dict
 
+
 def _get_semantic(code, code_checksum):
     from ...util import ast_dump
     from ...core.cache.database_client import database
-    
+
     code_checksum = parse_checksum(code_checksum, as_bytes=True)
     synkey = (code_checksum, "python", "transformer")
-    semantic_code_checksum = transformation_cache.syntactic_to_semantic_checksums.get(synkey)
+    semantic_code_checksum = transformation_cache.syntactic_to_semantic_checksums.get(
+        synkey
+    )
     semantic_code_checksum = Checksum(semantic_code_checksum)
     if semantic_code_checksum:
         return semantic_code_checksum
-    
+
     if code is None:
         code = get_buffer(code_checksum)
     if code is None:
@@ -607,7 +651,9 @@ def _get_semantic(code, code_checksum):
     semcode = ast_dump(tree).encode()
     semantic_code_checksum = calculate_checksum(semcode, hex=False)
     _sem_code_cache[semantic_code_checksum] = semcode
-    transformation_cache.syntactic_to_semantic_checksums[synkey] = semantic_code_checksum
+    transformation_cache.syntactic_to_semantic_checksums[synkey] = (
+        semantic_code_checksum
+    )
     key = (semantic_code_checksum, "python", "transformer")
     cache = transformation_cache.semantic_to_syntactic_checksums
     if key not in cache:
@@ -618,8 +664,10 @@ def _get_semantic(code, code_checksum):
 
     return semantic_code_checksum
 
+
 def _get_node_transformation_dependencies(node):
     from seamless import Transformation
+
     deps = {}
     temp = node.get("TEMP", {}).get("input_auth", {})
     for pinname, value in temp.items():
@@ -627,6 +675,7 @@ def _get_node_transformation_dependencies(node):
         if isinstance(value, Transformation):
             deps[pinname] = value
     return deps
+
 
 def _node_to_transformation_dict(node):
     # builds transformation dict from highlevel.Transformer node
@@ -645,7 +694,7 @@ def _node_to_transformation_dict(node):
     result_name = node["RESULT"]
     if node["language"] != "python":
         assert result_name == "result"
-    assert result_name not in node["pins"] #should have been checked by highlevel
+    assert result_name not in node["pins"]  # should have been checked by highlevel
     result_celltype = node.get("result_celltype", "structured")
     result_hash_pattern = None
     if result_celltype == "deepcell":
@@ -656,7 +705,7 @@ def _node_to_transformation_dict(node):
         result_hash_pattern = {"*": "##"}
     elif result_celltype == "structured":
         result_celltype = "mixed"
-    
+
     outputpin = (result_name, result_celltype, None)
     if result_hash_pattern is not None:
         outputpin += (result_hash_pattern,)
@@ -671,14 +720,14 @@ def _node_to_transformation_dict(node):
         checksum = calculate_checksum(envbuf)
         cache_buffer(checksum, envbuf)
         transformation_dict["__env__"] = checksum.hex()
-    
+
     meta = node.get("meta")
     if meta:
         transformation_dict["__meta__"] = meta
     node_pins = deepcopy(node["pins"])
-    
+
     tf_pins = {}
-    for pinname,pin in list(node_pins.items()):
+    for pinname, pin in list(node_pins.items()):
         celltype = pin.get("celltype")
         if celltype is None or celltype == "default":
             if pinname.endswith("_SCHEMA"):
@@ -692,13 +741,10 @@ def _node_to_transformation_dict(node):
 
         if celltype in ("cson", "yaml", "python"):
             raise NotImplementedError(pinname)
-        
-        pin.pop("subcelltype", None) # just to make sure...
+
+        pin.pop("subcelltype", None)  # just to make sure...
         if celltype == "module":
-            pin = {
-                "celltype": "plain",
-                "subcelltype": "module"
-            }
+            pin = {"celltype": "plain", "subcelltype": "module"}
         elif celltype in ("folder", "deepfolder", "deepcell"):
             if celltype == "deepcell":
                 pin = {
@@ -709,25 +755,18 @@ def _node_to_transformation_dict(node):
                 pin = {
                     "celltype": "mixed",
                     "hash_pattern": {"*": "##"},
-                    "filesystem": {
-                        "mode": "directory",
-                        "optional": False
-                    },
+                    "filesystem": {"mode": "directory", "optional": False},
                 }
             elif celltype == "folder":
                 pin = {
                     "celltype": "mixed",
                     "hash_pattern": {"*": "##"},
-                    "filesystem": {
-                        "mode": "directory",
-                        "optional": True
-                    },
+                    "filesystem": {"mode": "directory", "optional": True},
                 }
         else:
             pin["celltype"] = celltype
         tf_pins[pinname] = pin
     tf_pins["code"] = {"celltype": "python", "subcelltype": "transformer"}
-
 
     temp = node.get("TEMP", {}).get("input_auth", {}).copy()
     if "code" in node.get("TEMP", {}):
@@ -744,7 +783,9 @@ def _node_to_transformation_dict(node):
                 checksum = value.checksum
                 checksum = Checksum(checksum)
                 if not checksum:
-                    raise ValueError(f"Argument {pinname} (Cell {value}) has no checksum available")
+                    raise ValueError(
+                        f"Argument {pinname} (Cell {value}) has no checksum available"
+                    )
                 v = checksum
             elif isinstance(value, Transformation):
                 v = value
@@ -757,10 +798,9 @@ def _node_to_transformation_dict(node):
     return transformation_dict
 
 
-
-
 def _wait():
     from seamless.util import is_forked
+
     global _queued_transformations
     global _has_lock
     if not _queued_transformations:
@@ -783,13 +823,22 @@ def _wait():
             syntactic_cache,
             increfed,
             fingertip,
-            scratch
+            scratch,
         ) in queued_transformations:
             if is_forked():
-                #print(f"Delegate to parent: {transformation}, fingertip = {fingertip}, stack = {TRANSFORMATION_STACK}")
+                # print(f"Delegate to parent: {transformation}, fingertip = {fingertip}, stack = {TRANSFORMATION_STACK}")
                 assert transformation not in TRANSFORMATION_STACK
                 _parent_process_queue.put(
-                    (7, (transformation, tf_dunder, syntactic_cache, fingertip, scratch))
+                    (
+                        7,
+                        (
+                            transformation,
+                            tf_dunder,
+                            syntactic_cache,
+                            fingertip,
+                            scratch,
+                        ),
+                    )
                 )
         for (
             result_callback,
@@ -799,27 +848,39 @@ def _wait():
             syntactic_cache,
             increfed,
             fingertip,
-            scratch
+            scratch,
         ) in queued_transformations:
             try:
                 tf_checksum = bytes.fromhex(transformation)
                 if is_forked():
                     while 1:
                         ###tf_checksum2, result_checksum, logs = _parent_process_response_queue.get(timeout=15) ###
-                        tf_checksum2, result_checksum, logs = _parent_process_response_queue.get()
+                        tf_checksum2, result_checksum, logs = (
+                            _parent_process_response_queue.get()
+                        )
                         if tf_checksum2 != tf_checksum.hex():
-                            _parent_process_response_queue.put((tf_checksum2, result_checksum, logs))
+                            _parent_process_response_queue.put(
+                                (tf_checksum2, result_checksum, logs)
+                            )
                             time.sleep(0.1)
                             continue
                         _parent_process_response_queue.task_done()
                         break
                     result_checksum = Checksum(result_checksum)
                     if result_checksum:
-                        transformation_cache.register_known_transformation(tf_checksum, result_checksum)
+                        transformation_cache.register_known_transformation(
+                            tf_checksum, result_checksum
+                        )
                     transformation_cache.transformation_logs[tf_checksum] = logs
                 else:
                     running_event_loop = asyncio.get_event_loop().is_running()
-                    result_checksum = run_transformation(transformation, fingertip=fingertip, new_event_loop=running_event_loop, scratch=scratch, tf_dunder=tf_dunder)
+                    result_checksum = run_transformation(
+                        transformation,
+                        fingertip=fingertip,
+                        new_event_loop=running_event_loop,
+                        scratch=scratch,
+                        tf_dunder=tf_dunder,
+                    )
                     result_checksum = Checksum(result_checksum)
 
             finally:
@@ -864,4 +925,3 @@ def cleanup():
             and bytes.fromhex(transformation) in transformation_cache.transformations
         ):
             transformation_cache.decref_transformation(transformation_dict, increfed)
-

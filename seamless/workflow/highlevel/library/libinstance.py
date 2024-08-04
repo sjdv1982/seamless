@@ -4,13 +4,21 @@ import functools
 from copy import deepcopy
 
 highlevel_names = (
-    "Context", "Cell", 
-    "SimpleDeepCell", "DeepCell", "DeepFolderCell", "FolderCell",
-    "Transformer", "Macro", "Module"
+    "Context",
+    "Cell",
+    "SimpleDeepCell",
+    "DeepCell",
+    "DeepFolderCell",
+    "FolderCell",
+    "Transformer",
+    "Macro",
+    "Module",
 )
+
 
 def interpret_arguments(arguments, params, parent, extra_nodes):
     from .argument import Cell_like
+
     arguments = arguments.copy()
     result = {}
     for argname in params:
@@ -25,7 +33,7 @@ def interpret_arguments(arguments, params, parent, extra_nodes):
                 if not (par.get("must_be_defined") == False):
                     if "default" not in par:
                         raise ValueError("%s must be defined" % argname)
-                else:                
+                else:
                     continue
         elif par["type"] == "cell":
             path = argvalue
@@ -40,7 +48,7 @@ def interpret_arguments(arguments, params, parent, extra_nodes):
                         raise TypeError(msg % (argname, type(value)))
                     value = value._get_hcell(), path
                 if value is None and extra_nodes is not None:
-                    value_node = extra_nodes.get(path) 
+                    value_node = extra_nodes.get(path)
                     if value_node is not None:
                         value = value_node, path
             if value is None:
@@ -48,7 +56,7 @@ def interpret_arguments(arguments, params, parent, extra_nodes):
                     raise Exception("Non-existing cell '%s'", path)
                 if not (par.get("must_be_defined") == False):
                     raise ValueError("%s must be defined" % argname)
-            
+
         elif par["type"] == "context":
             if argvalue is None:
                 if not (par.get("must_be_defined") == False):
@@ -71,7 +79,7 @@ def interpret_arguments(arguments, params, parent, extra_nodes):
                 value = None
             else:
                 value = {}
-                for k,v in argvalue.items():
+                for k, v in argvalue.items():
                     if isinstance(v, list):
                         v = tuple(v)
                     vv = None
@@ -83,7 +91,7 @@ def interpret_arguments(arguments, params, parent, extra_nodes):
                                 raise TypeError(msg % (argname, k, type(vv)))
                             vv = vv._get_hcell(), v
                         if vv is None and extra_nodes is not None:
-                            vv_node = extra_nodes.get(v) 
+                            vv_node = extra_nodes.get(v)
                             if vv_node is not None:
                                 vv = vv_node, v
                     if vv is None:
@@ -97,7 +105,7 @@ def interpret_arguments(arguments, params, parent, extra_nodes):
                 value = None
             else:
                 value = {}
-                for k,v0 in argvalue.items():
+                for k, v0 in argvalue.items():
                     vtype, v = v0
                     if vtype == "cell":
                         if isinstance(v, list):
@@ -108,7 +116,7 @@ def interpret_arguments(arguments, params, parent, extra_nodes):
                             raise TypeError(msg % (argname, k, type(vv)))
                         vv = vv._get_hcell(), v
                         value[k] = "cell", vv
-                    else: # value
+                    else:  # value
                         value[k] = "value", v
 
         else:
@@ -117,11 +125,17 @@ def interpret_arguments(arguments, params, parent, extra_nodes):
         result[argname] = value
     return result
 
+
 class LibInstance:
-    
-    def __init__(self, 
-        parent, *, path=None, libpath=None, 
-        arguments=None, extra_nodes={},
+
+    def __init__(
+        self,
+        parent,
+        *,
+        path=None,
+        libpath=None,
+        arguments=None,
+        extra_nodes={},
     ):
         self._parent = weakref.ref(parent)
         self._path = path
@@ -132,7 +146,9 @@ class LibInstance:
         self._bound = None
 
     def _bind(self, ctx, path):
-        assert ctx is self._parent() or ctx._libroot is self._parent() # must have same top-level Context as the library
+        assert (
+            ctx is self._parent() or ctx._libroot is self._parent()
+        )  # must have same top-level Context as the library
         if self._path is not None:
             assert self._bound is None
             assert path == self._path, (path, self._path)
@@ -161,7 +177,6 @@ class LibInstance:
             except KeyError:
                 raise KeyError(self._path) from None
 
-
     def _exc(self, limit, libctx):
         self._get_node()["exception"] = traceback.format_exc(limit=limit)
         if libctx is not None:
@@ -184,7 +199,7 @@ class LibInstance:
         params = lib["params"]
 
         # gives trouble with wait for auth tasks...
-        #overlay_context = Context(manager=parent._manager)
+        # overlay_context = Context(manager=parent._manager)
         overlay_context = Context()
         overlay_context._libroot = parent
         overlay_context._untranslatable = True
@@ -194,8 +209,7 @@ class LibInstance:
         overlay_nodes = {}
 
         interpreted_arguments = interpret_arguments(
-            arguments, params, parent,
-            self._extra_nodes
+            arguments, params, parent, self._extra_nodes
         )
 
         # Fill namespace, part 1: value arguments
@@ -207,12 +221,10 @@ class LibInstance:
                 continue
             namespace[argname] = value
 
-
         # Fill namespace, part 2: validation
         if constructor_schema is not None:
             instance = LibInstanceSilk(
-                data=deepcopy(namespace), 
-                schema=constructor_schema
+                data=deepcopy(namespace), schema=constructor_schema
             )
             try:
                 instance.validate()
@@ -222,7 +234,6 @@ class LibInstance:
             except Exception:
                 self._exc(None, None)
                 return
-
 
         # Fill namespace, part 3: ctx and other arguments
         namespace["ctx"] = overlay_context
@@ -240,7 +251,7 @@ class LibInstance:
                     value = InputCellWrapper(connection_wrapper, node, cellpath)
                 elif par["io"] == "edit":
                     value = EditCellWrapper(connection_wrapper, node, cellpath)
-                else: # par["io"] == "output"
+                else:  # par["io"] == "output"
                     overlay_node = deepcopy(node)
                     overlay_nodes[cellpath] = overlay_node
                     value = OutputCellWrapper(
@@ -248,12 +259,12 @@ class LibInstance:
                     )
             elif par["type"] == "celldict":
                 value = {}
-                for k,vv in argvalue.items():
+                for k, vv in argvalue.items():
                     if par["io"] == "input":
                         vv = InputCellWrapper(connection_wrapper, vv[0], vv[1])
                     elif par["io"] == "edit":
                         vv = EditCellWrapper(connection_wrapper, vv[0], vv[1])
-                    else: # par["io"] == "output"
+                    else:  # par["io"] == "output"
                         node = vv[0]
                         cellpath = vv[1]
                         overlay_node = deepcopy(node)
@@ -264,18 +275,20 @@ class LibInstance:
                     value[k] = vv
             elif par["type"] == "kwargs":
                 value = {}
-                for k,v0 in argvalue.items():
+                for k, v0 in argvalue.items():
                     vtype, v = v0
                     if vtype == "cell":
-                        value[k] = "cell", InputCellWrapper(connection_wrapper, v[0], v[1])
-                    else: # value
+                        value[k] = "cell", InputCellWrapper(
+                            connection_wrapper, v[0], v[1]
+                        )
+                    else:  # value
                         value[k] = "value", v
 
             else:
                 raise NotImplementedError(par["type"])
             namespace[argname] = value
         # gives trouble with wait for auth tasks...
-        #libctx = StaticContext.from_graph(graph, manager=parent._manager)
+        # libctx = StaticContext.from_graph(graph, manager=parent._manager)
         libctx = StaticContext.from_graph(graph)
         namespace["libctx"] = libctx
         argnames = list(namespace.keys())
@@ -349,9 +362,11 @@ class LibInstance:
         par = params[argname]
         if par["io"] == "output":
             return Proxy(
-                parent, self._path + (argname,), "r", 
-                getter=functools.partial(self._output_getter, argname),    
-            )        
+                parent,
+                self._path + (argname,),
+                "r",
+                getter=functools.partial(self._output_getter, argname),
+            )
         argvalue = arguments[argname]
         if par["type"] == "cell":
             if isinstance(argvalue, list):
@@ -375,10 +390,10 @@ class LibInstance:
         value = parent._children.get(argvalue)
         return getattr(value, attr)
 
-    def __dir__(self):        
+    def __dir__(self):
         hnode = self._get_node()
         arguments = hnode["arguments"]
-        result = list(arguments.keys()) 
+        result = list(arguments.keys())
         result += ["ctx", "libpath", "arguments", "help", "status"]
         result += self._get_api_methods()
         return sorted(result)
@@ -411,7 +426,8 @@ class LibInstance:
         NOTE: this is the library at the time of construction.
         subsequent ctx.includes are not taken into account.
         """
-        from .include import IncludedLibrary 
+        from .include import IncludedLibrary
+
         lib_dict = self._get_lib(copy=True)
         return IncludedLibrary(self.ctx, **lib_dict)
 
@@ -432,6 +448,7 @@ class LibInstance:
 
     def __setattr__(self, attr, value):
         from .argument import parse_argument
+
         if attr.startswith("_"):
             super().__setattr__(attr, value)
             return
@@ -448,14 +465,13 @@ class LibInstance:
                     if parname not in arguments:
                         arguments[parname] = {}
                     arguments[parname][attr] = parse_argument(
-                        attr, value, params[parname],
-                        parent=self._parent()
+                        attr, value, params[parname], parent=self._parent()
                     )
                     break
             else:
                 if attr in self._get_api_methods():
                     api = self._build_api(arguments)
-                    return setattr(api, attr, value)  
+                    return setattr(api, attr, value)
                 raise AttributeError(attr)
         else:
             par = params[attr]
@@ -469,7 +485,13 @@ class LibInstance:
     def __doc__(self):
         return self.help.value
 
-from .iowrappers import ConnectionWrapper, InputCellWrapper, OutputCellWrapper, EditCellWrapper
+
+from .iowrappers import (
+    ConnectionWrapper,
+    InputCellWrapper,
+    OutputCellWrapper,
+    EditCellWrapper,
+)
 from ..synth_context import SynthContext
 from ..Cell import Cell, FolderCell, SimpleDeepCell
 from ..DeepCell import DeepCell, DeepFolderCell
@@ -480,10 +502,11 @@ from ...midlevel.StaticContext import StaticContext
 from ..Transformer import Transformer
 from ..Macro import Macro
 from ..Module import Module
-from seamless.buffer.cached_compile import exec_code
+from seamless.checksum.cached_compile import exec_code
 from ..proxy import Proxy
 from silk.Silk import Silk
 from silk.validation import ValidationError
+
 
 class LibInstanceSilk(Silk):
     __slots__ = list(Silk.__slots__) + ["_libinstance"]

@@ -4,10 +4,10 @@ import textwrap
 import inspect, asyncio
 
 from seamless import Checksum, Buffer
-from seamless.buffer.buffer_cache import buffer_cache
-from seamless.buffer.deserialize import deserialize_sync as deserialize
-from seamless.buffer.serialize import serialize_sync as serialize
-from seamless.buffer.get_buffer import get_buffer
+from seamless.checksum.buffer_cache import buffer_cache
+from seamless.checksum.deserialize import deserialize_sync as deserialize
+from seamless.checksum.serialize import serialize_sync as serialize
+from seamless.checksum.get_buffer import get_buffer
 from seamless.workflow.core.protocol.deep_structure import (
     apply_hash_pattern_sync,
     deep_structure_to_checksums,
@@ -178,7 +178,7 @@ def add_zip(manager, zipfile, incref=False):
 
 
 def fill_checksum(manager, node, temp_path, composite=True):
-    from seamless.buffer.cell import celltypes
+    from seamless.checksum.cell import celltypes
 
     checksum = None
     subcelltype = None

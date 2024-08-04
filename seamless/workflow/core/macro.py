@@ -3,27 +3,34 @@ import traceback
 
 from seamless import Checksum
 
-class ExecError(Exception): pass
+
+class ExecError(Exception):
+    pass
+
 
 class DummyContext:
     def __init__(self, path):
         self.path = path
 
+
 from .worker import Worker, InputPin, OutputPin
+
+
 class Macro(Worker):
     injected_modules = None
     allow_elision = False  # Do we honor elision keys?
-                    # NOTE: for nested macros, allow_elision is determined by the top macro
+
+    # NOTE: for nested macros, allow_elision is determined by the top macro
     def __init__(self, macro_params):
         self._gen_context = None
         self._unbound_gen_context = None
         self.code = InputPin(self, "code", "python", "macro")
-        self._pins = {"code":self.code}
+        self._pins = {"code": self.code}
         self._macro_params = OrderedDict()
         self.function_expr_template = "{0}\n{1}(ctx=ctx,"
         self.namespace = {}
-        self.input_dict = {}  #pinname-to-accessor
-        self._paths = {} #Path objects
+        self.input_dict = {}  # pinname-to-accessor
+        self._paths = {}  # Path objects
         self._void = True
         self._in_elision = False
         super().__init__()
@@ -55,6 +62,7 @@ class Macro(Worker):
 
     def _get_status(self):
         from .status import status_macro
+
         status = status_macro(self)
         return status
 
@@ -62,6 +70,7 @@ class Macro(Worker):
     def status(self):
         """The computation status of the macro"""
         from .status import format_worker_status
+
         try:
             status = self._get_status()
             statustxt = format_worker_status(status)
@@ -82,6 +91,7 @@ class Macro(Worker):
     def _execute(self, code, values, module_workspace):
         from .HighLevelContext import HighLevelContext
         from .context import Context
+
         manager = self._get_manager()
         ok = False
         assert self._gen_context is None
@@ -97,20 +107,22 @@ class Macro(Worker):
                 unbound_ctx._ubmanager = ubmanager
                 assert unbound_ctx._get_manager() is not None
                 self._unbound_gen_context = unbound_ctx
-                keep = {k:v for k,v in self.namespace.items() if k.startswith("_")}
+                keep = {k: v for k, v in self.namespace.items() if k.startswith("_")}
                 self.namespace.clear()
                 self.namespace["__name__"] = "macro"
                 self.namespace["__package__"] = "macro"
                 self.namespace.update(keep)
-                self.namespace.update( self.default_namespace.copy())
+                self.namespace.update(self.default_namespace.copy())
                 self.namespace["HighLevelContext"] = HighLevelContext
                 self.namespace["ctx"] = unbound_ctx
                 self.namespace.update(values)
-                inputs = ["ctx"] +  list(values.keys())
+                inputs = ["ctx"] + list(values.keys())
                 str_self = str(self)
                 if len(str_self) > 80:
-                    str_self = str_self[:35] + "..%d.." % (len(str_self)-70) + str_self[-35:]
-                #print("Execute", str_self)
+                    str_self = (
+                        str_self[:35] + "..%d.." % (len(str_self) - 70) + str_self[-35:]
+                    )
+                # print("Execute", str_self)
                 hctx = self._root()._root_highlevel_context()
                 if hctx is not None:
                     hctx._destroy_path(self.path + ("ctx",), runtime=True)
@@ -133,7 +145,7 @@ class Macro(Worker):
                 pmacro = self
                 ctx_path = self.path + ("ctx",)
                 lctx_path = len(ctx_path)
-                paths = [(ctx_path + k,v) for k,v in self._paths.items()]
+                paths = [(ctx_path + k, v) for k, v in self._paths.items()]
 
                 def add_paths(pmacro_path, pmpaths):
                     for path, p in pmpaths.items():
@@ -155,7 +167,7 @@ class Macro(Worker):
                 add_paths((), _global_paths.get(root, {}))
 
                 manager = self._get_manager()
-                ub_cells = {ctx_path + k: v for k,v in ubmanager.cells.items()}
+                ub_cells = {ctx_path + k: v for k, v in ubmanager.cells.items()}
                 for child in ubmanager._registered:
                     if not isinstance(child, UniLink):
                         continue
@@ -192,8 +204,8 @@ class Macro(Worker):
                 except Exception:
                     traceback.print_exc()
             if unbound_ctx is not None:
-                unbound_ctx._context = lambda: DummyContext(self.path) # KLUDGE
-                unbound_ctx.name = "ctx" # KLUDGE
+                unbound_ctx._context = lambda: DummyContext(self.path)  # KLUDGE
+                unbound_ctx.name = "ctx"  # KLUDGE
                 try:
                     unbound_ctx.destroy()
                 except Exception:
@@ -209,7 +221,7 @@ class Macro(Worker):
             manager._set_macro_exception(self, None)
         else:
             self._gen_context = None
-        keep = {k:v for k,v in self.namespace.items() if k.startswith("_")}
+        keep = {k: v for k, v in self.namespace.items() if k.startswith("_")}
         self.namespace.clear()
         self.namespace["__name__"] = "macro"
         self.namespace["__package__"] = "macro"
@@ -241,7 +253,10 @@ class Macro(Worker):
             try:
                 path = Path(current_macro, self.path, manager=self._get_manager())
             except Exception:
-                import traceback; traceback.print_exc(); raise
+                import traceback
+
+                traceback.print_exc()
+                raise
             return path.ctx
         if self._gen_context is None:
             raise AttributeError
@@ -261,6 +276,7 @@ class Path:
                 raise TypeError(path)
         from .unbound_context import UnboundManager
         from .manager import Manager
+
         self = object.__new__(cls)
         self._macro = macro
         self._path = path
@@ -310,6 +326,7 @@ class Path:
 
     def _root(self):
         from .unbound_context import UnboundManager
+
         if self._macro is not None:
             return self._macro._root()
         elif self._realmanager is not None:
@@ -361,8 +378,7 @@ class Path:
     def connect(self, other):
         manager = self._realmanager
         if manager is None:
-            if self._macro is not None and \
-                self._macro._unbound_gen_context is not None:
+            if self._macro is not None and self._macro._unbound_gen_context is not None:
                 manager = self._macro._unbound_gen_context._root()._realmanager
             else:
                 raise AttributeError
@@ -379,21 +395,18 @@ class Path:
         manager = self._get_manager()
         livegraph = manager.livegraph
         for accessor in livegraph.macropath_to_downstream[self]:
-            manager.cancel_accessor(
-                accessor, True,
-                reason=StatusReasonEnum.UNCONNECTED
-            )
+            manager.cancel_accessor(accessor, True, reason=StatusReasonEnum.UNCONNECTED)
         if not oldcell._destroyed:
             self_independence = livegraph.has_independence(self)
             if not self_independence:
                 manager.cancel_cell(
-                    oldcell, void=True,
-                    reason=StatusReasonEnum.UNDEFINED
+                    oldcell, void=True, reason=StatusReasonEnum.UNDEFINED
                 )
 
     def _bind(self, cell, trigger):
         from .manager.tasks.cell_update import CellUpdateTask
         from .manager.tasks.accessor_update import AccessorUpdateTask
+
         if self._destroyed:
             return
         if cell is self._cell:
@@ -409,7 +422,9 @@ class Path:
         if cell is None:
             return
         if cell._structured_cell:
-            raise NotImplementedError("Macro paths for structured cells are not supported")
+            raise NotImplementedError(
+                "Macro paths for structured cells are not supported"
+            )
         cell_independence = cell.has_independence()
         if not cell_independence and not self_independence:
             msg = "Cannot bind %s to %s: both have no independence"
@@ -434,7 +449,9 @@ class Path:
 
             if not self_independence:
                 up_accessor = livegraph.macropath_to_upstream[self]
-                assert up_accessor is not None  # if no up accessor, how could we have no independence?
+                assert (
+                    up_accessor is not None
+                )  # if no up accessor, how could we have no independence?
                 upstream_cell = livegraph.accessor_to_upstream[up_accessor]
                 if not upstream_cell._void:
                     up_accessor._new_macropath = True
@@ -443,12 +460,13 @@ class Path:
                 if Checksum(upstream_cell._checksum):
                     CellUpdateTask(manager, upstream_cell).launch()
         else:
-            if cell_independence and not self_independence:  # bound cell loses independence
+            if (
+                cell_independence and not self_independence
+            ):  # bound cell loses independence
                 manager.cancel_cell(cell, void=False)
 
-
     def __str__(self):
-        ret = "(Seamless path: ." + ".".join([str(n) for n in  self._path])
+        ret = "(Seamless path: ." + ".".join([str(n) for n in self._path])
         if self._macro is not None:
             ret += " from %s)" % str(self._macro)
         else:
@@ -461,6 +479,7 @@ class Path:
 
 def path(obj):
     from .unbound_context import UnboundManager
+
     try:
         manager = obj._get_manager()
         if not isinstance(manager, UnboundManager):
@@ -471,7 +490,9 @@ def path(obj):
         manager = None
     return Path(obj._macro, obj._path, manager=manager)
 
-_global_paths = {} # Paths created in direct mode, or macro mode None
+
+_global_paths = {}  # Paths created in direct mode, or macro mode None
+
 
 def replace_path(v, toplevel):
     if not isinstance(v, Path):
@@ -499,6 +520,7 @@ def replace_path(v, toplevel):
 
 def create_path(cell):
     from .cell import Cell
+
     if isinstance(cell, Path):
         return cell
     if not isinstance(cell, Cell):
@@ -516,8 +538,10 @@ def create_path(cell):
     path._bind(cell, trigger=False)
     return path
 
+
 def macro(params):
     return Macro(params)
+
 
 from .transformer import transformer
 from .reactor import reactor
@@ -525,18 +549,20 @@ from .cell import cell
 from .structured_cell import StructuredCell
 from .context import context
 from .unilink import unilink
-names = ("cell", "transformer", "context", "unilink",
- "reactor")
+
+names = ("cell", "transformer", "context", "unilink", "reactor")
 names += ("StructuredCell",)
 names = names + ("macro", "path")
-Macro.default_namespace = {n:globals()[n] for n in names}
-Macro.default_namespace["HighLevelContext"] = None   # import later to avoid circular imports
-Macro.default_namespace["HighlevelContext"] = None   # future alias for HighLevelContext
+Macro.default_namespace = {n: globals()[n] for n in names}
+Macro.default_namespace["HighLevelContext"] = (
+    None  # import later to avoid circular imports
+)
+Macro.default_namespace["HighlevelContext"] = None  # future alias for HighLevelContext
 
 from .cell import Cell
 from .unilink import UniLink
 from .injector import macro_injector as injector
 from .unbound_context import UnboundContext, UnboundManager
 from .macro_mode import macro_mode_on, curr_macro, get_macro_mode
-from seamless.buffer.cached_compile import exec_code
+from seamless.checksum.cached_compile import exec_code
 from .status import StatusReasonEnum

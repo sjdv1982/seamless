@@ -17,7 +17,7 @@ class ConnectionWrapper:
 
     def connect(self, source, target, source_subpath, target_subpath):
         if isinstance(source, InputCellWrapper):
-            #assert source_subpath is None
+            # assert source_subpath is None
             source_full_path = source.path
         else:
             source_full_path = self.basepath + source._path
@@ -27,7 +27,7 @@ class ConnectionWrapper:
             source_full_path += tuple(source_subpath)
 
         if isinstance(target, OutputCellWrapper):
-            #assert target_subpath is None
+            # assert target_subpath is None
             target.clear()
             target_full_path = target.path
         else:
@@ -48,6 +48,7 @@ class ConnectionWrapper:
             "target": target_full_path,
         }
         self.connections.append(connection)
+
 
 class CellWrapper:
     @property
@@ -103,35 +104,34 @@ class CellWrapper:
         assert celltype in ("structured", "mixed")
         return hcell["hash_pattern"]
 
+
 class InputCellWrapper(CellWrapper):
     def __init__(self, connection_wrapper, node, path):
         self._connection_wrapper = connection_wrapper
         self._node = node
         self._path = path
+
     def connect(self, target, source_path=None, target_path=None):
-        self._connection_wrapper.connect(
-            self,
-            target,
-            source_path,
-            target_path
-        )
+        self._connection_wrapper.connect(self, target, source_path, target_path)
+
     @property
     def path(self):
         return self._path
+
 
 class EditCellWrapper(CellWrapper):
     def __init__(self, connection_wrapper, node, path):
         self._connection_wrapper = connection_wrapper
         self._node = node
         self._path = path
+
     def link(self, target):
-        self._connection_wrapper.link(
-            self,
-            target
-        )
+        self._connection_wrapper.link(self, target)
+
     @property
     def path(self):
         return self._path
+
 
 class OutputCellWrapper(CellWrapper):
     def __init__(self, connection_wrapper, node, path):
@@ -144,12 +144,7 @@ class OutputCellWrapper(CellWrapper):
         return self._path
 
     def connect_from(self, source, source_path=None, target_path=None):
-        self._connection_wrapper.connect(
-            source,
-            self,
-            source_path,
-            target_path
-        )
+        self._connection_wrapper.connect(source, self, source_path, target_path)
 
     def clear(self):
         self._node["checksum"] = None
@@ -168,8 +163,6 @@ class OutputCellWrapper(CellWrapper):
         else:
             hcell.pop("hash_pattern", None)
 
-
-
     @CellWrapper.mimetype.setter
     def mimetype(self, value):
         hcell = self._node
@@ -182,7 +175,6 @@ class OutputCellWrapper(CellWrapper):
             hcell["file_extension"] = ext
         hcell["mimetype"] = value
 
-
     @CellWrapper.datatype.setter
     def datatype(self, value):
         hcell = self._node
@@ -193,11 +185,12 @@ class OutputCellWrapper(CellWrapper):
     @CellWrapper.hash_pattern.setter
     def hash_pattern(self, value):
         from ...core.protocol.deep_structure import validate_hash_pattern
+
         validate_hash_pattern(value)
         hcell = self._node
         celltype = self.celltype
         assert celltype in ("structured", "mixed")
-        if hcell["type"] in ("deepcell", "deepfoldercell"):        
+        if hcell["type"] in ("deepcell", "deepfoldercell"):
             raise AttributeError
         hcell["hash_pattern"] = value
         hcell.pop("checksum", None)
@@ -205,6 +198,7 @@ class OutputCellWrapper(CellWrapper):
     @CellWrapper.language.setter
     def language(self, value):
         from ...compiler import find_language
+
         hcell = self._node
         celltype = hcell["celltype"]
         if celltype != "code":
@@ -225,7 +219,7 @@ class OutputCellWrapper(CellWrapper):
                 "path": path,
                 "mode": mode,
                 "authority": authority,
-                "persistent": persistent
+                "persistent": persistent,
             }
             hcell["mount"] = mount
 
@@ -234,11 +228,17 @@ class OutputCellWrapper(CellWrapper):
 
     @property
     def schema(self):
-        raise NotImplementedError ### TODO: support connections to the schema
+        raise NotImplementedError  ### TODO: support connections to the schema
 
     @schema.setter
     def schema(self):
-        raise NotImplementedError ### TODO: support connections to the schema
+        raise NotImplementedError  ### TODO: support connections to the schema
+
 
 from ..Cell import Cell, celltypes
-from seamless.buffer.mime import get_mime, ext_to_mime, language_to_mime, language_to_ext
+from seamless.checksum.mime import (
+    get_mime,
+    ext_to_mime,
+    language_to_mime,
+    language_to_ext,
+)

@@ -10,10 +10,11 @@ from requests.exceptions import ConnectionError, ReadTimeout
 from seamless import CacheMissError, Checksum
 
 from seamless import Buffer
-from seamless.buffer.get_buffer import get_buffer
-from seamless.buffer.cell import celltypes
-from seamless.buffer.buffer_cache import buffer_cache
-from seamless.buffer.convert import try_convert, SeamlessConversionError
+from seamless.checksum.get_buffer import get_buffer
+from seamless.checksum.cell import celltypes
+from seamless.checksum.buffer_cache import buffer_cache
+from seamless.checksum.convert import try_convert, SeamlessConversionError
+
 session = requests.Session()
 
 MAX_DOWNLOADS = 10
@@ -83,6 +84,7 @@ def validate_url_info(url_info):
                 raise ValueError(url_info["celltype"])
     else:
         raise TypeError(url_info)
+
 
 def get_host(url):
     _, host, _, _, _ = urllib.parse.urlsplit(url)
@@ -404,7 +406,6 @@ if __name__ == "__main__":
     download_buffer_sync(checksum=checksum2, url_infos=urls2)
     print(time.time() - t)
     print()
-
 
     print("Async download")
     coro = download_buffer(checksum3, urls3)

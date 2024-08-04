@@ -6,12 +6,14 @@ from . import SeamlessBase
 from .status import StatusReasonEnum
 from .utils import overlap_path
 
+
 class Inchannel:
     _void = True
     _checksum = None
     _prelim = False
     _status_reason = StatusReasonEnum.UNDEFINED
-    _last_state = (None, None, None) # Allows the inchannel state to be saved
+    _last_state = (None, None, None)  # Allows the inchannel state to be saved
+
     def __init__(self, structured_cell, subpath):
         assert isinstance(subpath, tuple)
         self.structured_cell = weakref.ref(structured_cell)
@@ -33,11 +35,13 @@ class Inchannel:
     def hash_pattern(self):
         return self.structured_cell().hash_pattern
 
+
 class Outchannel:
     def __init__(self, structured_cell, subpath):
         assert isinstance(subpath, tuple)
         self.structured_cell = weakref.ref(structured_cell)
         self.subpath = subpath
+
     def connect(self, target):
         sc = self.structured_cell()
         manager = sc._get_manager()
@@ -56,9 +60,13 @@ class Outchannel:
 class StructuredCell(SeamlessBase):
     _celltype = "structured"
     _exception = None
-    _mode = None # SCModeEnum
+    _mode = None  # SCModeEnum
     _cyclic = False  # the cell is part of a cyclic dependency. Don't forward inchannel cancels until it is resolved
-    def __init__(self, data, *,
+
+    def __init__(
+        self,
+        data,
+        *,
         auth=None,
         schema=None,
         inchannels=[],
@@ -68,6 +76,7 @@ class StructuredCell(SeamlessBase):
         validate_inchannels=True
     ):
         from .unbound_context import UnboundManager
+
         self.no_auth = False
         if auth is None:
             if not len(inchannels):
@@ -131,7 +140,7 @@ class StructuredCell(SeamlessBase):
         self._auth_joining = False  #  an auth task is ongoing
         self._joining = False  #  a join task is ongoing
 
-        self._auth_value = None    # obeys hash pattern
+        self._auth_value = None  # obeys hash pattern
         self._auth_checksum = None  # obeys hash pattern
         self._auth_invalid = False
         self._schema_value = None
@@ -150,12 +159,17 @@ class StructuredCell(SeamlessBase):
             return "Status: exception"
         return self._data.status
 
-    def share(self, path, readonly=True, mimetype=None, *, toplevel=False, cellname=None):
+    def share(
+        self, path, readonly=True, mimetype=None, *, toplevel=False, cellname=None
+    ):
         if path is None:
             path = "/".join(self.path)
         self._data.share(
-            path, readonly=readonly, mimetype=mimetype,
-            toplevel=toplevel, cellname=cellname
+            path,
+            readonly=readonly,
+            mimetype=mimetype,
+            toplevel=toplevel,
+            cellname=cellname,
         )
 
     def _validate_inchannels(self):
@@ -195,6 +209,7 @@ class StructuredCell(SeamlessBase):
 
     def set_buffer(self, buffer, checksum=None):
         from seamless import Buffer
+
         value = Buffer(buffer, checksum=checksum).deserialize("mixed")
         self.set_no_inference(value)
 
@@ -215,13 +230,15 @@ class StructuredCell(SeamlessBase):
         if self._auth_value is None:
             if self._auth_invalid and self._exception is not None:
                 raise AttributeError(path)
-            self._auth_value = deepcopy(self.auth.data) # not .value, because of hash pattern
+            self._auth_value = deepcopy(
+                self.auth.data
+            )  # not .value, because of hash pattern
 
         if not from_pop and value is None and len(path) and isinstance(path[-1], int):
             l = len(self._get_auth_path(path[:-1]))
             tail = path[-1]
             new_value = None
-            for n in range(l-1, path[-1]+1, -1):
+            for n in range(l - 1, path[-1] + 1, -1):
                 path2 = path[:-1] + (n,)
                 old_value = self._get_auth_path(path2)
                 self._set_auth_path(path2, new_value, from_pop=True)
@@ -250,9 +267,9 @@ class StructuredCell(SeamlessBase):
                 self._auth_value = deepcopy(value)
             self._join_auth()
 
-
     def _join_auth(self):
         from .manager.cancel import get_scell_state
+
         if self._destroyed:
             return
         if self.buffer._destroyed:
@@ -267,7 +284,9 @@ class StructuredCell(SeamlessBase):
         if self.auth._observer is not None:
             self.auth._observer(None)
         if get_scell_state(self) == "void" and self._data is not self.auth:
-            manager._set_cell_checksum(self._data, None, void=True, status_reason=StatusReasonEnum.UNDEFINED)
+            manager._set_cell_checksum(
+                self._data, None, void=True, status_reason=StatusReasonEnum.UNDEFINED
+            )
         manager.structured_cell_trigger(self)
 
     def _get_schema_path(self, path):
@@ -297,13 +316,14 @@ class StructuredCell(SeamlessBase):
             set_subpath(self._schema_value, None, path, value)
 
     def _join_schema(self):
-        """ NOTE: This is an inefficient way of updating a schema value
+        """NOTE: This is an inefficient way of updating a schema value
         (re-calculate the checksum on every modification)
 
         But there shouldn't be any risk of data loss (no async operations)
         and schemas are small and rarely updated
         """
         from seamless import Buffer
+
         if self.schema._destroyed:
             return
         buf = Buffer(self._schema_value, "plain")
@@ -337,11 +357,7 @@ class StructuredCell(SeamlessBase):
             default_policy = silk_default_policy
         else:
             default_policy = silk_no_infer_policy
-        silk = Silk(
-            data=mixed_object,
-            schema=schema,
-            default_policy=default_policy
-        )
+        silk = Silk(data=mixed_object, schema=schema, default_policy=default_policy)
         return silk
 
     @property
@@ -366,8 +382,6 @@ class StructuredCell(SeamlessBase):
             raise NotImplementedError(self.hash_pattern)
         return mixed_object
 
-
-
     @property
     def checksum(self):
         checksum = self._data.checksum
@@ -382,7 +396,8 @@ class StructuredCell(SeamlessBase):
             if len(self.inchannels):
                 return None
             return self.auth.checksum
-    def set_auth_checksum(self, checksum:Checksum):
+
+    def set_auth_checksum(self, checksum: Checksum):
         checksum = Checksum(checksum)
 
         assert not self.no_auth
@@ -419,6 +434,7 @@ class StructuredCell(SeamlessBase):
 
     def _set_context(self, context, name):
         from .unbound_context import UnboundManager
+
         has_ctx = self._context is not None
         super()._set_context(context, name)
         assert self._context() is context
@@ -440,12 +456,14 @@ class StructuredCell(SeamlessBase):
             manager._destroy_structured_cell(self)
 
     def has_independence(self, path=None):
-        if path is not None: raise NotImplementedError
+        if path is not None:
+            raise NotImplementedError
         return not self.no_auth
 
     def __str__(self):
         ret = "Seamless structured cell: " + self._format_path()
         return ret
+
 
 class PathDict(dict):
     def __getitem__(self, item):
@@ -453,16 +471,20 @@ class PathDict(dict):
             item = (item,)
         return super().__getitem__(item)
 
+
 from .cell import Cell
 from .unbound_context import UnboundManager
 from .protocol.deep_structure import validate_hash_pattern
-from .protocol.expression import get_subpath_sync as get_subpath, set_subpath_sync as set_subpath
+from .protocol.expression import (
+    get_subpath_sync as get_subpath,
+    set_subpath_sync as set_subpath,
+)
 from silk.mixed.Monitor import Monitor
 from silk.mixed.Backend import StructuredCellBackend, StructuredCellSchemaBackend
 from silk.mixed import MixedObject, MixedDict, MixedList
 from silk.Silk import Silk
 from silk.policy import (
     default_policy as silk_default_policy,
-    no_infer_policy as silk_no_infer_policy
+    no_infer_policy as silk_no_infer_policy,
 )
-from seamless.buffer.buffer_cache import buffer_cache
+from seamless.checksum.buffer_cache import buffer_cache

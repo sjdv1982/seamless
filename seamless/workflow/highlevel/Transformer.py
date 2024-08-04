@@ -46,7 +46,7 @@ from .Resource import Resource
 from .SelfWrapper import SelfWrapper
 from .proxy import Proxy, CodeProxy, HeaderProxy
 from .pin import PinsWrapper
-from seamless.buffer.mime import language_to_mime
+from seamless.checksum.mime import language_to_mime
 from ..core.context import Context as CoreContext
 from . import parse_function_code
 from .SchemaWrapper import SchemaWrapper
@@ -102,7 +102,8 @@ def new_transformer(
 class Transformer(Base, HelpMixin):
     """Transforms input values to a result value
 
-    See http://sjdv1982.github.io/seamless/sphinx/html/transformer.html for documentation"""
+    See http://sjdv1982.github.io/seamless/sphinx/html/transformer.html for documentation
+    """
 
     _node = None
 
@@ -112,22 +113,24 @@ class Transformer(Base, HelpMixin):
         from ..metalevel.debugmode import DebugMode
 
         super().__init__(parent=None, path=None)
-        self._node = new_transformer(ctx=None, path=None, pins=pins, hash_pattern=hash_pattern)
+        self._node = new_transformer(
+            ctx=None, path=None, pins=pins, hash_pattern=hash_pattern
+        )
         if code is not None:
-            self.code = code # modifies self._node
-            
+            self.code = code  # modifies self._node
+
         self._debug = DebugMode(self)
         self._environment = Environment(self)
 
     def _get_parent2(self):
         parent = self._parent()
         if parent is None:
-            raise AttributeError("Transformer must have been bound to a workflow context.")
+            raise AttributeError(
+                "Transformer must have been bound to a workflow context."
+            )
         return parent
-    
-    def _init(
-        self, parent, path, set_node
-    ):
+
+    def _init(self, parent, path, set_node):
         assert parent is not None and path is not None
         assert self._parent() is None
 
@@ -147,7 +150,7 @@ class Transformer(Base, HelpMixin):
                     temp_connections[pinname] = value
                     continue
             for pinname, value in temp_connections.items():
-                temp.pop(pinname)                
+                temp.pop(pinname)
                 vparent = value._parent()
                 if vparent is None:
                     try:
@@ -171,15 +174,17 @@ class Transformer(Base, HelpMixin):
         else:
             hash_pattern = node["hash_pattern"].copy()
             pins = node["pins"]
-            default_node = new_transformer(ctx=None, path=None, pins=pins, hash_pattern=hash_pattern)
-            is_default_node = (node == default_node)
+            default_node = new_transformer(
+                ctx=None, path=None, pins=pins, hash_pattern=hash_pattern
+            )
+            is_default_node = node == default_node
 
             assert is_default_node, path
             parent_node = parent._get_node(path)
             assert parent_node is not None
             if "environment" in parent_node:
                 self._environment._load(parent_node["environment"])
-        
+
         Base._init2(self, parent, path)
         parent._set_child(path, self)
         self._get_htf()
@@ -192,7 +197,10 @@ class Transformer(Base, HelpMixin):
     def from_canonical_interface(cls, tool, command=None):
         """TODO: document"""
         from ..cmd.canonical import build_transformer_dict
-        tf_dict, result_celltype, buffers, bashcode = build_transformer_dict(tool, command=command)
+
+        tf_dict, result_celltype, buffers, bashcode = build_transformer_dict(
+            tool, command=command
+        )
         self = cls()
         self.language = "bash"
         for pin, celltype in tf_dict.items():
@@ -214,9 +222,10 @@ class Transformer(Base, HelpMixin):
         htf["TEMP"][attr] = value
         if "checksum" in htf:
             htf["checksum"].pop(attr, None)
-        
+
     def _set_temp_checksum(self, attr, checksum):
         from . import Checksum
+
         checksum = Checksum(checksum).hex()
         htf = self._get_htf()
         htf["UNTRANSLATED"] = True
@@ -295,14 +304,14 @@ class Transformer(Base, HelpMixin):
     @property
     def local(self) -> bool | None:
         """Local execution.
-If True, transformations are executed in the local Seamless instance.
-If False, they are delegated to an assistant.
-If None (default), 
-an assistant is tried first and local execution is a fallback."""
+        If True, transformations are executed in the local Seamless instance.
+        If False, they are delegated to an assistant.
+        If None (default),
+        an assistant is tried first and local execution is a fallback."""
         return self.meta.get("local")
 
     @local.setter
-    def local(self, value:bool):
+    def local(self, value: bool):
         self.meta["local"] = value
 
     @property
@@ -457,11 +466,13 @@ an assistant is tried first and local execution is a fallback."""
         parent = self._parent()
         if parent is None:
             if value not in ("python", "ipython", "bash"):
-                raise ValueError("Unbound transformers can only have 'python', 'ipython' or 'bash' as their language")
+                raise ValueError(
+                    "Unbound transformers can only have 'python', 'ipython' or 'bash' as their language"
+                )
             htf["language"] = value
-            return   
+            return
         lang, language, extension = parent.environment._find_language(value)
-        compiled = language["mode"] == "compiled"        
+        compiled = language["mode"] == "compiled"
         old_language = htf.get("language")
         htf["language"] = lang
         old_compiled = htf.get("compiled", False)
@@ -575,6 +586,7 @@ an assistant is tried first and local execution is a fallback."""
 
     def add_special_pin(self, pinname, celltype):
         from .Cell import celltypes
+
         if not pinname.startswith("SPECIAL__"):
             raise ValueError("Special pinname must start with SPECIAL__")
         if celltype not in celltypes and celltype not in ("deepcell", "folder"):
@@ -636,12 +648,13 @@ an assistant is tried first and local execution is a fallback."""
             and attr != htf["RESULT"]
         ):
             assign_to_temp = True
-        
 
         if assign_to_temp:
             if attr.startswith("SPECIAL__"):
                 if attr not in htf["pins"]:
-                    raise AttributeError("Cannot define new special pins before translation")
+                    raise AttributeError(
+                        "Cannot define new special pins before translation"
+                    )
             if isinstance(value, Resource):
                 value = value.data
             if "TEMP" not in htf or htf["TEMP"] is None:
@@ -727,9 +740,13 @@ an assistant is tried first and local execution is a fallback."""
         else:
             if attr.startswith("SPECIAL__"):
                 if attr not in htf["pins"]:
-                    raise AttributeError("Cannot define new special pins like this, use add_special_pin")
+                    raise AttributeError(
+                        "Cannot define new special pins like this, use add_special_pin"
+                    )
                 if not from_setitem:
-                    raise AttributeError("Special pins must be set using bracket syntax")
+                    raise AttributeError(
+                        "Special pins must be set using bracket syntax"
+                    )
             pin0 = {}
             if isinstance(value, DeepCell) or (
                 isinstance(value, Cell) and value.hash_pattern == {"*": "#"}
@@ -762,7 +779,12 @@ an assistant is tried first and local execution is a fallback."""
                 if old_pin != pin:
                     translate = True
             if isinstance(value, (Cell, Module, DeepCellBase)):
-                if new_pin and isinstance(value, Cell) and not isinstance(value, SubCell) and value.celltype == "checksum":
+                if (
+                    new_pin
+                    and isinstance(value, Cell)
+                    and not isinstance(value, SubCell)
+                    and value.celltype == "checksum"
+                ):
                     pin["celltype"] = "checksum"
                 target_path = self._path + (attr,)
                 assert value._parent() is parent
@@ -1106,7 +1128,7 @@ an assistant is tried first and local execution is a fallback."""
 
     def get_transformation_checksum(self) -> Optional[str]:
         """Return the checksum of the transformation dict.
-        
+
         The transformation dict contains the checksums of all input pins,
         including the code, as well as the following special keys:
         - __output__: the name (usually "result") and (sub)celltype of the output pin
@@ -1116,7 +1138,7 @@ an assistant is tried first and local execution is a fallback."""
 
         The transformation checksum is the checksum of this dict.
 
-        Note that in addition, a transformation dict may contain extra information 
+        Note that in addition, a transformation dict may contain extra information
         that is not reflected in this checksum:
 
         - __env__: the checksum of the environment description
@@ -1131,7 +1153,7 @@ an assistant is tried first and local execution is a fallback."""
         minus the dunder information. The checksum is
         treated like any other buffer, i.e. including database, assistant etc.
 
-        With Transformer.get_transformation_dict(), you will obtain the full 
+        With Transformer.get_transformation_dict(), you will obtain the full
         transformation dict, including the dunder.
         """
         _ = self._get_parent2()
@@ -1143,7 +1165,7 @@ an assistant is tried first and local execution is a fallback."""
             return tf.tf.get_transformation_checksum()
 
     async def _get_transformation_checksum_async(self) -> Optional[str]:
-        """Async version of .get_transformation_checksum"""        
+        """Async version of .get_transformation_checksum"""
         _ = self._get_parent2()
         htf = self._get_htf()
         tf = self._get_tf()
@@ -1160,7 +1182,7 @@ an assistant is tried first and local execution is a fallback."""
 
         In addition, it may contain the following special keys:
         - __output__: the name (usually "result") and (sub)celltype of the output pin
-          If it has a hash pattern, this is appended as the fourth element. 
+          If it has a hash pattern, this is appended as the fourth element.
         - __env__: the checksum of the environment description
         - __as__: a dictionary of pin-to-variable renames (pins.pinname.as_ attribute)
         - __format__: a dictionary that contains deepcell and filesystem attributes
@@ -1171,8 +1193,11 @@ an assistant is tried first and local execution is a fallback."""
         - __meta__: meta information (Transformer.meta).
         - __compilers__: context-wide compiler definitions.
         - __languages__: context-wide language definition."""
-        
-        from seamless.workflow.core.cache.transformation_cache import transformation_cache
+
+        from seamless.workflow.core.cache.transformation_cache import (
+            transformation_cache,
+        )
+
         checksum = self.get_transformation_checksum()
         checksum = Checksum(checksum)
         if not checksum:
@@ -1185,7 +1210,7 @@ an assistant is tried first and local execution is a fallback."""
         while self.status == "Status: pending":
             await parent.computation(0.05)
         result = self.result.checksum
-        if result is None: # glitch
+        if result is None:  # glitch
             await parent.computation(0.1)
             result = self.result.checksum
         return result
@@ -1196,14 +1221,17 @@ an assistant is tried first and local execution is a fallback."""
         while self.status == "Status: pending":
             parent.compute(0.05)
         result = self.result.checksum
-        if result is None: # glitch
+        if result is None:  # glitch
             parent.compute(0.1)
             result = self.result.checksum
         return result
 
     def get_transformation(self) -> "Transformation":
         from .direct import Transformation, transformation_from_dict
-        from ..core.direct.run import _get_node_transformation_dependencies, _node_to_transformation_dict
+        from ..core.direct.run import (
+            _get_node_transformation_dependencies,
+            _node_to_transformation_dict,
+        )
 
         result_celltype = self._get_htf().get("result_celltype", "mixed")
         if self._parent() is not None:
@@ -1217,9 +1245,9 @@ an assistant is tried first and local execution is a fallback."""
                 result_celltype,
                 resolver_sync,
                 resolver_async,
-                evaluator_sync, 
+                evaluator_sync,
                 evaluator_async,
-                upstream_dependencies
+                upstream_dependencies,
             )
 
         else:
@@ -1228,7 +1256,9 @@ an assistant is tried first and local execution is a fallback."""
             node = self._node.copy()
             transformation_dict = _node_to_transformation_dict(node)
             upstream_dependencies = _get_node_transformation_dependencies(node)
-            return transformation_from_dict(transformation_dict, result_celltype, upstream_dependencies)
+            return transformation_from_dict(
+                transformation_dict, result_celltype, upstream_dependencies
+            )
 
     def cancel(self) -> None:
         """Hard-cancels the transformer.
@@ -1253,22 +1283,25 @@ an assistant is tried first and local execution is a fallback."""
             tf.tf.hard_cancel()
 
     def undo(self) -> str | None:
-        """Attempt to undo a finished transformer.        
-        
+        """Attempt to undo a finished transformer.
+
         This may be useful in the case of non-reproducible transformers.
-        
+
         While the correct solution is to make them deterministic, this method
-        will allow repeated execution under various conditions, in order to 
+        will allow repeated execution under various conditions, in order to
         investigate the issue.
 
         If the transformer has no associated transformation (e.g. undefined inputs)
         or the transformation result is not known, an exception is raised.
-        
+
         Otherwise, the database is contacted in order to contest the result.
         If the database returns an error message, that is returned as string.
         """
 
-        from seamless.workflow.core.cache.transformation_cache import transformation_cache
+        from seamless.workflow.core.cache.transformation_cache import (
+            transformation_cache,
+        )
+
         if self._parent() is not None:
             tcache = self._parent()._manager.cachemanager.transformation_cache
         else:
@@ -1276,11 +1309,11 @@ an assistant is tried first and local execution is a fallback."""
         tf_checksum = self.get_transformation_checksum()
         tf_checksum = Checksum(tf_checksum)
         if not tf_checksum:
-            raise RuntimeError("Transformer has no defined transformation")        
+            raise RuntimeError("Transformer has no defined transformation")
         result = tcache.undo(tf_checksum)
         if not isinstance(result, bytes):
             return result
-        
+
     @property
     def self(self):
         """Returns a wrapper where the pins are not directly accessible.
@@ -1325,12 +1358,12 @@ an assistant is tried first and local execution is a fallback."""
         self._parent()._translate()
 
     def copy(self):
-        """If not bound to a context, return a copy of the Transformer. 
-        
-If bound to a workflow, return a copy wrapper.
-This wrapper can be assigned to a new Context attribute,
- creating a copy of the current Transformer,
- where input parameters and connections to input pins are all copied."""
+        """If not bound to a context, return a copy of the Transformer.
+
+        If bound to a workflow, return a copy wrapper.
+        This wrapper can be assigned to a new Context attribute,
+         creating a copy of the current Transformer,
+         where input parameters and connections to input pins are all copied."""
         if self._parent() is None:
             node = self._get_htf()
             node = deepcopy(node)
@@ -1652,7 +1685,7 @@ This wrapper can be assigned to a new Context attribute,
             return SchemaWrapper(self, schema, "RESULTSCHEMA")
         elif attr == "example":
             if self.result.celltype != "structured":
-                raise AttributeError(attr)            
+                raise AttributeError(attr)
             return self._result_example()
         elif attr == "exception":
             return resultcell.exception
@@ -1666,6 +1699,7 @@ This wrapper can be assigned to a new Context attribute,
 
     def _resultsetter(self, attr, value):
         from .Cell import celltypes
+
         if attr != "celltype":
             raise AttributeError(attr)
         htf = self._get_htf()
@@ -1752,7 +1786,7 @@ This wrapper can be assigned to a new Context attribute,
         htf["UNTRANSLATED"] = True
         parent._translate()
 
-    def _observe_input(self, checksum:Checksum):
+    def _observe_input(self, checksum: Checksum):
         checksum = Checksum(checksum)
         if self._parent() is None:
             return
@@ -1768,7 +1802,7 @@ This wrapper can be assigned to a new Context attribute,
         if checksum:
             htf["checksum"]["input"] = checksum
 
-    def _observe_input_auth(self, checksum:Checksum):
+    def _observe_input_auth(self, checksum: Checksum):
         checksum = Checksum(checksum)
         if self._parent() is None:
             return
@@ -1783,7 +1817,7 @@ This wrapper can be assigned to a new Context attribute,
         if checksum:
             htf["checksum"]["input_auth"] = checksum
 
-    def _observe_input_buffer(self, checksum:Checksum):
+    def _observe_input_buffer(self, checksum: Checksum):
         checksum = Checksum(checksum)
         if self._parent() is None:
             return
@@ -1801,7 +1835,7 @@ This wrapper can be assigned to a new Context attribute,
             if "input" not in htf["checksum"]:
                 htf["checksum"]["input_buffer"] = checksum
 
-    def _observe_code(self, checksum:Checksum):
+    def _observe_code(self, checksum: Checksum):
         checksum = Checksum(checksum)
         if self._parent() is None:
             return

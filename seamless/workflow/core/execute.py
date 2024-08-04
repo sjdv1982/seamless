@@ -16,10 +16,10 @@ except ModuleNotFoundError:
     debugpy = None
 
 from seamless import Checksum
-from seamless.buffer.cached_compile import exec_code, check_function_like
-from seamless.buffer.serialize import _serialize as serialize
-from seamless.buffer.buffer_cache import buffer_cache
-from seamless.buffer import buffer_remote
+from seamless.checksum.cached_compile import exec_code, check_function_like
+from seamless.checksum.serialize import _serialize as serialize
+from seamless.checksum.buffer_cache import buffer_cache
+from seamless.checksum import buffer_remote
 from multiprocessing.pool import ThreadPool, AsyncResult
 
 DIRECT_PRINT = False
@@ -224,7 +224,7 @@ def _execute(
         SeamlessStreamTransformationError,
     )
     from seamless.direct import transformer
-    from seamless.Expression import Expression
+    from seamless.checksum import Expression
 
     assert identifier is not None
     namespace["return_preliminary"] = functools.partial(
@@ -650,15 +650,15 @@ Execution time: {:.1f} seconds
 
 from seamless import CacheMissError, Checksum
 from silk import Silk
-from seamless.buffer import database_client
-from seamless.buffer.database_client import database
+from seamless.checksum import database_client
+from seamless.checksum.database_client import database
 from .protocol.deep_structure import (
     deep_structure_to_value,
     value_to_deep_structure_sync as value_to_deep_structure,
 )
-from seamless.buffer.serialize import serialize_sync
-from seamless.buffer.deserialize import deserialize_sync
-from seamless.buffer.cached_calculate_checksum import (
+from seamless.checksum.serialize import serialize_sync
+from seamless.checksum.deserialize import deserialize_sync
+from seamless.checksum.cached_calculate_checksum import (
     cached_calculate_checksum_sync as calculate_checksum,
     calculate_checksum_func,
     calculate_checksum_cache,

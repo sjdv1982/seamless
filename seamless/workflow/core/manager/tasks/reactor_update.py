@@ -2,26 +2,32 @@ import asyncio
 
 from seamless import Checksum
 from . import Task
-from seamless.buffer.cached_compile import cached_compile
+from seamless.checksum.cached_compile import cached_compile
 
 import logging
+
 logger = logging.getLogger(__name__)
+
 
 def print_info(*args):
     msg = " ".join([str(arg) for arg in args])
     logger.info(msg)
 
+
 def print_warning(*args):
     msg = " ".join([str(arg) for arg in args])
     logger.warning(msg)
+
 
 def print_debug(*args):
     msg = " ".join([str(arg) for arg in args])
     logger.debug(msg)
 
+
 def print_error(*args):
     msg = " ".join([str(arg) for arg in args])
     logger.error(msg)
+
 
 class ReactorUpdateTask(Task):
     def __init__(self, manager, reactor):
@@ -42,18 +48,21 @@ class ReactorUpdateTask(Task):
         editpins = rtreactor.editpins
         editpin_to_cell = livegraph.editpin_to_cell[reactor]
         upstreams = livegraph.reactor_to_upstream[reactor]
-        outputpins = [pinname for pinname in reactor._pins \
-            if reactor._pins[pinname].io == "output" ]
+        outputpins = [
+            pinname
+            for pinname in reactor._pins
+            if reactor._pins[pinname].io == "output"
+        ]
         all_downstreams = livegraph.reactor_to_downstream[reactor]
 
         status_reason = None
         for pinname, accessor in upstreams.items():
-            if accessor is None: #unconnected
+            if accessor is None:  # unconnected
                 status_reason = StatusReasonEnum.UNCONNECTED
                 break
         else:
             for pinname, accessor in upstreams.items():
-                if accessor._void: #upstream error
+                if accessor._void:  # upstream error
                     status_reason = StatusReasonEnum.UPSTREAM
         for pinname in outputpins:
             downstreams = all_downstreams.get(pinname, [])
@@ -74,14 +83,26 @@ class ReactorUpdateTask(Task):
                     return
 
         if status_reason is not None:
-            print("WARNING: reactor %s is void, shouldn't happen during reactor update" % reactor)
+            print(
+                "WARNING: reactor %s is void, shouldn't happen during reactor update"
+                % reactor
+            )
             manager.cancel_reactor(reactor, True, status_reason)
             return
 
         for pinname, accessor in upstreams.items():
             assert not accessor._void, (reactor, pinname)
-            if not Checksum(accessor._checksum): #pending; a legitimate use case, but we can't proceed
-                print_debug("ABORT", self.__class__.__name__, hex(id(self)), self.dependencies, " <= pinname", pinname)
+            if not Checksum(
+                accessor._checksum
+            ):  # pending; a legitimate use case, but we can't proceed
+                print_debug(
+                    "ABORT",
+                    self.__class__.__name__,
+                    hex(id(self)),
+                    self.dependencies,
+                    " <= pinname",
+                    pinname,
+                )
                 reactor._pending = True
                 return
 
@@ -158,13 +179,14 @@ class ReactorUpdateTask(Task):
 
         module_workspace = {}
         root = reactor._root()
-        compilers = getattr(root,"_compilers", default_compilers)
-        languages = getattr(root,"_languages", default_languages)
+        compilers = getattr(root, "_compilers", default_compilers)
+        languages = getattr(root, "_languages", default_languages)
         build_all_modules(
-            modules_to_build, module_workspace,
+            modules_to_build,
+            module_workspace,
             compilers=compilers,
             languages=languages,
-            module_debug_mounts=None
+            module_debug_mounts=None,
         )
         rtreactor.module_workspace.update(module_workspace)
         rtreactor.values.update(values)
@@ -177,11 +199,7 @@ class ReactorUpdateTask(Task):
 
 
 class ReactorResultTask(Task):
-    def __init__(self,
-        manager, reactor,
-        pinname, value,
-        celltype, subcelltype
-    ):
+    def __init__(self, manager, reactor, pinname, value, celltype, subcelltype):
         self.reactor = reactor
         super().__init__(manager)
         self._dependencies.append(reactor)
@@ -194,7 +212,10 @@ class ReactorResultTask(Task):
     async def _run(self):
         reactor = self.reactor
         if reactor._void:
-            print("WARNING: reactor %s is void, shouldn't happen during reactor result task" % reactor)
+            print(
+                "WARNING: reactor %s is void, shouldn't happen during reactor result task"
+                % reactor
+            )
             return
         manager = self.manager()
         if manager is None or manager._destroyed:
@@ -207,8 +228,7 @@ class ReactorResultTask(Task):
         if self.value is not None:
             try:
                 buffer = await SerializeToBufferTask(
-                    manager, self.value, celltype,
-                    use_cache=True
+                    manager, self.value, celltype, use_cache=True
                 ).run()
                 checksum = await CalculateChecksumTask(manager, buffer).run()
             except asyncio.CancelledError as exc:
@@ -219,12 +239,11 @@ class ReactorResultTask(Task):
                 manager._set_reactor_exception(reactor, pinname, exc)
                 raise exc from None
         checksum = Checksum(checksum)
-        
+
         if not checksum:
             buffer_cache.guarantee_buffer_info(checksum, celltype, sync_to_remote=True)
             validate_evaluation_subcelltype(
-                checksum, buffer, celltype, subcelltype,
-                str(reactor) + ":" + pinname
+                checksum, buffer, celltype, subcelltype, str(reactor) + ":" + pinname
             )
         if reactor._last_outputs is None:
             reactor._last_outputs = {}
@@ -254,13 +273,17 @@ class ReactorResultTask(Task):
 
         return None
 
+
 from ...status import StatusReasonEnum
 from .accessor_update import AccessorUpdateTask
 from .deserialize_buffer import DeserializeBufferTask
 from .serialize_buffer import SerializeToBufferTask
 from .checksum import CalculateChecksumTask
 from .get_buffer import GetBufferTask
-from seamless.buffer.buffer_cache import buffer_cache
-from seamless.buffer.evaluate import validate_evaluation_subcelltype
+from seamless.checksum.buffer_cache import buffer_cache
+from seamless.checksum.evaluate import validate_evaluation_subcelltype
 from ...build_module import build_all_modules
-from seamless.compiler import compilers as default_compilers, languages as default_languages
+from seamless.compiler import (
+    compilers as default_compilers,
+    languages as default_languages,
+)

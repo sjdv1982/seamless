@@ -1,7 +1,7 @@
 """Calculate SHA3-256 checksum, with a small LRU cache"""
 
 from seamless import Checksum
-from seamless.buffer.calculate_checksum import (
+from seamless.checksum.calculate_checksum import (
     calculate_checksum as calculate_checksum_func,
 )
 

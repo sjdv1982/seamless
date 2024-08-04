@@ -12,7 +12,7 @@ async def run_job(
     checksum: Checksum, tf_dunder, *, fingertip: bool, scratch: bool
 ) -> Checksum:
     """Runs a transformation job via the Seamless assistant"""
-    from seamless.buffer.buffer_cache import buffer_cache
+    from seamless.checksum.buffer_cache import buffer_cache
     from seamless.config import get_assistant, InProcessAssistant
 
     timeout = os.environ.get("SEAMLESS_ASSISTANT_JOB_TIMEOUT", None)

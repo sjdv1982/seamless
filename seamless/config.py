@@ -323,8 +323,8 @@ def set_inprocess_assistant(assistant: InProcessAssistant):
     _delegation_level = 4
 
 
-from seamless.buffer.database_client import database
-from seamless.buffer.buffer_remote import (
+from seamless.checksum.database_client import database
+from seamless.checksum.buffer_remote import (
     set_read_buffer_folders,
     set_read_buffer_servers,
     set_write_buffer_server,

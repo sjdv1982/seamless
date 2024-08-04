@@ -865,7 +865,7 @@ from ..macro import Macro, Path as MacroPath
 from ..reactor import Reactor
 from .. import SeamlessBase
 from .accessor import ReadAccessor
-from seamless.Expression import Expression
+from seamless.checksum import Expression
 from .tasks.upon_connection import UponConnectionTask
 from .tasks.structured_cell import StructuredCellAuthTask
 from .tasks import BackgroundTask

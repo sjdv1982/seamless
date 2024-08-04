@@ -12,7 +12,7 @@ import os, tempfile, shutil, functools
 from numpy import mod
 from sys import modules
 from seamless.workflow.core.manager import livegraph
-from seamless.buffer.cell import celltypes
+from seamless.checksum.cell import celltypes
 from seamless import Checksum
 
 SEAMLESS_DEBUGGING_DIRECTORY = os.environ.get("SEAMLESS_DEBUGGING_DIRECTORY")
@@ -551,7 +551,7 @@ class DebugMountManager:
 
 
 debugmountmanager = DebugMountManager()
-from seamless.buffer.buffer_cache import buffer_cache
+from seamless.checksum.buffer_cache import buffer_cache
 import atexit
 
 atexit.register(debugmountmanager.destroy)

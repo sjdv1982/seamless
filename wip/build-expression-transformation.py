@@ -1,7 +1,7 @@
 import sys
 import seamless
 from seamless import Checksum
-from seamless.Expression import Expression
+from seamless.checksum import Expression
 from seamless.workflow.core.manager.tasks.evaluate_expression import (
     build_expression_transformation,
 )

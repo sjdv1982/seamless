@@ -1,6 +1,7 @@
 """Module for Context class."""
+
 from seamless import Checksum, compiler
-from seamless.buffer.json import json_dumps
+from seamless.checksum.json import json_dumps
 import weakref
 from weakref import WeakValueDictionary
 from collections import OrderedDict
@@ -10,22 +11,29 @@ import asyncio
 from contextlib import contextmanager
 
 from . import SeamlessBase
-from .macro_mode import get_macro_mode, curr_macro, register_toplevel, unregister_toplevel
+from .macro_mode import (
+    get_macro_mode,
+    curr_macro,
+    register_toplevel,
+    unregister_toplevel,
+)
+
 
 class StatusReport(dict):
     def __str__(self):
         result = {}
-        for k,v in self.items():
+        for k, v in self.items():
             if not isinstance(v, StatusReport):
                 v = str(v)
             result[k] = v
         return "Status: " + str(result)
+
     def _repr_pretty_(self, p, cycle):
         return p.text(str(self))
 
+
 class Context(SeamlessBase):
-    """Context class. Organizes your cells and workers hierarchically.
-    """
+    """Context class. Organizes your cells and workers hierarchically."""
 
     _name = None
     _children = {}
@@ -33,47 +41,42 @@ class Context(SeamlessBase):
     _auto = None
     _toplevel = False
     _naming_pattern = "ctx"
-    _macro = None # The macro that created this context
+    _macro = None  # The macro that created this context
     _macro_root = None
     _root_highlevel_context = lambda self: None
     _synth_highlevel_context = lambda self: None
     _compilers = None
     _languages = None
 
-    def __init__(
-        self, *,
-        toplevel=False,
-        manager=None,
-        compilers=None,
-        languages=None
-    ):
+    def __init__(self, *, toplevel=False, manager=None, compilers=None, languages=None):
         """Construct a new context.
 
-A context can contain cells, workers (= transformers, reactors and macros),
-and other contexts.
+        A context can contain cells, workers (= transformers, reactors and macros),
+        and other contexts.
 
-**Important methods and attributes**:
-    ``.compute()``, ``.status``
+        **Important methods and attributes**:
+            ``.compute()``, ``.status``
 
-Parameters
-----------
-name: str
-    name of the context within the parent context
+        Parameters
+        ----------
+        name: str
+            name of the context within the parent context
 
-toplevel: bool
-    whether the context is top-level or not
+        toplevel: bool
+            whether the context is top-level or not
 
-manager: seamless.workflow.core.manager.Manager or None   
-    Managers can be shared between contexts, which can be practical for various caches
-    If None, create a new manager
+        manager: seamless.workflow.core.manager.Manager or None
+            Managers can be shared between contexts, which can be practical for various caches
+            If None, create a new manager
 
-compilers: dict or None
-    Compiler specification. If None, workers will use seamless.workflow.core.compiler.compilers
+        compilers: dict or None
+            Compiler specification. If None, workers will use seamless.workflow.core.compiler.compilers
 
-languages: dict or None
-    Languages specification. If None, workers will use seamless.workflow.core.compiler.languages
-"""
+        languages: dict or None
+            Languages specification. If None, workers will use seamless.workflow.core.compiler.languages
+        """
         from seamless.config import check_delegation
+
         global Macro
         if Macro is None:
             from .macro import Macro
@@ -133,6 +136,7 @@ languages: dict or None
     def _add_child(self, childname, child):
         assert not self._destroyed
         from .unbound_context import UnboundContext
+
         if isinstance(child, UnboundContext):
             raise TypeError("Cannot add an unbound context to a bound one")
         if not isinstance(child, (Context, Worker, Cell, UniLink, StructuredCell)):
@@ -173,9 +177,17 @@ languages: dict or None
     def __getattr__(self, attr):
         if attr in self._children:
             result = self._children[attr]
-            if isinstance(result, Context) and result._synth_highlevel_context() is not None:
+            if (
+                isinstance(result, Context)
+                and result._synth_highlevel_context() is not None
+            ):
                 from ..highlevel.synth_context import SynthContext
-                return SynthContext(result._synth_highlevel_context(), self.path + (attr,), context=result)
+
+                return SynthContext(
+                    result._synth_highlevel_context(),
+                    self.path + (attr,),
+                    context=result,
+                )
             return result
         raise AttributeError(attr)
 
@@ -201,7 +213,7 @@ languages: dict or None
     def _part_of2(self, ctx):
         assert isinstance(ctx, Context)
         p = ctx.path
-        return self.path[:len(p)] == p
+        return self.path[: len(p)] == p
 
     def _root(self):
         if self._macro is not None and self._macro_root is not None:
@@ -214,8 +226,7 @@ languages: dict or None
     def path(self):
         if self._context is not None:
             return super().path
-        if self._macro is not None \
-          and isinstance(self._macro, Macro):
+        if self._macro is not None and isinstance(self._macro, Macro):
             return self._macro.path + ("ctx",)
         else:
             return super().path
@@ -243,6 +254,7 @@ languages: dict or None
         Report the workers that are not stable every "report" seconds
         """
         from .. import verify_sync_compute
+
         verify_sync_compute()
         manager = self._get_manager()
         manager.sharemanager.tick()
@@ -267,7 +279,10 @@ languages: dict or None
                 continue
             if childname in self._auto:
                 continue
-            if isinstance(child, Context) and child._synth_highlevel_context() is not None:
+            if (
+                isinstance(child, Context)
+                and child._synth_highlevel_context() is not None
+            ):
                 child = getattr(self, childname)
                 status[childname] = child.status
                 continue
@@ -281,6 +296,7 @@ languages: dict or None
         If all children are OK, returns OK
         """
         from .status import format_context_status
+
         status = self._get_status()
         statustxt = format_context_status(status)
         if isinstance(statustxt, dict):
@@ -304,12 +320,17 @@ languages: dict or None
         from .build_module import get_compiled_module_code
         from .cache.buffer_cache import buffer_cache
         from .protocol.serialize import serialize_sync as serialize
-        from .protocol.calculate_checksum import calculate_checksum_sync as calculate_checksum
+        from .protocol.calculate_checksum import (
+            calculate_checksum_sync as calculate_checksum,
+        )
+
         manager = self._get_manager()
         livegraph = manager.livegraph
         for child in self._children.values():
             if isinstance(child, Context):
-                child._update_annotated_checksums(annotated_checksums0, skip_scratch=skip_scratch)
+                child._update_annotated_checksums(
+                    annotated_checksums0, skip_scratch=skip_scratch
+                )
             elif isinstance(child, Macro):
                 elision = livegraph.macro_elision.get(child)
                 if elision is not None:
@@ -318,28 +339,36 @@ languages: dict or None
                         return
                     elision_result_buffer = serialize(elision_result, "plain")
                     elision_result_checksum = calculate_checksum(elision_result_buffer)
-                    buffer_cache.cache_buffer(elision_result_checksum, elision_result_buffer)
-                    annotated_checksums0[elision_result_checksum.hex()] = False    
+                    buffer_cache.cache_buffer(
+                        elision_result_checksum, elision_result_buffer
+                    )
+                    annotated_checksums0[elision_result_checksum.hex()] = False
 
                 cctx = child._gen_context
                 if cctx is not None:
-                    cctx._update_annotated_checksums(annotated_checksums0, skip_scratch=skip_scratch)
-            
+                    cctx._update_annotated_checksums(
+                        annotated_checksums0, skip_scratch=skip_scratch
+                    )
+
             if not isinstance(child, Cell):
-                continue            
-            
+                continue
+
             if skip_scratch and child._scratch:
                 continue
 
             checksum = Checksum(child.checksum)
             if not checksum:
                 continue
-            
+
             if child.celltype == "plain":
-                compiled_module_code_checksum, compiled_module_code = get_compiled_module_code(bytes.fromhex(checksum))
+                compiled_module_code_checksum, compiled_module_code = (
+                    get_compiled_module_code(bytes.fromhex(checksum))
+                )
                 if compiled_module_code is not None:
-                    buffer_cache.cache_buffer(compiled_module_code_checksum, compiled_module_code)
-                    annotated_checksums0[compiled_module_code_checksum.hex()] = False    
+                    buffer_cache.cache_buffer(
+                        compiled_module_code_checksum, compiled_module_code
+                    )
+                    annotated_checksums0[compiled_module_code_checksum.hex()] = False
             has_independence = child.has_independence()
             if not annotated_checksums0.get(checksum, False):
                 annotated_checksums0[checksum] = has_independence
@@ -347,13 +376,17 @@ languages: dict or None
     def save_vault(self, dirname: str, *, flat=False):
         """Save the checksum-to-buffer cache for the current graph in a vault directory
 
-If flat=True, buffers are directly written into that directory, else they are organized by dependence and size."""
+        If flat=True, buffers are directly written into that directory, else they are organized by dependence and size.
+        """
         # TODO: option to not follow deep cell checksums (currently, they are always followed)
         manager = self._get_manager()
         assert manager is not None
         annotated_checksums0 = {}
         self._update_annotated_checksums(annotated_checksums0, skip_scratch=True)
-        annotated_checksums = [(checksum, not has_independence) for checksum, has_independence in annotated_checksums0.items()]
+        annotated_checksums = [
+            (checksum, not has_independence)
+            for checksum, has_independence in annotated_checksums0.items()
+        ]
         checksums = [c[0] for c in annotated_checksums]
         buffer_dict = get_buffer_dict_sync(manager, checksums)
         if flat:
@@ -381,6 +414,7 @@ If flat=True, buffers are directly written into that directory, else they are or
                     highlevel_parent._children.pop(childname)
         if self._toplevel:
             from .macro import _global_paths
+
             manager = self._get_manager()
             paths = _global_paths.get(self, {})
             for path in paths.values():
@@ -406,7 +440,9 @@ If flat=True, buffers are directly written into that directory, else they are or
         try:
             self.destroy()
         except Exception:
-            import traceback; traceback.print_exc()
+            import traceback
+
+            traceback.print_exc()
             pass
         if self._destroyed:
             return
@@ -414,14 +450,22 @@ If flat=True, buffers are directly written into that directory, else they are or
         print("Undestroyed %s (%s), mount points may remain" % (self, hex(id(self))))
 
 
-Context._methods = [m for m in Context.__dict__ if not m.startswith("_") \
-      and m not in ("destroy", ) ]
-Context._methods += [m for m in SeamlessBase.__dict__  if not m.startswith("_") \
-      and m != "StatusFlags" and m not in ("destroy",) \
-      and m not in Context._methods]
+Context._methods = [
+    m for m in Context.__dict__ if not m.startswith("_") and m not in ("destroy",)
+]
+Context._methods += [
+    m
+    for m in SeamlessBase.__dict__
+    if not m.startswith("_")
+    and m != "StatusFlags"
+    and m not in ("destroy",)
+    and m not in Context._methods
+]
+
 
 def context(**kwargs):
     from .macro import Macro
+
     if get_macro_mode():
         macro = curr_macro()
         """
@@ -432,21 +476,28 @@ def context(**kwargs):
     else:
         ctx = Context(**kwargs)
         return ctx
+
+
 context.__doc__ = Context.__init__.__doc__
+
 
 class _InternalChildrenWrapper:
     def __init__(self, wrapped):
         super().__setattr__("_wrapped", wrapped)
+
     def __getattr__(self, attr):
         children = getattr(self._wrapped, "_children")
         if attr not in children:
             raise AttributeError(attr)
         return children[attr]
+
     def __dir__(self):
         children = getattr(self._wrapped, "_children")
         return list(children.keys())
+
     def __setattr__(self, attr, value):
         raise AttributeError("_InternalChildrenWrapper is read-only")
+
 
 from .unbound_context import UnboundContext
 from .unilink import UniLink
@@ -455,10 +506,12 @@ from .worker import Worker, InputPinBase, OutputPinBase, EditPinBase
 from .structured_cell import StructuredCell
 from ..copying import get_buffer_dict_sync
 from ..vault import save_vault, save_vault_flat
+
 try:
     from ..metalevel.debugmount import debugmountmanager
 except ImportError:
     debugmountmanager = None
 
 from .manager import Manager
-Macro = None # import later
+
+Macro = None  # import later

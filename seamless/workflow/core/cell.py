@@ -7,14 +7,16 @@ from seamless import Checksum
 from . import SeamlessBase
 from copy import deepcopy
 from .status import StatusReasonEnum
-from seamless.buffer.cell import text_types, text_types2
+from seamless.checksum.cell import text_types, text_types2
 
 cell_counter = 0
 
 NoneChecksum = Checksum(None)
 
+
 class Cell(SeamlessBase):
     """Default class for cells."""
+
     _celltype = None
     _subcelltype = None
     _checksum = NoneChecksum
@@ -27,8 +29,8 @@ class Cell(SeamlessBase):
 
     _mount = None
     _mount_kwargs = None
-    _paths = None #WeakSet of Path object weakrefs
-    _hash_pattern = None #must be None, except for MixedCell
+    _paths = None  # WeakSet of Path object weakrefs
+    _hash_pattern = None  # must be None, except for MixedCell
     _subchecksums_persistent = False  # for deep cells
     _observer = None
     _traitlets = None
@@ -61,7 +63,7 @@ class Cell(SeamlessBase):
     @property
     def scratch(self):
         return self._scratch
-    
+
     @property
     def _in_structured_cell(self):
         if self._structured_cell is None:
@@ -69,7 +71,6 @@ class Cell(SeamlessBase):
         if self._structured_cell.schema is self:
             return False
         return True
-
 
     def _set_context(self, ctx, name):
         assert not self._checksum
@@ -108,9 +109,12 @@ class Cell(SeamlessBase):
 
     def _get_status(self):
         from .status import status_cell, format_status
+
         manager = self._get_manager()
         if isinstance(manager, UnboundManager):
-            raise Exception("Cannot ask the cell value of a context that is being constructed by a macro")
+            raise Exception(
+                "Cannot ask the cell value of a context that is being constructed by a macro"
+            )
         status = status_cell(self)
         return status
 
@@ -118,6 +122,7 @@ class Cell(SeamlessBase):
     def status(self):
         """The cell's current status."""
         from .status import format_status
+
         status = self._get_status()
         statustxt = format_status(status)
         return "Status: " + statustxt
@@ -126,7 +131,9 @@ class Cell(SeamlessBase):
     def checksum(self):
         manager = self._get_manager()
         if isinstance(manager, UnboundManager):
-            raise Exception("Cannot ask the cell value of a context that is being constructed by a macro")
+            raise Exception(
+                "Cannot ask the cell value of a context that is being constructed by a macro"
+            )
         checksum = manager.get_cell_checksum(self)
         return checksum
 
@@ -134,7 +141,9 @@ class Cell(SeamlessBase):
     def void(self):
         manager = self._get_manager()
         if isinstance(manager, UnboundManager):
-            raise Exception("Cannot ask the cell value of a context that is being constructed by a macro")
+            raise Exception(
+                "Cannot ask the cell value of a context that is being constructed by a macro"
+            )
         void = manager.get_cell_void(self)
         return void
 
@@ -142,14 +151,13 @@ class Cell(SeamlessBase):
     def semantic_checksum(self):
         manager = self._get_manager()
         if isinstance(manager, UnboundManager):
-            raise Exception("Cannot ask the cell value of a context that is being constructed by a macro")
+            raise Exception(
+                "Cannot ask the cell value of a context that is being constructed by a macro"
+            )
         checksum = bytes.fromhex(self.checksum)
         transformation_cache = manager.cachemanager.transformation_cache
         sem_checksum = transformation_cache.syntactic_to_semantic(
-            checksum,
-            self._celltype,
-            self._subcelltype,
-            str(self)
+            checksum, self._celltype, self._subcelltype, str(self)
         )
         return sem_checksum.hex()
 
@@ -159,7 +167,9 @@ class Cell(SeamlessBase):
         The cell's checksum is the SHA3-256 hash of this."""
         manager = self._get_manager()
         if isinstance(manager, UnboundManager):
-            raise Exception("Cannot ask the cell value of a context that is being constructed by a macro")
+            raise Exception(
+                "Cannot ask the cell value of a context that is being constructed by a macro"
+            )
         buffer, _ = manager.get_cell_buffer_and_checksum(self)
         return buffer
 
@@ -168,14 +178,18 @@ class Cell(SeamlessBase):
         """Return the cell's buffer and checksum."""
         manager = self._get_manager()
         if isinstance(manager, UnboundManager):
-            raise Exception("Cannot ask the cell value of a context that is being constructed by a macro")
+            raise Exception(
+                "Cannot ask the cell value of a context that is being constructed by a macro"
+            )
         buffer, checksum = manager.get_cell_buffer_and_checksum(self)
         return buffer, checksum
 
     def _get_value(self, copy):
         manager = self._get_manager()
         if isinstance(manager, UnboundManager):
-            raise Exception("Cannot ask the cell value of a context that is being constructed by a macro")
+            raise Exception(
+                "Cannot ask the cell value of a context that is being constructed by a macro"
+            )
         return manager.get_cell_value(self, copy=copy)
 
     @property
@@ -206,6 +220,7 @@ class Cell(SeamlessBase):
         if expression is None:
             return None
         return expression.exception
+
     def set(self, value):
         """Update cell data from authority"""
         if self._context is None:
@@ -213,9 +228,7 @@ class Cell(SeamlessBase):
             self._initial_val = value, False
         else:
             manager = self._get_manager()
-            manager.set_cell(
-              self, value
-            )
+            manager.set_cell(self, value)
         return self
 
     def set_buffer(self, buffer, checksum=None):
@@ -228,12 +241,12 @@ class Cell(SeamlessBase):
             self._initial_val = buffer, True
         else:
             manager = self._get_manager()
-            manager.set_cell_buffer(
-              self, buffer, checksum
-            )
+            manager.set_cell_buffer(self, buffer, checksum)
         return self
 
-    def _set_checksum(self, checksum:Checksum, initial=False, from_structured_cell=False):
+    def _set_checksum(
+        self, checksum: Checksum, initial=False, from_structured_cell=False
+    ):
         """Specifies the checksum of the data (hex format)
 
         If "initial" is True, it is assumed that the context is being initialized (e.g. when created from a graph).
@@ -248,14 +261,15 @@ class Cell(SeamlessBase):
         else:
             manager = self._get_manager()
             manager.set_cell_checksum(
-              self, checksum,
-              initial=initial,
-              from_structured_cell=from_structured_cell,
-              trigger_bilinks=(not initial)
+                self,
+                checksum,
+                initial=initial,
+                from_structured_cell=from_structured_cell,
+                trigger_bilinks=(not initial),
             )
         return self
 
-    def set_checksum(self, checksum:str):
+    def set_checksum(self, checksum: str):
         """Specifies the checksum of the data (hex format), from authority"""
         self._set_checksum(checksum)
         return self
@@ -288,6 +302,7 @@ class Cell(SeamlessBase):
         from .transformer import Transformer
         from .macro import Macro, Path
         from .unilink import UniLink
+
         manager = self._get_manager()
         target_subpath = None
 
@@ -298,7 +313,9 @@ class Cell(SeamlessBase):
             target_subpath = target.subpath
             target = target.structured_cell().buffer
         elif isinstance(target, Outchannel):
-            raise TypeError("Outchannels must be the source of a connection, not the target")
+            raise TypeError(
+                "Outchannels must be the source of a connection, not the target"
+            )
 
         if isinstance(target, Cell):
             if target_subpath is None:
@@ -310,7 +327,9 @@ class Cell(SeamlessBase):
         elif isinstance(target, EditPin):
             pass
         elif isinstance(target, OutputPin):
-            raise TypeError("Output pins must be the source of a connection, not the target")
+            raise TypeError(
+                "Output pins must be the source of a connection, not the target"
+            )
         elif isinstance(target, Transformer):
             raise TypeError("Transformers cannot be connected directly, select a pin")
         elif isinstance(target, Macro):
@@ -331,6 +350,7 @@ class Cell(SeamlessBase):
         """Create a bidirectional unilink between two cells"""
         from .unilink import UniLink
         from .macro import Path
+
         if isinstance(target, UniLink):
             target = target.get_linked()
         if not isinstance(target, (Cell, Path)):
@@ -356,8 +376,15 @@ class Cell(SeamlessBase):
         self._mount.update({"extension": extension})
         return self
 
-    def mount(self, path=None, mode="rw", authority="file", 
-        *, persistent=True, as_directory=False, directory_text_only=False,
+    def mount(
+        self,
+        path=None,
+        mode="rw",
+        authority="file",
+        *,
+        persistent=True,
+        as_directory=False,
+        directory_text_only=False,
     ):
         """Performs a "lazy mount"; cell is mounted to the file when macro mode ends
         path: file path (can be None if an ancestor context has been mounted)
@@ -368,24 +395,29 @@ class Cell(SeamlessBase):
         directory_text_only: directory mount is text-only
         """
         from .context import Context
-        assert is_dummy_mount(self._mount) #Only the mountmanager may modify this further!
+
+        assert is_dummy_mount(
+            self._mount
+        )  # Only the mountmanager may modify this further!
         if self._mount_kwargs is None:
-            raise NotImplementedError #cannot mount this type of cell
+            raise NotImplementedError  # cannot mount this type of cell
 
         kwargs = self._mount_kwargs
         if self._mount is None:
             self._mount = {}
-        self._mount.update({
-            "autopath": False,
-            "path": path,
-            "mode": mode,
-            "authority": authority,
-            "persistent": persistent,
-            "as_directory": as_directory,
-            "directory_text_only": directory_text_only
-        })
+        self._mount.update(
+            {
+                "autopath": False,
+                "path": path,
+                "mode": mode,
+                "authority": authority,
+                "persistent": persistent,
+                "as_directory": as_directory,
+                "directory_text_only": directory_text_only,
+            }
+        )
         self._mount.update(self._mount_kwargs)
-        MountItem(None, self, dummy=True, **self._mount) #to validate parameters
+        MountItem(None, self, dummy=True, **self._mount)  # to validate parameters
         context = self._context
         if context is not None and context() is not None:
             if isinstance(context(), Context):
@@ -398,15 +430,15 @@ class Cell(SeamlessBase):
 
     def _add_traitlet(self, traitlet, trigger=True):
         from ..highlevel.SeamlessTraitlet import SeamlessTraitlet
+
         assert isinstance(traitlet, SeamlessTraitlet)
         self._traitlets.append(traitlet)
         if trigger and self._checksum:
             traitlet.receive_update(self._checksum)
 
-
     def _set_observer(self, observer, trigger=True):
         manager = self._get_manager()
-        livegraph = manager.livegraph        
+        livegraph = manager.livegraph
         self._observer = observer
         if trigger and self._checksum:
             cs = self._checksum
@@ -415,18 +447,19 @@ class Cell(SeamlessBase):
             else:
                 observer(cs)
 
-    def share(self, path=None, readonly=True, mimetype=None, *, toplevel=False, cellname=None):
+    def share(
+        self, path=None, readonly=True, mimetype=None, *, toplevel=False, cellname=None
+    ):
         if not readonly:
-            if self._structured_cell is not None and self._structured_cell._data is self:
+            if (
+                self._structured_cell is not None
+                and self._structured_cell._data is self
+            ):
                 pass
             else:
                 assert self.has_independence()
         oldshare = self._share
-        self._share = {
-            "readonly": readonly,
-            "path": path,
-            "toplevel": toplevel
-        }
+        self._share = {"readonly": readonly, "path": path, "toplevel": toplevel}
         if mimetype is not None:
             self._share["mimetype"] = mimetype
         if cellname is not None:
@@ -453,6 +486,7 @@ class Cell(SeamlessBase):
 
     def _unmount(self, *, from_del, manager):
         from .macro import Macro
+
         if self._unmounted:
             return
         self._unmounted = True
@@ -461,6 +495,7 @@ class Cell(SeamlessBase):
         mountmanager = manager.mountmanager
         if not is_dummy_mount(self._mount):
             mountmanager.unmount(self, from_del=from_del)
+
 
 class BinaryCell(Cell):
     """A cell in binary (Numpy) format"""
@@ -475,6 +510,7 @@ class MixedCell(Cell):
 
     def __init__(self, hash_pattern=None):
         from .protocol.deep_structure import validate_hash_pattern
+
         super().__init__()
         if hash_pattern is not None:
             validate_hash_pattern(hash_pattern)
@@ -483,6 +519,7 @@ class MixedCell(Cell):
     @property
     def storage(self):
         from silk.mixed.get_form import get_form
+
         v = super().value
         if v is None:
             return None
@@ -491,6 +528,7 @@ class MixedCell(Cell):
     @property
     def form(self):
         from silk.mixed.get_form import get_form
+
         v = super().value
         if v is None:
             return None
@@ -502,6 +540,7 @@ class MixedCell(Cell):
         Deep structures are unfolded
         cell.set(cell.value) is guaranteed to have no effect"""
         from .protocol.expression import get_subpath_sync
+
         value = self._get_value(copy=True)
         if self._hash_pattern is None:
             return value
@@ -509,14 +548,15 @@ class MixedCell(Cell):
         return get_subpath_sync(value, self._hash_pattern, None)
 
 
-
 class TextCell(Cell):
     _mount_kwargs = {"encoding": "utf-8", "binary": False}
     _celltype = "text"
 
+
 class PythonCell(Cell):
     """Generic Python code object
     Buffer ends with a newline"""
+
     _celltype = "python"
     _subcelltype = None
     _mount_kwargs = {"encoding": "utf-8", "binary": False}
@@ -524,6 +564,7 @@ class PythonCell(Cell):
     def set(self, value):
         """Update cell data from authority"""
         from ..util import strip_decorators
+
         if callable(value):
             value = inspect.getsource(value)
         if value is not None:
@@ -535,10 +576,12 @@ class PythonCell(Cell):
         ret = "Seamless Python cell: " + self._format_path()
         return ret
 
+
 class PyReactorCell(PythonCell):
     """Python code object used for reactors
     a "PINS" object will be inserted into its namespace
     Buffer ends with a newline"""
+
     _subcelltype = "reactor"
 
     def __str__(self):
@@ -550,12 +593,12 @@ class PyTransformerCell(PythonCell):
     """Python code object used for transformers
     Each input will be an argument
     Buffer ends with a newline"""
+
     _subcelltype = "transformer"
 
     def __str__(self):
         ret = "Seamless Python transformer code cell: " + self._format_path()
         return ret
-
 
 
 class PyMacroCell(PythonCell):
@@ -565,20 +608,24 @@ class PyMacroCell(PythonCell):
     If the macro is a function, ctx must be returned
     Buffer ends with a newline
     """
+
     _subcelltype = "macro"
 
     def __str__(self):
         ret = "Seamless Python macro code cell: " + self._format_path()
         return ret
 
+
 class IPythonCell(Cell):
     """A cell in IPython format (e.g. a Jupyter cell). Buffer ends with a newline"""
+
     _celltype = "ipython"
     _mount_kwargs = {"encoding": "utf-8", "binary": False}
 
     def set(self, value):
         """Update cell data from authority"""
         from ..util import strip_decorators
+
         if callable(value):
             value = inspect.getsource(value)
         if value is not None:
@@ -593,44 +640,61 @@ class IPythonCell(Cell):
 
 class PlainCell(TextCell):
     """A cell in plain (i.e. JSON-serializable) format. Buffer ends with a newline"""
+
     _celltype = "plain"
 
 
 class CsonCell(TextCell):
     """A cell in CoffeeScript Object Notation (CSON) format. Buffer ends with a newline"""
+
     _celltype = "cson"
+
 
 class YamlCell(TextCell):
     """A cell in YAML format. Buffer ends with a newline"""
+
     _celltype = "yaml"
+
 
 class StrCell(TextCell):
     """A cell containing a string, wrapped in double quotes. Buffer ends with a newline"""
+
     _celltype = "str"
+
 
 class BytesCell(TextCell):
     """A cell containing bytes"""
+
     _mount_kwargs = {"binary": True}
     _celltype = "bytes"
 
+
 class IntCell(TextCell):
     """A cell containing an integer. Buffer ends with a newline"""
+
     _celltype = "int"
+
 
 class FloatCell(TextCell):
     """A cell containing a float. Buffer ends with a newline"""
+
     _celltype = "float"
+
 
 class BoolCell(TextCell):
     """A cell containing a bool. Buffer ends with a newline"""
+
     _celltype = "bool"
+
 
 class ChecksumCell(TextCell):
     """A cell that contains a checksum hex, or a deep (Merkle-like) structure
 
     Checksum cells do not hold references to the checksum value(s) they contain
     """
+
     _celltype = "checksum"
+
 
 cellclasses = {
     "text": TextCell,
@@ -649,8 +713,9 @@ cellclasses = {
     "int": IntCell,
     "float": FloatCell,
     "bool": BoolCell,
-    "checksum": ChecksumCell
+    "checksum": ChecksumCell,
 }
+
 
 def cell(celltype="mixed", **kwargs):
     if celltype is None:
@@ -658,26 +723,36 @@ def cell(celltype="mixed", **kwargs):
     cellclass = cellclasses[celltype]
     return cellclass(**kwargs)
 
-_cellclasses = [cellclass for cellclass in globals().values() if isinstance(cellclass, type) \
-  and issubclass(cellclass, Cell)]
+
+_cellclasses = [
+    cellclass
+    for cellclass in globals().values()
+    if isinstance(cellclass, type) and issubclass(cellclass, Cell)
+]
 
 extensions = {cellclass: ".txt" for cellclass in _cellclasses}
-extensions.update({
-    TextCell: ".txt",
-    PlainCell: ".json",
-    CsonCell: ".cson",
-    YamlCell: ".yaml",
-    BytesCell: ".dat",
-    PythonCell: ".py",
-    PyTransformerCell: ".py",
-    PyReactorCell: ".py",
-    PyMacroCell: ".py",
-    IPythonCell: ".ipy",
-    MixedCell: ".mixed",
-    BinaryCell: ".npy",
-})
+extensions.update(
+    {
+        TextCell: ".txt",
+        PlainCell: ".json",
+        CsonCell: ".cson",
+        YamlCell: ".yaml",
+        BytesCell: ".dat",
+        PythonCell: ".py",
+        PyTransformerCell: ".py",
+        PyReactorCell: ".py",
+        PyMacroCell: ".py",
+        IPythonCell: ".ipy",
+        MixedCell: ".mixed",
+        BinaryCell: ".npy",
+    }
+)
 
-subcelltypes = {cellclass._subcelltype:cellclass for cellclass in _cellclasses if cellclass._subcelltype is not None}
+subcelltypes = {
+    cellclass._subcelltype: cellclass
+    for cellclass in _cellclasses
+    if cellclass._subcelltype is not None
+}
 subcelltypes["module"] = None
 
 from .unbound_context import UnboundManager
@@ -687,6 +762,7 @@ from silk.mixed.get_form import get_form
 from .structured_cell import Inchannel, Outchannel
 from .macro_mode import get_macro_mode
 from .share import sharemanager
+
 """
 TODO Documentation: only-text changes
      adding comments / breaking up lines to a Python cell will affect a syntax highlighter, but not a transformer, it is only text

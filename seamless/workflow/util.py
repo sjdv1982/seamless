@@ -138,7 +138,7 @@ def verify_transformation_success(
     from .highlevel import Checksum
     from .config import database
     from .core.cache.buffer_cache import buffer_cache
-    from seamless.Expression import Expression
+    from seamless.checksum import Expression
 
     assert database.active
     transformation_checksum = Checksum(transformation_checksum)

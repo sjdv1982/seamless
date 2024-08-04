@@ -2,9 +2,10 @@ from collections import namedtuple
 import asyncio
 
 from . import BackgroundTask
-from seamless.buffer.serialize import serialize
+from seamless.checksum.serialize import serialize
 
-Serialization = namedtuple("Serialization",["value_id", "celltype"])
+Serialization = namedtuple("Serialization", ["value_id", "celltype"])
+
 
 class SerializeToBufferTask(BackgroundTask):
     @property
@@ -26,7 +27,9 @@ class SerializeToBufferTask(BackgroundTask):
         taskmanager = manager.taskmanager
         loop = taskmanager.loop
         try:
-            result = await serialize(self.value, self.celltype, use_cache=self.use_cache)
+            result = await serialize(
+                self.value, self.celltype, use_cache=self.use_cache
+            )
         except asyncio.CancelledError as exc:
             raise exc from None
         except Exception as exc:

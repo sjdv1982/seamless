@@ -5,6 +5,7 @@ from . import Task
 import asyncio
 import numpy as np
 
+
 class SetCellValueTask(Task):
     # For values that come from an interactive modification
     def __init__(self, manager, cell, value, *, origin_reactor=None):
@@ -16,6 +17,7 @@ class SetCellValueTask(Task):
 
     async def _run(self):
         from . import SerializeToBufferTask, CalculateChecksumTask, CellUpdateTask
+
         manager = self.manager()
         if manager is None or manager._destroyed:
             return
@@ -29,18 +31,15 @@ class SetCellValueTask(Task):
             value = self.value
             hash_pattern = cell._hash_pattern
             if hash_pattern is not None:
-                
-                new_deep_value, _ = await value_to_deep_structure(
-                    value, hash_pattern
-                )
+
+                new_deep_value, _ = await value_to_deep_structure(value, hash_pattern)
                 value = new_deep_value
 
             checksum = None
             if value is not None:
                 validate_text(value, cell._celltype, "".join(cell.path))
                 task = SerializeToBufferTask(
-                    manager, value, cell._celltype,
-                    use_cache=False
+                    manager, value, cell._celltype, use_cache=False
                 ).run()
                 try:
                     buffer = await task
@@ -55,38 +54,51 @@ class SetCellValueTask(Task):
             checksum = Checksum(checksum)
             if checksum:
                 if isinstance(value, np.ndarray):
-                    buffer_cache.update_buffer_info(checksum, "shape", value.shape, sync_remote=False)
-                    buffer_cache.update_buffer_info(checksum, "dtype", str(value.dtype), sync_remote=False)
-                buffer_cache.guarantee_buffer_info(checksum, cell._celltype, buffer=buffer, sync_to_remote=True)
+                    buffer_cache.update_buffer_info(
+                        checksum, "shape", value.shape, sync_remote=False
+                    )
+                    buffer_cache.update_buffer_info(
+                        checksum, "dtype", str(value.dtype), sync_remote=False
+                    )
+                buffer_cache.guarantee_buffer_info(
+                    checksum, cell._celltype, buffer=buffer, sync_to_remote=True
+                )
                 validate_evaluation_subcelltype(
-                    checksum, buffer,
-                    cell._celltype, cell._subcelltype,
-                    str(cell)
+                    checksum, buffer, cell._celltype, cell._subcelltype, str(cell)
                 )
                 manager.cancel_cell(cell, void=False, origin_task=self)
                 checksum_cache[checksum] = buffer
-                buffer_cache.cache_buffer(checksum, buffer)                
+                buffer_cache.cache_buffer(checksum, buffer)
                 manager._set_cell_checksum(self.cell, checksum, False)
                 livegraph.cell_parsing_exceptions.pop(cell, None)
-                CellUpdateTask(manager, cell, origin_reactor=self.origin_reactor).launch()
+                CellUpdateTask(
+                    manager, cell, origin_reactor=self.origin_reactor
+                ).launch()
             else:
-                manager.cancel_cell(cell, True, reason=StatusReasonEnum.UNDEFINED, origin_task=self)
+                manager.cancel_cell(
+                    cell, True, reason=StatusReasonEnum.UNDEFINED, origin_task=self
+                )
         except asyncio.CancelledError as exc:
             if self._canceled:
                 raise exc from None
             exc = traceback.format_exc()
-            manager.cancel_cell(self.cell, True, reason=StatusReasonEnum.INVALID, origin_task=self)
+            manager.cancel_cell(
+                self.cell, True, reason=StatusReasonEnum.INVALID, origin_task=self
+            )
             livegraph.cell_parsing_exceptions[self.cell] = exc
         except Exception as exc:
             exc = traceback.format_exc()
-            manager.cancel_cell(self.cell, True, reason=StatusReasonEnum.INVALID, origin_task=self)
+            manager.cancel_cell(
+                self.cell, True, reason=StatusReasonEnum.INVALID, origin_task=self
+            )
             livegraph.cell_parsing_exceptions[self.cell] = exc
         finally:
             taskmanager.cell_to_value.pop(cell, None)
         return None
 
-from seamless.buffer.evaluate import validate_evaluation_subcelltype, validate_text
-from seamless.buffer.cached_calculate_checksum import checksum_cache
+
+from seamless.checksum.evaluate import validate_evaluation_subcelltype, validate_text
+from seamless.checksum.cached_calculate_checksum import checksum_cache
 from ...status import StatusReasonEnum
 from ...protocol.deep_structure import value_to_deep_structure
-from seamless.buffer.buffer_cache import buffer_cache
+from seamless.checksum.buffer_cache import buffer_cache

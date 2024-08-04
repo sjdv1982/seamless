@@ -37,7 +37,7 @@ from silk.SilkBase import binary_special_method_names
 from .Base import Base
 from .Resource import Resource
 from .SelfWrapper import SelfWrapper
-from seamless.buffer.mime import get_mime, language_to_mime, ext_to_mime
+from seamless.checksum.mime import get_mime, language_to_mime, ext_to_mime
 from .HelpMixin import HelpMixin
 from seamless import Checksum
 
@@ -170,7 +170,7 @@ class Cell(Base, HelpMixin):
             self._node = get_new_cell(None)
         return self._node
 
-    def _observe_cell(self, checksum:Checksum):
+    def _observe_cell(self, checksum: Checksum):
         checksum = Checksum(checksum)
         if self._parent() is None:
             return
@@ -192,7 +192,7 @@ class Cell(Base, HelpMixin):
             hcell["checksum"]["value"] = checksum
             hcell["checksum"].pop("buffered", None)
 
-    def _observe_auth(self, checksum:Checksum):
+    def _observe_auth(self, checksum: Checksum):
         checksum = Checksum(checksum)
         if self._parent() is None:
             return
@@ -213,7 +213,7 @@ class Cell(Base, HelpMixin):
         if checksum:
             hcell["checksum"]["auth"] = checksum
 
-    def _observe_buffer(self, checksum:Checksum):
+    def _observe_buffer(self, checksum: Checksum):
         checksum = Checksum(checksum)
         if self._parent() is None:
             return
@@ -237,7 +237,7 @@ class Cell(Base, HelpMixin):
             if "value" not in hcell["checksum"]:
                 hcell["checksum"]["buffered"] = checksum
 
-    def _observe_schema(self, checksum:Checksum):
+    def _observe_schema(self, checksum: Checksum):
         checksum = Checksum(checksum)
         if self._parent() is None:
             return
@@ -322,7 +322,7 @@ class Cell(Base, HelpMixin):
         mode: str = "rw",
         authority: str = "file",
         *,
-        persistent: bool = True
+        persistent: bool = True,
     ):
         """Mounts the cell to the file system.
         Mounting is only supported for non-structured cells.
@@ -611,7 +611,8 @@ This cell is not fully independent, i.e. it has incoming connections"""
         - If not available, try to re-compute it using its provenance,
             i.e. re-evaluating any transformation or expression that produced it
         - Such recomputation is done in "fingertip" mode, i.e. disallowing
-            cache hits from expression-to-checksum or transformation-to-checksum caches"""
+            cache hits from expression-to-checksum or transformation-to-checksum caches
+        """
         parent = self._parent()
         manager = parent._manager
         cachemanager = manager.cachemanager
@@ -637,7 +638,7 @@ This cell is not fully independent, i.e. it has incoming connections"""
             raise AttributeError
         cell = self._get_cell()
         if cell.no_auth:
-            raise TypeError("Cannot set the value of a cell that is not independent")        
+            raise TypeError("Cannot set the value of a cell that is not independent")
         if self.hash_pattern is not None:
             return cell.handle_hash
         else:
@@ -692,7 +693,9 @@ This cell is not fully independent, i.e. it has incoming connections"""
             cell.set_auth_checksum(checksum.hex())
         else:
             if not self.independent:
-                raise TypeError("Cannot set the checksum of a cell that is not independent")
+                raise TypeError(
+                    "Cannot set the checksum of a cell that is not independent"
+                )
             cell.set_checksum(checksum.hex())
 
     @property
@@ -733,7 +736,7 @@ This cell is not fully independent, i.e. it has incoming connections"""
         return hcell["celltype"]
 
     @celltype.setter
-    def celltype(self, value:str):
+    def celltype(self, value: str):
         if not isinstance(value, str):
             raise TypeError(type(value))
         assert value in celltypes, value
@@ -849,14 +852,18 @@ This cell is not fully independent, i.e. it has incoming connections"""
             hcell.pop("datatype", None)
         else:
             if value == "bytes":
-                raise TypeError("Byte cells and structured cells are stored differently.")
+                raise TypeError(
+                    "Byte cells and structured cells are stored differently."
+                )
             elif value == "text":
-                raise TypeError("""
+                raise TypeError(
+                    """
 Text cells and structured cells are stored differently.
 
 For use in web forms, instead use "str".
 For other use in HTTP requests, instead set mimetype to "text/plain".
-""")
+"""
+                )
         hcell["datatype"] = value
 
     @property
@@ -876,7 +883,7 @@ For other use in HTTP requests, instead set mimetype to "text/plain".
         return "scratch" in hcell
 
     @scratch.setter
-    def scratch(self, value:bool):
+    def scratch(self, value: bool):
         if value not in (True, False):
             raise TypeError(value)
         hcell = self._get_hcell2()
@@ -898,7 +905,7 @@ For other use in HTTP requests, instead set mimetype to "text/plain".
         return hcell.get("fingertip_no_remote", False)
 
     @fingertip_no_remote.setter
-    def fingertip_no_remote(self, value:bool):
+    def fingertip_no_remote(self, value: bool):
         if value not in (True, False):
             raise TypeError(value)
         hcell = self._get_hcell2()
@@ -919,7 +926,7 @@ For other use in HTTP requests, instead set mimetype to "text/plain".
         return hcell.get("fingertip_no_recompute", False)
 
     @fingertip_no_recompute.setter
-    def fingertip_no_recompute(self, value:bool):
+    def fingertip_no_recompute(self, value: bool):
         if value not in (True, False):
             raise TypeError(value)
         hcell = self._get_hcell2()
@@ -1098,7 +1105,7 @@ def _cell_binary_method(self, other, name):
     hcell = self._get_hcell()
     is_simple = False
     if hcell.get("UNTRANSLATED") and "TEMP" in hcell:
-        obj = hcell["TEMP"]    
+        obj = hcell["TEMP"]
     elif self.celltype == "structured":
         obj = self.handle
     else:
@@ -1138,6 +1145,7 @@ class FolderCell(Cell):
 
     For datasets that do not fit in memory, use DeepFolderCell instead.
     """
+
     def _get_hcell2(self):
         try:
             return self._get_hcell()
@@ -1214,6 +1222,7 @@ def Constant(*args, **kwargs):
     cell._get_hcell2()["constant"] = True
     return cell
 
+
 def SimpleDeepCell():
     """Construct a mixed cell with a deep hash pattern."""
     cell = Cell()
@@ -1221,6 +1230,7 @@ def SimpleDeepCell():
     node["celltype"] = "mixed"
     node["hash_pattern"] = {"*": "#"}
     return cell
+
 
 for _ in binary_special_method_names:
     if _ in Cell.__dict__:

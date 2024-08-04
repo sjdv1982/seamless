@@ -9,7 +9,7 @@ class Buffer:
     def __init__(
         self, value_or_buffer, celltype: str | None = None, *, checksum: Checksum = None
     ):
-        from seamless.buffer.serialize import serialize_sync as serialize
+        from seamless.checksum.serialize import serialize_sync as serialize
 
         celltype = self._map_celltype(celltype)
         if celltype is None:
@@ -32,7 +32,7 @@ class Buffer:
         if celltype is None:
             return None
 
-        from seamless.buffer.cell import celltypes
+        from seamless.checksum.cell import celltypes
 
         allowed_celltypes = celltypes + [
             "deepcell",
@@ -66,7 +66,7 @@ class Buffer:
 
     def get_checksum(self) -> Checksum:
         """Returns the buffer's Checksum object, calculating it if needed"""
-        from seamless.buffer.cached_calculate_checksum import (
+        from seamless.checksum.cached_calculate_checksum import (
             cached_calculate_checksum_sync as cached_calculate_checksum,
         )
 
@@ -79,7 +79,9 @@ class Buffer:
 
     async def get_checksum_async(self) -> Checksum:
         """Returns the buffer's Checksum object, calculating it asynchronously if needed"""
-        from seamless.buffer.cached_calculate_checksum import cached_calculate_checksum
+        from seamless.checksum.cached_calculate_checksum import (
+            cached_calculate_checksum,
+        )
 
         if self._checksum is None:
             buf = self.value
@@ -90,7 +92,7 @@ class Buffer:
 
     def upload(self) -> None:
         """Upload buffer to buffer write server (if defined)"""
-        from seamless.buffer.buffer_remote import write_buffer
+        from seamless.checksum.buffer_remote import write_buffer
 
         self.get_checksum()
         write_buffer(self.checksum, self.value)
@@ -110,7 +112,7 @@ class Buffer:
     def deserialize(self, celltype: str):
         """Converts the buffer to a value.
         The checksum must have been computed already."""
-        from seamless.buffer.deserialize import deserialize_sync as deserialize
+        from seamless.checksum.deserialize import deserialize_sync as deserialize
 
         if self.value is None:
             return None
@@ -124,7 +126,7 @@ class Buffer:
         If copy=False, the value can be returned from cache.
         It must not be modified.
         """
-        from seamless.buffer.deserialize import deserialize
+        from seamless.checksum.deserialize import deserialize
 
         if self.value is None:
             return None

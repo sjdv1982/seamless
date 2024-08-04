@@ -1,6 +1,7 @@
 from seamless import Checksum
 from . import Task, BackgroundTask
-from seamless.buffer.cached_calculate_checksum import cached_calculate_checksum
+from seamless.checksum.cached_calculate_checksum import cached_calculate_checksum
+
 
 class CalculateChecksumTask(BackgroundTask):
     @property
