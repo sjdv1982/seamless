@@ -281,7 +281,7 @@ from .serialize_buffer import SerializeToBufferTask
 from .checksum import CalculateChecksumTask
 from .get_buffer import GetBufferTask
 from seamless.checksum.buffer_cache import buffer_cache
-from seamless.checksum.evaluate import validate_evaluation_subcelltype
+from seamless.checksum.value_conversion import validate_evaluation_subcelltype
 from ...build_module import build_all_modules
 from seamless.compiler import (
     compilers as default_compilers,

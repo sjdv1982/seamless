@@ -1231,7 +1231,7 @@ from seamless.compiler import (
 )
 from seamless.checksum.get_buffer import get_buffer
 from seamless.checksum.deserialize import deserialize, deserialize_sync
-from seamless.checksum.evaluate import validate_evaluation_subcelltype
+from seamless.checksum.value_conversion import validate_evaluation_subcelltype
 from seamless import CacheMissError, Checksum
 from seamless.checksum.buffer_cache import buffer_cache
 from .cache.transformation_cache import (

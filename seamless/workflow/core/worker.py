@@ -57,7 +57,7 @@ class Worker(SeamlessBase):
         return object.__dir__(self) + list(self._pins.keys())
 
 
-from seamless.checksum.cell import celltypes
+from seamless.checksum.celltypes import celltypes
 
 
 class PinBase(SeamlessBase):

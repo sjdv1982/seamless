@@ -1,18 +1,47 @@
-"""
-Handles all conversions that can be done using checksum and buffer alone,
+# pylint: disable=ungrouped-imports
+
+"""Handles all conversions that can be done using checksum and buffer alone,
  i.e. without value conversion.
 Conversions involving paths or hash patterns are also out-of-scope
 """
 
 import ast
+import builtins
 import orjson
 import numpy as np
-import builtins
+import ruamel.yaml
+
+from silk.mixed import MAGIC_NUMPY, MAGIC_SEAMLESS_MIXED
 
 from seamless import Buffer, Checksum
 
+from seamless.util.cson import cson2json
+from seamless.util.ipython import ipython2python
+from seamless.checksum.conversion import (
+    conversion_trivial,
+    conversion_reformat,
+    conversion_reinterpret,
+    conversion_possible,
+    conversion_equivalent,
+    conversion_chain,
+    conversion_values,
+    conversion_forbidden,
+    SeamlessConversionError,
+)
+from seamless.checksum.buffer_info import convert_from_buffer_info
+from seamless.checksum.buffer_cache import buffer_cache
+from seamless.checksum.deserialize import deserialize_sync
+from seamless.checksum.serialize import serialize_sync
+from seamless.checksum.get_buffer import get_buffer
 
-def validate_text(text, celltype, code_filename):
+yaml = ruamel.yaml.YAML(typ="safe")
+
+
+def validate_text(text: str, celltype: str, code_filename):
+    """Validate that 'text' is a valid value of 'celltype'.
+    A 'code_filename' can be provided for code buffers, to mark them with a
+    temporary source code filename.
+    """
     try:
         if text is None:
             return
@@ -32,6 +61,7 @@ def validate_text(text, celltype, code_filename):
 
 
 def validate_checksum(v):
+    """Validate a checksum, list or dict recursively"""
     if isinstance(v, str):
         if len(v) != 64:
             msg = v
@@ -124,14 +154,14 @@ def try_convert(
             if isinstance(result, Checksum):
                 curr_checksum = result
                 curr_buffer = None
-            elif result == True:
+            elif result == True:  # pylint: disable=singleton-comparison
                 pass
             elif result is None or result == -1:
                 if break_on_value:
                     conv = (curr_celltype, next_celltype)
                     if conv in conversion_values:
                         return None
-            elif result == False:
+            elif result == False:  # pylint: disable=singleton-comparison
                 return False
 
             curr_celltype = next_celltype
@@ -425,31 +455,3 @@ def _convert_from_buffer(checksum, buffer, source_celltype, target_celltype):
         return _convert_possible(checksum, buffer, source_celltype, target_celltype)
     else:
         return None
-
-
-from silk.mixed import MAGIC_NUMPY, MAGIC_SEAMLESS_MIXED
-
-import ruamel.yaml
-
-yaml = ruamel.yaml.YAML(typ="safe")
-
-from seamless.util.cson import cson2json
-
-from seamless.util.ipython import ipython2python
-
-from .conversion import (
-    conversion_trivial,
-    conversion_reformat,
-    conversion_reinterpret,
-    conversion_possible,
-    conversion_equivalent,
-    conversion_chain,
-    conversion_values,
-    conversion_forbidden,
-    SeamlessConversionError,
-)
-from .buffer_info import convert_from_buffer_info
-from .buffer_cache import buffer_cache
-from .deserialize import deserialize_sync
-from .serialize import serialize_sync
-from .get_buffer import get_buffer

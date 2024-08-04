@@ -2,6 +2,20 @@
 
 """BufferInfo class"""
 
+from seamless import Checksum
+
+from seamless.checksum.conversion import (
+    conversion_trivial,
+    conversion_reformat,
+    conversion_reinterpret,
+    conversion_possible,
+    conversion_equivalent,
+    conversion_chain,
+    conversion_values,
+    conversion_forbidden,
+    SeamlessConversionError,
+)
+
 
 class BufferInfo:
     """
@@ -74,13 +88,12 @@ class BufferInfo:
         "members",
     )
 
-    def __init__(self, checksum, params: dict = None):
+    def __init__(self, checksum: Checksum, params: dict | None = None):
         if params is None:
             params = {}
         for slot in self.__slots__:
             setattr(self, slot, params.get(slot))
-        if isinstance(checksum, str):
-            checksum = bytes.fromhex(checksum)
+        checksum = Checksum(checksum)
         self.checksum = checksum
 
     def __setattr__(self, attr, value):
@@ -121,7 +134,7 @@ class BufferInfo:
         else:
             return value
 
-    def as_dict(self):
+    def as_dict(self) -> dict:
         """Return the BufferInfo as dict"""
         result = {}
         for attr in self.__slots__:
@@ -133,7 +146,7 @@ class BufferInfo:
         return result
 
 
-def validate_buffer_info(buffer_info: BufferInfo, celltype):
+def validate_buffer_info(buffer_info: BufferInfo, celltype: str):
     """Raises an ValueError exception if buffer_info is certainly incompatible with celltype"""
     self = buffer_info
     if celltype == "bytes":
@@ -212,8 +225,7 @@ def convert_from_buffer_info(
 ):
     """Try to convert using buffer info alone.
     Return True if the conversion is possible and does not change checksum
-    Return the checksum (bytes format, not hex) if the checksum is different but
-     stored in the buffer info
+    Return the checksum if the checksum is different but stored in the buffer info
     Return -1 if the conversion is surely possible, but the converted checksum is not known
     Return None if the conversion may or may not be possible
     Return False if the conversion is surely not possible
@@ -317,16 +329,3 @@ def convert_from_buffer_info(
         return result
     else:
         raise AssertionError
-
-
-from .conversion import (
-    conversion_trivial,
-    conversion_reformat,
-    conversion_reinterpret,
-    conversion_possible,
-    conversion_equivalent,
-    conversion_chain,
-    conversion_values,
-    conversion_forbidden,
-    SeamlessConversionError,
-)

@@ -12,7 +12,7 @@ import os, tempfile, shutil, functools
 from numpy import mod
 from sys import modules
 from seamless.workflow.core.manager import livegraph
-from seamless.checksum.cell import celltypes
+from seamless.checksum.celltypes import celltypes
 from seamless import Checksum
 
 SEAMLESS_DEBUGGING_DIRECTORY = os.environ.get("SEAMLESS_DEBUGGING_DIRECTORY")

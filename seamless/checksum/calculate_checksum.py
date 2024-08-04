@@ -33,7 +33,7 @@ def calculate_file_checksum(filename: str) -> str:
     return checksum
 
 
-def calculate_dict_checksum(d, hex=False):  # pylint: disable=redefined-builtin
+def calculate_dict_checksum(d: dict, hex=False):  # pylint: disable=redefined-builtin
     """This function is compatible with the checksum of a "plain" cell"""
     from seamless.checksum.json import json_dumps
 

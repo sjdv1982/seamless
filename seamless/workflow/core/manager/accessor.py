@@ -124,7 +124,7 @@ class WriteAccessor(Accessor):
         self.hash_pattern = hash_pattern
 
 
-from seamless.checksum.cell import celltypes
+from seamless.checksum.celltypes import celltypes
 from ...core.cell import Cell, subcelltypes
 from ...core.macro import Path as MacroPath
 from ...core.status import StatusReasonEnum

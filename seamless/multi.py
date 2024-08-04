@@ -312,7 +312,7 @@ def resolve(
     as callback(N, value) whenever a resolve finishes.
     """
     from seamless.workflow.core.manager import Manager
-    from seamless.checksum.cell import celltypes
+    from seamless.checksum.celltypes import celltypes
 
     allowed_celltypes = celltypes + [
         "deepcell",

@@ -9,7 +9,7 @@ from requests.exceptions import (  # pylint: disable=redefined-builtin
 from seamless import Checksum
 
 
-def has(session, url, checksum: Checksum, *, timeout=None):
+def has(session, url, checksum: Checksum, *, timeout=None) -> bool:
     """Check if a buffer is available at a remote URL.
     URL is accessed using HTTP GET, with /has added to the URL,
      and the checksum as parameter"""

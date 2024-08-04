@@ -178,7 +178,7 @@ def add_zip(manager, zipfile, incref=False):
 
 
 def fill_checksum(manager, node, temp_path, composite=True):
-    from seamless.checksum.cell import celltypes
+    from seamless.checksum.celltypes import celltypes
 
     checksum = None
     subcelltype = None

@@ -72,7 +72,7 @@ class SetCellBufferTask(Task):
 
 
 from seamless.checksum.cached_calculate_checksum import checksum_cache
-from seamless.checksum.evaluate import has_validated_evaluation, validate_text
+from seamless.checksum.value_conversion import has_validated_evaluation, validate_text
 from ...status import StatusReasonEnum
 from seamless.checksum.buffer_cache import buffer_cache
 from seamless.checksum.get_buffer import get_buffer

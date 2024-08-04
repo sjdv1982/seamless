@@ -32,7 +32,7 @@ class Buffer:
         if celltype is None:
             return None
 
-        from seamless.checksum.cell import celltypes
+        from seamless.checksum.celltypes import celltypes
 
         allowed_celltypes = celltypes + [
             "deepcell",

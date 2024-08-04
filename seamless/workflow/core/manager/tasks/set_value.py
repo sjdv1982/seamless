@@ -97,7 +97,10 @@ class SetCellValueTask(Task):
         return None
 
 
-from seamless.checksum.evaluate import validate_evaluation_subcelltype, validate_text
+from seamless.checksum.value_conversion import (
+    validate_evaluation_subcelltype,
+    validate_text,
+)
 from seamless.checksum.cached_calculate_checksum import checksum_cache
 from ...status import StatusReasonEnum
 from ...protocol.deep_structure import value_to_deep_structure

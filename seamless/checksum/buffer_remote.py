@@ -12,6 +12,7 @@ from requests.exceptions import (  # pylint: disable=redefined-builtin
     ReadTimeout,
 )
 from seamless import Buffer, Checksum
+from seamless.checksum import buffer_read_client, buffer_write_client
 
 _read_servers: list[str] | None = None
 _read_folders: list[str] | None = None
@@ -136,7 +137,7 @@ def write_buffer(checksum: Checksum, buffer: bytes) -> None:
     buffer_write_client.write(session, _write_server, checksum, buffer)
 
 
-def is_known(checksum: Checksum):
+def is_known(checksum: Checksum) -> bool:
     """Returns if a buffer is known to be known remotely, from cache."""
     checksum = Checksum(checksum)
     if not checksum:
@@ -144,7 +145,7 @@ def is_known(checksum: Checksum):
     return checksum in _known_buffers or checksum in _written_buffers
 
 
-def remote_has_checksum(checksum: Checksum):
+def remote_has_checksum(checksum: Checksum) -> bool:
     """Returns if a buffer is known remotely. This is queried directly."""
     checksum = Checksum(checksum)
     if _read_folders is not None:
@@ -161,7 +162,7 @@ def remote_has_checksum(checksum: Checksum):
     return False
 
 
-def can_read_buffer(checksum: Checksum):
+def can_read_buffer(checksum: Checksum) -> bool:
     """Returns if a buffer is known remotely.
     A local cache of buffers that are known to be known remotely
      is also queried."""
@@ -171,7 +172,7 @@ def can_read_buffer(checksum: Checksum):
     return remote_has_checksum(checksum)
 
 
-def can_write():
+def can_write() -> bool:
     """Returns if it is possible to write buffers remotely"""
     return _write_server is not None
 
@@ -251,6 +252,3 @@ def set_write_buffer_server(write_buffer_server):
 def has_readwrite_servers() -> bool:
     """Check if there is a write buffer server and at least one read buffer server"""
     return _write_server is not None and len(_read_servers)
-
-
-from . import buffer_read_client, buffer_write_client

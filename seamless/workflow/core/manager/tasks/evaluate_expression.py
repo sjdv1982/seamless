@@ -718,7 +718,7 @@ from .get_buffer import GetBufferTask
 from .deserialize_buffer import DeserializeBufferTask
 from .serialize_buffer import SerializeToBufferTask
 from seamless.checksum import Expression
-from seamless.checksum.evaluate import (
+from seamless.checksum.value_conversion import (
     conversion,
     validate_checksum,
     try_convert,

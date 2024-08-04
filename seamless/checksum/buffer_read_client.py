@@ -10,7 +10,7 @@ from requests.exceptions import (  # pylint: disable=redefined-builtin
 from seamless import Buffer, Checksum
 
 
-def has(session, url, checksum: Checksum) -> bool:
+def has(session: requests.Session, url: str, checksum: Checksum) -> bool:
     """Check if a buffer is available at a remote URL.
     URL is accessed using HTTP GET, with /has added to the URL,
      and the checksum as parameter"""
@@ -43,7 +43,7 @@ def has(session, url, checksum: Checksum) -> bool:
         return
 
 
-def get(session: requests.Session, url, checksum: Checksum):
+def get(session: requests.Session, url: str, checksum: Checksum) -> bytes | None:
     """Download a buffer from a remote URL.
     URL is accessed using HTTP GET, with /<checksum> added to the URL"""
     from seamless.workflow.util import is_forked

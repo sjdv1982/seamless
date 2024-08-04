@@ -10,6 +10,7 @@ from silk.mixed.io import (  # pylint: disable=no-name-in-module
 from silk.Silk import Silk
 
 from seamless.util import lrucache2
+from seamless.checksum.celltypes import text_types
 
 # serialize_cache: maps id(value),celltype to (buffer, value).
 # Need to store (a ref to) value,
@@ -19,7 +20,7 @@ serialize_cache = lrucache2(10)
 logger = logging.getLogger(__name__)
 
 
-def _serialize(value, celltype):
+def _serialize(value, celltype: str):
     from seamless.checksum.json import json_dumps
 
     if celltype == "str":
@@ -103,7 +104,7 @@ async def serialize(value, celltype: str, use_cache=True):
     return buffer
 
 
-def serialize_sync(value, celltype, use_cache=True):
+def serialize_sync(value, celltype: str, use_cache: bool = True):
     """Serializes a value into a buffer
     The celltype must be one of the allowed celltypes.
     This function can be executed if the asyncio event loop is already running"""
@@ -117,6 +118,3 @@ def serialize_sync(value, celltype, use_cache=True):
     if use_cache:
         serialize_cache[id_value, celltype] = buffer, value
     return buffer
-
-
-from .cell import text_types

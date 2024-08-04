@@ -7,7 +7,7 @@ persistent=yes
 
 [MESSAGES CONTROL]
 
-disable=import-error,import-outside-toplevel,wrong-import-position,
+disable=import-error,import-outside-toplevel,
   wildcard-import,unused-wildcard-import,
   protected-access,invalid-name,broad-except,unspecified-encoding,
   unnecessary-lambda-assignment,global-statement,

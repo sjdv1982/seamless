@@ -1,17 +1,24 @@
+"""Download from direct or FAIR server-provided URLs
+NOT for download from read buffer servers or folders,
+see buffer_remote.py for that"""
+
 import asyncio
 import urllib.parse
-import requests
 import time
 import gzip
 import bz2
 import sys
 from concurrent.futures import ThreadPoolExecutor
-from requests.exceptions import ConnectionError, ReadTimeout
+import requests
+from requests.exceptions import (  # pylint: disable=redefined-builtin
+    ConnectionError,
+    ReadTimeout,
+)
 from seamless import CacheMissError, Checksum
 
 from seamless import Buffer
 from seamless.checksum.get_buffer import get_buffer
-from seamless.checksum.cell import celltypes
+from seamless.checksum.celltypes import celltypes
 from seamless.checksum.buffer_cache import buffer_cache
 from seamless.checksum.convert import try_convert, SeamlessConversionError
 
@@ -21,11 +28,14 @@ MAX_DOWNLOADS = 10
 mirrors = {}
 
 
-class DownloadError(Exception):
-    pass
+class DownloadError(RuntimeError):
+    """Download error"""
 
 
 class Mirror:
+    """Host/server for URL downloads.
+    Listed for many URLs, so that it is useful to measure speed."""
+
     def __init__(self, host):
         self.host = host
         self._failure_count = 0
@@ -36,19 +46,23 @@ class Mirror:
 
     @property
     def dead(self):
+        """If server is considered dead, after 5 failures."""
         return self._failure_count >= 5
 
     def add_failure(self):
+        """Increment failure count"""
         self._failure_count += 1
 
     @property
     def connection_latency(self):
+        """Mean connection latency"""
         lat = self._connection_latencies
         if not len(lat):
             return None
         return sum(lat) / len(lat)
 
     def add_connection_latency(self, latency):
+        """Add connection latency measurement"""
         lat = self._connection_latencies
         if len(lat) == 10:
             lat[:] = lat[:-1]
@@ -56,19 +70,25 @@ class Mirror:
 
     @property
     def bandwidth(self):
+        """Mean download speed"""
         if self.dead:
             return 0
         if self._download_time == 0:
             return None
         return self._downloaded / self._download_time
 
-    def record_download(self, downloaded, download_time):
+    def record_download(self, downloaded: int, download_time: float):
+        """Add download speed measurement. Reset failure count."""
         self._downloaded += downloaded
         self._download_time += download_time
         self._failure_count = 0
 
 
-def validate_url_info(url_info):
+def validate_url_info(url_info: dict | str):
+    """Validate url info.
+    An url info can be a URL string or a dict containing 'url' and
+    optionally 'celltype', 'compression'.
+    """
     if isinstance(url_info, str):
         get_host(url_info)
     elif isinstance(url_info, dict):
@@ -87,12 +107,15 @@ def validate_url_info(url_info):
 
 
 def get_host(url):
+    """Get the host/server portion of an URL"""
     _, host, _, _, _ = urllib.parse.urlsplit(url)
     return host
 
 
-def test_bandwidth(mirror, url, max_time=5):
-    t = time.time()
+def test_bandwidth(mirror: Mirror, url: str, max_time=5):
+    """Run a bandwidth test for a mirror, using a test URL.
+    Allow 'max_time' failures."""
+    t = time.time()  # pylint: disable=redefined-outer-name
     try:
         response = session.get(url, stream=True, timeout=3)
         latency = time.time() - t
@@ -111,7 +134,12 @@ def test_bandwidth(mirror, url, max_time=5):
         mirror.add_failure()
 
 
-def sort_mirrors_by_latency(mirrorlist):
+def sort_mirrors_by_latency(
+    mirrorlist: list[Mirror, str]
+) -> list[tuple[Mirror, str, float]]:
+    """Sort mirrors by latency.
+    A list of (mirror, url info) tuples must be provided
+    Return a list of (mirror, url info, latency) tuples, sorted by ascending latency."""
     result = []
     for mirror, url_info in mirrorlist:
         url = _get_url(url_info)
@@ -125,7 +153,14 @@ def sort_mirrors_by_latency(mirrorlist):
     return [(r[0], r[1]) for r in result]
 
 
-def sort_mirrors_by_download_time(mirrorlist, buffer_length):
+def sort_mirrors_by_download_time(
+    mirrorlist: list[Mirror, str], buffer_length: int
+) -> list[tuple[Mirror, str, float]]:
+    """Sort mirrors by estimated download time.
+    This time is computed as latency + buffer length/bandwith
+    A list of (mirror, url info) tuples must be provided
+    Return a list of (mirror, url info, latency) tuples, sorted by ascending download time.
+    """
     result = []
     for mirror, url_info in mirrorlist:
         url = _get_url(url_info)
@@ -155,7 +190,11 @@ def sort_mirrors_by_download_time(mirrorlist, buffer_length):
     return [(r[0], r[1]) for r in result]
 
 
-def get_buffer_length(checksum: Checksum, mirrorlist):
+def get_buffer_length(checksum: Checksum, mirrorlist: list[Mirror, str]) -> int | None:
+    """
+    Determines the length of a buffer by downloading it from the fastest mirror.
+    mirrorlist: a list of (mirror, url info) tuples must be provided
+    """
     checksum = Checksum(checksum)
     if checksum and buffer_cache is not None:
         try:
@@ -170,7 +209,7 @@ def get_buffer_length(checksum: Checksum, mirrorlist):
         except CacheMissError:
             pass
     for mirror, url in sort_mirrors_by_latency(mirrorlist):
-        t = time.time()
+        t = time.time()  # pylint: disable=redefined-outer-name
         try:
             response = session.get(url, stream=True, timeout=3)
             latency = time.time() - t
@@ -198,8 +237,16 @@ def _get_url(url_info):
 
 
 def download_buffer_sync(
-    checksum: Checksum, url_infos, celltype="bytes", *, verbose=False
-):
+    checksum: Checksum,
+    url_infos: list[(str | dict)],
+    celltype: str = "bytes",
+    *,
+    verbose: bool = False
+) -> bytes | None:
+    """Downloads a buffer using a list of url infos.
+    An url info can be a URL string or a dict containing 'url' and
+    optionally 'celltype', 'compression'.
+    """
     checksum = Checksum(checksum)
     mirrorlist = []
     for url_info in url_infos:
@@ -232,7 +279,7 @@ def download_buffer_sync(
             url = _get_url(url_info)
             if mirror.connection_latency is not None:
                 continue
-            t = time.time()
+            t = time.time()  # pylint: disable=redefined-outer-name
             try:
                 session.get(url, stream=True, timeout=3)
                 latency = time.time() - t
@@ -308,7 +355,7 @@ def download_buffer_sync(
                 conv = try_convert(
                     bytes.fromhex(buf_checksum), source_celltype, celltype, buffer=buf
                 )
-                if conv == True:
+                if conv == True:  # pylint: disable=singleton-comparison
                     pass
                 elif isinstance(conv, bytes):
                     buf = get_buffer(conv, remote=False)
@@ -337,6 +384,10 @@ _curr_max_downloads = None
 
 
 async def download_buffer(checksum, url_infos, celltype="bytes"):
+    """Downloads a buffer using a list of url infos.
+    An url info can be a URL string or a dict containing 'url' and
+    optionally 'celltype', 'compression'.
+    """
     global threadpool, _curr_max_downloads
     if threadpool is None:
         new_threadpool = True
@@ -415,7 +466,7 @@ if __name__ == "__main__":
     print(len(fut.result()))
     print()
 
-    async def multiple_download_buffer():
+    async def multiple_download_buffer():  # pylint: disable=missing-function-docstring
         coro1 = download_buffer(checksum1, urls1)
         coro2 = download_buffer(checksum2, urls2)
         coro3 = download_buffer(checksum3, urls3)

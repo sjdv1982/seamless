@@ -1,3 +1,6 @@
+"""Functions related to MIME and file extensions.
+This is mostly important for mounting and for the shareserver"""
+
 import os
 
 mimetypes_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), "mime.types")
@@ -23,7 +26,8 @@ for l in open(mimetypes_file, "r"):
         mimetypes[mimetype].append(extension)
 
 
-def language_to_extension(language, fallback=None):
+def language_to_extension(language: str, fallback=None):
+    """Get programming language file extensions"""
     try:
         return language_to_ext[language]
     except KeyError:
@@ -61,7 +65,8 @@ celltype_to_ext = {
 }
 
 
-def get_mime(celltype):
+def get_mime(celltype) -> str | None:
+    """Get the default MIME of a celltype"""
     ext = celltype_to_ext[celltype]
     if ext is None:
         return None
@@ -69,11 +74,13 @@ def get_mime(celltype):
     return mime
 
 
-def language_to_mime(language):
+def language_to_mime(language) -> str:
+    """Get the MIME type for a programming language"""
     ext = language_to_ext[language]
     mime = mimetypes_rev[ext]
     return mime
 
 
-def ext_to_mime(ext):
+def ext_to_mime(ext) -> str:
+    """Find the MIME type of a file extension"""
     return mimetypes_rev[ext]

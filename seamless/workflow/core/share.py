@@ -389,4 +389,4 @@ sharemanager = ShareManager(0.2)
 from ..shareserver import shareserver
 from seamless import CacheMissError, Checksum
 from seamless.checksum.get_buffer import get_buffer
-from seamless.checksum.evaluate import conversion
+from seamless.checksum.value_conversion import conversion

@@ -7,7 +7,7 @@ from seamless import Checksum
 from . import SeamlessBase
 from copy import deepcopy
 from .status import StatusReasonEnum
-from seamless.checksum.cell import text_types, text_types2
+from seamless.checksum.celltypes import text_types, text_types2
 
 cell_counter = 0
 

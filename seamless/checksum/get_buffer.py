@@ -1,9 +1,16 @@
+"""Get a buffer from its checksum"""
+
+from seamless import Checksum
+from seamless.checksum.buffer_cache import buffer_cache
+
 DEBUG = True
 REMOTE_TIMEOUT = 5.0
 
 
-def get_buffer(checksum, remote, _done=None, deep=False):
-    """Gets the buffer from its checksum.
+def get_buffer(
+    checksum: Checksum, remote: bool, _done: set | None = None, deep: bool = False
+):
+    """Get a buffer from its checksum.
     What is tried:
     - buffer cache ("remote" and "deep" are passed to it)
     - transformation cache
@@ -11,14 +18,14 @@ def get_buffer(checksum, remote, _done=None, deep=False):
 
     Since it is synchronous, it doesn't try everything possible to obtain it.
     - Only the remote facilities from buffer cache are used
-      (i.e. database, fairserver and buffer server),
+      (i.e. fairserver, direct download and read buffer server/folder),
     - No recomputation from transformation/expression is attempted
       (use fingertip for that).
 
-    If successful, add the buffer to local and/or database cache (with a tempref or a permanent ref).
+    If successful, add the buffer to local cache
+    and/or write buffer server.
     Else, return None
     """
-    from seamless import Checksum
     from seamless.checksum.convert import try_convert_single
 
     checksum = Checksum(checksum)
@@ -72,6 +79,3 @@ def get_buffer(checksum, remote, _done=None, deep=False):
                     return buffer
 
     return None
-
-
-from seamless.checksum.buffer_cache import buffer_cache

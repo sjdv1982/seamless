@@ -26,7 +26,7 @@ import json
 import functools
 
 from seamless import Buffer, Checksum
-from seamless.checksum.cell import text_types
+from seamless.checksum.celltypes import text_types
 
 
 def log(*args, **kwargs):

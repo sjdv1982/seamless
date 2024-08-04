@@ -2,12 +2,10 @@
 Conversions. Note that they operate at a checksum/buffer level, i.e. are "cheap".
   Conversions imply that that there is neither a access path not a hash pattern.
   In contrast, expressions with a path or a hash pattern operate at a value level.
-  VALUE-LEVEL CONVERSION IS NOT DEALT WITH HERE: it is evaluate_expression that does that.
+  VALUE-LEVEL CONVERSION IS NOT DEALT WITH HERE: 
+     it is value_conversion and evaluate_expression that do that.
    (Both source and target object are deserialized, and target_object[path] = source,
-    taking into account hash pattern.)
-  THEREFORE, DEEP CELLS ARE ALSO NOT HANDLED HERE.
-  REASON: conversion.py does not handle any kind of caching.
-
+    taking into account hash pattern in case of expressions.)
 
 Type hierarchy:
 
@@ -68,6 +66,8 @@ All of these promotions are value-based and therefore "forbidden"
 
 There is a limit of 1000 chars for buffers of int, float, bool
 """
+
+from seamless.checksum.celltypes import celltypes
 
 
 class SeamlessConversionError(ValueError):
@@ -398,7 +398,5 @@ def check_conversions():
                     )
                 done.append(conv)
 
-
-from .cell import celltypes
 
 check_conversions()

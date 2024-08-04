@@ -10,12 +10,12 @@ import atexit
 import requests
 import aiohttp
 
-session = requests.Session()
-sessions_async = weakref.WeakKeyDictionary()
-
 from seamless import Checksum, Buffer
 from seamless.checksum import Expression
 from seamless.checksum.buffer_info import BufferInfo
+
+session = requests.Session()
+sessions_async = weakref.WeakKeyDictionary()
 
 
 class Database:

@@ -4,6 +4,8 @@ import linecache
 import functools
 from ast import PyCF_ONLY_AST, FunctionDef, Expr, Lambda, stmt as Statement
 
+from seamless.util.ipython import execute as ipython_execute
+
 
 # @functools.lru_cache(maxsize=1000) disable LRU cache, because linecache identifiers are degenerate
 def cached_compile(code, identifier, mode="exec", flags=None, dont_inherit=0):
@@ -104,6 +106,3 @@ def check_function_like(code, identifier):
     if function_name is None:
         return False
     return function_name, nstatements
-
-
-from seamless.util.ipython import execute as ipython_execute
