@@ -1,9 +1,9 @@
 """Seamless Expression class"""
 
-from seamless import Checksum, Buffer
-
 from weakref import WeakValueDictionary
 import json
+
+from seamless import Checksum, Buffer
 
 _expressions = WeakValueDictionary()
 
@@ -73,35 +73,50 @@ class Expression:
         self.exception = None
 
     @property
-    def checksum(self):
+    def checksum(self) -> Checksum:
+        """Return the origin checksum"""
         return self._checksum
 
     @property
-    def path(self):
+    def path(self) -> tuple[str]:
+        """Return the evaluation path"""
         return self._path
 
     @property
-    def celltype(self):
+    def celltype(self) -> str:
+        """Return the origin celltype"""
         return self._celltype
 
     @property
-    def target_celltype(self):
+    def target_celltype(self) -> str:
+        """Return the target celltype"""
         return self._target_celltype
 
     @property
-    def target_subcelltype(self):
+    def target_subcelltype(self) -> str | None:
+        """Return the target subcelltype"""
         return self._target_subcelltype
 
     @property
-    def hash_pattern(self):
+    def hash_pattern(self) -> dict[str, str] | None:
+        """Return the origin checksum's hash pattern.
+        Only deep checksums have a hash pattern."""
         return self._hash_pattern
 
     @property
     def target_hash_pattern(self):
+        """Return the result checksum's hash pattern.
+        This may or may not be the same as the "result hash pattern".
+        Only deep checksums have a hash pattern."""
         return self._target_hash_pattern
 
     @property
     def result_hash_pattern(self):
+        """Return the result hash pattern.
+        This is obtained by applying the evaluation path on
+        the origin checksum's hash pattern.
+        This may or may not be the same as the target hash pattern.
+        """
         from seamless.workflow.core.protocol.deep_structure import access_hash_pattern
 
         return access_hash_pattern(self.hash_pattern, self.path)
