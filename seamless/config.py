@@ -154,6 +154,12 @@ def _init_buffer_remote_from_env(only_level_1=False):
         ) from None
 
 
+def _block_local():
+    from seamless.workflow.config import block_local
+
+    block_local()
+
+
 def delegate(level=4, *, raise_exceptions=False, force_database=False):
     """Delegate computations and/or data to remote servers and folders.
 
@@ -213,7 +219,6 @@ def delegate(level=4, *, raise_exceptions=False, force_database=False):
 
     Return value: True if an error occurred, False if delegation was successful
     """
-    from seamless.workflow.config import block_local
 
     global _delegation_level, _delegating
     if _delegation_level is not None and _delegation_level != level:
@@ -232,7 +237,7 @@ def delegate(level=4, *, raise_exceptions=False, force_database=False):
         if level == 4:
             _contact_assistant()
             assert _assistant is not None  # will have been checked above
-            block_local()
+            _block_local()
             return False
         if level >= 1:
             _init_buffer_remote_from_env(
@@ -336,7 +341,9 @@ from seamless.checksum.buffer_remote import (
 def set_ncores(ncores):
     """Define the number of cores.
     This affects the number of transformations that can run in parallel.
-    Unless defined otherwise, a transformation claims one core."""
+    Unless defined otherwise, a transformation claims one core.
+
+    This imports seamless.workflow"""
     from seamless.workflow.core.transformation import _set_ncores
 
     if ncores == 0:

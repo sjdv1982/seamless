@@ -24,7 +24,7 @@ def has(session, url, checksum: Checksum, *, timeout=None) -> bool:
     result = None
     for _trial in range(10):
         try:
-            with sess.get(path, json=[checksum], timeout=timeout) as response:
+            with sess.get(path, json=[checksum.value], timeout=timeout) as response:
                 if int(response.status_code / 100) in (4, 5):
                     raise ConnectionError()
                 result = response.json()
