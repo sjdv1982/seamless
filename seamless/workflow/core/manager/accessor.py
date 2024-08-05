@@ -129,4 +129,4 @@ from ...core.cell import Cell, subcelltypes
 from ...core.macro import Path as MacroPath
 from ...core.status import StatusReasonEnum
 from seamless.checksum import Expression
-from ..protocol.deep_structure import access_hash_pattern
+from seamless.checksum.expression import access_hash_pattern

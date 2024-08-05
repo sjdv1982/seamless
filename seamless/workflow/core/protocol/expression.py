@@ -333,6 +333,7 @@ async def set_subpath(value, hash_pattern, path, subvalue):
         raise ValueError(result)
 
 
+from seamless.checksum.expression import access_hash_pattern
 from .deep_structure import (
     deserialize_raw,
     serialize_raw,
@@ -345,7 +346,6 @@ from .deep_structure import (
     deep_structure_to_value_sync,
     deep_structure_to_checksums,
     access_deep_structure,
-    access_hash_pattern,
 )
 from seamless.checksum.cached_calculate_checksum import (
     cached_calculate_checksum,

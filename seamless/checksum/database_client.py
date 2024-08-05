@@ -134,7 +134,7 @@ class Database:
         request = {
             "type": "buffer_info",
             "checksum": Checksum(checksum).value,
-            "value": BufferInfo(buffer_info).as_dict(),
+            "value": BufferInfo(checksum, buffer_info).as_dict(),
         }
         self.send_put_request(request)
 

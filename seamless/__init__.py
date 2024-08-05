@@ -1,3 +1,4 @@
+# pylint: disable=wrong-import-position
 """Seamless: a framework for reusable computations and interactive workflows
 
 Author: Sjoerd de Vries
@@ -11,8 +12,12 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+SEAMLESS_WORKFLOW_IMPORTED = False
+
+
 class CacheMissError(Exception):
     """Exception for when a checksum cannot be mapped to a buffer"""
+
 
 from silk import Silk
 from seamless.Checksum import Checksum
@@ -22,7 +27,15 @@ from seamless.direct import transformer
 from seamless.util import fair
 from . import config
 from . import multi
+
 __all__ = [
-    "Silk", "Checksum", "Buffer", "config", 
-    "CacheMissError", "transformer", "delegate", "multi", "fair",
+    "Silk",
+    "Checksum",
+    "Buffer",
+    "config",
+    "CacheMissError",
+    "transformer",
+    "delegate",
+    "multi",
+    "fair",
 ]

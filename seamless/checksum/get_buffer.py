@@ -1,10 +1,25 @@
 """Get a buffer from its checksum"""
 
+import seamless
 from seamless import Checksum
 from seamless.checksum.buffer_cache import buffer_cache
 
 DEBUG = True
 REMOTE_TIMEOUT = 5.0
+
+
+def _get_buffer_from_transformation_cache(checksum):
+    from seamless.workflow.core.cache.transformation_cache import (
+        transformation_cache,
+        tf_get_buffer,
+    )
+
+    transformation = transformation_cache.transformations.get(checksum)
+    if transformation is not None:
+        buffer = tf_get_buffer(transformation)
+        if buffer is not None:
+            buffer_cache.find_missing(checksum, buffer)
+        return buffer
 
 
 def get_buffer(
@@ -21,6 +36,8 @@ def get_buffer(
       (i.e. fairserver, direct download and read buffer server/folder),
     - No recomputation from transformation/expression is attempted
       (use fingertip for that).
+    If seamless.workflow has been previously imported,
+    the transformation cache is checked as well.
 
     If successful, add the buffer to local cache
     and/or write buffer server.
@@ -37,17 +54,10 @@ def get_buffer(
     if buffer is not None:
         return buffer
 
-    from seamless.workflow.core.cache.transformation_cache import (
-        transformation_cache,
-        tf_get_buffer,
-    )
-
-    transformation = transformation_cache.transformations.get(checksum)
-    if transformation is not None:
-        buffer = tf_get_buffer(transformation)
+    if seamless.SEAMLESS_WORKFLOW_IMPORTED:
+        buffer = _get_buffer_from_transformation_cache(checksum)
         if buffer is not None:
-            buffer_cache.find_missing(checksum, buffer)
-        return buffer
+            return buffer
 
     buffer_info = buffer_cache.get_buffer_info(
         checksum, sync_remote=remote, buffer_from_remote=False, force_length=False

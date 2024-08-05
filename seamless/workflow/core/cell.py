@@ -509,7 +509,7 @@ class MixedCell(Cell):
     _celltype = "mixed"
 
     def __init__(self, hash_pattern=None):
-        from .protocol.deep_structure import validate_hash_pattern
+        from seamless.checksum.expression import validate_hash_pattern
 
         super().__init__()
         if hash_pattern is not None:

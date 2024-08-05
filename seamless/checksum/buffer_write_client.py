@@ -7,14 +7,13 @@ from requests.exceptions import (  # pylint: disable=redefined-builtin
     JSONDecodeError,
 )
 from seamless import Checksum
+from seamless.util.is_forked import is_forked
 
 
 def has(session, url, checksum: Checksum, *, timeout=None) -> bool:
     """Check if a buffer is available at a remote URL.
     URL is accessed using HTTP GET, with /has added to the URL,
      and the checksum as parameter"""
-
-    from seamless.workflow.util import is_forked
 
     sess = session
     if is_forked():
@@ -52,7 +51,6 @@ def write(session, url, checksum: Checksum, buffer: bytes):
     """Upload a buffer to a remote URL.
     URL is accessed using HTTP PUT, with /<checksum> added to the URL,
     and the buffer as the data."""
-    from seamless.workflow.util import is_forked
 
     sess = session
     if is_forked():

@@ -474,7 +474,7 @@ class PathDict(dict):
 
 from .cell import Cell
 from .unbound_context import UnboundManager
-from .protocol.deep_structure import validate_hash_pattern
+from seamless.checksum.expression import validate_hash_pattern
 from .protocol.expression import (
     get_subpath_sync as get_subpath,
     set_subpath_sync as set_subpath,

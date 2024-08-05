@@ -6,6 +6,7 @@ import logging
 
 from silk.mixed import MAGIC_NUMPY, MAGIC_SEAMLESS_MIXED
 
+import seamless
 from seamless.checksum.cached_calculate_checksum import checksum_cache
 from seamless import CacheMissError
 from seamless import Buffer, Checksum
@@ -72,6 +73,8 @@ class BufferCache:
     )
     # non-persistent buffers alive as long as they are referenced
 
+    _bottled_update_time_calls = None
+
     def __init__(self):
         self.buffer_cache = {}  # local cache, checksum-to-buffer
         self.last_time = {}
@@ -85,6 +88,8 @@ class BufferCache:
         self.persistent_buffers = (
             set()
         )  # only used if LOCAL_MODE_FULL_PERSISTENCE is False
+
+        self._bottled_update_time_calls = []
 
         self.incref_buffer(Checksum(empty_dict_checksum), b"{}\n", persistent=True)
         self.incref_buffer(Checksum(empty_list_checksum), b"[]\n", persistent=True)
@@ -120,7 +125,20 @@ class BufferCache:
         self.last_time.pop(checksum, None)
         self.buffer_cache.pop(checksum, None)
 
+    def _unbottle_update_time(self):
+        bottled_update_time_calls = self._bottled_update_time_calls.copy()
+        self._bottled_update_time_calls.clear()
+        for checksum, buffer_length in bottled_update_time_calls:
+            self._do_update_time(checksum, buffer_length)
+
     def _update_time(self, checksum: Checksum, buffer_length: int | None = None):
+        if not seamless.SEAMLESS_WORKFLOW_IMPORTED:
+            self._bottled_update_time_calls.append((checksum, buffer_length))
+            return
+        else:
+            return self._do_update_time(checksum, buffer_length)
+
+    def _do_update_time(self, checksum: Checksum, buffer_length: int | None = None):
         from seamless.workflow.tempref import temprefmanager
 
         t = time.time()
@@ -140,6 +158,10 @@ class BufferCache:
         """Caches a buffer locally for a short time, without incrementing its refcount
         Does not write it as remote server or buffer.
         The checksum can be incref'ed later, without the need to re-provide the buffer.
+
+        NOTE: seamless.workflow is needed to remove zero-refcount buffers after a short while.
+        As long as seamless.workflow has not yet been imported, these buffers will accumulate
+        in memory.
         """
         if not checksum:
             return

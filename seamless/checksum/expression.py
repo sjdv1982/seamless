@@ -117,8 +117,6 @@ class Expression:
         the origin checksum's hash pattern.
         This may or may not be the same as the target hash pattern.
         """
-        from seamless.workflow.core.protocol.deep_structure import access_hash_pattern
-
         return access_hash_pattern(self.hash_pattern, self.path)
 
     def _hash_dict(self):
@@ -145,3 +143,57 @@ class Expression:
     def _get_hash(self):
         strbuf = str(self) + "\n"
         return Buffer(strbuf.encode()).get_checksum()
+
+
+def access_hash_pattern(hash_pattern, path):
+    """Access a hash pattern using path, returning the sub-hash pattern"""
+
+    ###  To support complicated hash patterns, code must be changed in other places as well
+    ###  In particular: the Expression class and Accessor update tasks
+    ###
+    if hash_pattern is None:
+        if path is None or not len(path):
+            return hash_pattern
+        return None
+
+    validate_hash_pattern(hash_pattern)
+    if path is None or not len(path):
+        return hash_pattern
+    if len(path) == 1:
+        if hash_pattern in ("#", "##"):
+            return None
+        else:
+            if "!" in hash_pattern:
+                return access_hash_pattern(hash_pattern["!"], ())
+            else:
+                return access_hash_pattern(hash_pattern["*"], ())
+    else:
+        return None
+    ###
+
+
+_supported_hash_patterns = "#", {"*": "#"}, {"!": "#"}, "##", {"*": "##"}
+
+
+def validate_hash_pattern(hash_pattern):
+    """Validate hash pattern"""
+    assert hash_pattern is not None
+    ###  To support complicated hash patterns, code must be changed in other places as well
+    ###  In particular: the Expression class and Accessor update tasks
+    if hash_pattern not in _supported_hash_patterns:
+        err = """For now, Seamless supports only the following hash patterns:
+
+  {}
+
+Hash pattern {} is not supported.
+"""
+        sup = "\n  ".join([str(p) for p in _supported_hash_patterns])
+        raise NotImplementedError(err.format(sup, hash_pattern))
+    ###
+
+    if isinstance(hash_pattern, str):
+        return
+    for key, value in hash_pattern.items():
+        if not isinstance(key, str):
+            raise TypeError((key, type(key)))
+        validate_hash_pattern(value)
