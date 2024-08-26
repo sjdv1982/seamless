@@ -563,7 +563,7 @@ class PythonCell(Cell):
 
     def set(self, value):
         """Update cell data from authority"""
-        from ..util import strip_decorators
+        from seamless.util.source import strip_decorators
 
         if callable(value):
             value = inspect.getsource(value)

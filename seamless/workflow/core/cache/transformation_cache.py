@@ -180,7 +180,7 @@ def syntactic_is_semantic(celltype, subcelltype):
 
 
 async def syntactic_to_semantic(checksum: Checksum, celltype, subcelltype, codename):
-    from ...util import ast_dump
+    from seamless.util.source import ast_dump
 
     checksum = Checksum(checksum)
     if syntactic_is_semantic(celltype, subcelltype):

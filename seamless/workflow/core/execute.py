@@ -439,7 +439,7 @@ def execute(
         tf_checksum = Checksum(tf_checksum)
         if tf_checksum:
             TRANSFORMATION_STACK.append(tf_checksum.hex())
-        seamless.running_in_jupyter = False
+        seamless.workflow.running_in_jupyter = False
         database_client.session = requests.Session()
         signal.signal(signal.SIGINT, signal.SIG_IGN)
 

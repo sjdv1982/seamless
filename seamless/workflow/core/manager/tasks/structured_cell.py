@@ -764,12 +764,7 @@ from .upon_connection import UponConnectionTask
 from seamless import CacheMissError, Checksum
 from seamless.checksum.buffer_cache import buffer_cache
 from silk.Silk import Silk, ValidationError
-from ..cancel import get_scell_state, SCModeEnum
-from ...protocol.expression import (
-    get_subpath,
-    set_subpath_checksum,
-    access_hash_pattern,
-    value_to_deep_structure,
-)
+from ..cancel import SCModeEnum
+from ...protocol.expression import get_subpath, set_subpath_checksum
 from . import acquire_evaluation_lock, release_evaluation_lock
 from seamless.checksum.database_client import database

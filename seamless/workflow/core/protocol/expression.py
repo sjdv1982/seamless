@@ -1,5 +1,28 @@
-from seamless import Checksum
 from silk.mixed import _array_types
+
+from seamless import Checksum, CacheMissError
+from seamless.checksum.cached_calculate_checksum import (
+    cached_calculate_checksum,
+    cached_calculate_checksum_sync,
+)
+from seamless.checksum.deserialize import deserialize, deserialize_sync
+from seamless.checksum.serialize import serialize, serialize_sync
+from seamless.checksum.get_buffer import get_buffer
+from seamless.checksum.buffer_cache import buffer_cache
+
+from .deep_structure import (
+    deserialize_raw,
+    serialize_raw,
+    serialize_raw_async,
+    write_deep_structure,
+    set_deep_structure,
+    value_to_deep_structure,
+    value_to_deep_structure_sync,
+    deep_structure_to_value,
+    deep_structure_to_value_sync,
+    deep_structure_to_checksums,
+    access_deep_structure,
+)
 
 
 def _set_subpath(value, path, subvalue):
@@ -134,7 +157,7 @@ async def get_subpath(
         if perform_fingertip:
             buffer = await manager.cachemanager.fingertip(checksum)
         else:
-            buffer = get_buffer(cs, remote=True, deep=False)
+            buffer = get_buffer(checksum, remote=True, deep=False)
         value = await deserialize(buffer, checksum, "mixed", copy=True)
         value = _get_subpath(value, post_path)
         return ("value", value)
@@ -170,7 +193,7 @@ def set_subpath_sync(value, hash_pattern, path, subvalue):
                 deep_structure.clear()
                 deep_structure.update(sub_structure)
         else:
-            old_sub_structure = set_deep_structure(
+            _old_sub_structure = set_deep_structure(
                 sub_structure, deep_structure, sub_hash_pattern, path
             )
 
@@ -250,10 +273,12 @@ async def set_subpath_checksum(
         else:
             set_deep_structure(sub_structure, deep_structure, sub_hash_pattern, path)
     elif mode == 2:
-        new_sub_cs = cs  # cs is already in correct hash pattern encoding
+        new_sub_cs = (
+            subchecksum  # subchecksum is already in correct hash pattern encoding
+        )
         _, pre_path, _, _ = result
         result = write_deep_structure(
-            new_sub_cs, deep_structure, hash_pattern, pre_path, create=True
+            new_sub_cs, deep_structure, hash_pattern, pre_path
         )
         assert result[0] == 0, result
     else:
@@ -289,7 +314,7 @@ async def set_subpath(value, hash_pattern, path, subvalue):
                 deep_structure.clear()
                 deep_structure.update(sub_structure)
         else:
-            old_sub_structure = set_deep_structure(
+            _old_sub_structure = set_deep_structure(
                 sub_structure, deep_structure, sub_hash_pattern, path
             )
 
@@ -326,33 +351,8 @@ async def set_subpath(value, hash_pattern, path, subvalue):
             new_sub_cs = new_sub_checksum.hex()
 
         result = write_deep_structure(
-            new_sub_cs, deep_structure, hash_pattern, pre_path, create=True
+            new_sub_cs, deep_structure, hash_pattern, pre_path
         )
         assert result[0] == 0, result
     else:
         raise ValueError(result)
-
-
-from seamless.checksum.expression import access_hash_pattern
-from .deep_structure import (
-    deserialize_raw,
-    serialize_raw,
-    serialize_raw_async,
-    write_deep_structure,
-    set_deep_structure,
-    value_to_deep_structure,
-    value_to_deep_structure_sync,
-    deep_structure_to_value,
-    deep_structure_to_value_sync,
-    deep_structure_to_checksums,
-    access_deep_structure,
-)
-from seamless.checksum.cached_calculate_checksum import (
-    cached_calculate_checksum,
-    cached_calculate_checksum_sync,
-)
-from seamless.checksum.deserialize import deserialize, deserialize_sync
-from seamless.checksum.serialize import serialize, serialize_sync
-from seamless.checksum.get_buffer import get_buffer
-from seamless.checksum.buffer_cache import buffer_cache
-from seamless import CacheMissError, Checksum

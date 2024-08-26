@@ -104,7 +104,7 @@ def check_original_event_loop():
         return
     if _original_event_loop is not None and event_loop is not _original_event_loop:
         # import traceback; traceback.print_stack()
-        raise Exception(
+        raise RuntimeError(
             "The asyncio eventloop was changed (e.g. by asyncio.run) since seamless.workflow was imported"
         )
 

@@ -8,6 +8,15 @@ from traceback import print_exc
 import logging
 import requests
 
+from seamless.checksum.database_client import database
+from seamless.checksum.buffer_remote import (
+    set_read_buffer_folders,
+    set_read_buffer_servers,
+    set_write_buffer_server,
+    add_read_buffer_folder,
+    add_read_buffer_server,
+)
+
 logger = logging.getLogger(__name__)
 
 
@@ -326,16 +335,6 @@ def set_inprocess_assistant(assistant: InProcessAssistant):
         raise TypeError(type(assistant))
     _assistant = assistant
     _delegation_level = 4
-
-
-from seamless.checksum.database_client import database
-from seamless.checksum.buffer_remote import (
-    set_read_buffer_folders,
-    set_read_buffer_servers,
-    set_write_buffer_server,
-    add_read_buffer_folder,
-    add_read_buffer_server,
-)
 
 
 def set_ncores(ncores):

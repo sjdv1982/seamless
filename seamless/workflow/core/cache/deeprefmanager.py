@@ -234,7 +234,7 @@ class DeepRefManager:
             cells.add(cell)
 
     def decref_deep_buffer(self, checksum, hash_pattern):
-        from seamless.util import is_forked
+        from seamless.util.is_forked import is_forked
 
         if is_forked():
             return

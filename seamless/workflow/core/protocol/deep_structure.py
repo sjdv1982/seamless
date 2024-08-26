@@ -23,6 +23,7 @@ class DeepStructureError(ValueError):
 
 def validate_deep_structure(deep_structure, hash_pattern):
     from seamless.checksum.expression import validate_hash_pattern
+
     try:
         assert hash_pattern is not None
         validate_hash_pattern(hash_pattern)
@@ -384,7 +385,9 @@ def _build_deep_structure(hash_pattern, d, c):
                     result.append(sub_result)
             else:
                 assert list(d.keys()) == [key]
-                sub_result = _deep_structure_to_value(d[key], sub_hash_pattern, c)
+                sub_result = _deep_structure_to_value(
+                    d[key], sub_hash_pattern, c, copy=True
+                )
                 result = {key: sub_result}
     return result
 

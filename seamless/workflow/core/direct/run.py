@@ -172,7 +172,7 @@ def run_transformation_dict(
     """
     # TODO: add input schema and result schema validation...
     from ...core.cache.database_client import database
-    from seamless.util import is_forked
+    from seamless.util.is_forked import is_forked
 
     increfed, transformation = register_transformation_dict(transformation_dict)
     tf_dunder = extract_dunder(transformation_dict)
@@ -249,7 +249,7 @@ async def run_transformation_dict_async(
     """Runs a transformation that is specified as a dict of checksums,
     such as returned by highlevel.Transformer.get_transformation_dict"""
     # TODO: add input schema and result schema validation...
-    from seamless.util import is_forked
+    from seamless.util.is_forked import is_forked
     from seamless.workflow.core.cache.buffer_cache import buffer_cache
     from seamless.config import database
 
@@ -799,7 +799,7 @@ def _node_to_transformation_dict(node):
 
 
 def _wait():
-    from seamless.util import is_forked
+    from seamless.util.is_forked import is_forked
 
     global _queued_transformations
     global _has_lock

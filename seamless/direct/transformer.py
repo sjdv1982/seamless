@@ -1,11 +1,21 @@
-from copy import deepcopy
-from functools import update_wrapper
-import inspect
-from functools import partial
-import textwrap
-from types import LambdaType
+"""Wraps a function in a direct transformer
+Direct transformers can be called as normal functions, but
+the source code of the function and the arguments are converted
+into a Seamless transformation."""
 
-from seamless import Checksum
+from copy import deepcopy
+from functools import partial, update_wrapper
+import inspect
+from seamless import Checksum, CacheMissError
+
+from seamless.util.is_forked import is_forked
+from seamless.checksum.database_client import database
+from seamless.checksum.buffer_remote import has_readwrite_servers
+from seamless.checksum.get_buffer import get_buffer
+from seamless.checksum.deserialize import deserialize_sync
+
+from .Transformation import Transformation, transformation_from_dict
+from ..Environment import Environment
 
 
 def transformer(
@@ -42,30 +52,19 @@ def transformer(
     return result
 
 
-def getsource(func):
-    from seamless.util import strip_decorators
-    from seamless.workflow.core.lambdacode import lambdacode
-
-    if isinstance(func, LambdaType) and func.__name__ == "<lambda>":
-        code = lambdacode(func)
-        if code is None:
-            raise ValueError("Cannot extract source code from this lambda")
-        return code
-    else:
-        code = inspect.getsource(func)
-        code = textwrap.dedent(code)
-        code = strip_decorators(code)
-        return code
-
-
 class DirectTransformer:
+    """Direct transformer.
+    Direct transformers can be called as normal functions, but
+    the source code of the function and the arguments are converted
+    into a Seamless transformation. Doing so imports seamless.workflow."""
+
     def __init__(
         self, func, *, scratch, direct_print, local, return_transformation, in_process
     ):
         """Direct transformer.
         Direct transformers can be called as normal functions, but
         the source code of the function and the arguments are converted
-        into a Seamless transformation
+        into a Seamless transformation. Doing so imports seamless.workflow.
 
         Parameters:
 
@@ -106,7 +105,8 @@ class DirectTransformer:
         - environment  ...
 
         """
-        from seamless.workflow.core.protocol.serialize import (
+        from seamless.util.source import getsource
+        from seamless.checksum.serialize import (
             serialize_sync as serialize,
         )
 
@@ -131,10 +131,12 @@ class DirectTransformer:
 
     @property
     def celltypes(self):
+        """The celltypes"""
         return CelltypesWrapper(self._celltypes)
 
     @property
     def modules(self):
+        """The imported modules"""
         return ModulesWrapper(self._modules)
 
     @property
@@ -143,26 +145,20 @@ class DirectTransformer:
         return self._environment
 
     def __call__(self, *args, **kwargs):
-        from .Transformation import Transformation, transformation_from_dict
-        from ...core.direct.run import (
+        from seamless.workflow.core.direct.run import (
             run_transformation_dict,
             direct_transformer_to_transformation_dict,
             prepare_transformation_dict,
+            fingertip,
         )
-        from ...core.cache.database_client import database
-        from ...core.cache.buffer_remote import has_readwrite_servers
-        from ...core.protocol.get_buffer import get_buffer
-        from ...core.protocol.deserialize import deserialize_sync
-        from ...core.direct.run import fingertip
-        from ...core.direct.module import get_module_definition
-        from seamless import CacheMissError
-        from seamless.util import is_forked
+        from seamless.workflow.core.direct.module import get_module_definition
 
         if is_forked():
             assert not self._in_process
             if not database.active or not has_readwrite_servers():
                 raise RuntimeError(
-                    "Running @transformer inside a transformation requires a Seamless database and buffer servers"
+                    # pylint: disable=line-too-long
+                    "Running @transformer inside a transformation requires Seamless database and buffer servers"
                 )
 
         arguments = self._signature.bind(*args, **kwargs).arguments
@@ -217,6 +213,7 @@ class DirectTransformer:
 
     @property
     def meta(self):
+        """Transformation metadata"""
         return self._meta
 
     @meta.setter
@@ -228,6 +225,7 @@ class DirectTransformer:
 
     @property
     def scratch(self) -> bool:
+        """If True, the transformation result buffer will not be saved."""
         return self._scratch
 
     @scratch.setter
@@ -262,6 +260,9 @@ class DirectTransformer:
 
     @property
     def return_transformation(self) -> bool:
+        """If True, calling this Transformer returns a Transformation object.
+        Otherwise, calling causes a direct transformation execution, returning its result.
+        """
         return self._return_transformation
 
     @return_transformation.setter
@@ -307,7 +308,9 @@ class CelltypesWrapper:
 
 
 class ModulesWrapper:
-    """Wrapper around an imperative transformer's imported modules."""
+    """Wrapper around an imperative transformer's imported modules.
+
+    Modifying this wrapper imports seamless.workflow"""
 
     def __init__(self, modules):
         self._modules = modules
@@ -317,7 +320,7 @@ class ModulesWrapper:
 
     def __setattr__(self, attr, value):
         from types import ModuleType
-        from seamless import Module
+        from seamless.workflow.highlevel.Module import Module
 
         if attr.startswith("_"):
             return super().__setattr__(attr, value)
@@ -339,6 +342,3 @@ class ModulesWrapper:
 
     def __repr__(self):
         return str(self)
-
-
-from ..Environment import Environment
