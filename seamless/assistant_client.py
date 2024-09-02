@@ -32,7 +32,7 @@ async def run_job(
     # One session per request is really bad... but what can we do?
     async with aiohttp.ClientSession() as session:
         data = {
-            "checksum": checksum,
+            "checksum": Checksum(checksum).hex(),
             "dunder": tf_dunder,
             "scratch": scratch,
             "fingertip": fingertip,

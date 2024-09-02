@@ -8,6 +8,7 @@ from seamless.checksum.buffer_cache import buffer_cache
 from seamless.checksum.deserialize import deserialize_sync as deserialize
 from seamless.checksum.serialize import serialize_sync as serialize
 from seamless.checksum.get_buffer import get_buffer
+from seamless.checksum.buffer_cache import empty_dict_checksum, empty_list_checksum
 from seamless.workflow.core.protocol.deep_structure import (
     apply_hash_pattern_sync,
     deep_structure_to_checksums,
@@ -133,8 +134,6 @@ async def get_buffer_dict(manager, checksums):
 def get_buffer_dict_sync(manager, checksums):
     """This function can be executed if the asyncio event loop is already running"""
 
-    from .core.protocol.get_buffer import get_buffer
-
     if not asyncio.get_event_loop().is_running():
         coro = get_buffer_dict(manager, checksums)
         fut = asyncio.ensure_future(coro)
@@ -159,7 +158,6 @@ def add_zip(manager, zipfile, incref=False):
      if no element (cell, expression, or high-level library) holds their checksum
     This can be overridden with "incref=True" (not recommended for long-living contexts)
     """
-    from .core.cache.buffer_cache import empty_dict_checksum, empty_list_checksum
 
     result = []
     for checksum in zipfile.namelist():
@@ -167,7 +165,7 @@ def add_zip(manager, zipfile, incref=False):
             continue
         checksum2 = Checksum(checksum)
         buffer = zipfile.read(checksum)
-        checksum3 = Buffer(buffer).checksum
+        checksum3 = Buffer(buffer).get_checksum()
         if checksum3 != checksum2:
             raise ValueError("Incorrect checksum for zipped file '{}'".format(checksum))
         buffer_cache.cache_buffer(checksum2, buffer)
@@ -287,7 +285,7 @@ def fill_checksum(manager, node, temp_path, composite=True):
     if hash_pattern is not None:
         try:
             checksum = apply_hash_pattern_sync(checksum, hash_pattern)
-        except:
+        except Exception:
             msg = "WARNING {}:{} : hash pattern encoding expected, not found (legacy Seamless version?)"
             print(msg.format(node["path"], temp_path), file=sys.stderr)
     checksum = checksum.hex()
@@ -332,7 +330,6 @@ def get_graph_checksums(graph, with_libraries, *, with_annotations, skip_scratch
 
 def fill_checksums(mgr, nodes, *, path=None):
     """Fills checksums in the nodes from TEMP values, if untranslated"""
-    from .core.structured_cell import StructuredCell
 
     first_exc = None
     for p in nodes:
@@ -398,6 +395,7 @@ def fill_checksums(mgr, nodes, *, path=None):
 
                 traceback.print_exc()
             if node is not None and old_checksum is not None:
+                # pylint: disable=E1137  # bug in Pylint?
                 node["checksum"] = old_checksum
     if first_exc is not None:
         raise first_exc from None

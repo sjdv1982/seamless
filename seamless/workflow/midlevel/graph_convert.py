@@ -5,19 +5,24 @@ from copy import deepcopy
 import json
 import warnings
 
+from seamless import Checksum, CacheMissError
+from seamless.checksum.buffer_cache import buffer_cache
+
+
 def graph_convert_pre07(graph, ctx):
-    from ..core.cache import CacheMissError
-    from ..core.cache.buffer_cache import buffer_cache
+
     graph = deepcopy(graph)
     graph["__seamless__"] = "0.8"
-    def get_buffer(checksum):
+
+    def get_buffer(checksum: Checksum):
+        checksum = Checksum(checksum)
         if ctx is not None:
             try:
                 buf = ctx.resolve(checksum)
             except CacheMissError:
                 buf = None
         else:
-            buf = get_buffer(bytes.fromhex(checksum),remote=True)
+            buf = buffer_cache.get_buffer(checksum, remote=True)
         return buf
 
     converted_nodes = set()
@@ -33,12 +38,12 @@ def graph_convert_pre07(graph, ctx):
             auth_checksum = node["checksum"].get("input_auth")
             if auth_checksum is None:
                 continue
-            if node.get("hash_pattern") != {'*': '#'}:
+            if node.get("hash_pattern") != {"*": "#"}:
                 raise ValueError("Graph contains antique non-deep Docker transformers")
-            
+
             msg = "Antique Docker transformer: {}, checksum: {}"
             auth_buf = get_buffer(auth_checksum)
-            if auth_buf is None:                
+            if auth_buf is None:
                 raise CacheMissError(msg.format(path, auth_checksum))
             auth = json.loads(auth_buf)
             if not isinstance(auth, dict):
@@ -49,19 +54,19 @@ def graph_convert_pre07(graph, ctx):
                 for k in list(node["checksum"].keys()):
                     if k.startswith("input"):
                         node["checksum"].pop(k)
-                print("Warning: ignoring docker_options from antique Docker transformer")
+                print(
+                    "Warning: ignoring docker_options from antique Docker transformer"
+                )
                 auth.pop("docker_options")
             if "docker_image" in auth:
                 docker_image_checksum = auth.pop("docker_image")
                 docker_image = get_buffer(docker_image_checksum)
-                if docker_image is None:                
+                if docker_image is None:
                     raise CacheMissError(msg.format(path, docker_image_checksum))
                 docker_image = json.loads(docker_image)
                 if "environment" not in node:
                     node["environment"] = {}
-                node["environment"]["docker"] = {
-                    "name": docker_image 
-                }
+                node["environment"]["docker"] = {"name": docker_image}
     connections_to_remove = []
     for cnr, connection in enumerate(graph["connections"]):
         if connection["type"] == "connection":
@@ -70,13 +75,18 @@ def graph_convert_pre07(graph, ctx):
                 if path[:-1] in converted_nodes:
                     warnings.warn("Removed connection: {}".format(connection))
                     connections_to_remove.append(cnr)
-    graph["connections"][:] = [c for cnr,c in enumerate(graph["connections"]) if cnr not in connections_to_remove]
+    graph["connections"][:] = [
+        c
+        for cnr, c in enumerate(graph["connections"])
+        if cnr not in connections_to_remove
+    ]
     return graph
+
 
 def graph_convert_07(graph, ctx):
     graph = deepcopy(graph)
     graph["__seamless__"] = "0.8"
-    
+
     for node in graph["nodes"]:
         if node["type"] == "cell" and node.get("mount", {}).get("as_directory"):
             has_incoming_connections = False
@@ -88,9 +98,9 @@ def graph_convert_07(graph, ctx):
                 source = tuple(connection["source"])
                 target = tuple(connection["target"])
                 if source[:-1] == path or source == path:
-                    has_outgoing_connections = True  
+                    has_outgoing_connections = True
                 if target[:-1] == path or target == path:
-                    has_incoming_connections = True  
+                    has_incoming_connections = True
 
             mount = node["mount"]
             mount.pop("as_directory")
@@ -101,18 +111,26 @@ def graph_convert_07(graph, ctx):
                     mount["mode"] = "w"
                     if has_outgoing_connections:
                         msg += "\nOutgoing connections broken."
-                        graph["connections"][:] = [c for c in graph["connections"] if c["source"] != path and c["source"][:-1] != path]
+                        graph["connections"][:] = [
+                            c
+                            for c in graph["connections"]
+                            if c["source"] != path and c["source"][:-1] != path
+                        ]
                 else:
                     msg = "Mount mode set to 'r'."
                     mount["mode"] = "r"
 
-            print("""WARNING: converting Seamless 0.7 graph.
+            print(
+                """WARNING: converting Seamless 0.7 graph.
 Directory-mounted plain Cells are converted to FolderCells.
 
 Note that the stored value checksum has been deleted.
 The value will be re-read from the mounted directory.
 
-{}""".format(msg))
+{}""".format(
+                    msg
+                )
+            )
             checksum = node.get("checksum", {})
             checksum.pop("value", None)
             if not checksum:
@@ -121,6 +139,7 @@ The value will be re-read from the mounted directory.
             node.pop("celltype")
             mount["directory_text_only"] = True
     return graph
+
 
 def graph_convert_011(graph):
     graph = deepcopy(graph)
@@ -133,24 +152,28 @@ def graph_convert_011(graph):
                     continue
                 celltype = pin.get("celltype")
                 if subcelltype != "module" or celltype != "plain":
-                    print("""WARNING: legacy subcelltype that is not 'module', ignoring:
-Transformer: {}""".format("." + ".".join(node.get('path', []))))
+                    print(
+                        """WARNING: legacy subcelltype that is not 'module', ignoring:
+Transformer: {}""".format(
+                            "." + ".".join(node.get("path", []))
+                        )
+                    )
                 pin["celltype"] = "module"
     return graph
+
 
 def graph_convert(graph, ctx):
     if ctx is not None:
         from ..highlevel.Context import Context
+
         assert isinstance(ctx, Context)
     if not isinstance(graph, dict):
         raise TypeError(type(graph))
     seamless_version = graph.get("__seamless__")
-    if seamless_version is None: #pre-0.7
+    if seamless_version is None:  # pre-0.7
         graph = graph_convert_pre07(graph, ctx)
     elif seamless_version == "0.7":
         graph = graph_convert_07(graph, ctx)
     if seamless_version == "0.8":
         graph = graph_convert_011(graph)
     return graph
-
-from ..core.protocol.get_buffer import get_buffer    

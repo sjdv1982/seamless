@@ -1,11 +1,19 @@
+"""Build a Seamless bash transformation from a parsed cmd-seamless command line"""
+
 import os
-import sys
-from ..core.protocol.serialize import serialize_sync as serialize
-from ..calculate_checksum import calculate_checksum
-from ..core.cache.buffer_remote import write_buffer as remote_write_buffer, can_read_buffer
-from ..core.direct.run import run_transformation_dict, register_transformation_dict
-from ..core.cache.transformation_cache import transformation_cache
+import builtins
+from seamless import Checksum
+from seamless.cmd.message import message as msg
+from seamless.config import database
+from seamless.checksum.buffer_cache import buffer_cache
+from seamless.checksum.serialize import serialize_sync as serialize
+from seamless.checksum.calculate_checksum import calculate_checksum
+from seamless.checksum.buffer_remote import (
+    write_buffer as remote_write_buffer,
+    can_read_buffer,
+)
 from seamless.cmd.register import register_dict
+
 
 def prepare_bash_code(
     code: str,
@@ -14,6 +22,13 @@ def prepare_bash_code(
     result_targets: dict | None,
     capture_stdout: bool,
 ):
+    """Adapt cmd-seamless bash command into bash code for a bash transformation.
+    Deals with:
+    - If the command word refers to a file, make it executable
+    - Add current directory to PATH
+    - Handle stdout/stderr capture
+    - Handle result capture
+    """
 
     bashcode = ""
     if make_executables:
@@ -40,11 +55,12 @@ def prepare_bash_code(
             tardir = os.path.join("RESULT", os.path.dirname(tar))
             mvcode += f"mv {tar} {tardir}\n"
             if tardir not in result_target_dirs:
-                result_target_dirs.append(tardir)                 
+                result_target_dirs.append(tardir)
         bashcode += f"mkdir -p {' '.join(result_target_dirs)}\n"
         bashcode += code2 + "\n"
         bashcode += mvcode
-    return bashcode    
+    return bashcode
+
 
 def prepare_bash_transformation(
     code: str,
@@ -57,9 +73,9 @@ def prepare_bash_transformation(
     environment: dict,
     meta: dict,
     variables: dict,
-    dry_run: bool = False
+    dry_run: bool = False,
 ) -> str:
-    """Prepared a bash transformation for execution.
+    """Prepare a bash transformation for execution.
 
     Input:
 
@@ -78,24 +94,24 @@ def prepare_bash_transformation(
 
     Returns: transformation checksum, transformation dict
     """
-    from ..core.cache.buffer_cache import buffer_cache
+    from seamless.workflow.core.direct.run import register_transformation_dict
 
     bashcode = prepare_bash_code(
         code,
-        make_executables = make_executables,
-        result_targets = result_targets,
-        capture_stdout = capture_stdout
+        make_executables=make_executables,
+        result_targets=result_targets,
+        capture_stdout=capture_stdout,
     )
 
     new_args = {
         "code": ("text", None, bashcode),
     }
-    assert "bashcode" not in checksum_dict  # TODO: workaround
-    assert "pins_" not in checksum_dict  # TODO: workaround
-    
-    transformation_dict = {
-        "__language__": "bash"
-    }
+    for attr in ("bashcode", "pins_"):
+        if attr in checksum_dict:
+            msg(0, f"'{attr}' cannot be in checksum dict")
+            exit(1)
+
+    transformation_dict = {"__language__": "bash"}
 
     if not result_targets:
         transformation_dict["__output__"] = ("result", "bytes", None)
@@ -107,38 +123,30 @@ def prepare_bash_transformation(
     if environment:
         env_checksum = register_dict(environment, dry_run=dry_run)
         transformation_dict["__env__"] = env_checksum
-    format = {}
-    for k,v in checksum_dict.items():
+    format_ = {}
+    for k, v in checksum_dict.items():
         if k in directories:
             fmt = {
-                "filesystem": {
-                    "optional": True,
-                    "mode": "directory"
-                },
-                "hash_pattern": {"*": "##"}
+                "filesystem": {"optional": True, "mode": "directory"},
+                "hash_pattern": {"*": "##"},
             }
             transformation_dict[k] = "mixed", None, v
         else:
-            fmt = {
-                "filesystem": {
-                    "optional": True,
-                    "mode": "file"
-                }
-            }
+            fmt = {"filesystem": {"optional": True, "mode": "file"}}
             transformation_dict[k] = "bytes", None, v
-        format[k] = fmt
+        format_[k] = fmt
 
-    if format:
-        transformation_dict["__format__"] = format
+    if format_:
+        transformation_dict["__format__"] = format_
     if variables:
         for k, (v, celltype) in variables.items():
             if celltype in ("int", "float", "bool", "str"):
-                value = eval(celltype)(v)
+                value = getattr(builtins, celltype)(v)
             else:
                 raise TypeError(celltype)
             new_args[k] = celltype, None, value
 
-    for k,v in new_args.items():
+    for k, v in new_args.items():
         celltype, subcelltype, value = v
         buffer = serialize(value, celltype)
         checksum = calculate_checksum(buffer)
@@ -149,11 +157,25 @@ def prepare_bash_transformation(
         vv = celltype, subcelltype, checksum.hex()
         transformation_dict[k] = vv
 
-    _, transformation_checksum = register_transformation_dict(transformation_dict, dry_run=dry_run)
- 
+    _, transformation_checksum = register_transformation_dict(
+        transformation_dict, dry_run=dry_run
+    )
+
     return Checksum(transformation_checksum), transformation_dict
 
-def run_transformation(transformation_dict, *, undo, fingertip=False, scratch=False):
+
+def run_transformation(
+    transformation_dict: dict, *, undo: bool, fingertip=False, scratch=False
+):
+    """Run a cmd-seamless transformation dict.
+    First convert it into a bash transformation."""
+    from seamless.workflow.metalevel.unbashify import unbashify
+    from seamless.workflow.core.direct.run import (
+        run_transformation_dict,
+        register_transformation_dict,
+    )
+    from seamless.workflow.core.cache.transformation_cache import transformation_cache
+
     if not fingertip:
         fingertip = False
     for k in transformation_dict:
@@ -176,7 +198,9 @@ def run_transformation(transformation_dict, *, undo, fingertip=False, scratch=Fa
         else:
             result_checksum = result_py
             database.contest(transformation_checksum, result_checksum)
-            status, response = database.contest(transformation_checksum_py, result_checksum)
+            status, response = database.contest(
+                transformation_checksum_py, result_checksum
+            )
             if status == 200:
                 result = result_checksum
             else:
@@ -186,18 +210,19 @@ def run_transformation(transformation_dict, *, undo, fingertip=False, scratch=Fa
             msg(0, result)
             return None
         elif isinstance(result, bytes):
-            msg(2, f"Undo transformation {transformation_checksum.hex()} => {result.hex()}")
+            msg(
+                2,
+                f"Undo transformation {transformation_checksum.hex()} => {result.hex()}",
+            )
             return Checksum(result)
     else:
-        result_checksum = run_transformation_dict(transformation_dict, fingertip=fingertip, scratch=scratch)
+        result_checksum = run_transformation_dict(
+            transformation_dict, fingertip=fingertip, scratch=scratch
+        )
         result_checksum = Checksum(result_checksum)
         if result_checksum:
             # while https://github.com/sjdv1982/seamless/issues/247 is open:
-            database.set_transformation_result(transformation_checksum_py, result_checksum)
+            database.set_transformation_result(
+                transformation_checksum_py, result_checksum
+            )
         return Checksum(result_checksum)
-
-
-from seamless.cmd.message import message as msg
-from seamless import Checksum
-from seamless.metalevel.unbashify import unbashify
-from seamless.config import database

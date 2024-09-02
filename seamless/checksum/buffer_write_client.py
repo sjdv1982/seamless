@@ -57,7 +57,7 @@ def write(session, url, checksum: Checksum, buffer: bytes):
         sess = requests
     checksum = Checksum(checksum)
     assert checksum
-    path = url + "/" + checksum
+    path = url + "/" + str(checksum)
     for _trial in range(10):
         try:
             with sess.put(path, data=buffer) as response:

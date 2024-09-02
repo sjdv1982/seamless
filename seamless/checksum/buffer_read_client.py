@@ -23,7 +23,7 @@ def has(session: requests.Session, url: str, checksum: Checksum) -> bool:
     assert checksum
     try:
         path = url + "/has"
-        with sess.get(path, json=[checksum]) as response:
+        with sess.get(path, json=[str(checksum)]) as response:
             if int(response.status_code / 100) in (4, 5):
                 raise ConnectionError()
             result = response.json()
@@ -54,7 +54,7 @@ def get(session: requests.Session, url: str, checksum: Checksum) -> bytes | None
     curr_buf_checksum = None
     while 1:
         try:
-            path = url + "/" + checksum
+            path = url + "/" + str(checksum)
             with sess.get(path, stream=True, timeout=10) as response:
                 if int(response.status_code / 100) in (4, 5):
                     raise ConnectionError()

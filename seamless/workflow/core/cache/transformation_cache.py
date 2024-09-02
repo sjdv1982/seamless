@@ -121,12 +121,13 @@ class DummyTransformer:
     _exception_to_clear = None
 
     def __init__(self, tf_checksum):
-        self.tf_checksum = tf_checksum
+        self.tf_checksum = Checksum(tf_checksum)
         self.progress = None
         self.prelim = None
 
 
-def incref_transformation(tf_checksum, tf_buffer, transformation):
+def incref_transformation(tf_checksum: Checksum, tf_buffer, transformation):
+    tf_checksum = Checksum(tf_checksum)
     buffer_cache.incref_buffer(tf_checksum, tf_buffer, persistent=False)
     for pinname in transformation:
         if pinname in (
@@ -141,7 +142,7 @@ def incref_transformation(tf_checksum, tf_buffer, transformation):
         if pinname in ("__language__", "__output__"):
             continue
         if pinname == "__env__":
-            sem_checksum = bytes.fromhex(transformation[pinname])
+            sem_checksum = Checksum(transformation[pinname])
         else:
             _, _, sem_checksum = transformation[pinname]
         sem_checksum = Checksum(sem_checksum)
@@ -241,7 +242,7 @@ async def run_evaluate_expression(expression_dict, fingertip_mode, *, scratch, m
     d["target_subcelltype"] = None
     d["hash_pattern"] = d.get("hash_pattern")
     d["target_hash_pattern"] = d.get("target_hash_pattern")
-    d["checksum"] = bytes.fromhex(d["checksum"])
+    d["checksum"] = Checksum(d["checksum"])
     expression = Expression(**d)
 
     taskmanager = manager.taskmanager
@@ -702,7 +703,7 @@ class TransformationCache:
             ):
                 continue
             if pinname == "__env__":
-                checksum = bytes.fromhex(transformation[pinname])
+                checksum = Checksum(transformation[pinname])
                 buffer_cache.decref(checksum)
                 continue
             celltype, subcelltype, sem_checksum = transformation[pinname]
@@ -752,7 +753,7 @@ class TransformationCache:
                     checksums = semsyn
                     self.semantic_to_syntactic_checksums[semkey] = semsyn
                 else:
-                    raise KeyError(sem_checksum0, celltype, subcelltype) from None
+                    raise KeyError(sem_checksum, celltype, subcelltype) from None
             semantic_cache[semkey] = checksums
         return semantic_cache
 
@@ -1091,11 +1092,13 @@ class TransformationCache:
         return result_checksum, prelim
 
     async def serve_semantic_to_syntactic(
-        self, sem_checksum, celltype, subcelltype, peer_id
+        self, sem_checksum: Checksum, celltype, subcelltype, peer_id
     ):
+        sem_checksum = Checksum(sem_checksum)
+
         def ret(semsyn):
             for semsyn_checksum in semsyn:
-                assert isinstance(semsyn_checksum, bytes), semsyn
+                assert isinstance(semsyn_checksum, Checksum), semsyn
             return semsyn
 
         if syntactic_is_semantic(celltype, subcelltype):
@@ -1110,23 +1113,21 @@ class TransformationCache:
             return ret(semsyn)
         return None
 
-    def get_transformation_dict(self, tf_checksum: str) -> dict:
+    def get_transformation_dict(self, tf_checksum: Checksum) -> dict:
         """Return transformation dict corresponding to a checksum
         This transformation dict must have been previously defined
         and registered, e.g. by a transformer.
         Additional information that does not contribute to the checksum
         (__meta__, __languages__ and __compilers__) is also included.
         """
-        if not isinstance(tf_checksum, str):
-            raise TypeError(type(tf_checksum))
-        tf_checksum2 = bytes.fromhex(tf_checksum)
+        tf_checksum = Checksum(tf_checksum)
         try:
-            return self.transformations[tf_checksum2]
+            return self.transformations[tf_checksum]
         except KeyError:
             raise KeyError(tf_checksum) from None
 
-    async def serve_get_transformation(self, tf_checksum, remote_peer_id):
-        assert isinstance(tf_checksum, bytes), type(tf_checksum)
+    async def serve_get_transformation(self, tf_checksum: Checksum, remote_peer_id):
+        tf_checksum = Checksum(tf_checksum)
         transformation = self.transformations.get(tf_checksum)
         if transformation is None:
             transformation_buffer = get_buffer(tf_checksum, remote=True)
@@ -1510,7 +1511,7 @@ class TransformationCache:
                 "TransformationCache, transformer_to_transformations: %d undestroyed"
                 % len(a)
             )
-        for tf_checksum, job in self.transformation_jobs.items():
+        for _tf_checksum, job in self.transformation_jobs.items():
             if job is None:
                 continue
             future = job.future
@@ -1524,7 +1525,6 @@ class TransformationCache:
 
 transformation_cache = TransformationCache()
 
-from seamless import CacheMissError
 from seamless.workflow.tempref import temprefmanager
 from seamless.checksum.buffer_cache import buffer_cache
 from seamless.checksum.get_buffer import get_buffer

@@ -2,10 +2,15 @@ from zipfile import ZipFile
 from io import BytesIO
 
 from seamless import Checksum
+from seamless.checksum.get_buffer import get_buffer
+from seamless.checksum.deserialize import deserialize_sync
+from ..core.protocol.expression import get_subpath_sync
+
 from ..core import context, cell
 from .. import copying
 from copy import deepcopy
 from ..highlevel.HelpMixin import HelpMixin
+
 
 class StaticContext(HelpMixin):
     _parent_path = None
@@ -13,9 +18,10 @@ class StaticContext(HelpMixin):
     @classmethod
     def from_graph(cls, graph, *, manager=None):
         from .graph_convert import graph_convert
+
         graph = graph_convert(graph, None)
         nodes0 = graph["nodes"]
-        nodes = {tuple(node["path"]):node for node in nodes0}
+        nodes = {tuple(node["path"]): node for node in nodes0}
         connections = graph["connections"]
         params = graph.get("params", {})
         lib = graph.get("lib", {})
@@ -23,6 +29,7 @@ class StaticContext(HelpMixin):
 
     def __init__(self, nodes, connections, lib={}, params={}, *, manager=None):
         from seamless.workflow.core.manager import Manager
+
         self._nodes = deepcopy(nodes)
         self._connections = connections
         self._lib = lib
@@ -34,7 +41,7 @@ class StaticContext(HelpMixin):
         else:
             self._manager = Manager()
         old_root = self._manager.last_ctx()
-        self.root = context(toplevel=True,manager=self._manager)
+        self.root = context(toplevel=True, manager=self._manager)
         if old_root is not None:
             self._manager.add_context(old_root)
         for node in self._nodes.values():
@@ -51,15 +58,15 @@ class StaticContext(HelpMixin):
             graph["params"] = deepcopy(self._params)
             graph["lib"] = deepcopy(self._lib)
             return graph
-        nodes, connections, params  = self._nodes, self._connections, self._params
+        nodes, connections, params = self._nodes, self._connections, self._params
         path = self._parent_path
         lp = len(path)
         newnodes = []
         for nodepath, node in sorted(nodes.items(), key=lambda kv: kv[0]):
             if len(nodepath) and nodepath[0] == "HELP":
-                if len(nodepath[1:]) > lp and nodepath[1:lp+1] == path:
+                if len(nodepath[1:]) > lp and nodepath[1 : lp + 1] == path:
                     newnode = deepcopy(node)
-                    newnode["path"] = ("HELP",) + tuple(nodepath[lp+1:])
+                    newnode["path"] = ("HELP",) + tuple(nodepath[lp + 1 :])
                     newnodes.append(newnode)
             else:
                 if len(nodepath) > lp and nodepath[:lp] == path:
@@ -83,11 +90,7 @@ class StaticContext(HelpMixin):
                     con["second"] = second[lp:]
                     new_connections.append(con)
         params = deepcopy(params)
-        graph = {
-            "nodes": newnodes,
-            "connections": new_connections,
-            "params": params
-        }
+        graph = {"nodes": newnodes, "connections": new_connections, "params": params}
         return graph
 
     def add_zip(self, zip):
@@ -102,7 +105,6 @@ class StaticContext(HelpMixin):
             raise TypeError(type(zip))
         return copying.add_zip(self._manager, zipfile)
 
-
     def get_children(self, type=None, full_path=False):
         if type is not None:
             raise ValueError("StaticContext only supports type=None")
@@ -110,10 +112,10 @@ class StaticContext(HelpMixin):
         result = []
         for path in self._nodes:
             if parent_path is not None:
-                pp = path[:len(parent_path)]
+                pp = path[: len(parent_path)]
                 if pp != parent_path:
                     continue
-                fullchild = result.append(path[len(parent_path):])
+                fullchild = result.append(path[len(parent_path) :])
             else:
                 fullchild = path
             child = fullchild if full_path else fullchild[0]
@@ -135,37 +137,33 @@ class StaticContext(HelpMixin):
         t = node["type"]
         if t == "cell":
             if node["celltype"] == "structured":
-                return StructuredCellWrapper(
-                    self._manager, node
-                )
+                return StructuredCellWrapper(self._manager, node)
             else:
                 checksum = node.get("checksum", {}).get("value")
                 return SimpleCellWrapper(
-                    self._manager, node,
-                    node["celltype"], checksum
+                    self._manager, node, node["celltype"], checksum
                 )
         elif t == "context":
             l = len(path)
+
             def in_path(p):
                 if len(p) and p[0] == "HELP":
                     return in_path(p[1:])
                 if len(p) < l:
                     return False
                 return p[:l] == path
-            nodes = { k:v for k,v in self._nodes.items() if in_path(k)}
-            connections = [c for c in self._connections \
+
+            nodes = {k: v for k, v in self._nodes.items() if in_path(k)}
+            connections = [
+                c
+                for c in self._connections
                 if in_path(c["source"]) or in_path(c["target"])
             ]
-            result = StaticContext(
-                nodes, connections,
-                manager=self._manager
-            )
+            result = StaticContext(nodes, connections, manager=self._manager)
             result._parent_path = path
             return result
         elif t == "transformer":
-            return TransformerWrapper(
-                self._manager, node
-            )
+            return TransformerWrapper(self._manager, node)
         elif t == "macro":
             raise NotImplementedError(t)
         else:
@@ -187,14 +185,16 @@ class StaticContext(HelpMixin):
             raise AttributeError(attr)
         return self._get_child(path)
 
+
 class WrapperBase:
     def __init__(self, manager, node):
         self._manager = manager
         self._node = node
 
+
 class SimpleCellWrapper(WrapperBase):
 
-    def __init__(self, manager, node, celltype, checksum:Checksum):
+    def __init__(self, manager, node, celltype, checksum: Checksum):
         super().__init__(manager, node)
         root = self._manager.last_ctx()
         assert root is not None
@@ -209,16 +209,13 @@ class SimpleCellWrapper(WrapperBase):
 
     @property
     def buffer(self):
-        from ..core.protocol.get_buffer import get_buffer
         checksum = self._checksum
         if not checksum:
             return None
-        return get_buffer(checksum, remote=True,deep=True)
+        return get_buffer(checksum, remote=True, deep=True)
 
     @property
     def value(self):
-        from ..core.protocol.deserialize import deserialize_sync
-        from ..core.protocol.expression import get_subpath_sync
         checksum = self._checksum
         celltype = self._celltype
         buffer = self.buffer
@@ -227,7 +224,9 @@ class SimpleCellWrapper(WrapperBase):
 
         celltype = self._celltype
         if celltype == "mixed":
-            value = deserialize_sync(buffer,  bytes.fromhex(checksum), "mixed", copy=True)
+            value = deserialize_sync(
+                buffer, bytes.fromhex(checksum), "mixed", copy=True
+            )
             hash_pattern = self._node.get("hash_pattern")
             if hash_pattern is None:
                 return value
@@ -240,7 +239,7 @@ class SimpleCellWrapper(WrapperBase):
                 ct = "text"
         else:
             ct = celltype
-        value = deserialize_sync(buffer, bytes.fromhex(checksum), ct, copy=True)
+        value = deserialize_sync(buffer, Checksum(checksum).bytes(), ct, copy=True)
         return value
 
     def cell(self):
@@ -259,6 +258,7 @@ class SimpleCellWrapper(WrapperBase):
         checksum = Checksum(self._checksum)
         result._initial_checksum = checksum, True, False
         return result
+
 
 class StructuredCellWrapper(WrapperBase):
     def __init__(self, manager, node):
@@ -286,6 +286,7 @@ class StructuredCellWrapper(WrapperBase):
         checksum = self._node.get("checksum", {}).get("value")
         vcell = SimpleCellWrapper(self._manager, {}, "mixed", checksum)
         return vcell.value
+
 
 class TransformerWrapper(WrapperBase):
     def __init__(self, manager, node):
@@ -317,7 +318,7 @@ class TransformerWrapper(WrapperBase):
             "input": "value",
             "input_auth": "auth",
             "input_buffered": "buffered",
-            "schema": "schema"
+            "schema": "schema",
         }
         checksums = self._node.get("checksum", {})
         cs = {}
@@ -325,23 +326,19 @@ class TransformerWrapper(WrapperBase):
             if k in checksums:
                 cs[v] = checksums[k]
         return StructuredCellWrapper(
-            self._manager,
-            {"checksum": cs, "type": "cell", "celltype": "structured"}
+            self._manager, {"checksum": cs, "type": "cell", "celltype": "structured"}
         )
 
     def _result(self):
-        mapping = {
-            "result": "value",
-            "result_schema": "schema"
-        }
+        mapping = {"result": "value", "result_schema": "schema"}
         checksums = self._node.get("checksum", {})
         cs = {}
         for k, v in mapping.items():
             if k in checksums:
                 cs[v] = checksums[k]
         return StructuredCellWrapper(
-            self._manager,
-            {"checksum": cs, "type": "cell", "celltype": "structured"}
+            self._manager, {"checksum": cs, "type": "cell", "celltype": "structured"}
         )
+
 
 from ..core.manager.tasks import GetBufferTask, DeserializeBufferTask

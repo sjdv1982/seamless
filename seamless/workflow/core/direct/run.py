@@ -4,13 +4,22 @@ import asyncio
 from concurrent.futures import ThreadPoolExecutor
 from copy import deepcopy
 import ast
-import json
 import time
 import multiprocessing
 
 from seamless import CacheMissError, Checksum
 
 from seamless.checksum.get_buffer import get_buffer as _get_buffer
+from seamless.checksum.buffer_cache import buffer_cache
+from seamless.checksum import buffer_remote
+from seamless.checksum.database_client import database
+from seamless.checksum.calculate_checksum import calculate_checksum
+from seamless.checksum.cached_compile import exec_code
+from seamless.checksum.serialize import serialize_sync
+from seamless.util import parse_checksum
+from seamless.util.source import ast_dump
+from seamless.direct import transformer, Transformation
+
 from ...core.cache.transformation_cache import (
     transformation_cache,
     tf_get_buffer,
@@ -20,7 +29,6 @@ from ...core.cache.transformation_cache import (
 )
 from seamless.workflow.tempref import temprefmanager
 from seamless.direct import run_transformation, run_transformation_async
-from seamless.checksum.buffer_remote import write_buffer
 
 _queued_transformations = []
 
@@ -64,12 +72,10 @@ def set_parent_process_response_queue(parent_process_response_queue):
 
 
 def cache_buffer(checksum, buf):
-    from ...core.cache.buffer_cache import buffer_cache
-    from ...core.cache.buffer_remote import write_buffer as remote_write_buffer
 
     checksum = parse_checksum(checksum, as_bytes=True)
     buffer_cache.cache_buffer(checksum, buf)
-    remote_write_buffer(checksum, buf)
+    buffer_remote.write_buffer(checksum, buf)
 
 
 def get_buffer(checksum):
@@ -81,6 +87,7 @@ def get_buffer(checksum):
 
 
 def fingertip(checksum, dunder=None):
+
     checksum = parse_checksum(checksum, as_bytes=True)
     result = _get_buffer(checksum, remote=True)
     if result is not None:
@@ -113,7 +120,6 @@ def _register_transformation_dict(
     # The transformation buffer has them stripped, so that transformations with different __meta__ get the same checksum.
     # See tf_get_buffer source code for details
     # In addition, the buffers in the checksum have now a Seamless refcount and will not be garbage collected.
-    from ...core.cache.buffer_cache import buffer_cache
 
     result = None
     if (
@@ -171,7 +177,6 @@ def run_transformation_dict(
     such as returned by highlevel.Transformer.get_transformation_dict.
     """
     # TODO: add input schema and result schema validation...
-    from ...core.cache.database_client import database
     from seamless.util.is_forked import is_forked
 
     increfed, transformation = register_transformation_dict(transformation_dict)
@@ -250,8 +255,6 @@ async def run_transformation_dict_async(
     such as returned by highlevel.Transformer.get_transformation_dict"""
     # TODO: add input schema and result schema validation...
     from seamless.util.is_forked import is_forked
-    from seamless.workflow.core.cache.buffer_cache import buffer_cache
-    from seamless.config import database
 
     assert not is_forked()
     transformation_buffer = tf_get_buffer(transformation_dict)
@@ -310,12 +313,7 @@ def run_transformation_dict_in_process(
         compilers as default_compilers,
         languages as default_languages,
     )
-    from seamless.workflow.core.cache.transformation_cache import transformation_cache
     from seamless.workflow.core.injector import transformer_injector as injector
-    from seamless.workflow.core.cached_compile import exec_code
-    from seamless.config import database
-    from seamless.workflow.core.cache.buffer_cache import buffer_cache, buffer_remote
-    from seamless.highlevel.direct import transformer
 
     result_checksum = database.get_transformation_result(tf_checksum)
     result_checksum = Checksum(result_checksum)
@@ -386,7 +384,7 @@ def run_transformation_dict_in_process(
     if result is None:
         raise RuntimeError("Result is empty")
 
-    result_buffer = serialize(result, output_celltype)
+    result_buffer = serialize_sync(result, output_celltype)
     result_checksum = calculate_checksum(result_buffer)
 
     database.set_transformation_result(tf_checksum, result_checksum)
@@ -401,8 +399,6 @@ def run_transformation_dict_in_process(
 
 
 def prepare_code(semantic_code_checksum, codebuf, code_checksum):
-    from seamless import Checksum
-
     if codebuf is not None:
         assert isinstance(codebuf, bytes)
     semantic_code_checksum = Checksum(semantic_code_checksum).bytes()
@@ -428,9 +424,6 @@ def prepare_code(semantic_code_checksum, codebuf, code_checksum):
 
 
 def prepare_transformation_pin_value(value, celltype):
-    from seamless import Checksum, Transformation
-    from ...core.cache.buffer_remote import write_buffer as remote_write_buffer
-
     if isinstance(value, Checksum):
         pass
     elif value is None:
@@ -447,7 +440,7 @@ def prepare_transformation_pin_value(value, celltype):
         if isinstance(value, bytes):
             buf = value
         else:
-            buf = serialize(value, celltype)
+            buf = serialize_sync(value, celltype)
         checksum = calculate_checksum(buf, hex=False)
         assert isinstance(checksum, bytes)
         cache_buffer(checksum, buf)
@@ -464,8 +457,6 @@ def prepare_transformation_dict(transformation_dict):
     Replaced buffers or values are properly registered and cached
     (including their syntactic <=> semantic conversion).
     """
-
-    from seamless import Checksum
 
     non_checksum_items = (
         "__output__",
@@ -497,7 +488,7 @@ def prepare_transformation_dict(transformation_dict):
             assert isinstance(semantic_code_checksum, bytes)
             codebuf = None
             if code is not None:
-                codebuf = serialize(code, "python")
+                codebuf = serialize_sync(code, "python")
             value = prepare_code(semantic_code_checksum, codebuf, code_checksum)
             transformation_dict["__code_checksum__"] = code_checksum
 
@@ -511,8 +502,8 @@ def prepare_transformation_dict(transformation_dict):
 def direct_transformer_to_transformation_dict(
     codebuf, meta, celltypes, modules, arguments, env
 ):
-    from seamless import Base, Cell, Module, Transformation, Checksum
-    from seamless.DeepCell import DeepCellBase
+    from seamless.workflow.highlevel import Base, Cell, Module
+    from seamless.workflow.highlevel.DeepCell import DeepCellBase
 
     result_celltype = celltypes["result"]
     result_hash_pattern = None
@@ -535,7 +526,7 @@ def direct_transformer_to_transformation_dict(
     }
 
     if env is not None:
-        envbuf = serialize(env, "plain")
+        envbuf = serialize_sync(env, "plain")
         checksum = calculate_checksum(envbuf)
         cache_buffer(checksum, envbuf)
         transformation_dict["__env__"] = checksum.hex()
@@ -631,9 +622,6 @@ def direct_transformer_to_transformation_dict(
 
 
 def _get_semantic(code, code_checksum):
-    from ...util import ast_dump
-    from ...core.cache.database_client import database
-
     code_checksum = parse_checksum(code_checksum, as_bytes=True)
     synkey = (code_checksum, "python", "transformer")
     semantic_code_checksum = transformation_cache.syntactic_to_semantic_checksums.get(
@@ -666,8 +654,6 @@ def _get_semantic(code, code_checksum):
 
 
 def _get_node_transformation_dependencies(node):
-    from seamless import Transformation
-
     deps = {}
     temp = node.get("TEMP", {}).get("input_auth", {})
     for pinname, value in temp.items():
@@ -684,8 +670,8 @@ def _node_to_transformation_dict(node):
     # - The result transformation dict cannot be submitted directly,
     #    it must still be prepared.
 
-    from seamless import Base, Cell, Module, Transformation, Checksum
-    from seamless.DeepCell import DeepCellBase
+    from seamless.workflow.highlevel import Base, Cell, Module
+    from seamless.workflow.highlevel.DeepCell import DeepCellBase
 
     language = node["language"]
     if language == "bash":
@@ -716,7 +702,7 @@ def _node_to_transformation_dict(node):
     }
     env = node.get("environment")
     if env is not None:
-        envbuf = serialize(env, "plain")
+        envbuf = serialize_sync(env, "plain")
         checksum = calculate_checksum(envbuf)
         cache_buffer(checksum, envbuf)
         transformation_dict["__env__"] = checksum.hex()

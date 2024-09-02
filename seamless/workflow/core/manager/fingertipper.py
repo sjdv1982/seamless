@@ -264,9 +264,9 @@ class FingerTipper:
         return exc_str
 
 
+from seamless.checksum.expression import access_hash_pattern
 from ..protocol.expression import (
     set_subpath_checksum,
-    access_hash_pattern,
     value_to_deep_structure,
 )
 from seamless.checksum.get_buffer import get_buffer

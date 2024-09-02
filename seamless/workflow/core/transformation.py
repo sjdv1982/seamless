@@ -663,7 +663,7 @@ class TransformationJob:
         if result is None:
             self.remote = False
             return
-        return bytes.fromhex(result)
+        return Checksum(result)
         """
         # TODO, see TODO document. Probably rip this. 
         meta = self.transformation.get("__meta__")

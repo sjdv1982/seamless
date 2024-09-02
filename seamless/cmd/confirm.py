@@ -1,10 +1,15 @@
+"""Interactive command-line confirmation.
+
 # Adapted from the Conda project (conda/main/conda/cli/common.py)
 # Copyright (C) 2012 Anaconda, Inc
 # SPDX-License-Identifier: BSD-3-Clause
+"""
 
 import sys
 
+
 def confirm(message="Proceed", choices=("yes", "no"), default="yes"):
+    """Interactive command-line confirmation."""
     assert default in choices, default
 
     options = []
@@ -23,7 +28,7 @@ def confirm(message="Proceed", choices=("yes", "no"), default="yes"):
         try:
             user_choice = sys.stdin.readline().strip().lower()
         except OSError as e:
-            raise RuntimeError(f"cannot read from stdin: {e}")
+            raise RuntimeError(f"cannot read from stdin: {e}") from None
         if user_choice not in choices:
             print("Invalid choice: %s" % user_choice)
         else:
@@ -33,26 +38,25 @@ def confirm(message="Proceed", choices=("yes", "no"), default="yes"):
 
 
 def confirm_yn(message="Proceed", default="yes"):
+    """Interactive command-line confirmation, yes or no."""
     try:
-        choice = confirm(
-            message=message, choices=("yes", "no"), default=default
-        )
+        choice = confirm(message=message, choices=("yes", "no"), default=default)
     except KeyboardInterrupt:  # pragma: no cover
         from .exceptions import SeamlessSystemExit
 
-        raise SeamlessSystemExit("\nOperation aborted.  Exiting.")
+        raise SeamlessSystemExit("\nOperation aborted.  Exiting.") from None
     if choice == "no":
         return False
     return True
 
+
 def confirm_yna(message="Proceed", default="yes"):
+    """Interactive command-line confirmation, yes or no or all."""
     try:
-        choice = confirm(
-            message=message, choices=("yes", "no", "all"), default=default
-        )
+        choice = confirm(message=message, choices=("yes", "no", "all"), default=default)
     except KeyboardInterrupt:  # pragma: no cover
         from .exceptions import SeamlessSystemExit
 
-        raise SeamlessSystemExit("\nOperation aborted.  Exiting.")
+        raise SeamlessSystemExit("\nOperation aborted.  Exiting.") from None
 
     return choice

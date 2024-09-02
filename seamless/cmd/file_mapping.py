@@ -1,5 +1,6 @@
+"""Map files inside the transformation to files on disk."""
+
 from typing import Any
-import glob
 import os
 from pathlib import Path
 
@@ -33,7 +34,7 @@ def get_file_mapping(
     Returns:
 
     Updated argtypes dict where every "file" entry has been replaced.
-    The new key will be the filename/dirname (pin name) inside the transformation, 
+    The new key will be the filename/dirname (pin name) inside the transformation,
      which will also be the target file name on the server.
     The filename to be read from disk becomes the "mapping" field in the entry value.
     The "@order" field is updated accordingly.
@@ -155,17 +156,17 @@ To solve this problem:
                 new_entry = {"type": argtype, "mapping": fullpath}
 
             if new_path in result and result[new_path] != new_entry:
-                errmsg = f"""Two different mappings for argument "{new_path}": 
+                errmsg = f"""Two different mappings for argument "{new_path}":
 {result[new_path]} and {new_entry}"""
                 raise ValueError(errmsg)
-        
+
             if checksum:
                 new_entry["checksum"] = checksum
 
             if fixed_mapping:
                 result[argname] = new_entry
             else:
-                order_map[argname] = new_path            
+                order_map[argname] = new_path
                 result[new_path] = new_entry
 
         else:

@@ -1,3 +1,5 @@
+"""Control error/logging messages for cmd seamless"""
+
 import sys
 import io
 
@@ -6,8 +8,11 @@ _VERBOSITY: int = 0
 
 
 def set_header(header):
+    """Header pre-prending all messages.
+    Default: 'seamless'"""
     global _HEADER
     _HEADER = str(header) + ":"
+
 
 def set_verbosity(verbosity: int) -> None:
     """Set verbosity to -1 (quiet), 0 (default), 1, 2 or 3"""
@@ -33,6 +38,9 @@ def message(verbosity: int, *args) -> None:
         else:
             print(_HEADER, *args, file=sys.stderr)
 
+
 def message_and_exit(*args):
+    """Print error message and exit with error code 1.
+    Message is prepended with a newline and  "ERROR:" """
     print("\nERROR:", *args, file=sys.stderr)
     sys.exit(1)
