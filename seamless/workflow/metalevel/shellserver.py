@@ -11,7 +11,7 @@ import traceback
 import os
 from multiprocessing.context import Process
 
-import os,shutil
+import shutil
 import tempfile
 from typing import OrderedDict
 import numpy as np
@@ -19,11 +19,13 @@ import json
 from silk import Silk
 from silk.mixed.get_form import get_form
 
+from seamless.checksum.cached_compile import exec_code, analyze_code
+
 DOCKER_CONTAINER = None
 docker_container_file = os.path.expanduser("~/DOCKER_CONTAINER")
 if os.path.exists(docker_container_file):
-    with open(docker_container_file) as f:
-        DOCKER_CONTAINER = f.read().strip()
+    with open(docker_container_file) as _f:
+        DOCKER_CONTAINER = _f.read().strip()
 
 CODE_MOUNT_MESSAGE1 = """
 Modifying the code will update the code in the shell:
@@ -87,8 +89,6 @@ The files are not synchronized with the files in the sandbox directory.
 **********************************************************************
 """
 
-import os, tempfile
-
 DOCKER_IMAGE = os.environ.get("DOCKER_IMAGE")
 if DOCKER_IMAGE is None and DOCKER_CONTAINER is None:
     CONSOLE_COMMAND0 = "jupyter console --existing"
@@ -104,11 +104,8 @@ else:
 
 
 class ShellDict(dict):
-    def __init__(self,
-        name,
-        push_queue, inputs:list, *,
-        output_name,
-        ipython_language:bool
+    def __init__(
+        self, name, push_queue, inputs: list, *, output_name, ipython_language: bool
     ):
         self._name = name
         self._inputs = inputs
@@ -131,14 +128,15 @@ class ShellDict(dict):
         self._push_queue.put((pushable, self[pushable]))
 
     def transform(self):
-        from ..core.cached_compile import exec_code
+
         code = self["code"]
         exec_code(
-            code, identifier=self._name, 
-            namespace=self, 
-            inputs=self._inputs, 
+            code,
+            identifier=self._name,
+            namespace=self,
+            inputs=self._inputs,
             output=self._output_name,
-            with_ipython_kernel=self._ipython_language
+            with_ipython_kernel=self._ipython_language,
         )
         return self[self._output_name]
 
@@ -158,7 +156,7 @@ class ShellDict(dict):
             raise KeyError(attr) from None
 
     def _set_code(self, value):
-        from ..core.cached_compile import analyze_code
+
         if callable(value):
             value = inspect.getsource(value)
         else:
@@ -186,23 +184,31 @@ class QueueStdStream:
     def __init__(self, queue, id):
         self._queue = queue
         self._id = id
+
     def isatty(self):
         return False
+
     def write(self, v):
         self._queue.put((self._id, v))
+
     def writelines(self, sequence):
         for s in sequence:
             self.write(s)
+
     def writeable(self):
         return True
+
     def flush(self):
         pass
+
     def readable(self):
         return False
+
 
 def init_io_patched(self):
     """Redirect input streams and set a display hook."""
     from ipykernel.kernelapp import import_item
+
     # copy-paste: taken from ipykernel.kernelapp.IPKernelApp.init_io
     # Copyright (c) IPython Development Team.
     if self.outstream_class:
@@ -213,16 +219,14 @@ def init_io_patched(self):
         e_stdout = None if self.quiet else sys.__stdout__
         e_stderr = None if self.quiet else sys.__stderr__
 
-        sys.stdout = outstream_factory(self.session, self.iopub_thread,
-                                        'stdout',
-                                        echo=e_stdout,
-                                        watchfd=False)
+        sys.stdout = outstream_factory(
+            self.session, self.iopub_thread, "stdout", echo=e_stdout, watchfd=False
+        )
         if sys.stderr is not None:
             sys.stderr.flush()
-        sys.stderr = outstream_factory(self.session, self.iopub_thread,
-                                        'stderr',
-                                        echo=e_stderr,
-                                        watchfd=False)
+        sys.stderr = outstream_factory(
+            self.session, self.iopub_thread, "stderr", echo=e_stderr, watchfd=False
+        )
 
     if self.displayhook_class:
         displayhook_factory = import_item(str(self.displayhook_class))
@@ -231,9 +235,11 @@ def init_io_patched(self):
 
     self.patch_io()
 
+
 async def monitor_code_mount_file(code_mount_file, namespace, stderr):
-    import traceback
+
     try:
+
         def _get_mtime():
             try:
                 stat = os.stat(code_mount_file)
@@ -250,7 +256,7 @@ async def monitor_code_mount_file(code_mount_file, namespace, stderr):
             except Exception:
                 stderr(traceback.format_exc())
                 return None
-        
+
         mtime = _get_mtime()
         if mtime is None:
             return
@@ -259,7 +265,7 @@ async def monitor_code_mount_file(code_mount_file, namespace, stderr):
             new_mtime = _get_mtime()
             if new_mtime is None:
                 return
-            if new_mtime != mtime:                
+            if new_mtime != mtime:
                 mtime = new_mtime
                 code = _read()
                 if code is None:
@@ -268,18 +274,26 @@ async def monitor_code_mount_file(code_mount_file, namespace, stderr):
     except Exception:
         stderr(traceback.format_exc())
 
+
 def start_shell(
-    name, connection_file, namespace, module_workspace, push_queue, inputs, 
-    output_name, ipython_language, code_mount_file
+    name,
+    connection_file,
+    namespace,
+    module_workspace,
+    push_queue,
+    inputs,
+    output_name,
+    ipython_language,
+    code_mount_file,
 ):
     from IPython import get_ipython
     from ..core.injector import transformer_injector
     from ipykernel.kernelapp import IPKernelApp
+
     ipshell = get_ipython()
     if ipshell is not None:
         ipshell.clear_instance()
 
-    import asyncio
     asyncio.get_event_loop().stop()
     asyncio.set_event_loop(asyncio.new_event_loop())
     assert not asyncio.get_event_loop().is_running()
@@ -304,8 +318,8 @@ def start_shell(
     app.write_connection_file()
     # Log connection info after writing connection file, so that the connection
     # file is definitely available at the time someone reads the log.
-    ### app.log_connection_info()  # disable for Seamless  
-    #app.init_io()
+    ### app.log_connection_info()  # disable for Seamless
+    # app.init_io()
     init_io_patched(app)
     try:
         app.init_signal()
@@ -319,33 +333,37 @@ def start_shell(
     app.init_path()
 
     try:
+
         def stdout(msg):
-           if not isinstance(msg, str):
-               msg = str(msg)
-           push_queue.put((-1, msg)) 
+            if not isinstance(msg, str):
+                msg = str(msg)
+            push_queue.put((-1, msg))
+
         def stderr(msg):
-           if not isinstance(msg, str):
-               msg = str(msg)
-           push_queue.put((-2, msg)) 
+            if not isinstance(msg, str):
+                msg = str(msg)
+            push_queue.put((-2, msg))
 
         app.init_shell()
         # From now on, stdout and stderr are not working
 
         code_mount_message = CODE_MOUNT_MESSAGE0
         if code_mount_file is not None:
-            code_mount_message = CODE_MOUNT_MESSAGE1.format(code_mount_file=code_mount_file)
+            code_mount_message = CODE_MOUNT_MESSAGE1.format(
+                code_mount_file=code_mount_file
+            )
 
         app.shell.banner1 = PYBANNER.format(
             name=name,
             code_mount_message=code_mount_message,
         )
-            
+
         message = PYMESSAGE.format(
             name=name,
             CONSOLE_COMMAND=CONSOLE_COMMAND,
             CONSOLE_COMMAND0=CONSOLE_COMMAND0,
             code_mount_message=code_mount_message,
-            connection_file=connection_file
+            connection_file=connection_file,
         )
         stderr(message)
         app.init_gui_pylab()
@@ -355,27 +373,33 @@ def start_shell(
         # initialization do not get associated with the first execution request
         sys.stdout.flush()
         sys.stderr.flush()
-        # /copy-paste        
+        # /copy-paste
 
         with transformer_injector.active_workspace(module_workspace, namespace):
             shelldict = ShellDict(
-                name, push_queue, inputs, 
-                output_name=output_name, 
-                ipython_language=ipython_language
+                name,
+                push_queue,
+                inputs,
+                output_name=output_name,
+                ipython_language=ipython_language,
             )
             shelldict.update(namespace)
             shelldict._set_code(shelldict["code"])
-            coro = asyncio.ensure_future(monitor_code_mount_file(code_mount_file, shelldict, stderr)) 
+            coro = asyncio.ensure_future(
+                monitor_code_mount_file(code_mount_file, shelldict, stderr)
+            )
 
             app.kernel.user_ns = shelldict
-            app.shell.set_completer_frame()    
+            app.shell.set_completer_frame()
             app.start()
     except Exception:
         exc = traceback.format_exc()
         stderr(exc)
 
+
 class ShellHub:
     """One hub per transformer. There can be multiple shells per hub"""
+
     def __init__(self, name):
         self.name = name
         self.shells = {}
@@ -414,10 +438,13 @@ class ShellHub:
         finally:
             self._destroyed = True
 
+
 class PyShellHub(ShellHub):
-    def __init__(self, name, inputs, output_name, ipython_language, push_callback, *, debug_mount):
+    def __init__(
+        self, name, inputs, output_name, ipython_language, push_callback, *, debug_mount
+    ):
         super().__init__(name)
-        #self.shells: name => (Process, connection_file) dict
+        # self.shells: name => (Process, connection_file) dict
         self.inputs = inputs
         self.output_name = output_name
         self.ipython_language = ipython_language
@@ -440,10 +467,15 @@ class PyShellHub(ShellHub):
                 if isinstance(code_mount, dict) and not code_mount["as_directory"]:
                     code_mount_file = code_mount["path"]
         args = (
-            name, connection_file, namespace, module_workspace,
-            self.push_queue, self.inputs, self.output_name,
+            name,
+            connection_file,
+            namespace,
+            module_workspace,
+            self.push_queue,
+            self.inputs,
+            self.output_name,
             self.ipython_language,
-            code_mount_file
+            code_mount_file,
         )
         if multiprocessing.get_start_method(allow_none=True) is None:
             multiprocessing.set_start_method("fork")
@@ -472,9 +504,7 @@ In a bash terminal, you can connect to each shell with:"""
             _, connection_file = self.shells[name]
             name2 = name + ": " if len(self.shellnames) > 1 else ""
             result += "\n{}{CONSOLE_COMMAND} {connection_file}".format(
-                name2,
-                CONSOLE_COMMAND=CONSOLE_COMMAND,
-                connection_file=connection_file
+                name2, CONSOLE_COMMAND=CONSOLE_COMMAND, connection_file=connection_file
             )
         return result
 
@@ -498,16 +528,17 @@ In a bash terminal, you can connect to each shell with:"""
 
     def destroy_shell(self, name):
         from ..core.transformation import forked_processes
+
         if name not in self.shells:
             raise KeyError(name)
-        process, _ = self.shells.pop(name)            
+        process, _ = self.shells.pop(name)
         self.shellnames.remove(name)
         process.terminate()
         forked_processes[process] = time.time()
 
+
 class BashShellHub(ShellHub):
 
-        
     def new_shell(self, namespace, _):
         name = self.new_shell_name()
         docker_image = namespace.get("docker_image_", None)
@@ -519,12 +550,14 @@ class BashShellHub(ShellHub):
         if not os.path.exists(shelldir):
             os.mkdir(shelldir)
         else:
-            shelldir = tempfile.mkdtemp(dir=SEAMLESS_DEBUGGING_DIRECTORY, prefix="shell-"+ name)
+            shelldir = tempfile.mkdtemp(
+                dir=SEAMLESS_DEBUGGING_DIRECTORY, prefix="shell-" + name
+            )
 
         pins_ = namespace["pins_"]
-        if docker_image is None: # graphs/bash_transformer
+        if docker_image is None:  # graphs/bash_transformer
             bashcode = namespace["bashcode"]
-        else: # graphs/bash_transformer
+        else:  # graphs/bash_transformer
             bashcode = namespace["docker_command"]
         PINS = namespace["PINS"]
         old_cwd = os.getcwd()
@@ -551,7 +584,8 @@ class BashShellHub(ShellHub):
                 if storage == "pure-plain":
                     if isinstance(form, str):
                         vv = str(v)
-                        if not vv.endswith("\n"): vv += "\n"
+                        if not vv.endswith("\n"):
+                            vv += "\n"
                         if pin.find(".") == -1 and len(vv) <= 1000:
                             env[pin] = vv
                     else:
@@ -568,22 +602,25 @@ class BashShellHub(ShellHub):
                             pinf.write(vv)
                     else:
                         with open(pin, "bw") as pinf:
-                            np.save(pinf,v,allow_pickle=False)
+                            np.save(pinf, v, allow_pickle=False)
 
             gen_env_code = ""
             for v in env:
                 gen_env_code += "declare -p {}\n".format(v)
             try:
                 gen_env_process = subprocess.run(
-                    gen_env_code, capture_output=True, shell=True, check=True,
-                    executable='/bin/bash',
-                    env=env
+                    gen_env_code,
+                    capture_output=True,
+                    shell=True,
+                    check=True,
+                    executable="/bin/bash",
+                    env=env,
                 )
             except subprocess.CalledProcessError as exc:
                 stderr = exc.stderr
                 try:
                     stderr = stderr.decode()
-                except:
+                except Exception:
                     pass
                 print(stderr)
                 raise exc from None
@@ -613,23 +650,19 @@ set -u -e
   
 If the Docker image "{docker_image}" requires root, eliminate the line starting with -u.
 """.format(
-            shelldir=shelldir,
-            docker_image=docker_image
+                shelldir=shelldir, docker_image=docker_image
+            )
+        print(
+            BASHMESSAGE.format(name=name, shelldir=shelldir, bash_command=bash_command)
         )
-        print(BASHMESSAGE.format(
-            name=name,
-            shelldir=shelldir,
-            bash_command=bash_command
-        ))
 
         self.shells[name] = shelldir, bash_command
         self.shellnames.append(name)
 
-
     def destroy_shell(self, name):
         if name not in self.shells:
             raise KeyError(name)
-        shelldir, _ = self.shells.pop(name)            
+        shelldir, _ = self.shells.pop(name)
         self.shellnames.remove(name)
         shutil.rmtree(shelldir, ignore_errors=True)
 
@@ -653,8 +686,8 @@ In a bash terminal, you can connect to each shell with:"""
 class ShellServer:
     def __init__(self):
         self.INTERVAL = 0.1
-        self._shellhubs = {} #name-to-shellhub
-        
+        self._shellhubs = {}  # name-to-shellhub
+
     def _new_shellhub_name(self, name):
         if name not in self._shellhubs:
             return name
@@ -665,56 +698,76 @@ class ShellServer:
                 if name2 not in self._shellhubs:
                     return name2
 
-    def new_pyshellhub(self, name:str, inputs, output_name, ipython_language, push_callback, *, debug_mount=None):
+    def new_pyshellhub(
+        self,
+        name: str,
+        inputs,
+        output_name,
+        ipython_language,
+        push_callback,
+        *,
+        debug_mount=None
+    ):
         name = self._new_shellhub_name(name)
-        shellhub = PyShellHub(name, inputs, output_name, ipython_language, push_callback, debug_mount=debug_mount)
+        shellhub = PyShellHub(
+            name,
+            inputs,
+            output_name,
+            ipython_language,
+            push_callback,
+            debug_mount=debug_mount,
+        )
         self._shellhubs[name] = shellhub
         asyncio.ensure_future(shellhub.listen_push_queue(self.INTERVAL))
         return name
 
-    def new_bashshellhub(self, name:str):
+    def new_bashshellhub(self, name: str):
         name = self._new_shellhub_name(name)
         shellhub = BashShellHub(name)
         self._shellhubs[name] = shellhub
         return name
 
-    def new_shell_from_namespace(self, name:str, namespace, module_workspace):
+    def new_shell_from_namespace(self, name: str, namespace, module_workspace):
         if name not in self._shellhubs:
             raise KeyError(name)
         return self._shellhubs[name].new_shell(namespace, module_workspace)
 
-    async def new_shell_from_transformation(self, name:str, transformation):
+    async def new_shell_from_transformation(self, name: str, transformation):
         from ..core.cache.transformation_cache import transformation_cache
         from ..core.transformation import build_transformation_namespace
         from ..core.build_module import build_all_modules
         from ..core.execute import fast_unpack
-        from ..compiler import compilers as default_compilers, languages as default_languages
+        from seamless.compiler import (
+            compilers as default_compilers,
+            languages as default_languages,
+        )
+
         if name not in self._shellhubs:
             raise KeyError(name)
         semantic_cache = transformation_cache.build_semantic_cache(transformation)
         tf_ns = await build_transformation_namespace(
-            transformation, 
-            semantic_cache,
-            name
+            transformation, semantic_cache, name
         )
         code, namespace, modules_to_build, deep_structures_to_unpack = tf_ns
         for pinname, value in deep_structures_to_unpack.items():
-            deep_structure, hash_pattern = value 
+            deep_structure, hash_pattern = value
             unpacked_value = fast_unpack(deep_structure, hash_pattern)
             namespace[pinname] = unpacked_value
             namespace["PINS"][pinname] = unpacked_value
         namespace["code"] = code
         compilers = transformation.get("__compilers__", default_compilers)
-        languages = transformation.get("__languages__", default_languages)            
+        languages = transformation.get("__languages__", default_languages)
         module_workspace = {}
         build_all_modules(
-            modules_to_build, module_workspace,
-            compilers=compilers, languages=languages,
-            module_debug_mounts=None
+            modules_to_build,
+            module_workspace,
+            compilers=compilers,
+            languages=languages,
+            module_debug_mounts=None,
         )
         return self.new_shell_from_namespace(name, namespace, module_workspace)
 
-    def list_shells(self, name:str):
+    def list_shells(self, name: str):
         if name not in self._shellhubs:
             raise KeyError(name)
         return self._shellhubs[name].list_shells()
@@ -728,7 +781,7 @@ class ShellServer:
             if len(shellnames) > 1:
                 raise Exception("Multiple shells exist")
             shellname = shellnames[0]
-        shellhub.destroy_cell(shellname)        
+        shellhub.destroy_cell(shellname)
 
     def destroy_shellhub(self, name):
         if name not in self._shellhubs:
@@ -740,7 +793,8 @@ class ShellServer:
         while len(self._shellhubs):
             name = list(self._shellhubs.keys())[0]
             self.destroy_shellhub(name)
-       
+
+
 shellserver = ShellServer()
 import atexit
 

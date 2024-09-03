@@ -5,11 +5,12 @@ import weakref
 import asyncio
 from copy import deepcopy
 
-OBSERVE_GRAPH_DELAY = 0.23 # 23 is not a multiple of 50
+OBSERVE_GRAPH_DELAY = 0.23  # 23 is not a multiple of 50
 OBSERVE_STATUS_DELAY = 0.5
 OBSERVE_STATUS_DELAY2 = 0.2
 
 status_observers = []
+
 
 class StatusObserver:
     def __init__(self, ctx, status_ctx):
@@ -67,8 +68,6 @@ class StatusObserver:
         self.destroy(path)
         self.observers[path] = observer
 
-
-
     def destroy(self, path):
         observer = self.observers.pop(path, None)
         if observer is None:
@@ -110,7 +109,7 @@ def observe_graph(ctx, status_ctx, graph):
                 path,
                 path + (node["INPUT"],),
             ]
-        else: # TODO: macro
+        else:  # TODO: macro
             continue
         for path in paths:
             for attr in ("status", "exception"):
@@ -120,24 +119,24 @@ def observe_graph(ctx, status_ctx, graph):
                 status_observer.observe(subpath)
     for dpath in paths_to_delete:
         status_observer.destroy(dpath)
-    #print("DONE")
+    # print("DONE")
+
 
 def bind_status_context(ctx, status_ctx):
-    """"Sets up monitoring of ctx by status visualization context status_ctx
+    """ "Sets up monitoring of ctx by status visualization context status_ctx
 
-The status context must have cells called "graph" and/or "graph_rt",
- (for ctx's static graph and the runtime graph, respectively),
- and a cell called "status_".
-"""
-    observe_graph_bound = partial(
-        observe_graph, ctx, status_ctx
-    )
+    The status context must have cells called "graph" and/or "graph_rt",
+     (for ctx's static graph and the runtime graph, respectively),
+     and a cell called "status_".
+    """
+    observe_graph_bound = partial(observe_graph, ctx, status_ctx)
 
     params = {"runtime": True}
 
     # Primary observation of realtime graph.
     # Send to status_ctx.graph_rt if it exists, else to status_ctx.graph.
     ctx.observe(("get_graph",), observe_graph_bound, OBSERVE_GRAPH_DELAY, params=params)
+
     def observe2(graph):
         try:
             graphc = status_ctx.graph
@@ -146,7 +145,7 @@ The status context must have cells called "graph" and/or "graph_rt",
         if not isinstance(graphc, Cell):
             return
         graphc.set(deepcopy(graph))
-    
+
     # Secondary observation of static graph.
     # Only if both status_ctx.graph and status_ctx.graph_rt exist
     try:
@@ -160,70 +159,69 @@ The status context must have cells called "graph" and/or "graph_rt",
         pass
     else:
         ctx.observe(("get_graph",), observe2, OBSERVE_GRAPH_DELAY)
-    
+
+
 def bind_status_graph(ctx, status_graph, *, zips=None, mounts=False, shares=True):
-    """"Creates status visualization context that will monitor the status of ctx
+    """ "Creates status visualization context that will monitor the status of ctx
 
-The status visualization context is loaded from status_graph, 
- which must be a workflow in JSON format, from a .seamless file.
-The status context's underlying buffers must be available already
-(from add_zip or via Seamless database) or provided with "zips"
-The status context must have cells called "graph" and/or "graph_rt",
- (for ctx's static graph and the runtime graph, respectively),
- a cell called "status_", and normally, also a cell shared as "index.html".
-The status context will receive the share namespace "status"
+    The status visualization context is loaded from status_graph,
+     which must be a workflow in JSON format, from a .seamless file.
+    The status context's underlying buffers must be available already
+    (from add_zip or via Seamless database) or provided with "zips"
+    The status context must have cells called "graph" and/or "graph_rt",
+     (for ctx's static graph and the runtime graph, respectively),
+     a cell called "status_", and normally, also a cell shared as "index.html".
+    The status context will receive the share namespace "status"
 
-mounts and shares have the same meaning as in from_graph
+    mounts and shares have the same meaning as in from_graph
 
-Additional zips can be provided.
-They will be passed to ctx.add_zip before the graph is loaded
-"""
+    Additional zips can be provided.
+    They will be passed to ctx.add_zip before the graph is loaded
+    """
     from seamless.workflow import Context
+
     status_ctx = Context()
     if zips is not None:
         for zipf in zips:
             status_ctx.add_zip(zipf)
-    status_ctx.share_namespace="status"
-    status_ctx.set_graph(
-        status_graph,
-        mounts=mounts,
-        shares=shares
-    )
+    status_ctx.share_namespace = "status"
+    status_ctx.set_graph(status_graph, mounts=mounts, shares=shares)
     status_ctx.translate()
 
     bind_status_context(ctx, status_ctx)
     return status_ctx
 
-async def bind_status_graph_async(ctx, status_graph, *, zips=None, mounts=False, shares=True):
-    """"Creates status visualization context that will monitor the status of ctx
 
-The status visualization context is loaded from status_graph, 
- which must be a workflow in JSON format, from a .seamless file.
-The status context's underlying buffers must be available already
-(from add_zip or via Seamless database) or provided with "zips"
-The status context must have cells called "graph" and/or "graph_rt",
- (for ctx's static graph and the runtime graph, respectively),
- a cell called "status_", and normally, also a cell shared as "index.html".
-The status context will receive the share namespace "status"
+async def bind_status_graph_async(
+    ctx, status_graph, *, zips=None, mounts=False, shares=True
+):
+    """ "Creates status visualization context that will monitor the status of ctx
 
-mounts and shares have the same meaning as in from_graph
+    The status visualization context is loaded from status_graph,
+     which must be a workflow in JSON format, from a .seamless file.
+    The status context's underlying buffers must be available already
+    (from add_zip or via Seamless database) or provided with "zips"
+    The status context must have cells called "graph" and/or "graph_rt",
+     (for ctx's static graph and the runtime graph, respectively),
+     a cell called "status_", and normally, also a cell shared as "index.html".
+    The status context will receive the share namespace "status"
 
-Additional zips can be provided.
-They will be passed to ctx.add_zip before the graph is loaded
-"""
+    mounts and shares have the same meaning as in from_graph
+
+    Additional zips can be provided.
+    They will be passed to ctx.add_zip before the graph is loaded
+    """
     from seamless.workflow import Context
+
     status_ctx = Context()
     if zips is not None:
         for zipf in zips:
             status_ctx.add_zip(zipf)
-    status_ctx.share_namespace="status"
-    status_ctx.set_graph(
-        status_graph,
-        mounts=mounts,
-        shares=shares
-    )
+    status_ctx.share_namespace = "status"
+    status_ctx.set_graph(status_graph, mounts=mounts, shares=shares)
     await status_ctx.translation()
     bind_status_context(ctx, status_ctx)
     return status_ctx
+
 
 from seamless.workflow import Cell

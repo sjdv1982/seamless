@@ -2,7 +2,7 @@
 # - update default_bridges below
 # - update languages.cson in seamless/compiler
 
-from ...highlevel.Environment import ContextEnvironment, Environment
+from seamless.Environment import ContextEnvironment, Environment
 
 from . import r
 
@@ -15,10 +15,11 @@ _default_bridges = {
             "conda": """
             dependencies:
             - rpy2
-            """,            
-        }
+            """,
+        },
     }
 }
+
 
 def load_py_bridges(env: ContextEnvironment):
     for lang in _default_bridges:

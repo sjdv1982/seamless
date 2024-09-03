@@ -6,14 +6,13 @@ ctx is the root
 """
 
 from copy import deepcopy
-from logging import warn
 import os, tempfile, shutil, functools
 
-from numpy import mod
-from sys import modules
-from seamless.workflow.core.manager import livegraph
-from seamless.checksum.celltypes import celltypes
-from seamless import Checksum
+from seamless.checksum.get_buffer import get_buffer
+from seamless.checksum.deserialize import deserialize_sync
+from seamless.checksum.serialize import serialize_sync
+from seamless import Checksum, Buffer
+from seamless.checksum.mime import language_to_extension
 
 SEAMLESS_DEBUGGING_DIRECTORY = os.environ.get("SEAMLESS_DEBUGGING_DIRECTORY")
 
@@ -21,7 +20,6 @@ module_tag = "@@MODULE_"
 
 
 def checksum_to_code(checksum: Checksum):
-    from ..core.protocol.get_buffer import get_buffer
 
     code = None
     checksum = Checksum(checksum)
@@ -33,7 +31,6 @@ def checksum_to_code(checksum: Checksum):
 
 
 def parse_kwargs(checksum: Checksum):
-    from ..core.protocol.get_buffer import get_buffer
 
     checksum = Checksum(checksum)
     if not checksum:
@@ -45,8 +42,7 @@ def parse_kwargs(checksum: Checksum):
     result = {}
     for k, v in kwargs.items():
         vbuf = serialize_sync(v, "mixed")
-        vchecksum = calculate_checksum_sync(vbuf)
-        vchecksum = Checksum(vchecksum)
+        vchecksum = Buffer(vbuf).get_checksum()
         result[k] = vchecksum
     return result
 
@@ -63,14 +59,13 @@ def integrate_compiled_module(mod_lang, mod_rest, object_codes):
         assert "objects" in new_value and obj_name2 in new_value["objects"], obj_name2
         new_value["objects"][obj_name2]["code"] = obj_code
     new_value_buffer = serialize_sync(new_value, "plain")
-    new_checksum = calculate_checksum_sync(new_value_buffer)
+    new_checksum = Buffer(new_value_buffer).get_checksum()
     buffer_cache.cache_buffer(new_checksum, new_value_buffer)
     buffer_cache.guarantee_buffer_info(new_checksum, "plain", sync_to_remote=False)
     return new_checksum
 
 
 def integrate_kwargs(kwargs_checksums):
-    from ..core.protocol.get_buffer import get_buffer
 
     result = {}
     for kwarg, kwarg_checksum in kwargs_checksums.items():
@@ -82,7 +77,7 @@ def integrate_kwargs(kwargs_checksums):
             kwarg_value = deserialize_sync(buf, kwarg_checksum, "mixed", True)
             result[kwarg] = kwarg_value
     result_buffer = serialize_sync(result, "mixed")
-    result_checksum = calculate_checksum_sync(result_buffer)
+    result_checksum = Buffer(result_buffer).get_checksum()
     buffer_cache.cache_buffer(result_checksum, result_buffer)
     buffer_cache.guarantee_buffer_info(result_checksum, "mixed", sync_to_remote=False)
     return result_checksum
@@ -142,12 +137,12 @@ class DebugMount:
         self._object_codes = {}
         self.kwargs_cells = {}
         self.pinname_to_cells = {}
+        self.skip_pins = None
 
     def mount(self, skip_pins):
         from ..core.context import context
         from ..core.macro_mode import macro_mode_on
         from ..core.cell import subcelltypes, extensions, cell as core_cell
-        from ..mime import language_to_extension
 
         skip_pins = skip_pins.copy()
         self.skip_pins = skip_pins
@@ -263,7 +258,6 @@ class DebugMount:
                         cellclass = subcelltypes[subcelltype]
                     else:
                         raise NotImplementedError
-                        cellclass = celltypes[celltype]
                     c = cellclass()
                     ext = extensions[cellclass]
                 filename = os.path.join(self.path, pinname) + ext
@@ -324,7 +318,7 @@ class DebugMount:
             if code is not None:
                 new_value["code"] = code
             new_value_buffer = serialize_sync(new_value, "plain")
-            new_checksum = calculate_checksum_sync(new_value_buffer)
+            new_checksum = Buffer(new_value_buffer).get_checksum()
             buffer_cache.incref_buffer(new_checksum, new_value_buffer, persistent=True)
             if old_mod_cs is not None:
                 buffer_cache.decref(old_mod_cs)
@@ -419,8 +413,10 @@ class DebugMountManager:
     def __init__(self):
         self._mounts = {}
 
-    def add_mount(self, tf, skip_pins=[], *, special=None, prefix=None):
+    def add_mount(self, tf, skip_pins=None, *, special=None, prefix=None):
         # print("ADD MOUNT", tf)
+        if skip_pins is None:
+            skip_pins = []
         if SEAMLESS_DEBUGGING_DIRECTORY is None:
             raise Exception("""SEAMLESS_DEBUGGING_DIRECTORY undefined.""")
         path = None
