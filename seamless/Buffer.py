@@ -117,7 +117,8 @@ class Buffer:
         if self.value is None:
             return None
         celltype = self._map_celltype(celltype)
-        return deserialize(self.value, self.checksum.bytes(), celltype, copy=True)
+        checksum = self.get_checksum()
+        return deserialize(self.value, checksum.bytes(), celltype, copy=True)
 
     async def deserialize_async(self, celltype: str, *, copy: bool = True):
         """Converts the buffer to a value.
