@@ -6,6 +6,7 @@ from urllib.parse import urlparse
 from abc import ABC, abstractmethod
 from traceback import print_exc
 import logging
+import warnings
 import requests
 
 from seamless.checksum.database_client import database
@@ -346,11 +347,12 @@ def set_ncores(ncores):
     from seamless.workflow.core.transformation import _set_ncores
 
     if ncores == 0:
-        print(
-            DeprecationWarning(
-                "set_ncores(0) is deprecated. Use seamless.config.block_local() instead"
-            )
+        warnings.warn(
+            "set_ncores(0) is deprecated. Use seamless.config.block_local() instead.",
+            DeprecationWarning,
+            2,
         )
+
     return _set_ncores(ncores)
 
 
