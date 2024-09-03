@@ -1,14 +1,37 @@
-import time, copy
+"""Manager for temporary references.
+A singleton manager is fired up on import.
+This manager runs continuously in a coroutine.
+Do not change event loop afterwards!
+On shutdown, temporary references are cleaned up.
+"""
+
+import time
 import asyncio
 import bisect
 from collections import deque
+import atexit
+from typing import Callable
+
 
 class TempRefManager:
-    def __init__(self):
+    """Manager for temporary references.
+
+    Runs continuously in a coroutine.
+    Do not change event loop afterwards"""
+
+    def __init__(self, main_loop_interval: float = 0.05):
+        """Main loop will do a purge every main_loop_interval seconds"""
         self.refs = deque()
         self.running = False
+        self.main_loop_interval = main_loop_interval
 
-    def add_ref(self, ref, lifetime, on_shutdown, *, group=None):
+    def add_ref(self, ref: Callable, lifetime: float, on_shutdown: bool, *, group=None):
+        """Add reference.
+        - ref: object that will be called with zero arguments on expiry
+        - lifetime: expiry time
+        - on_shutdown: if the ref must be called when Seamless shuts down
+        - group: for purge_group
+        """
         expiry_time = time.time() + lifetime
         self.refs.append((expiry_time, ref, on_shutdown, group))
 
@@ -21,7 +44,7 @@ class TempRefManager:
                 continue
             try:
                 ref()
-            except:
+            except:  # pylint: disable=bare-except
                 pass
 
     def purge_group(self, group):
@@ -44,12 +67,14 @@ class TempRefManager:
         """Purges expired refs"""
         t = time.time()
         pos = bisect.bisect(self.refs, (t, None, None))
-        for n in range(pos):
+        for _ in range(pos):
             item = self.refs.popleft()
             _, ref, _, _ = item
             ref()
 
     async def loop(self):
+        """Main loop for purging expired refs.
+        Does a purge every main_loop_interval seconds"""
         if self.running:
             return
         self.running = True
@@ -58,15 +83,16 @@ class TempRefManager:
                 self.purge()
             except Exception:
                 import traceback
+
                 traceback.print_exc()
-            await asyncio.sleep(0.05)
+            await asyncio.sleep(self.main_loop_interval)
         self.running = False
+
 
 temprefmanager = TempRefManager()
 
 coro = temprefmanager.loop()
-import asyncio
+
 task = asyncio.ensure_future(coro)
 
-import atexit
-atexit.register(lambda  *args, **kwargs: task.cancel())
+atexit.register(lambda *args, **kwargs: task.cancel())

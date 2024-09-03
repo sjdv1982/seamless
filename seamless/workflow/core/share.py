@@ -9,6 +9,7 @@ logger = logging.getLogger("seamless")
 
 
 from seamless import Checksum
+from seamless.workflow.shareserver import ShareItemBase
 
 
 def get_fallback_checksum(cell) -> Checksum:
@@ -20,7 +21,7 @@ def get_fallback_checksum(cell) -> Checksum:
         return Checksum(fallback._checksum)
 
 
-class ShareItem:
+class ShareItem(ShareItemBase):
     last_exc = None
     _destroyed = False
     _initialized = False
@@ -44,8 +45,12 @@ class ShareItem:
         assert isinstance(readonly, bool)
         self.readonly = readonly
         self.mimetype = mimetype
-        self.toplevel = toplevel
+        self._toplevel = toplevel
         self._cellname = cellname
+
+    @property
+    def toplevel(self):
+        return self._toplevel
 
     @property
     def cellname(self):

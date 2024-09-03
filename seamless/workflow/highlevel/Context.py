@@ -543,7 +543,7 @@ class Context(Base, HelpMixin):
         This function can only be invoked if no event loop is running,
         i.e. under python or ipython, but not in a Jupyter kernel.
         """
-        from seamless import verify_sync_translate
+        from seamless.workflow import verify_sync_translate
 
         if self._untranslatable:
             raise Exception("Context is untranslatable")

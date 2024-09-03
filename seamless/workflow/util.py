@@ -1,5 +1,6 @@
+"""Utilities specific for workflows"""
+
 import json
-from abc import abstractmethod
 from multiprocessing import current_process
 
 from seamless import Checksum
@@ -10,17 +11,9 @@ except ImportError:
     parent_process = None
 
 
-class Wrapper:
-    @abstractmethod
-    def _unwrap(self):
-        pass
-
-    @abstractmethod
-    def set(self, value):
-        pass
-
-
 def as_tuple(v):
+    """Cast a string or to a one-member tuple.
+    Cast a list to a tuple."""
     if isinstance(v, str):
         return (v,)
     else:
@@ -36,7 +29,8 @@ def set_unforked_process():
     _unforked_process_name = current_process().name
 
 
-def is_forked():
+def is_forked() -> bool:
+    """Are we running in a forked process?"""
     if _unforked_process_name:
         if current_process().name != _unforked_process_name:
             return True
