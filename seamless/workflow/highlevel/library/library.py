@@ -1,6 +1,8 @@
 import json, inspect
 import textwrap
 
+from seamless.util.source import strip_decorators
+
 _libraries = {}
 
 
@@ -126,7 +128,6 @@ class Library:
         self._constructor_schema = constructor_schema
 
     def __setattr__(self, attr, value):
-        from ...util import strip_decorators
 
         if attr.startswith("_"):
             return super().__setattr__(attr, value)

@@ -1,3 +1,4 @@
+# pylint: disable=unused-import
 import traceback
 import weakref, json
 import functools
@@ -135,8 +136,10 @@ class LibInstance:
         path=None,
         libpath=None,
         arguments=None,
-        extra_nodes={},
+        extra_nodes=None,
     ):
+        if extra_nodes is None:
+            extra_nodes = {}
         self._parent = weakref.ref(parent)
         self._path = path
         self._temp_libpath = libpath

@@ -1,3 +1,6 @@
+from seamless.checksum.expression import validate_hash_pattern
+
+
 class ConnectionWrapper:
     def __init__(self, basepath):
         self.basepath = basepath
@@ -184,7 +187,6 @@ class OutputCellWrapper(CellWrapper):
 
     @CellWrapper.hash_pattern.setter
     def hash_pattern(self, value):
-        from ...core.protocol.deep_structure import validate_hash_pattern
 
         validate_hash_pattern(value)
         hcell = self._node
@@ -197,7 +199,6 @@ class OutputCellWrapper(CellWrapper):
 
     @CellWrapper.language.setter
     def language(self, value):
-        from ...compiler import find_language
 
         hcell = self._node
         celltype = hcell["celltype"]
@@ -240,5 +241,4 @@ from seamless.checksum.mime import (
     get_mime,
     ext_to_mime,
     language_to_mime,
-    language_to_ext,
 )

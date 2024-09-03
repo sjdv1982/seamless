@@ -1,5 +1,7 @@
 """Seamless utilities"""
 
+from seamless import Checksum
+
 from .pylru import lrucache
 
 
@@ -45,6 +47,20 @@ def parse_checksum(checksum, as_bytes=False):
     if checksum is None:
         return
     raise TypeError(type(checksum))
+
+
+def unchecksum(d: dict) -> dict:
+    """Return a copy of d where Checksum instances have been changed to str"""
+
+    def process_cs(v):
+        if isinstance(v, Checksum):
+            return v.value
+        elif isinstance(v, dict):
+            return unchecksum(v)
+        else:
+            return v
+
+    return {k: process_cs(v) for k, v in d.items()}
 
 
 from .cson import cson2json

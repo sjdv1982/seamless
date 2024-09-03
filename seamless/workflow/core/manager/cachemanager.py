@@ -3,9 +3,14 @@ import copy
 
 import logging
 
-from seamless import CacheMissError, Checksum
+from seamless import CacheMissError, Checksum, Buffer
 from seamless.checksum.database_client import database
 from seamless.checksum.buffer_cache import buffer_cache
+from seamless.checksum.calculate_checksum import calculate_dict_checksum
+from seamless.checksum.serialize import serialize_sync as serialize
+from seamless.checksum import buffer_remote
+
+from seamless.util import unchecksum
 
 logger = logging.getLogger(__name__)
 
@@ -530,20 +535,18 @@ is result checksum: {}
                 ok = False
 
     def get_join_cache(self, join_dict):
-        checksum = calculate_dict_checksum(join_dict)
+        join_dict2 = unchecksum(join_dict)
+        checksum = calculate_dict_checksum(join_dict2)
         return copy.deepcopy(self.join_cache.get(checksum))
 
     def set_join_cache(self, join_dict, result_checksum):
-        from ..protocol.serialize import serialize_sync as serialize
-        from ...config import database
-        from ..cache import buffer_remote
-
         if isinstance(result_checksum, str):
             result_checksum = bytes.fromhex(result_checksum)
         if join_dict == {"inchannels": {"[]": result_checksum.hex()}}:
             return
-        join_dict_buf = serialize(join_dict, "plain", use_cache=True)
-        checksum = calculate_checksum(join_dict_buf)
+        join_dict2 = unchecksum(join_dict)
+        join_dict_buf = serialize(join_dict2, "plain", use_cache=True)
+        checksum = Buffer(join_dict_buf).get_checksum()
         self.join_cache[checksum] = result_checksum
         self.rev_join_cache[result_checksum] = join_dict
         buffer_cache.cache_buffer(checksum, join_dict_buf)

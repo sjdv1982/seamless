@@ -139,7 +139,6 @@ class CompiledObjectWrapper:
     def _pull_source(self, path):
         from ..assign import assign_connection
         from ..Transformer import Transformer
-        from ...compiler import find_language
 
         worker = self._worker()
         parent = worker._parent()

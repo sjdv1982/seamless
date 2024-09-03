@@ -20,6 +20,7 @@ from silk.mixed import MixedBase
 from silk import Silk
 from silk.validation import _allowed_types
 from seamless.util.lambdacode import lambdacode
+from seamless.util.source import strip_decorators
 from seamless.checksum.cached_compile import cached_compile
 
 ConstantTypes = _allowed_types + (Silk, MixedBase, tuple)
@@ -44,7 +45,6 @@ def set_resource(f):
 
 
 def parse_function_code(code_or_func, identifier="<None>"):
-    from ..util import strip_decorators
 
     if callable(code_or_func):
         func = code_or_func

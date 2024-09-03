@@ -327,7 +327,7 @@ class StructuredCell(SeamlessBase):
         if self.schema._destroyed:
             return
         buf = Buffer(self._schema_value, "plain")
-        checksum = buf.checksum
+        checksum = buf.get_checksum()
         checksum = Checksum(checksum)
         buffer_cache.cache_buffer(checksum, buf)
         buffer_cache.guarantee_buffer_info(checksum, "plain", sync_to_remote=False)

@@ -1,6 +1,7 @@
 import weakref
 from copy import deepcopy
 from .CompiledObjectWrapper import CompiledObjectWrapper
+from ..Cell import Cell, Resource
 
 Transformer = None
 
@@ -140,6 +141,3 @@ class CompiledObjectDict:
 
     def __delattr__(self, attr):
         raise NotImplementedError
-
-
-from ...highlevel.Cell import Cell, Resource

@@ -2,9 +2,10 @@ import json
 import inspect
 import textwrap
 
+from seamless.util.source import strip_decorators
+
 
 def _get_value(name, value):
-    from ...util import strip_decorators
 
     if callable(value):
         value = inspect.getsource(value)

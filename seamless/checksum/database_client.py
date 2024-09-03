@@ -11,6 +11,7 @@ import requests
 import aiohttp
 
 from seamless import Checksum, Buffer
+from seamless.util import unchecksum
 from seamless.checksum import Expression
 from seamless.checksum.buffer_info import BufferInfo
 
@@ -442,7 +443,8 @@ class Database:
 
     def get_structured_cell_join(self, join_dict: dict) -> Checksum | None:
         """Get the result of a structured cell join"""
-        checksum = Buffer(join_dict, "plain").checksum.value
+        join_dict2 = unchecksum(join_dict)
+        checksum = Buffer(join_dict2, "plain").get_checksum().value
         request = {"type": "structured_cell_join", "checksum": checksum}
         response = self.send_get_request(request)
         if response is not None:

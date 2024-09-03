@@ -15,7 +15,7 @@ from typing import *
 
 def _add_webunit_instance(ctx, webunit_dict, **params):
     from seamless.workflow import Cell
-    from seamless import Base
+    from seamless.workflow.highlevel.Base import Base
 
     assert "@name" in webunit_dict
     name = webunit_dict["@name"]
@@ -50,7 +50,6 @@ def _add_webunit_instance(ctx, webunit_dict, **params):
             cell = params[param]
             if not isinstance(cell, Cell):
                 raise TypeError((param, type(cell)))
-            cell.value
             value = cell.value
 
         elif type_ == "value":

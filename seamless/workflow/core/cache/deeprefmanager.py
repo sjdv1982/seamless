@@ -9,6 +9,8 @@ from seamless.checksum.buffer_cache import (
     empty_list_checksum,
 )
 from seamless import CacheMissError
+from seamless.checksum.calculate_checksum import calculate_dict_checksum
+from seamless.checksum.deserialize import deserialize
 
 _rev_cs_hashpattern = {}
 

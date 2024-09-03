@@ -127,7 +127,7 @@ def _consider_local_evaluation(join_dict):
     """Checks if the structured cell join can easily (no fingertipping) be evaluated locally"""
     checksums = _join_dict_to_checksums(join_dict)
     for checksum in checksums:
-        if buffer_cache.get_buffer(bytes.fromhex(checksum), remote=False) is None:
+        if buffer_cache.get_buffer(checksum, remote=False) is None:
             buffer_info = buffer_cache.get_buffer_info(
                 bytes.fromhex(checksum),
                 sync_remote=True,
