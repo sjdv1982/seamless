@@ -2,9 +2,11 @@ import inspect
 import textwrap
 import copy
 
+
 def bootstrap(module):
     import inspect
     from seamless.util import strip_decorators
+
     result = {}
     for objname, obj in sorted(module.__dict__.items()):
         if objname.startswith("__"):
@@ -24,8 +26,10 @@ def bootstrap(module):
             continue
     return result
 
+
 def build_codeblock(module):
     from seamless.util import strip_decorators
+
     result = ""
     for objname, obj in sorted(module.__dict__.items()):
         if objname.startswith("__"):
@@ -47,6 +51,7 @@ def build_codeblock(module):
             continue
     return result
 
+
 if __name__ == "__main__":
     from seamless.workflow import Context, Cell
     import lib
@@ -65,11 +70,12 @@ if __name__ == "__main__":
     contexts = {}
 
     from seamless.highlevel.library import LibraryContainer
+
     mylib = LibraryContainer("mylib")
 
     mylib.map_list = ctx0
     mylib.map_list.constructor = constructors.map_list.constructor
-    mylib.map_list.params =  constructors.map_list.constructor_params
+    mylib.map_list.params = constructors.map_list.constructor_params
 
     mylib.map_list_N = ctx0
     mylib.map_list_N.constructor = constructors.map_list_N.constructor
@@ -77,15 +83,16 @@ if __name__ == "__main__":
 
     mylib.map_dict = ctx0
     mylib.map_dict.constructor = constructors.map_dict.constructor
-    mylib.map_dict.params =  constructors.map_dict.constructor_params
+    mylib.map_dict.params = constructors.map_dict.constructor_params
 
     mylib.map_dict_chunk = ctx0
     mylib.map_dict_chunk.constructor = constructors.map_dict_chunk.constructor
-    mylib.map_dict_chunk.params =  constructors.map_dict_chunk.constructor_params
+    mylib.map_dict_chunk.params = constructors.map_dict_chunk.constructor_params
 
     from testing import test
+
     ctx = test(mylib)
-    
+
     libctx = Context()
     for attr in ("map_list", "map_list_N", "map_dict", "map_dict_chunk"):
         setattr(libctx, attr, Context())
@@ -101,8 +108,9 @@ if __name__ == "__main__":
     graph = libctx.get_graph()
 
     import os, json
-    currdir=os.path.dirname(os.path.abspath(__file__))
-    graph_filename=os.path.join(currdir,"../lib-map.seamless")
-    zip_filename=os.path.join(currdir,"../lib-map.zip")
+
+    currdir = os.path.dirname(os.path.abspath(__file__))
+    graph_filename = os.path.join(currdir, "../lib-map.seamless")
+    zip_filename = os.path.join(currdir, "../lib-map.zip")
     libctx.save_graph(graph_filename)
     libctx.save_zip(zip_filename)

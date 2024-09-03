@@ -1,8 +1,11 @@
 import weakref
 
+
 class SynthContext:
     """Context synthesized by a Library or Macro constructor"""
+
     _context = None
+
     def __init__(self, parent, path, context=None):
         self._parent = weakref.ref(parent)
         self._path = path
@@ -83,6 +86,7 @@ class SynthContext:
             path = "<None>"
         path = "." + ".".join(self._path)
         return "Seamless SynthContext: " + path
+
 
 from .Base import Base
 from .Cell import Cell

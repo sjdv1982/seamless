@@ -2,9 +2,13 @@ import asyncio
 import traceback
 from copy import deepcopy
 
+
 class PollingObserver:
     _active = True
-    def __init__(self, ctx, path, callback, polling_interval, observe_none=False, params=None):
+
+    def __init__(
+        self, ctx, path, callback, polling_interval, observe_none=False, params=None
+    ):
         if not isinstance(ctx, Context):
             raise TypeError(type(ctx))
         self.ctx = ctx
@@ -27,6 +31,7 @@ class PollingObserver:
     def _run_once(self):
         class PathException(Exception):
             pass
+
         ctx = self.ctx
         if ctx._translating:
             return
@@ -39,7 +44,7 @@ class PollingObserver:
                     else:
                         value = getattr(value, p)
                 except:
-                    raise PathException(self.path[:pnr+1]) from None
+                    raise PathException(self.path[: pnr + 1]) from None
                 if not isinstance(value, (Base, Silk, MixedObject)):
                     if callable(value):
                         params = self.params
@@ -91,6 +96,7 @@ class PollingObserver:
             ctx._observers.remove(self)
         except KeyError:
             pass
+
 
 from .Context import Context, Base
 from ..core.macro import Path

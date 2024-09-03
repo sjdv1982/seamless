@@ -2,6 +2,7 @@ import weakref
 
 from .Cell import Cell
 
+
 class SubCell(Cell):
     def __init__(self, parent, cell, subpath, readonly):
         assert isinstance(cell, Cell)
@@ -24,6 +25,7 @@ class SubCell(Cell):
         if attr.startswith("_"):
             return object.__setattr__(self, attr, value)
         from .assign import assign_to_subcell
+
         parent = self._parent()
         path = self._subpath + (attr,)
         assign_to_subcell(self._cell(), path, value)
@@ -35,18 +37,20 @@ class SubCell(Cell):
             return super().__getattribute__(attr)
         parent = self._parent()
         readonly = self._readonly
-        return SubCell(self._parent(), self._cell(), self._subpath + (attr,), readonly=readonly)
+        return SubCell(
+            self._parent(), self._cell(), self._subpath + (attr,), readonly=readonly
+        )
 
     @property
     def authoritative(self):
-        #TODO: determine if the subcell didn't get any inbound connections
+        # TODO: determine if the subcell didn't get any inbound connections
         # If it did, you can't get another inbound connection, nor a link
-        return True #stub
+        return True  # stub
 
     @property
     def links(self):
-        #TODO: return the other partner of all Link objects with self in it
-        return [] #stub
+        # TODO: return the other partner of all Link objects with self in it
+        return []  # stub
 
     @property
     def value(self):
@@ -81,8 +85,9 @@ class SubCell(Cell):
     def __str__(self):
         return "Seamless SubCell: %s" % ".".join(self._path)
 
+
 class DeepSubCell(SubCell):
-    
+
     def __init__(self, parent, cell, attr, readonly):
         assert isinstance(cell, (DeepCell, DeepFolderCell))
         assert not isinstance(cell, SubCell)
@@ -122,5 +127,6 @@ class DeepSubCell(SubCell):
 
     def __str__(self):
         return "Seamless DeepSubCell: %s" % ".".join(self._path)
+
 
 from .DeepCell import DeepCell, DeepFolderCell

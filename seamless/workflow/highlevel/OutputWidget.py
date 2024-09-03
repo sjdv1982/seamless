@@ -5,13 +5,11 @@
 from __future__ import annotations
 from typing import *
 
-import json
-
 mimetype_to_DOC = {
     "text/html": "HTML",
     "image/png": ("Image", {"format": lambda cell: "png"}),
     "text/plain": "Pretty",
-    'text/x-chdr': ("Code", {"language": lambda cell: "c"}),
+    "text/x-chdr": ("Code", {"language": lambda cell: "c"}),
     "application/json": "JSON",
 }
 
@@ -23,13 +21,14 @@ celltype_to_DOC = {
     # "mixed",
     "binary": "JSON",
     "cson": "Pretty",
-     "yaml": "Pretty",
+    "yaml": "Pretty",
     "str": "Pretty",
-    #"bytes"
+    # "bytes"
     "int": "Pretty",
     "float": "Pretty",
     "bool": "Pretty",
 }
+
 
 def json_widget(data, **kwargs):
     """
@@ -43,12 +42,15 @@ def json_widget(data, **kwargs):
     return IPython.display.JSON(data, **kwargs)
     """
     import IPython.display
-    from seamless.workflow.core.protocol.json import json_dumps
+    from seamless.checksum.json import json_dumps
+
     txt = json_dumps(data)
     return IPython.display.Pretty(txt, **kwargs)
 
+
 def select_DOC(celltype, mimetype):
     import IPython.display
+
     classname, params = None, None
     if mimetype in ("JSON", "application/json") and celltype in celltype_to_DOC:
         result = celltype_to_DOC[celltype]
@@ -71,7 +73,7 @@ def select_DOC(celltype, mimetype):
         msg += "cannot be displayed in IPython"
         raise Exception(msg)
     DOC = getattr(IPython.display, classname)
-    if classname == "JSON": # monkey patch
+    if classname == "JSON":  # monkey patch
         DOC = json_widget
     return DOC, classname, params
 
@@ -89,10 +91,13 @@ def get_doc_kwargs(cell, params):
             doc_kwargs[name] = v
     return doc_kwargs
 
+
 class OutputWidget:
     value = None
-    def __init__(self, cell, layout:Optional[dict]=None):
+
+    def __init__(self, cell, layout: Optional[dict] = None):
         from ipywidgets import Output
+
         if layout is None:
             self.output_instance = Output()
         else:
@@ -114,9 +119,14 @@ class OutputWidget:
         from silk import Silk
         from silk.mixed.get_form import get_form
         from IPython.display import clear_output
+
         outdated = False
         tcelltype, tmimetype = self.traitlet.celltype, self.traitlet.mimetype
-        if tcelltype is not None and tcelltype != self.celltype or tmimetype != self.mimetype:
+        if (
+            tcelltype is not None
+            and tcelltype != self.celltype
+            or tmimetype != self.mimetype
+        ):
             DOC, DOC_name, params = select_DOC(tcelltype, tmimetype)
             if DOC_name != self.DOC_name:
                 outdated = True
@@ -146,14 +156,12 @@ class OutputWidget:
     def refresh(self):
         if self.value is None:
             return
-        display_object = self.DOC(data=self.value,**self.doc_kwargs)
+        display_object = self.DOC(data=self.value, **self.doc_kwargs)
         o = self.output_instance
         if len(o.outputs):
             o.clear_output(wait=True)
-        o.outputs = () # Otherwise, doesn't clear; bug in ipywidgets?
-        o.append_display_data(
-            display_object
-        )
+        o.outputs = ()  # Otherwise, doesn't clear; bug in ipywidgets?
+        o.append_display_data(display_object)
 
     def _update0(self, change):
         return self._update(change.new)

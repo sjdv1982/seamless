@@ -1,13 +1,16 @@
 import tempfile, os
 from seamless import subprocess
 from seamless.subprocess import PIPE
+
 tokens = "<|>"
 labels0 = "UPSTREAM", "BASE", "MODIFIED"
 
 no_conflict = "No conflict"
 
+
 class SeparatorInTextError(Exception):
     pass
+
 
 def build_labels(upstream, base, modified):
     n = ""
@@ -28,10 +31,11 @@ def build_labels(upstream, base, modified):
             n += 1
             continue
         break
-    return tuple([l+str(n) for l in labels0])
+    return tuple([l + str(n) for l in labels0])
+
 
 upstream, base, modified = None, None, None
-if PINS.conflict.defined and PINS.conflict.value.strip("\n ") not in ("",  no_conflict):
+if PINS.conflict.defined and PINS.conflict.value.strip("\n ") not in ("", no_conflict):
     state = "conflict"
     upstream = PINS.upstream_stage.value
     base = PINS.base.value

@@ -1,5 +1,7 @@
 import seamless.workflow.core.execute
+
 seamless.workflow.core.execute.DIRECT_PRINT = True
+
 
 def test(mylib):
     print("test map_list")
@@ -30,8 +32,10 @@ def test(mylib):
     ctx = test_map_dict_chunk_list(mylib, elision=True)
     return ctx
 
+
 def test_map_list_N(mylib):
     from seamless.workflow import Context, Cell
+
     ctx = Context()
     ctx.include(mylib.map_list_N)
 
@@ -39,9 +43,11 @@ def test_map_list_N(mylib):
     ctx.add.inp = Context()
     ctx.add.inp.a = Cell("mixed")
     ctx.add.inp.b = Cell("mixed")
+
     def add(a, b):
         print("ADD", a, b)
         return a + b
+
     ctx.add.tf = add
     ctx.add.tf.a = ctx.add.inp.a
     ctx.add.tf.b = ctx.add.inp.b
@@ -49,42 +55,45 @@ def test_map_list_N(mylib):
     ctx.add.result.celltype = "int"
     ctx.compute()
 
-    ctx.a = [10,20,30,40]
+    ctx.a = [10, 20, 30, 40]
     ctx.a.hash_pattern = {"!": "#"}
-    ctx.b = [2,4,8,12]
+    ctx.b = [2, 4, 8, 12]
     ctx.b.hash_pattern = {"!": "#"}
     ctx.result = Cell()
 
     ctx.mapping = ctx.lib.map_list_N(
         context_graph=ctx.add,
-        inp = {
+        inp={
             "a": ctx.a,
             "b": ctx.b,
         },
-        result = ctx.result,
-        elision = True,
-        elision_chunksize = 2
+        result=ctx.result,
+        elision=True,
+        elision_chunksize=2,
     )
     ctx.compute()
     print(ctx.result.value)
-    #ctx.a += [80, 12, 1, 1, 10,20,30,40] # Heisenbug
-    ctx.a = ctx.a.value + [80, 12, 1, 1, 10,20,30,40]
-    #ctx.b += [100, 16, 3, 3, 2,4,8,12] # Heisenbug
-    ctx.b = ctx.b.value + [100, 16, 3, 3, 2,4,8,12]
+    # ctx.a += [80, 12, 1, 1, 10,20,30,40] # Heisenbug
+    ctx.a = ctx.a.value + [80, 12, 1, 1, 10, 20, 30, 40]
+    # ctx.b += [100, 16, 3, 3, 2,4,8,12] # Heisenbug
+    ctx.b = ctx.b.value + [100, 16, 3, 3, 2, 4, 8, 12]
     ctx.compute()
     print(ctx.result.value)
 
     def add2(a, b):
         print("ADD2", a, b)
         return a + b + 1
-    #ctx.add.q = 12
+
+    # ctx.add.q = 12
     ctx.add.tf.code = add2
     ctx.compute()
     print(ctx.result.value)
     return ctx
 
+
 def test_map_list_N_uniform(mylib):
     from seamless.workflow import Context, Cell
+
     ctx = Context()
     ctx.include(mylib.map_list_N)
 
@@ -93,9 +102,11 @@ def test_map_list_N_uniform(mylib):
     ctx.add.inp = Context()
     ctx.add.inp.a = Cell("mixed")
     ctx.add.inp.b = Cell("mixed")
+
     def add(a, b, c):
         print("ADD", a, b, c)
         return a + b + c
+
     ctx.add.tf = add
     ctx.add.tf.a = ctx.add.inp.a
     ctx.add.tf.b = ctx.add.inp.b
@@ -104,23 +115,23 @@ def test_map_list_N_uniform(mylib):
     ctx.add.result.celltype = "int"
     ctx.compute()
 
-    ctx.a = [110,120,130,140]
+    ctx.a = [110, 120, 130, 140]
     ctx.a.hash_pattern = {"!": "#"}
-    ctx.b = [2,4,8,12]
+    ctx.b = [2, 4, 8, 12]
     ctx.b.hash_pattern = {"!": "#"}
     ctx.c = 7000
     ctx.result = Cell()
 
     ctx.mapping = ctx.lib.map_list_N(
         context_graph=ctx.add,
-        inp = {
+        inp={
             "a": ctx.a,
             "b": ctx.b,
         },
-        uniform = ctx.c,
-        result = ctx.result,
-        elision = True,
-        elision_chunksize = 2
+        uniform=ctx.c,
+        result=ctx.result,
+        elision=True,
+        elision_chunksize=2,
     )
     ctx.compute()
     print(ctx.result.value)
@@ -129,16 +140,20 @@ def test_map_list_N_uniform(mylib):
     print(ctx.result.value)
     return ctx
 
+
 def test_map_list(mylib):
     from seamless.workflow import Context, Cell
+
     ctx = Context()
     ctx.include(mylib.map_list)
 
     ctx.add = Context()
     ctx.add.inp = Cell("mixed")
+
     def add(a, b):
         print("ADD", a, b)
         return a + b
+
     ctx.add.tf = add
     ctx.add.tf.a = ctx.add.inp
     ctx.add.tf.b = 1000
@@ -146,28 +161,30 @@ def test_map_list(mylib):
     ctx.add.result.celltype = "int"
     ctx.compute()
 
-    ctx.inp = [10,20,30,40]
+    ctx.inp = [10, 20, 30, 40]
     ctx.inp.hash_pattern = {"!": "#"}
     ctx.result = Cell()
 
     ctx.mapping = ctx.lib.map_list(
         context_graph=ctx.add,
-        inp = ctx.inp,
-        result = ctx.result,
-        elision = True,
-        elision_chunksize = 2
+        inp=ctx.inp,
+        result=ctx.result,
+        elision=True,
+        elision_chunksize=2,
     )
     ctx.compute()
     print(ctx.mapping.ctx.m.exception)
     print(ctx.result.value)
-    #ctx.inp += [80, 12, 1, 1, 10,20,30,40]
-    ctx.inp = ctx.inp.value + [80, 12, 1, 1, 10,20,30,40]
+    # ctx.inp += [80, 12, 1, 1, 10,20,30,40]
+    ctx.inp = ctx.inp.value + [80, 12, 1, 1, 10, 20, 30, 40]
     ctx.compute()
     print(ctx.result.value)
     return ctx
 
+
 def test_map_list_uniform(mylib):
     from seamless.workflow import Context, Cell
+
     ctx = Context()
     ctx.include(mylib.map_list)
 
@@ -179,9 +196,11 @@ def test_map_list_uniform(mylib):
     ctx.add.inp = Cell("mixed")
     ctx.add.uniform = Cell("mixed")
     ctx.add.uniform2 = ctx.add.uniform
+
     def add(a, b):
         print("ADD", a, b)
         return a + b
+
     ctx.add.tf = add
     ctx.add.tf.a = ctx.add.inp
     ctx.add.tf.b = ctx.add.uniform2.b
@@ -189,17 +208,17 @@ def test_map_list_uniform(mylib):
     ctx.add.result.celltype = "int"
     ctx.compute()
 
-    ctx.inp = [210,220,230,240]
+    ctx.inp = [210, 220, 230, 240]
     ctx.inp.hash_pattern = {"!": "#"}
     ctx.result = Cell()
 
     ctx.mapping = ctx.lib.map_list(
         context_graph=ctx.add,
-        inp = ctx.inp,
-        uniform = ctx.uniform,
-        result = ctx.result,
-        elision = True,
-        elision_chunksize = 2
+        inp=ctx.inp,
+        uniform=ctx.uniform,
+        result=ctx.result,
+        elision=True,
+        elision_chunksize=2,
     )
     ctx.compute()
     print(ctx.mapping.ctx.m.exception)
@@ -209,16 +228,20 @@ def test_map_list_uniform(mylib):
     print(ctx.result.value)
     return ctx
 
+
 def test_map_dict(mylib):
     from seamless.workflow import Context, Cell
+
     ctx = Context()
     ctx.include(mylib.map_dict)
 
     ctx.add = Context()
     ctx.add.inp = Cell("mixed")
+
     def add(a, b):
         print("ADD", a, b)
         return a + b
+
     ctx.add.tf = add
     ctx.add.tf.a = ctx.add.inp
     ctx.add.tf.b = 1000
@@ -233,12 +256,12 @@ def test_map_dict(mylib):
 
     ctx.mapping = ctx.lib.map_dict(
         context_graph=ctx.add,
-        inp = ctx.inp,
-        keyorder0 = [],
-        keyorder = ctx.keyorder,
-        result = ctx.result,
-        elision = True,
-        elision_chunksize = 2
+        inp=ctx.inp,
+        keyorder0=[],
+        keyorder=ctx.keyorder,
+        result=ctx.result,
+        elision=True,
+        elision_chunksize=2,
     )
     ctx.compute()
     print(ctx.mapping.ctx.status)
@@ -248,20 +271,24 @@ def test_map_dict(mylib):
     ctx.compute()
     print(ctx.result.value)
     inp = ctx.inp.value
-    inp.update({
-        "a": 80,
-        "b": 30,
-        "c": 999,
-        "d": -1,
-    })
+    inp.update(
+        {
+            "a": 80,
+            "b": 30,
+            "c": 999,
+            "d": -1,
+        }
+    )
     ctx.inp = inp
     ctx.compute()
     print(ctx.result.value)
     print(ctx.keyorder.value)
     return ctx
 
+
 def test_map_dict_uniform(mylib):
     from seamless.workflow import Context, Cell
+
     ctx = Context()
     ctx.include(mylib.map_dict)
 
@@ -270,9 +297,11 @@ def test_map_dict_uniform(mylib):
     ctx.add = Context()
     ctx.add.inp = Cell("mixed")
     ctx.add.uniform = Cell("mixed")
+
     def add(a, b):
         print("ADD", a, b)
         return a + b
+
     ctx.add.tf = add
     ctx.add.tf.a = ctx.add.inp
     ctx.add.tf.b = ctx.add.uniform
@@ -287,13 +316,13 @@ def test_map_dict_uniform(mylib):
 
     ctx.mapping = ctx.lib.map_dict(
         context_graph=ctx.add,
-        inp = ctx.inp,
-        uniform = ctx.b,
-        keyorder0 = [],
-        keyorder = ctx.keyorder,
-        result = ctx.result,
-        elision = True,
-        elision_chunksize = 2
+        inp=ctx.inp,
+        uniform=ctx.b,
+        keyorder0=[],
+        keyorder=ctx.keyorder,
+        result=ctx.result,
+        elision=True,
+        elision_chunksize=2,
     )
     ctx.compute()
     print(ctx.mapping.ctx.status)
@@ -304,31 +333,43 @@ def test_map_dict_uniform(mylib):
     print(ctx.result.value)
     return ctx
 
+
 def test_map_dict_chunk(mylib, elision, merge_method):
     from seamless.workflow import Context, Cell
+
     ctx = Context()
     ctx.include(mylib.map_dict_chunk)
 
     ctx.mul = Context()
     ctx.mul.inp = Cell("mixed")
+
     def mul(a, factor):
         print("MUL", a)
         result = {}
         for key in a:
             result[key] = a[key] * factor
         return result
+
     ctx.mul.tf = mul
     ctx.mul.tf.a = ctx.mul.inp
-    ctx.mul.tf.factor = 3 + int(elision) # to avoid transformer cache hits
+    ctx.mul.tf.factor = 3 + int(elision)  # to avoid transformer cache hits
     ctx.mul.result = ctx.mul.tf
     ctx.mul.result.celltype = "mixed"
     ctx.compute()
 
     ctx.inp = {
-        "key01": 10, "key02": 220, "key03": 30,
-        "key04": 40, "key05": 250, "key06": 60,
-        "key07": 70, "key08": 280, "key09": 90,
-        "key10": 100, "key11": 2110, "key12": 120,
+        "key01": 10,
+        "key02": 220,
+        "key03": 30,
+        "key04": 40,
+        "key05": 250,
+        "key06": 60,
+        "key07": 70,
+        "key08": 280,
+        "key09": 90,
+        "key10": 100,
+        "key11": 2110,
+        "key12": 120,
     }
     ctx.inp.hash_pattern = {"*": "#"}
     ctx.result = Cell()
@@ -336,35 +377,39 @@ def test_map_dict_chunk(mylib, elision, merge_method):
 
     ctx.mapping = ctx.lib.map_dict_chunk(
         context_graph=ctx.mul,
-        inp = ctx.inp,
-        chunksize = 3,
-        keyorder0 = [],
-        keyorder = ctx.keyorder,
-        result = ctx.result,
-        elision = elision,
-        elision_chunksize = 2,
-        merge_method = merge_method,
+        inp=ctx.inp,
+        chunksize=3,
+        keyorder0=[],
+        keyorder=ctx.keyorder,
+        result=ctx.result,
+        elision=elision,
+        elision_chunksize=2,
+        merge_method=merge_method,
     )
     ctx.compute()
     print(ctx.mapping.ctx.status)
     print(ctx.result.value)
     print(ctx.result.value)
     keyorder = ctx.keyorder.value
-    ctx.inp.handle.update({
-        "a": 80,
-        "b": 30,
-        "c": 999,
-        "d": -1,
-    })    
+    ctx.inp.handle.update(
+        {
+            "a": 80,
+            "b": 30,
+            "c": 999,
+            "d": -1,
+        }
+    )
     keyorder.extend(["a", "b", "c", "d"])
     ctx.mapping.keyorder0 = keyorder
     ctx.compute()
     print(ctx.result.value)
     print(ctx.keyorder.value)
-    return ctx 
+    return ctx
+
 
 def test_map_dict_chunk_uniform(mylib):
     from seamless.workflow import Context, Cell
+
     ctx = Context()
     ctx.include(mylib.map_dict_chunk)
 
@@ -373,12 +418,14 @@ def test_map_dict_chunk_uniform(mylib):
     ctx.mul = Context()
     ctx.mul.inp = Cell("mixed")
     ctx.mul.uniform = Cell("mixed")
+
     def mul(a, factor):
         print("MUL", a, factor)
         result = {}
         for key in a:
             result[key] = a[key] * factor
         return result
+
     ctx.mul.tf = mul
     ctx.mul.tf.a = ctx.mul.inp
     ctx.mul.tf.factor = ctx.mul.uniform
@@ -393,14 +440,14 @@ def test_map_dict_chunk_uniform(mylib):
 
     ctx.mapping = ctx.lib.map_dict_chunk(
         context_graph=ctx.mul,
-        inp = ctx.inp,
-        chunksize = 2,
-        keyorder0 = [],
-        keyorder = ctx.keyorder,
-        uniform = ctx.factor,
-        result = ctx.result,
-        elision = True,
-        elision_chunksize = 3
+        inp=ctx.inp,
+        chunksize=2,
+        keyorder0=[],
+        keyorder=ctx.keyorder,
+        uniform=ctx.factor,
+        result=ctx.result,
+        elision=True,
+        elision_chunksize=3,
     )
     ctx.compute()
     print(ctx.mapping.ctx.status)
@@ -413,29 +460,40 @@ def test_map_dict_chunk_uniform(mylib):
 
 def test_map_dict_chunk_list(mylib, elision):
     from seamless.workflow import Context, Cell
+
     ctx = Context()
     ctx.include(mylib.map_dict_chunk)
 
     ctx.mul = Context()
     ctx.mul.inp = Cell("mixed")
+
     def mul(a, factor):
         print("MUL-LIST", a)
         result = []
         for key in sorted(a.keys()):
             result.append(a[key] * factor)
         return result
+
     ctx.mul.tf = mul
     ctx.mul.tf.a = ctx.mul.inp
-    ctx.mul.tf.factor = 3 + int(elision) # to avoid transformer cache hits
+    ctx.mul.tf.factor = 3 + int(elision)  # to avoid transformer cache hits
     ctx.mul.result = ctx.mul.tf
     ctx.mul.result.celltype = "mixed"
     ctx.compute()
 
     ctx.inp = {
-        "key01": 10, "key02": 220, "key03": 30,
-        "key04": 40, "key05": 250, "key06": 60,
-        "key07": 70, "key08": 280, "key09": 90,
-        "key10": 100, "key11": 2110, "key12": 120,
+        "key01": 10,
+        "key02": 220,
+        "key03": 30,
+        "key04": 40,
+        "key05": 250,
+        "key06": 60,
+        "key07": 70,
+        "key08": 280,
+        "key09": 90,
+        "key10": 100,
+        "key11": 2110,
+        "key12": 120,
     }
     ctx.inp.hash_pattern = {"*": "#"}
     ctx.result = Cell()
@@ -443,29 +501,31 @@ def test_map_dict_chunk_list(mylib, elision):
 
     ctx.mapping = ctx.lib.map_dict_chunk(
         context_graph=ctx.mul,
-        inp = ctx.inp,
-        chunksize = 3,
-        keyorder0 = [],
-        keyorder = ctx.keyorder,
-        result = ctx.result,
-        elision = elision,
-        elision_chunksize = 2,
-        merge_method = "list",
+        inp=ctx.inp,
+        chunksize=3,
+        keyorder0=[],
+        keyorder=ctx.keyorder,
+        result=ctx.result,
+        elision=elision,
+        elision_chunksize=2,
+        merge_method="list",
     )
     ctx.compute()
     print(ctx.mapping.ctx.status)
     print(ctx.result.value)
     print(ctx.result.value)
     keyorder = ctx.keyorder.value
-    ctx.inp.handle.update({
-        "a": 80,
-        "b": 30,
-        "c": 999,
-        "d": -1,
-    })
+    ctx.inp.handle.update(
+        {
+            "a": 80,
+            "b": 30,
+            "c": 999,
+            "d": -1,
+        }
+    )
     keyorder.extend(["a", "b", "c", "d"])
     ctx.mapping.keyorder0 = keyorder
     ctx.compute()
     print(ctx.result.value)
     print(ctx.keyorder.value)
-    return ctx 
+    return ctx

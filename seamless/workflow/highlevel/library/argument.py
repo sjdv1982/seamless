@@ -2,8 +2,10 @@ import json
 import inspect
 import textwrap
 
+
 def _get_value(name, value):
     from ...util import strip_decorators
+
     if callable(value):
         value = inspect.getsource(value)
         if value is None:
@@ -12,12 +14,14 @@ def _get_value(name, value):
         value = strip_decorators(value)
     return RichValue(value).value
 
+
 def get_argument_value(name, value):
     if isinstance(value, Cell_like):
         raise TypeError("'%s' is a value argument, you cannot pass a cell" % name)
     elif isinstance(value, Base):
         raise TypeError("'%s' must be value, not '%s'" % (name, type(value)))
     return _get_value(name, value)
+
 
 def parse_argument(argname, argvalue, parameter, *, parent=None):
     if parent is not None:
@@ -49,7 +53,9 @@ def parse_argument(argname, argvalue, parameter, *, parent=None):
         if isinstance(argvalue, Cell_like):
             value = ("cell", argvalue._path)
         elif isinstance(argvalue, Base):
-            raise TypeError("'%s' must be value or cell, not '%s'" % (argname, type(argvalue)))
+            raise TypeError(
+                "'%s' must be value or cell, not '%s'" % (argname, type(argvalue))
+            )
         else:
             value = ("value", _get_value(argname, argvalue))
     elif par["type"] == "celldict":
@@ -76,8 +82,11 @@ def parse_argument(argname, argvalue, parameter, *, parent=None):
     try:
         json.dumps(value)
     except (TypeError, ValueError):
-        raise ValueError("Argument '{}' is not JSON-serializable".format(argname)) from None
+        raise ValueError(
+            "Argument '{}' is not JSON-serializable".format(argname)
+        ) from None
     return value
+
 
 from silk.Silk import RichValue
 from ..Base import Base
@@ -85,4 +94,5 @@ from ..Cell import Cell
 from ..DeepCell import DeepCell, DeepFolderCell
 from ..Context import Context
 from ..SubContext import SubContext
+
 Cell_like = (Cell, DeepCell, DeepFolderCell)

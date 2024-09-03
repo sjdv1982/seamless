@@ -34,12 +34,14 @@ from functools import partialmethod
 from silk import Silk
 from silk.mixed import MixedBase
 from silk.SilkBase import binary_special_method_names
+
+from seamless import Checksum
+from seamless.checksum.expression import validate_hash_pattern
+from seamless.checksum.mime import get_mime, language_to_mime, ext_to_mime
 from .Base import Base
 from .Resource import Resource
 from .SelfWrapper import SelfWrapper
-from seamless.checksum.mime import get_mime, language_to_mime, ext_to_mime
 from .HelpMixin import HelpMixin
-from seamless import Checksum
 
 celltypes = (
     "structured",
@@ -59,7 +61,7 @@ celltypes = (
 )
 
 
-def get_new_cell(path: tuple(str, ...)) -> dict[str, Any]:
+def get_new_cell(path: tuple[str, ...]) -> dict[str, Any]:
     """Return a workflow graph node for a new cell"""
     return {
         "path": path,
@@ -666,18 +668,16 @@ This cell is not fully independent, i.e. it has incoming connections"""
         else:
             cell.set(value)
 
-    def set_buffer(self, value):
-        from ..core.structured_cell import StructuredCell
-
+    def set_buffer(self, buffer):
+        """Set ythe"""
         if not self.independent:
             raise TypeError("Cannot set the buffer of a cell that is not independent")
 
         hcell = self._get_hcell2()
         if hcell.get("UNTRANSLATED"):
-            hcell["TEMP"] = value
-            return
+            raise TypeError("Cannot set the buffer of a cell that is untranslated")
         cell = self._get_cell()
-        cell.set_buffer(value)
+        cell.set_buffer(buffer)
         return self
 
     def set_checksum(self, checksum: Checksum | str):
@@ -958,7 +958,6 @@ For other use in HTTP requests, instead set mimetype to "text/plain".
 
     @hash_pattern.setter
     def hash_pattern(self, value):
-        from ..core.protocol.deep_structure import validate_hash_pattern
 
         hcell = self._get_hcell2()
         if value is None:
@@ -1245,3 +1244,4 @@ from .synth_context import SynthContext
 from .Fallback import Fallback
 from .OutputWidget import OutputWidget
 from .Transformer import Transformer
+from .SeamlessTraitlet import SeamlessTraitlet

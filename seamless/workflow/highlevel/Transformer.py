@@ -27,7 +27,6 @@ and its helper functions."""
 # pylint: disable=too-many-lines
 
 from __future__ import annotations
-import asyncio
 import sys
 from typing import *
 
@@ -39,6 +38,9 @@ from copy import deepcopy
 from silk.mixed.get_form import get_form
 
 from seamless import Checksum
+from seamless.checksum.mime import language_to_mime
+from seamless.direct import Transformation, transformation_from_dict
+
 from .Base import Base
 from .Cell import Cell, FolderCell
 from .Module import Module
@@ -46,7 +48,6 @@ from .Resource import Resource
 from .SelfWrapper import SelfWrapper
 from .proxy import Proxy, CodeProxy, HeaderProxy
 from .pin import PinsWrapper
-from seamless.checksum.mime import language_to_mime
 from ..core.context import Context as CoreContext
 from . import parse_function_code
 from .SchemaWrapper import SchemaWrapper
@@ -196,7 +197,7 @@ class Transformer(Base, HelpMixin):
     @classmethod
     def from_canonical_interface(cls, tool, command=None):
         """TODO: document"""
-        from ..cmd.canonical import build_transformer_dict
+        from seamless.cmd.canonical import build_transformer_dict
 
         tf_dict, result_celltype, buffers, bashcode = build_transformer_dict(
             tool, command=command
@@ -223,8 +224,7 @@ class Transformer(Base, HelpMixin):
         if "checksum" in htf:
             htf["checksum"].pop(attr, None)
 
-    def _set_temp_checksum(self, attr, checksum):
-        from . import Checksum
+    def _set_temp_checksum(self, attr, checksum: Checksum):
 
         checksum = Checksum(checksum).hex()
         htf = self._get_htf()
@@ -329,13 +329,15 @@ class Transformer(Base, HelpMixin):
 
     @RESULT.setter
     def RESULT(self, value):
-        raise NotImplementedError
+        '''
         htf = self._get_htf()
         result_path = self._path + (htf["RESULT"],)
         new_result_path = self._path + (value,)
         parent = self._parent()
         htf["RESULT"] = value
-
+        '''
+        raise NotImplementedError
+    
     @property
     def INPUT(self) -> str:
         """The name of the input attribute. Default is "inp".
@@ -1226,8 +1228,7 @@ class Transformer(Base, HelpMixin):
             result = self.result.checksum
         return result
 
-    def get_transformation(self) -> "Transformation":
-        from .direct import Transformation, transformation_from_dict
+    def get_transformation(self) -> Transformation:
         from ..core.direct.run import (
             _get_node_transformation_dependencies,
             _node_to_transformation_dict,
@@ -1762,7 +1763,7 @@ class Transformer(Base, HelpMixin):
                 htf["checksum"].pop("code", None)
             set_mount(cell)
         else:
-            raise NotImplementedError
+            '''
             if tf is not None:
                 inp = getattr(tf, htf["INPUT"])
                 p = getattr(inp.value, attr)
@@ -1773,6 +1774,8 @@ class Transformer(Base, HelpMixin):
                 "celltype": "structured",
                 "datatype": "mixed",
             }
+            '''
+            raise NotImplementedError
         child = Cell(parent=parent, path=path)  # inserts itself as child
         parent._graph[0][path] = cell
         if "file_extension" in htf:

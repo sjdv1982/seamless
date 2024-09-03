@@ -1,7 +1,8 @@
 import makefun
 import functools
 import ruamel.yaml
-yaml = ruamel.yaml.YAML(typ='safe')
+
+yaml = ruamel.yaml.YAML(typ="safe")
 import os
 import glob
 import json
@@ -11,9 +12,11 @@ import traceback
 from inspect import Signature, Parameter
 from typing import *
 
+
 def _add_webunit_instance(ctx, webunit_dict, **params):
     from seamless.workflow import Cell
     from seamless import Base
+
     assert "@name" in webunit_dict
     name = webunit_dict["@name"]
 
@@ -26,9 +29,7 @@ def _add_webunit_instance(ctx, webunit_dict, **params):
     sib_id = len(sibling_webunits) + 1
 
     id_ = "{}_{:d}".format(name, sib_id)
-    new_webunit = {
-        "id": id_
-    }
+    new_webunit = {"id": id_}
     parameters = {}
     cells = {}
     new_webunit["parameters"] = parameters
@@ -59,7 +60,7 @@ def _add_webunit_instance(ctx, webunit_dict, **params):
             try:
                 json.dumps(value)
             except Exception:
-                raise TypeError((param,"Not JSON-serializable")) from None
+                raise TypeError((param, "Not JSON-serializable")) from None
             parameters[param] = deepcopy(value)
         else:
             raise TypeError(param, type_)
@@ -71,7 +72,15 @@ def _add_webunit_instance(ctx, webunit_dict, **params):
         type_ = conf.get("type")
         if type_ == "cell":
             cell = params[param]
-            allowed_celltypes = ("plain", "float", "int", "bool", "str", "binary", "text")
+            allowed_celltypes = (
+                "plain",
+                "float",
+                "int",
+                "bool",
+                "str",
+                "binary",
+                "text",
+            )
             if cell.celltype not in allowed_celltypes:
                 msg = "Webunit cells must have celltype in {}. {} has celltype '{}'"
                 raise TypeError(msg.format(allowed_celltypes, cell, cell.celltype))
@@ -80,15 +89,22 @@ def _add_webunit_instance(ctx, webunit_dict, **params):
                 default = webunit_dict[param].get("default")
                 if default is not None:
                     if not cell.independent:
-                        print("WARNING: webunit: skipping default value for empty {}, because it is not independent".format(cell),
-                        file=sys.stderr)
+                        print(
+                            "WARNING: webunit: skipping default value for empty {}, because it is not independent".format(
+                                cell
+                            ),
+                            file=sys.stderr,
+                        )
                     else:
                         cell.set(default)
             share = cell._get_hcell().get("share")
             if share is None:
                 readonly = webunit_dict[param].get("readonly", True)
                 sharepath = id_ + "/" + webunit_dict[param]["share"]
-                print("webunit: non-shared {}, sharing as '{}'".format(cell, sharepath), file=sys.stderr)
+                print(
+                    "webunit: non-shared {}, sharing as '{}'".format(cell, sharepath),
+                    file=sys.stderr,
+                )
                 cell.share(sharepath, readonly=readonly)
             else:
                 sharepath = share["path"]
@@ -108,17 +124,18 @@ def _add_webunit_instance(ctx, webunit_dict, **params):
     return id_
 
 
-def add_webunit_template(name:str, webunit_dict:dict[str, Any]) -> None:
+def add_webunit_template(name: str, webunit_dict: dict[str, Any]) -> None:
     """Adds a new webunit template.
-webunit_dict must be a dict of webunit template parameters.
-They are typically loaded from a .yaml file.
-See the .yaml files in seamless.highlevel.webunits for examples.
+    webunit_dict must be a dict of webunit template parameters.
+    They are typically loaded from a .yaml file.
+    See the .yaml files in seamless.highlevel.webunits for examples.
 
-"name" is the name of the webunit template. After calling this function,
-new webunit instances can be constructed using:
+    "name" is the name of the webunit template. After calling this function,
+    new webunit instances can be constructed using:
 
-seamless.highlevel.webunits.<name>(ctx, **params)"""
+    seamless.highlevel.webunits.<name>(ctx, **params)"""
     from .. import Cell, Context
+
     webunit_dict2 = deepcopy(webunit_dict)
     parameters = [
         Parameter(name="ctx", kind=Parameter.POSITIONAL_OR_KEYWORD, annotation=Context),
@@ -156,8 +173,11 @@ seamless.highlevel.webunits.<name>(ctx, **params)"""
     webunit_dict2["@name"] = name
     help = webunit_dict2.pop("help", name)
     func_impl = functools.partial(_add_webunit_instance, webunit_dict=webunit_dict2)
-    func = makefun.with_signature(Signature(parameters), func_name=name, doc=help)(func_impl)
+    func = makefun.with_signature(Signature(parameters), func_name=name, doc=help)(
+        func_impl
+    )
     globals()[name] = func
+
 
 def _init():
     currdir = os.path.dirname(os.path.abspath(__file__))
@@ -169,7 +189,7 @@ def _init():
         name = os.path.splitext(os.path.split(yaml_file)[1])[0]
         try:
             add_webunit_template(name, webunit_dict)
-        except Exception:            
+        except Exception:
             print("***** ERROR *****", file=sys.stderr)
             print("Webunit template '{}'".format(name), file=sys.stderr)
             traceback.print_exc(limit=0)
@@ -177,7 +197,9 @@ def _init():
         result.append(name)
     return result
 
+
 __all__ = _init() + ["add_webunit_template"]
+
 
 def __dir__():
     return sorted(__all__)

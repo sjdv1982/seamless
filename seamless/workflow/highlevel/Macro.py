@@ -357,7 +357,7 @@ class Macro(Base):
             elif k == "macro":
                 status = self._get_mctx(force=True).macro.status
             else:
-                macro = self._get_mctx(force=True).macro
+                mctx = self._get_mctx(force=True)
                 status = getattr(mctx, k).status
             if not status.endswith("OK"):
                 return "*" + k + "*: " + status

@@ -30,6 +30,7 @@ import weakref
 
 class Base:
     """Base class of all Seamless highlevel objects that can be in a Context"""
+
     _parent: Any  # weakref.ref or lambda returning None
     _parent = lambda self: None
     if TYPE_CHECKING:
@@ -44,6 +45,7 @@ class Base:
 
     def _get_path(self) -> tuple[str, ...]:
         from .Context import Context
+
         result = self._path
         if self._parent() is None:
             return result
@@ -54,12 +56,11 @@ class Base:
             assert result is not None
         return result
 
-
     def __init__(self, parent, path):
         assert (parent is None) == (path is None or not len(path))
         if parent is not None:
             self._init2(parent, path)
-    
+
     def _init2(self, parent, path):
         from .Context import Context
 

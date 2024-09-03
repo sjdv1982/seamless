@@ -1,6 +1,7 @@
 import inspect
 from copy import deepcopy
 
+
 def check_libinstance_subcontext_binding(ctx, path):
     for node in ctx._graph.nodes.values():
         if node["type"] == "libinstance":
@@ -11,9 +12,10 @@ def check_libinstance_subcontext_binding(ctx, path):
                 if par["type"] == "context":
                     argvalue = node["arguments"].get(argname)
                     if argvalue is not None:
-                        if path[:len(argvalue)] == argvalue:
+                        if path[: len(argvalue)] == argvalue:
                             ctx._translate()
                             return
+
 
 from . import ConstantTypes
 from .Cell import Cell, FolderCell, get_new_cell, get_new_foldercell
@@ -28,6 +30,7 @@ from .Link import Link
 from .compiled import CompiledObjectDict, CompiledObjectWrapper
 from .SchemaWrapper import SchemaWrapper
 
+
 def _remove_independent_mountshares(hcell):
     if "mount" in hcell:
         if "r" in hcell["mount"]["mode"]:
@@ -35,6 +38,7 @@ def _remove_independent_mountshares(hcell):
     if "share" in hcell:
         if hcell["share"]["readonly"]:
             hcell.pop("mount", None)
+
 
 def under_libinstance_control(nodedict, path):
     lp = len(path)
@@ -65,15 +69,13 @@ def under_libinstance_control(nodedict, path):
         return node
     return None
 
+
 def assign_constant(ctx, path, value, help_context=False):
     old = None
     if path in ctx._children:
         old = ctx._children[path]
         if isinstance(old, Cell):
-            removed = ctx.remove_connections(
-                path,
-                endpoint="target"
-            )
+            removed = ctx.remove_connections(path, endpoint="target")
             if removed:
                 ctx._translate()
                 hcell = old._get_hcell()
@@ -90,10 +92,7 @@ def assign_constant(ctx, path, value, help_context=False):
                 old._set(value)
                 return False
         elif isinstance(old, Module):
-            removed = ctx.remove_connections(
-                path,
-                endpoint="target"
-            )
+            removed = ctx.remove_connections(path, endpoint="target")
             if removed:
                 ctx._translate()
                 hnode = old._get_hnode()
@@ -101,9 +100,9 @@ def assign_constant(ctx, path, value, help_context=False):
             old.set(value)
             return False
         else:
-            raise AttributeError(path) #already exists, but not a Cell or Module
+            raise AttributeError(path)  # already exists, but not a Cell or Module
     if old is None:
-        Cell(parent=ctx, path=path) #inserts itself as child
+        Cell(parent=ctx, path=path)  # inserts itself as child
         cell = get_new_cell(path)
         if help_context:
             cell["celltype"] = "text"
@@ -124,10 +123,12 @@ def assign_constant(ctx, path, value, help_context=False):
     ctx._graph[0][path] = cell
     ctx._translate()
 
+
 def assign_resource(ctx, path, value):
     assign_constant(ctx, path, value.data)
     child = ctx._children[path]
     child.mount(value.filename)
+
 
 def assign_transformer(ctx, path, func):
     existing_transformer = None
@@ -144,9 +145,11 @@ def assign_transformer(ctx, path, func):
     code, _, _ = parse_function_code(func)
     parameters = []
     for pname, p in inspect.signature(func).parameters.items():
-        #TODO: look at default parameters, make them optional
+        # TODO: look at default parameters, make them optional
         if pname.startswith("SPECIAL__"):
-            raise TypeError("Pin name '{}' must not be like a special pin name".format(pname))
+            raise TypeError(
+                "Pin name '{}' must not be like a special pin name".format(pname)
+            )
         if p.kind not in (p.VAR_KEYWORD, p.VAR_POSITIONAL):
             parameters.append(pname)
     if existing_transformer is not None:
@@ -161,12 +164,9 @@ def assign_transformer(ctx, path, func):
                 ctx._translate()
         existing_transformer.code = code
     else:
-        tf = Transformer(
-            code=code,
-            pins=parameters
-        ) 
+        tf = Transformer(code=code, pins=parameters)
         tf._init(parent=ctx, path=path, set_node=True)
-        #inserts itself as child
+        # inserts itself as child
         assert ctx._children[path] is tf
         ctx._translate()
 
@@ -181,7 +181,7 @@ def assign_transformer_copy(ctx, path, tf):
     tf_node["path"] = path
     nodes, connections = ctx._graph[:2]
     nodes[path] = tf_node
-    
+
     tf_path = tf._path
     if tf_path is not None:
         lp = len(tf_path)
@@ -195,16 +195,19 @@ def assign_transformer_copy(ctx, path, tf):
                 connections.append(con2)
     tf = Transformer()
     tf._init(parent=ctx, path=path, set_node=False)
-    #inserts itself as child
+    # inserts itself as child
     assert ctx._children[path] is tf
     ctx._translate()
+
 
 def assign_libinstance(ctx, path, libinstance):
     libinstance._bind(ctx, path)
 
 
-def assign_connection(ctx, source, target, standalone_target, exempt=[]):
+def assign_connection(ctx, source, target, standalone_target, exempt=None):
     # "standalone_target" is False for subcells or proxywrappers, True otherwise
+    if exempt is None:
+        exempt = []
     nodedict = ctx._graph[0]
     libinstance_source_node = under_libinstance_control(nodedict, source)
     if libinstance_source_node is not None:
@@ -219,15 +222,16 @@ def assign_connection(ctx, source, target, standalone_target, exempt=[]):
                 raise AttributeError
             par = params[attr]
             if par["io"] != "output":
-                raise AttributeError 
+                raise AttributeError
             arguments = libinstance_source_node["arguments"]
             from .library.argument import parse_argument
+
             t = ctx._children[target]
             arguments[attr] = parse_argument(attr, t, par)
             return True
         except Exception:
             msg = "Cannot connect from path under libinstance control: {}"
-            raise Exception(msg.format(source)) from None        
+            raise Exception(msg.format(source)) from None
     if under_libinstance_control(nodedict, target):
         msg = "Cannot connect to path under libinstance control: {}"
         raise Exception(msg.format(target))
@@ -245,7 +249,7 @@ def assign_connection(ctx, source, target, standalone_target, exempt=[]):
                 if isinstance(t, (DeepCell, DeepFolderCell)):
                     hcell["checksum"].pop("origin", None)
                     if isinstance(ctx._children.get(source), DeepCellBase):
-                        hcell["checksum"].pop("keyorder", None)                    
+                        hcell["checksum"].pop("keyorder", None)
                 else:
                     hcell["checksum"].pop("auth", None)
         else:
@@ -255,6 +259,7 @@ def assign_connection(ctx, source, target, standalone_target, exempt=[]):
             else:
                 hnode.pop("checksum", None)
     lt = len(target)
+
     def keep_con(con):
         if con["type"] == "link":
             first = con["first"]
@@ -267,12 +272,13 @@ def assign_connection(ctx, source, target, standalone_target, exempt=[]):
         ctarget = con["target"]
         if ctarget[:lt] != target:
             return True
-        if target[:len(ctarget)] != ctarget:
+        if target[: len(ctarget)] != ctarget:
             return True
         for e in exempt:
-            if ctarget[:len(e)] == e:
+            if ctarget[: len(e)] == e:
                 return True
         return False
+
     ctx._graph[1][:] = filter(keep_con, ctx._graph[1])
     if standalone_target:
         t = ctx._children[target]
@@ -342,8 +348,9 @@ assign the DeepCell to the SimpleDeepCell, and the SimpleDeepCell to the Cell.
             assert isinstance(s, Proxy), s
             if isinstance(s, (CodeProxy, HeaderProxy)):
                 pass
-            elif isinstance(source_parent, Transformer) \
-              and attr == source_parent.RESULT:
+            elif (
+                isinstance(source_parent, Transformer) and attr == source_parent.RESULT
+            ):
                 source = source_parent_path
                 s = None
             elif attr in source_parent.pins:
@@ -359,40 +366,39 @@ assign the DeepCell to the SimpleDeepCell, and the SimpleDeepCell to the Cell.
         assert isinstance(t, (Cell, Module, DeepCellBase))
         if t._virtual_path is not None:
             target = t._virtual_path
-    connection = {
-        "type": "connection",
-        "source": source,
-        "target": target
-    }
+    connection = {"type": "connection", "source": source, "target": target}
     ctx._graph[1].append(connection)
+
 
 def _assign_context2(ctx, new_nodes, new_connections, path, runtime, *, fast):
     from .Context import Context
-    from .Cell import Cell
-    from .Transformer import Transformer
+
     assert isinstance(ctx, Context)
     if fast:
-        assert runtime    
+        assert runtime
     if runtime:
         nodes, connections, _, _ = ctx._runtime_graph
     else:
         nodes, connections, _, _ = ctx._graph
     if not fast:
         for p in list(nodes.keys()):
-            if p[:len(path)] == path or p[:len(path) + 1] == ("HELP",) + path:
+            if p[: len(path)] == path or p[: len(path) + 1] == ("HELP",) + path:
                 nodes.pop(p)
         for con in list(connections):
             if con["type"] == "connection":
                 source, target = con["source"], con["target"]
-                if source[:len(path)] != path and source[:len(path) + 1] != ("HELP",) + path:
+                if (
+                    source[: len(path)] != path
+                    and source[: len(path) + 1] != ("HELP",) + path
+                ):
                     continue
-                if target[:len(path)] != path and target[:len(path) + 1] != ("HELP",) + path:
+                if (
+                    target[: len(path)] != path
+                    and target[: len(path) + 1] != ("HELP",) + path
+                ):
                     continue
                 connections.remove(con)
-    nodes[path] = {
-        "path": path,
-        "type": "context"
-    }    
+    nodes[path] = {"path": path, "type": "context"}
     new_nodes = deepcopy(new_nodes)
     new_connections = deepcopy(new_connections)
     targets = set()
@@ -419,7 +425,7 @@ def _assign_context2(ctx, new_nodes, new_connections, path, runtime, *, fast):
             if node["celltype"] == "structured":
                 remove_checksum.append("value")
                 remove_checksum.append("buffered")
-            else: # simple cell, can be targeted at most once
+            else:  # simple cell, can be targeted at most once
                 if old_path in targets:
                     remove_checksum.append("value")
         elif nodetype == "transformer":
@@ -460,7 +466,7 @@ def _assign_context2(ctx, new_nodes, new_connections, path, runtime, *, fast):
                         arg = [arg]
                     arg = list(path) + arg
                 elif param["type"] == "celldict":
-                    for k,v in arg.items():
+                    for k, v in arg.items():
                         if isinstance(v, tuple):
                             v = list(v)
                         if not isinstance(v, list):
@@ -487,6 +493,7 @@ def _assign_context2(ctx, new_nodes, new_connections, path, runtime, *, fast):
     if fast:
         ctx._add_runtime_index(path, indexed_nodepaths, indexed_connections)
 
+
 def _assign_context(ctx, new_nodes, new_connections, path, runtime, *, fast=False):
     if runtime and not fast:
         old_graph = deepcopy(ctx._graph)
@@ -504,6 +511,7 @@ def _assign_context(ctx, new_nodes, new_connections, path, runtime, *, fast=Fals
     else:
         ctx._translate()
 
+
 def assign_context(ctx, path, value):
     graph = value.get_graph()
     for lib in graph["lib"]:
@@ -513,24 +521,23 @@ def assign_context(ctx, path, value):
     new_nodes, new_connections = graph["nodes"], graph["connections"]
     _assign_context(ctx, new_nodes, new_connections, path, runtime=False)
 
+
 def assign_to_deep_subcell(cell, attr, value):
     hcell = cell._get_hcell()
     ctx = cell._parent()
     if isinstance(value, Cell):
-        raise AttributeError("Can only assign cells to DeepCell.blacklist and DeepCell.whitelist")
+        raise AttributeError(
+            "Can only assign cells to DeepCell.blacklist and DeepCell.whitelist"
+        )
     elif isinstance(value, ConstantTypes):
         check_libinstance_subcontext_binding(ctx, (attr,))
         removed1 = ctx.remove_connections(
-            cell._path + (attr,),
-            endpoint="link",
-            match="all"
+            cell._path + (attr,), endpoint="link", match="all"
         )
         removed2 = ctx.remove_connections(
-            cell._path + (attr,),
-            endpoint="target",
-            match="all"
+            cell._path + (attr,), endpoint="target", match="all"
         )
-        removed = (removed1 or removed2)
+        removed = removed1 or removed2
         hcell = cell._get_hcell()
         untranslated = hcell.get("UNTRANSLATED")
         if removed:
@@ -541,7 +548,6 @@ def assign_to_deep_subcell(cell, attr, value):
                     raise TypeError(type(attr))
                 temp_value = hcell.get("TEMP", {})
             else:
-                raise NotImplementedError
                 """
                 assert isinstance(cell, DeepListCell)
                 if not isinstance(attr, int):
@@ -551,6 +557,7 @@ def assign_to_deep_subcell(cell, attr, value):
                     for d in range(len(temp_value), attr+1):
                         temp_value.append(None)
                 """
+                raise NotImplementedError
             temp_value[attr] = value
             hcell["TEMP"] = temp_value
             return
@@ -562,8 +569,10 @@ def assign_to_deep_subcell(cell, attr, value):
     else:
         raise TypeError(value)
 
+
 def assign_to_subcell(cell, path, value):
     from ..core.structured_cell import StructuredCell
+
     hcell = cell._get_hcell()
     if hcell.get("constant"):
         raise TypeError("Cannot assign to constant cell")
@@ -571,31 +580,31 @@ def assign_to_subcell(cell, path, value):
         raise TypeError("Can only assign directly to properties of structured cells")
     ctx = cell._parent()
     if isinstance(value, Cell):
-        assert value._parent() is ctx #no connections between different (toplevel) contexts
+        assert (
+            value._parent() is ctx
+        )  # no connections between different (toplevel) contexts
         _remove_independent_mountshares(hcell)
         assign_connection(ctx, value._path, cell._path + path, False)
         ctx._translate()
     elif isinstance(value, ConstantTypes):
         check_libinstance_subcontext_binding(ctx, path)
         removed1 = ctx.remove_connections(
-            cell._path + path,
-            endpoint="link",
-            match="all"
+            cell._path + path, endpoint="link", match="all"
         )
         removed2 = ctx.remove_connections(
-            cell._path + path,
-            endpoint="target",
-            match="all"
+            cell._path + path, endpoint="target", match="all"
         )
-        removed = (removed1 or removed2)
+        removed = removed1 or removed2
         untranslated = cell._get_hcell().get("UNTRANSLATED")
         if removed:
             ctx._translate()
         if untranslated:
-            raise Exception("""This cell is untranslated.
+            raise Exception(
+                """This cell is untranslated.
 You must first translate the cell before assigning constants to sub-values.
 Run 'ctx.translate()' or 'await ctx.translation()'
-""")
+"""
+            )
         handle = cell.handle
         for p in path[:-1]:
             if isinstance(p, int):
@@ -617,8 +626,8 @@ def assign(ctx, path, value, *, help_context=False):
     from .library.libinstance import LibInstance
     from .library import Library, LibraryContainer
     from .library.include import IncludedLibrary, IncludedLibraryContainer
-    from .proxy import Proxy
     from .Transformer import TransformerCopy
+
     nodedict = ctx._graph[0]
     if under_libinstance_control(nodedict, path):
         ok = False
@@ -637,11 +646,7 @@ def assign(ctx, path, value, *, help_context=False):
         if help_context:
             raise TypeError(type(value))
         if value._path is None:
-            ctx.remove_connections(
-                path,
-                endpoint="target",
-                match="all"
-            )
+            ctx.remove_connections(path, endpoint="target", match="all")
             value._init(ctx, path, set_node=True)
         else:
             assert value._parent() is not None
@@ -667,7 +672,7 @@ def assign(ctx, path, value, *, help_context=False):
                         cellnode["celltype"] = "text"
                     else:
                         cellnode["celltype"] = "structured"
-            else: #isinstance(value, DeepCellBase):
+            else:  # isinstance(value, DeepCellBase):
                 if cellnode is None:
                     cellnode = type(value)._new_func(path)
                 else:
@@ -676,7 +681,7 @@ def assign(ctx, path, value, *, help_context=False):
         else:
             assert value._get_top_parent() is ctx, value
             try:
-                target = get_path(ctx, path, namespace = None, is_target=True)
+                target = get_path(ctx, path, namespace=None, is_target=True)
             except AttributeError:
                 target = None
             if isinstance(target, Cell):
@@ -727,7 +732,7 @@ def assign(ctx, path, value, *, help_context=False):
         else:
             assert value._get_top_parent() is ctx, value
             try:
-                target = get_path(ctx, path, namespace = None, is_target=True)
+                target = get_path(ctx, path, namespace=None, is_target=True)
             except AttributeError:
                 target = None
             if isinstance(target, Cell):
@@ -758,7 +763,7 @@ def assign(ctx, path, value, *, help_context=False):
     elif isinstance(value, (Proxy, SchemaWrapper)):
         assert value._parent()._parent() is ctx
         if path not in ctx._children:
-            Cell(parent=ctx, path=path) #inserts itself as child
+            Cell(parent=ctx, path=path)  # inserts itself as child
             node = get_new_cell(path)
             if help_context:
                 node["celltype"] = "text"
@@ -774,11 +779,16 @@ def assign(ctx, path, value, *, help_context=False):
         value._init(ctx, path)
         ctx._translate()
     elif isinstance(value, CompiledObjectDict):
-        raise TypeError("Cannot assign directly to all module objects; assign to individual elements")
+        raise TypeError(
+            "Cannot assign directly to all module objects; assign to individual elements"
+        )
     elif isinstance(value, CompiledObjectWrapper):
-        raise TypeError("Cannot assign directly to an entire module object; assign to individual elements")
+        raise TypeError(
+            "Cannot assign directly to an entire module object; assign to individual elements"
+        )
     else:
         raise TypeError(str(value), type(value))
+
 
 from ..midlevel.util import get_path
 from .Base import Base

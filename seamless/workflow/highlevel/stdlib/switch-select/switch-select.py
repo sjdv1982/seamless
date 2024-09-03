@@ -15,6 +15,8 @@ ctx_select = Context()
  However, ctx.input will be connected to
   and ctx.foo will be connected from, where "foo" is any value in the cell dict
 """
+
+
 def switch_func(ctx, celltype, selected, options):
     assert selected in options, (selected, options)
     ctx.input = cell(celltype)
@@ -22,12 +24,14 @@ def switch_func(ctx, celltype, selected, options):
     setattr(ctx, selected, selected_output)
     ctx.input.connect(selected_output)
 
+
 def select_func1(ctx, celltype, selected, options):
     assert selected in options, (selected, options)
     ctx.output = cell(celltype)
     selected_input = cell(celltype)
     setattr(ctx, selected, selected_input)
     selected_input.connect(ctx.output)
+
 
 def select_func2(ctx, celltype, input_hash_pattern, input_value, selected):
     ctx.output = cell(celltype)
@@ -48,14 +52,16 @@ def select_func2(ctx, celltype, input_hash_pattern, input_value, selected):
     selected_input = input_value.get(selected)
     if selected_input is None:
         return
-    
+
     if input_hash_pattern is None:
         ctx.selected_input.set(selected_input)
     else:
         ctx.selected_input.set_checksum(selected_input)
-    
+
+
 def constructor_switch(ctx, libctx, celltype, input, selected, outputs):
     import json
+
     ctx.input = Cell(celltype)
     input.connect(ctx.input)
     ctx.selected = Cell("str")
@@ -63,21 +69,21 @@ def constructor_switch(ctx, libctx, celltype, input, selected, outputs):
 
     macro_pins = {
         "celltype": {
-            "io": "parameter", 
+            "io": "parameter",
             "celltype": "str",
         },
         "input": {
-            "io": "input", 
+            "io": "input",
             "celltype": celltype,
         },
         "selected": {
-            "io": "parameter", 
+            "io": "parameter",
             "celltype": "str",
         },
         "options": {
-            "io": "parameter", 
+            "io": "parameter",
             "celltype": "plain",
-        }
+        },
     }
 
     """
@@ -94,10 +100,7 @@ def constructor_switch(ctx, libctx, celltype, input, selected, outputs):
             msg = "You cannot switch to a cell under the selector '{}'"
             raise Exception(msg.format(output_name))
         options.append(output_name)
-        pin = {
-            "io": "output",
-            "celltype": celltype
-        }
+        pin = {"io": "output", "celltype": celltype}
         macro_pins[output_name] = pin
     ctx.switch_macro = Macro(pins=macro_pins)
     ctx.switch_macro.code = libctx.switch_code.value
@@ -113,6 +116,7 @@ def constructor_switch(ctx, libctx, celltype, input, selected, outputs):
         setattr(ctx, output_name, macro_pin)
         outputs[output_name].connect_from(output_cell)
 
+
 def constructor_select(ctx, libctx, celltype, input, inputs, selected, output):
     if input is None and inputs is None:
         raise TypeError("You must define 'input' or 'inputs'")
@@ -124,7 +128,7 @@ def constructor_select(ctx, libctx, celltype, input, inputs, selected, output):
     selected.connect(ctx.selected)
 
     # Version 1: a celldict of input cells
-    if inputs is not None: 
+    if inputs is not None:
         """
         Create one macro input pin per cell in the inputs dict
         This will populate the ctx passed to select_func with input cells
@@ -132,21 +136,21 @@ def constructor_select(ctx, libctx, celltype, input, inputs, selected, output):
         """
         macro1_pins = {
             "celltype": {
-                "io": "parameter", 
+                "io": "parameter",
                 "celltype": "str",
             },
             "output": {
-                "io": "output", 
+                "io": "output",
                 "celltype": celltype,
             },
             "selected": {
-                "io": "parameter", 
+                "io": "parameter",
                 "celltype": "str",
             },
             "options": {
-                "io": "parameter", 
+                "io": "parameter",
                 "celltype": "plain",
-            }
+            },
         }
 
         options = []
@@ -158,10 +162,7 @@ def constructor_select(ctx, libctx, celltype, input, inputs, selected, output):
                 msg = "You cannot select from a cell under the selector '{}'"
                 raise Exception(msg.format(input_name))
             options.append(input_name)
-            pin = {
-                "io": "input",
-                "celltype": celltype
-            }
+            pin = {"io": "input", "celltype": celltype}
             macro1_pins[input_name] = pin
         ctx.select_macro1 = Macro(pins=macro1_pins)
         ctx.select_macro1.code = libctx.select_code1.value
@@ -174,31 +175,31 @@ def constructor_select(ctx, libctx, celltype, input, inputs, selected, output):
             setattr(ctx, input_name, input_cell)
             setattr(ctx.select_macro1, input_name, input_cell)
             inputs[input_name].connect(input_cell)
-        
+
         ctx.output = ctx.select_macro1.output
     else:
         # Version 2: a structured input cell
         macro2_pins = {
             "celltype": {
-                "io": "parameter", 
+                "io": "parameter",
                 "celltype": "str",
             },
             "output": {
-                "io": "output", 
+                "io": "output",
                 "celltype": celltype,
             },
             "input_hash_pattern": {
-                "io": "parameter", 
+                "io": "parameter",
                 "celltype": "plain",
             },
             "input_value": {
-                "io": "parameter", 
+                "io": "parameter",
                 "celltype": "plain",
             },
             "selected": {
-                "io": "parameter", 
+                "io": "parameter",
                 "celltype": "str",
-            }
+            },
         }
 
         if input.celltype != "structured":
@@ -207,7 +208,7 @@ def constructor_select(ctx, libctx, celltype, input, inputs, selected, output):
         ctx.select_macro2 = Macro(pins=macro2_pins)
         ctx.select_macro2.code = libctx.select_code2.value
         ctx.select_macro2.celltype = celltype
-        ctx.input = Cell()        
+        ctx.input = Cell()
         input.connect(ctx.input)
         if input.hash_pattern is None:
             ctx.select_macro2.input_value = ctx.input
@@ -224,24 +225,16 @@ def constructor_select(ctx, libctx, celltype, input, inputs, selected, output):
 
         ctx.output = ctx.select_macro2.output
 
+
 ctx_switch.switch_code = Cell("code")
 ctx_switch.switch_code = switch_func
 ctx_switch.constructor_code = Cell("code")
 ctx_switch.constructor_code = constructor_switch
 ctx_switch.constructor_params = {
     "celltype": "value",
-    "input": {
-        "type": "cell",
-        "io": "input"
-    },
-    "selected": {
-        "type": "cell",
-        "io": "input"
-    },
-    "outputs": {
-        "type": "celldict",
-        "io": "output"
-    },
+    "input": {"type": "cell", "io": "input"},
+    "selected": {"type": "cell", "io": "input"},
+    "outputs": {"type": "celldict", "io": "output"},
 }
 ctx_switch.help = Cell("text")
 ctx_switch.help.mimetype = "md"
@@ -257,14 +250,8 @@ ctx_select.constructor_code = Cell("code")
 ctx_select.constructor_code = constructor_select
 ctx_select.constructor_params = {
     "celltype": "value",
-    "output": {
-        "type": "cell",
-        "io": "output"
-    },
-    "selected": {
-        "type": "cell",
-        "io": "input"
-    },
+    "output": {"type": "cell", "io": "output"},
+    "selected": {"type": "cell", "io": "input"},
     "inputs": {
         "type": "celldict",
         "io": "input",
@@ -292,6 +279,7 @@ zip_select = ctx_select.get_zip()
 # 3: Package the contexts in a library
 
 from seamless.highlevel.library import LibraryContainer
+
 mylib = LibraryContainer("mylib")
 mylib.switch = ctx_switch
 mylib.switch.constructor = ctx_switch.constructor_code.value
@@ -313,12 +301,18 @@ ctx2.f1 = 2.0
 ctx2.f2 = 3.0
 ctx2.f3 = 4.0
 
-def add(a,b):
+
+def add(a, b):
     return a + b
-def sub(a,b):
+
+
+def sub(a, b):
     return a - b
-def mul(a,b):
+
+
+def mul(a, b):
     return a * b
+
 
 ctx2.op1 = add
 ctx2.op1.a = ctx2.a1
@@ -366,11 +360,11 @@ ctx2.compute()
 print(ctx2.output.value)
 print(ctx2.a.value, ctx2.a1.value, ctx2.a2.value, ctx2.a3.value)
 print(ctx2.a1.status, ctx2.a2.status, ctx2.a3.status)
-#print(ctx2.switch.ctx.switch_macro._get_mctx().path1.status)
-#print(ctx2.switch.ctx.path2._get_cell().upstream().status)
-#print(ctx2.switch.ctx.path2.status)
-#print(ctx2.a2._get_cell().status)
-#print(ctx2.a2._get_cell().upstream().status)
+# print(ctx2.switch.ctx.switch_macro._get_mctx().path1.status)
+# print(ctx2.switch.ctx.path2._get_cell().upstream().status)
+# print(ctx2.switch.ctx.path2.status)
+# print(ctx2.a2._get_cell().status)
+# print(ctx2.a2._get_cell().upstream().status)
 print(ctx2.r1.value, ctx2.r2.value, ctx2.r3.value)
 print()
 
@@ -442,15 +436,16 @@ if ctx2.output.value is None:
 
 print("Save graph and zip")
 import os, json
-currdir=os.path.dirname(os.path.abspath(__file__))
-graph_switch_filename=os.path.join(currdir,"../switch.seamless")
+
+currdir = os.path.dirname(os.path.abspath(__file__))
+graph_switch_filename = os.path.join(currdir, "../switch.seamless")
 json.dump(graph_switch, open(graph_switch_filename, "w"), sort_keys=True, indent=2)
-graph_select_filename=os.path.join(currdir,"../select.seamless")
+graph_select_filename = os.path.join(currdir, "../select.seamless")
 json.dump(graph_select, open(graph_select_filename, "w"), sort_keys=True, indent=2)
 
-zip_switch_filename=os.path.join(currdir,"../switch.zip")
+zip_switch_filename = os.path.join(currdir, "../switch.zip")
 with open(zip_switch_filename, "bw") as f:
     f.write(zip_switch)
-zip_select_filename=os.path.join(currdir,"../select.zip")
+zip_select_filename = os.path.join(currdir, "../select.zip")
 with open(zip_select_filename, "bw") as f:
     f.write(zip_select)

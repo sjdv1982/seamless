@@ -1,8 +1,17 @@
-import traitlets
-from traitlets.traitlets import _validate_link
+"""SeamlessTraitlet class"""
+
+from typing import Callable
 import weakref
 import contextlib
 import asyncio
+
+import traitlets
+from traitlets.traitlets import _validate_link
+
+from seamless import Checksum
+from seamless.checksum.deserialize import deserialize_sync
+from seamless.checksum.get_buffer import get_buffer
+
 
 class Link(object):
     """Link traits from different objects together so they remain in sync.
@@ -21,6 +30,7 @@ class Link(object):
     >>> c = link((src, 'value'), (tgt, 'value'))
     >>> src.value = 5  # updates other objects as well
     """
+
     updating = False
 
     def __init__(self, source, target, bidirectional):
@@ -32,13 +42,9 @@ class Link(object):
             if source_value is not None:
                 setattr(target[0], target[1], source_value)
         finally:
-            source[0].observe(
-                self._update_target, names=source[1]
-            )
+            source[0].observe(self._update_target, names=source[1])
             if bidirectional:
-                target[0].observe(
-                    self._update_source, names=target[1]
-                )
+                target[0].observe(self._update_source, names=target[1])
 
     @contextlib.contextmanager
     def _busy_updating(self):
@@ -55,8 +61,7 @@ class Link(object):
         if new_value is None:
             return
         with self._busy_updating():
-            setattr(self.target[0], self.target[1],
-                    new_value)
+            setattr(self.target[0], self.target[1], new_value)
 
     def _update_source(self, change):
         if self.updating:
@@ -65,10 +70,10 @@ class Link(object):
         if new_value is None:
             return
         with self._busy_updating():
-            setattr(self.source[0], self.source[1],
-                    new_value)
+            setattr(self.source[0], self.source[1], new_value)
 
     def unlink(self):
+        """Break the link between traitlets"""
         if self.source is None:
             return
         self.source[0].unobserve(self._update_target, names=self.source[1])
@@ -81,11 +86,14 @@ class Link(object):
     def __del__(self):
         self.unlink()
 
+
 class SeamlessTraitlet(traitlets.HasTraits):
+    """A traitlet linked to a Seamless cell"""
+
     value = traitlets.Instance(object, allow_none=False)
     _destroyed = False
     _updating = False
-    parent = None
+    parent: Callable | None = None
     incell = None
     outcell = None
     links = None
@@ -94,7 +102,9 @@ class SeamlessTraitlet(traitlets.HasTraits):
     _timer_handle = None
 
     def _connect_seamless(self):
-        ccell = self.parent()._children[self.path]
+        if self.parent is None:
+            raise RuntimeError
+        ccell = self.parent()._children[self.path]  # pylint: disable=not-callable
         if not isinstance(ccell, Cell):
             raise TypeError(type(ccell))
         cell = ccell._get_cell()
@@ -116,7 +126,7 @@ class SeamlessTraitlet(traitlets.HasTraits):
             if not isinstance(outcell, core_cell):
                 raise TypeError(type(outcell))
             self.outcell = weakref.ref(outcell)
-        #print("traitlet %s, observing" % self.path)
+        # print("traitlet %s, observing" % self.path)
         outcell._add_traitlet(self)
         if old_celltype is not None:
             if self.celltype != old_celltype or self.mimetype != old_mimetype:
@@ -133,7 +143,8 @@ class SeamlessTraitlet(traitlets.HasTraits):
                     link.unlink()
                     self.links.remove(link)
 
-    def receive_update(self, checksum:Checksum):
+    def receive_update(self, checksum: Checksum):
+        """Update the outcell with a checksum"""
         if self._destroyed:
             return
         checksum = Checksum(checksum)
@@ -143,22 +154,17 @@ class SeamlessTraitlet(traitlets.HasTraits):
             return
         buffer = get_buffer(checksum, remote=True)
         celltype = cell._celltype
-        value = deserialize_sync(
-            buffer, checksum, celltype,
-            copy=True
-        )
+        value = deserialize_sync(buffer, checksum, celltype, copy=True)
         if celltype == "mixed":
             hash_pattern = cell._hash_pattern
             if hash_pattern is not None:
-                value = get_subpath(
-                    value, hash_pattern, ()
-                )
+                value = get_subpath(value, hash_pattern, ())
 
         if self._timer_handle is not None:
             self._timer_handle.cancel()
             self._timer_handle = None
 
-        #print("Traitlet RECEIVE UPDATE", self.path, value)
+        # print("Traitlet RECEIVE UPDATE", self.path, value)
 
         self._updating = True
         old_value = self.value
@@ -172,13 +178,13 @@ class SeamlessTraitlet(traitlets.HasTraits):
             return
         super()._notify_trait(name, old_value, new_value)
 
-    @traitlets.observe('value')
+    @traitlets.observe("value")
     def _value_changed(self, change):
         if self._destroyed:
             return
         if self.parent is None:
             return
-        #print("Traitlet DETECT VALUE CHANGE", self.path, change, self._updating)
+        # print("Traitlet DETECT VALUE CHANGE", self.path, change, self._updating)
         if self._updating:
             return
         value = change["new"]
@@ -227,18 +233,23 @@ class SeamlessTraitlet(traitlets.HasTraits):
         self.links.append(link)
 
     def connect(self, target, target_attr="value"):
+        """Connect the traitlet to a Seamless output cell (outcell)"""
         link = self._connect_traitlet(target, target_attr, False)
         self._newlink(link)
         return link
 
     def link(self, target, target_attr="value"):
+        """Bidirectionally link the traitlet to a Seamless cell"""
         if self.incell is not None:
             assert self.incell().has_independence()
         link = self._connect_traitlet(target, target_attr, True)
         self._newlink(link)
         return link
 
-    def observe(self, handler, names=traitlets.All, type='change'):
+    def observe(self, handler, names=traitlets.All, type="change"):
+        """Setup a handler to be called when a trait changes.
+        
+        See traitlets.HasTraits.observe"""
         super().observe(handler, names, type)
         names = traitlets.parse_notifier_name(names)
         if names == [traitlets.All] or "value" in names:
@@ -248,12 +259,14 @@ class SeamlessTraitlet(traitlets.HasTraits):
 
     def destroy(self):
         self._destroyed = True
+        if self.parent is None:
+            return
         if self.links is not None:
             self.links.clear()
         if self._timer_handle is not None:
             self._timer_handle.cancel()
             self._timer_handle = None
-        parent = self.parent()
+        parent = self.parent()  # pylint: disable=not-callable
         traitlet = parent._traitlets[self.path]
         if traitlet is self:
             parent._traitlets.pop(self.path)
@@ -262,7 +275,4 @@ class SeamlessTraitlet(traitlets.HasTraits):
 from .Cell import Cell
 from ..core.structured_cell import StructuredCell
 from ..core.cell import Cell as core_cell
-from ..core.protocol.deserialize import deserialize_sync
 from ..core.protocol.expression import get_subpath
-from ..core.protocol.get_buffer import get_buffer
-from ..core.cache.buffer_cache import buffer_cache

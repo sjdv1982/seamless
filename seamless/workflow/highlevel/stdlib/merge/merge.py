@@ -5,11 +5,12 @@ from seamless.highlevel import set_resource
 
 ctx = Context()
 
+
 def macro_code(ctx, fallback_mode, code_start, code_update):
     reactor_params = {
         "fallback_mode": {"io": "input", "celltype": "str"},
         "upstream": {"io": "input", "celltype": "text"},
-        "merged":  {"io": "output", "celltype": "text"},
+        "merged": {"io": "output", "celltype": "text"},
         "state": {"io": "output", "celltype": "str"},
     }
     for k in "upstream_stage", "base", "modified", "conflict":
@@ -43,11 +44,7 @@ def macro_code(ctx, fallback_mode, code_start, code_update):
 
 
 def constructor(
-    ctx, libctx,
-    fallback_mode,
-    upstream,
-    modified, conflict,
-    merged, state, base
+    ctx, libctx, fallback_mode, upstream, modified, conflict, merged, state, base
 ):
     assert fallback_mode in ("upstream", "modified", "no"), fallback_mode
     m = ctx.m = Macro()
@@ -87,44 +84,21 @@ def constructor(
     m.pins.state = {"io": "output", "celltype": "text"}
     ctx.state = m.state
 
+
 ctx.constructor_code = Cell("code").set(constructor)
 constructor_params = {
-    "fallback_mode": {
-        "type": "value",
-        "default": "modified"
-    },
-    "upstream": {
-        "type": "cell",
-        "celltype": "text",
-        "io": "input"
-    },
+    "fallback_mode": {"type": "value", "default": "modified"},
+    "upstream": {"type": "cell", "celltype": "text", "io": "input"},
     "base": {
         "type": "cell",
         "celltype": "text",
         "io": "edit",
         "must_be_defined": False,
-    }, 
-    "modified": {
-        "type": "cell",
-        "celltype": "text",
-        "io": "edit"
     },
-    "conflict": {
-        "type": "cell",
-        "celltype": "text",
-        "io": "edit"
-    },
-    "merged": {
-        "type": "cell",
-        "celltype": "text",
-        "io": "output"
-    },
-    "state": {
-        "type": "cell",
-        "celltype": "str",
-        "io": "output"
-    }
-
+    "modified": {"type": "cell", "celltype": "text", "io": "edit"},
+    "conflict": {"type": "cell", "celltype": "text", "io": "edit"},
+    "merged": {"type": "cell", "celltype": "text", "io": "output"},
+    "state": {"type": "cell", "celltype": "str", "io": "output"},
 }
 
 ctx.constructor_params = constructor_params
@@ -147,6 +121,7 @@ zip = ctx.get_zip()
 # 3: Package the contexts in a library
 
 from seamless.highlevel.library import LibraryContainer
+
 mylib = LibraryContainer("mylib")
 mylib.merge = ctx
 mylib.merge.constructor = ctx.constructor_code.value
@@ -155,16 +130,20 @@ mylib.merge.params = ctx.constructor_params.value
 # 4: Run test example
 
 import os
+
 mount_dir = "/tmp/seamless-merge"
 os.makedirs(mount_dir, exist_ok=True)
 try:
     os.mkdir(mount_dir)
 except OSError:
     pass
+
+
 def mount(cell, mode="rw"):
     filename = os.path.join(mount_dir, cell._path[-1]) + ".txt"
     auth = "file" if "r" in mode else "cell"
     cell.mount(filename, mode=mode, authority=auth, persistent=True)
+
 
 ctx = Context()
 ctx.include(mylib.merge)
@@ -199,7 +178,7 @@ ctx.merge = ctx.lib.merge(
     conflict=ctx.conflict,
     merged=ctx.merged,
     base=base,
-    state=ctx.state
+    state=ctx.state,
 )
 
 ctx.compute()
@@ -212,16 +191,18 @@ print(ctx.merge.ctx.m.ctx.base.value)
 
 if ctx.state.value != "passthrough":
     import sys
+
     sys.exit()
 
 # 5: Save graph and zip
 
 import os, json
-currdir=os.path.dirname(os.path.abspath(__file__))
-graph_filename=os.path.join(currdir,"../merge.seamless")
+
+currdir = os.path.dirname(os.path.abspath(__file__))
+graph_filename = os.path.join(currdir, "../merge.seamless")
 json.dump(graph, open(graph_filename, "w"), sort_keys=True, indent=2)
 
-zip_filename=os.path.join(currdir,"../merge.zip")
+zip_filename = os.path.join(currdir, "../merge.zip")
 with open(zip_filename, "bw") as f:
     f.write(zip)
 print("Graph saved")

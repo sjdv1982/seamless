@@ -44,6 +44,17 @@ from weakref import WeakSet
 import atexit
 import logging
 
+
+from seamless.Environment import ContextEnvironment
+from seamless.checksum.buffer_cache import (
+    buffer_cache,
+    empty_dict_checksum,
+    empty_list_checksum,
+)
+from seamless.workflow import verify_sync_compute
+from ..core.manager import Manager
+from ..core.direct import cleanup as _direct_cleanup
+
 logger = logging.getLogger(__name__)
 
 
@@ -166,8 +177,6 @@ atexit.register(_destroy_contexts)
 
 
 def _get_zip(buffer_dict):
-    from ..core.cache.buffer_cache import empty_dict_checksum, empty_list_checksum
-
     archive = BytesIO()
     with ZipFile(archive, mode="w", compression=ZIP_DEFLATED) as zipf:
         for checksum in sorted(list(buffer_dict.keys())):
@@ -490,7 +499,6 @@ class Context(Base, HelpMixin):
         This function can only be invoked if no event loop is running,
         i.e. under python or ipython, but not in a Jupyter kernel.
         """
-        from seamless import verify_sync_compute
 
         verify_sync_compute()
         self.translate()
@@ -1638,10 +1646,6 @@ from .SelfWrapper import SelfWrapper, ChildrenWrapper
 from .pin import PinWrapper
 from .library.libinstance import LibInstance
 from .PollingObserver import PollingObserver
-from seamless.Environment import ContextEnvironment
-
-from seamless.checksum.buffer_cache import buffer_cache
 from .SubContext import SubContext
-from ..core.manager import Manager
 from .library import Library
-from ..core.direct import cleanup as _direct_cleanup
+from .SeamlessTraitlet import SeamlessTraitlet

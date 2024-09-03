@@ -1,25 +1,32 @@
 from weakref import ref
 from copy import deepcopy
 
+
 class WebunitWrapper:
     def __init__(self, ctx):
         self._ctx = ref(ctx)
+
     def _get_webunits(self):
         return self._ctx()._graph.params.get("webunits", {})
+
     def __getattr__(self, attr):
         webunits = self._get_webunits()
         if attr not in webunits:
             raise AttributeError(attr)
         return WebunitSubWrapper(self._ctx(), attr)
+
     def __dir__(self):
         return sorted(list(self._get_webunits().keys()))
+
     def __str__(self):
         return str(self._get_webunits())
+
     def __repr__(self):
         return str(self)
 
+
 class WebunitSubWrapper:
-    def __init__(self, ctx, webunit_type:str):
+    def __init__(self, ctx, webunit_type: str):
         self._ctx = ref(ctx)
         self._webunit_type = webunit_type
 
@@ -32,7 +39,7 @@ class WebunitSubWrapper:
         sub_webunits = self._get_sub_webunits()
         sub_webunits_dict = {}
         for itemnr, item in enumerate(sub_webunits):
-            sub_webunits_dict[item["id"]] = itemnr, item 
+            sub_webunits_dict[item["id"]] = itemnr, item
         return sub_webunits_dict
 
     def __getattr__(self, attr):

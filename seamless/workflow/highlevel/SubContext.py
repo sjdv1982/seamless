@@ -252,6 +252,7 @@ class SubContext(Base, HelpMixin):
     def self(self):
         # TODO: implement
         return self
-        
+
+
 from .Context import _get_status
 from .Transformer import Transformer

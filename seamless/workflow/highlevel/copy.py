@@ -11,6 +11,8 @@ from .Base import Base
 from copy import deepcopy
 
 classes = (Context, SubContext, Transformer, Macro, Cell, Module, LibInstance)
+
+
 def copy(source, target):
 
     def get_path(x):
@@ -27,15 +29,15 @@ def copy(source, target):
     def get_top(x):
         if isinstance(x, Base):
             ctx = x._get_top_parent()
-        elif isinstance(x, (Proxy, Libinstance)):
+        elif isinstance(x, (Proxy, LibInstance)):
             x0 = x
             while isinstance(x0, Proxy):
                 x0 = x0._parent()
-            if isinstance(x0, Libinstance):
+            if isinstance(x0, LibInstance):
                 ctx = x0._parent()
             else:
                 ctx = x0._get_top_parent()
-        elif isinstance(x, Libinstance):
+        elif isinstance(x, LibInstance):
             ctx = x._parent()
         return ctx
 
@@ -66,5 +68,6 @@ def copy(source, target):
     elif isinstance(source, LibInstance):
         raise NotImplementedError
     target_ctx.translate()
-    
+
+
 from .assign import assign_context

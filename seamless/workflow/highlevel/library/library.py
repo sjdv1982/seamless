@@ -3,6 +3,7 @@ import textwrap
 
 _libraries = {}
 
+
 def validate_params(params):
     if params is None:
         return None
@@ -25,11 +26,7 @@ def validate_params(params):
             json.dumps(default)
         except:
             raise ValueError((k, default)) from None
-        result[k] = {
-            "type": type_,
-            "io": io,
-            "default": default
-        }
+        result[k] = {"type": type_, "io": io, "default": default}
         if must_be_defined is not None:
             if must_be_defined not in (True, False):
                 raise ValueError((k, must_be_defined))
@@ -38,25 +35,34 @@ def validate_params(params):
             result[k]["celltype"] = celltype
     return result
 
+
 def get_library(path):
-    (
-        graph, zip, constructor, params, 
-        api_schema, constructor_schema
-    ) = _libraries[path]
+    (graph, zip, constructor, params, api_schema, constructor_schema) = _libraries[path]
     lib = Library(
-        path, graph, zip, constructor, params,
+        path,
+        graph,
+        zip,
+        constructor,
+        params,
         api_schema=api_schema,
-        constructor_schema=constructor_schema
+        constructor_schema=constructor_schema,
     )
     return lib
 
-def set_library(path, graph, zip, constructor, params,
-    *, api_schema, constructor_schema):
+
+def set_library(
+    path, graph, zip, constructor, params, *, api_schema, constructor_schema
+):
     validated_params = validate_params(params)
     _libraries[path] = (
-        graph, zip, constructor, validated_params,
-        api_schema, constructor_schema
+        graph,
+        zip,
+        constructor,
+        validated_params,
+        api_schema,
+        constructor_schema,
     )
+
 
 class LibraryContainer:
     def __init__(self, path):
@@ -67,12 +73,14 @@ class LibraryContainer:
         else:
             raise TypeError(type(path))
         self._path = path
+
     def __getattr__(self, attr):
         path = self._path + (attr,)
         try:
             return get_library(path)
         except KeyError:
             return LibraryContainer(path)
+
     def __setattr__(self, attr, value):
         if attr.startswith("_"):
             return super().__setattr__(attr, value)
@@ -83,9 +91,9 @@ class LibraryContainer:
         graph = libctx.get_graph()
         zip = libctx.get_zip()
         set_library(
-            path, graph, zip, None, None,
-            api_schema=None, constructor_schema=None
+            path, graph, zip, None, None, api_schema=None, constructor_schema=None
         )
+
     def __dir__(self):
         spath = self._path
         lspath = len(spath)
@@ -96,11 +104,18 @@ class LibraryContainer:
                     result.append(path[-1])
         return sorted(result)
 
+
 class Library:
-    def __init__(self, path, graph, zip,
-        constructor=None, params=None,
+    def __init__(
+        self,
+        path,
+        graph,
+        zip,
+        constructor=None,
+        params=None,
         *,
-        api_schema=None, constructor_schema=None
+        api_schema=None,
+        constructor_schema=None
     ):
         self._path = path
         self._graph = graph
@@ -112,6 +127,7 @@ class Library:
 
     def __setattr__(self, attr, value):
         from ...util import strip_decorators
+
         if attr.startswith("_"):
             return super().__setattr__(attr, value)
         ok = False
@@ -147,10 +163,12 @@ class Library:
         if ok:
             set_library(
                 self._path,
-                self._graph, self._zip,
-                self._constructor, self._params,
+                self._graph,
+                self._zip,
+                self._constructor,
+                self._params,
                 constructor_schema=self._constructor_schema,
-                api_schema=self._api_schema
+                api_schema=self._api_schema,
             )
         else:
             raise AttributeError(attr)
@@ -183,7 +201,7 @@ class Library:
             backend = DefaultBackend(
                 plain=True,
                 data_getter=self._params_getter,
-                data_setter=self._params_setter
+                data_setter=self._params_setter,
             )
             monitor = Monitor(backend)
             return MixedDict(monitor, ())
@@ -200,13 +218,13 @@ class Library:
             "constructor": self._constructor,
             "params": self._params,
             "language": "python",
-            "api": "pyseamless"
+            "api": "pyseamless",
         }
         if self._constructor_schema is not None:
             lib["constructor_schema"] = self._constructor_schema
         if self._api_schema is not None:
             lib["api_schema"] = self._api_schema
-        IncludedLibrary(ctx, **lib)   # to validate the arguments
+        IncludedLibrary(ctx, **lib)  # to validate the arguments
         s = json.dumps(lib)
         lib = json.loads(s)
         if add_zip:
@@ -230,6 +248,7 @@ class Library:
     @property
     def __doc__(self):
         return self.help.value
+
 
 from .include import IncludedLibrary
 from ..Context import Context

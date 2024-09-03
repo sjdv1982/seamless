@@ -65,7 +65,6 @@ class PinWrapper:
         if self._pinname == "code":
             return "input"
         from .Transformer import Transformer
-        from .Macro import Macro
 
         parent = self._parent()
         if isinstance(parent, Transformer):

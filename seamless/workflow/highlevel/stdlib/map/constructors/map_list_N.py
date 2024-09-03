@@ -1,7 +1,5 @@
 def constructor(
-    ctx, libctx, context_graph, 
-    inp, uniform, 
-    result, elision, elision_chunksize
+    ctx, libctx, context_graph, inp, uniform, result, elision, elision_chunksize
 ):
     m = ctx.m = Macro()
     m.elision = elision
@@ -43,21 +41,23 @@ def constructor(
         m.has_uniform = False
 
     lib_module_dict = libctx.lib_module_dict.value
-    ctx.lib_module_dict = Cell("plain").set(lib_module_dict)  # not strictly necessary to create a cell
+    ctx.lib_module_dict = Cell("plain").set(
+        lib_module_dict
+    )  # not strictly necessary to create a cell
     m.lib_module_dict = ctx.lib_module_dict
     m.pins.lib_module_dict.celltype = "plain"
 
     lib_codeblock = libctx.lib_codeblock.value
-    ctx.lib_codeblock = Cell("plain").set(lib_codeblock)  # not strictly necessary to create a cell
+    ctx.lib_codeblock = Cell("plain").set(
+        lib_codeblock
+    )  # not strictly necessary to create a cell
     m.lib_codeblock = ctx.lib_codeblock
     m.pins.lib_codeblock.celltype = "plain"
 
-    lib_code = {
-        "type": "interpreted",
-        "language": "python",
-        "code": lib_codeblock
-    }
-    ctx.lib_code = Cell("plain").set(lib_code)  # not strictly necessary to create a cell
+    lib_code = {"type": "interpreted", "language": "python", "code": lib_codeblock}
+    ctx.lib_code = Cell("plain").set(
+        lib_code
+    )  # not strictly necessary to create a cell
     m.lib = ctx.lib_code
     m.pins.lib.celltype = "module"
 
@@ -70,27 +70,16 @@ def constructor(
     ctx.result = m.result
     result.connect_from(ctx.result)
 
+
 constructor_params = {
     "context_graph": "context",
-    "inp": {
-        "type": "celldict",  # TODO: enforce hash pattern
-        "io": "input"
-    },
+    "inp": {"type": "celldict", "io": "input"},  # TODO: enforce hash pattern
     "uniform": {
         "type": "cell",
         "io": "input",
         "must_be_defined": False,
     },
-    "result": {
-        "type": "cell",
-        "io": "output"
-    },
-    "elision": {
-        "type": "value",
-        "default": False
-    },
-    "elision_chunksize": {
-        "type": "value",
-        "default": 100
-    },
+    "result": {"type": "cell", "io": "output"},
+    "elision": {"type": "value", "default": False},
+    "elision_chunksize": {"type": "value", "default": 100},
 }

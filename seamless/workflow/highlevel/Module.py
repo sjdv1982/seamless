@@ -3,15 +3,17 @@ import traceback
 from .Base import Base
 from seamless import Checksum
 
+
 def get_new_module(path):
     return {
         "path": path,
         "type": "module",
         "module_type": "interpreted",
         "language": "python",
-        "dependencies": [], 
+        "dependencies": [],
         "UNTRANSLATED": True,
     }
+
 
 class Module(Base):
     _virtual_path = None  # always None for modules
@@ -67,7 +69,7 @@ class Module(Base):
             self._node = get_new_module(None)
         return self._node
 
-    def _observe_codecell(self, checksum:Checksum):
+    def _observe_codecell(self, checksum: Checksum):
         checksum = Checksum(checksum)
         if self._parent() is None:
             return
@@ -91,10 +93,7 @@ class Module(Base):
             msg = "Multi-module cannot have a mount path where the last part contains . : {}"
             raise ValueError(msg.format(path))
 
-    def mount(
-        self, path, mode="rw", authority="file", *,
-        persistent=True
-    ):
+    def mount(self, path, mode="rw", authority="file", *, persistent=True):
         """Mounts the module's code to the file system.
 
         To delete an existing mount, do `del module.mount`
@@ -123,7 +122,7 @@ class Module(Base):
             "path": path,
             "mode": mode,
             "authority": authority,
-            "persistent": persistent
+            "persistent": persistent,
         }
         if self.multi:
             self._check_mount_multi(mount)
@@ -136,6 +135,7 @@ class Module(Base):
         if attr == "code":
             from . import parse_function_code
             from .assign import assign
+
             parent = self._parent()
             if callable(value):
                 value = parse_function_code(value)[0]
@@ -167,9 +167,9 @@ class Module(Base):
     def dependencies(self):
         """Returns the dependencies of the module
 
-This is a list of module names that must be connected
-to any Transformer or Macro together with this module.
-"""
+        This is a list of module names that must be connected
+        to any Transformer or Macro together with this module.
+        """
         hnode = self._get_hnode2()
         return tuple(hnode.get("dependencies", []))
 
@@ -188,16 +188,16 @@ to any Transformer or Macro together with this module.
     @property
     def multi(self):
         """If the module is a multi-module
-        
-Multi-modules consist of multiple files.
-The module code is stored as a dict
-where the keys are file names and the values are file contents.
 
-Files in subdirectories have the subdirectory in their file name,
-e.g. "subdirectory/code.py".
-"""
+        Multi-modules consist of multiple files.
+        The module code is stored as a dict
+        where the keys are file names and the values are file contents.
+
+        Files in subdirectories have the subdirectory in their file name,
+        e.g. "subdirectory/code.py".
+        """
         hnode = self._get_hnode()
-        return hnode.get("multi", False)        
+        return hnode.get("multi", False)
 
     @multi.setter
     def multi(self, value):
@@ -219,12 +219,12 @@ e.g. "subdirectory/code.py".
     def internal_package_name(self):
         """For Python packages, the name that is used in internal absolute imports
 
-For example, if a package contains "__init__.py", "spam.py" and "ham.py",
-then "foo.py" could import "spam.eggs" with a relative import ("from .spam import eggs").
-   
-Or, it could use an internal package name like "spamalot" and do
-"from spamalot.spam import eggs"
-"""
+        For example, if a package contains "__init__.py", "spam.py" and "ham.py",
+        then "foo.py" could import "spam.eggs" with a relative import ("from .spam import eggs").
+
+        Or, it could use an internal package name like "spamalot" and do
+        "from spamalot.spam import eggs"
+        """
         if not self.multi:
             raise AttributeError("Only multi modules can have an internal package name")
         hnode = self._get_hnode()
@@ -304,7 +304,7 @@ Or, it could use an internal package name like "spamalot" and do
                     codecell = self._get_codecell()
                     return codecell.checksum
                 except Exception:
-                    raise AttributeError("TEMP value with unknown checksum")
+                    raise AttributeError("TEMP value with unknown checksum") from None
             return Checksum(hnode.get("checksum"))
         else:
             try:
@@ -358,7 +358,7 @@ Or, it could use an internal package name like "spamalot" and do
             return
         try:
             codecell = self._get_codecell()
-        except Exception:            
+        except Exception:
             traceback.print_exc()
             raise
         code = codecell.value
@@ -389,14 +389,11 @@ Or, it could use an internal package name like "spamalot" and do
         codecell = self._get_codecell()
         status = codecell.status
         if status == "Status: OK":
-            gen_moduledict = self._get_ctx().gen_moduledict  
+            gen_moduledict = self._get_ctx().gen_moduledict
             status2 = gen_moduledict.status
             if status2 != "Status: OK":
-                status = {
-                    "gen_moduledict": status2
-                }      
+                status = {"gen_moduledict": status2}
         return status
-
 
     @property
     def exception(self):
@@ -408,12 +405,10 @@ Or, it could use an internal package name like "spamalot" and do
         codecell = self._get_codecell()
         exception = codecell.exception
         if exception is None and codecell.status == "Status: OK":
-            gen_moduledict = self._get_ctx().gen_moduledict  
+            gen_moduledict = self._get_ctx().gen_moduledict
             exc2 = gen_moduledict.exception
             if exc2 is not None:
-                exception = {
-                    "gen_moduledict": exc2
-                }      
+                exception = {"gen_moduledict": exc2}
         return exception
 
     @property
@@ -449,7 +444,7 @@ Or, it could use an internal package name like "spamalot" and do
             raise TypeError("Multi-modules must be written in Python")
         if value not in ("python", "ipython"):
             raise NotImplementedError
-        from ..compiler import find_language
+
         hnode = self._get_hnode2()
         parent = self._parent()
         lang, _, _ = parent.environment._find_language(value)
@@ -466,6 +461,7 @@ Or, it could use an internal package name like "spamalot" and do
     def module(self):
         """Returns the current Python module object"""
         from ..core.build_module import build_module
+
         hnode = self._get_hnode()
         if hnode.get("UNTRANSLATED"):
             return None
@@ -479,12 +475,13 @@ Or, it could use an internal package name like "spamalot" and do
             compilers=root._compilers,
             languages=root._languages,
             module_debug_mounts=[],
-            module_error_name=str(self)
+            module_error_name=str(self),
         )
         return module[1]
 
     def _set_observers(self):
         from ..core.cell import Cell as CoreCell
+
         codecell = self._get_codecell()
         if not isinstance(codecell, CoreCell):
             raise Exception(codecell)
@@ -508,5 +505,6 @@ Or, it could use an internal package name like "spamalot" and do
 
     def __repr__(self):
         return str(self)
+
 
 from .synth_context import SynthContext

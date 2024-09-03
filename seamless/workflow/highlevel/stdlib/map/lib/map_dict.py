@@ -1,5 +1,5 @@
 def map_dict(ctx, graph, inp, has_uniform, elision):
-    #print("map_dict", inp)
+    # print("map_dict", inp)
     from seamless.workflow.core import Cell as CoreCell
     from seamless.workflow.core import cell
     from seamless.workflow.core.structured_cell import StructuredCell
@@ -7,18 +7,18 @@ def map_dict(ctx, graph, inp, has_uniform, elision):
     from seamless.workflow.core.unbound_context import UnboundContext
 
     pseudo_connections = []
-    ctx.result = cell("mixed", hash_pattern = {"*": "#"})
+    ctx.result = cell("mixed", hash_pattern={"*": "#"})
 
-    ctx.sc_data = cell("mixed", hash_pattern = {"*": "#"})
-    ctx.sc_buffer = cell("mixed", hash_pattern = {"*": "#"})
+    ctx.sc_data = cell("mixed", hash_pattern={"*": "#"})
+    ctx.sc_buffer = cell("mixed", hash_pattern={"*": "#"})
     inpkeys = sorted(list(inp.keys()))
     ctx.sc = StructuredCell(
         data=ctx.sc_data,
         buffer=ctx.sc_buffer,
         inchannels=[(k,) for k in inpkeys],
         outchannels=[()],
-        hash_pattern = {"*": "#"},
-        validate_inchannels=False
+        hash_pattern={"*": "#"},
+        validate_inchannels=False,
     )
 
     if has_uniform:
@@ -38,11 +38,21 @@ def map_dict(ctx, graph, inp, has_uniform, elision):
 
         if first:
             if isinstance(hci, StructuredCell):
-                raise TypeError("map_dict context has a cell called 'inp', but its celltype must be mixed, not structured")
+                raise TypeError(
+                    "map_dict context has a cell called 'inp', but its celltype must be mixed, not structured"
+                )
             if not isinstance(hci, CoreCell):
-                raise TypeError("map_dict context must have an attribute 'inp' that is a cell, not a {}".format(type(hci)))
+                raise TypeError(
+                    "map_dict context must have an attribute 'inp' that is a cell, not a {}".format(
+                        type(hci)
+                    )
+                )
             if hci.celltype != "mixed":
-                raise TypeError("map_dict context has a cell called 'inp', but its celltype must be mixed, not {}".format(hci.celltype))
+                raise TypeError(
+                    "map_dict context has a cell called 'inp', but its celltype must be mixed, not {}".format(
+                        hci.celltype
+                    )
+                )
 
         con = ["..inp"], ["ctx", subctx, "inp"]
         pseudo_connections.append(con)
@@ -50,13 +60,21 @@ def map_dict(ctx, graph, inp, has_uniform, elision):
         hci.set_checksum(cs)
 
         if has_uniform:
-            if first :
+            if first:
                 if not hasattr(hc, "uniform"):
-                    raise TypeError("map_dict context must have a cell called 'uniform'")
+                    raise TypeError(
+                        "map_dict context must have a cell called 'uniform'"
+                    )
                 if isinstance(hc.uniform, StructuredCell):
-                    raise TypeError("map_dict context has a cell called 'uniform', but its celltype must be mixed, not structured")
+                    raise TypeError(
+                        "map_dict context has a cell called 'uniform', but its celltype must be mixed, not structured"
+                    )
                 if not isinstance(hc.uniform, CoreCell):
-                    raise TypeError("map_dict context must have an attribute 'uniform' that is a cell, not a {}".format(type(hc.uniform)))
+                    raise TypeError(
+                        "map_dict context must have an attribute 'uniform' that is a cell, not a {}".format(
+                            type(hc.uniform)
+                        )
+                    )
             ctx.uniform.connect(hc.uniform)
             con = ["..uniform"], ["ctx", subctx, "uniform"]
             pseudo_connections.append(con)
@@ -65,9 +83,15 @@ def map_dict(ctx, graph, inp, has_uniform, elision):
             if not hasattr(hc, "result"):
                 raise TypeError("map_dict context must have a cell called 'result'")
             if isinstance(hc.result, StructuredCell):
-                raise TypeError("map_dict context has a cell called 'result', but its celltype must be mixed, not structured")
+                raise TypeError(
+                    "map_dict context has a cell called 'result', but its celltype must be mixed, not structured"
+                )
             if not isinstance(hc.result, CoreCell):
-                raise TypeError("map_dict context must have an attribute 'result' that is a cell, not a {}".format(type(hc.result)))
+                raise TypeError(
+                    "map_dict context must have an attribute 'result' that is a cell, not a {}".format(
+                        type(hc.result)
+                    )
+                )
 
         resultname = "result_%s" % k
         setattr(ctx, resultname, cell("mixed"))
@@ -82,25 +106,34 @@ def map_dict(ctx, graph, inp, has_uniform, elision):
     if not elision:
         ctx._pseudo_connections = pseudo_connections
 
+
 def map_dict_nested(
-  ctx, elision, elision_chunksize, graph, inp, keyorder,
-  *, lib_module_dict, lib_codeblock, lib, has_uniform
+    ctx,
+    elision,
+    elision_chunksize,
+    graph,
+    inp,
+    keyorder,
+    *,
+    lib_module_dict,
+    lib_codeblock,
+    lib,
+    has_uniform
 ):
     from seamless.workflow.core import cell, macro, context, path, transformer
+
     assert len(inp) == len(keyorder)
     length = len(inp)
-    #print("NEST", length, keyorder[0])
+    # print("NEST", length, keyorder[0])
 
     if elision and elision_chunksize > 1 and length > elision_chunksize:
         merge_subresults = lib_module_dict["helper"]["merge_subresults_dict"]
         ctx.lib_module_dict = cell("plain").set(lib_module_dict)
         ctx.lib_codeblock = cell("plain").set(lib_codeblock)
         ctx.main_code = cell("python").set(lib_module_dict["map_dict"]["main"])
-        ctx.lib_module = cell("plain").set({
-            "type": "interpreted",
-            "language": "python",
-            "code": lib_codeblock
-        })
+        ctx.lib_module = cell("plain").set(
+            {"type": "interpreted", "language": "python", "code": lib_codeblock}
+        )
         ctx.graph = cell("plain").set(graph)
         ctx.elision = cell("bool").set(elision)
         ctx.elision_chunksize = cell("int").set(elision_chunksize)
@@ -108,17 +141,17 @@ def map_dict_nested(
         chunk_index = 0
 
         macro_params = {
-            'elision_': {'celltype': 'bool'},
-            'elision_chunksize': {'celltype': 'int'},
-            'graph': {'celltype': 'plain'},
-            "lib_module_dict": {'celltype': 'plain'},
-            "lib_codeblock": {'celltype': 'plain'},
-            "lib": {'celltype': 'plain', 'subcelltype': 'module'},
-            'inp': {'celltype': 'plain'},
-            'has_uniform': {'celltype': 'bool'},
-            'keyorder': {'celltype': 'plain'},
+            "elision_": {"celltype": "bool"},
+            "elision_chunksize": {"celltype": "int"},
+            "graph": {"celltype": "plain"},
+            "lib_module_dict": {"celltype": "plain"},
+            "lib_codeblock": {"celltype": "plain"},
+            "lib": {"celltype": "plain", "subcelltype": "module"},
+            "inp": {"celltype": "plain"},
+            "has_uniform": {"celltype": "bool"},
+            "keyorder": {"celltype": "plain"},
         }
-        
+
         if has_uniform:
             ctx.uniform = cell("mixed")
         subresults = {}
@@ -126,7 +159,7 @@ def map_dict_nested(
         while chunksize * elision_chunksize < length:
             chunksize *= elision_chunksize
         for n in range(0, length, chunksize):
-            chunk_keyorder = keyorder[n:n+chunksize]
+            chunk_keyorder = keyorder[n : n + chunksize]
             chunk_inp = {k: inp[k] for k in chunk_keyorder}
             chunk_index += 1
             subresult = cell("checksum")
@@ -159,7 +192,9 @@ def map_dict_nested(
             ctx._get_manager().set_elision(
                 macro=m,
                 input_cells=input_cells,
-                output_cells={subresult: result_path,}
+                output_cells={
+                    subresult: result_path,
+                },
             )
 
         transformer_params = {}
@@ -169,7 +204,7 @@ def map_dict_nested(
         ctx.merge_subresults = transformer(transformer_params)
         ctx.merge_subresults.code.cell().set(merge_subresults)
         tf = ctx.merge_subresults
-        for subr,c in subresults.items():
+        for subr, c in subresults.items():
             c.connect(getattr(tf, subr))
 
         ctx.result = cell("mixed", hash_pattern={"*": "#"})
@@ -178,25 +213,50 @@ def map_dict_nested(
         lib.map_dict(ctx, graph, inp, has_uniform, elision)
     return ctx
 
-def main(ctx, elision_, elision_chunksize, graph, lib_module_dict, lib_codeblock, inp, keyorder, has_uniform):
+
+def main(
+    ctx,
+    elision_,
+    elision_chunksize,
+    graph,
+    lib_module_dict,
+    lib_codeblock,
+    inp,
+    keyorder,
+    has_uniform,
+):
     lib.map_dict_nested(
-        ctx, elision_, elision_chunksize, graph, inp,
+        ctx,
+        elision_,
+        elision_chunksize,
+        graph,
+        inp,
         lib_module_dict=lib_module_dict,
         lib_codeblock=lib_codeblock,
-        lib=lib, has_uniform=has_uniform,
-        keyorder=keyorder
+        lib=lib,
+        has_uniform=has_uniform,
+        keyorder=keyorder,
     )
     return ctx
 
-def top(ctx, elision_, elision_chunksize, graph, lib_module_dict, lib_codeblock, inp, keyorder, has_uniform):
+
+def top(
+    ctx,
+    elision_,
+    elision_chunksize,
+    graph,
+    lib_module_dict,
+    lib_codeblock,
+    inp,
+    keyorder,
+    has_uniform,
+):
     ctx.lib_module_dict = cell("plain").set(lib_module_dict)
     ctx.lib_codeblock = cell("plain").set(lib_codeblock)
     ctx.main_code = cell("python").set(lib_module_dict["map_dict"]["main"])
-    ctx.lib_module = cell("plain").set({
-        "type": "interpreted",
-        "language": "python",
-        "code": lib_codeblock
-    })
+    ctx.lib_module = cell("plain").set(
+        {"type": "interpreted", "language": "python", "code": lib_codeblock}
+    )
     ctx.graph = cell("plain").set(graph)
     ctx.elision = cell("bool").set(elision_)
     ctx.elision_chunksize = cell("int").set(elision_chunksize)
@@ -206,15 +266,15 @@ def top(ctx, elision_, elision_chunksize, graph, lib_module_dict, lib_codeblock,
         ctx.uniform = cell("mixed")
 
     macro_params = {
-        'elision_': {'celltype': 'bool'},
-        'elision_chunksize': {'celltype': 'int'},
-        'graph': {'celltype': 'plain'},
-        'lib_module_dict': {'celltype': 'plain'},
-        'lib_codeblock': {'celltype': 'plain'},
-        'lib': {'celltype': 'plain', 'subcelltype': 'module'},
-        'inp': {'celltype': 'plain'},
-        'keyorder': {'celltype': 'plain'},
-        'has_uniform': {'celltype': 'bool'},
+        "elision_": {"celltype": "bool"},
+        "elision_chunksize": {"celltype": "int"},
+        "graph": {"celltype": "plain"},
+        "lib_module_dict": {"celltype": "plain"},
+        "lib_codeblock": {"celltype": "plain"},
+        "lib": {"celltype": "plain", "subcelltype": "module"},
+        "inp": {"celltype": "plain"},
+        "keyorder": {"celltype": "plain"},
+        "has_uniform": {"celltype": "bool"},
     }
     ctx.top = macro(macro_params)
     m = ctx.top
@@ -238,9 +298,11 @@ def top(ctx, elision_, elision_chunksize, graph, lib_module_dict, lib_codeblock,
     if has_uniform:
         uniform_path = path(m.ctx).uniform
         ctx.uniform.connect(uniform_path)
-        input_cells={ctx.uniform: uniform_path}
+        input_cells = {ctx.uniform: uniform_path}
     ctx._get_manager().set_elision(
         macro=m,
         input_cells=input_cells,
-        output_cells={ctx.result: result_path,}
+        output_cells={
+            ctx.result: result_path,
+        },
     )

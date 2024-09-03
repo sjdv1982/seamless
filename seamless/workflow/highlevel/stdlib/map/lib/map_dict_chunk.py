@@ -420,7 +420,7 @@ def top(
     result_path = path(m.ctx).result
     ctx.result = cell("mixed")
     if merge_method == "deepcell":
-        ctx.result.hash_pattern={"*": "#"}
+        ctx.result.hash_pattern = {"*": "#"}
     result_path.connect(ctx.result)
 
     input_cells = {}

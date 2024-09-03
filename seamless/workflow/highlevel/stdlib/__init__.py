@@ -2,9 +2,10 @@ import glob, os, json
 from ..library import LibraryContainer
 from ..library.library import set_library
 from ...midlevel.StaticContext import StaticContext
+
 lib = LibraryContainer("stdlib")
 
-currdir=os.path.dirname(os.path.abspath(__file__))
+currdir = os.path.dirname(os.path.abspath(__file__))
 graph_files = glob.glob("{}/*.seamless".format(currdir))
 __all__ = []
 for graph_file in graph_files:
@@ -30,12 +31,16 @@ for graph_file in graph_files:
             api_schema = None
             if hasattr(ssctx, "api_schema"):
                 api_schema = ssctx.api_schema.value
-            path = ("stdlib", graph_name[len("lib-"):], child)
+            path = ("stdlib", graph_name[len("lib-") :], child)
             sub_graph = ssctx.static.get_graph()
             set_library(
-                path, sub_graph, zip, constructor, constructor_params,
+                path,
+                sub_graph,
+                zip,
+                constructor,
+                constructor_params,
                 constructor_schema=constructor_schema,
-                api_schema=api_schema
+                api_schema=api_schema,
             )
     else:
         constructor = sctx.constructor_code.value
@@ -48,12 +53,17 @@ for graph_file in graph_files:
             api_schema = sctx.api_schema.value
         path = ("stdlib", graph_name)
         set_library(
-            path, graph, zip, constructor, constructor_params,
+            path,
+            graph,
+            zip,
+            constructor,
+            constructor_params,
             constructor_schema=constructor_schema,
-            api_schema=api_schema
+            api_schema=api_schema,
         )
     globals()[path[1]] = getattr(lib, path[1])
     __all__.append(path[1])
+
 
 def __dir__():
     return sorted(__all__)

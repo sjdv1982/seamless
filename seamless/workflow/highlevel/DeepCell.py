@@ -1,10 +1,16 @@
+"""DeepCell class and support functions"""
+
 from copy import deepcopy
 from functools import partial
 
 from seamless import Checksum
+from seamless.util import fair
+from seamless.checksum.buffer_cache import empty_list_checksum, empty_dict_checksum
+from seamless.checksum.deserialize import deserialize_sync as deserialize
+
 
 def get_new_deepcell(path):
-    from ..core.cache.buffer_cache import empty_list_checksum, empty_dict_checksum
+    """Create a new DeepCell node for the nodegraph"""
     return {
         "path": path,
         "type": "deepcell",
@@ -12,11 +18,12 @@ def get_new_deepcell(path):
         "checksum": {
             "origin": empty_dict_checksum,
             "keyorder": empty_list_checksum,
-        }
+        },
     }
 
+
 def get_new_deepfoldercell(path):
-    from ..core.cache.buffer_cache import empty_list_checksum, empty_dict_checksum
+    """Create a new DeepFolderCell node for the nodegraph"""
     return {
         "path": path,
         "type": "deepfoldercell",
@@ -24,22 +31,35 @@ def get_new_deepfoldercell(path):
         "checksum": {
             "origin": empty_dict_checksum,
             "keyorder": empty_list_checksum,
-        }
+        },
     }
+
 
 from .Base import Base
 from .HelpMixin import HelpMixin
 
+
 class DeepCellBase(Base, HelpMixin):
+    """Base class for deep cells.
+    Deep cells are cells whose value is a dict of checksums"""
+
     _node = None
     _virtual_path = None  # always None for deep cells
     celltype = "structured"
     _components = (
-        "origin", "keyorder", "blacklist", "whitelist", "apply_blackwhite", 
-        "integrate_options", "filtered", "filtered_keyorder"
+        "origin",
+        "keyorder",
+        "blacklist",
+        "whitelist",
+        "apply_blackwhite",
+        "integrate_options",
+        "filtered",
+        "filtered_keyorder",
     )
 
-    def __init__(self, *, parent=None, path=None):
+    def __init__(
+        self, *, parent=None, path=None
+    ):  # pylint: disable=super-init-not-called
         assert (parent is None) == (path is None)
         if parent is not None:
             self._init(parent, path)
@@ -64,17 +84,17 @@ class DeepCellBase(Base, HelpMixin):
                     return exception
                 else:
                     return "*" + k + "*: " + exception
-    
+
     @property
     def checksum(self) -> Checksum:
         """Contains the checksum of the cell, as SHA3-256 hash.
 
-The checksum defines the value of the cell.
-If the cell is defined, the checksum is available, even if
-the value may not be.
-"""
+        The checksum defines the value of the cell.
+        If the cell is defined, the checksum is available, even if
+        the value may not be.
+        """
         hcell = self._get_hcell2()
-        if self._get_hcell().get("UNTRANSLATED"): 
+        if self._get_hcell().get("UNTRANSLATED"):
             return hcell.get("checksum", {}).get("origin")
         ctx = self._get_context()
         if len(ctx.origin.inchannels):
@@ -88,9 +108,9 @@ the value may not be.
         """Sets the checksum of the cell, as SHA3-256 hash"""
         checksum = Checksum(checksum)
         self.set_checksum(checksum)
-    
+
     def set_checksum(self, checksum: Checksum):
-        from ..core.cache.buffer_cache import empty_dict_checksum
+        """Set the index checksum, i.e. the checksum of the deepcell dict"""
         checksum = Checksum(checksum)
         hcell = self._get_hcell2()
         hcell.pop("metadata", None)
@@ -108,6 +128,8 @@ the value may not be.
 
     @property
     def keyorder(self):
+        """Get the order of the keys of the deepcell.
+        A custom keyorder can help in incremental computing."""
         hcell = self._get_hcell2()
         if hcell.get("UNTRANSLATED"):
             raise AttributeError
@@ -126,7 +148,7 @@ the value may not be.
         ctx = self._get_context()
         cell = ctx.keyorder
         cell.set(keyorder)
-        
+
     @property
     def keyorder_checksum(self):
         """The checksum defining the key order of the deep cell"""
@@ -139,12 +161,12 @@ the value may not be.
             return cell.checksum
 
     @keyorder_checksum.setter
-    def keyorder_checksum(self, checksum):
+    def keyorder_checksum(self, checksum: Checksum):
         """Sets the keyorder checksum, as SHA3-256 hash"""
         self.set_keyorder_checksum(checksum)
 
-    def set_keyorder_checksum(self, checksum:Checksum):
-        from ..core.cache.buffer_cache import empty_list_checksum
+    def set_keyorder_checksum(self, checksum: Checksum):
+        """Sets the keyorder checksum, as SHA3-256 hash"""
         checksum = Checksum(checksum)
         hcell = self._get_hcell2()
         hcell.pop("metadata", None)
@@ -160,20 +182,19 @@ the value may not be.
             checksum = Checksum(empty_list_checksum)
         cell.set_checksum(checksum)
 
-    def define(self, distribution:dict):
+    def define(self, distribution: dict):
         """Defines a DeepCell from a distribution
-A distribution is a dict containing at least "checksum" and "keyorder", 
-which are Seamless checksums.
-Distribution metadata ("content_size", "index_size", "nkeys", "access_index")
-is stored as well, if available.
-"""
-        from seamless.fair import find
+        A distribution is a dict containing at least "checksum" and "keyorder",
+        which are Seamless checksums.
+        Distribution metadata ("content_size", "index_size", "nkeys", "access_index")
+        is stored as well, if available.
+        """
         self.set_checksum(distribution["checksum"])
         self.set_keyorder_checksum(distribution["keyorder"])
         meta_keys = ["content_size", "index_size", "nkeys", "access_index"]
         try:
             distribution2 = None
-            result = find(distribution["checksum"])
+            result = fair.find(distribution["checksum"])
             if result is not None:
                 dataset, distribution2 = result["dataset"], result["distribution"]
             else:
@@ -222,10 +243,10 @@ is stored as well, if available.
     def filtered_checksum(self):
         """Contains the filtered checksum of the cell, as SHA3-256 hash.
 
-This is after blacklist/whitelist filtering has been applied
-"""
+        This is after blacklist/whitelist filtering has been applied
+        """
         hcell = self._get_hcell2()
-        if self._get_hcell().get("UNTRANSLATED"): 
+        if self._get_hcell().get("UNTRANSLATED"):
             return hcell.get("checksum", {}).get("filtered")
         ctx = self._get_context()
         return ctx.filtered0.checksum
@@ -234,10 +255,10 @@ This is after blacklist/whitelist filtering has been applied
     def filtered_keyorder(self):
         """Contains the filtered keyorder of the cell.
 
-This is after blacklist/whitelist filtering has been applied
-"""
-        hcell = self._get_hcell2()
-        if self._get_hcell().get("UNTRANSLATED"): 
+        This is after blacklist/whitelist filtering has been applied
+        """
+        _hcell = self._get_hcell2()
+        if self._get_hcell().get("UNTRANSLATED"):
             raise AttributeError
         ctx = self._get_context()
         return ctx.filtered_keyorder.value
@@ -261,7 +282,7 @@ This is after blacklist/whitelist filtering has been applied
 
     def set(self, value):
         """Sets the deep cell to a particular in-memory value
-        Deep cell must have been translated first. 
+        Deep cell must have been translated first.
         """
         hcell = self._get_hcell()
         if hcell.get("UNTRANSLATED"):
@@ -273,9 +294,9 @@ This is after blacklist/whitelist filtering has been applied
     def status(self):
         """Returns the status of the deep cell.
 
-The status may be undefined, pending, error or OK
-If it is error, cell.exception will be non-empty.
-"""
+        The status may be undefined, pending, error or OK
+        If it is error, cell.exception will be non-empty.
+        """
         if self._get_hcell().get("UNTRANSLATED"):
             return "Status: error (ctx needs translation)"
         ctx = self._get_context()
@@ -304,8 +325,9 @@ If it is error, cell.exception will be non-empty.
         return "Status: OK"
 
     def access(self, key):
-        from ..fair import access
-        from ..core.protocol.deserialize import deserialize_sync as deserialize
+        """Access the full value of an individual dict key.
+        Use the FAIR server to download the value."""
+
         ctx = self._get_context()
         cell = ctx.origin
         data = cell.data
@@ -315,26 +337,28 @@ If it is error, cell.exception will be non-empty.
         else:
             celltype = "mixed"
         cs = bytes.fromhex(checksum)
-        buf = access(checksum, celltype, verbose=True)
+        buf = fair.access(checksum, celltype, verbose=True)
         return deserialize(buf, cs, celltype, copy=False)
 
     @property
     def value(self):
+        """Get a dict with each checksum expanded to its full value"""
         msg = """It is too costly to construct the full value of a deep cell
 Use cell.data instead."""
         raise AttributeError(msg)
 
     @property
     def schema(self):
+        """Deep cell schema"""
         raise AttributeError("Deep cell schemas are currently disabled.")
 
-    def share(self, *, options:dict, path:str=None, toplevel=False):
+    def share(self, *, options: dict, path: str = None, toplevel=False):
         """TODO: document"""
         options2 = options
         for key, value in options.items():
             key = str(key)
             if not isinstance(value, dict):
-                raise ValueError((key,value))
+                raise ValueError((key, value))
             if sorted(value.keys()) != ["checksum", "keyorder"]:
                 raise ValueError("Wrong keys: {}".format((key, value)))
             value2 = {}
@@ -342,14 +366,11 @@ Use cell.data instead."""
                 try:
                     subvalue = Checksum(subvalue).hex()
                 except ValueError:
-                    raise ValueError((subkey,subvalue)) from None
+                    raise ValueError((subkey, subvalue)) from None
                 value2[subkey] = subvalue
             options2[key] = value2
         hcell = self._get_hcell()
-        hcell["share"] = {
-            "path": path,
-            "options": options2
-        }
+        hcell["share"] = {"path": path, "options": options2}
         if toplevel:
             hcell["share"]["toplevel"] = True
 
@@ -369,6 +390,7 @@ Use cell.data instead."""
 
     def _setattr(self, attr, value):
         from .assign import assign_to_deep_subcell
+
         assign_to_deep_subcell(self, attr, value)
 
     def _get_context(self):
@@ -396,7 +418,7 @@ Use cell.data instead."""
             self._node = self._new_func(None)
         return self._node
 
-    def _observe(self, key, checksum:Checksum):
+    def _observe(self, key, checksum: Checksum):
         checksum = Checksum(checksum)
         if self._parent() is None:
             return
@@ -427,10 +449,7 @@ Use cell.data instead."""
     def _get_subcell(self, attr):
         self._get_hcell()
         parent = self._parent()
-        return DeepSubCell(
-            parent, self,
-            attr, readonly=False
-        )
+        return DeepSubCell(parent, self, attr, readonly=False)
 
     def __getattribute__(self, attr):
         if attr.startswith("_"):
@@ -451,13 +470,16 @@ Use cell.data instead."""
     def _set_bwlist(self, bw, value):
         from .assign import assign_connection
         from .Cell import Cell
+
         if value is None or isinstance(value, (list, tuple)):
             ctx = self._get_context()
             cell = getattr(ctx, bw)
             cell.set(value)
         elif isinstance(value, Cell):
             ctx = self._parent()
-            assert value._parent() is ctx #no connections between different (toplevel) contexts
+            assert (
+                value._parent() is ctx
+            )  # no connections between different (toplevel) contexts
             assign_connection(ctx, value._path, self._path + (bw,), False)
             hcell = self._get_hcell2()
             hcell.pop("TEMP", None)
@@ -469,6 +491,7 @@ Use cell.data instead."""
 
     @property
     def blacklist(self):
+        """The blacklist contains a list of keys that are filtered out when the deepcell is connected from"""
         hcell = self._get_hcell2()
         if hcell.get("UNTRANSLATED"):
             raise AttributeError("Can set blacklist only after translation")
@@ -483,6 +506,7 @@ Use cell.data instead."""
 
     @property
     def whitelist(self):
+        """The blacklist contains a list of keys that are NOT filtered out when the deepcell is connected from"""
         hcell = self._get_hcell2()
         if hcell.get("UNTRANSLATED"):
             raise AttributeError
@@ -503,8 +527,13 @@ Use cell.data instead."""
 
     def __repr__(self):
         return str(self)
-    
+
+
 class DeepFolderCell(DeepCellBase):
+    """Class for deep folder cells.
+    Deep folder cells are cells whose value is a dict of checksums.
+    The keys correspond to file names/paths."""
+
     _new_func = get_new_deepfoldercell
     hash_pattern = {"*": "##"}
 
@@ -512,11 +541,29 @@ class DeepFolderCell(DeepCellBase):
         return "Seamless DeepFolderCell: " + self.path
 
     @staticmethod
-    def find_distribution(dataset:str, *, version:str=None, date:str=None, format:str=None, compression:str=None):
-        from seamless.fair import find_distribution
-        distribution = find_distribution(
-            dataset, type="deepfolder",
-            version=version, date=date, format=format, compression=compression
+    def find_distribution(
+        dataset: str,
+        *,
+        version: str = None,
+        date: str = None,
+        format: str = None,  # pylint: disable=redefined-builtin
+        compression: str = None
+    ):
+        """Contact a FAIR server to find a distribution.
+        The result is wrapped in a DeepFolderCell.
+
+        "dataset", "version", "date", "format"  are arbitrary strings
+        used to uniquely define the distribution.
+        "compression" can be "gz", ..., or None.
+
+        """
+        distribution = fair.find_distribution(
+            dataset,
+            type="deepfolder",
+            version=version,
+            date=date,
+            format=format,
+            compression=compression,
         )
         ''' # disable for now, as it also gives access data
         print("""WARNING: finding a FAIR data distribution for a DeepFolderCell
@@ -562,7 +609,13 @@ class DeepListCell(DeepCellBase):
             raise TypeError(item)
 """
 
+
 class DeepCell(DeepCellBase):
+    """Class for deep cells.
+    Deep cells are cells whose value is a dict of checksums.
+    The checksums correspond to "mixed" buffers, i.e.
+    JSON and/or Numpy format."""
+
     _new_func = get_new_deepcell
     hash_pattern = {"*": "#"}
 
@@ -570,11 +623,30 @@ class DeepCell(DeepCellBase):
         return "Seamless DeepCell: " + self.path
 
     @staticmethod
-    def find_distribution(dataset:str, *, version:str=None, date:str=None, format:str=None, compression:str=None):
-        from seamless.fair import find_distribution
-        distribution = find_distribution(
-            dataset, type="deepcell",
-            version=version, date=date, format=format, compression=compression
+    def find_distribution(
+        dataset: str,
+        *,
+        version: str = None,
+        date: str = None,
+        format: str = None,  # pylint: disable=redefined-builtin
+        compression: str = None
+    ):
+        """Contact a FAIR server to find a distribution.
+        The result is wrapped in a DeepCell.
+
+        "dataset", "version", "date", "format"  are arbitrary strings
+        used to uniquely define the distribution.
+        "compression" can be "gz", ..., or None.
+
+        """
+
+        distribution = fair.find_distribution(
+            dataset,
+            type="deepcell",
+            version=version,
+            date=date,
+            format=format,
+            compression=compression,
         )
         ''' # disable for now, as it also gives access data
         print("""WARNING: finding a FAIR data distribution for a DeepCell

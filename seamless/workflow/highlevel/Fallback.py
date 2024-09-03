@@ -2,6 +2,7 @@ import weakref
 
 from seamless import Checksum
 
+
 def set_fallback(cell, fallback_cell):
     try:
         core_cell = cell._get_cell()
@@ -36,22 +37,23 @@ def set_fallback(cell, fallback_cell):
 class Fallback:
     """Defines a fallback relationship: cell <=> fallback cell
     Both cell and fallback_cell are Cells.
-    A fallback is constructed as fallback = Fallback(cell)(fallback_cell).    
+    A fallback is constructed as fallback = Fallback(cell)(fallback_cell).
     When a fallback is activated, this is passed on the low level:
      there, fallback_cell.checksum is constantly propagated onto downstream
      targets of cell.
     When a fallback is cleared, cell.checksum is then again propagated onto
     its downstream targets.
-    
+
     If fallback_cell is not None, cell._fallback is set to fallback_cell.
     (at both the high and the low level).
     In addition, cell is registered as a reverse fallback of fallback_cell
     (at the low level. It is also added to the high level if the two cells
     are in different Contexts.)
-    
-    If fallback_cell is set to None, cell._fallback is cleared and 
+
+    If fallback_cell is set to None, cell._fallback is cleared and
     any reverse fallbacks are unregistered.
     """
+
     def __new__(cls, cell):
         if cell._fallback is not None:
             return cell._fallback
@@ -63,7 +65,7 @@ class Fallback:
         if not isinstance(cell, Cell):
             raise TypeError(type(cell))
         self._cell = weakref.ref(cell)  # high-level cell!
-        self._fallback_cell = None      # high-level cell!
+        self._fallback_cell = None  # high-level cell!
 
     def __call__(self, fallback_cell):
         if fallback_cell is not None:
@@ -91,12 +93,13 @@ class Fallback:
 
     def _activate(self):
         """Activates the fallback.
-        To be called after translation of the toplevel Context, of either cell or fallback_cell."""
+        To be called after translation of the toplevel Context, of either cell or fallback_cell.
+        """
         cell = self._cell()
         if cell is None:
             return
         if self._fallback_cell is None:
-            return None        
+            return None
         fb = self._fallback_cell()
         set_fallback(cell, fb)
 
@@ -105,12 +108,13 @@ class Fallback:
         if cell is None:
             return None
         if self._fallback_cell is None:
-            return None        
+            return None
         fb = self._fallback_cell()
         if fb is None:
             self._clear()
             return None
         result = "Fallback from {} to {}".format(cell, fb)
         return result
+
 
 from .Cell import Cell

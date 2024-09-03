@@ -19,22 +19,33 @@ import sys
 
 ctx = Context()
 
-def macro_code(ctx, tf_graph, scattered_input, scattered_input_name, celltypes, **kwargs):
+
+def macro_code(
+    ctx, tf_graph, scattered_input, scattered_input_name, celltypes, **kwargs
+):
     for k in kwargs:
         assert k.startswith("PIN_"), k
     if isinstance(scattered_input, list):
-        keys = range(1,len(scattered_input)+1)
+        keys = range(1, len(scattered_input) + 1)
         values = scattered_input
         hash_pattern = {"!": "#"}
     elif isinstance(scattered_input, dict):
         for k in scattered_input:
             if not isinstance(k, str):
-                raise TypeError("Pin '{}' to scatter is a dict with non-string key '{}'".format(scattered_input_name, k))
+                raise TypeError(
+                    "Pin '{}' to scatter is a dict with non-string key '{}'".format(
+                        scattered_input_name, k
+                    )
+                )
         keys = scattered_input.keys()
         values = scattered_input.values()
         hash_pattern = {"*": "#"}
     else:
-        raise TypeError("Pin '{}' to scatter must be a list or dict, not '{}'".format(scattered_input_name, type(scattered_input)))
+        raise TypeError(
+            "Pin '{}' to scatter must be a list or dict, not '{}'".format(
+                scattered_input_name, type(scattered_input)
+            )
+        )
 
     pseudo_connections = []
     ctx.result = cell("mixed", hash_pattern=hash_pattern)
@@ -46,7 +57,7 @@ def macro_code(ctx, tf_graph, scattered_input, scattered_input_name, celltypes, 
         buffer=ctx.sc_buffer,
         inchannels=[(k,) for k in keys],
         outchannels=[()],
-        hash_pattern = hash_pattern
+        hash_pattern=hash_pattern,
     )
 
     for key, value in zip(keys, values):
@@ -60,13 +71,13 @@ def macro_code(ctx, tf_graph, scattered_input, scattered_input_name, celltypes, 
         hc[scattered_input_name].set(value)
         con = [".." + scattered_input_name], ["ctx", subctx, "tf", scattered_input_name]
         pseudo_connections.append(con)
-        
+
         tf_result_name = "TRANSFORMER_RESULT_" + str(key)
         c = cell(celltypes.get("result", "mixed"))
         setattr(ctx, tf_result_name, c)
         hc.result.connect(c)
         c.connect(ctx.sc.inchannels[(key,)])
-        
+
         con = ["ctx", subctx, "result"], ["..result"]
         pseudo_connections.append(con)
 
@@ -74,10 +85,7 @@ def macro_code(ctx, tf_graph, scattered_input, scattered_input_name, celltypes, 
     ctx._pseudo_connections = pseudo_connections
 
 
-def constructor(
-    ctx, libctx,
-    language, code, result, scatter, inputpins, celltypes
-):
+def constructor(ctx, libctx, language, code, result, scatter, inputpins, celltypes):
     ctx.code = Cell("text")
     ctx.code.set(code)
     ctx.result = Cell()
@@ -91,16 +99,24 @@ def constructor(
         scattered_value = scattered_input[1]
 
         if isinstance(scattered_value, list):
-            keys = range(1,len(scattered_value)+1)
+            keys = range(1, len(scattered_value) + 1)
             values = scattered_value
         elif isinstance(scattered_value, dict):
             for k in scattered_value:
                 if not isinstance(k, str):
-                    raise TypeError("Pin '{}' to scatter is a dict with non-string key '{}'".format(scatter, k))
+                    raise TypeError(
+                        "Pin '{}' to scatter is a dict with non-string key '{}'".format(
+                            scatter, k
+                        )
+                    )
             keys = scattered_value.keys()
             values = scattered_value.values()
         else:
-            raise TypeError("Pin '{}' to scatter must be a list or dict, not '{}'".format(scatter, type(scattered_value)))
+            raise TypeError(
+                "Pin '{}' to scatter must be a list or dict, not '{}'".format(
+                    scatter, type(scattered_value)
+                )
+            )
 
         for pin_name in inputpins:
             if pin_name == scatter:
@@ -133,7 +149,7 @@ def constructor(
     elif scattered_input[0] == "cell":
         # Complex case (scattered input as cell)
         scattered_cell = scattered_input[1]
-        
+
         tf_ctx = Context()
         tf_ctx[scatter] = Cell(celltype=celltypes.get(scatter, "mixed"))
         tf = tf_ctx.tf = Transformer()
@@ -163,7 +179,7 @@ def constructor(
         ctx.scattered_input = Cell(scattered_cell.celltype)
         ctx.m.scattered_input = ctx.scattered_input
         scattered_cell.connect(ctx.scattered_input)
-        ctx.m.scattered_input_name = scatter 
+        ctx.m.scattered_input_name = scatter
         ctx.m.celltypes = celltypes
 
         for pin_name in inputpins:
@@ -178,34 +194,21 @@ def constructor(
 
         ctx.m.pins.result = {"io": "output", "celltype": "mixed"}
         ctx.result = ctx.m.result
-    
+
     else:
         raise TypeError(scattered_input[0])
     result.connect_from(ctx.result)
 
+
 ctx.macro_code = Cell("code").set(macro_code)
 ctx.constructor_code = Cell("code").set(constructor)
 ctx.constructor_params = {
-    "language": {
-        "type": "value",
-        "io": "input",
-        "default": "python"
-    },
+    "language": {"type": "value", "io": "input", "default": "python"},
     "code": "value",
-    "result": {
-        "type": "cell",
-        "io": "output"
-    },
+    "result": {"type": "cell", "io": "output"},
     "scatter": "value",
-    "celltypes": {
-        "type": "value",
-        "io": "input",
-        "default": {}
-    },
-    "inputpins": {
-        "type": "kwargs",
-        "io": "input"
-    },
+    "celltypes": {"type": "value", "io": "input", "default": {}},
+    "inputpins": {"type": "kwargs", "io": "input"},
 }
 
 ctx.compute()
@@ -218,6 +221,7 @@ zip = ctx.get_zip()
 # 3: Package the contexts in a library
 
 from seamless.highlevel.library import LibraryContainer
+
 mylib = LibraryContainer("mylib")
 mylib.scatter_transformer = ctx
 mylib.scatter_transformer.constructor = ctx.constructor_code.value
@@ -228,8 +232,11 @@ mylib.scatter_transformer.params = ctx.constructor_params.value
 ctx = Context()
 ctx.include(mylib.scatter_transformer)
 
-def add(a,b):
-    return a+b
+
+def add(a, b):
+    return a + b
+
+
 ctx.tf = ctx.lib.scatter_transformer()
 ctx.tf.code = add
 ctx.tf.scatter = "a"
@@ -244,9 +251,7 @@ if ctx.tf.status != "Status: OK":
 print(ctx.result.value)
 
 ctx.tf.a = {"x": 100.1, "y": 200.1, "z": 300.1}
-ctx.tf.celltypes = {
-    "a": "int"
-}
+ctx.tf.celltypes = {"a": "int"}
 ctx.b = -1000
 ctx.compute()
 print(ctx.tf.status)
@@ -261,19 +266,20 @@ ctx.compute()
 print(ctx.tf.status)
 if ctx.tf.status != "Status: OK":
     print(ctx.tf.exception)
-    #print(ctx.tf.ctx.m.exception)
-    #print(ctx.tf.ctx.m.ctx.subctx_p.tf.exception)
+    # print(ctx.tf.ctx.m.exception)
+    # print(ctx.tf.ctx.m.ctx.subctx_p.tf.exception)
 print(ctx.result.value)
 
 
 ctx.a = {"pp": 100, "qq": 200, "rr": 300}
 import asyncio
+
 asyncio.get_event_loop().run_until_complete(asyncio.sleep(2))  # no re-translation
 print(ctx.tf.status)
 if ctx.tf.status != "Status: OK":
     print(ctx.tf.exception)
-    #print(ctx.tf.ctx.m.exception)
-    #print(ctx.tf.ctx.m.ctx.subctx_p.tf.exception)
+    # print(ctx.tf.ctx.m.exception)
+    # print(ctx.tf.ctx.m.ctx.subctx_p.tf.exception)
 print(ctx.result.value)
 
 if not ctx.result.value.unsilk:
@@ -282,11 +288,12 @@ if not ctx.result.value.unsilk:
 # 5: Save graph and zip
 
 import os, json
-currdir=os.path.dirname(os.path.abspath(__file__))
-graph_filename=os.path.join(currdir,"../scatter_transformer.seamless")
+
+currdir = os.path.dirname(os.path.abspath(__file__))
+graph_filename = os.path.join(currdir, "../scatter_transformer.seamless")
 json.dump(graph, open(graph_filename, "w"), sort_keys=True, indent=2)
 
-zip_filename=os.path.join(currdir,"../scatter_transformer.zip")
+zip_filename = os.path.join(currdir, "../scatter_transformer.zip")
 with open(zip_filename, "bw") as f:
     f.write(zip)
 print("Graph saved")

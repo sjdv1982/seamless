@@ -1,16 +1,18 @@
 import weakref
 from copy import deepcopy
 from .CompiledObjectWrapper import CompiledObjectWrapper
+
 Transformer = None
 
 module_attrs = "compiler_verbose", "target", "link_options", "headers"
+
 
 class CompiledObjectDict:
     def __init__(self, worker):
         global Transformer
         if Transformer is None:
             from ..Transformer import Transformer
-        object.__setattr__(self,"_worker", weakref.ref(worker))
+        object.__setattr__(self, "_worker", weakref.ref(worker))
 
     @property
     def headers(self):
@@ -28,11 +30,15 @@ class CompiledObjectDict:
     def _set_headers(self, value):
         worker = self._worker()
         parent = worker._parent()
-        target_path = worker._path + ("_main_module", "headers",)
+        target_path = worker._path + (
+            "_main_module",
+            "headers",
+        )
         if isinstance(value, Cell):
             from ..assign import assign_connection
+
             assert value._parent() == parent
-            #TODO: check existing inchannel connections and links (cannot be the same or higher)
+            # TODO: check existing inchannel connections and links (cannot be the same or higher)
             exempt = worker._exempt()
             assign_connection(parent, value._path, target_path, False, exempt=exempt)
             parent._translate()
@@ -111,7 +117,9 @@ class CompiledObjectDict:
                     handle.set({})
                 handle[attr] = value
         else:
-            raise TypeError("Cannot assign directly an entire module object; assign individual elements")
+            raise TypeError(
+                "Cannot assign directly an entire module object; assign individual elements"
+            )
         worker._parent()._translate()
 
     def __dir__(self):
@@ -132,5 +140,6 @@ class CompiledObjectDict:
 
     def __delattr__(self, attr):
         raise NotImplementedError
+
 
 from ...highlevel.Cell import Cell, Resource

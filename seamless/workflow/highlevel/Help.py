@@ -1,13 +1,13 @@
 import weakref
 from functools import wraps
 
-from seamless.workflow.core.macro import Path
-
 from .Cell import Cell
 from .SubContext import SubContext
 
+
 class HelpWrapper:
     _wrapped_stronglink = None
+
     def __init__(self, wrapped, sub_path=None):
         if sub_path is None:
             sub_path = ()
@@ -45,6 +45,7 @@ class HelpWrapper:
 
     def _get_ctx(self):
         from ..midlevel.StaticContext import StaticContext
+
         wrapped = self._get_wrapped()
         if wrapped is None:
             return None
@@ -58,14 +59,15 @@ class HelpWrapper:
     def __str__(self):
         result = "{} for {}".format(type(self).__name__, self._get_wrapped())
         if len(self._sub_path):
-            result += ", sub-path ." + ".".join(self._sub_path) 
+            result += ", sub-path ." + ".".join(self._sub_path)
         return result
 
     def __repr__(self):
         return str(self)
 
+
 class HelpCell(HelpWrapper):
-        
+
     @property
     def _index_path(self):
         return self._help_path + ("INDEX",)
@@ -79,20 +81,17 @@ class HelpCell(HelpWrapper):
         help_index_cell = ctx._children.get(self._index_path)
         if create and help_index_cell is None:
             path = self._index_path
-            Cell(parent=ctx, path=path) #inserts itself as child
+            Cell(parent=ctx, path=path)  # inserts itself as child
             cell = get_new_cell(path)
             cell["celltype"] = "text"
             cell["UNTRANSLATED"] = True
             nodes = ctx._graph[0]
             nodes[path] = cell
             help_index_cell = ctx._children[path]
-            for n in range(1, len(self._help_path)+1):
+            for n in range(1, len(self._help_path) + 1):
                 p = self._help_path[:n]
                 if p not in nodes:
-                    nodes[p] = {
-                        "path": p,
-                        "type": "context"
-                    }
+                    nodes[p] = {"path": p, "type": "context"}
             ctx._translate()
 
         return help_index_cell
@@ -144,7 +143,7 @@ class HelpCell(HelpWrapper):
         if help_index_cell is None:
             raise AttributeError
         help_index_cell.mimetype = value
-    
+
     @wraps(Cell.mount)
     def mount(self, *args, **kwargs):
         help_index_cell = self._help_index_cell(create=True)
@@ -213,7 +212,7 @@ class HelpCell(HelpWrapper):
 class HelpContext(HelpWrapper):
 
     @property
-    def _context_path(self):        
+    def _context_path(self):
         return ("HELP",) + self._path + ("CTX",) + self._sub_path
 
     def _create_subcontext(self):
@@ -222,13 +221,10 @@ class HelpContext(HelpWrapper):
             raise AttributeError
         path = self._context_path
         nodes = ctx._graph[0]
-        for n in range(1, len(path)+1):
+        for n in range(1, len(path) + 1):
             p = path[:n]
             if p not in nodes:
-                nodes[p] = {
-                    "path": p,
-                    "type": "context"
-                }
+                nodes[p] = {"path": p, "type": "context"}
 
     def _get_subcontext(self):
         ctx = self._get_ctx()
@@ -240,7 +236,7 @@ class HelpContext(HelpWrapper):
             raise AttributeError
         if nodes[path]["type"] != "context":
             raise TypeError
-        return SubContext(ctx, path)        
+        return SubContext(ctx, path)
 
     def __getitem__(self, attr):
         if not isinstance(attr, str):
@@ -305,6 +301,5 @@ class HelpContext(HelpWrapper):
         d = [p for p in type(self).__dict__ if not p.startswith("_")]
         return sorted(d + self.get_children())
 
-   
-from .Context import SubContext
+
 from .assign import get_new_cell, assign

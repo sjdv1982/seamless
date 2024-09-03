@@ -1,6 +1,7 @@
 def merge_subresults_list(**subresults):
     import numpy as np
     import itertools
+
     result0 = []
     for k in sorted(subresults.keys()):
         v = subresults[k]
@@ -9,7 +10,7 @@ def merge_subresults_list(**subresults):
         result0.append(v)
     if not len(result0):
         return []
-    
+
     first = result0[0]
     if isinstance(first, np.ndarray):
         totlen = sum([len(v) for v in result0])
@@ -27,11 +28,13 @@ def merge_subresults_list(**subresults):
 
     return result
 
+
 def merge_subresults_dict(**subresults):
     result = {}
     for sub in subresults.values():
         result.update(sub)
     return result
+
 
 def merge_subresults_chunk(subresults):
     result = {}
@@ -39,9 +42,11 @@ def merge_subresults_chunk(subresults):
         result.update(sub)
     return result
 
+
 def merge_subresults_chunk_list(subresults):
     import numpy as np
     import itertools
+
     first_type, first_dtype = None, None
     first = True
     totlen = 0
@@ -54,7 +59,11 @@ def merge_subresults_chunk_list(subresults):
             if not len(v):
                 continue
             if v.ndim != 1:
-                raise TypeError("Merged subresult '{}' numpy array must be one-dimensional".format(vnr))
+                raise TypeError(
+                    "Merged subresult '{}' numpy array must be one-dimensional".format(
+                        vnr
+                    )
+                )
             v_dtype = v.dtype
         elif issubclass(v_type, list):
             if not len(v):
@@ -65,8 +74,12 @@ def merge_subresults_chunk_list(subresults):
                     continue
             except Exception:
                 pass
-            raise TypeError("Merged subresult '{}' must be list or numpy array, not {}".format(vnr, v_type))
-        
+            raise TypeError(
+                "Merged subresult '{}' must be list or numpy array, not {}".format(
+                    vnr, v_type
+                )
+            )
+
         if first:
             first_type = v_type
             first_dtype = v_dtype
@@ -74,10 +87,18 @@ def merge_subresults_chunk_list(subresults):
             first = False
         else:
             if v_type != first_type:
-                raise TypeError("Type mismatch between subresults '{}' and '{}': {} vs {}".format(first_vnr, vnr, first_type, v_type))
+                raise TypeError(
+                    "Type mismatch between subresults '{}' and '{}': {} vs {}".format(
+                        first_vnr, vnr, first_type, v_type
+                    )
+                )
             if v_dtype != first_dtype:
-                raise TypeError("Numpy dtype mismatch between subresults '{}' and '{}': {} vs {}".format(first_vnr, vnr, first_dtype, v_dtype))
-        
+                raise TypeError(
+                    "Numpy dtype mismatch between subresults '{}' and '{}': {} vs {}".format(
+                        first_vnr, vnr, first_dtype, v_dtype
+                    )
+                )
+
         totlen += len(v)
 
     if first_type is None:  # all subresults are empty lists
@@ -95,6 +116,7 @@ def merge_subresults_chunk_list(subresults):
     else:
         result = list(itertools.chain(*subresults))
     return result
+
 
 def calc_keyorder(inp_, keyorder0):
     result = []

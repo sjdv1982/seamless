@@ -20,7 +20,11 @@ def constructor(
     m.pins.graph.celltype = "plain"
 
     if merge_method == "deepcell":
-        m.pins.result = {"io": "output", "celltype": "mixed", "hash_pattern": {"*": "#"}}
+        m.pins.result = {
+            "io": "output",
+            "celltype": "mixed",
+            "hash_pattern": {"*": "#"},
+        }
     elif merge_method == "dict" or merge_method == "list":
         m.pins.result = {"io": "output", "celltype": "mixed"}
 

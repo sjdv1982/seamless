@@ -1,5 +1,6 @@
 from weakref import ref
 
+
 class SchemaWrapper:
     def __init__(self, parent, wrapped, path):
         self._wrapped = wrapped

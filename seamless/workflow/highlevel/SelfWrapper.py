@@ -1,8 +1,11 @@
 from functools import partial, update_wrapper
 
+
 class SelfWrapper:
     """Wraps class attributes that could be overruled by instance attributes"""
+
     _ATTRIBUTES = "Attributes"
+
     def __init__(self, wrapped, attributelist):
         self._attributelist = attributelist
         self._wrapped = wrapped
@@ -41,9 +44,9 @@ class SelfWrapper:
     def __repr__(self):
         return str(self)
 
+
 class ChildrenWrapper(SelfWrapper):
     _ATTRIBUTES = "Children"
 
     def _get_prop(self, attr):
         return self._wrapped._get_from_path((attr,))
-    
