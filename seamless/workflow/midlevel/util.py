@@ -1,7 +1,7 @@
-from seamless.workflow.core import cell as core_cell, \
- transformer, reactor, context, macro, StructuredCell, Inchannel
-import traceback
+from seamless.workflow.core import cell as core_cell, context, StructuredCell, Inchannel
+
 STRUC_ID = "_STRUC"
+
 
 def get_path_link(root, path, namespace):
     if path[-1] in ("SCHEMA", "RESULTSCHEMA"):
@@ -15,10 +15,10 @@ def get_path_link(root, path, namespace):
     else:
         return get_path(root, path, namespace, False)
 
-def get_path(root, path, namespace, is_target,
-  *, until_structured_cell=False,
-  return_node=False
- ):
+
+def get_path(
+    root, path, namespace, is_target, *, until_structured_cell=False, return_node=False
+):
     edit = False
     if namespace is not None:
         for key in namespace:
@@ -33,9 +33,9 @@ def get_path(root, path, namespace, is_target,
             for p, cmode in namespace:
                 if cmode != "edit" and cmode != cmode0:
                     continue
-                if path[:len(p)] == p:
+                if path[: len(p)] == p:
                     subroot = namespace[p, cmode][0]
-                    subpath = path[len(p):]
+                    subpath = path[len(p) :]
                     hit = get_path(subroot, subpath, None, None, return_node=True)
         if hit is not None:
             hit, node = hit
@@ -74,17 +74,19 @@ def get_path(root, path, namespace, is_target,
         else:
             return c
 
+
 def find_channels(path, connection_paths):
     inchannels = []
     outchannels = []
     for source, target in connection_paths:
-        if source[:len(path)] == path:
-            p = source[len(path):]
+        if source[: len(path)] == path:
+            p = source[len(path) :]
             outchannels.append(p)
-        if target[:len(path)] == path:
-            p = target[len(path):]
+        if target[: len(path)] == path:
+            p = target[len(path) :]
             inchannels.append(p)
     return inchannels, outchannels
+
 
 def cell_setattr(node, ctx, name, c):
     setattr(ctx, name, c)
@@ -93,17 +95,22 @@ def cell_setattr(node, ctx, name, c):
     if node.get("fingertip_no_remote"):
         c._fingertip_remote = False
 
+
 def build_structured_cell(
-  ctx, name,
-  inchannels, outchannels,
-  *, fingertip_no_remote, fingertip_no_recompute,
-  return_context=False,
-  hash_pattern=None,
-  validate_inchannels=True,
-  scratch=False,
-  auth_subchecksums_persistent=False
+    ctx,
+    name,
+    inchannels,
+    outchannels,
+    *,
+    fingertip_no_remote,
+    fingertip_no_recompute,
+    return_context=False,
+    hash_pattern=None,
+    validate_inchannels=True,
+    scratch=False,
+    auth_subchecksums_persistent=False
 ):
-    #print("build_structured_cell", name)
+    # print("build_structured_cell", name)
     name2 = name + STRUC_ID
     c = context(toplevel=False)
     setattr(ctx, name2, c)
@@ -131,15 +138,11 @@ def build_structured_cell(
         inchannels=inchannels,
         outchannels=outchannels,
         hash_pattern=hash_pattern,
-        validate_inchannels=validate_inchannels
+        validate_inchannels=validate_inchannels,
     )
     c.example_data = core_cell("mixed")
     c.example_buffer = core_cell("mixed")
-    c.example = StructuredCell(
-        c.example_data,
-        buffer=c.example_buffer,
-        schema=c.schema
-    )
+    c.example = StructuredCell(c.example_data, buffer=c.example_buffer, schema=c.schema)
 
     for cc in (c.data, c.buffer, c.schema, c.auth, c.example_data, c.example_buffer):
         if fingertip_no_recompute:

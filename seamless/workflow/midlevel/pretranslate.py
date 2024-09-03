@@ -1,8 +1,12 @@
 from copy import deepcopy
-import sys
 import weakref
 
-def pretranslate(ctx, graph, libinstance_nodes={},prev_overlay_nodes={}):
+
+def pretranslate(ctx, graph, libinstance_nodes=None, prev_overlay_nodes=None):
+    if libinstance_nodes is None:
+        libinstance_nodes = {}
+    if prev_overlay_nodes is None:
+        prev_overlay_nodes = {}
     assert isinstance(ctx, Context)
     nodes, connections = graph["nodes"], graph["connections"]
     graph_lib = deepcopy(graph["lib"])
@@ -10,8 +14,8 @@ def pretranslate(ctx, graph, libinstance_nodes={},prev_overlay_nodes={}):
     libinstances = []
     for node in nodes:
         if node["type"] == "libinstance":
-             path = tuple(node["path"])
-             libinstances.append(path)
+            path = tuple(node["path"])
+            libinstances.append(path)
     if not len(libinstances):
         return graph
     nodedict = {tuple(node["path"]): node for node in nodes}
@@ -24,7 +28,8 @@ def pretranslate(ctx, graph, libinstance_nodes={},prev_overlay_nodes={}):
         extra_nodes = None
     for path in libinstances:
         libinstance = LibInstance(
-            ctx, path=path, 
+            ctx,
+            path=path,
             extra_nodes=extra_nodes,
         )
         libinstance._bound = weakref.ref(ctx)
@@ -37,7 +42,7 @@ def pretranslate(ctx, graph, libinstance_nodes={},prev_overlay_nodes={}):
         for nodepath, node in curr_nodes.items():
             overlay_nodedict[nodepath] = node
         overlay_connections += curr_connections
-        for node in curr_graph["nodes"]:            
+        for node in curr_graph["nodes"]:
             p = tuple(node["path"])
             nodepath = path2 + p
             node["path"] = nodepath
@@ -64,7 +69,7 @@ def pretranslate(ctx, graph, libinstance_nodes={},prev_overlay_nodes={}):
                             arg = [arg]
                         arg = list(path2) + arg
                     elif param["type"] == "celldict":
-                        for k,v in arg.items():
+                        for k, v in arg.items():
                             if isinstance(v, tuple):
                                 v = list(v)
                             if not isinstance(v, list):
@@ -76,15 +81,16 @@ def pretranslate(ctx, graph, libinstance_nodes={},prev_overlay_nodes={}):
             con["source"] = path2 + tuple(con["source"])
             con["target"] = path2 + tuple(con["target"])
 
-        for node in curr_graph["nodes"]:   
+        for node in curr_graph["nodes"]:
             if node["type"] == "libinstance":
                 continue
             overlay_nodedict[node["path"]] = node
         if has_libinstance_nodes:
             sub_runtime_graph = pretranslate(
-                ctx, curr_graph, 
+                ctx,
+                curr_graph,
                 libinstance_nodes=libinstance_nodes,
-                prev_overlay_nodes=overlay_nodedict
+                prev_overlay_nodes=overlay_nodedict,
             )
             for node in sub_runtime_graph["nodes"]:
                 overlay_nodedict[node["path"]] = node
@@ -103,7 +109,7 @@ def pretranslate(ctx, graph, libinstance_nodes={},prev_overlay_nodes={}):
             newnode.update(overlay_node)
             if "checksum" in overlay_node:
                 if overlay_node["checksum"] is None:
-                    newnode.pop("checksum")            
+                    newnode.pop("checksum")
             runtime_graph_nodedict[nodename] = newnode
         else:
             runtime_graph_nodedict[nodename] = node
@@ -118,8 +124,7 @@ def pretranslate(ctx, graph, libinstance_nodes={},prev_overlay_nodes={}):
             "path": path2,
         }
     runtime_graph_nodes = [
-        v for k,v in sorted(runtime_graph_nodedict.items(),
-        key=lambda kv: kv[0])
+        v for k, v in sorted(runtime_graph_nodedict.items(), key=lambda kv: kv[0])
     ]
     runtime_graph_connections = connections + overlay_connections
     # eliminate duplicates
@@ -132,7 +137,7 @@ def pretranslate(ctx, graph, libinstance_nodes={},prev_overlay_nodes={}):
         cons.append(con)
         con_ids.add(idcon)
     runtime_graph_connections = cons
-    
+
     runtime_graph = {
         "nodes": runtime_graph_nodes,
         "connections": runtime_graph_connections,
@@ -142,6 +147,5 @@ def pretranslate(ctx, graph, libinstance_nodes={},prev_overlay_nodes={}):
     return runtime_graph
 
 
-from ..highlevel.Context import Context, Graph
+from ..highlevel.Context import Context
 from ..highlevel.library.libinstance import LibInstance
-from ..highlevel.assign import under_libinstance_control

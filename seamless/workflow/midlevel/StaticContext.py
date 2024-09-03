@@ -27,8 +27,12 @@ class StaticContext(HelpMixin):
         lib = graph.get("lib", {})
         return cls(nodes, connections, lib, params, manager=manager)
 
-    def __init__(self, nodes, connections, lib={}, params={}, *, manager=None):
+    def __init__(self, nodes, connections, lib=None, params=None, *, manager=None):
         from seamless.workflow.core.manager import Manager
+        if lib is None:
+            lib = {}
+        if params is None:
+            params = {}
 
         self._nodes = deepcopy(nodes)
         self._connections = connections
@@ -115,7 +119,7 @@ class StaticContext(HelpMixin):
                 pp = path[: len(parent_path)]
                 if pp != parent_path:
                     continue
-                fullchild = result.append(path[len(parent_path) :])
+                fullchild = path[len(parent_path) :]
             else:
                 fullchild = path
             child = fullchild if full_path else fullchild[0]

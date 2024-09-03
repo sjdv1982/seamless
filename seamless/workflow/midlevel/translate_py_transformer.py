@@ -1,14 +1,23 @@
 from copy import deepcopy
+from seamless.checksum.buffer_cache import empty_dict_checksum
+from seamless.Environment import Environment
 from ..core import cell, transformer, context
 
+
 def translate_py_transformer(
-        node, root, namespace, inchannels, outchannels,
-        *, ipy_template, py_bridge, has_meta_connection
-    ):
+    node,
+    root,
+    namespace,
+    inchannels,
+    outchannels,
+    *,
+    ipy_template,
+    py_bridge,
+    has_meta_connection
+):
     from .translate import set_structured_cell_from_checksum
-    from ..core.cache.buffer_cache import empty_dict_checksum
-    from ..highlevel.Environment import Environment
-    #TODO: simple translation, without a structured cell
+
+    # TODO: simple translation, without a structured cell
 
     assert not (ipy_template is not None and py_bridge is not None)
 
@@ -20,14 +29,11 @@ def translate_py_transformer(
 
     node_pins = deepcopy(node["pins"])
     deep_pins = {}
-    for pinname,pin in list(node_pins.items()):
-        pin.pop("subcelltype", None) # just to make sure...
+    for pinname, pin in list(node_pins.items()):
+        pin.pop("subcelltype", None)  # just to make sure...
         if pin.get("celltype") == "module":
             pin.clear()
-            pin.update({
-                "celltype": "plain",
-                "subcelltype": "module"
-            })
+            pin.update({"celltype": "plain", "subcelltype": "module"})
         elif pin.get("celltype") in ("folder", "deepfolder", "deepcell"):
             if pin["celltype"] == "deepcell":
                 pin = {
@@ -38,19 +44,13 @@ def translate_py_transformer(
                 pin = {
                     "celltype": "mixed",
                     "hash_pattern": {"*": "##"},
-                    "filesystem": {
-                        "mode": "directory",
-                        "optional": False
-                    },
+                    "filesystem": {"mode": "directory", "optional": False},
                 }
             elif pin["celltype"] == "folder":
                 pin = {
                     "celltype": "mixed",
                     "hash_pattern": {"*": "##"},
-                    "filesystem": {
-                        "mode": "directory",
-                        "optional": True
-                    },
+                    "filesystem": {"mode": "directory", "optional": True},
                 }
             pin["io"] = "input"
             deep_pins[pinname] = pin
@@ -69,7 +69,10 @@ def translate_py_transformer(
         assert result_name == "result"
     input_name = node["INPUT"]
     for c in inchannels:
-        assert (not len(c)) or c[0] not in (result_name, result_cell_name) #should have been checked by highlevel
+        assert (not len(c)) or c[0] not in (
+            result_name,
+            result_cell_name,
+        )  # should have been checked by highlevel
     all_inchannels = set(inchannels)
     pin_cells = {}
     for pin in list(node_pins.keys()) + list(deep_pins.keys()):
@@ -101,12 +104,15 @@ def translate_py_transformer(
     interchannels = [as_tuple(pin) for pin in node_pins]
     mount = node.get("mount", {})
     inp, inp_ctx = build_structured_cell(
-      ctx, input_name, inchannels, interchannels,
-      fingertip_no_remote=node.get("fingertip_no_remote", False),
-      fingertip_no_recompute=node.get("fingertip_no_recompute", False),
-      hash_pattern= node.get("hash_pattern"),
-      return_context=True,
-      auth_subchecksums_persistent=True
+        ctx,
+        input_name,
+        inchannels,
+        interchannels,
+        fingertip_no_remote=node.get("fingertip_no_remote", False),
+        fingertip_no_recompute=node.get("fingertip_no_recompute", False),
+        hash_pattern=node.get("hash_pattern"),
+        return_context=True,
+        auth_subchecksums_persistent=True,
     )
 
     setattr(ctx, input_name, inp)
@@ -116,7 +122,7 @@ def translate_py_transformer(
     for inchannel in inchannels:
         path = node["path"] + inchannel
         is_checksum = False
-        if len(inchannel) == 1:            
+        if len(inchannel) == 1:
             pinname = inchannel[0]
             pin = node_pins[pinname]
             if pin.get("celltype") == "checksum":
@@ -139,7 +145,7 @@ def translate_py_transformer(
         pin_cell = pin_cells[pinname]
         namespace[path, "target"] = pin_cell, node
 
-    assert result_name not in node["pins"] #should have been checked by highlevel
+    assert result_name not in node["pins"]  # should have been checked by highlevel
     result_celltype = node.get("result_celltype", "structured")
     result_celltype2 = result_celltype
     if result_celltype in ("structured", "folder", "deepcell"):
@@ -160,10 +166,7 @@ def translate_py_transformer(
             celltype = "plain"
         p["celltype"] = celltype
         all_pins[pinname] = p
-    result_pin = {
-        "io": "output", 
-        "celltype": result_celltype2
-    }
+    result_pin = {"io": "output", "celltype": result_celltype2}
     result_hash_pattern = None
     if result_celltype == "deepcell":
         result_hash_pattern = {"*": "#"}
@@ -171,29 +174,29 @@ def translate_py_transformer(
         result_hash_pattern = {"*": "##"}
     if result_hash_pattern is not None:
         result_pin["hash_pattern"] = result_hash_pattern
-    all_pins[result_name] = result_pin 
+    all_pins[result_name] = result_pin
     if node["SCHEMA"]:
-        all_pins[node["SCHEMA"]] = {
-            "io": "input", "celltype": "mixed"
-        }
-    if py_bridge is not None: 
+        all_pins[node["SCHEMA"]] = {"io": "input", "celltype": "mixed"}
+    if py_bridge is not None:
         for k in "code_", "bridge_parameters":
             if k in all_pins:
                 msg = "Python bridge for {} cannot have a pin named '{}'".format(
-                    "." + "".join(node["path"]), k 
+                    "." + "".join(node["path"]), k
                 )
                 raise ValueError(msg)
-        all_pins.update({
-            "code_": {
-                "io": "input",
-                "celltype": "text",
-                "as": "code",
-            },
-            "bridge_parameters": {
-                "io": "input",
-                "celltype": "plain",
-            },
-        })
+        all_pins.update(
+            {
+                "code_": {
+                    "io": "input",
+                    "celltype": "text",
+                    "as": "code",
+                },
+                "bridge_parameters": {
+                    "io": "input",
+                    "celltype": "plain",
+                },
+            }
+        )
     all_pins.update(deep_pins)
     ctx.tf = transformer(all_pins)
     ctx.tf._scratch = scratch
@@ -203,7 +206,7 @@ def translate_py_transformer(
         if env.get("powers") is None:
             env["powers"] = []
         env["powers"] += ["ipython"]
-    
+
     if ipy_template is not None or py_bridge is not None:
         ctx.code = cell("text")
     elif node["language"] == "ipython":
@@ -211,12 +214,12 @@ def translate_py_transformer(
     elif node["language"] == "python":
         ctx.code = cell("transformer")
     else:
-        raise ValueError(node["language"]) # shouldn't happen
+        raise ValueError(node["language"])  # shouldn't happen
 
     if "code" in mount:
         ctx.code.mount(**mount["code"])
 
-    if ipy_template is not None:        
+    if ipy_template is not None:
         ipy_template_params = {
             "code_": {
                 "io": "input",
@@ -230,7 +233,7 @@ def translate_py_transformer(
             "result": {
                 "io": "output",
                 "celltype": "ipython",
-            }            
+            },
         }
         ctx.apply_ipy_template = transformer(ipy_template_params)
         ctx.ipy_template_code = cell("transformer").set(ipy_template[0])
@@ -248,7 +251,7 @@ def translate_py_transformer(
         ctx.ipy_code = cell("ipython")
         ctx.apply_ipy_template.result.connect(ctx.ipy_code)
         ctx.ipy_code.connect(ctx.tf.code)
-    elif py_bridge is not None: 
+    elif py_bridge is not None:
         ctx.py_bridge_code = cell("transformer").set(py_bridge[0])
         ctx.py_bridge_code.connect(ctx.tf.code)
         ctx.code.connect(ctx.tf.code_)
@@ -291,17 +294,20 @@ def translate_py_transformer(
                             if not ok:
                                 raise TypeError(
                                     "Python bridge: cannot merge conda environments",
-                                    "."+".".join(node["path"]), node["language"],
-                                    k, type(v), type(bv)
+                                    "." + ".".join(node["path"]),
+                                    node["language"],
+                                    k,
+                                    type(v),
+                                    type(bv),
                                 )
     else:
         ctx.code.connect(ctx.tf.code)
-    
+
     checksum = node.get("checksum", {})
     if "code" in checksum:
         ctx.code._set_checksum(checksum["code"], initial=True)
     inp_checksum = convert_checksum_dict(checksum, "input")
-    if not len(node_pins): # no non-deepcell pins. Just to avoid errors.
+    if not len(node_pins):  # no non-deepcell pins. Just to avoid errors.
         inp_checksum = {"auth": empty_dict_checksum}
     """
     print("INP CHECKSUM", inp_checksum)
@@ -335,12 +341,14 @@ def translate_py_transformer(
 
     if result_celltype == "structured":
         result, result_ctx = build_structured_cell(
-            ctx, result_name, [()],
+            ctx,
+            result_name,
+            [()],
             outchannels,
             fingertip_no_remote=node.get("fingertip_no_remote", False),
             fingertip_no_recompute=node.get("fingertip_no_recompute", False),
             return_context=True,
-            scratch=scratch
+            scratch=scratch,
         )
 
         namespace[node["path"] + ("RESULTSCHEMA",), "source"] = result.schema, node
@@ -362,7 +370,7 @@ def translate_py_transformer(
         for k in checksum:
             if not k.startswith("result"):
                 continue
-            k2 = "value" if k == "result" else k[len("result_"):]
+            k2 = "value" if k == "result" else k[len("result_") :]
             result_checksum[k2] = checksum[k]
         set_structured_cell_from_checksum(result, result_checksum)
     else:
@@ -381,6 +389,7 @@ def translate_py_transformer(
 
     namespace[node["path"], "target"] = inp, node
     namespace[node["path"], "source"] = result, node
+
 
 from .util import get_path, build_structured_cell, cell_setattr
 from ..util import as_tuple

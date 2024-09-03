@@ -5,8 +5,8 @@ from ..core import cell as core_cell, transformer, context
 from ..metalevel.stdgraph import load as load_stdgraph
 from .util import get_path
 
-
 import inspect
+
 
 def gen_moduledict_generic(module_code, module_type, language, dependencies):
     result = {
@@ -18,6 +18,7 @@ def gen_moduledict_generic(module_code, module_type, language, dependencies):
         result["dependencies"] = dependencies
     return result
 
+
 def translate_module(node, root, namespace, inchannels, outchannels):
     module_type = node["module_type"]
     language = node["language"]
@@ -27,7 +28,7 @@ def translate_module(node, root, namespace, inchannels, outchannels):
     parent = get_path(root, path[:-1], None, None)
     name = path[-1]
     for c in inchannels + outchannels:
-        assert not len(c) #should have been checked by highlevel
+        assert not len(c)  # should have been checked by highlevel
     subcontext = context(toplevel=False)
     setattr(parent, name, subcontext)
 
@@ -50,7 +51,7 @@ def translate_module(node, root, namespace, inchannels, outchannels):
             mount["directory_text_only"] = True
             codecell2.mount(**mount)
             mode = mount.get("mode", "rw")
-            if mode == "rw" :
+            if mode == "rw":
                 codecell2.bilink(codecell)
             elif mode == "r":
                 codecell2.connect(codecell)
@@ -63,7 +64,7 @@ def translate_module(node, root, namespace, inchannels, outchannels):
             subcontext.code3 = codecell3
             codecell3.mount(**mount)
             mode = mount.get("mode", "rw")
-            if mode == "rw" :
+            if mode == "rw":
                 codecell2.bilink(codecell)
                 codecell3.bilink(codecell2)
             elif mode == "r":
@@ -77,27 +78,35 @@ def translate_module(node, root, namespace, inchannels, outchannels):
     if node.get("multi"):
         sctx = load_stdgraph("multi_module")
         subcontext.get_pypackage_dependencies_code = core_cell("python")
-        subcontext.get_pypackage_dependencies_code.set(sctx.get_pypackage_dependencies_code.value)
+        subcontext.get_pypackage_dependencies_code.set(
+            sctx.get_pypackage_dependencies_code.value
+        )
         subcontext.pypackage_to_moduledict_code = core_cell("python")
-        subcontext.pypackage_to_moduledict_code.set(sctx.pypackage_to_moduledict_code.value)
-        c = subcontext.gen_moduledict = transformer({
-            "internal_package_name": ("input", "str"),
-            "pypackage_dirdict": ("input", "plain"),
-            "get_pypackage_dependencies": ("input", "plain", "module"),
-            "result": ("output", "plain")
-        })
+        subcontext.pypackage_to_moduledict_code.set(
+            sctx.pypackage_to_moduledict_code.value
+        )
+        c = subcontext.gen_moduledict = transformer(
+            {
+                "internal_package_name": ("input", "str"),
+                "pypackage_dirdict": ("input", "plain"),
+                "get_pypackage_dependencies": ("input", "plain", "module"),
+                "result": ("output", "plain"),
+            }
+        )
         subcontext.pypackage_to_moduledict_code.connect(c.code)
         internal_package_name = node.get("internal_package_name", "")
         c.internal_package_name.cell().set(internal_package_name)
         codecell.connect(c.pypackage_dirdict)
 
-        subcontext.gen_moduledict_helper = transformer({
-            "module_type": ("input", "str"),
-            "language": ("input", "str"),
-            "module_code": ("input", "plain"),
-            "dependencies": ("input", "plain"),
-            "result": ("output", "plain")
-        })
+        subcontext.gen_moduledict_helper = transformer(
+            {
+                "module_type": ("input", "str"),
+                "language": ("input", "str"),
+                "module_code": ("input", "plain"),
+                "dependencies": ("input", "plain"),
+                "result": ("output", "plain"),
+            }
+        )
         subcontext.gen_moduledict_helper.code.cell().set(
             inspect.getsource(gen_moduledict_generic)
         )
@@ -117,13 +126,15 @@ def translate_module(node, root, namespace, inchannels, outchannels):
         )
     else:
         # non-multi
-        subcontext.gen_moduledict = transformer({
-            "module_type": ("input", "str"),
-            "language": ("input", "str"),
-            "module_code": ("input", "plain"),
-            "dependencies": ("input", "plain"),
-            "result": ("output", "plain")
-        })
+        subcontext.gen_moduledict = transformer(
+            {
+                "module_type": ("input", "str"),
+                "language": ("input", "str"),
+                "module_code": ("input", "plain"),
+                "dependencies": ("input", "plain"),
+                "result": ("output", "plain"),
+            }
+        )
         subcontext.gen_moduledict.code.cell().set(
             inspect.getsource(gen_moduledict_generic)
         )

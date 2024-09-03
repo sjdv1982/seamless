@@ -1,14 +1,23 @@
 from copy import deepcopy
+from seamless.checksum.buffer_cache import empty_dict_checksum
 from seamless.workflow.core import cell, transformer, context
 from ..metalevel.stdgraph import load as load_stdgraph
-from ..core.cache.buffer_cache import empty_dict_checksum
+
 
 def translate_bashdocker_transformer(
-    node, root, namespace, 
-    node_pins, inchannels, outchannels, 
-    deep_inchannels, deep_pins,
-    *, 
-    docker_image, docker_options, has_meta_connection, env
+    node,
+    root,
+    namespace,
+    node_pins,
+    inchannels,
+    outchannels,
+    deep_inchannels,
+    deep_pins,
+    *,
+    docker_image,
+    docker_options,
+    has_meta_connection,
+    env
 ):
 
     sctx = load_stdgraph("bashdocker_transformer")
@@ -23,13 +32,22 @@ def translate_bashdocker_transformer(
     result_name = node["RESULT"]
     input_name = node["INPUT"]
     result_cell_name = result_name + "_CELL"
-    forbidden = [result_name, result_cell_name, "docker_command", "docker_image_", "docker_options", "pins_"]
+    forbidden = [
+        result_name,
+        result_cell_name,
+        "docker_command",
+        "docker_image_",
+        "docker_options",
+        "pins_",
+    ]
     pin_intermediate = {}
     for pin in list(node_pins.keys()) + list(deep_pins.keys()):
         pin_intermediate[pin] = input_name + "_PIN_" + pin
         forbidden.append(pin_intermediate[pin])
     for c in inchannels:
-        assert (not len(c)) or c[0] not in forbidden #should have been checked by highlevel
+        assert (not len(c)) or c[
+            0
+        ] not in forbidden  # should have been checked by highlevel
 
     pins = node_pins.copy()
     pins["docker_command"] = {"celltype": "text"}
@@ -44,12 +62,15 @@ def translate_bashdocker_transformer(
     interchannels = [as_tuple(pin) for pin in pins]
     mount = node.get("mount", {})
     inp, inp_ctx = build_structured_cell(
-      ctx, input_name, inchannels, interchannels,
-      fingertip_no_remote=node.get("fingertip_no_remote", False),
-      fingertip_no_recompute=node.get("fingertip_no_recompute", False),
-      hash_pattern= node.get("hash_pattern"),
-      return_context=True,
-      auth_subchecksums_persistent=True
+        ctx,
+        input_name,
+        inchannels,
+        interchannels,
+        fingertip_no_remote=node.get("fingertip_no_remote", False),
+        fingertip_no_recompute=node.get("fingertip_no_recompute", False),
+        hash_pattern=node.get("hash_pattern"),
+        return_context=True,
+        auth_subchecksums_persistent=True,
     )
     setattr(ctx, input_name, inp)
     namespace[node["path"] + ("SCHEMA",), "source"] = inp.schema, node
@@ -58,7 +79,7 @@ def translate_bashdocker_transformer(
     for inchannel in inchannels:
         path = node["path"] + inchannel
         is_checksum = False
-        if len(inchannel) == 1:            
+        if len(inchannel) == 1:
             pinname = inchannel[0]
             pin = node_pins[pinname]
             if pin.get("celltype") == "checksum":
@@ -74,8 +95,7 @@ def translate_bashdocker_transformer(
         else:
             namespace[path, "target"] = inp.inchannels[inchannel], node
 
-    assert result_name not in pins #should have been checked by highlevel
-
+    assert result_name not in pins  # should have been checked by highlevel
 
     pin_cells = {}
     for pin in list(node_pins.keys()) + list(deep_pins.keys()):
@@ -117,18 +137,19 @@ def translate_bashdocker_transformer(
             celltype = "plain"
         p["celltype"] = celltype
         if celltype == "bytes":
-            p["filesystem"] = {
-                "mode": "file",
-                "optional": True
-            }            
+            p["filesystem"] = {"mode": "file", "optional": True}
         all_pins[pinname] = p
     all_pins[result_name] = {"io": "output"}
     if node["SCHEMA"]:
-        raise NotImplementedError
+        """
         all_pins[node["SCHEMA"]] = {
-            "io": "input", "transfer_mode": "json",
-            "access_mode": "json", "content_type": "json"
+            "io": "input",
+            "transfer_mode": "json",
+            "access_mode": "json",
+            "content_type": "json",
         }
+        """
+        raise NotImplementedError
     all_pins.update(deep_pins)
     ctx.tf = transformer(all_pins)
     ctx.code = cell("text")
@@ -143,7 +164,7 @@ def translate_bashdocker_transformer(
     if "code" in checksum:
         ctx.code._set_checksum(checksum["code"], initial=True)
     inp_checksum = convert_checksum_dict(checksum, "input")
-    if not len(node_pins): # no non-deepcell pins. Just to avoid errors.
+    if not len(node_pins):  # no non-deepcell pins. Just to avoid errors.
         inp_checksum = {"auth": empty_dict_checksum}
     set_structured_cell_from_checksum(inp, inp_checksum)
 
@@ -176,11 +197,13 @@ def translate_bashdocker_transformer(
         namespace[path, "target"] = pin_cell, node
 
     result, result_ctx = build_structured_cell(
-        ctx, result_name, [()],
+        ctx,
+        result_name,
+        [()],
         outchannels,
         fingertip_no_remote=node.get("fingertip_no_remote", False),
         fingertip_no_recompute=node.get("fingertip_no_recompute", False),
-        return_context=True
+        return_context=True,
     )
     namespace[node["path"] + ("RESULTSCHEMA",), "source"] = result.schema, node
     if "result_schema" in mount:
@@ -200,7 +223,7 @@ def translate_bashdocker_transformer(
     for k in checksum:
         if not k.startswith("result"):
             continue
-        k2 = "value" if k == "result" else k[len("result_"):]
+        k2 = "value" if k == "result" else k[len("result_") :]
         result_checksum[k2] = checksum[k]
     set_structured_cell_from_checksum(result, result_checksum)
 
@@ -209,6 +232,7 @@ def translate_bashdocker_transformer(
 
     namespace[node["path"], "target"] = inp, node
     namespace[node["path"], "source"] = result, node
+
 
 from .util import get_path, build_structured_cell, cell_setattr
 from ..util import as_tuple

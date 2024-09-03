@@ -1,6 +1,7 @@
-import os, json
+from seamless.Environment import Environment
 from seamless.workflow.core import cell, transformer, context
 from ..metalevel.stdgraph import load as load_stdgraph
+
 
 def _init_from_graph(ctf, sctx):
     ctf.gen_header_code = sctx.gen_header.code.cell()
@@ -10,7 +11,7 @@ def _init_from_graph(ctf, sctx):
 
     ctf.integrator_code = sctx.integrator.code.cell()
     ctf.integrator_params = sctx.integrator_params.cell()
-    ctf.integrator = transformer(sctx.integrator_params.value)    
+    ctf.integrator = transformer(sctx.integrator_params.value)
     ctf.integrator_code.connect(ctf.integrator.code)
 
     ctf.executor_code = sctx.executor.code.cell()
@@ -20,9 +21,10 @@ def _init_from_graph(ctf, sctx):
 
     ctf.executor.SPECIAL__DIRECT_PRINT.cell().set(False)
 
+
 def _finalize(
-        ctx, ctf, inp, c_inp, result, c_result,
-        input_name, result_name, inchannels, node):
+    ctx, ctf, inp, c_inp, result, c_result, input_name, result_name, inchannels, node
+):
 
     result_cell_name1 = result_name + "_CELL1"
     result_cell_name2 = result_name + "_CELL2"
@@ -30,13 +32,17 @@ def _finalize(
     link_options_cell_name = "LINK_OPTIONS_CELL"
     main_module_cell_name = input_name + "_MAIN_MODULE_CELL"
     forbidden = (
-        result_name, result_cell_name1,
-        result_cell_name2, input_cell_name,
+        result_name,
+        result_cell_name1,
+        result_cell_name2,
+        input_cell_name,
         link_options_cell_name,
-        main_module_cell_name
+        main_module_cell_name,
     )
     for c in inchannels:
-        assert (not len(c)) or c[0] not in forbidden #should have been checked by highlevel
+        assert (not len(c)) or c[
+            0
+        ] not in forbidden  # should have been checked by highlevel
 
     result_cell1 = cell("mixed")
     result_cell1._scratch = True
@@ -53,11 +59,9 @@ def _finalize(
     main_module_cell = cell("plain")
     cell_setattr(node, ctx, main_module_cell_name, main_module_cell)
 
-    link_options_cell.connect(
-        ctx.main_module.inchannels[("link_options",)]
-    )
+    link_options_cell.connect(ctx.main_module.inchannels[("link_options",)])
     link_options_cell.set(node.get("link_options", []))
-    #1: between transformer and library
+    # 1: between transformer and library
 
     ctx.inputpins.connect(ctf.gen_header.inputpins)
     ctx.pins.connect(ctf.executor.pins)
@@ -75,7 +79,7 @@ def _finalize(
     ctf.executor.input_name.cell().set(input_name)
     ctf.executor.result_name.cell().set(result_name)
 
-    #2: among library cells
+    # 2: among library cells
     ctx.header = cell("text")
     ctf.gen_header.result.connect(ctx.header)
     ctx.header.connect(ctf.integrator.header_)
@@ -90,24 +94,31 @@ def _finalize(
 
     ctx.module.connect(ctf.executor.module)
 
+
 def translate_compiled_transformer(
-        node, root, namespace, inchannels, outchannels,
-        *, has_meta_connection
-    ):
+    node, root, namespace, inchannels, outchannels, *, has_meta_connection
+):
     from .translate import set_structured_cell_from_checksum
-    from ..highlevel.Environment import Environment
-    
+
     scratch = node.get("scratch", False)
 
     env0 = Environment(None)
     env0._load(node.get("environment"))
     env = env0._to_lowlevel()
 
-    for pinname,pin in list(node["pins"].items()):
+    for pinname, pin in list(node["pins"].items()):
         if pin.get("celltype", "default") != "default":
-            raise ValueError("Compiled transformer celltype must be 'default', not celltype '{}' (pin '{}')".format(pin["celltype"], pin))
+            raise ValueError(
+                "Compiled transformer celltype must be 'default', not celltype '{}' (pin '{}')".format(
+                    pin["celltype"], pin
+                )
+            )
     if node.get("result_celltype", "structured") != "structured":
-        raise ValueError("Compiled transformer result celltype must be 'structured', not celltype '{}'".format(node["result_celltype"]))
+        raise ValueError(
+            "Compiled transformer result celltype must be 'structured', not celltype '{}'".format(
+                node["result_celltype"]
+            )
+        )
     inchannels = [ic for ic in inchannels if ic[0] != "code"]
 
     main_module_inchannels = [("link_options",), ("headers",)]
@@ -127,7 +138,7 @@ def translate_compiled_transformer(
 
     result_name = node["RESULT"]
     input_name = node["INPUT"]
-    
+
     inputpins = []
     all_inchannels = set(inchannels)
     pin_cells = {}
@@ -136,18 +147,21 @@ def translate_compiled_transformer(
         assert pin_cell_name not in all_inchannels
         assert pin_cell_name not in node["pins"]
         pin_cell = cell("mixed")
-        pin_cell._scratch = True        
+        pin_cell._scratch = True
         cell_setattr(node, ctx, pin_cell_name, pin_cell)
         pin_cells[pin] = pin_cell
 
     mount = node.get("mount", {})
     inp, inp_ctx = build_structured_cell(
-      ctx, input_name, inchannels, [()],
-      fingertip_no_remote=node.get("fingertip_no_remote", False),
-      fingertip_no_recompute=node.get("fingertip_no_recompute", False),
-      hash_pattern= node.get("hash_pattern"),
-      return_context=True,
-      auth_subchecksums_persistent=True
+        ctx,
+        input_name,
+        inchannels,
+        [()],
+        fingertip_no_remote=node.get("fingertip_no_remote", False),
+        fingertip_no_recompute=node.get("fingertip_no_recompute", False),
+        hash_pattern=node.get("hash_pattern"),
+        return_context=True,
+        auth_subchecksums_persistent=True,
     )
 
     setattr(ctx, input_name, inp)
@@ -158,8 +172,10 @@ def translate_compiled_transformer(
         path = node["path"] + inchannel
         namespace[path, "target"] = inp.inchannels[inchannel], node
 
-    assert result_name not in node["pins"] #should have been checked by highlevel
-    assert "executor_result_" not in node["pins"] #should have been checked by highlevel
+    assert result_name not in node["pins"]  # should have been checked by highlevel
+    assert (
+        "executor_result_" not in node["pins"]
+    )  # should have been checked by highlevel
     all_pins = {}
     inputpins = []
     for pinname, pin in node["pins"].items():
@@ -169,18 +185,18 @@ def translate_compiled_transformer(
         inputpins.append(pinname)
     all_pins[result_name] = {"io": "output"}
     if node["SCHEMA"]:
-        all_pins[node["SCHEMA"]] = {
-            "io": "input", "celltype": "mixed"
-        }
+        all_pins[node["SCHEMA"]] = {"io": "input", "celltype": "mixed"}
 
     # Compiler
     ctx.language = cell("str").set(node["language"])
 
     ctx.main_module = build_structured_cell(
-      ctx, "main_module",
-      main_module_inchannels, [()],
-      fingertip_no_remote=node.get("fingertip_no_remote", False),
-      fingertip_no_recompute=node.get("fingertip_no_recompute", False),
+        ctx,
+        "main_module",
+        main_module_inchannels,
+        [()],
+        fingertip_no_remote=node.get("fingertip_no_remote", False),
+        fingertip_no_recompute=node.get("fingertip_no_recompute", False),
     )
 
     for ic in main_module_inchannels:
@@ -213,8 +229,9 @@ def translate_compiled_transformer(
     checksum = node.get("checksum", {})
     if "code" in checksum:
         ctx.code._set_checksum(checksum["code"], initial=True)
-    main_module_checksum = checksum.get("main_module",
-      'd0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c' # {}
+    main_module_checksum = checksum.get(
+        "main_module",
+        "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",  # {}
     )
     set_structured_cell_from_checksum(ctx.main_module, {"auth": main_module_checksum})
     inp_checksum = convert_checksum_dict(checksum, "input")
@@ -225,18 +242,18 @@ def translate_compiled_transformer(
     # main module headers
     headers_cell = cell("plain")
     setattr(ctx, "main_module_headers_CELL", headers_cell)
-    headers_cell.connect(
-        ctx.main_module.inchannels[("headers",)]
-    )
-    namespace[node["path"] + ("_main_module", "headers"), "target"] = headers_cell, node        
+    headers_cell.connect(ctx.main_module.inchannels[("headers",)])
+    namespace[node["path"] + ("_main_module", "headers"), "target"] = headers_cell, node
 
     result, result_ctx = build_structured_cell(
-        ctx, result_name, [()],
+        ctx,
+        result_name,
+        [()],
         outchannels,
         fingertip_no_remote=node.get("fingertip_no_remote", False),
         fingertip_no_recompute=node.get("fingertip_no_recompute", False),
         return_context=True,
-        scratch=scratch
+        scratch=scratch,
     )
     namespace[node["path"] + ("RESULTSCHEMA",), "source"] = result.schema, node
     if "result_schema" in mount:
@@ -249,7 +266,7 @@ def translate_compiled_transformer(
     for k in checksum:
         if not k.startswith("result"):
             continue
-        k2 = "value" if k == "result" else k[len("result_"):]
+        k2 = "value" if k == "result" else k[len("result_") :]
         result_checksum[k2] = checksum[k]
     set_structured_cell_from_checksum(result, result_checksum)
 
@@ -258,9 +275,16 @@ def translate_compiled_transformer(
     c_inp = getattr(ctx, input_name + STRUC_ID)
     c_result = getattr(ctx, result_name + STRUC_ID)
     _finalize(
-        ctx, ctf, inp, c_inp, result, c_result,
-        input_name, result_name,
-        inchannels, node
+        ctx,
+        ctf,
+        inp,
+        c_inp,
+        result,
+        c_result,
+        input_name,
+        result_name,
+        inchannels,
+        node,
     )
 
     if "header" in mount:
@@ -272,6 +296,7 @@ def translate_compiled_transformer(
 
     namespace[node["path"], "target"] = inp, node
     namespace[node["path"], "source"] = result, node
+
 
 from .util import get_path, build_structured_cell, cell_setattr, STRUC_ID
 from .convert_checksum_dict import convert_checksum_dict

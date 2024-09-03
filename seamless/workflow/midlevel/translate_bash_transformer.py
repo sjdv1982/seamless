@@ -1,20 +1,16 @@
-import os, json
 from copy import deepcopy
+from seamless.checksum.buffer_cache import empty_dict_checksum
+from seamless.Environment import Environment
+from seamless.util.environment import validate_conda_environment, validate_docker
 from seamless.workflow.core import cell, transformer, context
 from ..metalevel.stdgraph import load as load_stdgraph
 
 
 def translate_bash_transformer(
-        node, root, namespace, inchannels, outchannels,
-        *, has_meta_connection
-    ):
+    node, root, namespace, inchannels, outchannels, *, has_meta_connection
+):
     from .translate import set_structured_cell_from_checksum
-    from ..core.cache.buffer_cache import empty_dict_checksum
-    from ..highlevel.Environment import Environment
-    from ..core.environment import (
-        validate_conda_environment,
-        validate_docker
-    )
+
     sctx = load_stdgraph("bash_transformer")
 
     env0 = Environment(None)
@@ -32,50 +28,35 @@ def translate_bash_transformer(
 
     node_pins = deepcopy(node["pins"])
     deep_pins = {}
-    for pinname,pin in list(node_pins.items()):
-        pin.pop("subcelltype", None) # just to make sure...
+    for pinname, pin in list(node_pins.items()):
+        pin.pop("subcelltype", None)  # just to make sure...
         if pin.get("celltype") == "module":
             pin.clear()
-            pin.update({
-                "celltype": "plain",
-                "subcelltype": "module"
-            })
+            pin.update({"celltype": "plain", "subcelltype": "module"})
         elif pin.get("celltype") in ("folder", "deepfolder", "deepcell", "bytes"):
             if pin["celltype"] == "deepcell":
                 pin = {
                     "celltype": "mixed",
                     "hash_pattern": {"*": "#"},
-                    "filesystem": {
-                        "mode": "file",
-                        "optional": False
-                    },
+                    "filesystem": {"mode": "file", "optional": False},
                 }
             elif pin["celltype"] == "deepfolder":
                 pin = {
                     "celltype": "mixed",
                     "hash_pattern": {"*": "##"},
-                    "filesystem": {
-                        "mode": "directory",
-                        "optional": False
-                    },
+                    "filesystem": {"mode": "directory", "optional": False},
                 }
             elif pin["celltype"] == "folder":
                 pin = {
                     "celltype": "mixed",
                     "hash_pattern": {"*": "##"},
-                    "filesystem": {
-                        "mode": "directory",
-                        "optional": True
-                    },
+                    "filesystem": {"mode": "directory", "optional": True},
                 }
             elif pin["celltype"] == "bytes":
                 pin = {
                     "celltype": "bytes",
                     "hash_pattern": None,
-                    "filesystem": {
-                        "mode": "file",
-                        "optional": True
-                    },
+                    "filesystem": {"mode": "file", "optional": True},
                 }
 
             pin["io"] = "input"
@@ -91,6 +72,7 @@ def translate_bash_transformer(
 
     if is_docker_transformer:
         from .translate_bashdocker_transformer import translate_bashdocker_transformer
+
         docker = env.pop("docker")
         docker_image = docker["name"]
         docker_options = docker.get("options", {})
@@ -99,12 +81,18 @@ def translate_bash_transformer(
             env["powers"] = []
         env["powers"].append("docker")
         return translate_bashdocker_transformer(
-            node, root, namespace, 
-            node_pins, inchannels, outchannels,
-            deep_inchannels, deep_pins,
-            has_meta_connection = has_meta_connection,
-            env=env, 
-            docker_image=docker_image, docker_options=docker_options
+            node,
+            root,
+            namespace,
+            node_pins,
+            inchannels,
+            outchannels,
+            deep_inchannels,
+            deep_pins,
+            has_meta_connection=has_meta_connection,
+            env=env,
+            docker_image=docker_image,
+            docker_options=docker_options,
         )
 
     parent = get_path(root, node["path"][:-1], None, None)
@@ -115,31 +103,44 @@ def translate_bash_transformer(
     result_name = node["RESULT"]
     input_name = node["INPUT"]
     result_cell_name = result_name + "_CELL"
-    forbidden = [result_name, result_cell_name, "bashcode", "pins_", "conda_environment_"]
+    forbidden = [
+        result_name,
+        result_cell_name,
+        "bashcode",
+        "pins_",
+        "conda_environment_",
+    ]
     pin_intermediate = {}
     for pin in node["pins"].keys():
         pin_intermediate[pin] = input_name + "_PIN_" + pin
         forbidden.append(pin_intermediate[pin])
     for c in inchannels:
-        assert (not len(c)) or c[0] not in forbidden #should have been checked by highlevel
+        assert (not len(c)) or c[
+            0
+        ] not in forbidden  # should have been checked by highlevel
 
     pins = node_pins.copy()
     pins["bashcode"] = {"celltype": "text"}
     pins["pins_"] = {"celltype": "plain"}
     pins["conda_environment_"] = {"celltype": "str"}
     pins_ = set(list(pins.keys()) + list(deep_pins.keys()))
-    pins_ = sorted([pin for pin in pins_ if pin not in ("pins_", "conda_environment_", "bashcode")])
+    pins_ = sorted(
+        [pin for pin in pins_ if pin not in ("pins_", "conda_environment_", "bashcode")]
+    )
     ctx.pins = cell("plain").set(pins_)
 
     interchannels = [as_tuple(pin) for pin in pins]
     mount = node.get("mount", {})
     inp, inp_ctx = build_structured_cell(
-      ctx, input_name, inchannels, interchannels,
-      fingertip_no_remote=node.get("fingertip_no_remote", False),
-      fingertip_no_recompute=node.get("fingertip_no_recompute", False),
-      hash_pattern= node.get("hash_pattern"),
-      return_context=True,
-      auth_subchecksums_persistent=True
+        ctx,
+        input_name,
+        inchannels,
+        interchannels,
+        fingertip_no_remote=node.get("fingertip_no_remote", False),
+        fingertip_no_recompute=node.get("fingertip_no_recompute", False),
+        hash_pattern=node.get("hash_pattern"),
+        return_context=True,
+        auth_subchecksums_persistent=True,
     )
     setattr(ctx, input_name, inp)
     namespace[node["path"] + ("SCHEMA",), "source"] = inp.schema, node
@@ -148,14 +149,14 @@ def translate_bash_transformer(
     for inchannel in inchannels:
         path = node["path"] + inchannel
         is_checksum = False
-        if len(inchannel) == 1:            
+        if len(inchannel) == 1:
             pinname = inchannel[0]
             pin = node_pins[pinname]
             if pin.get("celltype") == "checksum":
                 is_checksum = True
         if is_checksum:
             pin_cell2 = cell("checksum")
-            pin_cell2._scratch = True            
+            pin_cell2._scratch = True
             cell_setattr(node, ctx, pinname + "_CHECKSUM", pin_cell2)
             pin_cell3 = cell("plain")
             pin_cell3._scratch = True
@@ -166,7 +167,7 @@ def translate_bash_transformer(
         else:
             namespace[path, "target"] = inp.inchannels[inchannel], node
 
-    assert result_name not in pins #should have been checked by highlevel
+    assert result_name not in pins  # should have been checked by highlevel
     result_celltype = node.get("result_celltype", "structured")
     result_celltype2 = result_celltype
     if result_celltype in ("structured", "folder", "deepcell"):
@@ -187,10 +188,7 @@ def translate_bash_transformer(
             celltype = "plain"
         p["celltype"] = celltype
         all_pins[pinname] = p
-    result_pin = {
-        "io": "output", 
-        "celltype": result_celltype2
-    }
+    result_pin = {"io": "output", "celltype": result_celltype2}
     result_hash_pattern = None
     if result_celltype == "deepcell":
         result_hash_pattern = {"*": "#"}
@@ -198,13 +196,17 @@ def translate_bash_transformer(
         result_hash_pattern = {"*": "##"}
     if result_hash_pattern is not None:
         result_pin["hash_pattern"] = result_hash_pattern
-    all_pins[result_name] = result_pin 
+    all_pins[result_name] = result_pin
     if node["SCHEMA"]:
-        raise NotImplementedError
+        '''
         all_pins[node["SCHEMA"]] = {
-            "io": "input", "transfer_mode": "json",
-            "access_mode": "json", "content_type": "json"
+            "io": "input",
+            "transfer_mode": "json",
+            "access_mode": "json",
+            "content_type": "json",
         }
+        '''
+        raise NotImplementedError
     all_pins.update(deep_pins)
     ctx.tf = transformer(all_pins)
     ctx.tf._scratch = scratch
@@ -223,7 +225,7 @@ def translate_bash_transformer(
     if "code" in checksum:
         ctx.code._set_checksum(checksum["code"], initial=True)
     inp_checksum = convert_checksum_dict(checksum, "input")
-    if not len(node_pins): # no non-deepcell pins. Just to avoid errors.
+    if not len(node_pins):  # no non-deepcell pins. Just to avoid errors.
         inp_checksum = {"auth": empty_dict_checksum}
     set_structured_cell_from_checksum(inp, inp_checksum)
 
@@ -242,7 +244,7 @@ def translate_bash_transformer(
         namespace[node["path"] + ("meta",), "target"] = ctx.meta, node
 
     pin_cells = {}
-    for pin in list(node_pins.keys()) + list(deep_pins.keys()):        
+    for pin in list(node_pins.keys()) + list(deep_pins.keys()):
         hash_pattern = None
         if pin in deep_pins:
             celltype = deep_pins[pin]["celltype"]
@@ -262,7 +264,7 @@ def translate_bash_transformer(
                 celltype = "text"
         pin_cell = cell(celltype)
         if celltype != "plain" or node_pins[pin].get("subcelltype") != "module":
-            pin_cell._scratch = True        
+            pin_cell._scratch = True
         pin_cell._hash_pattern = hash_pattern
         cell_setattr(node, ctx, pin_intermediate[pin], pin_cell)
         pin_cells[pin] = pin_cell
@@ -283,12 +285,14 @@ def translate_bash_transformer(
 
     if result_celltype == "structured":
         result, result_ctx = build_structured_cell(
-            ctx, result_name, [()],
+            ctx,
+            result_name,
+            [()],
             outchannels,
             fingertip_no_remote=node.get("fingertip_no_remote", False),
             fingertip_no_recompute=node.get("fingertip_no_recompute", False),
             return_context=True,
-            scratch=True
+            scratch=True,
         )
         namespace[node["path"] + ("RESULTSCHEMA",), "source"] = result.schema, node
         if "result_schema" in mount:
@@ -309,7 +313,7 @@ def translate_bash_transformer(
         for k in checksum:
             if not k.startswith("result"):
                 continue
-            k2 = "value" if k == "result" else k[len("result_"):]
+            k2 = "value" if k == "result" else k[len("result_") :]
             result_checksum[k2] = checksum[k]
         set_structured_cell_from_checksum(result, result_checksum)
     else:
@@ -328,6 +332,7 @@ def translate_bash_transformer(
 
     namespace[node["path"], "target"] = inp, node
     namespace[node["path"], "source"] = result, node
+
 
 from .util import get_path, build_structured_cell, cell_setattr
 from ..util import as_tuple
