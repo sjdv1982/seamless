@@ -435,7 +435,7 @@ async def _evaluate_expression(
                     )
                     locknr = await acquire_evaluation_lock(self)
                     assert mode in ("checksum", "value"), mode
-                    if result is None:
+                    if _is_none(result):
                         done = True
                         result_checksum = None
                     elif mode == "checksum":
@@ -476,7 +476,7 @@ async def _evaluate_expression(
                         ).run()
                         if not result_checksum:
                             raise Exception
-                        assert isinstance(result_checksum, bytes)
+                        assert isinstance(result_checksum, Checksum)
                     done = True
 
             if not done and target_hash_pattern not in (None, "#", "##"):
@@ -605,6 +605,15 @@ class EvaluateExpressionTask(Task):
         )
 
 
+def _is_none(result):
+    if result is None:
+        return True
+    elif isinstance(result, Checksum):
+        return result.value is None
+    else:
+        return False
+
+
 async def evaluate_expression(
     expression, *, fingertip_mode=False, manager=None, fingertip_done=set()
 ):
@@ -615,7 +624,7 @@ async def evaluate_expression(
     if not fingertip_mode:
         result = database.get_expression(expression)
     from_task = False
-    if result is None:
+    if _is_none(result):
         celltype = celltype_mapping.get(expression.celltype, expression.celltype)
         target_celltype = celltype_mapping.get(
             expression.target_celltype, expression.target_celltype
@@ -646,13 +655,13 @@ async def evaluate_expression(
                     result = result_buffer
                 else:
                     result = expression.checksum
-        if result is None:
+        if _is_none(result):
             if fingertip_mode:
                 result = await evaluate_expression_remote(
                     expression, fingertip_mode=True
                 )
-                assert result is None or isinstance(result, bytes), type(result)
-                if result is None:
+                assert _is_none(result) or isinstance(result, bytes), type(result)
+                if _is_none(result):
                     result = await EvaluateExpressionTask(
                         manager,
                         expression,
@@ -660,20 +669,20 @@ async def evaluate_expression(
                         fingertip_upstream=True,
                         fingertip_done=fingertip_done,
                     ).run()
-                    assert result is None or isinstance(result, bytes), type(result)
-                    if result is not None:
+                    assert _is_none(result) or isinstance(result, bytes), type(result)
+                    if not _is_none(result):
                         from_task = True
             else:
                 result = await EvaluateExpressionTask(
                     manager, expression, fingertip_mode=False, fingertip_upstream=False
                 ).run()
-                if result is not None:
+                if not _is_none(result):
                     from_task = True
                 else:
                     result = await evaluate_expression_remote(
                         expression, fingertip_mode=False
                     )
-                    if result is None:
+                    if _is_none(result):
                         result = await EvaluateExpressionTask(
                             manager,
                             expression,
@@ -681,15 +690,16 @@ async def evaluate_expression(
                             fingertip_upstream=True,
                             fingertip_done=fingertip_done,
                         ).run()
-                        if result is not None:
+                        if not _is_none(result):
                             from_task = True
 
-        if result is not None:
+        if not _is_none(result):
             if fingertip_mode:
                 assert isinstance(result, bytes)
                 result_checksum = await CalculateChecksumTask(manager, result).run()
             else:
                 result_checksum = result
+            assert result_checksum
             trivial = False
             if (
                 expression.path is None

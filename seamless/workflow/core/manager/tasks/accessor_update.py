@@ -1,6 +1,7 @@
 import traceback
 from . import Task
 
+
 class AccessorUpdateTask(Task):
     def __init__(self, manager, accessor):
         assert isinstance(accessor, ReadAccessor)
@@ -62,7 +63,9 @@ class AccessorUpdateTask(Task):
         #
 
         try:
-            expression_result_checksum = await evaluate_expression(expression, manager=manager)
+            expression_result_checksum = await evaluate_expression(
+                expression, manager=manager
+            )
         except Exception as exc:
             fexc = traceback.format_exc()
             expression_result_checksum = None
@@ -75,9 +78,9 @@ class AccessorUpdateTask(Task):
             else:
                 reason = StatusReasonEnum.INVALID
                 accessor.exception = expression.exception
-            print("EXC", expression.exception, accessor.write_accessor.target(), expression_result_checksum, expression)
-            #exit(0)             
-            manager.cancel_accessor(accessor, void=True, origin_task=self, reason=reason)
+            manager.cancel_accessor(
+                accessor, void=True, origin_task=self, reason=reason
+            )
 
             target = accessor.write_accessor.target()
             if isinstance(target, MacroPath):
@@ -128,20 +131,23 @@ class AccessorUpdateTask(Task):
                         manager.macromanager.update_macro(worker)
                 else:
                     raise TypeError(type(worker))
-            elif isinstance(target, Cell): # If a cell:
+            elif isinstance(target, Cell):  # If a cell:
                 result_checksum = expression_result_checksum
 
                 if path is None:
-                    await manager.taskmanager.await_upon_connection_tasks(self.taskid, target._root())
+                    await manager.taskmanager.await_upon_connection_tasks(
+                        self.taskid, target._root()
+                    )
                     manager._set_cell_checksum(
-                        target, result_checksum,
-                        False, None, prelim=accessor._prelim
+                        target, result_checksum, False, None, prelim=accessor._prelim
                     )
                     if result_checksum:
                         CellUpdateTask(manager, target).launch()
                 else:
                     if not target._destroyed:
-                        assert expression.target_celltype == "mixed", expression.target_celltype
+                        assert (
+                            expression.target_celltype == "mixed"
+                        ), expression.target_celltype
                         sc = target._structured_cell
                         assert sc is not None
                         inchannel = sc.inchannels[path]
@@ -149,13 +155,17 @@ class AccessorUpdateTask(Task):
                         assert not inchannel._void, (sc, path)
 
                         manager._set_inchannel_checksum(
-                            inchannel, result_checksum,
-                            False, None, prelim=accessor._prelim
+                            inchannel,
+                            result_checksum,
+                            False,
+                            None,
+                            prelim=accessor._prelim,
                         )
             else:
                 raise TypeError(target)
         finally:
             release_evaluation_lock(locknr)
+
 
 from ..accessor import ReadAccessor
 from .evaluate_expression import evaluate_expression

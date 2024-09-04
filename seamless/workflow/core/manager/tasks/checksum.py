@@ -18,6 +18,8 @@ class CalculateChecksumTask(BackgroundTask):
             return
         result = await cached_calculate_checksum(self.buffer)
         result = Checksum(result)
+        if self.buffer:
+            assert result
         return result
 
 
