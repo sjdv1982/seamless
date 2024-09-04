@@ -1166,9 +1166,7 @@ class TransformationCache:
             if key in ("__output__", "__as__", "__language__"):
                 continue
             celltype, subcelltype, sem_checksum0 = value
-            sem_checksum = (
-                bytes.fromhex(sem_checksum0) if sem_checksum0 is not None else None
-            )
+            sem_checksum = Checksum(sem_checksum0)
             if syntactic_is_semantic(celltype, subcelltype):
                 syn_checksums = [sem_checksum]
             else:
@@ -1294,9 +1292,7 @@ class TransformationCache:
             if k in ("__compilers__", "__languages__", "__meta__", "__code_checksum__"):
                 continue
             celltype, subcelltype, sem_checksum0 = v
-            sem_checksum = (
-                bytes.fromhex(sem_checksum0) if sem_checksum0 is not None else None
-            )
+            sem_checksum = Checksum(sem_checksum0)
             if syntactic_is_semantic(celltype, subcelltype):
                 continue
             await self.serve_semantic_to_syntactic(

@@ -91,9 +91,7 @@ def unbashify_docker(
     )
     tdict["code"] = ("python", "transformer", semantic_code_checksum.hex())
     semkey = (semantic_code_checksum.bytes(), "python", "transformer")
-    semantic_cache[semkey] = [
-        bytes.fromhex(bash_checksums["docker_executor_code_checksum"])
-    ]
+    semantic_cache[semkey] = [Checksum(bash_checksums["docker_executor_code_checksum"])]
 
     execution_metadata["Language bridge"] = {
         "Source language": "bash",

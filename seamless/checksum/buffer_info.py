@@ -307,7 +307,7 @@ def convert_from_buffer_info(
             if self.dtype is not None:
                 if self.dtype[0] != "S":
                     return True
-            result = self.binary2bytes
+            result = Checksum(self.binary2bytes)
         elif conv == ("plain", "text"):
             if self.json_type is not None:
                 if self.json_type != "str":
@@ -316,16 +316,16 @@ def convert_from_buffer_info(
             if self.is_json:
                 return True
         elif conv == ("text", "str"):
-            result = self.text2str
+            result = Checksum(self.text2str)
         elif conv == ("str", "text"):
-            result = self.str2text
+            result = Checksum(self.str2text)
         elif target_celltype in ("float", "int", "bool"):
             if self.is_json_numeric_scalar:
                 return True
         if result is None:
             result = -1
         elif isinstance(result, str):
-            result = bytes.fromhex(result)
+            result = Checksum(result)
         return result
     else:
         raise AssertionError

@@ -341,9 +341,7 @@ def build_transformation_namespace_sync(transformation, semantic_cache, codename
         if pinname in ("__language__", "__output__", "__code_checksum__"):
             continue
         celltype, subcelltype, sem_checksum0 = transformation[pinname]
-        sem_checksum = (
-            bytes.fromhex(sem_checksum0) if sem_checksum0 is not None else None
-        )
+        sem_checksum = Checksum(sem_checksum0)
         if syntactic_is_semantic(celltype, subcelltype):
             checksum = sem_checksum
         else:
@@ -812,7 +810,7 @@ class TransformationJob:
 
         env_checksum0 = transformation.get("__env__")
         if env_checksum0 is not None:
-            env_checksum = bytes.fromhex(env_checksum0)
+            env_checksum = Checksum(env_checksum0)
             env = get_buffer(env_checksum, remote=True)
             if env is None:
                 raise CacheMissError(env_checksum.hex())
@@ -1068,7 +1066,7 @@ class TransformationJob:
                                 try:
                                     checksum = fut.result()
                                     logs = transformation_cache.transformation_logs.get(
-                                        bytes.fromhex(tf_checksum)
+                                        Checksum(tf_checksum)
                                     )
                                 except Exception:
                                     checksum = None
@@ -1093,11 +1091,11 @@ class TransformationJob:
                     ):
                         status = status[0]
                         if status == 0:
-                            result_checksum = bytes.fromhex(msg)
+                            result_checksum = Checksum(msg)
                             done = True
                             break
                         elif status == 2:
-                            prelim_checksum = bytes.fromhex(msg)
+                            prelim_checksum = Checksum(msg)
                             prelim_callback(self, prelim_checksum)
                         else:
                             raise Exception(
@@ -1281,7 +1279,7 @@ def get_global_info(global_info=None, force=False):
         execution_metadata0["Conda environment checksum"] = conda_env_checksum
         buffer_remote.write_buffer(conda_env_checksum, info)
         database.set_buffer_length(conda_env_checksum, len(info))
-        buffer_cache.cache_buffer(bytes.fromhex(conda_env_checksum), info)
+        buffer_cache.cache_buffer(conda_env_checksum, info)
         info = conda.cli.python_api.run_command(
             conda.cli.python_api.Commands.LIST, ["-f", "seamless-framework"]
         )[0]

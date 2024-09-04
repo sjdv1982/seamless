@@ -326,7 +326,7 @@ class MountItem:
                 )
             if result is None:
                 return None
-            checksum = bytes.fromhex(cs)
+            checksum = Checksum(cs)
             result_buf = get_buffer(checksum, remote=False)
             return result_buf
         binary = self.kwargs["binary"]

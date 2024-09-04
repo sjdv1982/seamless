@@ -57,7 +57,7 @@ def get_checksums(nodes, connections, *, with_annotations, skip_scratch):
         else:
             pass
         if hash_pattern is not None and get_deep_checksums:
-            buffer = get_buffer(bytes.fromhex(checksum), remote=True, deep=True)
+            buffer = get_buffer(Checksum(checksum), remote=True, deep=True)
             if buffer is None:
                 print(
                     "WARNING: could not get checksums for deep structures in {}".format(
@@ -66,7 +66,7 @@ def get_checksums(nodes, connections, *, with_annotations, skip_scratch):
                 )
                 return
             deep_structure = deserialize(
-                buffer, bytes.fromhex(checksum), "plain", copy=False
+                buffer, Checksum(checksum), "plain", copy=False
             )
             deep_checksums = deep_structure_to_checksums(deep_structure, hash_pattern)
             if with_annotations:
@@ -143,7 +143,7 @@ def get_buffer_dict_sync(manager, checksums):
     result = {}
     checksums = list(checksums)
     for checksum in checksums:
-        buffer = get_buffer(bytes.fromhex(checksum), remote=True)
+        buffer = get_buffer(Checksum(checksum), remote=True)
         if buffer is not None:
             result[checksum] = buffer
     return result

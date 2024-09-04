@@ -124,7 +124,7 @@ def _consider_local_evaluation(join_dict):
     for checksum in checksums:
         if buffer_cache.get_buffer(checksum, remote=False) is None:
             buffer_info = buffer_cache.get_buffer_info(
-                bytes.fromhex(checksum),
+                Checksum(checksum),
                 sync_remote=True,
                 buffer_from_remote=False,
                 force_length=False,
@@ -157,9 +157,7 @@ def _update_structured_cell(
     if len(sc.outchannels):
         livegraph = manager.livegraph
         downstreams = livegraph.paths_to_downstream[sc._data]
-        cs = checksum
-        if isinstance(checksum, str):
-            cs = bytes.fromhex(checksum)
+        cs = Checksum(checksum)
         if fallback is not None:
             cs = fallback._checksum
         taskmanager = manager.taskmanager
@@ -191,9 +189,7 @@ def _update_structured_cell(
                 AccessorUpdateTask(manager, accessor).launch()
 
     if not from_fallback:
-        cs = checksum
-        if isinstance(checksum, str):
-            cs = bytes.fromhex(checksum)
+        cs = Checksum(checksum)
         if sc._data is not sc.auth:
             sc._data._set_checksum(cs, from_structured_cell=True)
         manager.trigger_all_fallbacks(sc._data)

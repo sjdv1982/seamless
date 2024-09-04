@@ -153,7 +153,7 @@ class Cell(SeamlessBase):
             raise Exception(
                 "Cannot ask the cell value of a context that is being constructed by a macro"
             )
-        checksum = bytes.fromhex(self.checksum)
+        checksum = Checksum(self.checksum)
         transformation_cache = manager.cachemanager.transformation_cache
         sem_checksum = transformation_cache.syntactic_to_semantic(
             checksum, self._celltype, self._subcelltype, str(self)

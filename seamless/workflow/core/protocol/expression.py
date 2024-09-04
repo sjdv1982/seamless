@@ -86,8 +86,8 @@ def get_subpath_sync(value, hash_pattern, path):
     if post_path is None:
         if result is None:
             return None
-        elif isinstance(result, str):
-            checksum = bytes.fromhex(result)
+        elif isinstance(result, (str, Checksum)):
+            checksum = Checksum(result)
             deep = hash_pattern is not None
             buffer = get_buffer(checksum, remote=True, deep=deep)
             if hash_pattern == {"*": "##"} and len(path) == 1:
@@ -112,7 +112,7 @@ def get_subpath_sync(value, hash_pattern, path):
             )
             return value
     else:
-        checksum = bytes.fromhex(result)
+        checksum = Checksum(result)
         buffer = get_buffer(checksum, remote=True, deep=False)
         value = deserialize_sync(buffer, checksum, "mixed", copy=True)
         return _get_subpath(value, post_path)
@@ -130,8 +130,8 @@ async def get_subpath(
     if post_path is None:
         if result is None:
             return "value", None
-        elif isinstance(result, str):
-            checksum = bytes.fromhex(result)
+        elif isinstance(result, (str, Checksum)):
+            checksum = Checksum(result)
             return ("checksum", checksum)
         else:
             sub_structure, sub_hash_pattern = result
@@ -153,7 +153,7 @@ async def get_subpath(
             )
             return ("value", value)
     else:
-        checksum = bytes.fromhex(result)
+        checksum = Checksum(result)
         if perform_fingertip:
             buffer = await manager.cachemanager.fingertip(checksum)
         else:

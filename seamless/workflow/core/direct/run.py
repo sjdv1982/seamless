@@ -199,7 +199,7 @@ def run_transformation_dict(
                 celltype, subcelltype, sem_checksum = transformation_dict[k]
                 if syntactic_is_semantic(celltype, subcelltype):
                     continue
-                semkey = (bytes.fromhex(sem_checksum), celltype, subcelltype)
+                semkey = (Checksum(sem_checksum), celltype, subcelltype)
                 syn_checksums = transformation_cache.semantic_to_syntactic_checksums[
                     semkey
                 ]
@@ -837,7 +837,7 @@ def _wait():
             scratch,
         ) in queued_transformations:
             try:
-                tf_checksum = bytes.fromhex(transformation)
+                tf_checksum = Checksum(transformation)
                 if is_forked():
                     while 1:
                         ###tf_checksum2, result_checksum, logs = _parent_process_response_queue.get(timeout=15) ###
@@ -875,8 +875,7 @@ def _wait():
                 temprefmanager.purge_group("imperative")
                 if (
                     increfed
-                    and bytes.fromhex(transformation)
-                    in transformation_cache.transformations
+                    and Checksum(transformation) in transformation_cache.transformations
                 ):
                     transformation_cache.decref_transformation(
                         transformation_dict, increfed
@@ -908,6 +907,6 @@ def cleanup():
         # (see run_transformation_dict_async)
         if (
             increfed
-            and bytes.fromhex(transformation) in transformation_cache.transformations
+            and Checksum(transformation) in transformation_cache.transformations
         ):
             transformation_cache.decref_transformation(transformation_dict, increfed)

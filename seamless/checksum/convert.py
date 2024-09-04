@@ -68,7 +68,7 @@ def validate_checksum(v):
             if len(v) > 1000:
                 msg = v[:920] + "..." + v[-50:]
             raise ValueError(msg)
-        bytes.fromhex(v)
+        Checksum(v)
     elif isinstance(v, list):
         for vv in v:
             validate_checksum(vv)

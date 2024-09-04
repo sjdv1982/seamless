@@ -539,12 +539,11 @@ is result checksum: {}
         checksum = calculate_dict_checksum(join_dict2)
         return copy.deepcopy(self.join_cache.get(checksum))
 
-    def set_join_cache(self, join_dict, result_checksum):
-        if isinstance(result_checksum, str):
-            result_checksum = bytes.fromhex(result_checksum)
-        if join_dict == {"inchannels": {"[]": result_checksum.hex()}}:
-            return
+    def set_join_cache(self, join_dict, result_checksum: Checksum):
+        result_checksum = Checksum(result_checksum)
         join_dict2 = unchecksum(join_dict)
+        if join_dict2 == {"inchannels": {"[]": result_checksum.hex()}}:
+            return
         join_dict_buf = serialize(join_dict2, "plain", use_cache=True)
         checksum = Buffer(join_dict_buf).get_checksum()
         self.join_cache[checksum] = result_checksum

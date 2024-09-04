@@ -69,7 +69,7 @@ def set_structured_cell_from_checksum(cell, checksum, is_deepcell=False):
         assert len(checksum) == 1, checksum.keys()
         temp_checksum = checksum["temp"]
         if cell.hash_pattern is not None:
-            temp_cs = bytes.fromhex(temp_checksum)
+            temp_cs = Checksum(temp_checksum)
             temp_cs2 = apply_hash_pattern_sync(
                 temp_cs, cell.hash_pattern
             )

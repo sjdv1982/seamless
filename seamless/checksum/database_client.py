@@ -309,7 +309,7 @@ class Database:
         }
         response = self.send_get_request(request)
         if response is not None:
-            return [bytes.fromhex(cs.strip()) for cs in response.json()]
+            return [Checksum(cs.strip()) for cs in response.json()]
 
     def get_buffer_info(self, checksum: Checksum) -> BufferInfo:
         """Get BufferInfo for a checksum"""

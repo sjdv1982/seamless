@@ -66,6 +66,6 @@ with open(zip_filename, "bw") as f:
 
 from seamless.workflow.core.cache.transformation_cache import transformation_cache
 sem_checksum = transformation_cache.syntactic_to_semantic(
-    bytes.fromhex(ctx.executor.code.checksum), "python", "transformer", ""
+    ctx.executor.code.checksum), "python", "transformer", ""
 )
 print("Executor semantic code checksum:", sem_checksum.hex())

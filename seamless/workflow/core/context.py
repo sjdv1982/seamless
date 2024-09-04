@@ -348,7 +348,7 @@ class Context(SeamlessBase):
 
             if child.celltype == "plain":
                 compiled_module_code_checksum, compiled_module_code = (
-                    get_compiled_module_code(bytes.fromhex(checksum))
+                    get_compiled_module_code(checksum)
                 )
                 if compiled_module_code is not None:
                     buffer_cache.cache_buffer(

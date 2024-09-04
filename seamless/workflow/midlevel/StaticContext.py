@@ -29,6 +29,7 @@ class StaticContext(HelpMixin):
 
     def __init__(self, nodes, connections, lib=None, params=None, *, manager=None):
         from seamless.workflow.core.manager import Manager
+
         if lib is None:
             lib = {}
         if params is None:
@@ -228,9 +229,7 @@ class SimpleCellWrapper(WrapperBase):
 
         celltype = self._celltype
         if celltype == "mixed":
-            value = deserialize_sync(
-                buffer, bytes.fromhex(checksum), "mixed", copy=True
-            )
+            value = deserialize_sync(buffer, Checksum(checksum), "mixed", copy=True)
             hash_pattern = self._node.get("hash_pattern")
             if hash_pattern is None:
                 return value

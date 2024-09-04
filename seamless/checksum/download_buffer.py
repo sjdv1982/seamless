@@ -199,7 +199,7 @@ def get_buffer_length(checksum: Checksum, mirrorlist: list[Mirror, str]) -> int 
     if checksum and buffer_cache is not None:
         try:
             buffer_info = buffer_cache.get_buffer_info(
-                bytes.fromhex(checksum),
+                checksum,
                 force_length=True,
                 buffer_from_remote=False,
                 sync_remote=False,
@@ -350,24 +350,28 @@ def download_buffer_sync(
             buf = decompress(buf)
             if checksum or source_celltype != celltype:
                 buf_checksum = Buffer(buf).get_checksum().value
-            if source_celltype != celltype:
-                assert try_convert is not None
-                conv = try_convert(
-                    bytes.fromhex(buf_checksum), source_celltype, celltype, buffer=buf
-                )
-                if conv == True:  # pylint: disable=singleton-comparison
-                    pass
-                elif isinstance(conv, bytes):
-                    buf = get_buffer(conv, remote=False)
-                    assert buf is not None
-                    buf_checksum = conv.hex()
-                else:
-                    raise SeamlessConversionError
-            if checksum and buf_checksum != checksum:
-                print(
-                    "WARNING: '{}' has the wrong checksum".format(url), file=sys.stderr
-                )
-                continue
+                if source_celltype != celltype:
+                    assert try_convert is not None
+                    conv = try_convert(
+                        buf_checksum,
+                        source_celltype,
+                        celltype,
+                        buffer=buf,
+                    )
+                    if conv == True:  # pylint: disable=singleton-comparison
+                        pass
+                    elif isinstance(conv, bytes):
+                        buf = get_buffer(conv, remote=False)
+                        assert buf is not None
+                        buf_checksum = conv.hex()
+                    else:
+                        raise SeamlessConversionError
+                if checksum and buf_checksum != checksum:
+                    print(
+                        "WARNING: '{}' has the wrong checksum".format(url),
+                        file=sys.stderr,
+                    )
+                    continue
             return buf
         except (ConnectionError, ReadTimeout):
             # import traceback; traceback.print_exc()

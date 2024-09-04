@@ -57,7 +57,7 @@ def fast_unpack(deep_structure, hash_pattern):
     unpacked_buffers = []
     with ThreadPool(NTHREADS_AFTER_FORK) as pool:
         for n, deep_checksum in enumerate(deep_checksums):
-            deep_checksum2 = bytes.fromhex(deep_checksum)
+            deep_checksum2 = Checksum(deep_checksum)
             unpacked_buffer = buffer_cache.buffer_cache.get(deep_checksum2)
             if unpacked_buffer is not None:
                 unpacked_buffers.append(unpacked_buffer)

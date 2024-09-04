@@ -336,7 +336,7 @@ class DeepCellBase(Base, HelpMixin):
             celltype = "bytes"
         else:
             celltype = "mixed"
-        cs = bytes.fromhex(checksum)
+        cs = Checksum(checksum)
         buf = fair.access(checksum, celltype, verbose=True)
         return deserialize(buf, cs, celltype, copy=False)
 

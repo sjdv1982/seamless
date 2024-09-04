@@ -66,7 +66,7 @@ def verify_transformation_success(
         d["target_subcelltype"] = None
         d["hash_pattern"] = d.get("hash_pattern")
         d["target_hash_pattern"] = d.get("target_hash_pattern")
-        d["checksum"] = bytes.fromhex(d["checksum"])
+        d["checksum"] = Checksum(d["checksum"])
         expression = Expression(**d)
         # print("LOOK FOR EXPRESSION", expression.checksum.hex(), expression.path)
         result = database.get_expression(expression)

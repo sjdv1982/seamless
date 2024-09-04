@@ -98,7 +98,7 @@ async def value_conversion(
                 raise SeamlessConversionError(
                     "Cannot convert deep cell in value conversion"
                 )
-        checksum2 = bytes.fromhex(checksum_text)
+        checksum2 = Checksum(checksum_text)
         # return try_convert(checksum2, "bytes", target_celltype) # No, for now trust the "checksum" type
         return checksum2
 
@@ -218,7 +218,7 @@ def build_expression_transformation(expression: "Expression"):
     return transformation
 
 
-async def evaluate_expression_remote(expression, fingertip_mode):
+async def evaluate_expression_remote(expression, fingertip_mode) -> Checksum | None:
     from seamless.config import get_assistant
     from seamless.assistant_client import run_job
     from seamless.checksum.buffer_remote import write_buffer
@@ -233,10 +233,9 @@ async def evaluate_expression_remote(expression, fingertip_mode):
         result = await run_job(
             etf_checksum, tf_dunder=None, scratch=True, fingertip=fingertip_mode
         )
-        if result is not None:
-            result = bytes.fromhex(result)
-            if fingertip_mode:
-                result = buffer_cache.get_buffer(result)
+        result = Checksum(result)
+        if result and fingertip_mode:
+            result = buffer_cache.get_buffer(result)
     except (CacheMissError, RuntimeError):
         result = None
     return result
@@ -349,7 +348,7 @@ async def _evaluate_expression(
                 ).run()
                 nested_checksum = None
                 if isinstance(deep_structure, str):
-                    nested_checksum = bytes.fromhex(deep_structure)
+                    nested_checksum = Checksum(deep_structure)
                     if perform_fingertip:
                         buffer = await GetBufferTask(manager, nested_checksum).run()
                     else:

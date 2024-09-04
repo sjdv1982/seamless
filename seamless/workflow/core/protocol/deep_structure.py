@@ -29,7 +29,7 @@ def validate_deep_structure(deep_structure, hash_pattern):
             return
         if hash_pattern in ("#", "##"):
             try:
-                bytes.fromhex(deep_structure)
+                Checksum(deep_structure)
             except:
                 raise AssertionError from None
             return
@@ -314,13 +314,14 @@ async def deep_structure_to_value(deep_structure, hash_pattern, buffer_dict, cop
     checksums = set()
     for checksum0 in checksums0:
         checksum, is_raw = checksum0
+        checksum = Checksum(checksum)
         checksums.add(checksum)
         assert checksum in buffer_dict
         buf = buffer_dict[checksum]
         if is_raw:
             coro = _deserialize_raw_async(buf)
         else:
-            coro = deserialize(buf, bytes.fromhex(checksum), "mixed", copy=copy)
+            coro = deserialize(buf, checksum, "mixed", copy=copy)
         futures[checksum] = asyncio.ensure_future(coro)
     await asyncio.gather(*futures.values())
     value_dict = {checksum: futures[checksum].result() for checksum in checksums}
@@ -345,10 +346,11 @@ def deep_structure_to_value_sync(deep_structure, hash_pattern, buffer_dict, copy
     value_dict = {}
     for checksum0 in checksums0:
         checksum, is_raw = checksum0
+        checksum = Checksum(checksum)
         assert checksum in buffer_dict
         buf = buffer_dict[checksum]
         if not is_raw:
-            value = deserialize_sync(buf, bytes.fromhex(checksum), "mixed", copy=copy)
+            value = deserialize_sync(buf, checksum, "mixed", copy=copy)
         else:
             value = deserialize_raw(buf)
         value_dict[checksum] = value
@@ -593,8 +595,7 @@ def write_deep_structure(checksum: Checksum, deep_structure, hash_pattern, path)
     if hash_pattern in ("#", "##"):
         assert len(path)
         old_checksum = deep_structure
-        assert isinstance(old_checksum, str)
-        bytes.fromhex(old_checksum)
+        old_checksum = Checksum(old_checksum)
         return 2, (), old_checksum, path, (hash_pattern == "##")
 
     validate_deep_structure(deep_structure, hash_pattern)

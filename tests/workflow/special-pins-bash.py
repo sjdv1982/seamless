@@ -1,11 +1,12 @@
 # Special pins are all-capital.
-# They do not show up in the transformation dict over which the 
+# They do not show up in the transformation dict over which the
 # transformation checksum is computed.
 # Therefore, they are assumed not to influence the computation result
 
 import traceback
 
 import seamless
+
 seamless.delegate(False)
 
 from seamless.workflow import Context
@@ -18,8 +19,10 @@ echo $b
 echo 42 > RESULT
 """
 
+
 def func(a, b):
     pass
+
 
 ctx.tf = func
 ctx.tf.language = "bash"
@@ -93,17 +96,18 @@ ctx.compute()
 print(ctx.tf.logs)
 print(ctx.tf.get_transformation_checksum())
 
-print('Nothing printed')
+print("Nothing printed")
 ctx.tf["SPECIAL__X"] = "This will be printed IN THE END"
-ctx.tf.debug.direct_print = True 
+ctx.tf.debug.direct_print = True
 ctx.compute()
 cs = ctx.tf.get_transformation_checksum()
-print('/Nothing printed')
+print("/Nothing printed")
 
 # remove transformation from cache
 tf_cache = ctx._manager.cachemanager.transformation_cache
-result_cs, _ = tf_cache.transformation_results.pop(bytes.fromhex(cs))
+result_cs, _ = tf_cache.transformation_results.pop(Checksum(cs))
 from seamless.workflow.core.cache.buffer_cache import buffer_cache
+
 buffer_cache.decref(result_cs)
 
 # re-run

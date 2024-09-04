@@ -831,7 +831,7 @@ class Context(Base, HelpMixin):
                 skip_scratch=True,
             )
             for checksum in checksums:
-                buffer_cache.incref(bytes.fromhex(checksum), persistent=True)
+                buffer_cache.incref(Checksum(checksum), persistent=True)
         else:
             if old_lib is not None:
                 self._graph.lib.pop(path)
@@ -840,7 +840,7 @@ class Context(Base, HelpMixin):
                 old_lib["graph"]["nodes"], [], with_annotations=False, skip_scratch=True
             )
             for old_checksum in old_checksums:
-                buffer_cache.decref(bytes.fromhex(old_checksum))
+                buffer_cache.decref(Checksum(old_checksum))
 
     def add_zip(self, zip, incref: bool = False):  # pylint: disable=redefined-builtin
         """Add entries from "zip" to the checksum-to-buffer cache.
@@ -1611,7 +1611,7 @@ These modifications have been CANCELED.""" % (
                 skip_scratch=True,
             )
             for checksum in checksums:
-                buffer_cache.decref(bytes.fromhex(checksum))
+                buffer_cache.decref(Checksum(checksum))
 
     def __str__(self):
         p = self.path

@@ -71,11 +71,12 @@ def get_buffer(
             if _done is None:
                 _done = set()
             _done.add(checksum)
-            target_buf = get_buffer(bytes.fromhex(d[k]), remote=remote, _done=_done)
+            kcs = Checksum(d[k])
+            target_buf = get_buffer(kcs, remote=remote, _done=_done)
             if target_buf is not None:
                 try:
                     try_convert_single(
-                        bytes.fromhex(d[k]),
+                        kcs,
                         target,
                         src,
                         buffer=target_buf,

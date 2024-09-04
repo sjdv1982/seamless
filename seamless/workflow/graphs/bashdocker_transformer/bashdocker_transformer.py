@@ -23,7 +23,9 @@ zip = ctx.get_zip()
 
 ctx.testdata = "a\nb\nc\nd\ne\nf\n"
 ctx.docker_command = "head -$lines testdata > firstdata; mkdir -p RESULT/input; cp firstdata RESULT; cp testdata RESULT/input"
-ctx.executor = lambda docker_command, docker_image_, docker_options, pins_, testdata, lines: None
+ctx.executor = (
+    lambda docker_command, docker_image_, docker_options, pins_, testdata, lines: None
+)
 pins = ctx.executor.pins
 pins.docker_command.celltype = "text"
 pins.docker_image_.celltype = "str"
@@ -53,21 +55,24 @@ if ctx.result.value is None:
     print(ctx.executor.exception)
     print(ctx.status)
     import sys
+
     sys.exit()
 
 # 3: Save graph and zip
 
 import os, json
-currdir=os.path.dirname(os.path.abspath(__file__))
-graph_filename=os.path.join(currdir,"../bashdocker_transformer.seamless")
+
+currdir = os.path.dirname(os.path.abspath(__file__))
+graph_filename = os.path.join(currdir, "../bashdocker_transformer.seamless")
 json.dump(graph, open(graph_filename, "w"), sort_keys=True, indent=2)
 
-zip_filename=os.path.join(currdir,"../bashdocker_transformer.zip")
+zip_filename = os.path.join(currdir, "../bashdocker_transformer.zip")
 with open(zip_filename, "bw") as f:
     f.write(zip)
 
 from seamless.workflow.core.cache.transformation_cache import transformation_cache
+
 sem_checksum = transformation_cache.syntactic_to_semantic(
-    bytes.fromhex(ctx.executor.code.checksum), "python", "transformer", ""
+    ctx.executor.code.checksum, "python", "transformer", ""
 )
 print("Executor semantic code checksum:", sem_checksum.hex())

@@ -2,7 +2,7 @@ import asyncio
 import json
 import traceback
 
-from seamless import Buffer
+from seamless import Buffer, Checksum
 from seamless.checksum.buffer_cache import buffer_cache
 
 
@@ -52,15 +52,13 @@ class FingerTipper:
         coros = []
         for pinname in transformation:
             if pinname == "__env__":
-                cs = bytes.fromhex(transformation[pinname])
+                cs = Checksum(transformation[pinname])
                 coros.append(self.fingertip_upstream(cs))
                 continue
             if pinname.startswith("__"):
                 continue
             celltype, subcelltype, sem_checksum0 = transformation[pinname]
-            sem_checksum = (
-                bytes.fromhex(sem_checksum0) if sem_checksum0 is not None else None
-            )
+            sem_checksum = Checksum(sem_checksum0)
             sem2syn = self.tf_cache.semantic_to_syntactic_checksums
             semkey = (sem_checksum, celltype, subcelltype)
             checksum2 = sem2syn.get(semkey, [sem_checksum])[0]
@@ -136,13 +134,13 @@ class FingerTipper:
             inchannels[path] = cs
         paths = sorted(list(inchannels.keys()))
         if "auth" in join_dict:
-            auth_checksum = bytes.fromhex(join_dict["auth"])
+            auth_checksum = Checksum(join_dict["auth"])
             auth_buffer = await self.fingertip_upstream(auth_checksum)
             value = await DeserializeBufferTask(
                 self.manager, auth_buffer, auth_checksum, "mixed", copy=True
             ).run()
         elif paths == [()]:
-            sub_checksum = bytes.fromhex(inchannels[paths[0]])
+            sub_checksum = Checksum(inchannels[paths[0]])
             sub_buffer = await self.fingertip_upstream(sub_checksum)
             value = await DeserializeBufferTask(
                 self.manager, sub_buffer, sub_checksum, "mixed", copy=True
@@ -170,7 +168,7 @@ class FingerTipper:
                 if value is None:
                     value = {}
         for path in paths:
-            sub_checksum = bytes.fromhex(inchannels[path])
+            sub_checksum = Checksum(inchannels[path])
             sub_buffer = None
             if hash_pattern is None or access_hash_pattern(hash_pattern, path) not in (
                 "#",

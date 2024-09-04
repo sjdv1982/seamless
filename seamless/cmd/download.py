@@ -69,8 +69,9 @@ def download_file(filename, file_checksum):
         return
 
 
-def download_index(index_checksum, dirname):
-    index_buffer = buffer_cache.get_buffer(bytes.fromhex(index_checksum))
+def download_index(index_checksum: Checksum, dirname):
+    index_checksum = Checksum(index_checksum)
+    index_buffer = buffer_cache.get_buffer(index_checksum)
     if index_buffer is None:
         err(
             f"Cannot download directory '{dirname}' index '{index_checksum}', CacheMissError"

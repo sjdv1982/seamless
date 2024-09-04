@@ -582,8 +582,8 @@ class BufferCache:
         """Uncache all cached buffers"""
         if self.buffer_cache is None:
             return
-        self.buffer_refcount.pop(bytes.fromhex(empty_dict_checksum), None)
-        self.buffer_refcount.pop(bytes.fromhex(empty_list_checksum), None)
+        self.buffer_refcount.pop(empty_dict_checksum, None)
+        self.buffer_refcount.pop(empty_list_checksum, None)
         if len(self.buffer_refcount):
             print_warning(
                 "buffer cache, %s buffers undestroyed" % len(self.buffer_refcount)

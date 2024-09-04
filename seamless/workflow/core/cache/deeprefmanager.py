@@ -3,12 +3,12 @@ import traceback
 from weakref import WeakSet
 
 from ..status import StatusReasonEnum
+from seamless import Checksum, CacheMissError
 from seamless.checksum.buffer_cache import (
     buffer_cache,
     empty_dict_checksum,
     empty_list_checksum,
 )
-from seamless import CacheMissError
 from seamless.checksum.calculate_checksum import calculate_dict_checksum
 from seamless.checksum.deserialize import deserialize
 
@@ -62,7 +62,7 @@ class DeepRefManager:
             if len(sub_checksums) > self.MAX_DEEP_BUFFER_MEMBERS:
                 self.big_buffers.add(checksum)
                 return
-            sub_checksums2 = [bytes.fromhex(cs) for cs in sub_checksums]
+            sub_checksums2 = [Checksum(cs) for cs in sub_checksums]
             for n in range(nrefs):
                 buffer_cache._incref(
                     sub_checksums2, persistent=subchecksums_persistent, buffers=None
