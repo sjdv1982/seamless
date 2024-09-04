@@ -3,10 +3,12 @@ from seamless.workflow import Context, Transformer
 ctx = Context()
 
 ctx.a = 12
-ctx.a.share() #requires translate() to have an effect
+ctx.a.share()  # requires translate() to have an effect
+
 
 def triple_it(a):
     return 3 * a
+
 
 ctx.transform = triple_it
 ctx.code = ctx.transform.code.pull()

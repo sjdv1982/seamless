@@ -3,10 +3,12 @@ import traceback
 
 ctx = Context()
 
+
 def func(a, b):
     aa = a**2
     bb = b**2
-    return aa+bb
+    return aa + bb
+
 
 ctx.tf = func
 ctx.tf.a = 10
@@ -19,13 +21,13 @@ ctx.compute()
 
 print()
 try:
-    #import os; os.environ.pop("HOSTCWD", None)
+    # import os; os.environ.pop("HOSTCWD", None)
     ctx.tf.debug.enable("light")
 except Exception:
     traceback.print_exc(limit=0)
 
 print()
-#ctx.tf.code.mount("debugmount/debugmode-py-light-code.py", authority="cell")
+# ctx.tf.code.mount("debugmount/debugmode-py-light-code.py", authority="cell")
 ctx.code = ctx.tf.code.pull()
 ctx.code.mount("debugmount/debugmode-py-light-code.py", authority="cell")
 ctx.translate()
@@ -33,6 +35,7 @@ ctx.translate()
 ctx.tf.debug.enable("light")
 
 import traceback
+
 print("Error 1")
 try:
     ctx.translate(force=True)

@@ -1,4 +1,5 @@
 import seamless
+
 seamless.delegate(False)
 
 from seamless.workflow.core import context, transformer, cell
@@ -14,49 +15,55 @@ def get_meta(tf):
     meta = transformation["__meta__"]
     return meta
 
-ctx = context(toplevel=True)
-ctx.tf = transformer({
-    "a": {
-        "io": "input",
-        "celltype": "int",
-    },
-    "result": {
-        "io": "output",
-        "celltype": "int",
-    },
 
-})
+ctx = context(toplevel=True)
+ctx.tf = transformer(
+    {
+        "a": {
+            "io": "input",
+            "celltype": "int",
+        },
+        "result": {
+            "io": "output",
+            "celltype": "int",
+        },
+    }
+)
+
+
 def tf(a):
     import time
+
     time.sleep(a)
     return a + 42
+
+
 ctx.tf.code.cell().set(tf)
 ctx.a = cell("int").set(1)
 ctx.a.connect(ctx.tf.a)
-ctx.tf.meta = {
-    "calculation_time": "2s"
-}
+ctx.tf.meta = {"calculation_time": "2s"}
 ctx.result = cell("int")
 ctx.tf.result.connect(ctx.result)
 ctx.compute()
 print(get_meta(ctx.tf))
 
+
 def calc_meta(a):
-    return {
-        "calculation_time": "{:d}s".format(a)
+    return {"calculation_time": "{:d}s".format(a)}
+
+
+ctx.calc_meta = transformer(
+    {
+        "a": {
+            "io": "input",
+            "celltype": "int",
+        },
+        "result": {
+            "io": "output",
+            "celltype": "plain",
+        },
     }
-
-ctx.calc_meta = transformer({
-    "a": {
-        "io": "input",
-        "celltype": "int",
-    },
-    "result": {
-        "io": "output",
-        "celltype": "plain",
-    },
-
-})
+)
 ctx.calc_meta.code.cell().set(calc_meta)
 ctx.a.connect(ctx.calc_meta.a)
 ctx.meta = cell("plain")

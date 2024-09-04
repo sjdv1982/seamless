@@ -1,9 +1,11 @@
 import seamless
+
 seamless.delegate(False)
 
 from seamless.workflow import Context, copy
+
 ctx = Context()
-ctx.tf = lambda a,b: a * b
+ctx.tf = lambda a, b: a * b
 ctx.tf.a = 3
 ctx.tf.b = 4
 ctx.result = ctx.tf.result

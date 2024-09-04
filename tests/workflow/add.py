@@ -1,8 +1,12 @@
 from seamless.workflow import Context
+
 ctx = Context()
+
 
 def add(a, b):
     return a + b
+
+
 ctx.a = 10
 ctx.b = 20
 ctx.add = add

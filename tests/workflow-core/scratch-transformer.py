@@ -15,15 +15,17 @@ ctx.compute()
 print(ctx.a.value, ctx.b.value, ctx.c.value)
 print(ctx.a.checksum, ctx.b.checksum, ctx.c.checksum)
 
-ctx.code = cell("transformer").set('a + b + c')
+ctx.code = cell("transformer").set("a + b + c")
 ctx.result = cell("float")
 ctx.result._scratch = True
-ctx.tf = transformer({
-    "a": ("input", "float"),
-    "b": ("input", "float"),
-    "c": ("input", "float"),
-    "result": ("output", "float"),
-})
+ctx.tf = transformer(
+    {
+        "a": ("input", "float"),
+        "b": ("input", "float"),
+        "c": ("input", "float"),
+        "result": ("output", "float"),
+    }
+)
 ctx.tf._scratch = True
 ctx.code.connect(ctx.tf.code)
 ctx.a.connect(ctx.tf.a)

@@ -1,4 +1,5 @@
 import seamless
+
 seamless.delegate(level=2)
 from seamless.workflow.core import context, cell
 

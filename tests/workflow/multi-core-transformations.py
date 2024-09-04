@@ -3,7 +3,7 @@ import random
 import time
 import seamless
 import asyncio
-    
+
 if "DELEGATE" in os.environ:
     has_err = seamless.delegate()
     if has_err:
@@ -21,8 +21,10 @@ random.seed(time.time())
 def func(jobid, sleep, rand):
     print("Run job", jobid)
     import time
+
     time.sleep(sleep)
     return jobid
+
 
 func.direct_print = True
 

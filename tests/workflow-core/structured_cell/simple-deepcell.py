@@ -1,4 +1,5 @@
 import seamless
+
 seamless.delegate(False)
 
 from seamless.workflow.core import context, cell, StructuredCell
@@ -7,12 +8,9 @@ import traceback
 
 ctx = context(toplevel=True)
 ctx.data = cell("mixed")
-hash_pattern = {"*":"#"}
+hash_pattern = {"*": "#"}
 ctx.data._hash_pattern = hash_pattern
-ctx.sc = StructuredCell(
-    data=ctx.data,
-    hash_pattern=hash_pattern
-)
+ctx.sc = StructuredCell(data=ctx.data, hash_pattern=hash_pattern)
 
 data = ctx.sc.handle
 try:
@@ -26,7 +24,7 @@ print(ctx.data.value)
 print(data)
 print(ctx.sc.value)
 
-print("START")    
+print("START")
 data.x = "test"
 data.y = "test2"
 data.z = "test3"
@@ -40,11 +38,7 @@ print(ctx.sc.data)
 print(data["x"], data["y"], data["z"])
 print(data.x.unsilk, data.y.unsilk, data.z.unsilk)
 
-data.set({
-    "p": 10,
-    "q": 20,
-    "r": 30
-})
+data.set({"p": 10, "q": 20, "r": 30})
 ctx.compute()
 print(ctx.data.value)
 print(data)
@@ -53,4 +47,6 @@ print(ctx.sc.value)
 print(data.p.data, data.q.data, data.r.data)
 
 print("STOP")
-import sys; sys.exit()
+import sys
+
+sys.exit()

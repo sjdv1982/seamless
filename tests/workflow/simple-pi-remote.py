@@ -1,10 +1,12 @@
-#use with jobslave.py
+# use with jobslave.py
 
 import seamless
+
 seamless.delegate()
 import math
 from seamless.workflow import Context, Cell
 import json
+
 ctx = Context()
 ctx.pi = math.pi
 ctx.doubleit = lambda a: 2 * a

@@ -1,4 +1,5 @@
 import seamless
+
 seamless.delegate(False)
 
 import json

@@ -1,10 +1,11 @@
 import seamless
+
 seamless.delegate(False)
 
 from seamless.workflow import Context, Cell
 
 ctx = Context()
-ctx.add = lambda a,b: a + b
+ctx.add = lambda a, b: a + b
 ctx.a = 10
 ctx.b = 20
 ctx.add.a = ctx.a
@@ -26,7 +27,7 @@ ctx.sub3 = ctx.sub1
 ctx.compute()
 print(ctx.sub3.result.value)
 print()
-subctx.add.code = lambda a,b: a*b
+subctx.add.code = lambda a, b: a * b
 ctx.a1 = 110
 ctx.a2 = 210
 ctx.sub1.a = ctx.a1
@@ -51,6 +52,7 @@ print(ctx.sub.sub2.result.value)
 print(ctx.sub.sub3.result.value)
 print()
 from pprint import pprint
+
 pprint(ctx.status)
 
 # Copying subcontexts does not copy external connections
@@ -60,11 +62,11 @@ ctx.subc.a = ctx.a1
 ctx.subc2 = ctx.subc
 ctx.compute()
 print(ctx.subc.a.value)
-print(ctx.subc2.a.value) # None!
+print(ctx.subc2.a.value)  # None!
 ctx.a1 = 1000
 ctx.compute()
 print(ctx.subc.a.value)
-print(ctx.subc2.a.value) # None!
+print(ctx.subc2.a.value)  # None!
 print()
 
 graph = ctx.get_graph()

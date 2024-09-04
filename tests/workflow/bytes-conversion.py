@@ -1,4 +1,5 @@
 import seamless
+
 seamless.delegate(False)
 
 from seamless.workflow import Context, Cell
@@ -6,7 +7,7 @@ from seamless.workflow import Context, Cell
 ctx = Context()
 ctx.bin1 = Cell()
 ctx.bin1.celltype = "bytes"
-ctx.bin1.set(b'this is a bytes value')
+ctx.bin1.set(b"this is a bytes value")
 ctx.compute()
 print(ctx.bin1.buffer)
 print(ctx.bin1.value)

@@ -8,11 +8,14 @@ Overhead is terrible and space requirements are atrocious, but there could be
 """
 
 import seamless
+
 seamless.delegate(False)
 
 from seamless.workflow.core import context, cell, macro, macro_mode_on
 import time
+
 ctx = context(toplevel=True)
+
 
 def refe_collatz(value):
     if value == 1:
@@ -22,6 +25,7 @@ def refe_collatz(value):
     else:
         newvalue = value // 2
     return [value] + refe_collatz(newvalue)
+
 
 def collatz(ctx, value, macro_code, macro_params):
     print("COLLATZ", value)
@@ -53,13 +57,14 @@ def collatz(ctx, value, macro_code, macro_params):
     ctx.tf.c.connect(ctx.series)
     print("/COLLATZ", value)
 
+
 ctx.start = cell()
 
 ctx.code = cell("macro").set(collatz)
 macro_params = {
     "value": "int",
     "macro_params": "plain",
-    "macro_code": ("python", "macro")
+    "macro_code": ("python", "macro"),
 }
 ctx.macro_params = cell().set(macro_params)
 ctx.compute()

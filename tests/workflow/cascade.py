@@ -2,9 +2,11 @@
 # Making the first one invalid, and then valid again, shouldn't disable docker_image on the second
 
 import seamless
+
 seamless.delegate(False)
 
 from seamless.workflow import Context
+
 ctx = Context()
 ctx.tf1 = lambda a: None
 ctx.tf2 = lambda a: None

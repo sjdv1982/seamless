@@ -10,11 +10,14 @@ def get_square(value):
     return value**2
 """
 
+
 def func(a, b):
     from .pymodule import get_square
+
     aa = get_square(a)
     bb = get_square(b)
-    return aa+bb
+    return aa + bb
+
 
 ctx.tf = func
 ctx.tf.a = 10
@@ -27,7 +30,7 @@ ctx.result = ctx.tf
 ctx.compute()
 print(ctx.tf.result.value)
 
-#ctx.tf.debug.attach = False
+# ctx.tf.debug.attach = False
 ctx.tf.debug.enable("sandbox")
 
 ctx.tf.a = 12

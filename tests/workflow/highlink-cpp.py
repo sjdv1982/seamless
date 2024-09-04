@@ -1,14 +1,19 @@
 import seamless
+
 seamless.delegate(False)
 from seamless.workflow import Context, Cell, Transformer
 import numpy as np
 
 ctx = Context()
+
+
 def calc_arr(period, npoints):
     import numpy as np
+
     points = np.arange(npoints)
-    phase = points/period*np.pi*2
+    phase = points / period * np.pi * 2
     return np.sin(phase)
+
 
 ctx.period = 200
 ctx.npoints = 1100
@@ -71,7 +76,7 @@ ctx.compute()
 print(ctx.tf.status)
 print(ctx.tf.exception)
 ctx.tf.result.example.set(np.zeros(10))
-ctx.tf.result.schema["form"]["shape"] = [[0, 100000]]   # maximum result size
+ctx.tf.result.schema["form"]["shape"] = [[0, 100000]]  # maximum result size
 
 print("\nSTEP 3\n")
 ctx.compute()

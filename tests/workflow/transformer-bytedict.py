@@ -1,16 +1,20 @@
 import seamless
+
 seamless.delegate(False)
 
 from seamless.workflow import Context
 
+
 def func():
     import numpy as np
+
     result = {}
-    result["a"] = b'abc'
-    result["a2"] = 'xyz'
+    result["a"] = b"abc"
+    result["a2"] = "xyz"
     result["b"] = np.arange(3).tobytes()
     result["c"] = 42
     return result
+
 
 ctx = Context()
 ctx.tf = func

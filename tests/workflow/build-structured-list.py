@@ -1,7 +1,9 @@
 import seamless
+
 seamless.delegate(False)
 
 from seamless.workflow import Context, Cell
+
 ctx = Context()
 ctx.a = Cell()
 

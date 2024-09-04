@@ -5,7 +5,7 @@ seamless.delegate(level=0, force_database=True)
 from seamless.workflow import Context, Cell
 
 ctx = Context()
-ctx.transform = lambda a,b: a + b
+ctx.transform = lambda a, b: a + b
 ctx.transform.a = 2
 ctx.transform.b = 3
 ctx.translate()
@@ -25,7 +25,7 @@ extern "C" int transform(int a, int b, double *result) {
     return 0;
 }"""
 ctx.translate()
-ctx.transform.result.example = 0.0 #example, just to fill the schema
+ctx.transform.result.example = 0.0  # example, just to fill the schema
 ctx.compute()
 print(ctx.result.value)
 

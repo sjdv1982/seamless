@@ -1,4 +1,5 @@
 import seamless
+
 seamless.delegate(False)
 
 from seamless.workflow.core import macro_mode, context, cell, macro
@@ -6,10 +7,13 @@ from seamless.workflow.core import macro_mode, context, cell, macro
 with macro_mode.macro_mode_on(None):
     ctx = context(toplevel=True)
 
-ctx.macro = macro({
-    "a": "mixed",
-})
+ctx.macro = macro(
+    {
+        "a": "mixed",
+    }
+)
 ctx.a = cell().set(42)
+
 
 def code(ctx, a):
     ctx.answer = cell().set(a)
@@ -19,6 +23,7 @@ def code(ctx, a):
     ctx.result = cell()
     ctx.double.result.connect(ctx.result)
 
+
 ctx.code = cell("macro").set(code)
 ctx.a.connect(ctx.macro.a)
 ctx.code.connect(ctx.macro.code)
@@ -27,7 +32,7 @@ print(ctx.macro.status)
 print(ctx.macro.exception)
 print(ctx.macro.ctx.answer.value)
 print(ctx.macro.ctx.result.value)
-ctx.result0 = cell() 
+ctx.result0 = cell()
 ctx.macro.ctx.result.connect(ctx.result0)
 ctx.compute()
 print(ctx.result0.value)

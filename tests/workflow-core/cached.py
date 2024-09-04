@@ -1,16 +1,20 @@
 import seamless
+
 seamless.delegate(False)
 
 from seamless.workflow.core import macro_mode_on
 from seamless.workflow.core import context, cell, transformer, macro
 
-def run(a,b):
+
+def run(a, b):
     print("RUN")
     import time
+
     for n in range(3):
-        print("Running", n+1)
+        print("Running", n + 1)
         time.sleep(1)
     return a + b
+
 
 def build(ctx, param, run):
     print("BUILD")
@@ -20,13 +24,9 @@ def build(ctx, param, run):
         "c": "output",
     }
     ctx.tf1 = transformer(tf_params)
-    ctx.tf1._debug = {
-        "direct_print" : True
-    }
+    ctx.tf1._debug = {"direct_print": True}
     ctx.tf2 = transformer(tf_params)
-    ctx.tf2._debug = {
-        "direct_print" : True
-    }
+    ctx.tf2._debug = {"direct_print": True}
     tf = ctx.tf2 if param == "PARAM" else ctx.tf1
 
     ctx.run = cell("transformer").set(run)
@@ -39,12 +39,15 @@ def build(ctx, param, run):
     tf.c.connect(ctx.c)
     ctx.param = cell().set(param)
 
+
 with macro_mode_on():
     ctx = context(toplevel=True)
-    ctx.macro = macro({
-        "param": "plain",
-        "run": "text",
-    })
+    ctx.macro = macro(
+        {
+            "param": "plain",
+            "run": "text",
+        }
+    )
     ctx.macro_code = cell("macro").set(build)
     ctx.macro_code.connect(ctx.macro.code)
     ctx.run = cell("transformer").set(run)

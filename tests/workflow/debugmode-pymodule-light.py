@@ -11,11 +11,14 @@ def get_square(value):
 """
 ctx.pymodule.mount("debugmount/test-pymodule.py", authority="cell")
 
+
 def func(a, b):
     from .pymodule import get_square
+
     aa = get_square(a)
     bb = get_square(b)
-    return aa+bb
+    return aa + bb
+
 
 ctx.tf = func
 ctx.tf.a = 10

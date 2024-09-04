@@ -1,10 +1,11 @@
 import seamless
+
 seamless.delegate(False)
 
 from seamless.workflow import Context
 
 ctx = Context()
-ctx.transform = lambda a,b: a + b
+ctx.transform = lambda a, b: a + b
 ctx.transform.a = 2
 ctx.transform.b = 3
 ctx.translate()
@@ -29,9 +30,9 @@ extern "C" int transform(int a, int b, double *result) {
     return 1;
 }"""
 ctx.translate()
-ctx.transform.result.example = 0.0 #example, just to fill the schema
+ctx.transform.result.example = 0.0  # example, just to fill the schema
 ctx.transform.link_options = ["-lstdc++"]
-#ctx.transform.main_module.link_options also works
+# ctx.transform.main_module.link_options also works
 ctx.compute()
 print(ctx.transform.exception)
 print("")
@@ -47,6 +48,6 @@ extern "C" int transform(int a, int b, double *result) {
     exit(1);
 }"""
 ctx.translate()
-ctx.transform.result.example = 0.0 #example, just to fill the schema
+ctx.transform.result.example = 0.0  # example, just to fill the schema
 ctx.compute()
 print(ctx.transform.exception)

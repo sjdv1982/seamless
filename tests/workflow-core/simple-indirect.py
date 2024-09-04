@@ -1,4 +1,5 @@
 import seamless
+
 seamless.delegate(False)
 
 from seamless.workflow.core import context, cell, transformer, unilink
@@ -9,11 +10,7 @@ with macro_mode_on():
     ctx.cell1 = cell().set(1)
     ctx.cell2 = cell().set(2)
     ctx.result = cell()
-    ctx.tf = transformer({
-        "a": "input",
-        "b": "input",
-        "c": "output"
-    })
+    ctx.tf = transformer({"a": "input", "b": "input", "c": "output"})
     ctx.cell1_unilink = unilink(ctx.cell1)
     ctx.cell1_unilink.connect(ctx.tf.a)
     ctx.cell2.connect(ctx.tf.b)

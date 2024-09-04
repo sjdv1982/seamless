@@ -1,4 +1,5 @@
 import seamless
+
 seamless.delegate(False)
 
 from seamless.workflow.core import macro_mode_on
@@ -56,13 +57,16 @@ with macro_mode_on():
     ctx = context(toplevel=True)
     ctx.param = cell("plain").set(1)
 
-    ctx.macro = macro({
-        "param": "plain",
-        "testmodule": ("plain", "module"),
-    })
+    ctx.macro = macro(
+        {
+            "param": "plain",
+            "testmodule": ("plain", "module"),
+        }
+    )
 
     ctx.param.connect(ctx.macro.param)
-    ctx.macro_code = cell("macro").set("""
+    ctx.macro_code = cell("macro").set(
+        """
 print("macro execute")
 from .testmodule import testvalue
 from .testmodule.mod1 import func
@@ -74,7 +78,8 @@ print(testmodule.testvalue)
 from .testmodule import mod3
 print(mod3.testvalue)
 print("/macro execute")
-""")
+"""
+    )
     ctx.macro_code.connect(ctx.macro.code)
 
     ctx.testmodule = cell("plain").set(testmodule)

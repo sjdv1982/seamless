@@ -1,4 +1,5 @@
 from seamless import Transformer, Cell, Context, Module
+
 ctx = Context()
 ctx.cython_module = Module()
 ctx.cython_module.language = "ipython"

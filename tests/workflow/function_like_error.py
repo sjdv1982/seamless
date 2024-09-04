@@ -1,10 +1,13 @@
 import seamless
+
 seamless.delegate(False)
 
 from seamless.workflow import Context
 
+
 def func(a, b):
     return a + b
+
 
 ctx = Context()
 ctx.tf = func

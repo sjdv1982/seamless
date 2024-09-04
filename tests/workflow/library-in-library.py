@@ -1,4 +1,5 @@
 import seamless
+
 seamless.delegate(False)
 
 from seamless.workflow import Context, Cell
@@ -9,7 +10,7 @@ lib = LibraryContainer("lib")
 ctx = Context()
 ctx.x = 20
 ctx.y = 5
-ctx.minus = lambda x,y: x - y
+ctx.minus = lambda x, y: x - y
 ctx.minus.x = ctx.x
 ctx.minus.y = ctx.y
 ctx.result = ctx.minus
@@ -17,6 +18,8 @@ ctx.compute()
 print(ctx.result.value)
 
 lib.subtract = ctx
+
+
 def constructor(ctx, libctx, x, result):
     graph = libctx.get_graph()
     ctx.set_graph(graph)
@@ -24,6 +27,8 @@ def constructor(ctx, libctx, x, result):
         ctx.x = x
     if result is not None:
         result.connect_from(ctx.result)
+
+
 lib.subtract.constructor = constructor
 lib.subtract.params = {
     "x": {
@@ -37,12 +42,14 @@ lib.subtract.params = {
         "type": "cell",
         "default": None,
         "must_be_defined": False,
-    }
+    },
 }
 
 ctx = Context()
 ctx.include(lib.subtract)
 lib.subtract2 = ctx
+
+
 def constructor(ctx, libctx, result):
     ctx.sub_inner = ctx.lib.subtract()
     if result is not None:
@@ -50,6 +57,7 @@ def constructor(ctx, libctx, result):
         result.connect_from(ctx.result)
     else:
         ctx.result = Cell()
+
 
 lib.subtract2.constructor = constructor
 lib.subtract2.params = {
@@ -60,12 +68,12 @@ lib.subtract2.params = {
         "must_be_defined": False,
     }
 }
-    
+
 ctx = Context()
 ctx.include(lib.subtract2)  # will also include lib.subtract
 ctx.sub_dummy = ctx.lib.subtract2()
 ctx.sub_outer = ctx.lib.subtract2()
-#ctx.sub_dummy = ctx.lib.subtract()
+# ctx.sub_dummy = ctx.lib.subtract()
 ctx.compute()
 
 print(ctx.sub_outer.ctx)

@@ -1,8 +1,10 @@
 import seamless
+
 seamless.delegate(False)
 
 import traceback
 from seamless.workflow import Context, Cell
+
 ctx = Context()
 ctx.a = Cell("int").set(10)
 ctx.c = Cell("int").set(30)
@@ -58,7 +60,7 @@ print(ctx.ss.value)
 print(ctx.s.exception)
 print("")
 ctx.d = 123
-#ctx.d.celltype = "int" ###
+# ctx.d.celltype = "int" ###
 ctx.s.d = ctx.d
 ctx.compute()
 print(ctx.s.value)

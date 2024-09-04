@@ -1,4 +1,5 @@
 import seamless
+
 seamless.delegate(False)
 
 import traceback
@@ -41,6 +42,7 @@ try:
     print(ctx.a2.value)
 except Exception:
     import traceback
+
     traceback.print_exc(0)
 print(ctx.a2.data)
 print(ctx.a2.checksum)
@@ -64,7 +66,7 @@ print(ctx.test.value)
 ctx.somecell = Cell()
 try:
     ctx.somecell = ctx.a
-except Exception:    
+except Exception:
     traceback.print_exc(0)
     print()
 del ctx.somecell

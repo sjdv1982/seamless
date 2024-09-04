@@ -1,11 +1,14 @@
 import seamless
+
 seamless.delegate(False)
 
 from seamless import transformer
 
+
 @transformer
 def func(a, b):
     return a + b
+
 
 result = func(88, 17)
 print(result, type(result))

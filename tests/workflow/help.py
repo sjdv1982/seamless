@@ -1,15 +1,19 @@
 import seamless
+
 seamless.delegate(False)
 
 from seamless.workflow import Context, Cell, Transformer
 
 import inspect
+
+
 def hhelp(obj):
     # Similar to doing obj? in IPython
     # Standard Python help() does not work with Python 3.8. Fixed in Python 3.9
     print("*" * 80)
     print(inspect.getdoc(obj))
     print("*" * 80)
+
 
 print("###", 1)
 ctx = Context()
@@ -69,14 +73,16 @@ print()
 print("###", 6)
 import numpy as np
 from matplotlib import pyplot as plt
+
 plt.scatter([0, 1, 2, 3], [12, 7, 5, 6])
 from io import BytesIO
+
 f = BytesIO()
 plt.savefig(f)
 png = f.getvalue()
 ctx.help.ctx.pictures = Context()
 pic1 = Cell(celltype="bytes")
-ctx.help.ctx.pictures.pic1 = pic1 
+ctx.help.ctx.pictures.pic1 = pic1
 ctx.help.ctx.pictures.pic1_txt = "Description of picture 1"
 pic1.set(png)
 pic1.mount("/tmp/pic1.png", authority="cell", persistent=False)
@@ -102,11 +108,15 @@ ctx.compute()
 print()
 
 print("###", 8)
+
+
 def calc_help(help_language):
     if help_language == "English":
         return "Help in English"
     elif help_language == "French":
         return "Aide en Français"
+
+
 ctx.calc_help = calc_help
 ctx.calc_help.help_language = "English"
 ctx.help.ctx.multi_lingual = Cell()

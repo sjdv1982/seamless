@@ -1,4 +1,5 @@
 import seamless
+
 seamless.delegate(False)
 
 from seamless.workflow.core import context, cell, StructuredCell
@@ -6,9 +7,7 @@ from seamless.workflow.core import context, cell, StructuredCell
 ctx = context(toplevel=True)
 ctx.data = cell("mixed")
 ctx.sc = StructuredCell(
-    data=ctx.data,
-    inchannels=[()],
-    outchannels=[("a",), ("b",), ("c",)]
+    data=ctx.data, inchannels=[()], outchannels=[("a",), ("b",), ("c",)]
 )
 
 ctx.a = cell("int")
@@ -23,7 +22,7 @@ ctx.upstream.connect(ctx.sc.inchannels[()])
 
 ctx.compute()
 print(ctx.a.status, ctx.b.status, ctx.c.status, ctx.a.value, ctx.b.value, ctx.c.value)
-ctx.upstream.set({"a": 10, "b": {"x": 20}, "c": [1,2,3]})
+ctx.upstream.set({"a": 10, "b": {"x": 20}, "c": [1, 2, 3]})
 ctx.compute()
 print(ctx.a.status, ctx.b.status, ctx.c.status, ctx.a.value, ctx.b.value, ctx.c.value)
 text = ["*" * 1000]

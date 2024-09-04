@@ -1,20 +1,23 @@
 import seamless
+
 seamless.delegate(False)
 
 from seamless.workflow.core import macro_mode_on
-from seamless.workflow.core import context, cell, transformer, \
-  macro, unilink, path
+from seamless.workflow.core import context, cell, transformer, macro, unilink, path
 
 with macro_mode_on():
     ctx = context(toplevel=True)
     ctx.param = cell("plain").set(0)
 
-    ctx.macro = macro({
-        "param": "plain",
-    })
+    ctx.macro = macro(
+        {
+            "param": "plain",
+        }
+    )
 
     ctx.param.connect(ctx.macro.param)
-    ctx.macro_code = cell("macro").set("""
+    ctx.macro_code = cell("macro").set(
+        """
 ctx.sub = context()
 ctx.a = cell("plain").set(1000 + param)
 ctx.b = cell("plain").set(2000 + param)
@@ -55,12 +58,10 @@ ctx.r = cell("text").set("r" + str(param))
 ctx.r_unilink = unilink(ctx.r)
 ctx.rr = cell("text")
 ctx.rr_unilink = unilink(ctx.rr)
-""")
+"""
+    )
     ctx.macro_code.connect(ctx.macro.code)
-    ctx.tfx = transformer({
-        "x0": "input",
-        "x": "output"
-    })
+    ctx.tfx = transformer({"x0": "input", "x": "output"})
     ctx.tfx.code.cell().set("x = x0 + '!'")
     ctx.tfx_x0 = cell("text")
     ctx.tfx_x0.connect(ctx.tfx.x0)
@@ -93,6 +94,7 @@ ctx.rr_unilink = unilink(ctx.rr)
     ctx.macro.ctx.r_unilink.connect(ctx.r_unilink)
     ctx.r.connect(ctx.macro.ctx.rr_unilink)
 
+
 def report():
     print("%-20s" % "macro a", ctx.macro.ctx.a.value)
     print("%-20s" % "macro b", ctx.macro.ctx.b.value)
@@ -111,19 +113,22 @@ def report():
     print("%-20s" % "macro z", ctx.macro.ctx.z.value)
     print("%-20s" % "q", ctx.q.value)
     print("%-20s" % "macro q", ctx.macro.ctx.q.value)
-    print("%-20s" % "macro q_unilink",ctx.macro.ctx.q_unilink.value)
+    print("%-20s" % "macro q_unilink", ctx.macro.ctx.q_unilink.value)
     print("%-20s" % "macro qq", ctx.macro.ctx.qq.value)
     print("%-20s" % "r", ctx.r.value)
     print("%-20s" % "macro rr", ctx.macro.ctx.rr.value)
     print()
 
+
 print("START")
 ctx.compute()
 
-print("""Initial param 0
+print(
+    """Initial param 0
 Should be non-existent for .d
 Should be None for .e, .e2
-""")
+"""
+)
 report()
 print(ctx.status)
 
@@ -133,10 +138,12 @@ ctx.compute()
 report()
 print(ctx.status)
 
-print("""Change to 1
+print(
+    """Change to 1
 Should change to non-existent for .d
 Should change to None for .e, .e2
-""")
+"""
+)
 ctx.param.set(1)
 ctx.compute()
 report()
@@ -155,4 +162,6 @@ report()
 print(ctx.status)
 
 print("STOP")
-import sys; sys.exit()
+import sys
+
+sys.exit()

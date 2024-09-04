@@ -1,4 +1,5 @@
 import seamless
+
 seamless.delegate(False)
 
 import inspect, textwrap
@@ -6,15 +7,20 @@ import inspect, textwrap
 from seamless import calculate_checksum
 from seamless.workflow.core.cache.buffer_cache import buffer_cache
 from seamless.workflow.core.cache.transformation_cache import (
-    transformation_cache, DummyTransformer, tf_get_buffer, 
-    syntactic_is_semantic, syntactic_to_semantic, 
-    transformation_cache
+    transformation_cache,
+    DummyTransformer,
+    tf_get_buffer,
+    syntactic_is_semantic,
+    syntactic_to_semantic,
+    transformation_cache,
 )
 
 from seamless.workflow.core.protocol.serialize import serialize
 
-def func(a,b):
-    return a*b+1000
+
+def func(a, b):
+    return a * b + 1000
+
 
 def get_source(value):
     if callable(value):
@@ -23,12 +29,12 @@ def get_source(value):
         value = textwrap.dedent(value)
     return value
 
+
 async def get_semantic_checksum(checksum, celltype, pinname):
     subcelltype = None
     if not syntactic_is_semantic(celltype, subcelltype):
         sem_checksum = await syntactic_to_semantic(
-            checksum, celltype, subcelltype,
-            pinname
+            checksum, celltype, subcelltype, pinname
         )
         semkey = (sem_checksum, celltype, subcelltype)
         transformation_cache.semantic_to_syntactic_checksums[semkey] = [checksum]
@@ -40,15 +46,18 @@ async def get_semantic_checksum(checksum, celltype, pinname):
 async def build_transformation():
     func_buf = await serialize(get_source(func) + "\nresult = func(a,b)", "python")
     inp = {
-        "a": ("int", 12,),
-        "b": ("int", 7,),
+        "a": (
+            "int",
+            12,
+        ),
+        "b": (
+            "int",
+            7,
+        ),
         "code": ("python", func_buf),
     }
-    transformation = {
-        "__language__": "python",
-        "__output__": ("result", "int", None)
-    }
-    for k,v in inp.items():
+    transformation = {"__language__": "python", "__output__": ("result", "int", None)}
+    for k, v in inp.items():
         celltype, value = v
         buf = await serialize(value, celltype)
         checksum = calculate_checksum(buf)
@@ -60,10 +69,14 @@ async def build_transformation():
     print(tf_buf.decode())
     tf_checksum = calculate_checksum(tf_buf)
     buffer_cache.cache_buffer(tf_checksum, tf_buf)
-    
+
     tf = DummyTransformer(tf_checksum)
-    result = await transformation_cache.run_transformation_async(tf_checksum, fingertip=False, scratch=False)
+    result = await transformation_cache.run_transformation_async(
+        tf_checksum, fingertip=False, scratch=False
+    )
     print(buffer_cache.get_buffer(result, remote=False))
 
+
 import asyncio
+
 asyncio.get_event_loop().run_until_complete(build_transformation())

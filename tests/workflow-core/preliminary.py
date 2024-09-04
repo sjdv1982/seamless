@@ -1,6 +1,7 @@
 import sys
 import seamless
 import os
+
 if "DELEGATE" in os.environ:
     has_err = seamless.delegate()
     if has_err:
@@ -12,13 +13,16 @@ from seamless.workflow.core import context, cell, transformer, macro_mode_on
 from pprint import pprint
 import time
 
+
 def progress(limit, delay, factor, offset):
     import time
+
     for n in range(limit):
-        return_preliminary(factor*n + offset)
-        set_progress(100* (n+1)/limit)
+        return_preliminary(factor * n + offset)
+        set_progress(100 * (n + 1) / limit)
         time.sleep(delay)
     return factor * limit + offset
+
 
 with macro_mode_on():
     ctx = context(toplevel=True)
@@ -79,7 +83,12 @@ oldstate = {}
 start = time.time()
 while 1:
     waitfor, background = ctx.compute(0.2, report=None)
-    state["status"] = {"tf1": ctx.tf1.status, "tf2": ctx.tf2.status, "tf3": ctx.tf3.status, "tf4": ctx.tf4.status}
+    state["status"] = {
+        "tf1": ctx.tf1.status,
+        "tf2": ctx.tf2.status,
+        "tf3": ctx.tf3.status,
+        "tf4": ctx.tf4.status,
+    }
     state["status"]["tf1-result"] = ctx.tf1_result.status
     state["status"]["tf2-result"] = ctx.tf2_result.status
     state["status"]["tf3-result"] = ctx.tf3_result.status

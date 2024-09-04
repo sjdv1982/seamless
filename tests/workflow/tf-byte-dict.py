@@ -1,17 +1,20 @@
 from __future__ import annotations
 import seamless
+
 seamless.delegate(False)
 
 from seamless.workflow import Context
 import numpy as np
 
 ctx = Context()
+
+
 def code() -> dict[str, np.ndarray]:
     import numpy as np
-    a = np.arange(20,80).astype(np.int8)
-    return {
-        "a": a
-    }
+
+    a = np.arange(20, 80).astype(np.int8)
+    return {"a": a}
+
 
 ctx.tf = code
 ctx.result = ctx.tf

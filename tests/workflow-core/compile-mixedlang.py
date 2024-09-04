@@ -1,4 +1,5 @@
 import seamless
+
 seamless.delegate(False)
 
 from seamless.workflow.core.build_module import build_module
@@ -43,7 +44,7 @@ module = {
     "public_header": {
         "language": "c",
         "code": public_header,
-    }
+    },
 }
 
 ######################################################################
@@ -51,40 +52,46 @@ module = {
 ######################################################################
 
 from seamless.compiler import compilers, languages
+
 testmodule = build_module(
-    module, module_error_name=None,
-    compilers=compilers, languages=languages,
-    module_debug_mounts=None
+    module,
+    module_error_name=None,
+    compilers=compilers,
+    languages=languages,
+    module_debug_mounts=None,
 )[1].lib
-print(testmodule.add(2,3))
-print(testmodule.add2(2,3))
+print(testmodule.add(2, 3))
+print(testmodule.add2(2, 3))
 
 ######################################################################
 # 3: test it in a context
 ######################################################################
 
 from seamless.workflow.core import context, cell, transformer, macro_mode_on
+
 with macro_mode_on():
     ctx = context(toplevel=True)
     ctx.module = cell("plain")
     ctx.module.set(module)
-    tf = ctx.tf = transformer({
-        "a": ("input", "plain"),
-        "b": ("input", "plain"),
-        "testmodule": ("input", "plain", "module"),
-        "result": ("output", "plain"),
-    })
-    ctx.tf._debug = {
-        "direct_print" : True
-    }
+    tf = ctx.tf = transformer(
+        {
+            "a": ("input", "plain"),
+            "b": ("input", "plain"),
+            "testmodule": ("input", "plain", "module"),
+            "result": ("output", "plain"),
+        }
+    )
+    ctx.tf._debug = {"direct_print": True}
     ctx.module.connect(tf.testmodule)
     tf.a.cell().set(12)
     tf.b.cell().set(13)
-    tf.code.cell().set("""
+    tf.code.cell().set(
+        """
 from .testmodule import lib
 print("ADD2", lib.add2(a,b))
 result = testmodule.lib.add2(a,b)
-    """)
+    """
+    )
     ctx.result = cell("plain")
     ctx.tf.result.connect(ctx.result)
 

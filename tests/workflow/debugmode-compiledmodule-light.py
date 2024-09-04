@@ -9,9 +9,10 @@ ctx.a.celltype = "plain"
 ctx.b = 30
 ctx.b.celltype = "plain"
 
+
 def build_transformer():
     del ctx.transform
-    ctx.transform = lambda a,b: a + b
+    ctx.transform = lambda a, b: a + b
     ctx.translate()
     ctx.transform.example.a = 0
     ctx.transform.example.b = 0
@@ -32,7 +33,7 @@ def build_transformer():
     }"""
     ctx.code.mount("debugmount/compiled_module/main.cpp", authority="cell")
     ctx.translate()
-    ctx.transform.result.example = 0.0 #example, just to fill the schema
+    ctx.transform.result.example = 0.0  # example, just to fill the schema
 
     ctx.transform.main_module.add.language = "c"
     code = """
@@ -46,6 +47,7 @@ double add(int a, int b) {
     ctx.transform.main_module.add.code = ctx.add_code
     ctx.add_code.set(code)
     ctx.translate()
+
 
 build_transformer()
 ctx.compute()

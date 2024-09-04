@@ -1,5 +1,6 @@
 # adapted from simple-channels.py
 import seamless
+
 seamless.delegate(False)
 
 from seamless.workflow.core import context, cell, StructuredCell
@@ -38,4 +39,7 @@ print(ctx.a.value, ctx.b.value, ctx.c.value)
 ctx.sc.set({"b": 21, "c": 31})
 ctx.compute()
 print(ctx.a.value, ctx.b.value, ctx.c.value)
-print("STOP"); import sys; sys.exit()
+print("STOP")
+import sys
+
+sys.exit()

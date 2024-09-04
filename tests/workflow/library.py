@@ -1,4 +1,5 @@
 import seamless
+
 seamless.delegate(False)
 
 from seamless.workflow import Context
@@ -9,7 +10,7 @@ lib = LibraryContainer("lib")
 ctx = Context()
 ctx.x = 20
 ctx.y = 5
-ctx.minus = lambda x,y: x - y
+ctx.minus = lambda x, y: x - y
 ctx.minus.x = ctx.x
 ctx.minus.y = ctx.y
 ctx.result = ctx.minus
@@ -17,11 +18,15 @@ ctx.compute()
 print(ctx.result.value)
 
 lib.subtract = ctx
+
+
 def constructor(ctx, libctx, result):
     graph = libctx.get_graph()
     ctx.set_graph(graph)
     if result is not None:
         result.connect_from(ctx.result)
+
+
 lib.subtract.constructor = constructor
 lib.subtract.params = {
     "result": {

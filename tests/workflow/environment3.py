@@ -3,16 +3,19 @@ adding direct Cython support via an ipy template
 
 The graph is then saved and re-loaded
 """
+
 import seamless
+
 seamless.delegate(False)
 
 import traceback
 
 from seamless.workflow import Context, Transformer
+
 ctx = Context()
 env = ctx.environment
 
-# Define a transformer in IPython format that uses Cython magic 
+# Define a transformer in IPython format that uses Cython magic
 ctx.tf = Transformer()
 ctx.tf.a = 123
 ctx.tf.language = "ipython"
@@ -37,10 +40,13 @@ print(ctx.tf.result.value)
 
 # For good measure, define an execution environment
 # This should give no problem, as Cython is installed in the Seamless Docker image
-ctx.tf.environment.set_conda("""
+ctx.tf.environment.set_conda(
+    """
 dependencies:
   - cython
-""", "yaml")
+""",
+    "yaml",
+)
 ctx.tf.environment.set_which(["cython"], format="plain")
 ctx.compute()
 print(ctx.tf.status)
@@ -50,7 +56,7 @@ print(ctx.tf.result.value)
 # - We must call it "transform"
 # - The argument must be "a", the pin name
 # - Cython arguments with a C type cannot be both positional and keyword
-#   Therefore, it must be declared as keyword-only 
+#   Therefore, it must be declared as keyword-only
 ctx.tf.code = """
 from libc.math cimport log
 def transform(*, int a): 
@@ -98,8 +104,9 @@ except NotImplementedError as exc:
 
 #### help(env.set_ipy_template)   # for interactive use
 
+
 # TODO: make sure that PINS is documented
-def wrap_cython(code, parameters):    
+def wrap_cython(code, parameters):
     tmpl = """
 get_ipython().run_line_magic("load_ext", "Cython")
 get_ipython().run_cell_magic("cython", "", {})
@@ -109,15 +116,20 @@ result = transform(**PINS)
 """
     return tmpl.format(repr(code))
 
+
 env.set_ipy_template("cython", wrap_cython)
 
 # Define an environment for the Cython code generator
 from seamless.Environment import Environment
+
 tmpl_env = Environment()
-tmpl_env.set_conda("""
+tmpl_env.set_conda(
+    """
 dependencies:
   - cython
-""", "yaml")
+""",
+    "yaml",
+)
 tmpl_env.set_which(["cython"], format="plain")
 env.set_ipy_template_environment("cython", tmpl_env)
 

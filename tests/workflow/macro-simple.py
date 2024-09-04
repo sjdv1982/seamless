@@ -1,15 +1,19 @@
 import seamless
+
 seamless.delegate(False)
 
 from seamless.workflow import Context, Macro
+
 ctx = Context()
 m = ctx.m = Macro()
 ctx.a = 10
 m.a = ctx.a
 m.b = 20
+
+
 def run_macro(ctx, a, b):
     pins = {
-        "a": "input", 
+        "a": "input",
         "b": "input",
         "c": "output",
     }
@@ -20,6 +24,8 @@ def run_macro(ctx, a, b):
     ctx.c = cell()
     ctx.tf.c.connect(ctx.c)
     return
+
+
 m.code = run_macro
 ctx.compute()
 print(m.status, m.exception)

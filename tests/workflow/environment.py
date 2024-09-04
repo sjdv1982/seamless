@@ -7,14 +7,16 @@ Simple examples on how to modify the Seamless environment
 import traceback
 
 import seamless
+
 seamless.delegate(False)
 
 from seamless.workflow import Context, Cell, Transformer
+
 ctx = Context()
 env = ctx.environment
 
 # Define an environment that requires Python
-conda_environment ="""
+conda_environment = """
 dependencies:
    - python
 """
@@ -39,7 +41,7 @@ env.set_conda(None, "yaml")
 ctx.translate()
 
 
-# Define a transformer with signature 
+# Define a transformer with signature
 #    (a: int, b: int) -> int
 #    and a=13, b=16
 ctx.tf = Transformer()
@@ -109,15 +111,11 @@ print()
 #  for each crate (.rs file).
 # Therefore, the compiler mode is "archive"
 languages = env.get_languages("plain")
-languages["rust"] = {
-    "extension": "rs",
-    "mode": "compiled",
-    "compiler": "rustc"
-}
+languages["rust"] = {"extension": "rs", "mode": "compiled", "compiler": "rustc"}
 env.set_languages(languages, "plain")
 compilers = env.get_compilers("plain")
 compilers["rustc"] = {
-    "mode": "archive", 
+    "mode": "archive",
     "options": ["--crate-type=staticlib"],
     "debug_options": ["--crate-type=staticlib"],
     "profile_options": [],
@@ -147,14 +145,14 @@ except ValueError:
 # If we get here, then everything should be fine
 ctx.compute()
 print(ctx.tf.exception)  # None
-print(ctx.tf.result.value) # 29
+print(ctx.tf.result.value)  # 29
 
 ctx.tf.a = 18
 ctx.compute()
-print(ctx.tf.result.value) # 34
+print(ctx.tf.result.value)  # 34
 
 # We can also provide linker options (not needed here)
 ctx.tf.link_options = ["-lm"]  # no effect
 ctx.compute()
-print(ctx.tf.exception) # None
-print(ctx.tf.result.value) # 34
+print(ctx.tf.exception)  # None
+print(ctx.tf.result.value)  # 34

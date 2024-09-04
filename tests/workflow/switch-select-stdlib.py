@@ -1,5 +1,6 @@
 # Adapted from /seamless/highlevel/stdlib/switch-select/switch-select.py
 import seamless
+
 seamless.delegate(False)
 
 from seamless.workflow import Context, Cell
@@ -16,12 +17,18 @@ ctx.f1 = 2.0
 ctx.f2 = 3.0
 ctx.f3 = 4.0
 
-def add(a,b):
+
+def add(a, b):
     return a + b
-def sub(a,b):
+
+
+def sub(a, b):
     return a - b
-def mul(a,b):
+
+
+def mul(a, b):
     return a * b
+
 
 ctx.op1 = add
 ctx.op1.a = ctx.a1

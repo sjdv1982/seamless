@@ -1,4 +1,5 @@
 import seamless
+
 seamless.delegate(False)
 
 from seamless.workflow import Context
@@ -18,9 +19,11 @@ ctx.a = 12
 ctx.compute()
 print("1a", ctx.a.value)
 
+
 # 2
 def double_it(a):
     return 2 * a
+
 
 ctx.transform = double_it
 ctx.transform.a = ctx.a
@@ -34,17 +37,24 @@ ctx.a = 12
 ctx.compute()
 print("3", ctx.myresult.value)
 
+
 # 4
 def triple_it(a):
     return 3 * a
+
+
 ctx.transform.code = triple_it
 ctx.compute()
 print("4", ctx.myresult.value)
 
 # 5
 ctx.tfcode = ctx.transform.code.pull()
+
+
 def triple_it2(a, b):
     return 3 * a + b
+
+
 ctx.tfcode = triple_it2
 ctx.compute()
 print("5 (should be None)", ctx.myresult.value)

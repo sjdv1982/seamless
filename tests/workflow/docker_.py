@@ -1,5 +1,6 @@
 import os
 import seamless
+
 if "DELEGATE" in os.environ:
     if seamless.delegate():
         exit(1)

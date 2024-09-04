@@ -1,5 +1,6 @@
 import seamless
 import os
+
 if "DELEGATE" in os.environ:
     has_err = seamless.delegate()
     if has_err:
@@ -7,6 +8,7 @@ if "DELEGATE" in os.environ:
 else:
     seamless.delegate(level=3)
     from seamless.workflow.core.transformation import get_global_info
+
     get_global_info()  # avoid timing errors
 
 from seamless.workflow import Context, Cell, Module
@@ -23,12 +25,15 @@ print(ctx.pypackage._get_ctx().module_cell.value)
 print()
 print("Stage 1")
 
+
 @transformer
 def func(a, b):
     from .pypackage import get_square
+
     aa = get_square(a)
     bb = get_square(b)
-    return aa+bb + 0
+    return aa + bb + 0
+
 
 ctx.tf = func
 ctx.tf.debug.direct_print = True
@@ -45,6 +50,7 @@ func.modules.pypackage = ctx.pypackage
 print(func(12, 13))
 
 import sys
+
 sys.path.append("debugmount")
 import pypackage
 
@@ -52,21 +58,25 @@ func.modules.pypackage = pypackage
 
 print(func(14, 15))
 
+
 @transformer(return_transformation=True)
-def func2(a,b):
-    
+def func2(a, b):
+
     @transformer(return_transformation=True)
     def func(a, b):
         from .pypackage2 import get_square
+
         aa = get_square(a)
         bb = get_square(b)
-        return aa+bb
+        return aa + bb
+
     func.modules.pypackage2 = pypackage
     result = func(a, b)
     result.compute()
     print("func RESULT LOGS", result.logs)
     print("func RESULT VALUE", result.value)
     return result.value
+
 
 ctx.tf.code = func2
 print("Stage 2")
@@ -88,25 +98,31 @@ print(result.value)
 print("/stage 3")
 
 print("Stage 4")
-def func3(a,b,c):
+
+
+def func3(a, b, c):
 
     @transformer
-    def func2(a,b):
-        
+    def func2(a, b):
+
         @transformer(return_transformation=True)
         def func(a, b):
             from .pypackage2 import get_square
+
             aa = get_square(a)
             bb = get_square(b)
-            return aa+bb
-        func.modules.pypackage2 = pypackage        
-        result = func(a, b) 
+            return aa + bb
+
+        func.modules.pypackage2 = pypackage
+        result = func(a, b)
         result.compute()
         print("func RESULT LOGS", result.logs)
         print("func RESULT VALUE", result.value)
         return result.value
+
     func2.modules.pypackage = pypackage
     return func2(a, b) + func2(b, c)
 
-print(func3(17,18,19), 17**2 + 2*18**2 + 19**2)
+
+print(func3(17, 18, 19), 17**2 + 2 * 18**2 + 19**2)
 print("/stage 4")

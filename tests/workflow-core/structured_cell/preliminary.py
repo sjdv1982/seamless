@@ -1,20 +1,22 @@
 import seamless
+
 seamless.delegate(False)
 
-from seamless.workflow.core import (
-    context, cell, transformer, macro_mode_on
-)
+from seamless.workflow.core import context, cell, transformer, macro_mode_on
 from seamless.workflow.core.structured_cell import StructuredCell
 from pprint import pprint
 import time
 
+
 def progress(limit, delay, factor, offset):
     import time
+
     for n in range(limit):
-        return_preliminary(factor*n + offset)
-        set_progress(100* (n+1)/limit)
+        return_preliminary(factor * n + offset)
+        set_progress(100 * (n + 1) / limit)
         time.sleep(delay)
     return factor * limit + offset
+
 
 def report(self):
     print("*" * 80)
@@ -29,6 +31,7 @@ def report(self):
     print("*" * 80)
     print("")
 
+
 def subreport(self):
     print("Limit:", self.limit.unsilk)
     print("Factor:", self.factor.unsilk)
@@ -38,6 +41,7 @@ def subreport(self):
     except AttributeError:
         pass
     print("")
+
 
 def structured_transformer(c):
     tf_params = {
@@ -77,15 +81,14 @@ def structured_transformer(c):
     c.example_data = cell("mixed")
     c.example_buffer = cell("mixed")
     c.example = StructuredCell(
-        data=c.example_data,
-        buffer=c.example_buffer,
-        schema=c.input_schema
+        data=c.example_data, buffer=c.example_buffer, schema=c.input_schema
     )
+
 
 with macro_mode_on():
     ctx = context(toplevel=True)
-    tf_names = [("tf1",),("tf2",),("tf3",),("tf4",)]
-    channel_names = tf_names # TODO (long term): try numeric path
+    tf_names = [("tf1",), ("tf2",), ("tf3",), ("tf4",)]
+    channel_names = tf_names  # TODO (long term): try numeric path
 
     ctx.params_struc = context()
     ctx.params_struc.data = cell("mixed")
@@ -100,7 +103,7 @@ with macro_mode_on():
         buffer=ctx.params_struc.buffer,
         schema=ctx.params_struc.schema,
         inchannels=[tf_names[2] + ("offset",), tf_names[3] + ("offset",)],
-        outchannels=channel_names
+        outchannels=channel_names,
     )
     ctx.params_example = StructuredCell(
         ctx.params_struc.example_data,
@@ -125,16 +128,15 @@ with macro_mode_on():
 
     ctx.result = StructuredCell(
         ctx.result_struc.data,
-        buffer = ctx.result_struc.buffer,
-        schema = ctx.result_struc.schema,
-        inchannels = channel_names,
-        outchannels = channel_names
+        buffer=ctx.result_struc.buffer,
+        schema=ctx.result_struc.schema,
+        inchannels=channel_names,
+        outchannels=channel_names,
     )
     for outchannel, tf_name in zip(channel_names, tf_names):
         channel_cell = cell("mixed")
         setattr(ctx, "result_" + tf_name[0], channel_cell)
         ctx.result.outchannels[outchannel].connect(channel_cell)
-
 
     for n in range(4):
         channel_name, tf_name = channel_names[n], tf_names[n]
@@ -142,7 +144,7 @@ with macro_mode_on():
         cell_name = "outchannel_" + tf_name[0]
         setattr(ctx.params_struc, cell_name, c)
         ctx.params.outchannels[channel_name].connect(c)
-        stf = getattr(ctx, "stf" + str(n+1))
+        stf = getattr(ctx, "stf" + str(n + 1))
         c.connect(stf.input.inchannels[()])
         stf.result.connect(ctx.result.inchannels[channel_name])
 
@@ -163,12 +165,14 @@ with macro_mode_on():
 ctx.compute()
 print("START")
 
-ctx.params.handle.set({
-    "tf1": {},
-    "tf2": {},
-    "tf3": {},
-    "tf4": {},
-})
+ctx.params.handle.set(
+    {
+        "tf1": {},
+        "tf2": {},
+        "tf3": {},
+        "tf4": {},
+    }
+)
 
 ctx.compute()
 print("START2")
@@ -183,10 +187,14 @@ hh.subreport = subreport
 hh.limit = 0
 hh.factor = 0.0
 hh.delay = 0.1
-#hh.offset = 0.0 # offset can be optional
+
+
+# hh.offset = 0.0 # offset can be optional
 def validate_param(self):
     assert self.delay > 0
     assert self.limit < 100
+
+
 hh.add_validator(validate_param, "validate_param")
 
 for tf in channel_names[1:]:
@@ -210,13 +218,13 @@ hh = ctx.params.handle.tf3
 hh.limit = 9
 hh.factor = 1
 hh.delay = 0.5
-#hh.offset = 0.0
+# hh.offset = 0.0
 
 hh = ctx.params.handle.tf4
 hh.limit = 1
 hh.factor = 9
 hh.delay = 0.1
-#hh.offset = 0.0
+# hh.offset = 0.0
 
 ctx.compute(0.1)
 ctx.params.handle.report()
@@ -225,6 +233,7 @@ ctx.params.handle.tf1.validate()
 for c in (ctx.stf1, ctx.stf2, ctx.stf3, ctx.stf4):
     h = c.example.handle
     h.subreport = subreport
+
     def v(self):
         try:
             offset = self.offset
@@ -233,6 +242,7 @@ for c in (ctx.stf1, ctx.stf2, ctx.stf3, ctx.stf4):
         if offset.unsilk is None:
             return
         assert offset == 0 or offset > 2000 or self.factor == 9
+
     h.add_validator(v, "v")
 
 ctx.compute(0.1)

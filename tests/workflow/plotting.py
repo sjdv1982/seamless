@@ -1,17 +1,22 @@
 from seamless.workflow import Context
 
 ctx = Context()
+
+
 def plot(period, npoints):
     import matplotlib.pyplot as plt
     import numpy as np
+
     points = np.arange(npoints)
-    phase = points/period*np.pi*2
+    phase = points / period * np.pi * 2
     fig, ax = plt.subplots()
     ax.plot(np.sin(phase))
     from io import BytesIO
+
     png = BytesIO()
     plt.savefig(png)
     return png.getvalue()
+
 
 ctx.plot = plot
 ctx.plot.period = 100

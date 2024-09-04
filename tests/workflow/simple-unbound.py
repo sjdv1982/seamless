@@ -1,11 +1,17 @@
 import seamless
+
 seamless.delegate(False)
 
 from seamless.workflow import Context, Transformer
+
 ctx = Context()
 ctx.a = 123
+
+
 def func(a):
     return a + 1000
+
+
 tf = Transformer(func)
 tf.a = 456
 ctx.tf = tf
@@ -63,4 +69,3 @@ ctx.tf4 = tf4
 ctx.compute()
 print(cs)
 print(ctx.tf4.get_transformation_checksum())
-

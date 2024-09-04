@@ -1,4 +1,5 @@
 import seamless
+
 seamless.load_vault("./reuse-vault")
 
 seamless.delegate(level=0, force_database=True)
@@ -7,7 +8,7 @@ seamless.config.block_local()
 from seamless.workflow import Context, Cell
 
 ctx = Context()
-ctx.transform = lambda a,b: a + b
+ctx.transform = lambda a, b: a + b
 ctx.transform.a = 2
 ctx.transform.b = 3
 ctx.translate()
@@ -26,7 +27,7 @@ extern "C" int transform(int a, int b, double *result) {
     return 0;
 }"""
 ctx.translate()
-ctx.transform.result.example = 0.0 #example, just to fill the schema
+ctx.transform.result.example = 0.0  # example, just to fill the schema
 ctx.compute()
 print(ctx.result.value)
 
@@ -39,7 +40,9 @@ ctx.b.celltype = "plain"
 ctx.transform.b = ctx.b
 
 ctx.transform.main_module.link_options = ["-lstdc++"]
-ctx.transform.main_module.compiler_verbose = True  #for now, this flag becomes part of the module definition!
+ctx.transform.main_module.compiler_verbose = (
+    True  # for now, this flag becomes part of the module definition!
+)
 
 ctx.compute()
 print(ctx.result.value)

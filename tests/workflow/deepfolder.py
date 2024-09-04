@@ -1,4 +1,5 @@
 import seamless
+
 seamless.delegate(False)
 
 import traceback
@@ -55,7 +56,7 @@ print(ctx.test.value)
 ctx.somecell = Cell()
 try:
     ctx.somecell = ctx.a
-except Exception:    
+except Exception:
     traceback.print_exc(0)
     print()
 del ctx.somecell

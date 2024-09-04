@@ -4,11 +4,14 @@ This is a good test for delegation since as of Seamless 0.12,
 PyTorch cannot be added to the Seamless Docker image using conda
 (the openmp versions are mutually exclusive).
 """
+
 import json
 import seamless
+
 seamless.delegate()
 
 from seamless.workflow import Context, Transformer
+
 ctx = Context()
 ctx.tf = Transformer()
 ctx.tf.code = open("pytorch_test1.py").read()

@@ -1,19 +1,25 @@
 """
 Dynamic workflow example
 """
+
 from seamless.workflow import Context
+
 
 def switch(input, which):
     return {which: input}
 
+
 def join(input, which):
     return input.get(which)
+
 
 def func1(v):
     return v + 42
 
+
 def func2(v):
     return -2 * v
+
 
 ctx = Context()
 ctx.join = join

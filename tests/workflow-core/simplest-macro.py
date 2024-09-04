@@ -1,12 +1,14 @@
 import seamless
+
 seamless.delegate(False)
 
 from seamless.workflow.core import macro_mode_on
-from seamless.workflow.core import context, cell, \
-  macro, path
+from seamless.workflow.core import context, cell, macro, path
+
 
 def run_macro(ctx):
     ctx.mycell = cell()
+
 
 with macro_mode_on():
     ctx = context(toplevel=True)

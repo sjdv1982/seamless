@@ -5,20 +5,23 @@ import time
 import asyncio
 
 from seamless.workflow.core.transformation import get_global_info
+
 get_global_info()
-    
+
 if "DELEGATE" in os.environ:
     has_err = seamless.delegate()
     if has_err:
         exit(1)
 else:
     seamless.delegate(False)
-    
+
 from seamless import transformer
+
 
 @transformer(return_transformation=True)
 def func(a, delay):
     import time
+
     time.sleep(delay)
     return 10 * a
 
@@ -39,6 +42,7 @@ async def main():
     print(result)
     t = time.time() - start_time
     print("Time to complete: {:.1f} seconds".format(t))
+
 
 if not asyncio.get_event_loop().is_running():
     asyncio.get_event_loop().run_until_complete(main())

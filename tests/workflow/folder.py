@@ -1,21 +1,23 @@
 import seamless
+
 seamless.delegate(False)
 
 from seamless.workflow import Context, FolderCell
 import numpy as np
 import shutil
+
 ctx = Context()
 f = ctx.folder = FolderCell()
 shutil.rmtree("./testfolder", ignore_errors=True)
-f.mount("./testfolder",mode="w")
+f.mount("./testfolder", mode="w")
 ctx.compute()
 f["test.txt"] = "This is a\ntest"
 f["test.dat"] = b"Test buffer"
-f["test.json"] = {"a":10, "b":20, "c":30}
+f["test.json"] = {"a": 10, "b": 20, "c": 30}
 f["test.npy"] = np.arange(10)
 f["test2.dat"] = np.arange(130).tobytes()
 f["sub/test2.txt"] = "And another\ntest"
-f["sub/test3.npy"] = np.arange(10,20)
+f["sub/test3.npy"] = np.arange(10, 20)
 ctx.compute()
 print(f.data)
 print(ctx.resolve(f.data["test.txt"]))

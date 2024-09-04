@@ -1,6 +1,7 @@
 import seamless
 
 import os
+
 if "DELEGATE" in os.environ:
     has_err = seamless.delegate()
     if has_err:
@@ -11,7 +12,7 @@ else:
 from seamless.workflow import Context
 
 ctx = Context()
-ctx.transform = lambda a,b: a + b
+ctx.transform = lambda a, b: a + b
 ctx.transform.a = 2
 ctx.transform.b = 3
 ctx.translate()
@@ -34,7 +35,7 @@ extern "C" int transform(int a, int b, double *result) {
     return 0;
 }"""
 ctx.translate()
-ctx.transform.result.example = 0.0 #example, just to fill the schema
+ctx.transform.result.example = 0.0  # example, just to fill the schema
 ctx.compute()
 print(ctx.result.value)
 exc = ctx.transform.exception
@@ -50,8 +51,8 @@ ctx.b.celltype = "plain"
 ctx.transform.b = ctx.b
 
 ctx.transform.main_module.link_options = ["-lstdc++"]
-#ctx.transform.main_module.compiler_verbose = True
-#ctx.transform.main_module.compiler_verbose = False
+# ctx.transform.main_module.compiler_verbose = True
+# ctx.transform.main_module.compiler_verbose = False
 
 ctx.compute()
 print(ctx.result.value)

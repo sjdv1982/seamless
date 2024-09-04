@@ -1,4 +1,5 @@
 import seamless
+
 seamless.delegate(False)
 
 from seamless.workflow import Context
@@ -8,7 +9,7 @@ fallback_ctx = Context()
 
 ctx.a = 5
 ctx.b = 7
-ctx.tf = lambda a,b: a * b
+ctx.tf = lambda a, b: a * b
 ctx.tf.a = ctx.a
 ctx.tf.b = ctx.b
 ctx.result = ctx.tf.result

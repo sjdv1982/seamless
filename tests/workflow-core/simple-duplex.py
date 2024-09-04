@@ -1,5 +1,6 @@
 import seamless
 import os
+
 if "DELEGATE" in os.environ:
     has_err = seamless.delegate()
     if has_err:
@@ -12,34 +13,27 @@ from seamless.workflow.core import context, cell, transformer
 ctx = context(toplevel=True)
 ctx.cell1 = cell("int").set(1)
 ctx.cell2 = cell("int").set(2)
+
+
 def progress(a, b):
     import time
+
     for n in range(10):
-        print("PROGRESS", n+1)
-        set_progress((n+1)/10* 100)
+        print("PROGRESS", n + 1)
+        set_progress((n + 1) / 10 * 100)
         if (n % 2) == 0:
-            return_preliminary((n+1)/10*(a+b))
+            return_preliminary((n + 1) / 10 * (a + b))
         time.sleep(1)
     return a + b
+
+
 ctx.code = cell("transformer").set(progress)
 ctx.result = cell("float")
 ctx.result_duplex = cell("float")
-ctx.tf = transformer({
-    "a": "input",
-    "b": "input",
-    "c": "output"
-})
-ctx.tf._debug = {
-    "direct_print" : True
-}
-ctx.tf_duplex = transformer({
-    "a": "input",
-    "b": "input",
-    "c": "output"
-})
-ctx.tf_duplex._debug = {
-    "direct_print" : True
-}
+ctx.tf = transformer({"a": "input", "b": "input", "c": "output"})
+ctx.tf._debug = {"direct_print": True}
+ctx.tf_duplex = transformer({"a": "input", "b": "input", "c": "output"})
+ctx.tf_duplex._debug = {"direct_print": True}
 ctx.code.connect(ctx.tf.code)
 ctx.code.connect(ctx.tf_duplex.code)
 ctx.cell1.connect(ctx.tf.a)
@@ -48,6 +42,7 @@ ctx.cell2.connect(ctx.tf.b)
 ctx.cell2.connect(ctx.tf_duplex.b)
 ctx.tf.c.connect(ctx.result)
 ctx.tf_duplex.c.connect(ctx.result_duplex)
+
 
 def report():
     print("TF       ", ctx.tf.status)
@@ -59,6 +54,7 @@ def report():
     print("RESULT       ", v1, ctx.result.status)
     print("RESULT DUPLEX", v2, ctx.result_duplex.status)
     print()
+
 
 for n in range(3):
     ctx.compute(0.5)

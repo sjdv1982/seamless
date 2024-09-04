@@ -1,8 +1,10 @@
 import seamless
+
 seamless.delegate(False)
 
-checksum = 'a768afb52fb0be2c8bf1657ea5c892df910a2a70bac7310cd8595e0f62b89fbf' # 136
+checksum = "a768afb52fb0be2c8bf1657ea5c892df910a2a70bac7310cd8595e0f62b89fbf"  # 136
 from seamless.workflow import Context
+
 ctx = Context()
 ctx.a = 10
 ctx.compute()

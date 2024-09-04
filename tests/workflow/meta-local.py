@@ -3,7 +3,7 @@ import sys, os
 from seamless.workflow import Context
 import seamless
 
-currdir=os.path.dirname(os.path.abspath(__file__))
+currdir = os.path.dirname(os.path.abspath(__file__))
 
 if "--delegate" in sys.argv[1:]:
     if seamless.delegate():
@@ -16,21 +16,32 @@ else:
         seamless.delegate(False)
 
 ctx = Context()
+
+
 def func1():
     return 42
+
+
 ctx.func1 = func1
 ctx.compute()
 print("#1", ctx.func1.result.value, "exception:", ctx.func1.exception)
 
 seamless.config.block_local()
+
+
 def func2():
     return 88
+
+
 ctx.func2 = func2
 ctx.compute()
 print("#2", ctx.func2.result.value, "exception:", ctx.func2.exception)
 
+
 def func3():
     return 777
+
+
 ctx.func3 = func3
 ctx.func3.meta = {"local": True}
 ctx.compute()

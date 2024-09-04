@@ -5,18 +5,23 @@ ctx = Context()
 
 ctx.pypackage = Module()
 ctx.pypackage.multi = True
-ctx.pypackage["__init__.py"] = "from .submodule import get_square" 
-ctx.pypackage["submodule.py"] = """
+ctx.pypackage["__init__.py"] = "from .submodule import get_square"
+ctx.pypackage[
+    "submodule.py"
+] = """
 def get_square(value):
     return value**2
 """
 ctx.pypackage.mount("debugmount/pypackage", authority="cell")
 
+
 def func(a, b):
     from .pypackage import get_square
+
     aa = get_square(a)
     bb = get_square(b)
-    return aa+bb
+    return aa + bb
+
 
 ctx.tf = func
 ctx.tf.a = 10

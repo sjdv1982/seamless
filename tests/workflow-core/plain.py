@@ -1,18 +1,16 @@
 import json
 import seamless
+
 seamless.delegate(False)
 
 from seamless.workflow.core import macro_mode_on
-from seamless.workflow.core import context, cell, transformer,  StructuredCell
+from seamless.workflow.core import context, cell, transformer, StructuredCell
 import os
+
 os.makedirs("/tmp/mount-test", exist_ok=True)
 with macro_mode_on():
     ctx = context(toplevel=True)
-    ctx.tf = transformer({
-        "a": "input",
-        "b": "input",
-        "c": "output"
-    })
+    ctx.tf = transformer({"a": "input", "b": "input", "c": "output"})
     ctx.a = cell("plain").set({"x": 2})
     ctx.b = cell("plain").set(2)
     ctx.b.mount("/tmp/mount-test/b.json", authority="cell")
@@ -26,6 +24,7 @@ with macro_mode_on():
 ctx.compute()
 
 import asyncio
+
 asyncio.get_event_loop().run_until_complete(asyncio.sleep(0.5))
 with open("/tmp/mount-test/b.json", "w") as f:
     f.write("10\n")

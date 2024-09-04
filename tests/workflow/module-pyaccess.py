@@ -1,4 +1,5 @@
 import seamless
+
 seamless.delegate(False)
 
 module_code = """
@@ -14,8 +15,10 @@ ctx = Context()
 ctx.mod = Module()
 ctx.mod.code = module_code
 
+
 def run():
     return mod.func(10, 7)
+
 
 ctx.run = run
 ctx.run.mod = ctx.mod
@@ -27,7 +30,7 @@ print()
 a = ctx.mod.module.a
 print(a)
 func = ctx.mod.module.func
-print(func(10,7))
+print(func(10, 7))
 print()
 
 module_code = """
@@ -45,7 +48,7 @@ a = ctx.mod.module.a
 print(a)
 print()
 
-print(func(10,7))
+print(func(10, 7))
 func = ctx.mod.module.func
-print(func(10,7))
+print(func(10, 7))
 print()

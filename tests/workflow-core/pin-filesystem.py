@@ -16,9 +16,13 @@ d1 = "/tmp/PIN-FILESYSTEM-FOLDER1"
 d2 = "/tmp/PIN-FILESYSTEM-FOLDER2"
 
 import os
-from seamless.workflow.core.mount_directory import deep_read_from_directory, write_to_directory
+from seamless.workflow.core.mount_directory import (
+    deep_read_from_directory,
+    write_to_directory,
+)
+
 if not os.path.exists(d1):
-    write_to_directory(d1, {"file1.txt": 2}, cleanup=False, deep=False, text_only=False)    
+    write_to_directory(d1, {"file1.txt": 2}, cleanup=False, deep=False, text_only=False)
 if not os.path.exists(d2):
     write_to_directory(d2, {"file2.txt": 3}, cleanup=False, deep=False, text_only=False)
 
@@ -31,9 +35,10 @@ def tf_code(a, b, c, d):
     print("pin D", d)
     return "OK"
 
+
 with macro_mode_on():
     ctx = context(toplevel=True)
-    ctx.a = cell("plain").set([1,2,3])
+    ctx.a = cell("plain").set([1, 2, 3])
     ctx.b = cell("mixed")
     ctx.b._hash_pattern = {"*": "##"}
     ctx.c = cell("int").set(3.0)
@@ -42,39 +47,23 @@ with macro_mode_on():
     ctx.code = cell("str").set("CODE")
     ctx.tf_code = cell("transformer").set(tf_code)
     ctx.result = cell("str")
-    ctx.tf = transformer({
-        "a": {
-            "io": "input",
-            "filesystem": {
-                "mode": "file",
-                "optional": True
-            }
-        },
-        "b": {
-            "io": "input",
-            "hash_pattern": {"*": "##"},
-            "filesystem": {
-                "mode": "directory",
-                "optional": True
-            }
-        },
-        "c": {
-            "io": "input",
-            "filesystem": {
-                "mode": "file",
-                "optional": False
-            }
-        },
-        "d": {
-            "io": "input",
-            "hash_pattern": {"*": "##"},
-            "filesystem": {
-                "mode": "directory",
-                "optional": False
-            }
-        },
-        "result": "output"
-    })
+    ctx.tf = transformer(
+        {
+            "a": {"io": "input", "filesystem": {"mode": "file", "optional": True}},
+            "b": {
+                "io": "input",
+                "hash_pattern": {"*": "##"},
+                "filesystem": {"mode": "directory", "optional": True},
+            },
+            "c": {"io": "input", "filesystem": {"mode": "file", "optional": False}},
+            "d": {
+                "io": "input",
+                "hash_pattern": {"*": "##"},
+                "filesystem": {"mode": "directory", "optional": False},
+            },
+            "result": "output",
+        }
+    )
     ctx.a.connect(ctx.tf.a)
     ctx.b.connect(ctx.tf.b)
     ctx.c.connect(ctx.tf.c)
@@ -85,7 +74,7 @@ with macro_mode_on():
 ctx.compute()
 deep_read_from_directory(d1, ctx.b, text_only=False, cache_buffers=True)
 deep_read_from_directory(d2, ctx.d, text_only=False, cache_buffers=True)
-ctx.compute()    
+ctx.compute()
 print("A", ctx.a.checksum, ctx.a.buffer)
 print("B", ctx.b.checksum, ctx.b.buffer)
 print("C", ctx.c.checksum, ctx.c.buffer)

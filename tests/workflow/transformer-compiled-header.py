@@ -1,4 +1,5 @@
 import seamless
+
 seamless.delegate(False)
 
 from seamless.workflow import Context, Cell
@@ -14,7 +15,7 @@ ctx.b.celltype = "plain"
 headers = {
     "offset": {
         "language": "c",
-        #"code": "const int OFFSET = 1000;"
+        # "code": "const int OFFSET = 1000;"
     }
 }
 ctx.headers = headers
@@ -22,9 +23,10 @@ ctx.offset_header = Cell("text").set("const int OFFSET = 1001;")
 ctx.offset_header.mount("/tmp/offset.h", authority="cell")
 ctx.headers.offset.code = ctx.offset_header
 
+
 def build_transformer():
     del ctx.transform
-    ctx.transform = lambda a,b: a + b
+    ctx.transform = lambda a, b: a + b
     ctx.translate()
     ctx.transform.example.a = 0
     ctx.transform.example.b = 0
@@ -44,7 +46,7 @@ def build_transformer():
         return 0;
     }"""
     ctx.translate()
-    ctx.transform.result.example = 0.0 #example, just to fill the schema
+    ctx.transform.result.example = 0.0  # example, just to fill the schema
 
     ctx.transform.main_module.add.language = "c"
     code = """
@@ -58,6 +60,7 @@ def build_transformer():
     ctx.translate()
 
     ctx.transform.main_module.headers = ctx.headers
+
 
 build_transformer()
 ctx.compute()

@@ -1,4 +1,5 @@
 import seamless
+
 seamless.delegate(False)
 
 from seamless.workflow import Context, Cell
@@ -9,7 +10,7 @@ ctx.compute()
 print(ctx.a.value)
 
 ctx.x = "override"
-ctx.a.x = ctx.x 
+ctx.a.x = ctx.x
 ctx.compute()
 print(ctx.a.value)
 

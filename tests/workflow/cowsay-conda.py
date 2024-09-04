@@ -1,7 +1,9 @@
 import seamless
+
 seamless.delegate(False)
 
 from seamless.workflow import Context
+
 ctx = Context()
 ctx.tf = lambda cowtext: None
 ctx.tf.language = "bash"

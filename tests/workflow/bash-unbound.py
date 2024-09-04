@@ -1,4 +1,5 @@
 import seamless
+
 seamless.delegate(False)
 
 from seamless.workflow import Context, Transformer
@@ -28,5 +29,5 @@ ctx.result.celltype = "mixed"
 ctx.compute()
 print(ctx.result.value)
 
-#tr = tf.run()
-#print(tr.value)
+# tr = tf.run()
+# print(tr.value)

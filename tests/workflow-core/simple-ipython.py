@@ -1,4 +1,5 @@
 import seamless
+
 seamless.delegate(False)
 
 from seamless.workflow.core import context, cell, transformer, unilink
@@ -6,7 +7,8 @@ from seamless.workflow.core import context, cell, transformer, unilink
 ctx = context(toplevel=True)
 ctx.cell1 = cell("int").set(1)
 ctx.cell2 = cell("int").set(2)
-ctx.code = cell("ipython").set("""
+ctx.code = cell("ipython").set(
+    """
 %timeit -n 10 c = a + b
 
 %timeit -n 10 c = 99
@@ -16,17 +18,12 @@ def func():
     return a + b
 
 c = a + b
-""")
+"""
+)
 ctx.result = cell("int")
-ctx.tf = transformer({
-    "a": "input",
-    "b": "input",
-    "c": "output"
-})
+ctx.tf = transformer({"a": "input", "b": "input", "c": "output"})
 
-ctx.tf.env = {
-    "powers": ["ipython"]
-}
+ctx.tf.env = {"powers": ["ipython"]}
 ctx.cell1.connect(ctx.tf.a)
 ctx.cell2.connect(ctx.tf.b)
 ctx.code.connect(ctx.tf.code)

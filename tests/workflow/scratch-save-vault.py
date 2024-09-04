@@ -1,6 +1,7 @@
 import os
 import shutil
 import seamless
+
 seamless.delegate(False)
 from seamless.workflow import Cell, Context
 
@@ -9,7 +10,7 @@ shutil.rmtree("TEMPVAULT", ignore_errors=True)
 ctx = Context()
 ctx.a = Cell("int").set(2)
 ctx.b = Cell("int").set(3)
-ctx.tf = lambda a,b: a+b
+ctx.tf = lambda a, b: a + b
 ctx.tf.scratch = True
 ctx.tf.a = ctx.a
 ctx.tf.b = ctx.b

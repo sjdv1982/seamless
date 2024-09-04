@@ -1,4 +1,5 @@
 import seamless
+
 seamless.delegate(False)
 
 from seamless.workflow.core import macro_mode_on
@@ -81,10 +82,12 @@ with macro_mode_on():
     ctx = context(toplevel=True)
     ctx.param = cell("plain").set(1)
 
-    ctx.macro = macro({
-        "param": "plain",
-        "testmodule": ("plain", "module"),
-    })
+    ctx.macro = macro(
+        {
+            "param": "plain",
+            "testmodule": ("plain", "module"),
+        }
+    )
 
     ctx.param.connect(ctx.macro.param)
     ctx.macro_code = cell("macro").set(code)
@@ -101,18 +104,20 @@ with macro_mode_on():
     ctx = context(toplevel=True)
     ctx.param = cell("plain").set(1)
 
-    ctx.tf = transformer({
-        "param": {
-            "io": "input",
-            "celltype": "plain",
-        },
-        "testmodule": {
-            "io": "input",
-            "celltype": "plain", 
-            "subcelltype": "module",
-        },
-        "result": "output"
-    })
+    ctx.tf = transformer(
+        {
+            "param": {
+                "io": "input",
+                "celltype": "plain",
+            },
+            "testmodule": {
+                "io": "input",
+                "celltype": "plain",
+                "subcelltype": "module",
+            },
+            "result": "output",
+        }
+    )
 
     ctx.param.connect(ctx.tf.param)
     ctx.tf_code = cell("transformer").set(code)
@@ -123,7 +128,7 @@ with macro_mode_on():
 
     ctx.result = cell("plain")
     ctx.tf.result.connect(ctx.result)
-    
+
 print("START 2")
 ctx.compute()
 print(ctx.tf.logs)

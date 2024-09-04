@@ -1,4 +1,5 @@
 import seamless
+
 seamless.delegate(False)
 
 from seamless.workflow.core import context, cell, transformer, unilink
@@ -6,8 +7,8 @@ import numpy as np
 
 ctx = context(toplevel=True)
 x = np.arange(10)
-y = np.log(x+1)
-cell1 = cell("mixed").set({"x": x, "y": y, "z": [1,2,"test",[3,4]]})
+y = np.log(x + 1)
+cell1 = cell("mixed").set({"x": x, "y": y, "z": [1, 2, "test", [3, 4]]})
 cell1.mount("/tmp/mixedcellsilk.mixed")
 ctx.cell1 = cell1
 ctx.compute()
@@ -17,11 +18,7 @@ print(ctx.cell1.form)
 
 ctx.cell2 = cell("mixed").set(80)
 ctx.result = cell("mixed")
-ctx.tf = transformer({
-    "a": "input",
-    "b": "input",
-    "c": "output"
-})
+ctx.tf = transformer({"a": "input", "b": "input", "c": "output"})
 ctx.cell1_unilink = unilink(ctx.cell1)
 ctx.cell1_unilink.connect(ctx.tf.a)
 ctx.cell2.connect(ctx.tf.b)
@@ -44,4 +41,5 @@ print(ctx.result.value, ctx.status)
 with open("/tmp/mixedcellsilk.mixed", "rb") as f:
     content = f.read()
 from seamless import calculate_checksum
+
 print(calculate_checksum(content).hex())

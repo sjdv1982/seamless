@@ -15,14 +15,18 @@ testctx.tf.language = "bash"
 testctx.tf.code = "echo 1 2 3; touch RESULT"
 testctx.translate()
 
+
 def update_stdgraph(*args, **kwargs):
     new_graph = bash_ctx.get_graph()
     new_zip = bash_ctx.get_zip()
     stdgraph.set("bash_transformer", new_graph, new_zip)
+
     async def do_translate():
         await testctx.translation(force=True)
+
     coro = do_translate()
     asyncio.ensure_future(coro)
+
 
 t = bash_ctx.executor_code.traitlet()
 t.observe(update_stdgraph)

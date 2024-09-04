@@ -1,10 +1,12 @@
 # run scripts/jobslave.py
 
 import os
+
 os.environ["SEAMLESS_COMMUNION_ID"] = "compile-run-remote"
 os.environ["SEAMLESS_COMMUNION_PORT"] = "8602"
 
 import seamless
+
 seamless.set_ncores(0)
 from seamless import communion_server
 
@@ -34,11 +36,8 @@ testmodule = {
             "language": "cpp",
         },
     },
-    "link_options" : ["-lm"],
-    "public_header": {
-        "language": "c",
-        "code": "float add(int a, int b);"
-    }
+    "link_options": ["-lm"],
+    "public_header": {"language": "c", "code": "float add(int a, int b);"},
 }
 
 from seamless.workflow.core import context, cell, transformer, macro_mode_on
@@ -47,20 +46,24 @@ with macro_mode_on():
     ctx = context(toplevel=True)
     ctx.testmodule = cell("plain")
     ctx.testmodule.set(testmodule)
-    tf = ctx.tf = transformer({
-        "a": ("input", "plain"),
-        "b": ("input", "plain"),
-        "testmodule": ("input", "plain", "module"),
-        "result": ("output", "plain"),
-    })
+    tf = ctx.tf = transformer(
+        {
+            "a": ("input", "plain"),
+            "b": ("input", "plain"),
+            "testmodule": ("input", "plain", "module"),
+            "result": ("output", "plain"),
+        }
+    )
     ctx.testmodule.connect(tf.testmodule)
     tf.a.cell().set(2)
     tf.b.cell().set(3)
-    tf.code.cell().set("""
+    tf.code.cell().set(
+        """
 from .testmodule import lib
 print("ADD", lib.add(a,b))
 result = testmodule.lib.add(a,b)
-    """)
+    """
+    )
     ctx.result = cell("plain")
     ctx.tf.result.connect(ctx.result)
 

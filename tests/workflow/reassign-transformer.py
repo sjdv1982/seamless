@@ -1,22 +1,30 @@
 import seamless
+
 seamless.delegate(False)
 
 from seamless.workflow import Context
+
 ctx = Context()
 
-def func(a,b,c,x):
+
+def func(a, b, c, x):
     return a + b + 10 * c - x
 
+
 ctx.tf = func
-ctx.a = 10    
+ctx.a = 10
 ctx.b = 20
 ctx.tf.a = ctx.a
 ctx.tf.b = ctx.b
 ctx.tf.c = 80
 ctx.tf.x = 123
 ctx.compute()
-def func2(b,c,d):
+
+
+def func2(b, c, d):
     return b + 10 * c - d
+
+
 ctx.tf = func2
 ctx.tf.d = 5
 ctx.compute()

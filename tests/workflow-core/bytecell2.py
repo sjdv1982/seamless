@@ -1,10 +1,12 @@
 import seamless
+
 seamless.delegate(False)
 
 from seamless.workflow.core import context, cell
+
 ctx = context(toplevel=True)
 ctx.bytes1 = cell("bytes")
-ctx.bytes1.set(b'this is a bytes value')
+ctx.bytes1.set(b"this is a bytes value")
 
 ctx.bin = cell("binary")
 ctx.bytes1.connect(ctx.bin)

@@ -1,4 +1,5 @@
 import seamless
+
 seamless.delegate(False)
 
 import asyncio
@@ -11,8 +12,10 @@ value = [42, "test", {"mykey": "myvalue"}, True]
 value_json = json.dumps(value)
 
 import time
+
 start_time = time.time()
 print_ORIGINAL = print
+
 
 def print(*args):
     if not len(args):
@@ -21,6 +24,7 @@ def print(*args):
     args = [str(arg) for arg in args]
     elapsed_time = time.time() - start_time
     print_ORIGINAL("Time: %.1f ms," % (1000 * elapsed_time), *args)
+
 
 ctx.txt1 = cell("text")
 ctx.txt2 = cell("text")
@@ -67,19 +71,21 @@ print("ctx.plain", ctx.plain.data)
 print("*** Stage 3a ***")
 ctx.txt3.connect(ctx.plain2)
 ctx.compute()
-print("ctx.plain2", ctx.plain2.data, type(ctx.plain2.data).__name__) # list
+print("ctx.plain2", ctx.plain2.data, type(ctx.plain2.data).__name__)  # list
 
 print("*** Stage 3b ***")
 ctx.txt3.connect(ctx.mixed)  # NOT text-to-plain!
 ctx.compute()
-print("ctx.mixed", ctx.mixed.data, type(ctx.mixed.data).__name__) # str
+print("ctx.mixed", ctx.mixed.data, type(ctx.mixed.data).__name__)  # str
 
 print("*** Stage 4 ***")
-ctx.ipy = cell("ipython").set("""
+ctx.ipy = cell("ipython").set(
+    """
 %%timeit
 x = 42
 
-""")
+"""
+)
 ctx.py = cell("python")
 ctx.ipy.connect(ctx.py)
 ctx.compute()

@@ -1,4 +1,5 @@
 import seamless
+
 seamless.delegate(False)
 
 from seamless.workflow.core import context, cell
@@ -26,7 +27,7 @@ with macro_mode_on():
     ctx.bin.connect(ctx.bytes2)
     ctx.bytes1.connect(ctx.bin)
 
-    ctx.bytes1.set(b'this is a bytes value')
+    ctx.bytes1.set(b"this is a bytes value")
 
 ctx.compute()
 

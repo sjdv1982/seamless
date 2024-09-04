@@ -11,13 +11,17 @@ else:
 
 from seamless import calculate_checksum
 from seamless.workflow.core.cache.buffer_cache import buffer_cache
-from seamless.workflow.core.cache.buffer_remote import write_buffer as remote_write_buffer
+from seamless.workflow.core.cache.buffer_remote import (
+    write_buffer as remote_write_buffer,
+)
 from seamless.workflow.core.cache.transformation_cache import (
-    transformation_cache, tf_get_buffer, 
-    transformation_cache
+    transformation_cache,
+    tf_get_buffer,
+    transformation_cache,
 )
 
 from seamless.workflow.core.protocol.serialize import serialize
+
 
 async def build_transformation():
     bash_code = "nginx -v >& RESULT"
@@ -26,11 +30,8 @@ async def build_transformation():
         "__env__": ("plain", {"docker": {"name": "nginx:1.25.2"}}),
     }
     tf_dunder = {}
-    transformation = {
-        "__language__": "bash",
-        "__output__": ("result", "bytes", None)
-    }
-    for k,v in inp.items():
+    transformation = {"__language__": "bash", "__output__": ("result", "bytes", None)}
+    for k, v in inp.items():
         celltype, value = v
         buf = await serialize(value, celltype)
         checksum = calculate_checksum(buf)
@@ -45,12 +46,14 @@ async def build_transformation():
     tf_checksum = calculate_checksum(tf_buf)
     buffer_cache.cache_buffer(tf_checksum, tf_buf)
     remote_write_buffer(tf_checksum, tf_buf)
-    
+
     result = None
-    result_checksum = await transformation_cache.run_transformation_async(tf_checksum, tf_dunder=tf_dunder, fingertip=False, scratch=False)
+    result_checksum = await transformation_cache.run_transformation_async(
+        tf_checksum, tf_dunder=tf_dunder, fingertip=False, scratch=False
+    )
     result_checksum = Checksum(result_checksum)
     if result_checksum:
-        result = buffer_cache.get_buffer(result_checksum, remote=(delegation==True))
+        result = buffer_cache.get_buffer(result_checksum, remote=(delegation == True))
         if delegation:
             transformation_cache.undo(tf_checksum)
     if result is not None:
@@ -60,5 +63,7 @@ async def build_transformation():
             pass
     print(result)
 
+
 import asyncio
+
 asyncio.get_event_loop().run_until_complete(build_transformation())

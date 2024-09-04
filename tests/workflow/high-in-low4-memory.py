@@ -4,6 +4,7 @@
 import seamless
 
 import seamless.workflow.core.execute
+
 seamless.workflow.core.execute.DIRECT_PRINT = True
 
 if seamless.delegate(level=3):
@@ -27,9 +28,13 @@ sctx.a = Cell("str")
 sctx.b = Cell("str")
 sctx.a = sctx.inp2.a
 sctx.b = sctx.inp2.b
-def add(a,b):
+
+
+def add(a, b):
     print("ADD", a[:10], b[:10])
-    return a+b
+    return a + b
+
+
 sctx.add = add
 sctx.add.a = sctx.a
 sctx.add.b = sctx.b
@@ -44,13 +49,13 @@ ctx.graph = Cell("plain").set(graph)
 ctx.data = Cell()
 ctx.data.hash_pattern = {"!": "#"}
 ctx.compute()
-#ctx.data.schema.storage = "pure-plain" # bad idea... validation forces full value construction
+# ctx.data.schema.storage = "pure-plain" # bad idea... validation forces full value construction
 
 repeat = int(10e6)
-#for n in range(1000): # 2x10 GB
-for n in range(100): # 2x1 GB
-    a = "A:%d:" % n + str(n%10) * repeat
-    b = "B:%d:" % n + str(n%10) * repeat
+# for n in range(1000): # 2x10 GB
+for n in range(100):  # 2x1 GB
+    a = "A:%d:" % n + str(n % 10) * repeat
+    b = "B:%d:" % n + str(n % 10) * repeat
     """
     # not as fast
     ctx.data[n] = {}
@@ -60,52 +65,69 @@ for n in range(100): # 2x1 GB
     ctx.data[n] = {"a": a, "b": b}  # equivalent, but faster
     if n % 20 == 0:
         ctx.compute()
-    print(n+1)
+    print(n + 1)
 
 ctx.compute()
 print(ctx.data._data)
 print(ctx.data.handle[0].value["a"][:10])
-import time; time.sleep(1); print(); print()
+import time
+
+time.sleep(1)
+print()
+print()
 
 ctx.cs_data = Cell("checksum")
 ctx.cs_data = ctx.data
 ctx.result = Cell()
 ctx.result.hash_pattern = {"!": "#"}
 ctx.compute()
-#ctx.result.schema.storage = "pure-plain" # bad idea... validation forces full value construction
+# ctx.result.schema.storage = "pure-plain" # bad idea... validation forces full value construction
 
 m = ctx.m = Macro()
 m.cs_data = ctx.cs_data
 m.graph = ctx.graph
 m.pins.result = {"io": "output", "celltype": "mixed", "hash_pattern": {"!": "#"}}
+
+
 def map_list(ctx, cs_data, graph):
     from seamless.workflow.core import Cell as CoreCell
-    print("CS-DATA", cs_data)
-    ctx.result = cell("mixed", hash_pattern = {"!": "#"})
 
-    ctx.sc_data = cell("mixed" , hash_pattern = {"!": "#"})
-    ctx.sc_buffer = cell("mixed" , hash_pattern = {"!": "#"})
+    print("CS-DATA", cs_data)
+    ctx.result = cell("mixed", hash_pattern={"!": "#"})
+
+    ctx.sc_data = cell("mixed", hash_pattern={"!": "#"})
+    ctx.sc_buffer = cell("mixed", hash_pattern={"!": "#"})
     ctx.sc = StructuredCell(
         data=ctx.sc_data,
         buffer=ctx.sc_buffer,
         inchannels=[(n,) for n in range(len(cs_data))],
         outchannels=[()],
-        hash_pattern = {"!": "#"}
+        hash_pattern={"!": "#"},
     )
 
     for n, cs in enumerate(cs_data):
         hc = HighLevelContext(graph)
-        setattr(ctx, "subctx%d" % (n+1), hc)
+        setattr(ctx, "subctx%d" % (n + 1), hc)
         if not hasattr(hc, "inp"):
             raise TypeError("Map-reduce context must have a cell called 'inp'")
         if isinstance(hc.inp, StructuredCell):
-            raise TypeError("Map-reduce context has a cell called 'inp', but its celltype must be mixed, not structured")
+            raise TypeError(
+                "Map-reduce context has a cell called 'inp', but its celltype must be mixed, not structured"
+            )
         if not isinstance(hc.inp, CoreCell):
-            raise TypeError("Map-reduce context must have an attribute 'inp' that is a cell, not a {}".format(type(hc.inp)))
+            raise TypeError(
+                "Map-reduce context must have an attribute 'inp' that is a cell, not a {}".format(
+                    type(hc.inp)
+                )
+            )
         if hc.inp.celltype != "mixed":
-            raise TypeError("Map-reduce context has a cell called 'inp', but its celltype must be mixed, not {}".format(hc.inp.celltype))
+            raise TypeError(
+                "Map-reduce context has a cell called 'inp', but its celltype must be mixed, not {}".format(
+                    hc.inp.celltype
+                )
+            )
         hc.inp.set_checksum(cs)
-        resultname = "result%d" % (n+1)
+        resultname = "result%d" % (n + 1)
         setattr(ctx, resultname, cell("str"))
         c = getattr(ctx, resultname)
         hc.result.connect(c)

@@ -1,7 +1,9 @@
 import seamless
+
 seamless.delegate(False)
 
 from seamless.workflow import Context, Macro
+
 ctx = Context()
 m = ctx.m = Macro()
 ctx.a = 10
@@ -9,6 +11,8 @@ m.a = ctx.a
 m.b = 20
 m.pins.x = {"io": "input", "celltype": "int"}
 m.pins.y = {"io": "output", "celltype": "int"}
+
+
 def run_macro(ctx, a, b):
     pins = {
         "a": "input",
@@ -24,6 +28,7 @@ def run_macro(ctx, a, b):
     ctx.tf.code.cell().set("y = a * b + x")
     ctx.y = cell("int")
     ctx.tf.y.connect(ctx.y)
+
 
 m.code = run_macro
 ctx.compute()

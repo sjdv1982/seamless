@@ -1,7 +1,9 @@
 import seamless
+
 seamless.delegate(False)
 
 from seamless.workflow import Context
+
 ctx = Context()
 ctx.test = "<b>This is a test</b>"
 print("cell:")
@@ -15,7 +17,7 @@ ctx.test.mimetype = "text/xhtml"
 print(ctx.test.mimetype)
 print()
 
-ctx.tf = lambda a,b: 10
+ctx.tf = lambda a, b: 10
 print("transformer:")
 print(ctx.tf.code.mimetype)
 print()

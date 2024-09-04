@@ -1,4 +1,5 @@
 import seamless
+
 seamless.delegate(False)
 
 from seamless.workflow import Context
@@ -8,9 +9,11 @@ ctx = Context()
 
 ctx.a = 12
 
+
 def triple_it(a):
     print("triple", a)
     return 3 * a
+
 
 ctx.transform = triple_it
 ctx.transform.a = ctx.a
@@ -38,4 +41,5 @@ print(ctx2.sub2.myresult.value)
 graph = ctx.get_graph()
 j = json.dumps(graph, sort_keys=True, indent=2)
 from seamless import calculate_checksum
+
 print(calculate_checksum(j).hex())

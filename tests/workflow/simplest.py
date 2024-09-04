@@ -1,4 +1,5 @@
 import seamless
+
 seamless.delegate(False)
 
 from seamless.workflow import Context, Cell
@@ -55,9 +56,11 @@ print(ctx.a.schema)
 graph = ctx.get_graph()
 pprint(graph)
 
+
 def validation(self):
     print("RUN VALIDATION", self)
     assert self != "test"
+
 
 ctx.a.add_validator(validation, "validation")
 ctx.compute()

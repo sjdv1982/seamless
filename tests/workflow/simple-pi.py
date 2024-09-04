@@ -1,9 +1,11 @@
 import seamless
+
 seamless.delegate(False)
 
 import math
 from seamless.workflow import Context
 import json
+
 ctx = Context()
 ctx.pi = math.pi
 ctx.doubleit = lambda a: 2 * a
@@ -13,7 +15,7 @@ ctx.twopi = ctx.doubleit
 ctx.translate()
 
 graph = ctx.get_graph()
-print(json.dumps( graph, indent=2, sort_keys=True))
+print(json.dumps(graph, indent=2, sort_keys=True))
 json.dump(graph, open("twopi.seamless", "w"), indent=2, sort_keys=True)
 
 ctx.compute()
@@ -40,6 +42,7 @@ graph = ctx.get_graph()
 json.dump(graph, open("twopi-result.seamless", "w"), indent=2, sort_keys=True)
 archive = ctx.get_zip()
 with open("twopi-result.zip", "wb") as f:
-    f.write(archive) 
+    f.write(archive)
 import os
+
 os.system("md5sum twopi.seamless twopi-result.seamless twopi-result.zip")

@@ -1,11 +1,13 @@
 import seamless
+
 seamless.delegate(level=3)
 
 from seamless.workflow import Cell, Context
+
 ctx = Context()
 ctx.a = Cell("int").set(2)
 ctx.b = Cell("int").set(3)
-ctx.tf = lambda a,b: a+b
+ctx.tf = lambda a, b: a + b
 ctx.tf.scratch = True
 ctx.tf.a = ctx.a
 ctx.tf.b = ctx.b

@@ -16,6 +16,7 @@ ctx.compute()
 print(ctx.result.value)
 
 from seamless.metalevel.debugmode import ValidationError
+
 try:
     ctx.tf.debug.enable("light")
 except ValidationError as exc:

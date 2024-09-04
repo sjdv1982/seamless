@@ -4,12 +4,15 @@ This is a good test for delegation since as of Seamless 0.12,
 PyTorch cannot be added to the Seamless Docker image using conda
 (the openmp versions are mutually exclusive).
 """
+
 import json
 import seamless
+
 if seamless.delegate():
-     exit(1)
+    exit(1)
 
 from seamless.workflow import Context, Transformer
+
 ctx = Context()
 ctx.tf = Transformer()
 ctx.tf.code = open("pytorch_test1.py").read()
@@ -27,7 +30,7 @@ for k in "env", "meta", "compilers", "languages":
     key = "__" + k + "__"
     v = tf_dict.get(key)
     if v is not None:
-          tf_dunder[key] = v
+        tf_dunder[key] = v
 with open("environment7-dunder.json", "w") as f:
     json.dump(tf_dunder, f, sort_keys=True, indent=2)
 print("Transformation dunder stored in environment7-dunder.json")

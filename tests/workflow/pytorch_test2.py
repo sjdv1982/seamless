@@ -26,7 +26,8 @@ We load the code from the previous sections on `Datasets & DataLoaders <data_tut
 and `Build Model  <buildmodel_tutorial.html>`_.
 """
 
-def main(batch_size:int, epochs:int, learning_rate:float):
+
+def main(batch_size: int, epochs: int, learning_rate: float):
     ##############################################
     # Hyperparameters
     # -----------------
@@ -48,17 +49,11 @@ def main(batch_size:int, epochs:int, learning_rate:float):
     from torchvision.transforms import ToTensor
 
     training_data = datasets.FashionMNIST(
-        root="data",
-        train=True,
-        download=True,
-        transform=ToTensor()
+        root="data", train=True, download=True, transform=ToTensor()
     )
 
     test_data = datasets.FashionMNIST(
-        root="data",
-        train=False,
-        download=True,
-        transform=ToTensor()
+        root="data", train=False, download=True, transform=ToTensor()
     )
 
     class NeuralNetwork(nn.Module):
@@ -66,7 +61,7 @@ def main(batch_size:int, epochs:int, learning_rate:float):
             super(NeuralNetwork, self).__init__()
             self.flatten = nn.Flatten()
             self.linear_relu_stack = nn.Sequential(
-                nn.Linear(28*28, 512),
+                nn.Linear(28 * 28, 512),
                 nn.ReLU(),
                 nn.Linear(512, 512),
                 nn.ReLU(),
@@ -79,7 +74,6 @@ def main(batch_size:int, epochs:int, learning_rate:float):
             return logits
 
     model = NeuralNetwork()
-
 
     #####################################
     # Optimization Loop
@@ -112,8 +106,6 @@ def main(batch_size:int, epochs:int, learning_rate:float):
     # Initialize the loss function
     loss_fn = nn.CrossEntropyLoss()
 
-
-
     #####################################
     # Optimizer
     # ~~~~~~~~~~~~~~~~~
@@ -131,7 +123,6 @@ def main(batch_size:int, epochs:int, learning_rate:float):
     #  * Call ``optimizer.zero_grad()`` to reset the gradients of model parameters. Gradients by default add up; to prevent double-counting, we explicitly zero them at each iteration.
     #  * Backpropagate the prediction loss with a call to ``loss.backward()``. PyTorch deposits the gradients of the loss w.r.t. each parameter.
     #  * Once we have our gradients, we call ``optimizer.step()`` to adjust the parameters by the gradients collected in the backward pass.
-
 
     ########################################
     # .. _full-impl-label:
@@ -157,7 +148,6 @@ def main(batch_size:int, epochs:int, learning_rate:float):
                 loss, current = loss.item(), (batch + 1) * len(X)
                 print(f"loss: {loss:>7f}  [{current:>5d}/{size:>5d}]")
 
-
     def test_loop(dataloader, model, loss_fn):
         size = len(dataloader.dataset)
         num_batches = len(dataloader)
@@ -173,14 +163,12 @@ def main(batch_size:int, epochs:int, learning_rate:float):
         correct /= size
         return f"Test Error: \n Accuracy: {(100*correct):>0.1f}%, Avg loss: {test_loss:>8f} \n"
 
-
     ########################################
     # We initialize the loss function and optimizer, and pass it to ``train_loop`` and ``test_loop``.
     # Feel free to increase the number of epochs to track the model's improving performance.
 
     train_dataloader = DataLoader(training_data, batch_size=batch_size)
     test_dataloader = DataLoader(test_data, batch_size=batch_size)
-        
 
     loss_fn = nn.CrossEntropyLoss()
     optimizer = torch.optim.SGD(model.parameters(), lr=learning_rate)
@@ -193,7 +181,6 @@ def main(batch_size:int, epochs:int, learning_rate:float):
     print("Done!")
     return result
 
-
     #################################################################
     # Further Reading
     # -----------------------
@@ -202,9 +189,10 @@ def main(batch_size:int, epochs:int, learning_rate:float):
     # - `Warmstart Training a Model <https://pytorch.org/tutorials/recipes/recipes/warmstarting_model_using_parameters_from_a_different_model.html>`_
     #
 
+
 if __name__ == "__main__":
     result = main(batch_size=64, epochs=10, learning_rate=1e-3)
     print(result)
 
-if __name__ == "transformer":  # Seamless 
+if __name__ == "transformer":  # Seamless
     result = main(batch_size=batch_size, epochs=epochs, learning_rate=learning_rate)

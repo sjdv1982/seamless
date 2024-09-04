@@ -1,7 +1,8 @@
 import seamless
+
 seamless.delegate(False)
 from seamless.workflow.core import macro_mode_on
-from seamless.workflow.core import context,cell
+from seamless.workflow.core import context, cell
 
 with macro_mode_on():
     ctx = context(toplevel=True)
@@ -9,4 +10,3 @@ with macro_mode_on():
     ctx.json.mount("/tmp/test.json", authority="cell")
 
 ctx.compute()
-

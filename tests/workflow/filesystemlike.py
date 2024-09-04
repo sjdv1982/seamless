@@ -1,9 +1,12 @@
 import seamless
+
 seamless.delegate(False)
 
 from seamless.workflow import Context
+
 ctx = Context()
-ctx.filesystem = {"test.txt": """
+ctx.filesystem = {
+    "test.txt": """
 This
 is
 a

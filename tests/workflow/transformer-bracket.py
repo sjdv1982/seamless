@@ -1,12 +1,15 @@
 import seamless
+
 seamless.delegate(False)
 
 from seamless.workflow import Context
 
 ctx = Context()
 
-def transform(a,b):
+
+def transform(a, b):
     return a * b
+
 
 ctx.tf = transform
 ctx.tf.a = 12

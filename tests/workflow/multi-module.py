@@ -1,7 +1,8 @@
 import seamless
+
 seamless.delegate(False)
 
-tf_code = '''
+tf_code = """
 print(__name__)
 from .testmodule import q
 print(testmodule)
@@ -10,17 +11,22 @@ print(testmodule.submodule.q)
 from .testmodule.submodule import q
 print(q)
 result = q
-'''
+"""
 
 from seamless import Transformer, Context, Module
+
 ctx = Context()
 ctx.testmodule = Module()
 ctx.testmodule.multi = True
-ctx.testmodule["__init__.py"] = """
+ctx.testmodule[
+    "__init__.py"
+] = """
 from .submodule import q
 from . import submodule
-""" 
-ctx.testmodule["submodule.py"] = """q = 10
+"""
+ctx.testmodule[
+    "submodule.py"
+] = """q = 10
 def func():
     return 42
 """
@@ -36,7 +42,9 @@ print(ctx.tf.status)
 print(ctx.tf.exception)
 print(ctx.tf.result.value)
 
-ctx.testmodule["submodule.py"] = """q = 9
+ctx.testmodule[
+    "submodule.py"
+] = """q = 9
 def func():
     return 42
 """
@@ -50,10 +58,12 @@ ctx.testmodule.set(code)
 ctx.compute()
 print(ctx.tf.result.value)
 
-ctx.testmodule["submodule2.py"] = """
+ctx.testmodule[
+    "submodule2.py"
+] = """
 from mytestmodule.submodule import q, func
 q2 = 2 * q
-""" 
+"""
 ctx.testmodule.internal_package_name = "mytestmodule"
 ctx.tf.code = """
 from .testmodule.submodule2 import q2, func

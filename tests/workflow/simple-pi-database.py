@@ -3,6 +3,7 @@ from seamless.workflow import Context, Cell
 import json
 
 import seamless
+
 raise NotImplementedError
 seamless.database_sink.connect()
 
@@ -16,4 +17,5 @@ ctx.translate()
 graph = ctx.get_graph()
 json.dump(graph, open("/tmp/twopi-database.seamless", "w"), indent=2, sort_keys=True)
 import os
+
 os.system("md5sum twopi.seamless /tmp/twopi-database.seamless")

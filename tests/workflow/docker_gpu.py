@@ -1,15 +1,13 @@
 from seamless.workflow import Context, Transformer
 
-#docker run --rm --gpus all --shm-size 1gb nvidia/cuda:11.8.0-base-ubuntu22.04 \
+# docker run --rm --gpus all --shm-size 1gb nvidia/cuda:11.8.0-base-ubuntu22.04 \
 # bash -c 'nvidia-smi && df /dev/shm'
 
 ctx = Context()
 
 docker_options = {
-    "shm_size":"1gb",
-    "device_requests":[
-        {"count":-1, "capabilities":[['gpu']]}
-    ]
+    "shm_size": "1gb",
+    "device_requests": [{"count": -1, "capabilities": [["gpu"]]}],
 }
 
 tf = ctx.tf = Transformer()

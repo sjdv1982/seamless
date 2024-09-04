@@ -1,10 +1,13 @@
 import seamless
+
 seamless.delegate(False)
 
 from seamless.workflow import Context, Cell
 
-def func(a,b):
+
+def func(a, b):
     pass
+
 
 ctx = Context()
 ctx.c = Cell("code")
@@ -46,11 +49,11 @@ ctx.compute()
 print(ctx.tf._get_tf().code.status)
 print(ctx.tf.code.value)
 
-'''
+"""
 ctx.c = func
 ctx.c.mount("/tmp/code.py")
 ctx.compute()
-'''
+"""
 
 ctx.tf = func
 ctx.tf.code.mount("/tmp/code.py")

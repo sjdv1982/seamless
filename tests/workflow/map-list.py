@@ -1,4 +1,5 @@
 import seamless
+
 seamless.delegate(False)
 
 from seamless.workflow import Context, Cell
@@ -11,7 +12,7 @@ ctx.inp = Cell("mixed")
 ctx.inp0 = Cell()
 ctx.inp0 = ctx.inp
 ctx.uniform = Cell("mixed")
-ctx.add = lambda a,b,c: a+b+c
+ctx.add = lambda a, b, c: a + b + c
 ctx.add.a = ctx.inp0.a
 ctx.add.b = ctx.inp0.b
 ctx.add.c = ctx.uniform
@@ -43,7 +44,7 @@ ctx.mapping = ctx.lib.map_list(
     context_graph=ctx.mapped_ctx,
     inp=ctx.inp_mixed,
     uniform=ctx.uniform,
-    result=ctx.result
+    result=ctx.result,
 )
 print(str(ctx.mapping.help.value)[:30])
 ctx.compute()

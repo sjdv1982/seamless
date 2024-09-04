@@ -10,14 +10,18 @@ else:
     if has_err:
         exit(1)
     from seamless.workflow.core.transformation import get_global_info
+
     get_global_info()  # avoid timing errors
 
 from seamless.workflow import Context
 
-def func(a,b,c):
+
+def func(a, b, c):
     import time
+
     time.sleep(3)
-    return (a+b) * c
+    return (a + b) * c
+
 
 ctx = Context()
 ctx.tf = func
@@ -26,6 +30,7 @@ tf.a = 2
 tf.b = 3
 tf.c = 4
 import time
+
 t = time.time()
 ctx.compute()
 print("{:.1f} seconds".format(time.time() - t))

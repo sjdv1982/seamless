@@ -1,7 +1,9 @@
 import seamless
+
 seamless.delegate(False)
 
 from seamless.workflow import Context
+
 ctx = Context()
 ctx.tf = lambda a: 42
 ctx.tf.docker_image = "some_docker_image"

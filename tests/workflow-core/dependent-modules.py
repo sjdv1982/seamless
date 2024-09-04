@@ -1,4 +1,5 @@
 import seamless
+
 seamless.delegate(False)
 
 from seamless.workflow.core import macro_mode_on
@@ -8,14 +9,17 @@ with macro_mode_on():
     ctx = context(toplevel=True)
     ctx.param = cell("plain").set(1)
 
-    ctx.macro = macro({
-        "param": "plain",
-        "testmodule": ("plain", "module"),
-        "dep_module": ("plain", "module"),
-    })
+    ctx.macro = macro(
+        {
+            "param": "plain",
+            "testmodule": ("plain", "module"),
+            "dep_module": ("plain", "module"),
+        }
+    )
 
     ctx.param.connect(ctx.macro.param)
-    ctx.macro_code = cell("macro").set("""
+    ctx.macro_code = cell("macro").set(
+        """
 print("macro execute")
 from .testmodule import b
 from .testmodule import dep
@@ -23,7 +27,8 @@ a = dep.a
 from .dep_module import a as aa
 print(a, b, aa)
 print("/macro execute")
-""")
+"""
+    )
     ctx.macro_code.connect(ctx.macro.code)
 
     testmodule = {
@@ -33,7 +38,7 @@ print("/macro execute")
 import dep_module as dep
 b = 100
         """,
-        "dependencies": ["dep_module"]
+        "dependencies": ["dep_module"],
     }
     ctx.testmodule = cell("plain").set(testmodule)
     ctx.testmodule.connect(ctx.macro.testmodule)

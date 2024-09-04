@@ -7,6 +7,7 @@ import sys
 from pprint import pprint
 
 import seamless
+
 seamless.delegate(False)
 
 from silk import Silk, ValidationError
@@ -15,21 +16,19 @@ from seamless.workflow.core import context, cell, StructuredCell
 ctx = None
 hash_pattern = {"*": "#"}
 
+
 def reset_backend(share_schemas=True, with_hash_pattern=True):
     hp = hash_pattern if with_hash_pattern else None
     global ctx, s, s2, s3
     if ctx is not None:
-        ctx.compute() # makes no difference, but could be easier debugging
+        ctx.compute()  # makes no difference, but could be easier debugging
         ctx.destroy()
     ctx = context(toplevel=True)
     ctx.data = cell("mixed", hash_pattern=hp)
     ctx.buffer = cell("mixed", hash_pattern=hp)
     ctx.schema = cell("plain")
     ctx.sc = StructuredCell(
-        buffer=ctx.buffer,
-        data=ctx.data,
-        schema=ctx.schema,
-        hash_pattern=hp
+        buffer=ctx.buffer, data=ctx.data, schema=ctx.schema, hash_pattern=hp
     )
     s = ctx.sc.handle
     ctx.data2 = cell("mixed", hash_pattern=hp)
@@ -40,13 +39,10 @@ def reset_backend(share_schemas=True, with_hash_pattern=True):
         ctx.schema2 = cell("plain")
         schema2 = ctx.schema2
     ctx.sc2 = StructuredCell(
-        buffer=ctx.buffer2,
-        data=ctx.data2,
-        schema=schema2,
-        hash_pattern=hp
+        buffer=ctx.buffer2, data=ctx.data2, schema=schema2, hash_pattern=hp
     )
     s2 = ctx.sc2.handle
-    hp3 = None # never use hash pattern for this one
+    hp3 = None  # never use hash pattern for this one
     ctx.data3 = cell("mixed", hash_pattern=hp3)
     ctx.buffer3 = cell("mixed", hash_pattern=hp3)
     if share_schemas:
@@ -55,15 +51,13 @@ def reset_backend(share_schemas=True, with_hash_pattern=True):
         ctx.schema3 = cell("plain")
         schema3 = ctx.schema3
     ctx.sc3 = StructuredCell(
-        buffer=ctx.buffer3,
-        data=ctx.data3,
-        schema=schema3,
-        hash_pattern=hp3
+        buffer=ctx.buffer3, data=ctx.data3, schema=schema3, hash_pattern=hp3
     )
     s3 = ctx.sc3.handle
 
 
 reset_backend()
+
 
 def adder(self, other):
     return other + self.x
@@ -83,7 +77,7 @@ pprint(s.data)
 pprint(s.schema.value)
 
 print(s.bla(5))
-print(s+5)
+print(s + 5)
 
 ctx.compute()
 print("OK")
@@ -92,28 +86,35 @@ pprint(ctx.data.value)
 pprint(ctx.schema.value)
 
 s2.x = 10
-print(s2+5, s2.bla(5))
+print(s2 + 5, s2.bla(5))
 ctx.compute()
 print(ctx.data2.value)
 
 s3.x = 10
-print(s3+25)
+print(s3 + 25)
+
 
 def xy(self):
     return self.x + self.y
 
+
 s.x = 1
 s.y = 2
 print(s.x + s.y)
-s3.xy = property(xy) # all three Silks use the same schema
-#pprint(s.schema.value)
+s3.xy = property(xy)  # all three Silks use the same schema
+# pprint(s.schema.value)
 print(s.xy)
+
 
 def xx_get(self):
     return self.x * self.x
+
+
 def xx_set(self, xx):
     import math
+
     self.x = int(math.sqrt(xx))
+
 
 s.x = 3
 s.xx = property(xx_get, xx_set)
@@ -132,9 +133,11 @@ print(sz.q.data, sz.r.data)
 s.z.qr = property(lambda self: self.q * self.r)
 print(s.z.qr)
 
+
 def validate_z(self):
     print("VALIDATE", self.q.data, self.r.data)
     assert self.q < self.r
+
 
 try:
     s.z.add_validator(validate_z)
@@ -144,11 +147,11 @@ except Exception:
 s.z.validate()
 pprint(s.schema.value)
 
-s.lis = [1,2,3]
+s.lis = [1, 2, 3]
 s.lis.append(10)
 print(s.lis.data)
 s.lis += [5]
-print(s.lis*2)
+print(s.lis * 2)
 
 """
 for a in s.lis[1:3]:  # slices not yet supported by monitor
@@ -160,7 +163,7 @@ print(hasattr(s, "lis"), "lis" in s)
 print(hasattr(s, "lis2"), "lis2" in s)
 
 for v in sorted(s):
-    #print(v.data)  # With Monitor, iteration does *not* give a Silk object
+    # print(v.data)  # With Monitor, iteration does *not* give a Silk object
     print(v)
 
 print("")
@@ -176,8 +179,12 @@ s.x = inc
 print(s.x())
 s.y = property(inc)
 print(s.y)
-def setter(self,v):
+
+
+def setter(self, v):
     self.set(v - 1)
+
+
 s.z = property(inc, setter)
 print(s.z)
 s.z = 10
@@ -187,7 +194,8 @@ print(s.z)
 reset_backend(share_schemas=False)
 s2.x = 10
 import numpy as np
-arr = np.array([1.0,2.0,3.0])
+
+arr = np.array([1.0, 2.0, 3.0])
 s2.arr = arr
 
 # Need .self.data or .unsilk for Numpy arrays, because Numpy arrays have a .data method
@@ -197,13 +205,17 @@ print(type(s2.arr.self.data), type(arr))
 print(s2.arr[2].self.data, arr[2])
 print(type(s2.arr[2].self.data), type(arr[2]))
 
-#s2.arr.schema["type"] = "array"  #  inferred
+# s2.arr.schema["type"] = "array"  #  inferred
 print(s2.arr.schema["type"])
 item = s3
 item.set(5.0)
-#item.schema["type"] = "number"  #  inferred
+
+
+# item.schema["type"] = "number"  #  inferred
 def func(self):
     assert self > 0
+
+
 item.add_validator(func)
 s2.arr.schema["items"] = item.schema
 s2.validate()
@@ -219,22 +231,26 @@ reset_backend()
 s.x = 1.0
 s.y = 0.0
 s.z = 0.0
+
+
 def func(self):
-    assert abs(self.x**2+self.y**2+self.z**2 - 1) < 0.001
+    assert abs(self.x**2 + self.y**2 + self.z**2 - 1) < 0.001
+
+
 s.add_validator(func)
 s.y = 0.0
 s.validate()
 try:
-    s.y = 1.0   #  would fail
-    ctx.compute() # to ensure that ctx.sc.exception is set
+    s.y = 1.0  #  would fail
+    ctx.compute()  # to ensure that ctx.sc.exception is set
     s.validate()
 except ValidationError:
     print("FAIL")
     print(ctx.sc.exception)
     s.y = 0
-#pprint(s.schema.value)
+# pprint(s.schema.value)
 
-#print("set")
+# print("set")
 s.x = 0.0
 s.y = 0.0
 s.z = 1.0
@@ -246,42 +262,58 @@ s.z = 0.0
 print(s.data)
 
 import numpy as np
+
 reset_backend(share_schemas=False)
 a = s
-a.coor = [0.0,0.0,1.0]
+a.coor = [0.0, 0.0, 1.0]
 ctx.compute()
 pprint(a.coor.schema.value)
 print(a.coor.data)
 print("START")
 np.array(a.coor.data)
 print(np.array(a.coor.data))
+
+
 def func(self):
-    import numpy as np #necessary!
+    import numpy as np  # necessary!
+
     arr = np.array(self.data)
     assert abs(np.sum(arr**2) - 1) < 0.01
+
+
 a.coor.add_validator(func)
 coor_schema = a.coor.schema.value
 
 reset_backend(share_schemas=False, with_hash_pattern=False)
 c = s2
 c.schema.clear()
-c.set( [0.0, 0.0, 0.0] )
+c.set([0.0, 0.0, 0.0])
 c.schema.update(coor_schema)
+
 
 def set_x(self, value):
     self[0] = value
+
+
 c.x = property(lambda self: self[0], set_x)
+
 
 def set_y(self, value):
     self[1] = value
+
+
 c.y = property(lambda self: self[1], set_y)
+
 
 def set_z(self, value):
     self[2] = value
+
+
 c.z = property(lambda self: self[2], set_z)
 
+
 def set_xyz(self, xyz):
-    x,y,z = xyz
+    x, y, z = xyz
     try:
         self.x = x
     except ValidationError:
@@ -291,6 +323,7 @@ def set_xyz(self, xyz):
     except ValidationError:
         pass
     self.z = z
+
 
 c.xyz = property(lambda self: tuple(self.data), set_xyz)
 
@@ -304,9 +337,9 @@ except ValidationError:
     pass
 c.z = 0.93
 print(c.data)
-c.xyz = -1,0,0
+c.xyz = -1, 0, 0
 print(c.data, c.xyz)
-c.xyz = 0.2,-0.3,0.93
+c.xyz = 0.2, -0.3, 0.93
 print(c.data, c.xyz)
 pprint(c.schema.value)
 ctx.compute()
@@ -316,24 +349,24 @@ ctx = context(toplevel=True)
 ctx.data = cell("mixed")
 ctx.buffer = cell("mixed")
 ctx.schema = cell("plain")
-ctx.sc = StructuredCell(
-    buffer=ctx.buffer,
-    data=ctx.data,
-    schema=ctx.schema
-)
+ctx.sc = StructuredCell(buffer=ctx.buffer, data=ctx.data, schema=ctx.schema)
 
-Test = ctx.sc.handle # singleton
+Test = ctx.sc.handle  # singleton
 """
 # will never work for a singleton backed up by a structured cell
 def __init__(self, a, b):
     self.a = a
     self.b = b
 """
+
+
 def __call__(self, c):
     return self.a + self.b + c
-#Test.__init__ = __init__
+
+
+# Test.__init__ = __init__
 Test.__call__ = __call__
-#test = Test(7,8)
+# test = Test(7,8)
 test = Test
 test.a, test.b = 7, 8
 test.validate()
@@ -348,7 +381,7 @@ l = test.l
 l.append("bla")
 test.validate()
 try:
-    l.append(10) #Error
+    l.append(10)  # Error
     l.validate()
 except ValidationError as exc:
     print(exc)

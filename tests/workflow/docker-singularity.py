@@ -1,9 +1,13 @@
 import os
+
 os.environ["SEAMLESS_DOCKER_DISABLED"] = "1"
 
 import os
 import seamless
-seamless.delegate(False)  # With delegation, singularity must be configured for the assistant!
+
+seamless.delegate(
+    False
+)  # With delegation, singularity must be configured for the assistant!
 
 from seamless.workflow import Context
 

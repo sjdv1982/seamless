@@ -1,4 +1,5 @@
 import seamless
+
 seamless.delegate(False)
 from seamless.workflow.core import macro_mode_on
 from seamless.workflow.core import context, cell
@@ -12,7 +13,8 @@ with macro_mode_on():
     ctx.cson.connect(ctx.json)
 
 if 1:
-	ctx.cson.set("""
+    ctx.cson.set(
+        """
 	# Comments!!!
 
 	# An Array with no commas!
@@ -53,6 +55,7 @@ if 1:
 			'''
 
 		more: 'http://cowspiracy.com/facts'
-	""")
+	"""
+    )
 
 ctx.compute()

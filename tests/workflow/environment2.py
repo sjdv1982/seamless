@@ -5,13 +5,15 @@ adding Go support via "go build"
 import traceback
 
 import seamless
+
 seamless.delegate(False)
 
 from seamless.workflow import Context, Cell, Transformer
+
 ctx = Context()
 env = ctx.environment
 
-# Define a transformer with signature 
+# Define a transformer with signature
 #    (a: int, b: int) -> int
 #    and a=13, b=16
 ctx.tf = Transformer()
@@ -89,11 +91,7 @@ print()
 # Therefore, the compiler mode is "package"
 
 languages = env.get_languages("plain")
-languages["go"] = {
-    "extension": "go",
-    "mode": "compiled",
-    "compiler": "go build"
-}
+languages["go"] = {"extension": "go", "mode": "compiled", "compiler": "go build"}
 env.set_languages(languages, "plain")
 compilers = env.get_compilers("plain")
 compilers["go build"] = {
@@ -104,7 +102,6 @@ compilers["go build"] = {
     "public_options": [],
     "compile_flag": "",
     "output_flag": "-o",
-
 }
 env.set_compilers(compilers, "plain")
 ctx.translate()
@@ -147,14 +144,14 @@ func transform(a C.int, b C.int, result *C.int) C.int {  //correct
 func main(){}
 """
 ctx.compute()
-print(ctx.tf.exception) # None
-print(ctx.tf.result.value) # 2029
+print(ctx.tf.exception)  # None
+print(ctx.tf.result.value)  # 2029
 
 ctx.tf.a = 80
 ctx.compute()
-print(ctx.tf.result.value) # 2096
+print(ctx.tf.result.value)  # 2096
 
-'''
+"""
 # We can even launch debugging 
 #  GDB is not very good, but other debuggers (Delve) exist
 # TODO: source file mapping (Seamless only does this for gcc compilers)
@@ -165,4 +162,4 @@ ctx.tf.debug.enable("light")
 ctx.tf.a = 18
 ctx.compute()
 print(ctx.tf.result.value)
-'''
+"""

@@ -1,10 +1,11 @@
 import glob
 
 import subprocess
+
 docker_file = """FROM ubuntu:latest
 RUN apt update && apt -y install openssl   
 """
-subprocess.run("docker build -t openssl -", shell=True,input=docker_file.encode())
+subprocess.run("docker build -t openssl -", shell=True, input=docker_file.encode())
 
 
 import seamless
@@ -21,7 +22,9 @@ from seamless.Cell import FolderCell
 from seamless.workflow import Context, DeepFolderCell, Transformer
 
 try:
-    deepfolder_checksum = seamless.parse_checksum(open("/tmp/PIN-FILESYSTEM-FOLDER.CHECKSUM").read())
+    deepfolder_checksum = seamless.parse_checksum(
+        open("/tmp/PIN-FILESYSTEM-FOLDER.CHECKSUM").read()
+    )
 except Exception:
     deepfolder_checksum = None
 
@@ -34,6 +37,8 @@ print(ctx.deepfolder.exception)
 print(ctx.deepfolder.checksum)
 print()
 ctx.tf = Transformer()
+
+
 def code(**kwargs):
     print(PINS.keys())
     for pin in sorted(FILESYSTEM.keys()):
@@ -42,6 +47,8 @@ def code(**kwargs):
         print(PINS[pin])
         print()
     return 42
+
+
 ctx.tf.deepfolderpin = ctx.deepfolder
 ctx.tf.code = code
 ctx.compute()

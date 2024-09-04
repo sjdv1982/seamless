@@ -21,9 +21,9 @@ ctx.transform.a = ctx.a
 ctx.transform.debug.direct_print = True
 ctx.myresult = ctx.transform
 ctx.compute()
-print(ctx.myresult.value) # None
+print(ctx.myresult.value)  # None
 
 ctx.a = 13
 ctx.compute()
-print(ctx.myresult.value) # None
+print(ctx.myresult.value)  # None
 print(ctx.transform.status)

@@ -21,7 +21,9 @@ print(ctx.tf.status)
 print(ctx.tf.exception)
 
 
-ctx.tf.delay = 2  # This will cancel the old transformer, and hopefully the sleep processes
+ctx.tf.delay = (
+    2  # This will cancel the old transformer, and hopefully the sleep processes
+)
 ctx.compute()
 print(ctx.tf.status)
 print(ctx.tf.exception)

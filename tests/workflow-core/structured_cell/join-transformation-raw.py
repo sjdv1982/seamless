@@ -1,9 +1,9 @@
-
 import json
 import sys
 from pprint import pprint
 
 import seamless
+
 seamless.delegate(False)
 
 from seamless import Checksum
@@ -24,7 +24,7 @@ ctx.sc = StructuredCell(
     data=ctx.data,
     schema=ctx.schema,
     inchannels=[("a",), ("b",), ("c",)],
-    hash_pattern=hp
+    hash_pattern=hp,
 )
 s = ctx.sc.handle
 
@@ -35,8 +35,10 @@ ctx.a.connect(ctx.sc.inchannels[("a"),])
 ctx.b.connect(ctx.sc.inchannels[("b"),])
 ctx.c.connect(ctx.sc.inchannels[("c"),])
 
+
 def adder(self, other):
     return other + self.x
+
 
 s.x = 80
 print(s.x.data)
@@ -45,8 +47,10 @@ ctx.compute()
 pprint(ctx.buffer.value)
 pprint(ctx.data.value)
 
+
 def validate_x(self):
     assert self.x < 100
+
 
 try:
     s.add_validator(validate_x)
@@ -55,8 +59,11 @@ except Exception:
 
 ctx.compute()
 
-from seamless.workflow.core.manager.tasks.structured_cell import build_join_transformation
+from seamless.workflow.core.manager.tasks.structured_cell import (
+    build_join_transformation,
+)
 from seamless.workflow.core.cache.buffer_cache import buffer_cache
+
 tf_checksum = build_join_transformation(ctx.sc)
 tfd = json.loads(buffer_cache.get_buffer(tf_checksum).decode())
 pprint(tfd)

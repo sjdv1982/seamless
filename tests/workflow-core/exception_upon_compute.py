@@ -1,4 +1,5 @@
 import seamless
+
 seamless.delegate(False)
 
 from seamless.workflow.core import macro_mode_on
@@ -10,10 +11,12 @@ with macro_mode_on():
     ctx = context(toplevel=True)
     ctx.cell1 = cell().set(1)
     ctx.result = cell()
-    ctx.tf = transformer({
-        "a": "input",
-        "b": "output",
-    })
+    ctx.tf = transformer(
+        {
+            "a": "input",
+            "b": "output",
+        }
+    )
     ctx.cell1.connect(ctx.tf.a)
     ctx.tf.code.set(code)
     ctx.tf.b.cell()

@@ -1,14 +1,18 @@
 import pexpect, time
 
-ipy = pexpect.spawn("ipython3 --simple-prompt",maxread=1)
-def next():    
-    ipy.expect([r'In \[\d+\]', pexpect.EOF], timeout=10)    
+ipy = pexpect.spawn("ipython3 --simple-prompt", maxread=1)
+
+
+def next():
+    ipy.expect([r"In \[\d+\]", pexpect.EOF], timeout=10)
     print(ipy.before)
     print(ipy.after)
+
 
 def send(line):
     ipy.sendline(line)
     next()
+
 
 next()
 

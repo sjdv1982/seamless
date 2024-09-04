@@ -1,7 +1,9 @@
 import seamless
+
 seamless.delegate(False)
 
 from seamless.workflow import Context
+
 ctx = Context()
 ctx.sub = Context()
 ctx.sub.tf = lambda a, b: a + b

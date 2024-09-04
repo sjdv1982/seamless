@@ -1,4 +1,5 @@
 import seamless
+
 seamless.delegate(False)
 
 from seamless.workflow.core import macro_mode_on
@@ -8,13 +9,16 @@ with macro_mode_on():
     ctx = context(toplevel=True)
     ctx.param = cell("plain").set(1)
 
-    ctx.mymacro = macro({
-        "param": "plain",
-    })
+    ctx.mymacro = macro(
+        {
+            "param": "plain",
+        }
+    )
 
     ctx.param.connect(ctx.mymacro.param)
     ctx.inp = cell("text").set("INPUT")
-    ctx.mymacro_code = cell("macro").set("""
+    ctx.mymacro_code = cell("macro").set(
+        """
 print("Executing 'mymacro'...")
 ctx.submacro = macro({
     "inp": "plain"
@@ -26,7 +30,8 @@ ctx.myinp = cell("text").set(inp + "!!!")
 ctx.submacro_code.connect(ctx.submacro.code)
 ctx.inp2 = cell("text")
 ctx.inp2.connect(ctx.submacro.inp)
-""")
+"""
+    )
     ctx.mymacro_code.connect(ctx.mymacro.code)
     ctx.inp.connect(ctx.mymacro.ctx.inp2)
 

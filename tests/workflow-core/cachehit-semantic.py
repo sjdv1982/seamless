@@ -1,7 +1,9 @@
 import seamless
+
 seamless.delegate(False)
 
 from seamless.workflow.core import cell, transformer, context
+
 ctx = context(toplevel=True)
 ctx.cell1 = cell("cson").set("a: 10")
 ctx.cell1a = cell("plain")
@@ -13,12 +15,13 @@ print(ctx.cell1.semantic_checksum)
 print(ctx.cell1a.value)
 print(ctx.cell1a.semantic_checksum)
 
-params = {
-    "v": ("input", "plain"), 
-    "result": "output"
-}
+params = {"v": ("input", "plain"), "result": "output"}
+
+
 def func(v):
     return v["a"] + 2
+
+
 ctx.code = cell("transformer").set(func)
 ctx.tf = transformer(params)
 ctx.code.connect(ctx.tf.code)

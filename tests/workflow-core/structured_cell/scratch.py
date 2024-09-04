@@ -9,7 +9,7 @@ ctx.sc = StructuredCell(
     data=ctx.data,
     inchannels=[("a",), ("b",), ("c",)],
     outchannels=[()],
-    hash_pattern={"*": "##"}
+    hash_pattern={"*": "##"},
 )
 ctx.a = cell("bytes")
 ctx.a.connect(ctx.sc.inchannels[("a",)])

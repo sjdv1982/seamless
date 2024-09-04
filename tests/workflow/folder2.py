@@ -1,10 +1,12 @@
 import seamless
+
 seamless.delegate(False)
 
 from seamless.workflow import Context, FolderCell, Cell
+
 ctx = Context()
 f = ctx.folder = FolderCell()
-f.mount("./testfolder",mode="r")
+f.mount("./testfolder", mode="r")
 ctx.compute()
 print(f.data)
 print(f.checksum)
@@ -27,6 +29,7 @@ try:
     f["gives-error.txt"] = "Error"
 except AttributeError:
     import traceback
+
     traceback.print_exc(limit=0)
 
 print("STAGE 2")

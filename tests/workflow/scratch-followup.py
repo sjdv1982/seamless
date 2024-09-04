@@ -1,4 +1,5 @@
 import seamless
+
 seamless.delegate(level=3)
 
 from seamless.workflow import Context, Cell
@@ -7,7 +8,9 @@ ctx = Context()
 ctx.result2 = Cell("str")
 ctx.result2.scratch = True
 ctx.translate()
-ctx.result2.checksum = "3a5e4e816160d53828641e0f45a9f8c7fcb29c7c27b5afeed016769b5b182911"
+ctx.result2.checksum = (
+    "3a5e4e816160d53828641e0f45a9f8c7fcb29c7c27b5afeed016769b5b182911"
+)
 ctx.compute()
 print("Value 2:")
 print(ctx.result2.value)

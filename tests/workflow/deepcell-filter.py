@@ -1,4 +1,5 @@
 import seamless
+
 seamless.delegate(False)
 
 from seamless.workflow import Context, Cell, DeepCell
@@ -74,15 +75,10 @@ print(ctx.deep2.data)
 print()
 
 # assign deep cell to normal cell
-ctx.c = Cell("plain").set({
-    "a": 10,
-    "b": 20,
-    "c": 30
-})
+ctx.c = Cell("plain").set({"a": 10, "b": 20, "c": 30})
 ctx.deep3 = DeepCell()
 ctx.deep3 = ctx.c
 ctx.compute()
 print(ctx.deep3.data)
 print(ctx.deep3._get_context().filtered.value)
 print()
-

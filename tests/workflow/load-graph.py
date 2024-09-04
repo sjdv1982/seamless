@@ -1,4 +1,5 @@
 import seamless
+
 seamless.delegate(False)
 
 import json
@@ -19,9 +20,9 @@ ctx.set_graph(graph)
 ctx.add_zip(zipfile)
 ctx.translate()
 print(ctx.pi.value.unsilk)  # For now, None; could be defined immediately in future
-print(ctx.twopi.value.unsilk) # set to None, because of independence
-ctx.compute() # re-runs the computation;
-                  # in the future, the graph will be loaded more smartly
-                  # so that this is either not needed, or runs instantly (cache hit)
+print(ctx.twopi.value.unsilk)  # set to None, because of independence
+ctx.compute()  # re-runs the computation;
+# in the future, the graph will be loaded more smartly
+# so that this is either not needed, or runs instantly (cache hit)
 print(ctx.twopi.value.unsilk)
 print()

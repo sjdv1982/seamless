@@ -1,9 +1,14 @@
 import seamless
+
 seamless.delegate(False)
 
 from seamless.workflow import Context
+
+
 def func(a):
-    return a+100
+    return a + 100
+
+
 ctx = Context()
 ctx.func = func
 ctx.func.a = 12

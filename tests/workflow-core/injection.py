@@ -1,4 +1,5 @@
 import seamless
+
 seamless.delegate(False)
 
 from seamless.workflow.core import macro_mode_on
@@ -8,13 +9,16 @@ with macro_mode_on():
     ctx = context(toplevel=True)
     ctx.param = cell("plain").set(1)
 
-    ctx.macro = macro({
-        "param": "plain",
-        "testmodule": ("plain", "module"),
-    })
+    ctx.macro = macro(
+        {
+            "param": "plain",
+            "testmodule": ("plain", "module"),
+        }
+    )
 
     ctx.param.connect(ctx.macro.param)
-    ctx.macro_code = cell("macro").set("""
+    ctx.macro_code = cell("macro").set(
+        """
 print("macro execute")
 print(testmodule)
 print(testmodule.a)
@@ -23,21 +27,20 @@ print(a)
 import sys
 print([m for m in sys.modules if m.find("testmodule") > -1])
 print("/macro execute")
-""")
+"""
+    )
     ctx.macro_code.connect(ctx.macro.code)
-    testmodule = {
-        "type": "interpreted",
-        "language": "python",
-        "code": "a = 10"
-    }
+    testmodule = {"type": "interpreted", "language": "python", "code": "a = 10"}
     ctx.testmodule = cell("plain").set(testmodule)
     ctx.testmodule.connect(ctx.macro.testmodule)
 
-
-    ctx.macro2 = macro({
-        "testmodule2": ("plain", "module"),
-    })
-    ctx.macro_code2 = cell("macro").set("""
+    ctx.macro2 = macro(
+        {
+            "testmodule2": ("plain", "module"),
+        }
+    )
+    ctx.macro_code2 = cell("macro").set(
+        """
 print("macro2 execute")
 print(testmodule2)
 print(testmodule2.a)
@@ -46,10 +49,10 @@ print(a)
 import sys
 print([m for m in sys.modules if m.find("testmodule") > -1])
 print("/macro2 execute")
-""")
+"""
+    )
     ctx.macro_code2.connect(ctx.macro2.code)
     ctx.testmodule.connect(ctx.macro2.testmodule2)
-
 
 
 print("START")
