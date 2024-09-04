@@ -1,11 +1,13 @@
 """Here, support for PHP is added via a Python bridge
 The actual bridge is implemented using python-bond
 """
+
 import seamless
+
 seamless.delegate(False)
 
 from seamless.workflow import Cell, Context
-from seamless.highlevel.Transformer import Transformer
+from seamless.workflow.highlevel.Transformer import Transformer
 
 import traceback
 
@@ -14,18 +16,20 @@ env = ctx.environment
 
 ctx.tf = Transformer()
 
+
 # Code for the bridge. All values are read from PINS
 # NOTE: python-bond supports no keyword arguments
 #  argument order is alphabetical
 def bridge_php(**kwargs):
     import json
     from bond import make_bond
-    php = make_bond('PHP')
+
+    php = make_bond("PHP")
     code = PINS["code"]
     php.eval_block(code)
     transform = php.callable("transform")
     args = []
-    for pinname in sorted(PINS.keys()): # alphabetical sort
+    for pinname in sorted(PINS.keys()):  # alphabetical sort
         if pinname == "code":
             continue
         pinvalue = PINS[pinname]
@@ -37,13 +41,17 @@ def bridge_php(**kwargs):
         args.append(pinvalue)
     return transform(*args)
 
+
 ctx.tf.code = bridge_php
-ctx.tf.environment.set_conda("""
+ctx.tf.environment.set_conda(
+    """
 channels:
   - pypi
 dependencies:
   - python-bond
-""", "yaml")
+""",
+    "yaml",
+)
 ctx.tf.environment.set_which(["php"], "plain")
 
 ctx.php_code = """function transform($a, $b){
@@ -100,14 +108,18 @@ except NotImplementedError as exc:
 env.set_py_bridge("php", bridge_php)
 
 # Define an environment for the PHP bridge
-from seamless.highlevel.Environment import Environment
+from seamless.workflow.highlevel.Environment import Environment
+
 bridge_env = Environment()
-bridge_env.set_conda("""
+bridge_env.set_conda(
+    """
 channels:
   - pypi
 dependencies:
   - python-bond
-""", "yaml")
+""",
+    "yaml",
+)
 bridge_env.set_which(["php"], format="plain")
 env.set_py_bridge_environment("php", bridge_env)
 

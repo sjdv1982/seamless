@@ -8,7 +8,7 @@ from seamless.metalevel.bind_status_graph import bind_status_graph
 
 print("Load graph...")
 graph = json.load(open("snakegraph.seamless"))
-ctx = seamless.highlevel.load_graph(graph)
+ctx = seamless.workflow.highlevel.load_graph(graph)
 ctx.add_zip("snakegraph.zip")
 ctx.translate()
 
@@ -16,17 +16,22 @@ print("Load status visualization context (adapted from visualize-graph test)")
 
 seamless_dir = os.path.dirname(seamless.__file__)
 status_graph0 = seamless_dir + "/graphs/status-visualization"
-status_graph_file, status_graph_zip = status_graph0 + ".seamless", status_graph0 + ".zip"
+status_graph_file, status_graph_zip = (
+    status_graph0 + ".seamless",
+    status_graph0 + ".zip",
+)
 
 bind_status_graph(ctx, status_graph_file, zips=[status_graph_zip])
 
 print("Setup binding of files")
+
 
 def bind(file, mode):
     data = open(file, "r" + mode).read()
     if mode == "b":
         data = np.frombuffer(data, dtype=np.uint8)
     setattr(ctx.fs, file, data)
+
 
 def list_files():
     print("Virtual file system contents:")
@@ -39,14 +44,15 @@ def list_files():
         if value2.storage == "pure-plain":
             v = str(value2.value)
             if len(v) > 80:
-                v = v[:35] + "." * 10  + v[-35:]
+                v = v[:35] + "." * 10 + v[-35:]
         else:
             v = "< Binary data, length %d >" % len(value)
         print(fs_cellname + ":", v)
         print()
 
 
-print("""
+print(
+    """
 *********************************************************************
 *  Interactive setup complete.
 *********************************************************************
@@ -61,4 +67,5 @@ print("""
 
 - "ctx.compute()" or "await ctx.computation()"
    will block until the workflow is complete
-""")
+"""
+)

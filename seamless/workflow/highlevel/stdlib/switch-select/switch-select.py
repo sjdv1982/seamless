@@ -278,7 +278,7 @@ zip_select = ctx_select.get_zip()
 
 # 3: Package the contexts in a library
 
-from seamless.highlevel.library import LibraryContainer
+from seamless.workflow.highlevel.library import LibraryContainer
 
 mylib = LibraryContainer("mylib")
 mylib.switch = ctx_switch

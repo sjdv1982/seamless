@@ -1,8 +1,9 @@
 from seamless.workflow import Context, Transformer, Cell, FolderCell
-from seamless.highlevel import stdlib
+from seamless.workflow.highlevel import stdlib
 import json
 
 import os
+
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
 os.system("rm -rf web")
 os.system("mkdir web")
@@ -53,7 +54,7 @@ ctx.merge_webform = ctx.lib.merge(
     modified=ctx.webform0,
     conflict=ctx.webform_CONFLICT,
     merged=ctx.webform_DUMMY,
-    state=ctx.webform_STATE
+    state=ctx.webform_STATE,
 )
 
 ctx.webcomponents = FolderCell().mount("web/components", "r")
@@ -100,7 +101,9 @@ ctx.index_html_AUTOGEN = ctx.webpage["index.html"]
 ctx.index_html_AUTOGEN.celltype = "text"
 ctx.index_html_AUTOGEN.mount("web/index-AUTOGEN.html", "w")
 ctx.index_html_BASE = Cell("text").mount("web/index-BASE.html")
-ctx.index_html_CONFLICT = Cell("text").set("").mount("web/index-CONFLICT.html", authority="cell")
+ctx.index_html_CONFLICT = (
+    Cell("text").set("").mount("web/index-CONFLICT.html", authority="cell")
+)
 ctx.index_html_STATE = Cell("str")
 ctx.index_html_DUMMY = Cell("text")
 
@@ -110,7 +113,7 @@ ctx.merge_index_html = ctx.lib.merge(
     modified=ctx.index_html,
     conflict=ctx.index_html_CONFLICT,
     merged=ctx.index_html_DUMMY,
-    state=ctx.index_html_STATE
+    state=ctx.index_html_STATE,
 )
 
 ctx.index_js_AUTOGEN = ctx.webpage["index.js"]
@@ -127,7 +130,7 @@ ctx.merge_index_js = ctx.lib.merge(
     modified=ctx.index_js,
     conflict=ctx.index_js_CONFLICT,
     merged=ctx.index_js_DUMMY,
-    state=ctx.index_js_STATE
+    state=ctx.index_js_STATE,
 )
 
 ctx["seamless-client.js"].share("seamless-client.js", toplevel=True)

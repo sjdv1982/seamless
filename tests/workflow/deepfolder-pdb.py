@@ -1,17 +1,21 @@
 import seamless
+
 seamless.fair.add_server("https://fair.rpbs.univ-paris-diderot.fr")
 seamless.delegate(level=1)
 seamless.config.add_buffer_server("https://buffer.rpbs.univ-paris-diderot.fr")
 
 from seamless.workflow import Context, Cell, DeepFolderCell, FolderCell
 import shutil
+
 shutil.rmtree("/tmp/pdb_folder", ignore_errors=True)
 ctx = Context()
 
 ctx.pdb = DeepFolderCell()
 
 # Weakly reproducible way
-distribution = DeepFolderCell.find_distribution("pdb", date="2022-03-21", format="mmcif_flatfilenames")
+distribution = DeepFolderCell.find_distribution(
+    "pdb", date="2022-03-21", format="mmcif_flatfilenames"
+)
 ctx.pdb.define(distribution)
 
 # Strongly reproducible way
@@ -55,7 +59,8 @@ ctx.compute()
 print()
 
 print("STAGE 5")
-from seamless.highlevel import stdlib
+from seamless.workflow.highlevel import stdlib
+
 ctx.include(stdlib.select)
 ctx.pdb_code = Cell("str").set("2sni.cif")
 ctx.pdb_structure = Cell("text").mount("/tmp/pdb_structure.mmcif", "w")

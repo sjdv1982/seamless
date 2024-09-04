@@ -1,5 +1,5 @@
 from seamless.workflow import Context, Cell
-from seamless.highlevel import set_resource
+from seamless.workflow.highlevel import set_resource
 
 # 1: Setup context
 
@@ -120,7 +120,7 @@ zip = ctx.get_zip()
 
 # 3: Package the contexts in a library
 
-from seamless.highlevel.library import LibraryContainer
+from seamless.workflow.highlevel.library import LibraryContainer
 
 mylib = LibraryContainer("mylib")
 mylib.merge = ctx

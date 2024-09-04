@@ -1,5 +1,5 @@
 from seamless.workflow import Context, Cell, Transformer, FolderCell, load_graph
-from seamless.highlevel import stdlib
+from seamless.workflow.highlevel import stdlib
 import os
 
 ctx = Context()
@@ -31,7 +31,7 @@ ctx.merge_webform = ctx.lib.merge(
     modified=ctx.webform0,
     conflict=ctx.webform_CONFLICT,
     merged=ctx.webform_DUMMY,
-    state=ctx.webform_STATE
+    state=ctx.webform_STATE,
 )
 
 ctx.webcomponents = FolderCell().mount("components", "r")
@@ -71,7 +71,7 @@ ctx.merge_index_html = ctx.lib.merge(
     modified=ctx.index_html,
     conflict=ctx.index_html_CONFLICT,
     merged=ctx.index_html_DUMMY,
-    state=ctx.index_html_STATE
+    state=ctx.index_html_STATE,
 )
 
 ctx.index_js_INITIAL = ctx.webpage["index.js"]
@@ -87,26 +87,31 @@ ctx.merge_index_js = ctx.lib.merge(
     modified=ctx.index_js,
     conflict=ctx.index_js_CONFLICT,
     merged=ctx.index_js_DUMMY,
-    state=ctx.index_js_STATE
+    state=ctx.index_js_STATE,
 )
 
 import seamless
+
 seamless_dir = os.path.dirname(seamless.__file__)
 seamless_client = open(seamless_dir + "/js/seamless-client.js").read()
 ctx.seamless_js = Cell("text").set(seamless_client).share("seamless-client.js")
-ctx.seamless_js.mimetype="text/javascript"
+ctx.seamless_js.mimetype = "text/javascript"
 ctx.seamless_js.share("seamless-client.js", toplevel=True)
 ctx.seamless_js.mount("seamless-client.js")
 
 ctx.compute()
 
 ctx_original = Context()
+
+
 def reload(graph):
     ctx_original.add_zip("initial-graph.zip")
     ctx_original.set_graph(graph)
-    #ctx_original.translate() # not allowed in Seamless traitlet
+    # ctx_original.translate() # not allowed in Seamless traitlet
     import asyncio
+
     asyncio.ensure_future(ctx_original.translation(force=True))
+
 
 reload(ctx.initial_graph.value)
 ctx_original.compute()

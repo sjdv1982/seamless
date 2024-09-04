@@ -8,8 +8,11 @@ import sys
 # 1: Setup context
 
 ctx = Context()
+
+
 def subtract_func(a, b):
     return a - b
+
 
 def constructor(ctx, libctx, celltype, a, b, c):
     assert celltype in ("int", "float"), celltype
@@ -30,24 +33,16 @@ def constructor(ctx, libctx, celltype, a, b, c):
     ctx.subtract.pins.b.celltype = celltype
     ctx.c = ctx.subtract
 
+
 ctx.subtract_code = Cell("code")
 ctx.subtract_code = subtract_func
 ctx.constructor_code = Cell("code")
 ctx.constructor_code = constructor
 ctx.constructor_params = {
     "celltype": "value",
-    "a": {
-        "type": "cell",
-        "io": "input"
-    },
-    "b": {
-        "type": "cell",
-        "io": "input"
-    },
-    "c": {
-        "type": "cell",
-        "io": "output"
-    },
+    "a": {"type": "cell", "io": "input"},
+    "b": {"type": "cell", "io": "input"},
+    "c": {"type": "cell", "io": "output"},
 }
 ctx.compute()
 
@@ -58,7 +53,8 @@ zip = ctx.get_zip()
 
 # 3: Package the context in a library
 
-from seamless.highlevel.library import LibraryContainer
+from seamless.workflow.highlevel.library import LibraryContainer
+
 mylib = LibraryContainer("mylib")
 mylib.subtract = ctx
 mylib.subtract.constructor = ctx.constructor_code.value
@@ -71,12 +67,7 @@ ctx2.include(mylib.subtract)
 ctx2.x = 10.0
 ctx2.y = 3.0
 ctx2.z = Cell("float")
-ctx2.subtract = ctx2.lib.subtract(
-    a=ctx2.x,
-    b=ctx2.y,
-    c=ctx2.z,
-    celltype="float"
-)
+ctx2.subtract = ctx2.lib.subtract(a=ctx2.x, b=ctx2.y, c=ctx2.z, celltype="float")
 ctx2.compute()
 print(ctx2.z.value)
 print(ctx2.subtract.ctx.c.value)
@@ -90,10 +81,11 @@ ctx.compute()
 # 3: Save graph and zip
 
 import os, json
-currdir=os.path.dirname(os.path.abspath(__file__))
-graph_filename=os.path.join(currdir,"../subtract.seamless")
+
+currdir = os.path.dirname(os.path.abspath(__file__))
+graph_filename = os.path.join(currdir, "../subtract.seamless")
 json.dump(graph, open(graph_filename, "w"), sort_keys=True, indent=2)
 
-zip_filename=os.path.join(currdir,"../subtract.zip")
+zip_filename = os.path.join(currdir, "../subtract.zip")
 with open(zip_filename, "bw") as f:
     f.write(zip)

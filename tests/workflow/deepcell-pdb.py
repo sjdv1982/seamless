@@ -1,9 +1,11 @@
 import seamless
+
 seamless.fair.add_server("https://fair.rpbs.univ-paris-diderot.fr")
 seamless.delegate(level=1)
 seamless.config.add_buffer_server("https://buffer.rpbs.univ-paris-diderot.fr")
 
 from seamless.workflow import Context, Cell, DeepCell
+
 ctx = Context()
 
 ctx.pdb = DeepCell()
@@ -43,7 +45,8 @@ print(ctx.epo.checksum)
 print(ctx.epo.value[:200])
 
 print("STAGE 4")
-from seamless.highlevel import stdlib
+from seamless.workflow.highlevel import stdlib
+
 ctx.include(stdlib.select)
 ctx.pdb_code = Cell("str").set("1brs")
 ctx.pdb_structure = Cell("text").mount("/tmp/pdb_structure.mmcif", "w")

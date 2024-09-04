@@ -1,15 +1,15 @@
 import seamless
+
 seamless.delegate(False)
 
 from seamless.workflow import Context
-from seamless.highlevel import stdlib
+from seamless.workflow.highlevel import stdlib
 
 ctx = Context()
 ctx.include(stdlib.channel)
 
-ctx.channel = (ctx.lib.channel()
-    .fromList([10, 17, 12, 9, 30, 2, 27])
-    .filter("lambda it: it >= 10")
+ctx.channel = (
+    ctx.lib.channel().fromList([10, 17, 12, 9, 30, 2, 27]).filter("lambda it: it >= 10")
 )
 ctx.result = ctx.channel.result
 ctx.compute()

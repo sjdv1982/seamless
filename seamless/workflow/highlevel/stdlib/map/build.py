@@ -69,7 +69,7 @@ if __name__ == "__main__":
 
     contexts = {}
 
-    from seamless.highlevel.library import LibraryContainer
+    from seamless.workflow.highlevel.library import LibraryContainer
 
     mylib = LibraryContainer("mylib")
 

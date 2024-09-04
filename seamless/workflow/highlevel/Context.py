@@ -894,8 +894,8 @@ class Context(Base, HelpMixin):
     def include(self, lib: Library, only_zip: bool = False, full_path: bool = False):
         """Include a library in the graph.
 
-        A library (seamless.highlevel.Library) must be included before
-        library instances (seamless.highlevel.LibInstance) can be constructed
+        A library (seamless.workflow.highlevel.Library) must be included before
+        library instances (seamless.workflow.highlevel.LibInstance) can be constructed
         using ctx.lib
         """
 

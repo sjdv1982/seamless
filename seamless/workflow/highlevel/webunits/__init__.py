@@ -127,12 +127,12 @@ def add_webunit_template(name: str, webunit_dict: dict[str, Any]) -> None:
     """Adds a new webunit template.
     webunit_dict must be a dict of webunit template parameters.
     They are typically loaded from a .yaml file.
-    See the .yaml files in seamless.highlevel.webunits for examples.
+    See the .yaml files in seamless.workflow.highlevel.webunits for examples.
 
     "name" is the name of the webunit template. After calling this function,
     new webunit instances can be constructed using:
 
-    seamless.highlevel.webunits.<name>(ctx, **params)"""
+    seamless.workflow.highlevel.webunits.<name>(ctx, **params)"""
     from .. import Cell, Context
 
     webunit_dict2 = deepcopy(webunit_dict)

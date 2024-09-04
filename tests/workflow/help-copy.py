@@ -1,9 +1,11 @@
 import seamless
+
 seamless.delegate(False)
 
 import inspect
 
 from seamless.workflow import Context
+
 
 def hhelp(obj):
     # Similar to doing obj? in IPython
@@ -11,6 +13,7 @@ def hhelp(obj):
     print("*" * 80)
     print(inspect.getdoc(obj))
     print("*" * 80)
+
 
 ctx2 = Context()
 ctx2.help = "Subcontext 2 help"
@@ -29,5 +32,6 @@ hhelp(ctx)
 hhelp(ctx.sub)
 hhelp(ctx.sub2)
 
-from seamless.highlevel.Help import HelpCell
+from seamless.workflow.highlevel.Help import HelpCell
+
 hc = HelpCell(ctx.sub)

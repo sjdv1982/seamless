@@ -1,11 +1,14 @@
 """
 Version of high-in-low6 with nested invocation and elision
 """
+
 import seamless
+
 seamless.delegate(False)
 
 from seamless.workflow import Context, Cell, Macro
-from seamless.highlevel.library import LibraryContainer
+from seamless.workflow.highlevel.library import LibraryContainer
+
 
 def map_list_N(ctx, inp_prefix, graph, inp):
     print("map_list_N", inp)
@@ -17,55 +20,73 @@ def map_list_N(ctx, inp_prefix, graph, inp):
 
     first_k = list(inp.keys())[0]
     length = len(inp[first_k])
-    first_k = first_k[len(inp_prefix):]
+    first_k = first_k[len(inp_prefix) :]
     for k0 in inp:
-        k = k0[len(inp_prefix):]
+        k = k0[len(inp_prefix) :]
         if len(inp[k0]) != length:
             err = "all cells in inp must have the same length, but '{}' has length {} while '{}' has length {}"
             raise ValueError(err.format(k, len(inp[k0]), first_k, length))
 
     pseudo_connections = []
-    ctx.result = cell("mixed", hash_pattern = {"!": "#"})
+    ctx.result = cell("mixed", hash_pattern={"!": "#"})
 
-    ctx.sc_data = cell("mixed", hash_pattern = {"!": "#"})
-    ctx.sc_buffer = cell("mixed", hash_pattern = {"!": "#"})
+    ctx.sc_data = cell("mixed", hash_pattern={"!": "#"})
+    ctx.sc_buffer = cell("mixed", hash_pattern={"!": "#"})
     ctx.sc = StructuredCell(
         data=ctx.sc_data,
         buffer=ctx.sc_buffer,
         inchannels=[(n,) for n in range(length)],
         outchannels=[()],
-        hash_pattern = {"!": "#"}
+        hash_pattern={"!": "#"},
     )
 
     for n in range(length):
         hc = HighLevelContext(graph)
 
-        subctx = "subctx%d" % (n+1)
+        subctx = "subctx%d" % (n + 1)
         setattr(ctx, subctx, hc)
 
         if not hasattr(hc, "inp"):
             raise TypeError("map_list_N context must have a subcontext called 'inp'")
         hci = hc.inp
         if not isinstance(hci, UnboundContext):
-            raise TypeError("map_list_N context must have an attribute 'inp' that is a context, not a {}".format(type(hci)))
+            raise TypeError(
+                "map_list_N context must have an attribute 'inp' that is a context, not a {}".format(
+                    type(hci)
+                )
+            )
 
         for k0 in inp:
-            k = k0[len(inp_prefix):]
+            k = k0[len(inp_prefix) :]
             if not hasattr(hci, k):
-                raise TypeError("map_list_N context must have a cell called inp.'{}'".format(k))
+                raise TypeError(
+                    "map_list_N context must have a cell called inp.'{}'".format(k)
+                )
             if isinstance(hci[k], StructuredCell):
-                raise TypeError("map_list_N context has a cell called inp.'{}', but its celltype must be mixed, not structured".format(k))
+                raise TypeError(
+                    "map_list_N context has a cell called inp.'{}', but its celltype must be mixed, not structured".format(
+                        k
+                    )
+                )
             if not isinstance(hci[k], CoreCell):
-                raise TypeError("map_list_N context must have an attribute inp.'{}' that is a cell, not a {}".format(k, type(hci[k])))
+                raise TypeError(
+                    "map_list_N context must have an attribute inp.'{}' that is a cell, not a {}".format(
+                        k, type(hci[k])
+                    )
+                )
             if hci[k].celltype != "mixed":
-                raise TypeError("map_list_N context has a cell called inp.'{}', but its celltype must be mixed, not {}".format(k, hci[k].celltype))
+                raise TypeError(
+                    "map_list_N context has a cell called inp.'{}', but its celltype must be mixed, not {}".format(
+                        k, hci[k].celltype
+                    )
+                )
 
             con = [".." + k], ["ctx", subctx, "inp", k]
             pseudo_connections.append(con)
             cs = inp[k0][n]
             hci[k].set_checksum(cs)
 
-        resultname = "result%d" % (n+1)
+        resultname = "result%d" % (n + 1)
         setattr(ctx, resultname, cell("int"))
         c = getattr(ctx, resultname)
         hc.result.connect(c)
@@ -76,21 +97,29 @@ def map_list_N(ctx, inp_prefix, graph, inp):
     ctx.sc.outchannels[()].connect(ctx.result)
     ctx._pseudo_connections = pseudo_connections
 
+
 def map_list_N_nested(
-  ctx, elision_chunksize, inp_prefix, graph, inp,
-  *, map_list_N_nested_code, macro_code_lib_code,
-  macro_code_lib0=None
+    ctx,
+    elision_chunksize,
+    inp_prefix,
+    graph,
+    inp,
+    *,
+    map_list_N_nested_code,
+    macro_code_lib_code,
+    macro_code_lib0=None
 ):
     global macro_code_lib
     if macro_code_lib0 is not None:
         macro_code_lib = macro_code_lib0
     from seamless.workflow.core import cell, macro, context, path, transformer
+
     first_k = list(inp.keys())[0]
     length = len(inp[first_k])
     print("NEST", length, inp[first_k][0])
-    first_k = first_k[len(inp_prefix):]
+    first_k = first_k[len(inp_prefix) :]
     for k0 in inp:
-        k = k0[len(inp_prefix):]
+        k = k0[len(inp_prefix) :]
         if len(inp[k0]) != length:
             err = "all cells in inp must have the same length, but '{}' has length {} while '{}' has length {}"
             raise ValueError(err.format(k, len(inp[k0]), first_k, length))
@@ -104,24 +133,22 @@ def map_list_N_nested(
             return result"""
         ctx.macro_code = cell("python").set(map_list_N_nested_code)
         ctx.macro_code_lib_code = cell("plain").set(macro_code_lib_code)
-        ctx.macro_code_lib = cell("plain").set({
-            "type": "interpreted",
-            "language": "python",
-            "code": macro_code_lib_code
-        })
+        ctx.macro_code_lib = cell("plain").set(
+            {"type": "interpreted", "language": "python", "code": macro_code_lib_code}
+        )
         ctx.graph = cell("plain").set(graph)
         ctx.inp_prefix = cell("str").set(inp_prefix)
         ctx.elision_chunksize = cell("int").set(elision_chunksize)
         chunk_index = 0
 
         macro_params = {
-            'inp_prefix': {'celltype': 'str'},
-            'elision_chunksize': {'celltype': 'int'},
-            'graph': {'celltype': 'plain'},
-            'inp': {'celltype': 'plain'},
-            "map_list_N_nested_code": {'celltype': 'python'},
-            "macro_code_lib": {'celltype': 'plain', 'subcelltype': 'module'},
-            "macro_code_lib_code": {'celltype': 'plain'},
+            "inp_prefix": {"celltype": "str"},
+            "elision_chunksize": {"celltype": "int"},
+            "graph": {"celltype": "plain"},
+            "inp": {"celltype": "plain"},
+            "map_list_N_nested_code": {"celltype": "python"},
+            "macro_code_lib": {"celltype": "plain", "subcelltype": "module"},
+            "macro_code_lib_code": {"celltype": "plain"},
         }
 
         subresults = {}
@@ -131,7 +158,7 @@ def map_list_N_nested(
         for n in range(0, length, chunksize):
             chunk_inp = {}
             for k in inp:
-                chunk_inp[k] = inp[k][n:n+chunksize]
+                chunk_inp[k] = inp[k][n : n + chunksize]
             chunk_index += 1
             subresult = cell("checksum")
 
@@ -143,11 +170,7 @@ def map_list_N_nested(
             """
 
             m = macro(macro_params)
-            elision = {
-                "macro": m,
-                "input_cells": {},
-                "output_cells": {}
-            }
+            elision = {"macro": m, "input_cells": {}, "output_cells": {}}
             m.allow_elision = True
 
             setattr(ctx, "m{}".format(chunk_index), m)
@@ -174,7 +197,7 @@ def map_list_N_nested(
         ctx.merge_subresults = transformer(transformer_params)
         ctx.merge_subresults.code.cell().set(merge_subresults)
         tf = ctx.merge_subresults
-        for subr,c in subresults.items():
+        for subr, c in subresults.items():
             c.connect(getattr(tf, subr))
         ctx.result = cell("mixed", hash_pattern={"!": "#"})
         tf.result.connect(ctx.result)
@@ -182,18 +205,33 @@ def map_list_N_nested(
         macro_code_lib.map_list_N(ctx, inp_prefix, graph, inp)
     return ctx
 
+
 libctx = Context()
 libctx.map_list_N = Cell("code").set(map_list_N)
 libctx.map_list_N_nested = Cell("code").set(map_list_N_nested)
 
-def main(ctx, elision_chunksize, inp_prefix, graph, map_list_N_nested_code, macro_code_lib_code, **inp):
+
+def main(
+    ctx,
+    elision_chunksize,
+    inp_prefix,
+    graph,
+    map_list_N_nested_code,
+    macro_code_lib_code,
+    **inp
+):
     macro_code_lib.map_list_N_nested(
-        ctx, elision_chunksize, inp_prefix, graph, inp,
+        ctx,
+        elision_chunksize,
+        inp_prefix,
+        graph,
+        inp,
         map_list_N_nested_code=map_list_N_nested_code,
         macro_code_lib_code=macro_code_lib_code,
-        macro_code_lib0=macro_code_lib
+        macro_code_lib0=macro_code_lib,
     )
     return ctx
+
 
 libctx.main = Cell("code").set(main)
 
@@ -219,14 +257,16 @@ def constructor(ctx, libctx, context_graph, inp, result, elision, elision_chunks
         inp[key].connect(c)
         ctx.cs_inp[key] = Cell("checksum")
         ctx.cs_inp[key] = ctx.inp[key]
-        setattr(m, inp_prefix + key , ctx.cs_inp[key])
+        setattr(m, inp_prefix + key, ctx.cs_inp[key])
         getattr(m.pins, inp_prefix + key).celltype = "checksum"
 
-    macro_code_lib_code = libctx.map_list_N.value + "\n\n" + libctx.map_list_N_nested.value
+    macro_code_lib_code = (
+        libctx.map_list_N.value + "\n\n" + libctx.map_list_N_nested.value
+    )
     macro_code_lib = {
         "type": "interpreted",
         "language": "python",
-        "code": macro_code_lib_code
+        "code": macro_code_lib_code,
     }
     ctx.macro_code_lib = Cell("plain").set(macro_code_lib)
     ctx.macro_code_lib_code = Cell("code").set(macro_code_lib_code)
@@ -243,24 +283,13 @@ def constructor(ctx, libctx, context_graph, inp, result, elision, elision_chunks
     ctx.result = m.result
     result.connect_from(ctx.result)
 
+
 lib_params = {
     "context_graph": "context",
-    "inp": {
-        "type": "celldict",
-        "io": "input"
-    },
-    "result": {
-        "type": "cell",
-        "io": "output"
-    },
-    "elision": {
-        "type": "value",
-        "default": False
-    },
-    "elision_chunksize": {
-        "type": "value",
-        "default": 100
-    },
+    "inp": {"type": "celldict", "io": "input"},
+    "result": {"type": "cell", "io": "output"},
+    "elision": {"type": "value", "default": False},
+    "elision_chunksize": {"type": "value", "default": 100},
 }
 libctx.lib_params = lib_params
 mylib = LibraryContainer("mylib")
@@ -278,8 +307,12 @@ sctx.a = Cell("int")
 sctx.b = Cell("int")
 sctx.a = sctx.inp.a
 sctx.b = sctx.inp.b
-def add(a,b):
-    return a+b
+
+
+def add(a, b):
+    return a + b
+
+
 sctx.add = add
 sctx.add.a = sctx.a
 sctx.add.b = sctx.b
@@ -311,12 +344,18 @@ data = [
 ]
 ctx.data = Cell().set(data)
 
+
 def get_data_a(data):
     return [v["a"] for v in data]
+
+
 ctx.get_data_a = get_data_a
+
 
 def get_data_b(data):
     return [v["b"] for v in data]
+
+
 ctx.get_data_b = get_data_b
 
 ctx.get_data_a.data = ctx.data
@@ -325,27 +364,27 @@ ctx.get_data_b.data = ctx.data
 ctx.data_a = Cell()
 ctx.data_a.hash_pattern = {"!": "#"}
 ctx.data_a = ctx.get_data_a
-#ctx.compute()
-#ctx.data_a.example.... # bad idea... validation forces full value construction
+# ctx.compute()
+# ctx.data_a.example.... # bad idea... validation forces full value construction
 
 ctx.data_b = Cell()
 ctx.data_b.hash_pattern = {"!": "#"}
-#ctx.compute()
-#ctx.data_b.example.... # bad idea... validation forces full value construction
+# ctx.compute()
+# ctx.data_b.example.... # bad idea... validation forces full value construction
 ctx.data_b = ctx.get_data_b
 
 ctx.result = Cell()
 ctx.result.hash_pattern = {"!": "#"}
 ctx.compute()
-#ctx.result.schema.storage = "pure-plain" # bad idea... validation forces full value construction
+# ctx.result.schema.storage = "pure-plain" # bad idea... validation forces full value construction
 
 ctx.include(mylib.map_list_N)
 ctx.inst = ctx.lib.map_list_N(
-    context_graph = ctx.adder,
-    inp = {"a": ctx.data_a, "b": ctx.data_b},
-    result = ctx.result,
-    elision = True,
-    elision_chunksize = 2,
+    context_graph=ctx.adder,
+    inp={"a": ctx.data_a, "b": ctx.data_b},
+    result=ctx.result,
+    elision=True,
+    elision_chunksize=2,
 )
 ctx.translate(force=True)
 ctx.compute()
@@ -358,7 +397,9 @@ ctx.translate(force=True)
 ctx.compute()
 print(ctx.result.value)
 print("START2")
-ctx.data.handle.extend([{"a": 10, "b": 0}, {"a": 12, "b": -1}, {"a": 14, "b": -2}, {"a": 16, "b": -3}])
+ctx.data.handle.extend(
+    [{"a": 10, "b": 0}, {"a": 12, "b": -1}, {"a": 14, "b": -2}, {"a": 16, "b": -3}]
+)
 ctx.compute(2)
 
 print(ctx.result.value)

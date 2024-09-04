@@ -1,5 +1,5 @@
 from seamless.workflow import Context, Cell
-from seamless.highlevel import set_resource
+from seamless.workflow.highlevel import set_resource
 
 executor_file = "executor.py"
 

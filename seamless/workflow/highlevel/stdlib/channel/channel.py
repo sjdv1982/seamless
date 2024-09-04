@@ -8,7 +8,7 @@ Work in progress!
 
 from seamless.workflow.core.transformer import Transformer
 from seamless.workflow import Context, Cell
-from seamless.highlevel.library import LibraryContainer
+from seamless.workflow.highlevel.library import LibraryContainer
 from silk.Silk import Silk
 
 mylib = LibraryContainer("mylib")
@@ -56,7 +56,7 @@ def fromList(self, content):
 
 
 def _get_source(self, function):
-    from seamless.highlevel import parse_function_code
+    from seamless.workflow.highlevel import parse_function_code
     from seamless.workflow.core.cached_compile import analyze_code
 
     source, _, _ = parse_function_code(function)

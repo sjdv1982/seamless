@@ -7,7 +7,7 @@ from seamless.workflow import *
 from seamless.workflow.highlevel import stdlib
 
 warnings.warn(
-    "seamless.highlevel is deprecated. Use seamless.workflow instead.",
+    "seamless.workflow.highlevel is deprecated. Use seamless.workflow instead.",
     DeprecationWarning,
     2,
 )
