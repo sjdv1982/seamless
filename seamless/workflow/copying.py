@@ -8,7 +8,7 @@ from seamless.checksum.buffer_cache import buffer_cache
 from seamless.checksum.deserialize import deserialize_sync as deserialize
 from seamless.checksum.serialize import serialize_sync as serialize
 from seamless.checksum.get_buffer import get_buffer
-from seamless.checksum.buffer_cache import empty_dict_checksum, empty_list_checksum
+from seamless.checksum import empty_dict_checksum, empty_list_checksum
 from seamless.workflow.core.protocol.deep_structure import (
     apply_hash_pattern_sync,
     deep_structure_to_checksums,

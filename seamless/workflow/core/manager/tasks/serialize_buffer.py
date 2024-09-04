@@ -25,13 +25,13 @@ class SerializeToBufferTask(BackgroundTask):
         if manager is None or manager._destroyed:
             return
         taskmanager = manager.taskmanager
-        loop = taskmanager.loop
+        _loop = taskmanager.loop
         try:
             result = await serialize(
                 self.value, self.celltype, use_cache=self.use_cache
             )
         except asyncio.CancelledError as exc:
             raise exc from None
-        except Exception as exc:
-            raise type(exc)(exc) from None
+        ###except Exception as exc:
+        ###    raise type(exc)(exc) from None
         return result

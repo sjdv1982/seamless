@@ -338,9 +338,6 @@ class StructuredCell(SeamlessBase):
             self._schema_value,
         )
 
-    def handle(self):
-        return self._get_handle(inference=True)
-
     def _get_handle(self, inference):
         # Silk structure using self.auth
         # (_set_auth_path, _get_auth_path, wrapped in a Backend)

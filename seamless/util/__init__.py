@@ -1,8 +1,11 @@
 """Seamless utilities"""
 
+from typing import Any
+
 from seamless import Checksum
 
 from .pylru import lrucache
+from .cson import cson2json
 
 
 class lrucache2(lrucache):
@@ -27,7 +30,6 @@ class lrucache2(lrucache):
 def parse_checksum(checksum, as_bytes=False):
     """Parses checksum and returns it as string
     If as_bytes is True, return it as bytes instead."""
-    from seamless import Checksum
 
     if isinstance(checksum, Checksum):
         checksum = checksum.bytes()
@@ -49,18 +51,23 @@ def parse_checksum(checksum, as_bytes=False):
     raise TypeError(type(checksum))
 
 
-def unchecksum(d: dict) -> dict:
+def _unchecksum_dict(d: dict) -> dict:
     """Return a copy of d where Checksum instances have been changed to str"""
-
-    def process_cs(v):
-        if isinstance(v, Checksum):
-            return v.value
-        elif isinstance(v, dict):
-            return unchecksum(v)
-        else:
-            return v
-
-    return {k: process_cs(v) for k, v in d.items()}
+    return {k: unchecksum(v) for k, v in d.items()}
 
 
-from .cson import cson2json
+def _unchecksum_list(l: list | tuple) -> list:
+    """Return a copy of l where Checksum instances have been changed to str"""
+    return [unchecksum(v) for v in l]
+
+
+def unchecksum(value: Any) -> Any:
+    """Return value or a copy of value where Checksum instances have been changed to str"""
+    if isinstance(value, Checksum):
+        return value.value
+    elif isinstance(value, dict):
+        return _unchecksum_dict(value)
+    elif isinstance(value, (list, tuple)):
+        return _unchecksum_list(value)
+    else:
+        return value

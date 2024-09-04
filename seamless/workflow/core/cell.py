@@ -3,11 +3,10 @@ import textwrap
 from weakref import WeakSet
 
 from seamless import Checksum
+from seamless.util.source import strip_decorators
 
 from . import SeamlessBase
-from copy import deepcopy
 from .status import StatusReasonEnum
-from seamless.checksum.celltypes import text_types, text_types2
 
 cell_counter = 0
 
@@ -518,7 +517,6 @@ class MixedCell(Cell):
 
     @property
     def storage(self):
-        from silk.mixed.get_form import get_form
 
         v = super().value
         if v is None:
@@ -527,7 +525,6 @@ class MixedCell(Cell):
 
     @property
     def form(self):
-        from silk.mixed.get_form import get_form
 
         v = super().value
         if v is None:
@@ -544,7 +541,7 @@ class MixedCell(Cell):
         value = self._get_value(copy=True)
         if self._hash_pattern is None:
             return value
-        # TODO: verify that the unfolded deep structure is not humonguous...
+        # TODO: verify that the unfolded deep structure is not humongous...
         return get_subpath_sync(value, self._hash_pattern, None)
 
 
@@ -563,8 +560,6 @@ class PythonCell(Cell):
 
     def set(self, value):
         """Update cell data from authority"""
-        from seamless.util.source import strip_decorators
-
         if callable(value):
             value = inspect.getsource(value)
         if value is not None:
@@ -624,7 +619,6 @@ class IPythonCell(Cell):
 
     def set(self, value):
         """Update cell data from authority"""
-        from ..util import strip_decorators
 
         if callable(value):
             value = inspect.getsource(value)

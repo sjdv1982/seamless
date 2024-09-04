@@ -1,4 +1,4 @@
-from seamless.checksum.buffer_cache import empty_list_checksum
+from seamless.checksum import empty_list_checksum
 from .util import get_path, build_structured_cell
 from ..core import cell as core_cell, transformer, reactor, context
 

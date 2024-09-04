@@ -3,6 +3,7 @@ from types import ModuleType
 from contextlib import contextmanager
 from .build_module import Package
 
+
 class Injector:
     def __init__(self, topmodule_name):
         self.topmodule_name = topmodule_name
@@ -24,7 +25,7 @@ class Injector:
             package_mapping = {}
             for modname, mod in workspace.items():
                 if isinstance(mod, Package):
-                    for k,v in mod.mapping.items():
+                    for k, v in mod.mapping.items():
                         if v == "__init__":
                             vv = modname
                         else:
@@ -36,18 +37,18 @@ class Injector:
                     continue
                 modname2 = modname
                 is_abs = False
-                if modname in package_mapping:                    
+                if modname in package_mapping:
                     modname2 = package_mapping[modname]
                 elif modname.find(".") > -1:
                     # absolute module name injection
                     is_abs = True
                 if is_abs:
-                    continue ###
+                    continue  ###
                     mname = modname
                 else:
                     mname = self.topmodule_name + "." + modname2
                 if mname.endswith(".__init__"):
-                    mname = mname[:-len(".__init__")]
+                    mname = mname[: -len(".__init__")]
                 if mname in sys_modules:
                     old_modules[mname] = sys_modules[mname]
                 new_modules[modname] = mname
@@ -60,11 +61,11 @@ class Injector:
                 old_names[mname] = mod.__name__
                 package_name = mname
                 if package_name.endswith(".__init__"):
-                    package_name = package_name[:-len(".__init__")]
+                    package_name = package_name[: -len(".__init__")]
                 else:
                     pos = package_name.rfind(".")
                     if pos > -1:
-                        package_name = package_name[:pos]        
+                        package_name = package_name[:pos]
                 mod.__package__ = package_name
                 mod.__name__ = mname
                 mod.__path__ = []
@@ -95,9 +96,9 @@ class Injector:
                 else:
                     sys_modules.pop(mname, None)
                 if mod.__name__ in old_modules:
-                    sys_modules[mod.__name__ ] = old_modules[mod.__name__ ]
+                    sys_modules[mod.__name__] = old_modules[mod.__name__]
                 else:
-                    sys_modules.pop(mod.__name__ , None)
+                    sys_modules.pop(mod.__name__, None)
 
 
 macro_injector = Injector("macro")

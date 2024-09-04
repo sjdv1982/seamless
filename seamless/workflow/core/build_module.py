@@ -1,8 +1,9 @@
 from copy import deepcopy
 import json
-import re
 import shutil
-import sys, os
+import sys
+import os
+import inspect
 import importlib
 import tempfile
 import pprint
@@ -11,6 +12,9 @@ from types import ModuleType
 from weakref import WeakKeyDictionary
 
 from seamless import Buffer, Checksum
+from seamless.util.ipython import ipython2python, execute as execute_ipython
+from seamless.checksum.cached_compile import cached_compile
+from seamless.checksum.get_buffer import get_buffer
 from seamless.compiler.locks import dirlock
 from seamless.compiler import compile, complete
 from seamless.compiler.build_extension import build_extension_cffi
@@ -53,8 +57,6 @@ def build_interpreted_module(
     *,
     module_debug_mounts,
 ):
-    from ..ipython import ipython2python, execute as execute_ipython
-
     global bootstrap_package_definition
     language = module_definition["language"]
     code = module_definition["code"]
@@ -110,8 +112,6 @@ def build_interpreted_module(
             execute_ipython(code, namespace)
         else:
             try:
-                from .cached_compile import cached_compile
-
                 code_obj = cached_compile(code, filename)
                 exec(code_obj, namespace)
             except ModuleNotFoundError as exc:
@@ -234,12 +234,12 @@ def _merge_objects(objects):
                     and o["compiler"] == obj["compiler"]
                 ):
                     pass
-            else:
-                curr = deepcopy(obj)
-                curr.pop("code")
-                n_merged += 1
-                result["_PACKAGE__%d.a" % n_merged] = curr
-                curr["code_dict"] = {}
+        else:
+            curr = deepcopy(obj)
+            curr.pop("code")
+            n_merged += 1
+            result["_PACKAGE__%d.a" % n_merged] = curr
+            curr["code_dict"] = {}
             curr["code_dict"][objname + "." + obj["extension"]] = obj["code"]
     return result
 
@@ -280,7 +280,8 @@ def build_compiled_module(
                     original_checksum
                 )
                 if module_code is None:
-                    module_code_checksum = database.get_compile_result(checksum)
+                    ### module_code_checksum = database.get_compile_result(checksum)
+                    module_code_checksum = None  ###
                     module_code_checksum = Checksum(module_code_checksum)
                     if module_code_checksum:
                         module_code = get_buffer(module_code_checksum, remote=True)
@@ -297,9 +298,10 @@ def build_compiled_module(
                     for object_file, object_ in objects.items():
                         object_checksum = Buffer(object_, "plain").checksum
                         binary_code = None
-                        binary_code_checksum = database.get_compile_result(
-                            object_checksum
-                        )
+                        ### binary_code_checksum = database.get_compile_result(
+                        ###    object_checksum
+                        ### )
+                        binary_code_checksum = None  ###
                         binary_code_checksum = Checksum(binary_code_checksum)
                         if binary_code_checksum:
                             binary_code = get_buffer(binary_code_checksum, remote=True)
@@ -388,7 +390,7 @@ def build_compiled_module(
 
 def build_module(
     module_definition,
-    module_workspace={},
+    module_workspace=None,
     *,
     compilers,
     languages,
@@ -397,6 +399,8 @@ def build_module(
     mtype=None,
     parent_module_name=None,
 ):
+    if module_workspace is None:
+        module_workspace = {}
     if mtype is None:
         mtype = module_definition["type"]
     else:
@@ -407,7 +411,7 @@ def build_module(
     if mtype == "compiled":
         module_definition2 = module_definition.copy()
         module_definition2["@NAME"] = module_error_name
-    checksum = calculate_dict_checksum(module_definition2)
+    checksum = Buffer(module_definition2, celltype="plain").get_checksum()
     dependencies = module_definition.get("dependencies")
     full_module_name = "seamless_module_" + checksum.hex()
     if module_error_name is not None:
@@ -441,7 +445,9 @@ def build_module(
             completed_module_definition = complete(
                 module_definition, compilers, languages
             )
-            completed_checksum = calculate_dict_checksum(completed_module_definition)
+            completed_checksum = Buffer(
+                completed_module_definition, celltype="plain"
+            ).get_checksum()
             mod = build_compiled_module(
                 full_module_name,
                 checksum,
@@ -544,7 +550,6 @@ def bootstrap():
     If the Python module/package has been built (or is being built) by Seamless (with build_module),
     the module definition is simply returned.
     """
-    import inspect, sys, os
 
     if bootstrap_package_definition is not None:
         return bootstrap_package_definition
@@ -585,7 +590,3 @@ def block():
 def unblock():
     global _blocked
     _blocked = False
-
-
-from seamless.checksum.database_client import database
-from seamless.checksum.get_buffer import get_buffer

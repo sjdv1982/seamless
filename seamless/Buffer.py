@@ -49,10 +49,21 @@ class Buffer:
         return celltype
 
     @classmethod
-    def load(cls, filename):
+    def load(cls, filename) -> "Buffer":
         """Loads the buffer from a file"""
         with open(filename, "rb") as f:
             buf = f.read()
+        return cls(buf)
+
+    @classmethod
+    async def from_async(cls, value, celltype: str, use_cache: bool = True) -> "Buffer":
+        """Init from value, asynchronously"""
+        from seamless.checksum.serialize import serialize
+
+        celltype = cls._map_celltype(celltype)
+        if celltype is None:
+            raise TypeError(celltype)
+        buf = await serialize(value, celltype, use_cache=use_cache)
         return cls(buf)
 
     @property

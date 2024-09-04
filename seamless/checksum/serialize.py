@@ -10,6 +10,7 @@ from silk.mixed.io import (  # pylint: disable=no-name-in-module
 from silk.Silk import Silk
 
 from seamless.util import lrucache2
+from seamless.util import unchecksum
 from seamless.checksum.celltypes import text_types
 
 # serialize_cache: maps id(value),celltype to (buffer, value).
@@ -21,8 +22,11 @@ logger = logging.getLogger(__name__)
 
 
 def _serialize(value, celltype: str):
+    from seamless import Checksum
     from seamless.checksum.json import json_dumps
 
+    if isinstance(value, Checksum):
+        value = value.value
     if celltype == "str":
         if not isinstance(value, bool):
             value = str(value)
@@ -41,10 +45,13 @@ def _serialize(value, celltype: str):
         else:
             buffer = (str(value).rstrip("\n") + "\n").encode()
     elif celltype == "plain":
+        value = unchecksum(value)
         buffer = json_dumps(value, as_bytes=True) + b"\n"
     elif celltype == "mixed":
         if isinstance(value, Silk):
             value = value.unsilk
+        else:
+            value = unchecksum(value)
         buffer = mixed_serialize(value)
     elif celltype == "binary":
         if isinstance(value, bytes):

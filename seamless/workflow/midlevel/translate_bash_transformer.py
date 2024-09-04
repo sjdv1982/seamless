@@ -1,5 +1,5 @@
 from copy import deepcopy
-from seamless.checksum.buffer_cache import empty_dict_checksum
+from seamless.checksum import empty_dict_checksum
 from seamless.Environment import Environment
 from seamless.util.environment import validate_conda_environment, validate_docker
 from seamless.workflow.core import cell, transformer, context
@@ -198,14 +198,14 @@ def translate_bash_transformer(
         result_pin["hash_pattern"] = result_hash_pattern
     all_pins[result_name] = result_pin
     if node["SCHEMA"]:
-        '''
+        """
         all_pins[node["SCHEMA"]] = {
             "io": "input",
             "transfer_mode": "json",
             "access_mode": "json",
             "content_type": "json",
         }
-        '''
+        """
         raise NotImplementedError
     all_pins.update(deep_pins)
     ctx.tf = transformer(all_pins)

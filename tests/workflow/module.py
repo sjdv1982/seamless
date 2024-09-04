@@ -1,7 +1,8 @@
 import seamless
+
 seamless.delegate(False)
 
-tf_code = '''
+tf_code = """
 print(__name__)
 print(testmodule)
 print(testmodule.q)
@@ -10,9 +11,10 @@ print(q)
 import sys
 print([m for m in sys.modules if m.find("testmodule") > -1])
 result = a + b
-'''
+"""
 
-from seamless import Transformer, Cell, Context, Module
+from seamless.workflow import Transformer, Cell, Context, Module
+
 ctx = Context()
 ctx.testmodule = Module()
 ctx.testmodule.code = "q = 10"
@@ -45,9 +47,12 @@ print(ctx.mod.value)
 ctx.testmodule.mount("/tmp/x.py", authority="cell")
 ctx.compute()
 
+
 def tf(a):
     from .mymodule import q
+
     return a * q * mymodule.q
+
 
 ctx.tf = tf
 ctx.tf.debug.direct_print = True

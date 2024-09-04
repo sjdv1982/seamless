@@ -1,4 +1,4 @@
-from seamless import Checksum
+from seamless import Checksum, Buffer, CacheMissError
 from . import Task
 import sys
 import traceback
@@ -7,9 +7,13 @@ import asyncio
 import json
 from asyncio import CancelledError
 
-from ...utils import overlap_path
+from seamless.checksum import empty_dict_checksum
+from seamless.checksum.buffer_remote import write_buffer, remote_has_checksum
+from seamless.checksum.expression import access_hash_pattern
+from seamless.config import get_assistant
+from seamless.assistant_client import run_job
 
-empty_dict_checksum = "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c"
+from ...utils import overlap_path
 
 
 def is_empty(cell):
@@ -57,10 +61,6 @@ def build_join_transformation(structured_cell):
     The main use case is to send data-intensive structured cell joins to remote locations
     where the data is.
     """
-    from ...protocol.serialize import serialize_sync as serialize
-    from ...protocol.calculate_checksum import (
-        calculate_checksum_sync as calculate_checksum,
-    )
 
     join_dict, _, _ = _build_join_dict(structured_cell)
     assert isinstance(join_dict, dict), join_dict
@@ -68,8 +68,8 @@ def build_join_transformation(structured_cell):
         "__language__": "<structured_cell_join>",
         "structured_cell_join": join_dict,
     }
-    transformation_dict_buffer = serialize(transformation_dict, "plain")
-    transformation = calculate_checksum(transformation_dict_buffer)
+    transformation_dict_buffer = Buffer(transformation_dict, "plain")
+    transformation = transformation_dict_buffer.get_checksum()
     buffer_cache.cache_buffer(transformation, transformation_dict_buffer)
 
     return transformation
@@ -94,11 +94,6 @@ def _join_dict_to_checksums(join_dict):
 
 
 async def evaluate_join_transformation_remote(structured_cell) -> Checksum:
-    from ....config import get_assistant
-    from ....assistant_client import run_job
-    from ...cache.buffer_remote import write_buffer
-    from ...protocol.serialize import serialize
-    from ...protocol.calculate_checksum import calculate_checksum
 
     if not get_assistant():
         return
@@ -107,8 +102,8 @@ async def evaluate_join_transformation_remote(structured_cell) -> Checksum:
     assert jtf_buffer is not None
     write_buffer(jtf_checksum, jtf_buffer)
     join_dict = json.loads(jtf_buffer)["structured_cell_join"]
-    join_dict_buf = await serialize(join_dict, "plain", use_cache=True)
-    join_dict_checksum = await calculate_checksum(join_dict_buf)
+    join_dict_buf = await Buffer.from_async(join_dict, "plain", use_cache=True)
+    join_dict_checksum = await join_dict_buf.get_checksum_async()
     write_buffer(join_dict_checksum, join_dict_buf)
     try:
         result = await run_job(
@@ -145,8 +140,6 @@ def _consider_remote_evaluation(join_dict):
     """Checks if the structured cell join can easily (no fingertipping) be evaluated remotely.
     This assumes that the assistant has access to the exact same buffer read folders/servers
     """
-    from ...cache.buffer_remote import remote_has_checksum
-    from ....config import get_assistant
 
     if not get_assistant():
         return False
@@ -325,11 +318,12 @@ class StructuredCellAuthTask(StructuredCellTask):
 
                 def func():
                     if ok != (not sc._auth_invalid):  # BUG!
-                        return
-                    if self._canceled:
-                        return
-                    sc._auth_joining = False
-                    manager.structured_cell_trigger(sc, void=(not ok))
+                        pass
+                    elif self._canceled:
+                        pass
+                    else:
+                        sc._auth_joining = False
+                        manager.structured_cell_trigger(sc, void=(not ok))
 
                 taskmanager.add_synctask(func, (), {}, False)
 
@@ -748,9 +742,10 @@ class StructuredCellJoinTask(StructuredCellTask):
 
                 def func():
                     if self._canceled:
-                        return
-                    sc._joining = False
-                    manager.structured_cell_trigger(sc, void=(not ok))
+                        pass
+                    else:
+                        sc._joining = False
+                        manager.structured_cell_trigger(sc, void=(not ok))
 
                 taskmanager.add_synctask(func, (), {}, False)
 
@@ -761,7 +756,6 @@ from .get_buffer import GetBufferTask
 from .checksum import CalculateChecksumTask
 from .accessor_update import AccessorUpdateTask
 from .upon_connection import UponConnectionTask
-from seamless import CacheMissError, Checksum
 from seamless.checksum.buffer_cache import buffer_cache
 from silk.Silk import Silk, ValidationError
 from ..cancel import SCModeEnum

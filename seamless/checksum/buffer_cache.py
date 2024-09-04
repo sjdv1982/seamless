@@ -7,6 +7,7 @@ import logging
 from silk.mixed import MAGIC_NUMPY, MAGIC_SEAMLESS_MIXED
 
 import seamless
+from seamless.checksum import empty_dict_checksum, empty_list_checksum
 from seamless.checksum.cached_calculate_checksum import checksum_cache
 from seamless import CacheMissError
 from seamless import Buffer, Checksum
@@ -40,10 +41,6 @@ def print_error(*args):
     """Logging aid"""
     msg = " ".join([str(arg) for arg in args])
     logger.error(msg)
-
-
-empty_dict_checksum = "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c"
-empty_list_checksum = "7b41ad4a50b29158e075c6463133761266adb475130b8e886f2f5649070031cf"
 
 
 class BufferCache:

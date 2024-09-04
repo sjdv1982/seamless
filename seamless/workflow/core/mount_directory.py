@@ -6,7 +6,8 @@ import logging
 import os
 import shutil
 
-from seamless import Checksum
+from seamless import Checksum, Buffer
+from seamless.checksum.buffer_cache import buffer_cache
 
 
 def _validate_cell(cell):
@@ -31,10 +32,6 @@ def read_from_directory(directory, cell, reference_dir=None, *, text_only):
 
     Cell can be None.
     """
-    from .protocol.calculate_checksum import calculate_checksum_sync
-    from .protocol.serialize import serialize_sync
-    from .cache.buffer_cache import buffer_cache
-
     if not os.path.exists(directory) or not os.path.isdir(directory):
         raise OSError(directory)
     if cell is not None:
@@ -48,16 +45,16 @@ def read_from_directory(directory, cell, reference_dir=None, *, text_only):
             key = os.path.relpath(full_filename, reference_dir)
             with open(full_filename, "rb") as f:
                 buf = f.read()
+            buf = Buffer(buf)
             if text_only:
                 try:
-                    result[key] = deserialize_sync(buf, None, "text", copy=False)
+                    result[key] = buf.deserialize("text")
                 except (ValueError, UnicodeDecodeError):
                     continue
             else:
                 result[key] = deserialize_raw(buf)
-    result_buf = serialize_sync(result, "mixed")
-    result_checksum = calculate_checksum_sync(result_buf)
-    assert Checksum(result_checksum)
+    result_buf = Buffer(result, celltype="mixed")
+    result_checksum = result_buf.get_checksum()
     buffer_cache.cache_buffer(result_checksum, result_buf)
     buffer_cache.guarantee_buffer_info(result_checksum, "plain", sync_to_remote=False)
     result_checksum = result_checksum.hex()
@@ -84,9 +81,6 @@ def deep_read_from_directory(
      that are new to the database.
     If there is no connected Seamless buffer storage, Seamless will hold all file buffers in-memory.
     """
-    from .protocol.calculate_checksum import calculate_checksum_sync
-    from .protocol.serialize import serialize_sync
-    from .cache.buffer_cache import buffer_cache
 
     if not os.path.exists(directory) or not os.path.isdir(directory):
         raise OSError(directory)
@@ -101,14 +95,14 @@ def deep_read_from_directory(
             key = os.path.relpath(full_filename, reference_dir)
             with open(full_filename, "rb") as f:
                 buf = f.read()
+            buf = Buffer(buf)
             if text_only:
                 try:
-                    txt = deserialize_sync(buf, None, "text", copy=False)
-                    buf = serialize_sync(txt, "text")
+                    txt = buf.deserialize("text")
+                    buf = Buffer(txt, celltype="text")
                 except (ValueError, UnicodeDecodeError):
                     continue
-            checksum = calculate_checksum_sync(buf)
-            checksum = Checksum(checksum)
+            checksum = buf.get_checksum()
             if not checksum:  # shouldn't happen...
                 continue
             if cell is not None or cache_buffers:
@@ -120,8 +114,8 @@ def deep_read_from_directory(
                 buffer_cache.incref_buffer(checksum, buf, persistent=True)
                 buffer_cache.decref(checksum)
             result[key] = checksum.hex()
-    result_buf = serialize_sync(result, "plain")
-    result_checksum = calculate_checksum_sync(result_buf)
+    result_buf = Buffer(result, "plain")
+    result_checksum = result_buf.get_checksum()
     assert Checksum(result_checksum)
     if cell is not None or cache_buffers:
         buffer_cache.cache_buffer(result_checksum, result_buf)
@@ -153,16 +147,17 @@ def write_to_directory(directory, data, *, cleanup, deep, text_only):
             filename = os.path.join(abs_dir, k)
             all_files.add(filename)
             if deep:
-                cs = parse_checksum(v)
+                cs = Checksum(v)
                 buf = get_buffer(cs, remote=True, deep=False)
                 if buf is None:
                     logging.warn("CacheMissError: {}".format(v))
                     continue
             else:
                 buf = serialize_raw(v)
+            buf = Buffer(buf)
             if text_only:
                 try:
-                    txt = deserialize_sync(buf, None, "text", copy=False)
+                    txt = buf.deserialize("text")
                 except (ValueError, UnicodeDecodeError):
                     continue
                 with open(filename, "w") as f:

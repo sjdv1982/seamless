@@ -6,6 +6,7 @@ from collections import deque
 import logging
 
 from seamless import Checksum
+from seamless.checksum.value_conversion import conversion
 from ..status import StatusReasonEnum
 
 logger = logging.getLogger(__name__)
@@ -46,7 +47,6 @@ def destroyer(func):
     return wrapper
 
 async def do_bilink(buffer, checksum, celltype, target_celltype, manager, target_cell):
-    from ..protocol.evaluate import conversion
     expression_result_checksum = await conversion(
         checksum,
         celltype, target_celltype,

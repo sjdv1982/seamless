@@ -1,5 +1,5 @@
 from copy import deepcopy
-from seamless.checksum.buffer_cache import empty_dict_checksum
+from seamless.checksum import empty_dict_checksum
 from seamless.Environment import Environment
 from ..core import cell, transformer, context
 

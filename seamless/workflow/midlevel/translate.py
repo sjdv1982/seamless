@@ -59,7 +59,7 @@ direct_celltypes = (
     "checksum",
 )
 
-empty_dict_checksum = "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c"
+from seamless.checksum import empty_dict_checksum
 
 
 def set_structured_cell_from_checksum(cell, checksum, is_deepcell=False):

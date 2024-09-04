@@ -335,7 +335,7 @@ class MountItem:
         with open(self.path, filemode, encoding=encoding) as f:
             try:
                 result = f.read()
-            except:
+            except Exception:
                 log("Reading error in '{}'".format(self.path))
                 return None
             if not binary:
@@ -823,8 +823,7 @@ def scan(ctx):
     """Scans a cell or a context and its children for _mount attributes, and mounts them"""
     from .context import Context
     from .unbound_context import UnboundContext
-    from .cell import Cell
-    from . import Worker, Macro
+    from . import Macro
 
     assert not mountmanager._mounting
 

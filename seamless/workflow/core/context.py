@@ -1,14 +1,7 @@
 """Module for Context class."""
 
-from seamless import Checksum, compiler
+from seamless import Checksum, Buffer
 from seamless.checksum.json import json_dumps
-import weakref
-from weakref import WeakValueDictionary
-from collections import OrderedDict
-import json
-import time
-import asyncio
-from contextlib import contextmanager
 
 from . import SeamlessBase
 from .macro_mode import (
@@ -17,6 +10,8 @@ from .macro_mode import (
     register_toplevel,
     unregister_toplevel,
 )
+
+from seamless.checksum.buffer_cache import buffer_cache
 
 
 class StatusReport(dict):
@@ -77,9 +72,6 @@ class Context(SeamlessBase):
         """
         from seamless.config import check_delegation
 
-        global Macro
-        if Macro is None:
-            from .macro import Macro
         super().__init__()
         if manager is not None:
             assert toplevel
@@ -135,7 +127,6 @@ class Context(SeamlessBase):
 
     def _add_child(self, childname, child):
         assert not self._destroyed
-        from .unbound_context import UnboundContext
 
         if isinstance(child, UnboundContext):
             raise TypeError("Cannot add an unbound context to a bound one")
@@ -318,11 +309,6 @@ class Context(SeamlessBase):
 
     def _update_annotated_checksums(self, annotated_checksums0, *, skip_scratch):
         from .build_module import get_compiled_module_code
-        from .cache.buffer_cache import buffer_cache
-        from .protocol.serialize import serialize_sync as serialize
-        from .protocol.calculate_checksum import (
-            calculate_checksum_sync as calculate_checksum,
-        )
 
         manager = self._get_manager()
         livegraph = manager.livegraph
@@ -337,8 +323,8 @@ class Context(SeamlessBase):
                     elision_result = elision.get_elision_result()
                     if elision_result is None:
                         return
-                    elision_result_buffer = serialize(elision_result, "plain")
-                    elision_result_checksum = calculate_checksum(elision_result_buffer)
+                    elision_result_buffer = Buffer(elision_result, "plain")
+                    elision_result_checksum = elision_result_buffer.get_checksum()
                     buffer_cache.cache_buffer(
                         elision_result_checksum, elision_result_buffer
                     )
@@ -464,8 +450,6 @@ Context._methods += [
 
 
 def context(**kwargs):
-    from .macro import Macro
-
     if get_macro_mode():
         macro = curr_macro()
         """
@@ -513,5 +497,4 @@ except ImportError:
     debugmountmanager = None
 
 from .manager import Manager
-
-Macro = None  # import later
+from .macro import Macro

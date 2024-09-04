@@ -252,7 +252,7 @@ class Transformer(Worker):
 
     @property
     def execution_metadata(self):
-        from .cache.database_client import database
+        from seamless.checksum.database_client import database
 
         if not database.active:
             return None
@@ -262,10 +262,6 @@ class Transformer(Worker):
         if transformation is None:
             return None
         return database.get_metadata(transformation)
-
-    @property
-    def void(self):
-        return self._void
 
     def _get_buffer_sync(self) -> bytes | None:
         from seamless.checksum.get_buffer import get_buffer

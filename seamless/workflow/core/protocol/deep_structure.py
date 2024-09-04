@@ -5,8 +5,6 @@ from io import BytesIO
 from silk.mixed import MAGIC_NUMPY, MAGIC_SEAMLESS_MIXED
 from seamless import Checksum
 
-from seamless.checksum.expression import Expression
-
 
 class DeepStructureError(ValueError):
     def __str__(self):
@@ -62,7 +60,7 @@ def validate_deep_structure(deep_structure, hash_pattern):
                     validate_deep_structure(sub_deep_structure, sub_hash_pattern)
             elif key.startswith("!"):
                 assert key[1:].isnumeric()
-                step = int(key[1:])
+                _step = int(key[1:])
                 assert isinstance(deep_structure, list)
                 assert hash_pattern[key] == "#"
             else:
@@ -629,7 +627,7 @@ def write_deep_structure(checksum: Checksum, deep_structure, hash_pattern, path)
             else:
                 step = int(key[1:])
             chunk = int(attribute / step)
-            for n in range(len(deep_structure), chunk + 1):
+            for _ in range(len(deep_structure), chunk + 1):
                 deep_structure.append(None)
             sub_deep_structure = deep_structure[chunk]
             sub_hash_pattern = hash_pattern[key]

@@ -3,6 +3,7 @@ import asyncio
 from weakref import WeakSet
 from contextlib import contextmanager
 
+from seamless.checksum.buffer_cache import buffer_cache
 from seamless.workflow.tempref import temprefmanager
 
 _toplevel_registered = WeakSet()
@@ -10,17 +11,8 @@ _toplevel_managers = WeakSet()
 _toplevel_registrable = set()
 _toplevel_managers_temp = set()
 
-mountmanager = None  # import later
-
-transformation_cache = None  # import later
-
-buffer_cache = None  # import later
-
 
 def register_toplevel(ctx):
-    global mountmanager
-    from .mount import mountmanager
-
     manager = ctx._get_manager()
     assert manager is not None
     if not _macro_mode:
@@ -106,7 +98,6 @@ def macro_mode_on(macro=None):
         _mount_scans = []
         if old_context is not None:
             old_context.destroy()
-        ok = False
         yield
         if macro is None:
 
@@ -175,4 +166,3 @@ def macro_mode_on(macro=None):
 from .cache.transformation_cache import transformation_cache
 from .mount import mountmanager
 from .unbound_context import UnboundContext, UnboundManager
-from seamless.checksum.buffer_cache import buffer_cache

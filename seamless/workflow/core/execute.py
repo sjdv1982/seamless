@@ -15,7 +15,18 @@ try:
 except ModuleNotFoundError:
     debugpy = None
 
-from seamless import Checksum
+from silk import Silk
+from seamless import Checksum, CacheMissError
+from seamless.checksum import database_client
+from seamless.checksum.database_client import database
+from seamless.checksum.serialize import serialize_sync
+from seamless.checksum.deserialize import deserialize_sync
+from seamless.checksum.cached_calculate_checksum import (
+    cached_calculate_checksum_sync as calculate_checksum,
+    calculate_checksum_func,
+    calculate_checksum_cache,
+)
+from seamless.util.subprocess_ import kill_children
 from seamless.checksum.cached_compile import exec_code, check_function_like
 from seamless.checksum.serialize import _serialize as serialize
 from seamless.checksum.buffer_cache import buffer_cache
@@ -107,7 +118,7 @@ def _fast_pack(value, buffer, celltype, database, scratch, result_queue):
 
 
 def fast_pack(unpacked_values, hash_pattern, *, scratch, result_queue):
-    from .protocol.serialize import serialize_cache
+    from seamless.checksum.serialize import serialize_cache
 
     if hash_pattern == {"*": "#"}:
         values = unpacked_values.values()
@@ -648,19 +659,7 @@ Execution time: {:.1f} seconds
         kill_children(multiprocessing.current_process())
 
 
-from seamless import CacheMissError, Checksum
-from silk import Silk
-from seamless.checksum import database_client
-from seamless.checksum.database_client import database
 from .protocol.deep_structure import (
     deep_structure_to_value,
     value_to_deep_structure_sync as value_to_deep_structure,
 )
-from seamless.checksum.serialize import serialize_sync
-from seamless.checksum.deserialize import deserialize_sync
-from seamless.checksum.cached_calculate_checksum import (
-    cached_calculate_checksum_sync as calculate_checksum,
-    calculate_checksum_func,
-    calculate_checksum_cache,
-)
-from seamless.util.subprocess_ import kill_children

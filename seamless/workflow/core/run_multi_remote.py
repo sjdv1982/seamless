@@ -5,8 +5,9 @@ import asyncio
 import sys
 import traceback
 
+
 async def run_multi_remote(serverlist, *args, **kwargs):
-    #print("run_multi_remote", len(serverlist))
+    # print("run_multi_remote", len(serverlist))
     if not len(serverlist):
         return None
     futures = []
@@ -18,7 +19,9 @@ async def run_multi_remote(serverlist, *args, **kwargs):
         while 1:
             if not len(futures):
                 return None
-            done, pending = await asyncio.wait(futures, return_when=asyncio.FIRST_COMPLETED)
+            done, pending = await asyncio.wait(
+                futures, return_when=asyncio.FIRST_COMPLETED
+            )
             for future in done:
                 exception = future.exception()
                 if not future.cancelled() and not exception:
@@ -26,9 +29,11 @@ async def run_multi_remote(serverlist, *args, **kwargs):
                     if result is not None:
                         for pending_future in pending:
                             pending_future.cancel()
-                        return result 
+                        return result
                 elif exception:
-                    exc = traceback.format_exception(type(exception), exception, exception.__traceback__)
+                    exc = traceback.format_exception(
+                        type(exception), exception, exception.__traceback__
+                    )
                     exc = "".join(exc)
                     print("run_multi_remote", exc, file=sys.stderr)
             futures = pending
@@ -66,16 +71,18 @@ async def run_multi_remote_pair(serverlist, *args, **kwargs):
                     if result is not None:
                         for pending_future in pending:
                             pending_future.cancel()
-                        result_servernr = servernr 
+                        result_servernr = servernr
                         break
                 elif exception:
-                    exc = traceback.format_exception(type(exception), exception, exception.__traceback__)
+                    exc = traceback.format_exception(
+                        type(exception), exception, exception.__traceback__
+                    )
                     exc = "".join(exc)
                     print("run_multi_remote_pair stage 1", exc, file=sys.stderr)
             if result == True:
                 break
             futures = pending
-    except asyncio.CancelledError:        
+    except asyncio.CancelledError:
         for servernr, future in enumerate(futures):
             if not future.done():
                 future.cancel()
@@ -86,7 +93,9 @@ async def run_multi_remote_pair(serverlist, *args, **kwargs):
         await future
         exception = future.exception()
         if exception:
-            exc = traceback.format_exception(type(exception), exception, exception.__traceback__)
+            exc = traceback.format_exception(
+                type(exception), exception, exception.__traceback__
+            )
             exc = "".join(exc)
             print("run_multi_remote_pair stage 2", exc, file=sys.stderr)
         else:

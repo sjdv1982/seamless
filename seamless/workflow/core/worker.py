@@ -218,7 +218,7 @@ class OutputPin(OutputPinBase):
         if my_cells is None:
             return []
         my_cells = [c[0] for c in my_cells]
-        return mycells
+        return my_cells
 
 
 class EditPinBase(PinBase):

@@ -5,7 +5,7 @@ from functools import partial
 
 from seamless import Checksum
 from seamless.util import fair
-from seamless.checksum.buffer_cache import empty_list_checksum, empty_dict_checksum
+from seamless.checksum import empty_list_checksum, empty_dict_checksum
 from seamless.checksum.deserialize import deserialize_sync as deserialize
 
 

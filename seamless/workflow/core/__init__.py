@@ -1,8 +1,10 @@
 import weakref
 
+
 class IpyString(str):
     def _repr_pretty_(self, p, cycle):
         return p.text(str(self))
+
 
 class SeamlessBase:
     _destroyed = False
@@ -34,7 +36,6 @@ class SeamlessBase:
         return required_path
 
     def _set_context(self, context, name):
-        from .context import Context, UnboundContext
         assert isinstance(context, (Context, UnboundContext))
         if self._context is not None and self._context() is context:
             assert self.name in context._auto
@@ -45,15 +46,17 @@ class SeamlessBase:
         if isinstance(context, UnboundContext):
             assert self._context is None
         else:
-            assert self._context is None or isinstance(self._context(), UnboundContext), self._context
+            assert self._context is None or isinstance(
+                self._context(), UnboundContext
+            ), self._context
         ctx = weakref.ref(context)
         self._context = ctx
         self.name = name
         return self
 
     def _get_manager(self) -> "Manager":
-        assert self._context is not None, self.name #worker/cell must have a context
-        assert self._context() is not None, self.name #worker/cell must have a context
+        assert self._context is not None, self.name  # worker/cell must have a context
+        assert self._context() is not None, self.name  # worker/cell must have a context
         return self._context()._get_manager()
 
     def _root(self):
@@ -89,12 +92,13 @@ class SeamlessBase:
     def destroy(self, **kwargs):
         self._destroyed = True
 
+
 from .mount import mountmanager
 from .macro_mode import get_macro_mode, macro_mode_on
 from . import cell as cell_module
 from .cell import Cell, cell
 from . import context as context_module
-from .context import Context, context
+from .context import Context, UnboundContext, context
 from .worker import Worker
 from .transformer import Transformer, transformer
 from .structured_cell import StructuredCell, Inchannel, Outchannel

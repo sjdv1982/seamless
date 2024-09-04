@@ -253,8 +253,6 @@ class Macro(Worker):
             try:
                 path = Path(current_macro, self.path, manager=self._get_manager())
             except Exception:
-                import traceback
-
                 traceback.print_exc()
                 raise
             return path.ctx
