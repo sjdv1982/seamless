@@ -296,7 +296,7 @@ def build_compiled_module(
                     remaining_objects = {}
                     object_checksums = {}
                     for object_file, object_ in objects.items():
-                        object_checksum = Buffer(object_, "plain").checksum
+                        object_checksum = Buffer(object_, "plain").get_checksum()
                         binary_code = None
                         ### binary_code_checksum = database.get_compile_result(
                         ###    object_checksum
@@ -329,7 +329,7 @@ def build_compiled_module(
                         for object_file, binary_code in new_binary_objects.items():
                             binary_objects[object_file] = binary_code
                             object_checksum = object_checksums[object_file]
-                            binary_code_checksum = Buffer(binary_code).checksum
+                            binary_code_checksum = Buffer(binary_code).get_checksum()
                             # Disable writing of compiled code for now
                             """
                             buffer_remote.write_buffer(binary_code_checksum, binary_code)
@@ -351,7 +351,7 @@ def build_compiled_module(
                             "compiler_verbose", CFFI_VERBOSE
                         ),
                     )
-                    module_code_checksum = Buffer(module_code).checksum
+                    module_code_checksum = Buffer(module_code).get_checksum()
                     _compilation_buffers[original_checksum] = (
                         module_code_checksum,
                         module_code,

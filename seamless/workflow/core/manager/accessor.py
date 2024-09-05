@@ -1,7 +1,7 @@
 import weakref
 
 
-from seamless.checksum.celltypes import celltypes
+from seamless.checksum.celltypes import celltypes2
 from seamless.checksum import Expression
 from seamless.checksum.expression import access_hash_pattern
 
@@ -24,7 +24,7 @@ class ReadAccessor(Accessor):
         self.source = source
         self.manager = weakref.ref(manager)
         self.path = path
-        assert celltype in celltypes or isinstance(celltype, MacroPath), celltype
+        assert celltype in celltypes2 or isinstance(celltype, MacroPath), celltype
         self.reactor_pinname = None
         self.celltype = celltype
         self.write_accessor = None
@@ -116,7 +116,7 @@ class WriteAccessor(Accessor):
         assert pinname is None or path is None
         self.read_accessor = weakref.ref(read_accessor)
         self.target = weakref.ref(target)
-        assert celltype in celltypes or isinstance(celltype, MacroPath), celltype
+        assert celltype in celltypes2 or isinstance(celltype, MacroPath), celltype
         self.celltype = celltype
         assert subcelltype is None or subcelltype in subcelltypes
         self.subcelltype = subcelltype

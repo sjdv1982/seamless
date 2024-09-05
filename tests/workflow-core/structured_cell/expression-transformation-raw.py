@@ -26,7 +26,7 @@ accessor = livegraph.cell_to_upstream[ctx.a]
 from seamless.workflow.core.manager.tasks.evaluate_expression import (
     build_expression_transformation,
 )
-from seamless.workflow.core.cache.buffer_cache import buffer_cache
+from seamless.checksum.buffer_cache import buffer_cache
 
 tf_checksum = build_expression_transformation(accessor.expression)
 tfd = json.loads(buffer_cache.get_buffer(tf_checksum).decode())

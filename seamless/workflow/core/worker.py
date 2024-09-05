@@ -57,14 +57,14 @@ class Worker(SeamlessBase):
         return object.__dir__(self) + list(self._pins.keys())
 
 
-from seamless.checksum.celltypes import celltypes
+from seamless.checksum.celltypes import celltypes2
 
 
 class PinBase(SeamlessBase):
     def __init__(self, worker, name, celltype, subcelltype=None, *, as_=None):
         self.worker_ref = weakref.ref(worker)
         super().__init__()
-        assert celltype is None or celltype in celltypes, (celltype, celltypes)
+        assert celltype is None or celltype in celltypes2, (celltype, celltypes2)
         self.name = name
         self.celltype = celltype
         self.subcelltype = subcelltype

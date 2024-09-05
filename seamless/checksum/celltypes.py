@@ -17,6 +17,7 @@ celltypes = [
     "checksum",
 ]
 
+celltypes2 = celltypes + ["silk"]
 
 text_types = (
     "text",

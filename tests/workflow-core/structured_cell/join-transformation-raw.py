@@ -62,7 +62,7 @@ ctx.compute()
 from seamless.workflow.core.manager.tasks.structured_cell import (
     build_join_transformation,
 )
-from seamless.workflow.core.cache.buffer_cache import buffer_cache
+from seamless.checksum.buffer_cache import buffer_cache
 
 tf_checksum = build_join_transformation(ctx.sc)
 tfd = json.loads(buffer_cache.get_buffer(tf_checksum).decode())

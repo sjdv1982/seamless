@@ -43,7 +43,7 @@ from silk import Silk
 from seamless.Checksum import Checksum
 from seamless.Buffer import Buffer
 from seamless.config import delegate
-from seamless.direct import transformer
+from seamless.direct import transformer, run_transformation
 from seamless.util import fair
 from . import config
 from . import multi
@@ -58,4 +58,5 @@ __all__ = [
     "delegate",
     "multi",
     "fair",
+    "run_transformation",
 ]
