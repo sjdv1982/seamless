@@ -74,7 +74,7 @@ async def value_conversion(
     checksum = Checksum(checksum)
     cachemanager = manager.cachemanager
     if target_celltype == "checksum":
-        target_buffer = checksum
+        target_buffer = Checksum(checksum).hex().encode()
         target_checksum = await CalculateChecksumTask(manager, target_buffer).run()
         buffer_cache.cache_buffer(target_checksum, target_buffer)
         return target_checksum

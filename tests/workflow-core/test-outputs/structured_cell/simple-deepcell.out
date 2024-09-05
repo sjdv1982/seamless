@@ -1,5 +1,5 @@
 Traceback (most recent call last):
-  File "/cwd/tests/lowlevel/structured_cell/simple-deepcell.py", line 19, in <module>
+  File "/cwd/workflow-core/structured_cell/simple-deepcell.py", line 17, in <module>
     data.set(20)
   File "/silk/silk/Silk.py", line 536, in set
     self._set(value, lowlevel=False)
@@ -15,17 +15,17 @@ Traceback (most recent call last):
     result = self._set_path(path, data)
   File "/silk/silk/mixed/Backend.py", line 366, in _set_path
     sc._set_auth_path((), data)
-  File "/seamless/seamless/core/structured_cell.py", line 245, in _set_auth_path
+  File "/seamless/seamless/workflow/core/structured_cell.py", line 265, in _set_auth_path
     set_subpath(self._auth_value, self.hash_pattern, path, value)
-  File "/seamless/seamless/core/protocol/expression.py", line 170, in set_subpath_sync
-    sub_structure, _ = value_to_deep_structure_sync(
-  File "/seamless/seamless/core/protocol/deep_structure.py", line 516, in value_to_deep_structure_sync
+  File "/seamless/seamless/workflow/core/protocol/expression.py", line 188, in set_subpath_sync
+    sub_structure, _ = value_to_deep_structure_sync(subvalue, sub_hash_pattern)
+  File "/seamless/seamless/workflow/core/protocol/deep_structure.py", line 485, in value_to_deep_structure_sync
     asyncio.get_event_loop().run_until_complete(fut)
   File "/opt/conda/lib/python3.10/asyncio/base_events.py", line 649, in run_until_complete
     return future.result()
-  File "/seamless/seamless/core/protocol/deep_structure.py", line 479, in value_to_deep_structure
+  File "/seamless/seamless/workflow/core/protocol/deep_structure.py", line 441, in value_to_deep_structure
     raise DeepStructureError(hash_pattern, value) from None
-seamless.core.protocol.deep_structure.DeepStructureError: 
+seamless.workflow.core.protocol.deep_structure.DeepStructureError: 
   Invalid deep structure: 20
   Hash pattern: {'*': '#'}
 {}

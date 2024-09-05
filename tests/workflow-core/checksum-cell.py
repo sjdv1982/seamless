@@ -56,7 +56,7 @@ ctx.compute()
 print(ctx.t3.checksum, ctx.t3.buffer)
 print(ctx.tt3.buffer)
 
-from seamless.workflow.core.cache import CacheMissError
+from seamless import CacheMissError
 
 try:
     print(ctx.tt3.value)

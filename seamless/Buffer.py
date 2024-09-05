@@ -13,6 +13,8 @@ class Buffer:
 
         if isinstance(value_or_buffer, Buffer):
             value_or_buffer = value_or_buffer.value
+        elif isinstance(value_or_buffer, Checksum):
+            raise TypeError
 
         celltype = self._map_celltype(celltype)
         if celltype is None:

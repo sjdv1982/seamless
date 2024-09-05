@@ -1,6 +1,6 @@
 """Calculate SHA3-256 checksum, with a small LRU cache"""
 
-from seamless import Checksum
+from seamless import Checksum, Buffer
 from seamless.checksum.calculate_checksum import (
     calculate_checksum as calculate_checksum_func,
 )
@@ -16,9 +16,10 @@ calculate_checksum_cache = lrucache2(10)
 checksum_cache = lrucache2(10)
 
 
-async def cached_calculate_checksum(buffer: bytes | None) -> Checksum:
+async def cached_calculate_checksum(buffer: Buffer | bytes | None) -> Checksum:
     """Calculate SHA3-256 checksum, with a small LRU cache"""
 
+    buffer = Buffer(buffer).value
     if buffer is None:
         return None
     assert isinstance(buffer, bytes)

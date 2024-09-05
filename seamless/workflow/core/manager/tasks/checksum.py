@@ -1,4 +1,4 @@
-from seamless import Checksum
+from seamless import Checksum, Buffer
 from . import BackgroundTask
 from seamless.checksum.cached_calculate_checksum import cached_calculate_checksum
 
@@ -9,7 +9,7 @@ class CalculateChecksumTask(BackgroundTask):
         return id(self.buffer)
 
     def __init__(self, manager, buffer):
-        self.buffer = buffer
+        self.buffer = Buffer(buffer).value
         super().__init__(manager)
 
     async def _run(self) -> Checksum:

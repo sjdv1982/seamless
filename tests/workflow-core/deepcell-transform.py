@@ -4,7 +4,7 @@ seamless.delegate(False)
 
 from seamless.workflow.core import macro_mode_on
 from seamless.workflow.core import context, cell, transformer
-from seamless.workflow.core.protocol.json import json_dumps
+from seamless.checksum.json import json_dumps
 
 with macro_mode_on():
     ctx = context(toplevel=True)

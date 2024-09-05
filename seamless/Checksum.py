@@ -2,6 +2,7 @@
 
 from typing import Union
 
+
 class Checksum:
     """Class for Seamless checksums.
     Seamless checksums are calculated as SHA3-256 hashes of buffers."""

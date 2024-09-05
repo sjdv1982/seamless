@@ -163,8 +163,9 @@ def fast_pack(unpacked_values, hash_pattern, *, scratch, result_queue):
         else:
             raise AssertionError(hash_pattern)
         for n, (key, packing_checksum) in enumerate(zip(keys, packing_checksums)):
-            packing_checksum = Checksum(packing_checksum)
-            if not packing_checksum:
+            if isinstance(packing_checksum, Checksum):
+                packing_checksum = packing_checksum.bytes()
+            if packing_checksum is None:
                 result_checksum = None
             elif isinstance(packing_checksum, bytes):
                 result_checksum = packing_checksum

@@ -46,6 +46,7 @@ VALIDATE 12 25
                     'property': True,
                     'setter': 'def xx_set(self, xx):\n'
                               '    import math\n'
+                              '\n'
                               '    self.x = int(math.sqrt(xx))\n'},
              'xy': {'getter': 'def xy(self):\n    return self.x + self.y\n',
                     'language': 'python',
@@ -72,7 +73,6 @@ VALIDATE 12 25
 3
 10
 5
-VALIDATE 12 25
 True True
 True False
 lis
@@ -111,7 +111,7 @@ Traceback (most recent call last):
   File "/silk/silk/validation/validators.py", line 242, in validator_validators
     validator_func(silkobject)
   File "Silk validator 1", line 2, in func
-    assert abs(self.x**2+self.y**2+self.z**2 - 1) < 0.001
+    assert abs(self.x**2 + self.y**2 + self.z**2 - 1) < 0.001
 AssertionError
 ************************************************************************
 
@@ -122,8 +122,8 @@ AssertionError
                                 'z': {'type': 'number'}},
                  'type': 'object',
                  'validators': [{'code': 'def func(self):\n'
-                                         '    assert abs(self.x**2+self.y**2+self.z**2 '
-                                         '- 1) < 0.001\n',
+                                         '    assert abs(self.x**2 + self.y**2 + '
+                                         'self.z**2 - 1) < 0.001\n',
                                  'language': 'python'}]}
 
             On instance:
@@ -148,7 +148,7 @@ START
                      'language': 'python',
                      'property': True,
                      'setter': 'def set_xyz(self, xyz):\n'
-                               '    x,y,z = xyz\n'
+                               '    x, y, z = xyz\n'
                                '    try:\n'
                                '        self.x = x\n'
                                '    except ValidationError:\n'
@@ -169,7 +169,8 @@ START
  'storage': 'plain',
  'type': 'array',
  'validators': [{'code': 'def func(self):\n'
-                         '    import numpy as np #necessary!\n'
+                         '    import numpy as np  # necessary!\n'
+                         '\n'
                          '    arr = np.array(self.data)\n'
                          '    assert abs(np.sum(arr**2) - 1) < 0.01\n',
                  'language': 'python'}]}
