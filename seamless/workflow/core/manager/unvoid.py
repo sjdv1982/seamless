@@ -1,17 +1,22 @@
 import logging
+
 logger = logging.getLogger(__name__)
+
 
 def print_info(*args):
     msg = " ".join([str(arg) for arg in args])
     logger.info(msg)
 
+
 def print_warning(*args):
     msg = " ".join([str(arg) for arg in args])
     logger.warning(msg)
 
+
 def print_debug(*args):
     msg = " ".join([str(arg) for arg in args])
     logger.debug(msg)
+
 
 def print_error(*args):
     msg = " ".join([str(arg) for arg in args])
@@ -37,15 +42,13 @@ def unvoid_cell(cell, livegraph):
     for accessor in accessors:
         unvoid_accessor(accessor, livegraph)
 
+
 def unvoid_scell_all(scell, livegraph):
     if scell._data._void:
         print_debug("!!!UNVOID!!!: %s" % scell)
     scell._exception = None
     manager = livegraph.manager()
-    manager._set_cell_checksum(
-        scell._data, None,
-        void=False
-    )
+    manager._set_cell_checksum(scell._data, None, void=False)
     if scell.auth is not None:
         scell.auth._void = False
         scell.auth._status_reason = None
@@ -56,6 +59,7 @@ def unvoid_scell_all(scell, livegraph):
     for path in all_accessors:
         for accessor in all_accessors[path]:
             unvoid_accessor(accessor, livegraph)
+
 
 def unvoid_scell_inpath(scell, livegraph, inpath):
     cell = scell._data
@@ -77,14 +81,14 @@ def unvoid_transformer(transformer, livegraph):
     for pinname, accessor in upstreams.items():
         if pinname == "META":
             continue
-        if accessor is None: #unconnected
+        if accessor is None:  # unconnected
             transformer._status_reason = StatusReasonEnum.UNCONNECTED
             return
     for pinname, accessor in upstreams.items():
         if pinname == "META":
             continue
-        if accessor._void: #upstream error
-            #print("NOT UNVOID", transformer, pinname)
+        if accessor._void:  # upstream error
+            # print("NOT UNVOID", transformer, pinname)
             transformer._status_reason = StatusReasonEnum.UPSTREAM
             return
 
@@ -105,31 +109,32 @@ def unvoid_reactor(reactor, livegraph):
     editpins = rtreactor.editpins
     editpin_to_cell = livegraph.editpin_to_cell[reactor]
     upstreams = livegraph.reactor_to_upstream[reactor]
-    outputpins = [pinname for pinname in reactor._pins \
-        if reactor._pins[pinname].io == "output" ]
+    outputpins = [
+        pinname for pinname in reactor._pins if reactor._pins[pinname].io == "output"
+    ]
 
     for pinname, accessor in upstreams.items():
-        if accessor is None: #unconnected
-            #print("NOT UNVOID UNCON", reactor, pinname)
+        if accessor is None:  # unconnected
+            # print("NOT UNVOID UNCON", reactor, pinname)
             reactor._status_reason = StatusReasonEnum.UNCONNECTED
             return
 
     for pinname in editpins:
-        if editpin_to_cell[pinname] is None: #unconnected
-            #print("NOT UNVOID UNCON", reactor, pinname, editpin_to_cell)
+        if editpin_to_cell[pinname] is None:  # unconnected
+            # print("NOT UNVOID UNCON", reactor, pinname, editpin_to_cell)
             reactor._status_reason = StatusReasonEnum.UNCONNECTED
             return
 
     all_downstreams = livegraph.reactor_to_downstream[reactor]
     for outputpin in outputpins:
         if not len(all_downstreams.get(outputpin, [])):
-            #print("NOT UNVOID UNCON", reactor, pinname)
+            # print("NOT UNVOID UNCON", reactor, pinname)
             reactor._status_reason = StatusReasonEnum.UNCONNECTED
             return
 
     for pinname, accessor in upstreams.items():
         if accessor._void:
-            #print("NOT UNVOID UP", reactor, pinname)
+            # print("NOT UNVOID UP", reactor, pinname)
             reactor._status_reason = StatusReasonEnum.UPSTREAM
             return
 
@@ -144,32 +149,35 @@ def unvoid_reactor(reactor, livegraph):
     print_debug("!!!UNVOID!!!: %s" % reactor)
     reactor._void = False
 
-    outputpins = [pinname for pinname in reactor._pins \
-        if reactor._pins[pinname].io == "output" ]
+    outputpins = [
+        pinname for pinname in reactor._pins if reactor._pins[pinname].io == "output"
+    ]
     for pinname in outputpins:
         accessors = all_downstreams[pinname]
         for accessor in accessors:
             unvoid_accessor(accessor, livegraph)
+
 
 def unvoid_macro(macro, livegraph):
     if not macro._void:
         return
     upstreams = livegraph.macro_to_upstream[macro]
     for pinname, accessor in upstreams.items():
-        if accessor is None: #unconnected
+        if accessor is None:  # unconnected
             macro._status_reason = StatusReasonEnum.UNCONNECTED
             return
     for pinname, accessor in upstreams.items():
-        if accessor._void: #upstream error
+        if accessor._void:  # upstream error
             macro._status_reason = StatusReasonEnum.UPSTREAM
             return
     print_debug("!!!UNVOID!!!: %s" % macro)
     macro._void = False
 
+
 def unvoid_accessor(accessor, livegraph):
     if not accessor._void:
         return
-    #print("UNVOID ACCESSOR", accessor)
+    # print("UNVOID ACCESSOR", accessor)
     accessor._void = False
     accessor.exception = None
     target = accessor.write_accessor.target()
@@ -197,8 +205,7 @@ def unvoid_accessor(accessor, livegraph):
                 from_unconnected_cell = True
         if from_unconnected_cell:
             livegraph.manager().cancel_accessor(
-                accessor, void=True,
-                reason=StatusReasonEnum.UNCONNECTED
+                accessor, void=True, reason=StatusReasonEnum.UNCONNECTED
             )
         else:
             unvoid_cell(target, livegraph)
@@ -207,7 +214,7 @@ def unvoid_accessor(accessor, livegraph):
         ic = scell.inchannels[path]
         if not ic._void:
             return
-        #print("UNVOID INCHANNEL", scell, path)
+        # print("UNVOID INCHANNEL", scell, path)
         unvoid_scell_inpath(scell, livegraph, path)
     elif isinstance(target, Transformer):
         unvoid_transformer(target, livegraph)

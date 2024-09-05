@@ -6,6 +6,7 @@ from copy import deepcopy
 import ast
 import time
 import multiprocessing
+from typing import Optional
 
 from seamless import CacheMissError, Checksum
 
@@ -35,9 +36,6 @@ _queued_transformations = []
 _sem_code_cache = {}
 
 TRANSFORMATION_STACK = []
-
-import multiprocessing
-from typing import Optional
 
 _parent_process_queue: Optional[multiprocessing.JoinableQueue] = None
 _parent_process_response_queue: Optional[multiprocessing.JoinableQueue] = None
@@ -787,7 +785,6 @@ def _node_to_transformation_dict(node):
 def _wait():
     from seamless.util.is_forked import is_forked
 
-    global _queued_transformations
     global _has_lock
     if not _queued_transformations:
         return None

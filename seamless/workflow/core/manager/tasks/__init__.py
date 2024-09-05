@@ -1,3 +1,4 @@
+import sys
 import weakref
 import asyncio
 from asyncio import CancelledError
@@ -5,6 +6,7 @@ import traceback
 from functools import partial
 
 import logging
+
 logger = logging.getLogger(__name__)
 
 
@@ -12,9 +14,11 @@ def print_info(*args):
     msg = " ".join([str(arg) for arg in args])
     logger.info(msg)
 
+
 def print_warning(*args):
     msg = " ".join([str(arg) for arg in args])
     logger.warning(msg)
+
 
 def print_debug(*args):
     if logger.level < logging.DEBUG:
@@ -22,9 +26,11 @@ def print_debug(*args):
     msg = " ".join([str(arg) for arg in args])
     logger.debug(msg)
 
+
 def print_error(*args):
     msg = " ".join([str(arg) for arg in args])
     logger.error(msg)
+
 
 def is_equal(old, new):
     if new is None:
@@ -36,7 +42,9 @@ def is_equal(old, new):
             return False
     return True
 
+
 _evaluation_locks = [None] * 20  # twenty evaluations in parallel
+
 
 def set_parallel_evaluations(evaluations):
     if len(_evaluation_locks) != evaluations:
@@ -55,9 +63,11 @@ async def acquire_evaluation_lock(task):
                 return locknr
         await asyncio.sleep(0.01)
 
+
 def release_evaluation_lock(locknr):
     assert _evaluation_locks[locknr] is not None
     _evaluation_locks[locknr] = None
+
 
 class Task:
     _realtask = None
@@ -90,8 +100,8 @@ class Task:
                 taskmanager.rev_reftasks[self] = self.refkey
         self.manager = weakref.ref(manager)
         if reftask is None:
-            self.refholders = [self] # tasks that are value-identical to this one,
-                                # of which this one is the realtask
+            self.refholders = [self]  # tasks that are value-identical to this one,
+            # of which this one is the realtask
 
         taskmanager._task_id_counter += 1
         self.taskid = taskmanager._task_id_counter
@@ -117,7 +127,10 @@ class Task:
             if root is None:
                 root = deproot
             elif deproot is not None:
-                assert root is deproot, (root, deproot) # tasks cannot depend on multiple toplevel contexts
+                assert root is deproot, (
+                    root,
+                    deproot,
+                )  # tasks cannot depend on multiple toplevel contexts
         self._cached_root = root
         return root
 
@@ -130,7 +143,7 @@ class Task:
         if realtask is not None:
             result = await realtask.run()
             return result
-        already_launched = (self.future is not None)
+        already_launched = self.future is not None
         if not already_launched:
             self._launch()
             assert self.future is not None
@@ -155,7 +168,10 @@ class Task:
         await asyncio.shield(taskmanager.await_active())
         while len(taskmanager.synctasks):
             await asyncio.sleep(0.001)
-        if not isinstance(self, (UponConnectionTask, EvaluateExpressionTask, GetBufferTask, BackgroundTask)):
+        if not isinstance(
+            self,
+            (UponConnectionTask, EvaluateExpressionTask, GetBufferTask, BackgroundTask),
+        ):
             await taskmanager.await_barrier(self.taskid)
         if isinstance(self, StructuredCellAuthTask):
             scell = self.dependencies[0]
@@ -245,27 +261,38 @@ class Task:
             taskmanager.cancel_task(self)
 
     def __str__(self):
-        return(self.__class__.__name__ + " " + str(self.taskid))
+        return self.__class__.__name__ + " " + str(self.taskid)
+
 
 class BackgroundTask(Task):
     pass
+
 
 from .set_value import SetCellValueTask
 from .set_buffer import SetCellBufferTask
 from .serialize_buffer import SerializeToBufferTask
 from .deserialize_buffer import DeserializeBufferTask
-from .checksum import CellChecksumTask, CalculateChecksumTask
+from .checksum import CalculateChecksumTask
 from .cell_update import CellUpdateTask
 from .get_buffer import GetBufferTask
 from .upon_connection import UponConnectionTask, UponBiLinkTask
 from .structured_cell import StructuredCellAuthTask, StructuredCellJoinTask
 from .evaluate_expression import EvaluateExpressionTask
-from .get_buffer import GetBufferTask
 from .accessor_update import AccessorUpdateTask
 from .transformer_update import TransformerUpdateTask, TransformerResultUpdateTask
 from ..manager import Manager
-UnblockedTasks = (UponConnectionTask, AccessorUpdateTask, TransformerUpdateTask, 
-                  TransformerResultUpdateTask, CellUpdateTask, SetCellValueTask, 
-                  GetBufferTask, DeserializeBufferTask, SerializeToBufferTask,
-                  CalculateChecksumTask, StructuredCellAuthTask)
-UnblockedTasks += (StructuredCellJoinTask,)  #blocking is managed internally
+
+UnblockedTasks = (
+    UponConnectionTask,
+    AccessorUpdateTask,
+    TransformerUpdateTask,
+    TransformerResultUpdateTask,
+    CellUpdateTask,
+    SetCellValueTask,
+    GetBufferTask,
+    DeserializeBufferTask,
+    SerializeToBufferTask,
+    CalculateChecksumTask,
+    StructuredCellAuthTask,
+)
+UnblockedTasks += (StructuredCellJoinTask,)  # blocking is managed internally

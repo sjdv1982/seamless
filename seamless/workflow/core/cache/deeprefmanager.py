@@ -2,8 +2,8 @@ import asyncio
 import traceback
 from weakref import WeakSet
 
-from ..status import StatusReasonEnum
 from seamless import Checksum, CacheMissError
+from seamless.checksum.get_buffer import get_buffer
 from seamless.checksum.buffer_cache import (
     buffer_cache,
     empty_dict_checksum,
@@ -11,6 +11,8 @@ from seamless.checksum.buffer_cache import (
 )
 from seamless.checksum.calculate_checksum import calculate_dict_checksum
 from seamless.checksum.deserialize import deserialize
+
+from ..status import StatusReasonEnum
 
 _rev_cs_hashpattern = {}
 
@@ -63,7 +65,7 @@ class DeepRefManager:
                 self.big_buffers.add(checksum)
                 return
             sub_checksums2 = [Checksum(cs) for cs in sub_checksums]
-            for n in range(nrefs):
+            for _ in range(nrefs):
                 buffer_cache._incref(
                     sub_checksums2, persistent=subchecksums_persistent, buffers=None
                 )
@@ -266,7 +268,6 @@ class DeepRefManager:
                 assert refcount >= 0
                 assert checksum in self.checksum_to_subchecksums, checksum.hex()
             except AssertionError:
-                import traceback
 
                 traceback.print_exc()
                 return
@@ -282,4 +283,3 @@ class DeepRefManager:
 deeprefmanager = DeepRefManager()
 
 from ..protocol.deep_structure import deep_structure_to_checksums
-from seamless.checksum.get_buffer import get_buffer

@@ -1,6 +1,8 @@
 #!/usr/bin/env -S python3 -u
 # type: ignore   # disable PyLance, as it cannot import seamless from here. Pylint still works correctly
-# pylint: disable=import-self
+# pylint: disable=import-self, wrong-import-position
+
+"""Main command-line seamless executable script"""
 
 __version__ = "0.12"
 
@@ -13,8 +15,7 @@ import json
 import time
 import traceback
 import threading
-
-stdout_lock = threading.Lock()
+import logging
 
 os.environ["__SEAMLESS_FRUGAL"] = "1"
 import seamless
@@ -40,6 +41,8 @@ from seamless.Environment import Environment
 from seamless.checksum.json import json_dumps
 from seamless.workflow.core.direct.run import fingertip, extract_dunder, tf_get_buffer
 from seamless.checksum.calculate_checksum import calculate_checksum
+
+stdout_lock = threading.Lock()
 
 parser = argparse.ArgumentParser()
 parser.add_argument(
@@ -475,12 +478,12 @@ for commandnr, command in enumerate(commands):
     shim = None
     if interface_file is not None:
         msg(2, f"loading {interface_file}")
-        new_interface_data = interface.load(interface_file.as_posix())
-        msg(3, f"{interface_file} content: {json.dumps(new_interface_data, indent=2)}")
-        new_shim = new_interface_data.get("shim")
+        _new_interface_data = interface.load(interface_file.as_posix())
+        msg(3, f"{interface_file} content: {json.dumps(_new_interface_data, indent=2)}")
+        new_shim = _new_interface_data.get("shim")
         if new_shim is not None:
             shim = new_shim
-        update_interface_data(new_interface_data, first=(commandnr == 0))
+        update_interface_data(_new_interface_data, first=(commandnr == 0))
 
     if commandnr == 0:
         interface_py_file = None
@@ -493,16 +496,17 @@ for commandnr, command in enumerate(commands):
                 command_words[0] = mapped_execarg
 
         arguments = command_words[interface_argindex + 1 :]
-        new_interface_data = interface.interface_from_py_file(
+        _new_interface_data = interface.interface_from_py_file(
             interface_py_file, arguments
         )
         msg(
-            3, f"{interface_py_file} result: {json.dumps(new_interface_data, indent=2)}"
+            3,
+            f"{interface_py_file} result: {json.dumps(_new_interface_data, indent=2)}",
         )
-        new_shim = new_interface_data.get("shim")
+        new_shim = _new_interface_data.get("shim")
         if new_shim is not None:
             shim = new_shim
-        update_interface_data(new_interface_data, first=(commandnr == 0))
+        update_interface_data(_new_interface_data, first=(commandnr == 0))
 
         if shim:
             wordnode = command.wordnodes[interface_argindex]
@@ -534,11 +538,11 @@ else:
     decal = os.path.relpath(os.getcwd(), workdir)
     if decal != ".":
         results_initial2 = results_initial.copy()
-        for k, v in results_initial.items():
-            if v is None:
-                kk = os.path.join(decal, k)
-                results_initial2.pop(k)
-                results_initial2[kk] = v
+        for _k, _v in results_initial.items():
+            if _v is None:
+                _kk = os.path.join(decal, _k)
+                results_initial2.pop(_k)
+                results_initial2[_kk] = _v
         results_initial = results_initial2
 
 results = results_initial.copy()
@@ -736,31 +740,30 @@ if args.dry_run:
         transformation_buffer = tf_get_buffer(transformation_dict)
         dunder = extract_dunder(transformation_dict)
         if dunder:
-            with open(os.path.join(args.write_job, "dunder.json"), "wb") as f:
-                f.write(json_dumps(dunder, as_bytes=True) + b"\n")
+            with open(os.path.join(args.write_job, "dunder.json"), "wb") as _f:
+                _f.write(json_dumps(dunder, as_bytes=True) + b"\n")
         code_checksum = transformation_dict["code"][2]
         env_checksum = transformation_dict.get("__env__")
         if args.upload:
             with open(
                 os.path.join(args.write_job, "transformation.json.CHECKSUM"), "w"
-            ) as f:
-                f.write(transformation_checksum)
+            ) as _f:
+                _f.write(transformation_checksum)
         else:
-            with open(os.path.join(args.write_job, "transformation.json"), "wb") as f:
-                f.write(transformation_buffer)
+            with open(os.path.join(args.write_job, "transformation.json"), "wb") as _f:
+                _f.write(transformation_buffer)
             command = buffer_cache.buffer_cache[bytes.fromhex(code_checksum)]
-            with open(os.path.join(args.write_job, "command.txt"), "wb") as f:
-                f.write(command)
+            with open(os.path.join(args.write_job, "command.txt"), "wb") as _f:
+                _f.write(command)
             if env_checksum is not None:
                 env_buffer = buffer_cache.buffer_cache[bytes.fromhex(env_checksum)]
-                with open(os.path.join(args.write_job, "env.json"), "wb") as f:
-                    f.write(env_buffer)
+                with open(os.path.join(args.write_job, "env.json"), "wb") as _f:
+                    _f.write(env_buffer)
 
     if args.upload or args.write_job:
         print(transformation_checksum)
 
         # kludge to hide spurious "buffers undestroyed" warnings
-        import logging
 
         logger = logging.getLogger("seamless")
         logger.setLevel(logging.ERROR)
@@ -904,8 +907,6 @@ def download_result(filename, file_checksum):
 
 
 # kludge to hide spurious "buffers undestroyed" warnings
-import logging
-
 logger = logging.getLogger("seamless")
 logger.setLevel(logging.ERROR)
 
@@ -945,32 +946,34 @@ else:
         directories_to_download = []
         download_checksum_dict = {}
 
-        for result_target, download_target in result_targets.items():
-            if download_target is None:
-                download_target = result_target
-            if result_target in result_checksum_dict:  # file
-                result = result_checksum_dict[result_target]
-                download_checksum_dict[download_target] = result
-                write_result_checksum(download_target, result)
-                files_to_download.append(download_target)
+        for _result_target, _download_target in result_targets.items():
+            if _download_target is None:
+                _download_target = _result_target
+            if _result_target in result_checksum_dict:  # file
+                _result = result_checksum_dict[_result_target]
+                download_checksum_dict[_download_target] = _result
+                write_result_checksum(_download_target, _result)
+                files_to_download.append(_download_target)
             else:
                 curr_files = [
-                    f for f in result_checksum_dict if f.startswith(result_target + "/")
+                    f
+                    for f in result_checksum_dict
+                    if f.startswith(_result_target + "/")
                 ]
                 if not len(curr_files):
-                    msg(0, f"No result for '{download_target}' was returned")
+                    msg(0, f"No result for '{_download_target}' was returned")
                     continue
-                striplen = len(result_target) + 1
+                striplen = len(_result_target) + 1
                 result = {f[striplen:]: result_checksum_dict[f] for f in curr_files}
 
-                index_checksum = write_result_index(download_target, result)
-                if index_checksum is not None:
-                    write_result_checksum(download_target, index_checksum)
+                _index_checksum = write_result_index(_download_target, result)
+                if _index_checksum is not None:
+                    write_result_checksum(_download_target, _index_checksum)
 
-                for f in result:
-                    ff = download_target + "/" + f
-                    download_checksum_dict[ff] = result[f]
-                directories_to_download.append(download_target)
+                for _f in result:
+                    _ff = _download_target + "/" + _f
+                    download_checksum_dict[_ff] = result[_f]
+                directories_to_download.append(_download_target)
 
         if not args.no_download and not args.scratch:
             download(

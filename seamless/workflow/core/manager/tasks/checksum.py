@@ -1,5 +1,5 @@
 from seamless import Checksum
-from . import Task, BackgroundTask
+from . import BackgroundTask
 from seamless.checksum.cached_calculate_checksum import cached_calculate_checksum
 
 
@@ -21,18 +21,3 @@ class CalculateChecksumTask(BackgroundTask):
         if self.buffer:
             assert result
         return result
-
-
-class CellChecksumTask(Task):
-    """Makes sure that the cell's checksum is current"""
-
-    def __init__(self, manager, cell):
-        self.cell = cell
-        super().__init__(manager)
-        self._dependencies.append(cell)
-
-    async def _run(self):
-        taskmanager = self.manager().taskmanager
-        cell = self.cell
-        await taskmanager.await_upon_connection_tasks(self.taskid, self._root())
-        await taskmanager.await_cell(cell, self.taskid, self._root())

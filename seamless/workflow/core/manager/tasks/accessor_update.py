@@ -179,4 +179,3 @@ from ...macro import Macro, Path as MacroPath
 from ...cell import Cell
 from ...status import StatusReasonEnum
 from . import acquire_evaluation_lock, release_evaluation_lock
-from ...macro import Path as MacroPath

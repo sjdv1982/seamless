@@ -1,5 +1,9 @@
 """Canceling system
 
+***This is probably the hairiest and most complicated piece of code in seamless.workflow.core.***
+
+Possible cyclic dependencies are dealt with (hopefully correctly).
+
 There are two canceling signals:
 "void" means that an element is None and will remain None.
 non-void means that the element is None but may be filled up later ("pending")
@@ -17,8 +21,11 @@ The signals are then applied to the elements in the "resolve" stage of the cance
   This always gives the correct result if at least one received signal is void.
   However, in case of a non-void signal, this is often over-eager, so the worker may have to be re-voided.
 
-- Structured cells are complicated.
+- Structured cells are complicated. 
+  See the docstring of get_scell_state for the different states a structured cell may be in.
+
 """
+
 import weakref
 import traceback
 
@@ -26,39 +33,42 @@ from enum import Enum
 
 from seamless import Checksum
 
-SCModeEnum = Enum("SCModeEnum", (
-    "VOID",
-    "EQUILIBRIUM",
-    "PENDING",
-    "AUTH_JOINING",
-    "JOINING",
-    "FORCE_JOINING"
-))
+SCModeEnum = Enum(
+    "SCModeEnum",
+    ("VOID", "EQUILIBRIUM", "PENDING", "AUTH_JOINING", "JOINING", "FORCE_JOINING"),
+)
 
 import logging
+
 logger = logging.getLogger(__name__)
+
 
 def print_info(*args):
     msg = " ".join([str(arg) for arg in args])
     logger.info(msg)
 
+
 def print_warning(*args):
     msg = " ".join([str(arg) for arg in args])
     logger.warning(msg)
+
 
 def print_debug(*args):
     msg = " ".join([str(arg) for arg in args])
     logger.debug(msg)
 
+
 def print_error(*args):
     msg = " ".join([str(arg) for arg in args])
     logger.error(msg)
+
 
 def scell_any_pending(scell):
     for ic in scell.inchannels.values():
         if not Checksum(ic._checksum) and not ic._void:
             return True
     return False
+
 
 def get_scell_state(scell, verbose=False):
     """Returns the state for a structured cell.
@@ -91,9 +101,17 @@ def get_scell_state(scell, verbose=False):
     joining = scell._joining
     modified_auth = scell._modified_auth
     auth_invalid = scell._auth_invalid
-    pending_inchannels = {k for k,ic in scell.inchannels.items() if (not Checksum(ic._checksum) and not ic._void)}
-    valid_inchannels = {k for k,ic in scell.inchannels.items() if not ic._void}
-    devalued_inchannels = {k for k,ic in scell.inchannels.items() if (ic._void and ic._last_state[1] is not None)}
+    pending_inchannels = {
+        k
+        for k, ic in scell.inchannels.items()
+        if (not Checksum(ic._checksum) and not ic._void)
+    }
+    valid_inchannels = {k for k, ic in scell.inchannels.items() if not ic._void}
+    devalued_inchannels = {
+        k
+        for k, ic in scell.inchannels.items()
+        if (ic._void and ic._last_state[1] is not None)
+    }
     has_auth = scell.auth is not None and Checksum(scell.auth._checksum)
     has_exc = scell._exception is not None and not auth_invalid
 
@@ -124,7 +142,7 @@ def get_scell_state(scell, verbose=False):
                         result = "devalued-"
                     else:
                         result = "equilibrium"
-        else: # implies has_auth
+        else:  # implies has_auth
             if has_exc:
                 result = "void"
             else:
@@ -134,13 +152,25 @@ def get_scell_state(scell, verbose=False):
                     result = "equilibrium"
 
     if verbose:
-        print("STATE", scell, result, modified_auth, auth_invalid, pending_inchannels, valid_inchannels, devalued_inchannels, has_auth, has_exc)
+        print(
+            "STATE",
+            scell,
+            result,
+            modified_auth,
+            auth_invalid,
+            pending_inchannels,
+            valid_inchannels,
+            devalued_inchannels,
+            has_auth,
+            has_exc,
+        )
 
     return result
 
 
 class StructuredCellCancellation:
     _inconsistent = False
+
     def __init__(self, scell, cycle, trigger=False):
         if scell in cycle.to_unvoid:
             cycle._unvoid_structured_cell(scell)
@@ -149,17 +179,25 @@ class StructuredCellCancellation:
         self.state = get_scell_state(scell)
         if self.state == "void":
             # Structured cells with auth checksums may have been unvoided during translation
-            scell._data._void = True  
+            scell._data._void = True
         self.mode = scell._mode
         if self.mode is None:
             self.mode = SCModeEnum.VOID
         self.has_propagated = False
         self.canceled_inchannels = {}
         livegraph = cycle.manager().livegraph
-        if not len(livegraph._destroying) and not scell._destroyed and not scell._cyclic:
+        if (
+            not len(livegraph._destroying)
+            and not scell._destroyed
+            and not scell._cyclic
+        ):
             try:
-                assert (self.state == "void") == scell._data._void, (scell, scell._data._void, self.state)
-            except:
+                assert (self.state == "void") == scell._data._void, (
+                    scell,
+                    scell._data._void,
+                    self.state,
+                )
+            except AssertionError:
                 self._inconsistent = True
                 known_inconsistency = cycle._known_inconsistencies.get(scell.path)
                 incon = (self.state, scell._data._void)
@@ -184,7 +222,11 @@ class StructuredCellCancellation:
             return
 
         if inpath is not None:
-            if self.mode not in (SCModeEnum.VOID, SCModeEnum.EQUILIBRIUM, SCModeEnum.JOINING):
+            if self.mode not in (
+                SCModeEnum.VOID,
+                SCModeEnum.EQUILIBRIUM,
+                SCModeEnum.JOINING,
+            ):
                 return
             if scell._cyclic:
                 return
@@ -226,26 +268,16 @@ class StructuredCellCancellation:
             print_debug("***CANCEL***: unvoided %s" % scell)
         elif Checksum(scell._data._checksum):
             print_debug("***CANCEL***: cleared %s" % scell)
-        manager._set_cell_checksum(
-            scell._data, None,
-            void=False
-        )
+        manager._set_cell_checksum(scell._data, None, void=False)
         if get_scell_state(scell) == "auth_joining":
             if scell.auth is not None:
                 if scell.auth._void:
                     print_debug("***CANCEL***: unvoided auth %s" % scell)
                 elif Checksum(scell.auth._checksum):
                     print_debug("***CANCEL***: cleared auth %s" % scell)
-                manager._set_cell_checksum(
-                    scell.auth, None,
-                    void=False
-                )
+                manager._set_cell_checksum(scell.auth, None, void=False)
         if scell.buffer is not None:
-            manager._set_cell_checksum(
-                scell.buffer, None,
-                void=False
-            )
-
+            manager._set_cell_checksum(scell.buffer, None, void=False)
 
     def resolve(self, taskmanager, manager):
         if self._inconsistent:
@@ -265,14 +297,21 @@ class StructuredCellCancellation:
                 print_debug("***CANCEL***: voided %s, inchannel %s" % (scell, path))
             elif not void and Checksum(ic._checksum):
                 if scell._cyclic:
-                    print_debug("***CANCEL***: refused to clear cyclic %s, inchannel %s" % (scell, path))
+                    print_debug(
+                        "***CANCEL***: refused to clear cyclic %s, inchannel %s"
+                        % (scell, path)
+                    )
                     continue
                 print_debug("***CANCEL***: cleared %s, inchannel %s" % (scell, path))
             if reason is None and void:
                 reason = StatusReasonEnum.UPSTREAM
             manager._set_inchannel_checksum(
-                ic, None, void, status_reason=reason,
-                prelim=False, from_cancel_system=True
+                ic,
+                None,
+                void,
+                status_reason=reason,
+                prelim=False,
+                from_cancel_system=True,
             )
 
         old_state = self.state
@@ -283,7 +322,6 @@ class StructuredCellCancellation:
             self.clear_sc_data()
             self.launch_auth_task(taskmanager)
 
-
         """
         print("RESOLVE", scell, old_state, new_state, self.mode, not Checksum(scell._data._checksum))
         get_scell_state(scell, verbose=True)
@@ -292,11 +330,17 @@ class StructuredCellCancellation:
             if self.mode == SCModeEnum.VOID:
                 pass
             elif self.mode == SCModeEnum.AUTH_JOINING:
-                assert not Checksum(scell.auth._checksum), (scell, old_state, new_state, self.mode)
+                assert not Checksum(scell.auth._checksum), (
+                    scell,
+                    old_state,
+                    new_state,
+                    self.mode,
+                )
                 if scell.auth is not scell._data:
                     # KLUDGE: disable this, as it gives a heisenbug problem in stdlib/map/testing.py
                     ### assert not scell.auth._void, scell
-                    pass ###
+                    # TODO: have another look at this...
+                    pass  ###
                 assert scell._auth_invalid
                 print_debug("***CANCEL***: voided auth %s" % scell)
                 scell.auth._void = True
@@ -305,28 +349,49 @@ class StructuredCellCancellation:
                 else:
                     reason = StatusReasonEnum.UNDEFINED
                 self.cycle().to_void.append((scell, reason))
-            elif self.mode in (SCModeEnum.JOINING, SCModeEnum.AUTH_JOINING, SCModeEnum.FORCE_JOINING):
+            elif self.mode in (
+                SCModeEnum.JOINING,
+                SCModeEnum.AUTH_JOINING,
+                SCModeEnum.FORCE_JOINING,
+            ):
                 if self.mode != SCModeEnum.FORCE_JOINING and not scell._cyclic:
                     # The join task went wrong
-                    assert not Checksum(scell._data._checksum), (scell, old_state, new_state, self.mode)
+                    assert not Checksum(scell._data._checksum), (
+                        scell,
+                        old_state,
+                        new_state,
+                        self.mode,
+                    )
                 else:
                     # The forced join task might have gone wrong;
                     # or it succeeded, but later on, all valid inchannels were voided
                     pass
-                reason = _get_scell_status_reason(scell)                
+                reason = _get_scell_status_reason(scell)
                 print_debug("***CANCEL***: marked for void %s (from joining)" % scell)
                 self.cycle().to_void.append((scell, reason))
             elif self.mode == SCModeEnum.PENDING:
                 # The last pending inchannel got void-canceled
-                assert not Checksum(scell._data._checksum), (scell, old_state, new_state, self.mode)
+                assert not Checksum(scell._data._checksum), (
+                    scell,
+                    old_state,
+                    new_state,
+                    self.mode,
+                )
                 reason = _get_scell_status_reason(scell)
                 print_debug("***CANCEL***: marked for void (from pending) %s" % scell)
                 self.cycle().to_void.append((scell, reason))
             elif self.mode == SCModeEnum.EQUILIBRIUM:
                 # The last valued inchannel got void-canceled
-                assert Checksum(scell._data._checksum), (scell, old_state, new_state, self.mode)
+                assert Checksum(scell._data._checksum), (
+                    scell,
+                    old_state,
+                    new_state,
+                    self.mode,
+                )
                 reason = _get_scell_status_reason(scell)
-                print_debug("***CANCEL***: marked for void (from equilibrium) %s" % scell)
+                print_debug(
+                    "***CANCEL***: marked for void (from equilibrium) %s" % scell
+                )
                 self.cycle().to_void.append((scell, reason))
             else:
                 raise ValueError((scell, old_state, new_state, self.mode))
@@ -344,7 +409,12 @@ class StructuredCellCancellation:
             return
 
         if new_state == "joining":
-            assert self.mode in (SCModeEnum.JOINING, SCModeEnum.FORCE_JOINING), (scell, old_state, new_state, self.mode)
+            assert self.mode in (SCModeEnum.JOINING, SCModeEnum.FORCE_JOINING), (
+                scell,
+                old_state,
+                new_state,
+                self.mode,
+            )
             # Nothing to do; wait until the join task will finish, disable "joining", and trigger us
             return
 
@@ -372,7 +442,12 @@ class StructuredCellCancellation:
                     if not self.has_propagated:
                         self.cycle().to_cancel.append(scell)
             else:
-                assert self.mode == SCModeEnum.PENDING, (scell, old_state, new_state, self.mode)
+                assert self.mode == SCModeEnum.PENDING, (
+                    scell,
+                    old_state,
+                    new_state,
+                    self.mode,
+                )
                 assert old_state == "pending", (scell, old_state, new_state, self.mode)
                 if not self.has_propagated:
                     self.cycle().to_cancel.append(scell)
@@ -384,24 +459,34 @@ class StructuredCellCancellation:
                 pass
             elif self.mode == SCModeEnum.EQUILIBRIUM:
                 # or: the schema was modified
-                assert not Checksum(scell._data._checksum), (scell, old_state, new_state, self.mode)
+                assert not Checksum(scell._data._checksum), (
+                    scell,
+                    old_state,
+                    new_state,
+                    self.mode,
+                )
             else:
                 # or: we were already in this state (probably a trigger cancel)
                 assert old_state == "join", (scell, old_state, new_state, self.mode)
-            if scell._mode is not None:   # or: if auth is set from initial translation
+            if scell._mode is not None:  # or: if auth is set from initial translation
                 if scell._cyclic and self.mode == SCModeEnum.VOID:
                     self.cycle().to_unvoid.append(scell)
                 else:
                     if old_state == "join" and self.mode == SCModeEnum.VOID:
                         pass
                     else:
-                        assert self.mode in (SCModeEnum.PENDING, SCModeEnum.JOINING, SCModeEnum.AUTH_JOINING, SCModeEnum.EQUILIBRIUM, SCModeEnum.FORCE_JOINING), (old_state, new_state, scell._mode)
+                        assert self.mode in (
+                            SCModeEnum.PENDING,
+                            SCModeEnum.JOINING,
+                            SCModeEnum.AUTH_JOINING,
+                            SCModeEnum.EQUILIBRIUM,
+                            SCModeEnum.FORCE_JOINING,
+                        ), (old_state, new_state, scell._mode)
             taskmanager.cancel_structured_cell(scell, no_auth=True)
             scell._joining = True
             StructuredCellJoinTask(taskmanager.manager, scell).launch()
             scell._mode = SCModeEnum.JOINING
             return
-
 
         if new_state == "equilibrium":
             if self.mode == SCModeEnum.EQUILIBRIUM:
@@ -428,7 +513,15 @@ class StructuredCellCancellation:
                     # Special case
                     pass
                 else:
-                    raise ValueError((scell, old_state, new_state, self.mode, not Checksum(scell._data._checksum)))
+                    raise ValueError(
+                        (
+                            scell,
+                            old_state,
+                            new_state,
+                            self.mode,
+                            not Checksum(scell._data._checksum),
+                        )
+                    )
             scell._mode = SCModeEnum.EQUILIBRIUM
             return
 
@@ -439,7 +532,15 @@ class StructuredCellCancellation:
             # 3. Join/auth tasks will clear the devalued channels
             # HOWEVER, join/auth tasks will only clear at the end
             if self.mode != SCModeEnum.EQUILIBRIUM:
-                raise ValueError((scell, old_state, new_state, self.mode, not Checksum(scell._data._checksum)))
+                raise ValueError(
+                    (
+                        scell,
+                        old_state,
+                        new_state,
+                        self.mode,
+                        not Checksum(scell._data._checksum),
+                    )
+                )
             taskmanager.cancel_structured_cell(scell, no_auth=True)
             self.clear_sc_data()
             scell._joining = True
@@ -457,6 +558,7 @@ class StructuredCellCancellation:
 
         raise ValueError(new_state)
 
+
 def void_worker(upstreams):
     for pinname, accessor in upstreams.items():
         if pinname == "META":
@@ -467,19 +569,22 @@ def void_worker(upstreams):
             return StatusReasonEnum.UPSTREAM
     return None
 
+
 from collections import deque
+
 
 class CancellationCycle:
     """
-    NOTE: all cancellation must happen within one async step
+    ***NOTE***: all cancellation must happen within one async step
     Therefore, the direct or indirect call of _sync versions of coroutines
     (e.g. deserialize_sync, which launches coroutines and waits for them)
-    IS NOT ALLOWED
+    ***IS NOT ALLOWED***
 
     Calling back into the cancel system is OK after we clear the cycle, creating a nested resolve
     Calling the unvoid system is OK, although it may call back into the cancel system
     In both cases, the rule is: after clearing the cycle, in nested resolves, you can void but not unvoid
     """
+
     cleared = False
 
     def __init__(self, manager):
@@ -499,11 +604,10 @@ class CancellationCycle:
         self.cells = {}  # => void, reason
         self.scells = {}  # StructuredCell => StructuredCellCancellation
         self.accessors = {}  # => void, reason
-        self.workers = {} # => void, reason, fired_unvoid. Transformers and Reactors.
+        self.workers = {}  # => void, reason, fired_unvoid. Transformers and Reactors.
         self.macros = {}  # => void, reason
         self.macros_to_destroy = []
         self.cleared = True
-
 
     def cancel_cell(self, cell, void, reason):
         assert not self.cleared
@@ -537,15 +641,14 @@ class CancellationCycle:
             accessor_reason = StatusReasonEnum.UNCONNECTED
 
         for accessor in accessors:
-            self.cancel_accessor(
-                accessor, void=void,
-                reason=accessor_reason
-            )
+            self.cancel_accessor(accessor, void=void, reason=accessor_reason)
         if cell in livegraph.cell_to_macro_elision:
             for elision in livegraph.cell_to_macro_elision[cell]:
                 macro = elision.macro
                 if macro._in_elision:
-                    self.cancel_macro(macro, void=void, reason=StatusReasonEnum.UPSTREAM)
+                    self.cancel_macro(
+                        macro, void=void, reason=StatusReasonEnum.UPSTREAM
+                    )
 
     def _resolve_cell(self, taskmanager, manager, cell, void, reason):
         if void and cell._void:
@@ -562,7 +665,9 @@ class CancellationCycle:
             else:
                 print_debug("***CANCEL***: cleared %s" % cell)
         # use the _set_cell_checksum API, because we don't want to re-trigger a cancel cycle
-        manager._set_cell_checksum(cell, None, void, status_reason=reason) # no async, so OK
+        manager._set_cell_checksum(
+            cell, None, void, status_reason=reason
+        )  # no async, so OK
 
     def _cancel_cell_path(self, scell, path, *, void, reason):
         assert not self.cleared
@@ -583,10 +688,7 @@ class CancellationCycle:
             accessor_reason = StatusReasonEnum.UNCONNECTED
 
         for accessor in accessors:
-            self.cancel_accessor(
-                accessor, void=void,
-                reason=accessor_reason
-            )
+            self.cancel_accessor(accessor, void=void, reason=accessor_reason)
 
     def cancel_scell_inpath(self, scell, path, *, void, reason):
         assert not self.cleared
@@ -609,12 +711,19 @@ class CancellationCycle:
                 if not scell._data._void:
                     print_debug("***CANCEL***: voided %s" % scell)
                     manager = self.manager()
-                    manager._set_cell_checksum(scell._data, None, void=True, status_reason=StatusReasonEnum.INVALID)
+                    manager._set_cell_checksum(
+                        scell._data,
+                        None,
+                        void=True,
+                        status_reason=StatusReasonEnum.INVALID,
+                    )
         else:
             if scell._data._void:
                 unvoid_by_schema = False
                 if update_schema and not scell._auth_invalid:
-                    valid_inchannels = {k for k,ic in scell.inchannels.items() if not ic._void}
+                    valid_inchannels = {
+                        k for k, ic in scell.inchannels.items() if not ic._void
+                    }
                     has_auth = scell.auth is not None and Checksum(scell.auth._checksum)
                     if has_auth or valid_inchannels:
                         unvoid_by_schema = True
@@ -658,14 +767,17 @@ class CancellationCycle:
         if isinstance(target, Cell):
             if accessor.write_accessor.path is None:
                 if target._structured_cell is not None:
-                    assert target._structured_cell.schema is target, target # cancel_cell only on schema cells, else use cancel_scell_inpath
+                    assert (
+                        target._structured_cell.schema is target
+                    ), target  # cancel_cell only on schema cells, else use cancel_scell_inpath
                 return self.cancel_cell(target, void=void, reason=reason)
             else:
                 assert target._structured_cell is not None
                 self.cancel_scell_inpath(
                     target._structured_cell,
                     accessor.write_accessor.path,
-                    void=void, reason=reason
+                    void=void,
+                    reason=reason,
                 )
         elif isinstance(target, Worker):
             if isinstance(target, (Transformer, Reactor)):
@@ -682,7 +794,7 @@ class CancellationCycle:
         taskmanager.cancel_accessor(accessor, origin_task=origin_task)
         if accessor.expression is not None:
             accessor.clear_expression(manager.livegraph)
-        accessor._checksum = None  #  accessors do not hold references to their checksums. Expressions do.
+        accessor._checksum = None  #  No need to decref. Accessors do not hold references to their checksums. Expressions do.
         accessor._void = void
         if not void:
             accessor.exception = None
@@ -713,10 +825,13 @@ class CancellationCycle:
                     return
                 raise KeyError(worker)
 
-        else: # reactor
+        else:  # reactor
 
-            outputpins = [pinname for pinname in worker._pins \
-                if worker._pins[pinname].io == "output" ]
+            outputpins = [
+                pinname
+                for pinname in worker._pins
+                if worker._pins[pinname].io == "output"
+            ]
 
             downstreams = []
             all_downstreams = livegraph.reactor_to_downstream.get(worker, None)
@@ -745,14 +860,15 @@ class CancellationCycle:
                     accessor, void=void, reason=StatusReasonEnum.UPSTREAM
                 )
 
-
     def cancel_transformer(self, transformer, *, void, reason):
         return self._cancel_worker(transformer, void=void, reason=reason)
 
     def cancel_reactor(self, reactor, *, void, reason):
         return self._cancel_worker(reactor, void=void, reason=reason)
 
-    def _resolve_transformer(self, taskmanager, manager, transformer, void, reason, fired_unvoid):
+    def _resolve_transformer(
+        self, taskmanager, manager, transformer, void, reason, fired_unvoid
+    ):
         if void:
             assert reason is not None
             if transformer._void:
@@ -783,19 +899,18 @@ class CancellationCycle:
                 if Checksum(transformer._checksum):
                     print_debug("***CANCEL***: cleared %s" % transformer)
 
-
         void_error = (void == True) and (reason == StatusReasonEnum.ERROR)
         taskmanager.cancel_transformer(transformer)
-        manager.cachemanager.transformation_cache.cancel_transformer(transformer, void_error)
+        manager.cachemanager.transformation_cache.cancel_transformer(
+            transformer, void_error
+        )
         manager._set_transformer_checksum(
-            transformer, None, void,
-            status_reason=reason,
-            prelim=False
+            transformer, None, void, status_reason=reason, prelim=False
         )
 
-
-
-    def _resolve_reactor(self, taskmanager, manager, reactor, void, reason, fired_unvoid):
+    def _resolve_reactor(
+        self, taskmanager, manager, reactor, void, reason, fired_unvoid
+    ):
         if void:
             assert reason is not None
             if reactor._void:
@@ -825,11 +940,9 @@ class CancellationCycle:
                     self.to_cancel.append(reactor)
                     return
 
-
-        reactor._pending = (not void)
+        reactor._pending = not void
         reactor._void = void
         reactor._status_reason = reason
-
 
     def cancel_macro(self, macro, *, void, reason):
         assert not self.cleared
@@ -868,7 +981,7 @@ class CancellationCycle:
     def resolve(self):
         try:
             self.nested_resolve += 1
-            #print("CYCLE")
+            # print("CYCLE")
             assert not self.cleared
             manager = self.manager()
             livegraph = manager.livegraph
@@ -886,13 +999,17 @@ class CancellationCycle:
                 scell_cancellation.resolve(taskmanager, manager)
             for worker, (void, reason, fired_unvoid) in list(self.workers.items()):
                 if isinstance(worker, Transformer):
-                    self._resolve_transformer(taskmanager, manager, worker, void, reason, fired_unvoid )
+                    self._resolve_transformer(
+                        taskmanager, manager, worker, void, reason, fired_unvoid
+                    )
                 else:
-                    self._resolve_reactor(taskmanager, manager, worker, void, reason, fired_unvoid)
+                    self._resolve_reactor(
+                        taskmanager, manager, worker, void, reason, fired_unvoid
+                    )
             for macro, (void, reason) in list(self.macros.items()):
                 self._resolve_macro(macromanager, manager, macro, void, reason)
             self._clear()
-            #print("/CYCLE")
+            # print("/CYCLE")
 
             for macro in list(self.macros_to_destroy):
                 gen_context = macro._gen_context
@@ -922,8 +1039,7 @@ class CancellationCycle:
                         if not scell._data._void:
                             print_debug("***CANCEL***: voided %s" % scell)
                             manager._set_cell_checksum(
-                                scell._data, None, status_reason=reason,
-                                void=True
+                                scell._data, None, status_reason=reason, void=True
                             )
                         accessors_to_cancel = []
                         all_accessors = livegraph.paths_to_downstream.get(cell, {})
@@ -959,7 +1075,7 @@ class CancellationCycle:
         finally:
             self.origin_task = None
 
-        #print("/CYCLE2")
+        # print("/CYCLE2")
 
     def _unvoid_structured_cell(self, scell):
         manager = self.manager()
@@ -968,10 +1084,7 @@ class CancellationCycle:
             scell._exception = None
         if scell._data._void:
             print_debug("***CANCEL***: unvoided %s" % scell)
-            manager._set_cell_checksum(
-                scell._data, None,
-                void=False
-            )
+            manager._set_cell_checksum(scell._data, None, void=False)
         if get_scell_state(scell) == "auth_joining":
             if scell.auth is not None:
                 scell.auth._void = False
@@ -992,16 +1105,18 @@ class CancellationCycle:
                 raise ValueError(scell)  # neither cyclic nor pending
 
         if len(new_cyclic_cells):
-            msg = "Possible cyclic dependencies detected, involving %d cells" % len(new_cyclic_cells)
+            msg = "Possible cyclic dependencies detected, involving %d cells" % len(
+                new_cyclic_cells
+            )
             if len(new_cyclic_cells) <= 5:
                 msg += ":\n"
-                for scell in sorted(new_cyclic_cells,key=lambda c: str(c)):
+                for scell in sorted(new_cyclic_cells, key=lambda c: str(c)):
                     msg += "   " + str(scell) + "\n"
             else:
                 msg += "..."
             print_warning(msg)
 
-        stable = (len(new_cyclic_cells) == 0)
+        stable = len(new_cyclic_cells) == 0
         stable_cells = []
         for scell in old_cyclic_cells:
             checksum = scell._data._checksum
@@ -1013,18 +1128,6 @@ class CancellationCycle:
                 stable = False
             else:
                 stable_cells.append(scell)
-
-        """
-        if stable:
-            for scell in cyclic_scells:
-                if scell_any_pending(scell):
-                    for inchannel in scell.inchannels.values():
-                        if not Checksum(inchannel._checksum) and not inchannel._void:
-                            print_info("cyclic => void pending inchannels", scell)
-                            inchannel._void = False
-                            inchannel._status_reason = None
-                    stable_cells.remove(scell)
-        """
 
         if not stable:
             for scell in stable_cells:
@@ -1041,8 +1144,7 @@ class CancellationCycle:
             livegraph = manager.livegraph
             for scell in cyclic_scells:
                 """
-                from seamless.core.cache.buffer_cache import buffer_cache
-                print("CYCLIC", scell, buffer_cache.get_buffer(scell.checksum,remote=False), scell.exception)
+                print("CYCLIC", scell, scell.checksum, scell.exception)
                 get_scell_state(scell, True)
                 """
                 if scell._cyclic:
@@ -1055,6 +1157,7 @@ class CancellationCycle:
                 scell._mode = SCModeEnum.FORCE_JOINING
             return True  # change
 
+
 def _get_scell_status_reason(scell):
     if scell._exception is not None:
         reason = StatusReasonEnum.INVALID
@@ -1064,9 +1167,8 @@ def _get_scell_status_reason(scell):
         else:
             reason = StatusReasonEnum.UPSTREAM
     return reason
-    
-from ..utils import overlap_path
-from ..manager.accessor import Accessor
+
+
 from ..cell import Cell
 from ..worker import Worker
 from ..transformer import Transformer
@@ -1074,6 +1176,5 @@ from ..macro import Macro, Path
 from ..reactor import Reactor
 from ..status import StatusReasonEnum
 from ..structured_cell import StructuredCell
-from ..manager.tasks.accessor_update import AccessorUpdateTask
 from .tasks.structured_cell import StructuredCellJoinTask, StructuredCellAuthTask
 from .unvoid import unvoid_transformer, unvoid_reactor, unvoid_macro, unvoid_scell_all

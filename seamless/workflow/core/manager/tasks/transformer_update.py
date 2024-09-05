@@ -2,33 +2,41 @@ from seamless import Checksum
 from . import Task
 
 import logging
+
 logger = logging.getLogger(__name__)
+
 
 def print_info(*args):
     msg = " ".join([str(arg) for arg in args])
     logger.info(msg)
 
+
 def print_warning(*args):
     msg = " ".join([str(arg) for arg in args])
     logger.warning(msg)
+
 
 def print_debug(*args):
     msg = " ".join([str(arg) for arg in args])
     logger.debug(msg)
 
+
 def print_error(*args):
     msg = " ".join([str(arg) for arg in args])
     logger.error(msg)
 
+
 class TransformerUpdateTask(Task):
     waiting_for_job = False
+
     def __init__(self, manager, transformer):
         self.transformer = transformer
         super().__init__(manager)
         self._dependencies.append(transformer)
 
     async def _run(self):
-        from ....metalevel.debugmount import debugmountmanager        
+        from ....metalevel.debugmount import debugmountmanager
+
         transformer = self.transformer
         has_debugmount = debugmountmanager.is_mounted(transformer)
         manager = self.manager()
@@ -40,13 +48,16 @@ class TransformerUpdateTask(Task):
 
         if not has_debugmount:
             if transformer._void:
-                print("WARNING: transformer %s is void, shouldn't happen during transformer update" % transformer)
+                print(
+                    "WARNING: transformer %s is void, shouldn't happen during transformer update"
+                    % transformer
+                )
                 manager.cancel_transformer(transformer, True, StatusReasonEnum.ERROR)
                 return
-    
+
         upstreams = livegraph.transformer_to_upstream[transformer]
         downstreams = livegraph.transformer_to_downstream[transformer]
-        
+
         if has_debugmount:
             await debugmountmanager.run(transformer)
             return
@@ -54,28 +65,40 @@ class TransformerUpdateTask(Task):
         for pinname, accessor in upstreams.items():
             if pinname == "META":
                 continue
-            if accessor is None: #unconnected
+            if accessor is None:  # unconnected
                 status_reason = StatusReasonEnum.UNCONNECTED
                 break
         else:
             for pinname, accessor in upstreams.items():
                 if pinname == "META" and accessor is None:
                     continue
-                if accessor._void: #upstream error
+                if accessor._void:  # upstream error
                     status_reason = StatusReasonEnum.UPSTREAM
         if not len(downstreams):
             status_reason = StatusReasonEnum.UNCONNECTED
 
         if status_reason is not None:
-            print("WARNING: transformer %s is void, shouldn't happen during transformer update" % transformer)
+            print(
+                "WARNING: transformer %s is void, shouldn't happen during transformer update"
+                % transformer
+            )
             manager.cancel_transformer(transformer, True, status_reason)
             return
 
         for pinname, accessor in upstreams.items():
             if pinname == "META" and accessor is None:
                 continue
-            if not Checksum(accessor._checksum): #pending; a legitimate use case, but we can't proceed
-                print_debug("ABORT", self.__class__.__name__, hex(id(self)), self.dependencies, " <= pinname", pinname)
+            if not Checksum(
+                accessor._checksum
+            ):  # pending; a legitimate use case, but we can't proceed
+                print_debug(
+                    "ABORT",
+                    self.__class__.__name__,
+                    hex(id(self)),
+                    self.dependencies,
+                    " <= pinname",
+                    pinname,
+                )
                 manager.cancel_transformer(transformer, False)
                 return
 
@@ -111,6 +134,7 @@ class TransformerUpdateTask(Task):
             transformer, celltypes, inputpins, outputpin
         )
 
+
 class TransformerResultUpdateTask(Task):
     def __init__(self, manager, transformer):
         self.transformer = transformer
@@ -123,7 +147,10 @@ class TransformerResultUpdateTask(Task):
             return
         transformer = self.transformer
         if transformer._void:
-            print("WARNING: transformer %s is void, shouldn't happen during transformer update" % transformer)
+            print(
+                "WARNING: transformer %s is void, shouldn't happen during transformer update"
+                % transformer
+            )
             return
 
         livegraph = manager.livegraph
@@ -131,7 +158,8 @@ class TransformerResultUpdateTask(Task):
         checksum = transformer._checksum
         checksum = Checksum(checksum)
 
-        from ....metalevel.debugmount import debugmountmanager        
+        from ....metalevel.debugmount import debugmountmanager
+
         if debugmountmanager.is_mounted(transformer):
             debugmountmanager.debug_result(transformer, checksum)
             return

@@ -869,6 +869,5 @@ from seamless.checksum import Expression
 from .tasks.upon_connection import UponConnectionTask
 from .tasks.structured_cell import StructuredCellAuthTask
 from .tasks import BackgroundTask
-from ..transformer import Transformer
 from ..cache.deeprefmanager import deeprefmanager
 from ..share import sharemanager

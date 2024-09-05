@@ -4,7 +4,8 @@ import sys
 import pathlib
 import ast
 
-def get_pypackage_dependencies(pycode:str, package_name:str, is_init:bool):
+
+def get_pypackage_dependencies(pycode: str, package_name: str, is_init: bool):
     tree = ast.parse(pycode)
     deps = set()
     for node in tree.body:
@@ -22,13 +23,13 @@ def get_pypackage_dependencies(pycode:str, package_name:str, is_init:bool):
                 for name in node.names:
                     deps.add("." + name.name)
                 continue
-            dep = "." * node.level 
+            dep = "." * node.level
             if node.module is not None:
                 dep += node.module
             deps.add(dep)
         else:
             continue
-        
+
     return sorted(list(deps))
 
 
@@ -36,8 +37,9 @@ def pypackage_to_moduledict(pypackage_dirdict, internal_package_name=None):
     code = {}
     if internal_package_name is not None and len(internal_package_name):
         code["__name__"] = internal_package_name
+
     def analyze(d, prefix):
-        for k,v in d.items():
+        for k, v in d.items():
             if isinstance(v, dict):
                 new_prefix = prefix
                 if len(new_prefix):
@@ -70,7 +72,7 @@ def pypackage_to_moduledict(pypackage_dirdict, internal_package_name=None):
                             continue
                         d = pos * "."
                     else:
-                        d = pos * "." + dep[ind+1:]
+                        d = pos * "." + dep[ind + 1 :]
                 while d.startswith("."):
                     dots += 1
                     d = d[1:]
@@ -78,13 +80,13 @@ def pypackage_to_moduledict(pypackage_dirdict, internal_package_name=None):
                     dep2 = ""
                     dpref = ".".join(ff[:-dots])
                     if len(dpref):
-                        dep2 += "." + dpref + "." 
+                        dep2 += "." + dpref + "."
                     dep2 += "__init__"
                 else:
-                    dep2 = "."    
+                    dep2 = "."
                     dpref = ".".join(ff[:-dots])
                     if len(dpref):
-                        dep2 += dpref + "." 
+                        dep2 += dpref + "."
                     dep2 += d
                 if dep2 == f:
                     continue
@@ -96,8 +98,9 @@ def pypackage_to_moduledict(pypackage_dirdict, internal_package_name=None):
                 "dependencies": deps,
             }
             code[f] = item
+
     dirdict = {}
-    for k,v in pypackage_dirdict.items():
+    for k, v in pypackage_dirdict.items():
         if not isinstance(v, str):
             dirdict[k] = v
             continue
@@ -113,8 +116,9 @@ def pypackage_to_moduledict(pypackage_dirdict, internal_package_name=None):
         "language": "python",
         "type": "interpreted",
         "code": code,
-    }    
+    }
     return result
+
 
 def _restore_dependencies(module_definition):
     dep_orig = module_definition.pop("dependencies-ORIGINAL", None)
@@ -124,25 +128,25 @@ def _restore_dependencies(module_definition):
     if isinstance(code, dict):
         for sub_def in code.values():
             _restore_dependencies(sub_def)
-    
-def get_module_definition(module:ModuleType) -> dict[str]:
+
+
+def get_module_definition(module: ModuleType) -> dict[str]:
     from ...core.build_module import module_definition_cache
+
     if module in module_definition_cache:
         result0 = module_definition_cache[module]
         result = deepcopy(result0)
         if "__init__" in result and "code" not in result:
-            result = {
-                "code": result,
-                "language": "python",
-                "type": "interpreted"
-            }
+            result = {"code": result, "language": "python", "type": "interpreted"}
         _restore_dependencies(result)
     else:
+
         def getsource(module):
             with open(module.__file__) as f:
-                #code = inspect.getsource(module).strip("\n")
+                # code = inspect.getsource(module).strip("\n")
                 code = f.read().strip("\n")
             return code
+
         module_file = module.__file__
         if module_file.endswith("__init__.py"):
             module_dir = pathlib.PosixPath(module_file).parent
@@ -157,9 +161,5 @@ def get_module_definition(module:ModuleType) -> dict[str]:
             result = pypackage_to_moduledict(dirdict)
         else:
             code = getsource(module)
-            result = {
-                "code": code,
-                "language": "python",
-                "type": "interpreted"
-            }
+            result = {"code": code, "language": "python", "type": "interpreted"}
     return result

@@ -22,14 +22,14 @@ List of features to discuss/expand:
 
 /NOTE
 
-Seamless consists of a high-level API, a graph format, and a low-level translator-evaluator (core).
-Only the graph formal, being universal, will have a formal specification. 
+Seamless.workflow consists of a high-level API, a graph format, and a low-level translator-evaluator (core).
+Only the graph format, being universal, will have a formal specification. 
 The other two are informal APIs tied to (for now) the Python language. Future alternative implementations
 of Seamless may replace one or both APIs.
 
-The workflow of Seamless can be decoupled as follows:
+The flowchart of Seamless can be decoupled as follows:
 
-1. A graph is constructed using the high-level API (seamless.highlevel).
+1. A graph is constructed using the high-level API (seamless.workflow.highlevel).
    This graph consists of the node topology + cell checksums.
    Topology can be translated while checksums are missing.
    This makes that the graph can describe: 
@@ -45,7 +45,7 @@ The workflow of Seamless can be decoupled as follows:
     in-browser evaluation (CPython => wasm JS).
   Note that Seamless graph construction can be decoupled from evaluation (see below)
 
-2. The mid-level translator (seamless.midlevel) translates a Seamless graph into a low-level seamless context.
+2. The mid-level translator (seamless.workflow.midlevel) translates a Seamless graph into a low-level seamless context.
    The current low-level implementation in Python will be the only one for the foreseeable future.
    However, the entire translator-evaluator will wrapped into Seamless network services that accept graphs.
    These services have various levels of interactivity, but a semi-interactive model (fixed topology, interactive values)

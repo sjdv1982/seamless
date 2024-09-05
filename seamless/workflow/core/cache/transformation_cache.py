@@ -117,6 +117,7 @@ class RemoteTransformer:
 
 class DummyTransformer:
     _status_reason = None
+    _scratch = False
     _debug = None
     _exception_to_clear = None
 

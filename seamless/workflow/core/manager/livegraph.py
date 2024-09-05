@@ -11,23 +11,29 @@ from ..status import StatusReasonEnum
 
 logger = logging.getLogger(__name__)
 
+
 def print_info(*args):
     msg = " ".join([str(arg) for arg in args])
     logger.info(msg)
+
 
 def print_warning(*args):
     msg = " ".join([str(arg) for arg in args])
     logger.warning(msg)
 
+
 def print_debug(*args):
     msg = " ".join([str(arg) for arg in args])
     logger.debug(msg)
+
 
 def print_error(*args):
     msg = " ".join([str(arg) for arg in args])
     logger.error(msg)
 
+
 # NOTE: distinction between simple cells (no StructuredCell monitor), StructuredCell data cells, and StructuredCell buffer cells
+
 
 def destroyer(func):
     def wrapper(*args, **kwargs):
@@ -46,38 +52,52 @@ def destroyer(func):
     update_wrapper(wrapper, func)
     return wrapper
 
+
 async def do_bilink(buffer, checksum, celltype, target_celltype, manager, target_cell):
     expression_result_checksum = await conversion(
-        checksum,
-        celltype, target_celltype,
-        perform_fingertip=False,
-        buffer=buffer
+        checksum, celltype, target_celltype, perform_fingertip=False, buffer=buffer
     )
     manager.set_cell_checksum(
-        target_cell, expression_result_checksum,
+        target_cell,
+        expression_result_checksum,
         initial=False,
         from_structured_cell=False,
-        trigger_bilinks=False
+        trigger_bilinks=False,
     )
+
 
 class LiveGraph:
     def __init__(self, manager):
         self.manager = weakref.ref(manager)
-        self.accessor_to_upstream = {} # Mapping of read accessors to the cell or worker that defines it.
-                                    # Mapping is a tuple (cell-or-worker, pinname), where pinname is None except for reactors.
-        self.expression_to_accessors = {} # Mapping of expressions to the list of read accessors that resolve to it
-        self.cell_to_upstream = {} # Mapping of simple cells to the read accessor that defines it.
-        self.cell_to_downstream = {} # Mapping of simple cells to the read accessors that depend on it.
+        self.accessor_to_upstream = (
+            {}
+        )  # Mapping of read accessors to the cell or worker that defines it.
+        # Mapping is a tuple (cell-or-worker, pinname), where pinname is None except for reactors.
+        self.expression_to_accessors = (
+            {}
+        )  # Mapping of expressions to the list of read accessors that resolve to it
+        self.cell_to_upstream = (
+            {}
+        )  # Mapping of simple cells to the read accessor that defines it.
+        self.cell_to_downstream = (
+            {}
+        )  # Mapping of simple cells to the read accessors that depend on it.
         self.cell_to_editpins = {}
         self.cell_or_path_to_bilink = {}
-        self.paths_to_upstream = {} # Mapping of buffercells-to-dictionary-of-path:upstream-write-accessor.
-        self.paths_to_downstream = {} # Mapping of datacells-to-dictionary-of-path:list-of-downstream-read-accessors
-        self.transformer_to_upstream = {} # input pin to read accessor
+        self.paths_to_upstream = (
+            {}
+        )  # Mapping of buffercells-to-dictionary-of-path:upstream-write-accessor.
+        self.paths_to_downstream = (
+            {}
+        )  # Mapping of datacells-to-dictionary-of-path:list-of-downstream-read-accessors
+        self.transformer_to_upstream = {}  # input pin to read accessor
         self.transformer_to_downstream = {}
-        self.reactor_to_upstream = {} # input pin to read accessor
-        self.reactor_to_downstream = {} # Unlike all other X_to_downstream, this is a dict
+        self.reactor_to_upstream = {}  # input pin to read accessor
+        self.reactor_to_downstream = (
+            {}
+        )  # Unlike all other X_to_downstream, this is a dict
         self.editpin_to_cell = {}
-        self.macro_to_upstream = {} # input pin to read accessor
+        self.macro_to_upstream = {}  # input pin to read accessor
         self.macropath_to_upstream = {}
         self.macropath_to_downstream = {}
         self.macro_elision = {}
@@ -88,7 +108,9 @@ class LiveGraph:
 
         self.datacells = {}
         self.buffercells = {}
-        self.schemacells = {} # cell-to-structuredcell to which it serves as schema; can be multiple
+        self.schemacells = (
+            {}
+        )  # cell-to-structuredcell to which it serves as schema; can be multiple
 
         self.rtreactors = {}
 
@@ -110,9 +132,12 @@ class LiveGraph:
         self.schemacells[cell] = []
 
     def register_transformer(self, transformer):
-        inputpins = [pinname for pinname in transformer._pins \
-            if transformer._pins[pinname].io == "input" ]
-        upstream = {pinname:None for pinname in inputpins}
+        inputpins = [
+            pinname
+            for pinname in transformer._pins
+            if transformer._pins[pinname].io == "input"
+        ]
+        upstream = {pinname: None for pinname in inputpins}
         self.transformer_to_upstream[transformer] = upstream
         self.transformer_to_downstream[transformer] = []
 
@@ -120,28 +145,30 @@ class LiveGraph:
         # Editpins are neither upstream nor downstream,
         #  but have a separate cell_to_editpins mapping
         manager = self.manager()
-        inputpins = [pinname for pinname in reactor._pins \
-            if reactor._pins[pinname].io == "input" ]
-        outputpins = [pinname for pinname in reactor._pins \
-            if reactor._pins[pinname].io == "output" ]
-        editpins = [pinname for pinname in reactor._pins \
-            if reactor._pins[pinname].io == "edit" ]
-        upstream = {pinname:None for pinname in inputpins}
+        inputpins = [
+            pinname for pinname in reactor._pins if reactor._pins[pinname].io == "input"
+        ]
+        outputpins = [
+            pinname
+            for pinname in reactor._pins
+            if reactor._pins[pinname].io == "output"
+        ]
+        editpins = [
+            pinname for pinname in reactor._pins if reactor._pins[pinname].io == "edit"
+        ]
+        upstream = {pinname: None for pinname in inputpins}
         self.reactor_to_upstream[reactor] = upstream
-        downstream = {pinname:[] for pinname in outputpins}
+        downstream = {pinname: [] for pinname in outputpins}
         self.reactor_to_downstream[reactor] = downstream
-        editpin_cell = {pinname:None for pinname in editpins}
+        editpin_cell = {pinname: None for pinname in editpins}
         self.editpin_to_cell[reactor] = editpin_cell
         self.rtreactors[reactor] = RuntimeReactor(
-            manager,
-            reactor,
-            inputpins, outputpins, editpins
+            manager, reactor, inputpins, outputpins, editpins
         )
-
 
     def register_macro(self, macro):
         inputpins = [pinname for pinname in macro._pins]
-        upstream = {pinname:None for pinname in inputpins}
+        upstream = {pinname: None for pinname in inputpins}
         self.macro_to_upstream[macro] = upstream
 
     def register_structured_cell(self, structured_cell):
@@ -179,15 +206,17 @@ class LiveGraph:
 
     def incref_expression(self, expression, accessor):
         if expression not in self.expression_to_accessors:
-            #print("CREATE")
+            # print("CREATE")
             assert expression not in self.expression_to_accessors
             self.expression_to_accessors[expression] = []
             manager = self.manager()
             manager.taskmanager.register_expression(expression)
             exists = manager.cachemanager.register_expression(expression)
             if not exists:
-                manager.cachemanager.incref_checksum(expression.checksum, expression, result=False)
-        #print("INCREF", expression.celltype, expression.target_celltype)
+                manager.cachemanager.incref_checksum(
+                    expression.checksum, expression, result=False
+                )
+        # print("INCREF", expression.celltype, expression.target_celltype)
         self.expression_to_accessors[expression].append(accessor)
 
     def decref_expression(self, expression, accessor):
@@ -199,8 +228,8 @@ class LiveGraph:
             print_warning("Error in decref_expression: non-existing accessor")
             return
         accessors.remove(accessor)
-        #print("DECREF", expression.celltype, expression.target_celltype, accessors)
-        #import traceback; traceback.print_stack(limit=3)
+        # print("DECREF", expression.celltype, expression.target_celltype, accessors)
+        # import traceback; traceback.print_stack(limit=3)
         if not len(accessors):
             self.expression_to_accessors.pop(expression)
             manager = self.manager()
@@ -219,9 +248,9 @@ class LiveGraph:
                 self._get_bilink_targets(source2, targets)
         else:
             for path in source._paths:
-                self._get_bilink_targets(path, targets)    
+                self._get_bilink_targets(path, targets)
 
-    def activate_bilink(self, cell, checksum:Checksum):
+    def activate_bilink(self, cell, checksum: Checksum):
         checksum = Checksum(checksum)
         if isinstance(cell, Path):
             cell = cell._cell
@@ -240,15 +269,19 @@ class LiveGraph:
                 if cell.celltype != target.celltype:
                     coro = do_bilink(
                         cell.buffer,
-                        checksum, cell.celltype, target.celltype,
-                        manager, target
+                        checksum,
+                        cell.celltype,
+                        target.celltype,
+                        manager,
+                        target,
                     )
                     asyncio.ensure_future(coro)
             manager.set_cell_checksum(
-                target, checksum,
+                target,
+                checksum,
                 initial=False,
                 from_structured_cell=False,
-                trigger_bilinks=False
+                trigger_bilinks=False,
             )
         return True
 
@@ -266,10 +299,11 @@ class LiveGraph:
                 continue
             if Checksum(target._checksum):
                 manager.set_cell_checksum(
-                    cell, Checksum(target._checksum),
+                    cell,
+                    Checksum(target._checksum),
                     initial=False,
                     from_structured_cell=False,
-                    trigger_bilinks=False
+                    trigger_bilinks=False,
                 )
                 break
 
@@ -306,8 +340,7 @@ class LiveGraph:
                     self.activate_bilink(target, checksum)
 
     def connect_pin_cell(
-        self, current_macro, source, target,
-        from_upon_connection_task=None
+        self, current_macro, source, target, from_upon_connection_task=None
     ):
         """Connect a pin to a simple cell"""
         assert target._structured_cell is None
@@ -337,9 +370,7 @@ class LiveGraph:
         if celltype is None:
             celltype = target._celltype
         read_accessor = ReadAccessor(
-            source,
-            manager, None, celltype,
-            hash_pattern=source._hash_pattern
+            source, manager, None, celltype, hash_pattern=source._hash_pattern
         )
         if isinstance(worker, Reactor):
             read_accessor.reactor_pinname = pinname
@@ -347,19 +378,25 @@ class LiveGraph:
         if subcelltype is None:
             subcelltype = target._subcelltype
         write_accessor = WriteAccessor(
-            read_accessor, target,
+            read_accessor,
+            target,
             celltype=target._celltype,
             subcelltype=target._subcelltype,
             pinname=None,
             path=None,
-            hash_pattern=target._hash_pattern
+            hash_pattern=target._hash_pattern,
         )
-        assert self.accessor_to_upstream.get(read_accessor) is None, (self.accessor_to_upstream[read_accessor], worker)
+        assert self.accessor_to_upstream.get(read_accessor) is None, (
+            self.accessor_to_upstream[read_accessor],
+            worker,
+        )
 
         # Right before connecting, void-cancel the target (without propagation)
         manager.taskmanager.cancel_cell(target, full=False)
         if not target._void:
-            manager._set_cell_checksum(target, None, void=True, status_reason=StatusReasonEnum.UNDEFINED)
+            manager._set_cell_checksum(
+                target, None, void=True, status_reason=StatusReasonEnum.UNDEFINED
+            )
         else:
             target._status_reason = StatusReasonEnum.UNDEFINED
 
@@ -372,8 +409,7 @@ class LiveGraph:
         return read_accessor
 
     def connect_cell_pin(
-        self, current_macro, source, target,
-        from_upon_connection_task=None
+        self, current_macro, source, target, from_upon_connection_task=None
     ):
         """Connect a simple cell to a pin"""
         assert source._structured_cell is None
@@ -381,10 +417,16 @@ class LiveGraph:
         manager = self.manager()
         path_cell, path_pin = manager._verify_connect(current_macro, source, target)
         if path_pin:
-            msg = str(target) + ": macro-generated pins/paths may not be connected outside the macro"
+            msg = (
+                str(target)
+                + ": macro-generated pins/paths may not be connected outside the macro"
+            )
             raise Exception(msg)
         if path_cell:
-            msg = str(source) + ": macro-generated cells/paths may only be connected to cells, not %s"
+            msg = (
+                str(source)
+                + ": macro-generated cells/paths may only be connected to cells, not %s"
+            )
             raise Exception(msg % target)
 
         pinname = target.name
@@ -395,12 +437,10 @@ class LiveGraph:
             to_upstream = self.reactor_to_upstream[worker]
         elif isinstance(worker, Macro):
             to_upstream = self.macro_to_upstream[worker]
-        assert to_upstream[pinname] is None, target # must have received no connections
+        assert to_upstream[pinname] is None, target  # must have received no connections
 
         read_accessor = ReadAccessor(
-            source,
-            manager, None, source._celltype,
-            hash_pattern=source._hash_pattern
+            source, manager, None, source._celltype, hash_pattern=source._hash_pattern
         )
         celltype = target.celltype
         if celltype is None:
@@ -409,15 +449,19 @@ class LiveGraph:
         if subcelltype is None:
             subcelltype = source._subcelltype
         write_accessor = WriteAccessor(
-            read_accessor, worker,
+            read_accessor,
+            worker,
             celltype=celltype,
             subcelltype=subcelltype,
             pinname=pinname,
             path=None,
-            hash_pattern=target._hash_pattern
+            hash_pattern=target._hash_pattern,
         )
         read_accessor.write_accessor = write_accessor
-        assert self.accessor_to_upstream.get(read_accessor) is None, (self.accessor_to_upstream[read_accessor], source)
+        assert self.accessor_to_upstream.get(read_accessor) is None, (
+            self.accessor_to_upstream[read_accessor],
+            source,
+        )
         self.accessor_to_upstream[read_accessor] = source
         self.cell_to_downstream[source].append(read_accessor)
         to_upstream[pinname] = read_accessor
@@ -426,8 +470,7 @@ class LiveGraph:
         return read_accessor
 
     def connect_cell_cell(
-        self, current_macro, source, target,
-        from_upon_connection_task=None
+        self, current_macro, source, target, from_upon_connection_task=None
     ):
         """Connect one simple cell to another"""
         assert source._structured_cell is None and target._structured_cell is None
@@ -437,24 +480,28 @@ class LiveGraph:
 
         manager = self.manager()
         read_accessor = ReadAccessor(
-            source,
-            manager, None, source._celltype,
-            hash_pattern=source._hash_pattern
+            source, manager, None, source._celltype, hash_pattern=source._hash_pattern
         )
         write_accessor = WriteAccessor(
-            read_accessor, target,
+            read_accessor,
+            target,
             celltype=target._celltype,
             subcelltype=target._subcelltype,
             pinname=None,
             path=None,
-            hash_pattern=target._hash_pattern
+            hash_pattern=target._hash_pattern,
         )
-        assert self.accessor_to_upstream.get(read_accessor) is None, (self.accessor_to_upstream[read_accessor], source)
+        assert self.accessor_to_upstream.get(read_accessor) is None, (
+            self.accessor_to_upstream[read_accessor],
+            source,
+        )
         read_accessor.write_accessor = write_accessor
 
         # Right before connecting, void-cancel the target (without propagation)
         manager.taskmanager.cancel_cell(target, full=False)
-        manager._set_cell_checksum(target, None, void=True, status_reason=StatusReasonEnum.UNDEFINED)
+        manager._set_cell_checksum(
+            target, None, void=True, status_reason=StatusReasonEnum.UNDEFINED
+        )
 
         self.accessor_to_upstream[read_accessor] = source
         self.cell_to_downstream[source].append(read_accessor)
@@ -464,13 +511,16 @@ class LiveGraph:
         return read_accessor
 
     def connect_scell_cell(
-        self, current_macro, source, source_path, target,
-        from_upon_connection_task=None
+        self, current_macro, source, source_path, target, from_upon_connection_task=None
     ):
         """Connect a structured cell (outchannel) to a simple cell"""
         assert source._structured_cell is not None and target._structured_cell is None
         assert source in self.paths_to_downstream, source
-        assert source_path in self.paths_to_downstream[source], (source, self.paths_to_downstream[source].keys(), source_path)
+        assert source_path in self.paths_to_downstream[source], (
+            source,
+            self.paths_to_downstream[source].keys(),
+            source_path,
+        )
         assert self._has_independence(
             target, from_upon_connection_task=from_upon_connection_task
         ), target
@@ -478,23 +528,32 @@ class LiveGraph:
         manager = self.manager()
         read_accessor = ReadAccessor(
             source,
-            manager, source_path, source._celltype,
-            hash_pattern=source._hash_pattern
+            manager,
+            source_path,
+            source._celltype,
+            hash_pattern=source._hash_pattern,
         )
         write_accessor = WriteAccessor(
-            read_accessor, target,
+            read_accessor,
+            target,
             celltype=target._celltype,
             subcelltype=target._subcelltype,
             pinname=None,
             path=None,
-            hash_pattern=target._hash_pattern
+            hash_pattern=target._hash_pattern,
         )
-        assert self.accessor_to_upstream.get(read_accessor) is None, (self.accessor_to_upstream[read_accessor], source, source_path)
+        assert self.accessor_to_upstream.get(read_accessor) is None, (
+            self.accessor_to_upstream[read_accessor],
+            source,
+            source_path,
+        )
         read_accessor.write_accessor = write_accessor
 
         # Right before connecting, void-cancel the target (without propagation)
         manager.taskmanager.cancel_cell(target, full=False)
-        manager._set_cell_checksum(target, None, void=True, status_reason=StatusReasonEnum.UNDEFINED)
+        manager._set_cell_checksum(
+            target, None, void=True, status_reason=StatusReasonEnum.UNDEFINED
+        )
 
         self.accessor_to_upstream[read_accessor] = source
         self.paths_to_downstream[source][source_path].append(read_accessor)
@@ -504,31 +563,40 @@ class LiveGraph:
         return read_accessor
 
     def connect_cell_scell(
-        self, current_macro, source, target, target_path,
-        from_upon_connection_task=None
+        self, current_macro, source, target, target_path, from_upon_connection_task=None
     ):
         """Connect a simple cell to a structured cell (inchannel)"""
         assert source._structured_cell is None and target._structured_cell is not None
         assert target in self.paths_to_upstream, target
-        assert target_path in self.paths_to_upstream[target], (target, self.paths_to_upstream[target].keys(), target_path)
-        assert self.paths_to_upstream[target][target_path] is None, (target, target_path, self.paths_to_upstream[target][target_path])
+        assert target_path in self.paths_to_upstream[target], (
+            target,
+            self.paths_to_upstream[target].keys(),
+            target_path,
+        )
+        assert self.paths_to_upstream[target][target_path] is None, (
+            target,
+            target_path,
+            self.paths_to_upstream[target][target_path],
+        )
 
         manager = self.manager()
         read_accessor = ReadAccessor(
-            source,
-            manager, None, source._celltype,
-            hash_pattern=source._hash_pattern
+            source, manager, None, source._celltype, hash_pattern=source._hash_pattern
         )
         write_accessor = WriteAccessor(
-            read_accessor, target,
+            read_accessor,
+            target,
             celltype=target._celltype,
             subcelltype=target._subcelltype,
             pinname=None,
             path=target_path,
-            hash_pattern=target._hash_pattern
+            hash_pattern=target._hash_pattern,
         )
         read_accessor.write_accessor = write_accessor
-        assert self.accessor_to_upstream.get(read_accessor) is None, (self.accessor_to_upstream[read_accessor], source)
+        assert self.accessor_to_upstream.get(read_accessor) is None, (
+            self.accessor_to_upstream[read_accessor],
+            source,
+        )
         self.accessor_to_upstream[read_accessor] = source
         self.cell_to_downstream[source].append(read_accessor)
         self.paths_to_upstream[target][target_path] = read_accessor
@@ -539,16 +607,22 @@ class LiveGraph:
 
         return read_accessor
 
-    def connect_scell_scell(self,
-        current_macro, source, source_path, target, target_path,
-        from_upon_connection_task=None
+    def connect_scell_scell(
+        self,
+        current_macro,
+        source,
+        source_path,
+        target,
+        target_path,
+        from_upon_connection_task=None,
     ):
         """Connect one structured cell (outchannel) to another one (inchannel)"""
-        raise TypeError("Structured cells cannot be connected to each other; use a simple cell as intermediate")
+        raise TypeError(
+            "Structured cells cannot be connected to each other; use a simple cell as intermediate"
+        )
 
     def connect_macropath_cell(
-        self, current_macro, source, target,
-        from_upon_connection_task=None
+        self, current_macro, source, target, from_upon_connection_task=None
     ):
         """Connect a macropath to a simple cell"""
         assert target._structured_cell is None
@@ -559,23 +633,31 @@ class LiveGraph:
         manager = self.manager()
         read_accessor = ReadAccessor(
             source,
-            manager, None, source,
-            hash_pattern=None  # will be derived from the cell bound to the macropath
+            manager,
+            None,
+            source,
+            hash_pattern=None,  # will be derived from the cell bound to the macropath
         )
         write_accessor = WriteAccessor(
-            read_accessor, target,
+            read_accessor,
+            target,
             celltype=target._celltype,
             subcelltype=target._subcelltype,
             pinname=None,
             path=None,
-            hash_pattern=target._hash_pattern
+            hash_pattern=target._hash_pattern,
         )
-        assert self.accessor_to_upstream.get(read_accessor) is None, (self.accessor_to_upstream[read_accessor], source)
+        assert self.accessor_to_upstream.get(read_accessor) is None, (
+            self.accessor_to_upstream[read_accessor],
+            source,
+        )
         read_accessor.write_accessor = write_accessor
 
         # Right before connecting, void-cancel the target (without propagation)
         manager.taskmanager.cancel_cell(target, full=False)
-        manager._set_cell_checksum(target, None, void=True, status_reason=StatusReasonEnum.UNDEFINED)
+        manager._set_cell_checksum(
+            target, None, void=True, status_reason=StatusReasonEnum.UNDEFINED
+        )
 
         self.accessor_to_upstream[read_accessor] = source
         self.macropath_to_downstream[source].append(read_accessor)
@@ -585,8 +667,7 @@ class LiveGraph:
         return read_accessor
 
     def connect_cell_macropath(
-        self, current_macro, source, target,
-        from_upon_connection_task=None
+        self, current_macro, source, target, from_upon_connection_task=None
     ):
         """Connect a simple cell to a macropath"""
         assert source._structured_cell is None
@@ -597,19 +678,25 @@ class LiveGraph:
         manager = self.manager()
         read_accessor = ReadAccessor(
             source,
-            manager, None, source._celltype,
+            manager,
+            None,
+            source._celltype,
             hash_pattern=source._hash_pattern,
         )
         write_accessor = WriteAccessor(
-            read_accessor, target,
+            read_accessor,
+            target,
             celltype=target,
             subcelltype=None,
             pinname=None,
             path=None,
-            hash_pattern=None
+            hash_pattern=None,
         )
         read_accessor.write_accessor = write_accessor
-        assert self.accessor_to_upstream.get(read_accessor) is None, (self.accessor_to_upstream[read_accessor], source)
+        assert self.accessor_to_upstream.get(read_accessor) is None, (
+            self.accessor_to_upstream[read_accessor],
+            source,
+        )
         self.accessor_to_upstream[read_accessor] = source
         self.cell_to_downstream[source].append(read_accessor)
         self.macropath_to_upstream[target] = read_accessor
@@ -619,6 +706,7 @@ class LiveGraph:
 
     def cell_from_pin(self, pin):
         from ..worker import InputPin, OutputPin
+
         worker = pin.worker_ref()
         if isinstance(pin, InputPin):
             if isinstance(worker, Transformer):
@@ -668,7 +756,7 @@ class LiveGraph:
             macropath = cell_or_macropath
             assert path is None
             if macropath._destroyed:
-                return True # TODO? would this ever be bad?
+                return True  # TODO? would this ever be bad?
             return self.macropath_to_upstream[macropath] is None
         cell = cell_or_macropath
         if path is not None:
@@ -684,14 +772,12 @@ class LiveGraph:
                     return False
             return self.cell_to_upstream[cell] is None
 
-    def has_independence(
-        self, cell_or_macropath, path=None
-    ):
+    def has_independence(self, cell_or_macropath, path=None):
         return self._has_independence(cell_or_macropath, path)
 
     @destroyer
     def destroy_accessor(self, manager, accessor, from_upstream=False):
-        #print("DESTROY", accessor)
+        # print("DESTROY", accessor)
         expression = accessor.expression
         if expression is not None:
             accessor.expression = None
@@ -764,7 +850,10 @@ class LiveGraph:
             assert self.accessor_to_upstream[accessor] is transformer
             self.destroy_accessor(manager, accessor, from_upstream=True)
             if len(down_accessors) and down_accessors[0] is accessor:
-                print("WARNING: destruction of transformer downstream %s failed" % accessor)
+                print(
+                    "WARNING: destruction of transformer downstream %s failed"
+                    % accessor
+                )
                 down_accessors = down_accessors[1:]
         self.transformer_to_downstream.pop(transformer)
 
@@ -777,7 +866,6 @@ class LiveGraph:
         for up_accessor in up_accessors.values():
             if up_accessor is not None:
                 self.destroy_accessor(manager, up_accessor)
-
 
     @destroyer
     def destroy_reactor(self, manager, reactor):
@@ -795,7 +883,10 @@ class LiveGraph:
                 assert self.accessor_to_upstream[accessor] is reactor
                 self.destroy_accessor(manager, accessor, from_upstream=True)
                 if len(down_accessors) and down_accessors[0] is accessor:
-                    print("WARNING: destruction of reactor pin %s downstream %s failed" % (pinname, accessor))
+                    print(
+                        "WARNING: destruction of reactor pin %s downstream %s failed"
+                        % (pinname, accessor)
+                    )
                     down_accessors = down_accessors[1:]
         self.reactor_to_downstream.pop(reactor)
         editpins_cell = self.editpin_to_cell.pop(reactor)
@@ -824,7 +915,7 @@ class LiveGraph:
             assert cell._structured_cell is not None
         for structured_cell in self.schemacells.pop(cell, []):
             structured_cells.add(structured_cell)
-            
+
         for structured_cell in structured_cells:
             structured_cell.destroy()
 
@@ -855,7 +946,9 @@ class LiveGraph:
                         up_accessors.append(acc)
                 if len(up_accessors) and up_accessors[0] is accessor:
                     if cell._structured_cell:
-                        print("WARNING: destruction of cell upstream %s failed" % accessor)
+                        print(
+                            "WARNING: destruction of cell upstream %s failed" % accessor
+                        )
                     up_accessors = up_accessors[1:]
 
         else:
@@ -920,7 +1013,9 @@ class LiveGraph:
             assert self.accessor_to_upstream[accessor] is macropath
             self.destroy_accessor(manager, accessor, from_upstream=True)
             if len(down_accessors) and down_accessors[0] is accessor:
-                print("WARNING: destruction of macropath downstream %s failed" % accessor)
+                print(
+                    "WARNING: destruction of macropath downstream %s failed" % accessor
+                )
                 down_accessors = down_accessors[1:]
         cell = macropath._cell
         if cell is not None and not cell._destroyed:
@@ -949,20 +1044,24 @@ class LiveGraph:
             "datacells",
             "buffercells",
             "schemacells",
-            "rtreactors"
+            "rtreactors",
         )
         ok = True
         name = self.__class__.__name__
         for attrib in attribs:
             a = getattr(self, attrib)
             if len(a):
-                print_warning(name + ", " + attrib + ": %d undestroyed"  % len(a))
+                print_warning(name + ", " + attrib + ": %d undestroyed" % len(a))
                 ok = False
         return ok
 
     def _flush_observations(self):
         while 1:
-            if len(self._destroying) or not len(self._observing) or self._hold_observations:
+            if (
+                len(self._destroying)
+                or not len(self._observing)
+                or self._hold_observations
+            ):
                 break
             cell, checksum = self._observing.popleft()
             if cell._destroyed or cell._observer is None:
@@ -971,7 +1070,6 @@ class LiveGraph:
                 cell._observer(checksum)
             except Exception:
                 traceback.print_exc()
-
 
     def get_cyclic(self):
         manager = self.manager()

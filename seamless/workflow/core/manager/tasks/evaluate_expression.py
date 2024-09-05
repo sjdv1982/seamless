@@ -9,7 +9,7 @@ import numpy as np
 from . import Task
 from silk.json_util import json_encode
 
-from seamless import Checksum
+from seamless import Checksum, Buffer
 
 celltype_mapping = {
     "silk": "mixed",
@@ -19,9 +19,7 @@ celltype_mapping = {
 }
 
 
-async def inter_deepcell_conversion(
-    manager, value, source_hash_pattern, target_hash_pattern
-):
+async def inter_deepcell_conversion(value, source_hash_pattern, target_hash_pattern):
     # {"*": "#"}, {"!": "#"}, {"*": "##"}
     if source_hash_pattern == {"*": "#"} and target_hash_pattern == {"!": "#"}:
         result = [value[k] for k in sorted(value.keys())]
@@ -157,7 +155,7 @@ async def value_conversion(
     target_checksum = await CalculateChecksumTask(manager, buffer).run()
     target_checksum = Checksum(target_checksum)
     if not target_checksum:
-        raise Exception
+        raise ValueError("Unknown error")
     buffer_cache.cache_buffer(target_checksum, target_buffer)
     if conv == ("plain", "binary"):
         buffer_cache.update_buffer_info(
@@ -192,10 +190,6 @@ def build_expression_transformation(expression: "Expression"):
     The main use case is to send data-intensive expressions to remote locations
     where the data is.
     """
-    from ...protocol.serialize import serialize_sync as serialize
-    from ...protocol.calculate_checksum import (
-        calculate_checksum_sync as calculate_checksum,
-    )
 
     expression_dict = {
         "checksum": expression.checksum.hex(),
@@ -212,8 +206,9 @@ def build_expression_transformation(expression: "Expression"):
         "__language__": "<expression>",
         "expression": expression_dict,
     }
-    transformation_dict_buffer = serialize(transformation_dict, "plain")
-    transformation = calculate_checksum(transformation_dict_buffer)
+
+    transformation_dict_buffer = Buffer(transformation_dict, "plain")
+    transformation = transformation_dict_buffer.get_checksum()
     buffer_cache.cache_buffer(transformation, transformation_dict_buffer)
     return transformation
 
@@ -419,7 +414,7 @@ async def _evaluate_expression(
                 full_value = True
                 if trivial_path:
                     result_value = await inter_deepcell_conversion(
-                        manager, value, source_hash_pattern, target_hash_pattern
+                        value, source_hash_pattern, target_hash_pattern
                     )
                     if result_value is not None:
                         full_value = False
@@ -475,7 +470,7 @@ async def _evaluate_expression(
                             manager, result_buffer
                         ).run()
                         if not result_checksum:
-                            raise Exception
+                            raise ValueError("Unknown error")
                         assert isinstance(result_checksum, Checksum)
                     done = True
 
@@ -575,12 +570,14 @@ class EvaluateExpressionTask(Task):
         *,
         fingertip_mode=False,
         fingertip_upstream=False,
-        fingertip_done=set()
+        fingertip_done=None
     ):
         assert isinstance(expression, Expression)
         self.expression = expression
         self.fingertip_mode = fingertip_mode
         self.fingertip_upstream = fingertip_upstream
+        if fingertip_done is None:
+            fingertip_done = set()
         self.fingertip_done = fingertip_done
 
         super().__init__(manager)
@@ -615,8 +612,10 @@ def _is_none(result):
 
 
 async def evaluate_expression(
-    expression, *, fingertip_mode=False, manager=None, fingertip_done=set()
+    expression, *, fingertip_mode=False, manager=None, fingertip_done=None
 ):
+    if fingertip_done is None:
+        fingertip_done = set()
     if manager is None:
         manager = Manager()
 
@@ -740,5 +739,4 @@ from seamless.checksum.buffer_cache import buffer_cache, CacheMissError
 from seamless.checksum.database_client import database
 from . import acquire_evaluation_lock, release_evaluation_lock
 from ...protocol.deep_structure import apply_hash_pattern, validate_deep_structure
-from ...protocol.expression import get_subpath
 from ..manager import Manager

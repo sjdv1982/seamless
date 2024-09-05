@@ -1,6 +1,6 @@
 import asyncio
 
-from seamless import Checksum
+from seamless import Checksum, CacheMissError
 from . import Task
 from seamless.checksum.cached_compile import cached_compile
 

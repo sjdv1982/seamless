@@ -242,7 +242,7 @@ class StructuredCellTask(Task):
         if len(tasks):
             if _iter == 10:
                 raise Exception(tasks[:10], self)  # could not wait for tasks
-            futures0 = [task.future for future in tasks]
+            futures0 = [task.future for task in tasks]
             futures = [future for future in futures0 if future is not None]
             if not len(futures):
                 await asyncio.sleep(0.05)

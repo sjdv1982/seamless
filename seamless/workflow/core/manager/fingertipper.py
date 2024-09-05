@@ -4,6 +4,8 @@ import traceback
 
 from seamless import Buffer, Checksum
 from seamless.checksum.buffer_cache import buffer_cache
+from seamless.checksum.expression import access_hash_pattern
+from seamless.checksum.get_buffer import get_buffer
 
 
 class FingerTipper:
@@ -262,10 +264,8 @@ class FingerTipper:
         return exc_str
 
 
-from seamless.checksum.expression import access_hash_pattern
 from ..protocol.expression import (
     set_subpath_checksum,
     value_to_deep_structure,
 )
-from seamless.checksum.get_buffer import get_buffer
 from ..cache.transformation_cache import syntactic_to_semantic

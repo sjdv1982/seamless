@@ -1,9 +1,12 @@
 from seamless import Checksum
 from . import Task
 
+
 class CellUpdateTask(Task):
     def __init__(self, manager, cell, *, origin_reactor=None):
-        assert cell._structured_cell is None or cell._structured_cell.schema is cell, cell # cell update is not for StructuredCell cells, unless schema
+        assert (
+            cell._structured_cell is None or cell._structured_cell.schema is cell
+        ), cell  # cell update is not for StructuredCell cells, unless schema
         self.cell = cell
         self.origin_reactor = origin_reactor
         super().__init__(manager)
@@ -29,7 +32,9 @@ class CellUpdateTask(Task):
         """Updates the downstream dependencies (accessors) of a cell"""
         cell = self.cell
         if cell._void:
-            print("WARNING: cell %s is void, shouldn't happen during cell update" % cell)
+            print(
+                "WARNING: cell %s is void, shouldn't happen during cell update" % cell
+            )
             return
         manager = self.manager()
         if manager is None or manager._destroyed:
@@ -50,7 +55,9 @@ class CellUpdateTask(Task):
                 checksum = cell._checksum
             checksum = Checksum(checksum)
             assert checksum, cell
-            assert not cell._structured_cell # cell update is not for StructuredCell cells
+            assert (
+                not cell._structured_cell
+            )  # cell update is not for StructuredCell cells
             livegraph = manager.livegraph
             accessors = livegraph.cell_to_downstream[cell]
             for path in cell._paths:
@@ -72,7 +79,7 @@ class CellUpdateTask(Task):
                 return
 
             for accessor in accessors:
-                #- launch an accessor update task
+                # - launch an accessor update task
                 target = accessor.write_accessor.target()
                 if isinstance(target, MacroPath):
                     target = target._cell
@@ -99,6 +106,7 @@ class CellUpdateTask(Task):
             return None
         finally:
             release_evaluation_lock(locknr)
+
 
 from .accessor_update import AccessorUpdateTask
 from .reactor_update import ReactorUpdateTask

@@ -6,7 +6,7 @@ import traceback
 import sys
 from copy import deepcopy
 
-from seamless import CacheMissError, Checksum
+from seamless import Checksum
 
 from ..status import StatusReasonEnum
 
@@ -97,7 +97,6 @@ class Manager:
         from seamless.workflow import check_original_event_loop
 
         check_original_event_loop()
-        global is_dummy_mount
         from .livegraph import LiveGraph
         from .cachemanager import CacheManager
         from .taskmanager import TaskManager
@@ -118,9 +117,6 @@ class Manager:
         from seamless.workflow.tempref import temprefmanager
 
         self.temprefmanager = temprefmanager
-
-        # for now, just a single global mountmanager
-        from ..mount import mountmanager, is_dummy_mount
 
         self.mountmanager = mountmanager
         mountmanager.start()
@@ -355,6 +351,7 @@ class Manager:
         On the other hand, since cachemanager.incref_checksum is called,
          deep structures have their contained checksums automatically incref'ed,
          and decref'ed for the old value
+         (to the extent that deep structure member checksums are refcounted at all!)
         NOTE: this function blindly assumes that the checksum is parseable
          for the cell's celltype, and in fact triggers a guarantee.
         If you are paranoid about this, do not call this function unless you
@@ -943,7 +940,6 @@ class Manager:
 from .tasks import (
     SetCellValueTask,
     SetCellBufferTask,
-    CellChecksumTask,
     GetBufferTask,
     DeserializeBufferTask,
     UponConnectionTask,
@@ -967,3 +963,4 @@ from ..reactor import Reactor
 from .accessor import ReadAccessor
 from ..structured_cell import StructuredCell
 from .cancel import get_scell_state
+from ..mount import mountmanager, is_dummy_mount

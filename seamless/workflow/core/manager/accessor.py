@@ -1,6 +1,11 @@
 import weakref
 
 
+from seamless.checksum.celltypes import celltypes
+from seamless.checksum import Expression
+from seamless.checksum.expression import access_hash_pattern
+
+
 class Accessor:
     pass
 
@@ -105,8 +110,6 @@ class WriteAccessor(Accessor):
         *,
         hash_pattern
     ):
-        from ...core.cell import Cell
-        from ...core.worker import Worker
 
         assert isinstance(read_accessor, ReadAccessor)
         assert isinstance(target, (Cell, Worker, MacroPath))
@@ -124,9 +127,7 @@ class WriteAccessor(Accessor):
         self.hash_pattern = hash_pattern
 
 
-from seamless.checksum.celltypes import celltypes
 from ...core.cell import Cell, subcelltypes
+from ...core.worker import Worker
 from ...core.macro import Path as MacroPath
 from ...core.status import StatusReasonEnum
-from seamless.checksum import Expression
-from seamless.checksum.expression import access_hash_pattern

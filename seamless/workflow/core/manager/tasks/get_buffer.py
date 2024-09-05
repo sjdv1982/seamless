@@ -1,14 +1,13 @@
 from seamless import Checksum
 from . import BackgroundTask
 
+
 class GetBufferTask(BackgroundTask):
     @property
     def refkey(self):
         return self.checksum
 
-    def __init__(self,
-        manager, checksum:Checksum
-    ):
+    def __init__(self, manager, checksum: Checksum):
         checksum = Checksum(checksum)
         self.checksum = checksum
         super().__init__(manager)

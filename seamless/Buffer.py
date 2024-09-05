@@ -56,7 +56,9 @@ class Buffer:
         return cls(buf)
 
     @classmethod
-    async def from_async(cls, value, celltype: str, use_cache: bool = True) -> "Buffer":
+    async def from_async(
+        cls, value, celltype: str, *, use_cache: bool = True, checksum: Checksum = None
+    ) -> "Buffer":
         """Init from value, asynchronously"""
         from seamless.checksum.serialize import serialize
 
@@ -64,7 +66,7 @@ class Buffer:
         if celltype is None:
             raise TypeError(celltype)
         buf = await serialize(value, celltype, use_cache=use_cache)
-        return cls(buf)
+        return cls(buf, checksum=checksum)
 
     @property
     def checksum(self) -> Checksum:
