@@ -52,7 +52,7 @@ def save_vault_flat(dirname, annotated_checksums, buffer_dict):
     with VaultLock(dirname) as vl:
         for checksum, _is_dependent in annotated_checksums:
             buffer = buffer_dict[checksum]
-            filename = os.path.join(dirname, checksum)
+            filename = os.path.join(dirname, str(checksum))
             with open(filename, "wb") as f:
                 f.write(buffer)
                 vl.touch()
@@ -95,7 +95,7 @@ def save_vault(dirname, annotated_checksums, buffer_dict):
             size = "small" if len(buffer) <= SMALL_BIG_THRESHOLD else "big"
             dep = "dependent" if is_dependent else "independent"
             dirn = dirs[dep, size]
-            filename = os.path.join(dirn, checksum)
+            filename = os.path.join(dirn, str(checksum))
             with open(filename, "wb") as f:
                 f.write(buffer)
                 vl.touch()
@@ -105,6 +105,7 @@ def load_vault_flat(dirname, incref: bool) -> list[Checksum]:
     result = []
     for _, _, files in os.walk(dirname):
         for filename in files:
+            filename = str(filename)
             if filename.startswith("."):
                 continue
             checksum = Checksum(filename)

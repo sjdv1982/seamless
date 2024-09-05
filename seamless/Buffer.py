@@ -11,6 +11,9 @@ class Buffer:
     ):
         from seamless.checksum.serialize import serialize_sync as serialize
 
+        if isinstance(value_or_buffer, Buffer):
+            value_or_buffer = value_or_buffer.value
+
         celltype = self._map_celltype(celltype)
         if celltype is None:
             if isinstance(value_or_buffer, Buffer):

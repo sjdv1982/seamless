@@ -6,7 +6,7 @@ from requests.exceptions import (  # pylint: disable=redefined-builtin
     ChunkedEncodingError,
     JSONDecodeError,
 )
-from seamless import Checksum
+from seamless import Checksum, Buffer
 from seamless.util.is_forked import is_forked
 
 
@@ -47,7 +47,7 @@ def has(session, url, checksum: Checksum, *, timeout=None) -> bool:
     return result[0]
 
 
-def write(session, url, checksum: Checksum, buffer: bytes):
+def write(session, url, checksum: Checksum, buffer: Buffer):
     """Upload a buffer to a remote URL.
     URL is accessed using HTTP PUT, with /<checksum> added to the URL,
     and the buffer as the data."""
@@ -56,6 +56,7 @@ def write(session, url, checksum: Checksum, buffer: bytes):
     if is_forked():
         sess = requests
     checksum = Checksum(checksum)
+    buffer = Buffer(buffer).value
     assert checksum
     path = url + "/" + str(checksum)
     for _trial in range(10):
