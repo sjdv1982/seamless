@@ -18,7 +18,12 @@ class Buffer:
         if celltype is None:
             if isinstance(value_or_buffer, Buffer):
                 value_or_buffer = value_or_buffer.value
-            if not isinstance(value_or_buffer, bytes):
+            if value_or_buffer is None:
+                if Checksum(checksum):
+                    raise TypeError(
+                        "Constructing Buffer from None, but checksum is not None"
+                    )
+            elif not isinstance(value_or_buffer, bytes):
                 raise TypeError(
                     "Constructing Buffer from raw buffer, but raw buffer is not a bytes object"
                 )

@@ -164,7 +164,7 @@ def write_to_directory(directory, data, *, cleanup, deep, text_only):
                     f.write(txt)
             else:
                 with open(filename, "wb") as f:
-                    f.write(buf)
+                    f.write(buf.value)
     if cleanup:
         with os.scandir(directory) as it:
             for entry in it:

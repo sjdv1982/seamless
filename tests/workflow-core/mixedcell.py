@@ -40,6 +40,6 @@ print(ctx.result.value, ctx.status)
 
 with open("/tmp/mixedcellsilk.mixed", "rb") as f:
     content = f.read()
-from seamless import calculate_checksum
+from seamless import Buffer
 
-print(calculate_checksum(content).hex())
+print(Buffer(content).get_checksum().hex())

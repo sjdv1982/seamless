@@ -2,6 +2,7 @@ import atexit
 import asyncio
 from weakref import WeakSet
 from contextlib import contextmanager
+import multiprocessing.util  # pylint: disable=unused-import # MUST be imported before destroy_toplevels is registered at exit
 
 from seamless.checksum.buffer_cache import buffer_cache
 from seamless.workflow.tempref import temprefmanager

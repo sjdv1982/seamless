@@ -403,7 +403,6 @@ class Path:
 
     def _bind(self, cell, trigger):
         from .manager.tasks.cell_update import CellUpdateTask
-        from .manager.tasks.accessor_update import AccessorUpdateTask
 
         if self._destroyed:
             return
@@ -437,7 +436,7 @@ class Path:
                     if not cell._void:
                         accessor._new_macropath = True
                         manager.cancel_accessor(accessor, void=False)
-                if not Checksum(cell._checksum):
+                if not cell._void and not Checksum(cell._checksum):
                     CellUpdateTask(manager, cell).launch()
             checksum = Checksum(cell._checksum)
             if checksum:

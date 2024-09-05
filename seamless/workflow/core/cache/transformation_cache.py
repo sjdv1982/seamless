@@ -410,8 +410,8 @@ class TransformationCache:
             meta.update(inp_meta)
         transformation["__meta__"] = meta
         if transformer.env is not None:
-            envbuf = await serialize(transformer.env, "plain")
-            env_checksum = Checksum(envbuf)
+            envbuf = await Buffer.from_async(transformer.env, "plain")
+            env_checksum = await envbuf.get_checksum_async()
             buffer_cache.cache_buffer(env_checksum, envbuf)
             buffer_cache.guarantee_buffer_info(
                 env_checksum, "plain", sync_to_remote=True
@@ -1267,8 +1267,8 @@ class TransformationCache:
         if lang == "<structured_cell_join>":
             assert manager is not None
             join_dict = transformation["structured_cell_join"]
-            join_dict_buffer = await serialize(join_dict, "plain")
-            join_dict_checksum = await Buffer(join_dict_buffer).get_checksum_async()
+            join_dict_buffer = await Buffer.from_async(join_dict, "plain")
+            join_dict_checksum = await join_dict_buffer.get_checksum_async()
             if not join_dict_checksum:
                 raise TypeError
             buffer_cache.cache_buffer(join_dict_checksum, join_dict_buffer)

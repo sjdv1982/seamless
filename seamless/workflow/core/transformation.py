@@ -4,6 +4,7 @@ from copy import deepcopy
 import weakref
 import asyncio
 import multiprocessing
+import multiprocessing.util  # to register the atexit function
 from multiprocessing import Process, JoinableQueue as Queue
 import sys
 import traceback

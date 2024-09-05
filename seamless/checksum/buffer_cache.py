@@ -163,7 +163,7 @@ class BufferCache:
         if not checksum:
             return
         checksum = Checksum(checksum)
-        buffer = Buffer(buffer)
+        buffer = Buffer(buffer, checksum=checksum)
         # print("LOCAL CACHE", checksum.hex())
         self._update_time(checksum, len(buffer))
         self.update_buffer_info(checksum, "length", len(buffer), sync_remote=False)

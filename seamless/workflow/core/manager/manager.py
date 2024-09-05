@@ -88,6 +88,7 @@ def _run_in_mainthread(func):
 class Manager:
     CLEAR_NEW_TRANSFORMER_EXCEPTIONS = True
     _destroyed = False
+    _destroying = False
     _highlevel_refs = 0
     _last_ctx = None
     _blocked = False
@@ -912,9 +913,9 @@ class Manager:
 
     @mainthread
     def destroy(self, from_del=False):
-        if self._destroyed:
+        if self._destroyed or self._destroying:
             return
-        self._destroyed = True
+        self._destroying = True
         contexts = list(self.contexts)
         self.contexts.clear()
         for ctx in contexts:
@@ -922,6 +923,8 @@ class Manager:
         self._last_ctx = None
         for path in list(self.livegraph.macropath_to_upstream.keys()):
             path.destroy()
+        self._destroyed = True
+        self._destroying = False
         self.cachemanager.check_destroyed()
         self.livegraph.check_destroyed()
         self.taskmanager.check_destroyed()

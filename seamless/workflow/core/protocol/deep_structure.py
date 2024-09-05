@@ -3,7 +3,7 @@ from copy import deepcopy
 import numpy as np
 from io import BytesIO
 from silk.mixed import MAGIC_NUMPY, MAGIC_SEAMLESS_MIXED
-from seamless import Checksum
+from seamless import Checksum, Buffer
 
 
 class DeepStructureError(ValueError):
@@ -214,7 +214,7 @@ def _deep_structure_to_value(deep_structure, hash_pattern, value_dict, copy):
         return None
 
     if hash_pattern in ("#", "##"):
-        checksum = deep_structure
+        checksum = Checksum(deep_structure)
         value = value_dict[checksum]
         if copy:
             value = deepcopy(value)
@@ -251,7 +251,9 @@ def _deep_structure_to_value(deep_structure, hash_pattern, value_dict, copy):
     return result
 
 
-def deserialize_raw(buffer):
+def deserialize_raw(buffer: Buffer | bytes):
+    if isinstance(buffer, Buffer):
+        buffer = buffer.value
     if buffer.startswith(MAGIC_SEAMLESS_MIXED):
         return np.array(buffer)
     if buffer.startswith(MAGIC_NUMPY):

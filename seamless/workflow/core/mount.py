@@ -38,10 +38,11 @@ empty_checksums = {
 }
 
 
-def adjust_buffer(file_buffer, celltype):
+def adjust_buffer(file_buffer: bytes, celltype: str) -> bytes:
+    file_buffer = Buffer(file_buffer)
     if celltype not in text_types:
-        return file_buffer
-    return file_buffer.rstrip(b"\n") + b"\n"
+        return file_buffer.value
+    return Buffer(file_buffer.value.rstrip(b"\n") + b"\n")
 
 
 def is_dummy_mount(mount):
@@ -160,7 +161,7 @@ class MountItem:
         cell_checksum = cell._checksum
         cell_empty = not Checksum(cell_checksum)
         if not cell_empty:
-            if cell_checksum in empty_checksums:
+            if Checksum(cell_checksum) in empty_checksums:
                 cell_empty = True
         from_cache = False
         cache_cell_checksum, cache_cell_buffer = self._from_cache()
@@ -184,6 +185,7 @@ class MountItem:
                 if cell_buffer is None:
                     cell_checksum = None
                     cell_empty = True
+        cell_buffer = Buffer(cell_buffer).value
         self.cell_buffer = cell_buffer
         self.cell_checksum = cell_checksum
         if self.authority in ("file", "file-strict"):
@@ -192,21 +194,23 @@ class MountItem:
                     if self._destroyed:
                         return
                     file_buffer0 = self._read()
+                    file_buffer0 = Buffer(file_buffer0).value
                     if file_buffer0 is not None:
                         file_buffer = adjust_buffer(file_buffer0, cell._celltype)
                     else:
                         file_buffer = None
                     update_file = True
                     file_checksum = None
-                    if not cell_empty and file_buffer is not None:
+                    if file_buffer is not None:
                         file_checksum = Buffer(file_buffer).get_checksum()
-                        if file_checksum == cell_checksum:
-                            update_file = False
-                        else:
-                            print(
-                                "Warning: File path '%s' has a different value, overwriting cell"
-                                % self.path
-                            )  # TODO: log warning
+                        if not cell_empty:
+                            if file_checksum == cell_checksum:
+                                update_file = False
+                            else:
+                                print(
+                                    "Warning: File path '%s' has a different value, overwriting cell"
+                                    % self.path
+                                )  # TODO: log warning
                     self._after_read(file_checksum)
                 if update_file:
                     self.set(file_buffer, checksum=file_checksum)
@@ -241,6 +245,7 @@ class MountItem:
                     if self._destroyed:
                         return
                     file_buffer0 = self._read()
+                    file_buffer0 = Buffer(file_buffer0).value
                     if file_buffer0 is not None:
                         file_buffer = adjust_buffer(file_buffer0, cell._celltype)
                         update_file = True
@@ -304,11 +309,12 @@ class MountItem:
         cache = mountmanager.cached_checksums.pop(self.path, (None, None))
         cached_time, cached_checksum = cache
         buffer = get_buffer(cached_checksum, remote=True)
+        buffer = Buffer(buffer).value
         if buffer is not None:
             self.last_mtime = cached_time
         return cached_checksum, buffer
 
-    def _read(self):
+    def _read(self) -> bytes | None:
         if self._destroyed:
             return
         # print("read", self.cell())
@@ -344,6 +350,7 @@ class MountItem:
 
     def _write_as_directory(self, file_buffer, with_none):
         os.makedirs(self.path, exist_ok=True)
+        file_buffer = Buffer(file_buffer).value
         if with_none and file_buffer is None:
             return
         data = Buffer(file_buffer).deserialize("plain")
@@ -363,6 +370,7 @@ class MountItem:
         if self._destroyed:
             return
         assert "w" in self.mode
+        file_buffer = Buffer(file_buffer).value
         if self.as_directory:
             return self._write_as_directory(file_buffer, with_none)
         binary = self.kwargs["binary"]
@@ -392,8 +400,9 @@ class MountItem:
         except Exception:
             pass
 
-    def conditional_write(self, checksum: Checksum, buffer, with_none=False):
+    def conditional_write(self, checksum: Checksum, buffer: bytes, with_none=False):
         checksum = Checksum(checksum)
+        buffer = Buffer(buffer).value
         if not self._initialized:
             return
         if self._destroyed:
@@ -447,6 +456,7 @@ class MountItem:
             if cell_checksum and self.as_directory:
                 # Write a non-existing folder to disk, even if it was in read mode
                 cell_buffer = get_buffer(cell_checksum, remote=True)
+                cell_buffer = Buffer(cell_buffer).value
                 if cell_buffer is not None:
                     self._write_as_directory(cell_buffer, with_none=True)
             return
@@ -458,6 +468,7 @@ class MountItem:
             file_buffer = None
             if self.last_mtime is None or mtime > self.last_mtime:
                 file_buffer0 = self._read()
+                file_buffer0 = Buffer(file_buffer0).value
                 if file_buffer0 is not None:
                     file_buffer = adjust_buffer(file_buffer0, cell._celltype)
                     file_checksum = Buffer(file_buffer).get_checksum()
@@ -666,8 +677,9 @@ class MountManager:
             self.garbage_dirs[dirpath] = time.time(), mount["persistent"]
 
     @lockmethod
-    def add_cell_update(self, cell, checksum: Checksum, buffer):
+    def add_cell_update(self, cell, checksum: Checksum, buffer: bytes | None):
         checksum = Checksum(checksum)
+        buffer = Buffer(buffer).value
         if self._mounting:
             return
         root = cell._root()
