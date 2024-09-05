@@ -3,8 +3,6 @@ import seamless
 seamless.delegate(False)
 
 from seamless.workflow.core import context, transformer, cell
-from seamless.workflow.core.protocol.get_buffer import get_buffer
-import json
 
 
 def get_meta(tf):

@@ -20,9 +20,9 @@ TF DUPLEX Status: error
 RESULT        None Status: upstream
 RESULT DUPLEX None Status: upstream
 
-EXCEPTION        seamless.core.cache.transformation_cache.HardCancelError: HardCancelError
+EXCEPTION        seamless.workflow.core.cache.transformation_cache.HardCancelError: HardCancelError
 
-EXCEPTION DUPLEX seamless.core.cache.transformation_cache.HardCancelError: HardCancelError
+EXCEPTION DUPLEX seamless.workflow.core.cache.transformation_cache.HardCancelError: HardCancelError
 
 
 EXCEPTION        None
@@ -58,7 +58,12 @@ RESULT DUPLEX 0.900 Status: preliminary
 
 TF        Status: executing, 30.0 %
 TF DUPLEX Status: executing, 30.0 %
+RESULT        0.900 Status: preliminary
+RESULT DUPLEX 0.900 Status: preliminary
+
 PROGRESS 4
+TF        Status: executing, 40.0 %
+TF DUPLEX Status: executing, 40.0 %
 RESULT        0.900 Status: preliminary
 RESULT DUPLEX 0.900 Status: preliminary
 
@@ -68,11 +73,6 @@ RESULT        0.900 Status: preliminary
 RESULT DUPLEX 0.900 Status: preliminary
 
 PROGRESS 5
-TF        Status: executing, 50.0 %
-TF DUPLEX Status: executing, 50.0 %
-RESULT        0.900 Status: pending
-RESULT DUPLEX None Status: pending
-
 TF        Status: executing, 50.0 %
 TF DUPLEX Status: executing, 50.0 %
 RESULT        1.500 Status: preliminary
@@ -112,10 +112,10 @@ RESULT        2.100 Status: preliminary
 RESULT DUPLEX 2.100 Status: preliminary
 
 PROGRESS 9
-TF        Status: executing, 90.0 %
-TF DUPLEX Status: executing, 90.0 %
-RESULT        2.700 Status: preliminary
-RESULT DUPLEX 2.700 Status: preliminary
+TF        Status: executing, 80.0 %
+TF DUPLEX Status: executing, 80.0 %
+RESULT        2.100 Status: preliminary
+RESULT DUPLEX 2.100 Status: preliminary
 
 TF        Status: executing, 90.0 %
 TF DUPLEX Status: executing, 90.0 %

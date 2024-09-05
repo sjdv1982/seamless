@@ -2,20 +2,14 @@ import seamless
 
 seamless.delegate(False)
 
-import inspect, textwrap
-
-from seamless import calculate_checksum
+from seamless import Checksum, Buffer
 from seamless.checksum.buffer_cache import buffer_cache
 from seamless.workflow.core.cache.transformation_cache import (
     transformation_cache,
     DummyTransformer,
     tf_get_buffer,
-    syntactic_is_semantic,
-    syntactic_to_semantic,
     transformation_cache,
 )
-
-from seamless.workflow.core.protocol.serialize import serialize
 
 
 async def build_transformation():
@@ -34,14 +28,14 @@ async def build_transformation():
     transformation = {"__language__": "bash", "__output__": ("result", "bytes", None)}
     for k, v in inp.items():
         celltype, value = v
-        buf = await serialize(value, celltype)
-        checksum = calculate_checksum(buf)
+        buf = await Buffer.from_async(value, celltype)
+        checksum = await buf.get_checksum_async()
         buffer_cache.cache_buffer(checksum, buf)
         transformation[k] = celltype, None, checksum.hex()
 
     tf_buf = tf_get_buffer(transformation)
     print(tf_buf.decode())
-    tf_checksum = calculate_checksum(tf_buf)
+    tf_checksum = await Buffer(tf_buf).get_checksum_async()
     buffer_cache.cache_buffer(tf_checksum, tf_buf)
 
     tf = DummyTransformer(tf_checksum)

@@ -3,7 +3,7 @@ import seamless
 
 seamless.delegate(False)
 
-from seamless import calculate_checksum
+from seamless import Checksum, Buffer
 from seamless.checksum.buffer_cache import buffer_cache
 from seamless.workflow.core.cache.transformation_cache import (
     transformation_cache,
@@ -13,8 +13,7 @@ from seamless.workflow.core.cache.transformation_cache import (
     transformation_cache,
 )
 
-from seamless.workflow.core.protocol.serialize import serialize
-from seamless.ipython import ipython2python
+from seamless.util.ipython import ipython2python
 
 func_code = """
 %%timeit
@@ -43,7 +42,7 @@ async def get_semantic_checksum(checksum, celltype, pinname):
 
 
 async def build_transformation():
-    func_buf = await serialize(func_code, "python")
+    func_buf = (await Buffer.from_async(func_code, "python")).value
     inp = {
         "a": (
             "int",
@@ -65,14 +64,14 @@ async def build_transformation():
     environment = {"powers": ["ipython"]}
     for k, v in inp.items():
         celltype, value = v
-        buf = await serialize(value, celltype)
-        checksum = calculate_checksum(buf)
+        buf = await Buffer.from_async(value, celltype)
+        checksum = await buf.get_checksum_async()
         buffer_cache.cache_buffer(checksum, buf)
         sem_checksum = await get_semantic_checksum(checksum, celltype, k)
         transformation[k] = celltype, None, sem_checksum.hex()
 
-    envbuf = await serialize(environment, "plain")
-    env_checksum = calculate_checksum(envbuf)
+    envbuf = await Buffer.from_async(environment, "plain")
+    env_checksum = await envbuf.get_checksum_async()
     buffer_cache.cache_buffer(env_checksum, envbuf)
     transformation["__env__"] = (
         env_checksum.hex()
@@ -82,7 +81,7 @@ async def build_transformation():
     tf_buf = tf_get_buffer(transformation)
     print(tf_buf.decode())
     print(json.dumps(tf_dunder, sort_keys=True, indent=2))
-    tf_checksum = calculate_checksum(tf_buf)
+    tf_checksum = await Buffer(tf_buf).get_checksum_async()
     buffer_cache.cache_buffer(tf_checksum, tf_buf)
 
     result = await transformation_cache.run_transformation_async(
