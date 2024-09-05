@@ -40,6 +40,6 @@ print(ctx2.sub2.myresult.value)
 
 graph = ctx.get_graph()
 j = json.dumps(graph, sort_keys=True, indent=2)
-from seamless import calculate_checksum
+from seamless import Buffer
 
-print(calculate_checksum(j).hex())
+print(Buffer(j.encode()).get_checksum())

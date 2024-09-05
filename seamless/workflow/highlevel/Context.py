@@ -51,6 +51,7 @@ from seamless.checksum.buffer_cache import (
     empty_dict_checksum,
     empty_list_checksum,
 )
+from seamless.util import unchecksum
 from seamless.workflow import verify_sync_compute
 from ..core.manager import Manager
 from ..core.direct import cleanup as _direct_cleanup
@@ -686,8 +687,13 @@ class Context(Base, HelpMixin):
         "runtime": The graph is returned after Library/LibInstance/Macro
         transformations of the graph.
         """
+        return self._get_graph(runtime=runtime, do_unchecksum=True)
+
+    def _get_graph(self, *, runtime, do_unchecksum):
         graph_dict = self._get_graph_dict(copy=True)
         if not runtime:
+            if do_unchecksum:
+                graph_dict = unchecksum(graph_dict)
             return graph_dict
         else:
             # self._get_graph_dict still needs to be run
@@ -707,6 +713,9 @@ class Context(Base, HelpMixin):
             "params": params,
             "lib": lib,
         }
+        if do_unchecksum:
+            graph = unchecksum(graph)
+
         return graph
 
     async def _get_graph_async(self, *args, **kwargs):

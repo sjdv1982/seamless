@@ -1,5 +1,5 @@
 Status: OK
-def func(a,b):
+def func(a, b):
     pass
 
 Status: invalid
@@ -11,7 +11,7 @@ None
 Status: invalid
 None
 Status: OK
-def func(a,b):
+def func(a, b):
     pass
 
 Status: invalid
