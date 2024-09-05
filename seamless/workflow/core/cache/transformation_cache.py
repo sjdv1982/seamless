@@ -189,6 +189,7 @@ async def syntactic_to_semantic(checksum: Checksum, celltype, subcelltype, coden
         return checksum
 
     buffer = get_buffer(checksum, remote=True)
+    buffer = Buffer(buffer).value
     if buffer is None:
         raise CacheMissError(checksum.hex()) from None
     buffer_cache.cache_buffer(checksum, buffer)

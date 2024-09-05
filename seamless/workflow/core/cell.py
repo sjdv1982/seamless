@@ -2,7 +2,7 @@ import inspect
 import textwrap
 from weakref import WeakSet
 
-from seamless import Checksum
+from seamless import Checksum, Buffer
 from seamless.util.source import strip_decorators
 
 from . import SeamlessBase
@@ -230,11 +230,11 @@ class Cell(SeamlessBase):
             manager.set_cell(self, value)
         return self
 
-    def set_buffer(self, buffer, checksum=None):
+    def set_buffer(self, buffer: Buffer, checksum: Checksum | None = None):
         """Update cell buffer from authority.
         If the checksum is known, it can be provided as well."""
-        if not (buffer is None or isinstance(buffer, bytes)):
-            raise TypeError(type(buffer))
+        buffer = Buffer(buffer)
+        checksum = Checksum(checksum)
         if self._context is None:
             self._initial_checksum = None
             self._initial_val = buffer, True

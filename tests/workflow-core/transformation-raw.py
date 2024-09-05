@@ -4,8 +4,8 @@ seamless.delegate(False)
 
 import inspect, textwrap
 
-from seamless import calculate_checksum
-from seamless.workflow.core.cache.buffer_cache import buffer_cache
+from seamless import Buffer
+from seamless.checksum.buffer_cache import buffer_cache
 from seamless.workflow.core.cache.transformation_cache import (
     transformation_cache,
     DummyTransformer,
@@ -14,8 +14,6 @@ from seamless.workflow.core.cache.transformation_cache import (
     syntactic_to_semantic,
     transformation_cache,
 )
-
-from seamless.workflow.core.protocol.serialize import serialize
 
 
 def func(a, b):
@@ -44,7 +42,9 @@ async def get_semantic_checksum(checksum, celltype, pinname):
 
 
 async def build_transformation():
-    func_buf = await serialize(get_source(func) + "\nresult = func(a,b)", "python")
+    func_buf = (
+        await Buffer.from_async(get_source(func) + "\nresult = func(a,b)", "python")
+    ).value
     inp = {
         "a": (
             "int",
@@ -59,15 +59,15 @@ async def build_transformation():
     transformation = {"__language__": "python", "__output__": ("result", "int", None)}
     for k, v in inp.items():
         celltype, value = v
-        buf = await serialize(value, celltype)
-        checksum = calculate_checksum(buf)
+        buf = await Buffer.from_async(value, celltype)
+        checksum = await buf.get_checksum_async()
         buffer_cache.cache_buffer(checksum, buf)
         sem_checksum = await get_semantic_checksum(checksum, celltype, k)
         transformation[k] = celltype, None, sem_checksum.hex()
 
     tf_buf = tf_get_buffer(transformation)
     print(tf_buf.decode())
-    tf_checksum = calculate_checksum(tf_buf)
+    tf_checksum = await Buffer(tf_buf).get_checksum_async()
     buffer_cache.cache_buffer(tf_checksum, tf_buf)
 
     tf = DummyTransformer(tf_checksum)

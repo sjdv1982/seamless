@@ -6,7 +6,7 @@ import traceback
 import sys
 from copy import deepcopy
 
-from seamless import Checksum
+from seamless import Checksum, Buffer
 
 from ..status import StatusReasonEnum
 
@@ -518,12 +518,14 @@ class Manager:
             self.structured_cell_trigger(sc, update_schema=True)
 
     @_run_in_mainthread
-    def set_cell_buffer(self, cell, buffer, checksum):
+    def set_cell_buffer(self, cell, buffer: Buffer, checksum: Checksum):
         if self._destroyed or cell._destroyed:
-            return
+            return        
         assert cell._hash_pattern is None
         assert cell.has_independence(), "{} is not independent".format(cell)
         assert cell._structured_cell is None, cell
+        buffer = Buffer(buffer).value
+        checksum = Checksum(checksum)
         reason = None
         if buffer is None:
             reason = StatusReasonEnum.UNDEFINED

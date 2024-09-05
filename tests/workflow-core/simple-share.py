@@ -51,7 +51,7 @@ ctx.compute()
 async def echo(uri):
     async with websockets.connect(uri) as websocket:
         async for message in websocket:
-            print("WS ECHO", message)
+            print("WS ECHO", json.dumps(json.loads(message)))
 
 
 ws = echo("ws://localhost:5138/ctx")

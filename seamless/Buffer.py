@@ -141,6 +141,12 @@ class Buffer:
         checksum = self.get_checksum()
         return deserialize(self.value, checksum.bytes(), celltype, copy=True)
 
+    def decode(self):
+        buf = self.value
+        if buf is None:
+            return None
+        return buf.decode()
+
     async def deserialize_async(self, celltype: str, *, copy: bool = True):
         """Converts the buffer to a value.
         The checksum must have been computed already.
@@ -154,6 +160,17 @@ class Buffer:
             return None
         celltype = self._map_celltype(celltype)
         return await deserialize(self.value, self.checksum.bytes(), celltype, copy=copy)
+
+    def __str__(self):
+        return str(self.value)
+
+    def __repr__(self):
+        result = "Seamless Buffer"
+        if self._checksum is not None:
+            result += f", checksum {self.checksum}"
+        if self.value is not None:
+            result += f", length {len(self.value)}"
+        return result
 
     def __eq__(self, other):
         if not isinstance(other, Buffer):

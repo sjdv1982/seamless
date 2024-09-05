@@ -566,7 +566,9 @@ class ShareServer(object):
         if not checksum:
             return
         try:
-            return await self._send(websocket, ("update", (key, checksum, marker)))
+            return await self._send(
+                websocket, ("update", (key, checksum.hex(), marker))
+            )
         except ConnectionClosed:
             try:
                 namespace.update_connections.remove(websocket)
