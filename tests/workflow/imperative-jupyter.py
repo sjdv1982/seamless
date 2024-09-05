@@ -21,7 +21,7 @@ transformation_checksum = ctx.tf.get_transformation_checksum()
 transformation_dict = ctx.resolve(transformation_checksum, "plain")
 
 from seamless.workflow.core.direct.run import run_transformation_dict_async
-from seamless.workflow.core.cache.buffer_cache import buffer_cache
+from seamless.checksum.buffer_cache import buffer_cache
 from seamless.workflow.core.protocol.deserialize import deserialize_sync as deserialize
 
 result_checksum = await run_transformation_dict_async(

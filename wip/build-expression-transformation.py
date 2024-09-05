@@ -30,7 +30,7 @@ print(expression)
 expression_transformation = build_expression_transformation(expression)
 print(expression_transformation.hex())
 if len(sys.argv) > 2 and not sys.argv[-1].startswith("-"):
-    from seamless.workflow.core.cache.buffer_cache import buffer_cache
+    from seamless.checksum.buffer_cache import buffer_cache
 
     d = buffer_cache.get_buffer(expression_transformation)
     assert d is not None

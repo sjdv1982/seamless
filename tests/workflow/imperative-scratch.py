@@ -5,7 +5,7 @@ import seamless
 seamless.delegate(level=3)
 
 from seamless import transformer
-from seamless.workflow.core.cache.buffer_cache import buffer_cache
+from seamless.checksum.buffer_cache import buffer_cache
 
 
 def gen_random_rotations(n):

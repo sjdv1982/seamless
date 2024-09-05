@@ -15,7 +15,7 @@ import seamless
 
 seamless.delegate(False)
 
-from seamless.workflow.core.cache.buffer_cache import buffer_cache
+from seamless.checksum.buffer_cache import buffer_cache
 from seamless.workflow.core.cache import CacheMissError
 
 from seamless.workflow import Context, Cell

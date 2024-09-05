@@ -10,7 +10,7 @@ else:
     seamless.delegate(False)
 
 from seamless import calculate_checksum
-from seamless.workflow.core.cache.buffer_cache import buffer_cache
+from seamless.checksum.buffer_cache import buffer_cache
 from seamless.workflow.core.cache.buffer_remote import (
     write_buffer as remote_write_buffer,
 )

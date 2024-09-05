@@ -5,7 +5,7 @@ seamless.delegate(False)
 import inspect, textwrap
 
 from seamless import calculate_checksum
-from seamless.workflow.core.cache.buffer_cache import buffer_cache
+from seamless.checksum.buffer_cache import buffer_cache
 from seamless.workflow.core.cache.transformation_cache import (
     transformation_cache,
     DummyTransformer,

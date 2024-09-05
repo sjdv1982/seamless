@@ -49,7 +49,7 @@ if "DELEGATE" in os.environ:
     has_err = seamless.delegate()
     if has_err:
         exit(1)
-    from seamless.workflow.core.cache.buffer_cache import buffer_cache
+    from seamless.checksum.buffer_cache import buffer_cache
 
     buffer_cache.buffer_cache.clear()
 else:

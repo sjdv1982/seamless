@@ -7,16 +7,14 @@ import asyncio, traceback
 loop = asyncio.get_event_loop()
 
 import sys
-from seamless.workflow.core.cache.buffer_cache import buffer_cache, CacheMissError
+from seamless.checksum.buffer_cache import buffer_cache, CacheMissError
 
 buffer_cache.LIFETIME_TEMP = 0.1
 buffer_cache.LIFETIME_TEMP_SMALL = 0.1
 buffer_cache.LOCAL_MODE_FULL_PERSISTENCE = False
-from seamless.workflow.core.protocol import (
-    calculate_checksum_module as calculate_checksum,
-)
+from seamless.checksum import cached_calculate_checksum
 
-calculate_checksum.checksum_cache.disable()
+cached_calculate_checksum.checksum_cache.disable()
 
 from seamless.workflow.core import context, cell, transformer
 

@@ -106,7 +106,7 @@ print("/Nothing printed")
 # remove transformation from cache
 tf_cache = ctx._manager.cachemanager.transformation_cache
 result_cs, _ = tf_cache.transformation_results.pop(Checksum(cs))
-from seamless.workflow.core.cache.buffer_cache import buffer_cache
+from seamless.checksum.buffer_cache import buffer_cache
 
 buffer_cache.decref(result_cs)
 
