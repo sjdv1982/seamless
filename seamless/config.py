@@ -249,7 +249,7 @@ def delegate(level=4, *, raise_exceptions=False, force_database=False):
         if level == 4:
             _contact_assistant()
             assert _assistant is not None  # will have been checked above
-            _block_local()
+            block_local()
             return False
         if level >= 1:
             _init_buffer_remote_from_env(

@@ -1,5 +1,6 @@
 import json
 import os
+import sys
 import threading
 from concurrent.futures import ThreadPoolExecutor
 
@@ -30,7 +31,7 @@ def exists_file(filename, download_checksum):
 
     try:
         current_checksum = calculate_file_checksum(filename)
-        current_checksum = Checksum(download_checksum)
+        current_checksum = Checksum(current_checksum)
     except Exception:
         return False
 
@@ -61,8 +62,14 @@ def download_file(filename, file_checksum):
             )
         return
     try:
-        with open(filename, "wb") as f:
-            f.write(file_buffer)
+        print("OK?", filename, file_buffer)
+        if filename == "/dev/stdout":
+            sys.stdout.buffer.write(file_buffer)
+        elif filename == "/dev/stderr":
+            sys.stderr.buffer.write(file_buffer)
+        else:
+            with open(filename, "wb") as f:
+                f.write(file_buffer)
     except Exception:
         with stdout_lock:
             msg(0, f"Cannot download file '{filename}'")

@@ -21,6 +21,8 @@ def calculate_checksum(
 
 def calculate_file_checksum(filename: str) -> str:
     """Calculate a file checksum"""
+    if filename in ("/dev/stdout", "/dev/stderr"):
+        return None
     blocksize = 2**16
     with open(filename, "rb") as f:
         hasher = sha3_256()

@@ -229,6 +229,9 @@ def set_write_buffer_server(write_buffer_server):
     """Set the write buffer server.
     There can only be one."""
     global _write_server
+    if write_buffer_server == _write_server:
+        return
+
     if write_buffer_server:
         ntrials = 5
         for trials in range(ntrials):
@@ -242,6 +245,7 @@ def set_write_buffer_server(write_buffer_server):
                 if trials < ntrials - 1:
                     continue
                 raise ConnectionError(write_buffer_server) from None
+            break
         if _write_server is not None:
             _written_buffers.clear()
         _write_server = write_buffer_server

@@ -1276,7 +1276,7 @@ def get_global_info(global_info=None, force=False):
         info = subprocess.getoutput("conda env export")
         info = "\n".join([l for l in info.splitlines() if not l.startswith("name:")])
         info = info.encode()
-        conda_env_checksum = Checksum(info).value
+        conda_env_checksum = Buffer(info).get_checksum().value
         execution_metadata0["Conda environment checksum"] = conda_env_checksum
         buffer_remote.write_buffer(conda_env_checksum, info)
         database.set_buffer_length(conda_env_checksum, len(info))
