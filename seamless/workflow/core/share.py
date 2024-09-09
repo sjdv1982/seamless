@@ -5,7 +5,7 @@ import asyncio
 
 import logging
 
-logger = logging.getLogger("seamless")
+logger = logging.getLogger(__name__)
 
 
 from seamless import Checksum

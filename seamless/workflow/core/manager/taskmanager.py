@@ -23,8 +23,6 @@ def print_warning(*args):
 
 
 def print_debug(*args):
-    if logger.level < logging.DEBUG:
-        return
     msg = " ".join([str(arg) for arg in args])
     logger.debug(msg)
 

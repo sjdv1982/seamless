@@ -7,7 +7,7 @@ from functools import partial
 
 import logging
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("seamless.workflow.core.manager.tasks")
 
 
 def print_info(*args):
@@ -21,8 +21,6 @@ def print_warning(*args):
 
 
 def print_debug(*args):
-    if logger.level < logging.DEBUG:
-        return
     msg = " ".join([str(arg) for arg in args])
     logger.debug(msg)
 

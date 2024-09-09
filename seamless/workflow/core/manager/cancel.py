@@ -532,6 +532,17 @@ class StructuredCellCancellation:
             # 3. Join/auth tasks will clear the devalued channels
             # HOWEVER, join/auth tasks will only clear at the end
             if self.mode != SCModeEnum.EQUILIBRIUM:
+                if self.mode == SCModeEnum.JOINING and (
+                    old_state == new_state == "devalued-"
+                ):
+                    # glitch?
+                    return
+                if self.mode == SCModeEnum.FORCE_JOINING and (
+                    new_state == "devalued-" and old_state in ("devalued-", "pending")
+                ):
+                    # glitch?
+                    return
+
                 raise ValueError(
                     (
                         scell,
