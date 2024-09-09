@@ -1,5 +1,5 @@
 Traceback (most recent call last):
-  File "/cwd/workflow-core/structured_cell/simple-deepcell.py", line 17, in <module>
+  File "/cwd/tests/workflow-core/structured_cell/simple-deepcell.py", line 17, in <module>
     data.set(20)
   File "/silk/silk/Silk.py", line 536, in set
     self._set(value, lowlevel=False)

@@ -22,19 +22,5 @@
   ]
 }
 
-Traceback (most recent call last):
-  File "/cwd/workflow-core/transformation-raw-bash.py", line 57, in <module>
-    asyncio.get_event_loop().run_until_complete(build_transformation())
-  File "/opt/conda/lib/python3.10/asyncio/base_events.py", line 649, in run_until_complete
-    return future.result()
-  File "/cwd/workflow-core/transformation-raw-bash.py", line 42, in build_transformation
-    result = await transformation_cache.run_transformation_async(
-  File "/seamless/seamless/workflow/core/cache/transformation_cache.py", line 1378, in run_transformation_async
-    raise self.transformation_exceptions[tf_checksum]
-seamless.workflow.core.transformation.SeamlessTransformationError: Traceback (most recent call last):
-  File "transformer", line 8, in <module>
-    from seamless.core.transformation import SeamlessStreamTransformationError
-ModuleNotFoundError: No module named 'seamless.core'
-*************************************************
-Execution time: 0.0 seconds
+OK? 12 7 19
 

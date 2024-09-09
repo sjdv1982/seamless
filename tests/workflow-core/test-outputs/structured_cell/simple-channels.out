@@ -5,9 +5,9 @@ Status: invalid Status: OK Status: OK
 Traceback (most recent call last):
   File "/seamless/seamless/workflow/core/manager/tasks/evaluate_expression.py", line 462, in _evaluate_expression
     result_buffer = await SerializeToBufferTask(
-  File "/seamless/seamless/workflow/core/manager/tasks/__init__.py", line 156, in run
+  File "/seamless/seamless/workflow/core/manager/tasks/__init__.py", line 154, in run
     await asyncio.shield(self.future)
-  File "/seamless/seamless/workflow/core/manager/tasks/__init__.py", line 191, in _run0
+  File "/seamless/seamless/workflow/core/manager/tasks/__init__.py", line 189, in _run0
     return await self._runner
   File "/seamless/seamless/workflow/core/manager/tasks/serialize_buffer.py", line 30, in _run
     result = await serialize(
