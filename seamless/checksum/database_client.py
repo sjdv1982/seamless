@@ -184,6 +184,7 @@ class Database:
         """Set transformation metadata.
         tf_checksum: transformation checksum"""
         tf_checksum = Checksum(tf_checksum).value
+        metadata = unchecksum(metadata)
         if not self.active:
             return
         request = {
