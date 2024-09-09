@@ -1,4 +1,4 @@
-from seamless.workflow import Context, Cell
+from seamless.workflow import Context
 from seamless.workflow.highlevel import set_resource
 
 executor_file = "executor.py"
@@ -51,21 +51,24 @@ if ctx.result.value is None:
     print(ctx.executor.exception)
     print(ctx.status)
     import sys
+
     sys.exit()
 
 # 3: Save graph and zip
 
 import os, json
-currdir=os.path.dirname(os.path.abspath(__file__))
-graph_filename=os.path.join(currdir,"../bash_transformer.seamless")
+
+currdir = os.path.dirname(os.path.abspath(__file__))
+graph_filename = os.path.join(currdir, "../bash_transformer.seamless")
 json.dump(graph, open(graph_filename, "w"), sort_keys=True, indent=2)
 
-zip_filename=os.path.join(currdir,"../bash_transformer.zip")
+zip_filename = os.path.join(currdir, "../bash_transformer.zip")
 with open(zip_filename, "bw") as f:
     f.write(zip)
 
 from seamless.workflow.core.cache.transformation_cache import transformation_cache
+
 sem_checksum = transformation_cache.syntactic_to_semantic(
-    ctx.executor.code.checksum), "python", "transformer", ""
+    ctx.executor.code.checksum, "python", "transformer", ""
 )
 print("Executor semantic code checksum:", sem_checksum.hex())

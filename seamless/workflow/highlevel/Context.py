@@ -184,6 +184,8 @@ def _get_zip(buffer_dict):
             if checksum in (empty_dict_checksum, empty_list_checksum):
                 continue
             buffer = buffer_dict[checksum]
+            if isinstance(checksum, Checksum):
+                checksum = checksum.value
             info = ZipInfo(checksum, date_time=(1980, 1, 1, 0, 0, 0))
             zipf.writestr(info, buffer)
     result = archive.getvalue()
@@ -743,6 +745,8 @@ class Context(Base, HelpMixin):
         )
         manager = self._manager
         buffer_dict = copying.get_buffer_dict_sync(manager, checksums)
+        if buffer_dict is None:
+            raise RuntimeError("Cannot obtain buffers for current checksums")
         return _get_zip(buffer_dict)
 
     async def get_zip_async(self, with_libraries: bool = True) -> bytes:

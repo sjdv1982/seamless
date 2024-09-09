@@ -1,19 +1,22 @@
-import os,shutil
+import os
+import shutil
 import tempfile
-import numpy as np
 import json
+import signal
 from io import BytesIO
+
+import numpy as np
+
 from silk import Silk
+from silk.mixed.get_form import get_form
 from seamless.workflow.core.transformation import SeamlessStreamTransformationError
 from seamless.workflow.core.mount_directory import write_to_directory
-from silk.mixed.get_form import get_form
-from seamless import subprocess_ as subprocess
-from subprocess import PIPE
-import signal
+from seamless.util import subprocess_ as subprocess
 
 env = os.environ.copy()
 
 resultfile = "RESULT"
+
 
 def sighandler(signal, frame):
     if process is not None:
@@ -21,6 +24,7 @@ def sighandler(signal, frame):
     os.chdir(old_cwd)
     shutil.rmtree(tempdir, ignore_errors=True)
     raise SystemExit()
+
 
 def read_data(data):
     if OUTPUTPIN[0] == "bytes" or OUTPUTPIN == ("mixed", {"*": "##"}):
@@ -38,7 +42,9 @@ def read_data(data):
         except ValueError:
             return sdata
 
+
 old_cwd = os.getcwd()
+
 
 def _write_file(pinname, data, filemode):
     if pinname.startswith("/"):
@@ -48,9 +54,10 @@ def _write_file(pinname, data, filemode):
         raise ValueError("Pin {}: .. is not allowed")
     if len(path_elements) > 1:
         parent_dir = os.path.dirname(pinname)
-        os.makedirs(parent_dir, exist_ok=True)       
+        os.makedirs(parent_dir, exist_ok=True)
     with open(pinname, filemode) as pinf:
         pinf.write(data)
+
 
 try:
     process = None
@@ -83,7 +90,8 @@ try:
         if storage == "pure-plain":
             if isinstance(form, str):
                 vv = str(v)
-                if not vv.endswith("\n"): vv += "\n"
+                if not vv.endswith("\n"):
+                    vv += "\n"
                 if pin.find(".") == -1 and len(vv) <= 1000:
                     env[pin] = vv.rstrip("\n")
             else:
@@ -98,7 +106,7 @@ try:
                     pinf.write(vv)
             else:
                 with open(pin, "bw") as pinf:
-                    np.save(pinf,v,allow_pickle=False)
+                    np.save(pinf, v, allow_pickle=False)
     bash_header = """set -u -e
 trap 'jobs -p | xargs -r kill' EXIT
 """
@@ -110,23 +118,25 @@ conda activate {conda_environment_}
 """
 
     bashcode2 = bash_header + bashcode
-    process = subprocess.Popen(            
-        bashcode2, shell=True, 
-        stdout = subprocess.PIPE,
-        stderr = subprocess.STDOUT,
-        executable='/bin/bash',
-        env=env
+    process = subprocess.Popen(
+        bashcode2,
+        shell=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        executable="/bin/bash",
+        env=env,
     )
     for line in process.stdout:
         try:
             line = line.decode()
         except UnicodeDecodeError:
             pass
-        print(line,end="")
+        print(line, end="")
     process.wait()
 
     if process.returncode:
-        raise SeamlessStreamTransformationError("""
+        raise SeamlessStreamTransformationError(
+            """
 Bash transformer exception
 ==========================
 
@@ -137,7 +147,10 @@ Error: Return code {}
 *************************************************
 {}
 *************************************************
-""".format(process.returncode, bashcode)) from None
+""".format(
+                process.returncode, bashcode
+            )
+        ) from None
     if not os.path.exists(resultfile):
         msg = """
 Bash transformer exception
@@ -150,7 +163,9 @@ Error: Result file/folder RESULT does not exist
 *************************************************
 {}
 *************************************************
-""".format(bashcode)
+""".format(
+            bashcode
+        )
         raise SeamlessStreamTransformationError(msg)
 
     if os.path.isdir(resultfile):
@@ -159,7 +174,7 @@ Error: Result file/folder RESULT does not exist
             for filename in filenames:
                 full_filename = os.path.join(dirpath, filename)
                 assert full_filename.startswith(resultfile + "/")
-                member = full_filename[len(resultfile) + 1:]
+                member = full_filename[len(resultfile) + 1 :]
                 data = open(full_filename, "rb").read()
                 rdata = read_data(data)
                 result0[member] = rdata

@@ -62,7 +62,6 @@ def download_file(filename, file_checksum):
             )
         return
     try:
-        print("OK?", filename, file_buffer)
         if filename == "/dev/stdout":
             sys.stdout.buffer.write(file_buffer)
         elif filename == "/dev/stderr":

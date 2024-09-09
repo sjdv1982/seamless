@@ -60,6 +60,26 @@ class Checksum:
             other = Checksum(other)
         return self.bytes() == other.bytes()
 
+    def __gt__(self, other):
+        if isinstance(other, Checksum):
+            return self._value > other._value
+        elif isinstance(other, str):
+            return self.hex() > other
+        elif isinstance(other, bytes):
+            return self._value > other
+        else:
+            raise NotImplementedError
+
+    def __lt__(self, other):
+        if isinstance(other, Checksum):
+            return self._value < other._value
+        elif isinstance(other, str):
+            return self.hex() < other
+        elif isinstance(other, bytes):
+            return self._value < other
+        else:
+            raise NotImplementedError
+
     def save(self, filename):
         """Saves the checksum to a .CHECKSUM file.
 

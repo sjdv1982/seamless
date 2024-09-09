@@ -1,26 +1,31 @@
-import os,shutil
+import os
+import shutil
 import tempfile
-import numpy as np
 import tarfile
 import json
 import sys
+import signal
 from io import BytesIO
+from urllib3.exceptions import ProtocolError
+
+import numpy as np
+from requests.exceptions import ConnectionError
+
 from silk import Silk
 from silk.mixed.get_form import get_form
-from requests.exceptions import ConnectionError
-from urllib3.exceptions import ProtocolError
+
+from seamless.checksum.buffer_remote import _read_folders
+from seamless.util import subprocess_ as subprocess
+from seamless.util.environment import validate_singularity, check_docker_power
 from seamless.workflow.core.transformation import SeamlessStreamTransformationError
 from seamless.workflow.core.mount_directory import write_to_directory
-from seamless.workflow.core.cache.buffer_remote import _read_folders
-from seamless.workflow.core.environment import validate_singularity, check_docker_power
-from seamless import subprocess_ as subprocess
-import signal
 
 resultfile = "RESULT"
 
 _creating_container = False
 _to_exit = False
 _sys_exit = False
+
 
 def read_data(data):
     if OUTPUTPIN[0] == "bytes" or OUTPUTPIN == ("mixed", {"*": "##"}):
@@ -37,6 +42,7 @@ def read_data(data):
             return json.loads(sdata)
         except ValueError:
             return sdata
+
 
 def sighandler(signal, frame):
     global _creating_container, _to_exit, _sys_exit
@@ -60,7 +66,9 @@ def sighandler(signal, frame):
     _sys_exit = True
     raise SystemExit() from None
 
+
 old_cwd = os.getcwd()
+
 
 def _write_file(pinname, data, filemode):
     if pinname.startswith("/"):
@@ -70,18 +78,23 @@ def _write_file(pinname, data, filemode):
         raise ValueError("Pin {}: .. is not allowed")
     if len(path_elements) > 1:
         parent_dir = os.path.dirname(pinname)
-        os.makedirs(parent_dir, exist_ok=True)       
+        os.makedirs(parent_dir, exist_ok=True)
     with open(pinname, filemode) as pinf:
         pinf.write(data)
+
 
 singularity_mode = False
 if not check_docker_power():
     if validate_singularity():
         singularity_dir = os.environ.get("SEAMLESS_SINGULARITY_DIR")
         if singularity_dir is None:
-            raise SeamlessStreamTransformationError("No docker available, and SEAMLESS_SINGULARITY_DIR is not defined")
+            raise SeamlessStreamTransformationError(
+                "No docker available, and SEAMLESS_SINGULARITY_DIR is not defined"
+            )
         if not os.path.exists(singularity_dir):
-            raise SeamlessStreamTransformationError(f"SEAMLESS_SINGULARITY_DIR '{singularity_dir}' does not exist")
+            raise SeamlessStreamTransformationError(
+                f"SEAMLESS_SINGULARITY_DIR '{singularity_dir}' does not exist"
+            )
         singularity_file0 = os.path.join(singularity_dir, docker_image_)
         singularity_file = None
         for ext in "sif", "simg":
@@ -90,13 +103,17 @@ if not check_docker_power():
                 singularity_file = singularity_file00
                 break
         if singularity_file is None:
-            raise SeamlessStreamTransformationError(f"SEAMLESS_SINGULARITY_DIR '{singularity_dir}' does not contain {docker_image_}.sif or .simg")
+            raise SeamlessStreamTransformationError(
+                f"SEAMLESS_SINGULARITY_DIR '{singularity_dir}' does not contain {docker_image_}.sif or .simg"
+            )
         singularity_mode = True
     else:
-        raise SeamlessStreamTransformationError("Docker and singularity are not available")
+        raise SeamlessStreamTransformationError(
+            "Docker and singularity are not available"
+        )
 
 if singularity_mode:
-    #adapted from bash transformer
+    # adapted from bash transformer
     try:
         process = None
         tempdir = tempfile.mkdtemp(prefix="seamless-singularity-transformer")
@@ -120,7 +137,9 @@ if singularity_mode:
                     os.symlink(v, pin)
                     continue
                 elif FILESYSTEM[pin]["mode"] == "directory":
-                    write_to_directory(pin, v, cleanup=False, deep=False, text_only=False)
+                    write_to_directory(
+                        pin, v, cleanup=False, deep=False, text_only=False
+                    )
                     env[pin] = pin
                     continue
             storage, form = get_form(v)
@@ -129,7 +148,8 @@ if singularity_mode:
             if storage == "pure-plain":
                 if isinstance(form, str):
                     vv = str(v)
-                    if not vv.endswith("\n"): vv += "\n"
+                    if not vv.endswith("\n"):
+                        vv += "\n"
                     if pin.find(".") == -1 and len(vv) <= 1000:
                         env[pin] = vv.rstrip("\n")
                 else:
@@ -144,13 +164,13 @@ if singularity_mode:
                         pinf.write(vv)
                 else:
                     with open(pin, "bw") as pinf:
-                        np.save(pinf,v,allow_pickle=False)
+                        np.save(pinf, v, allow_pickle=False)
         bash_header = f"""set -u -e
 trap 'jobs -p | xargs -r kill' EXIT
 declare -p {" ".join(env.keys())} > __env__
 """
         with open("__env__", "w") as f:
-            for k,v in env.items():
+            for k, v in env.items():
                 f.write(f"{k}=''")
         with open("__BASHCODE__", "w") as f:
             f.write(docker_command)
@@ -162,23 +182,25 @@ declare -p {" ".join(env.keys())} > __env__
 bash -c 'cd /run; bash ./__BASHCODE__'
 """
         full_singularity_command = bash_header + singularity_command
-        process = subprocess.Popen(            
-            full_singularity_command, shell=True, 
-            stdout = subprocess.PIPE,
-            stderr = subprocess.STDOUT,
-            executable='/bin/bash',
-            env=env
+        process = subprocess.Popen(
+            full_singularity_command,
+            shell=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            executable="/bin/bash",
+            env=env,
         )
         for line in process.stdout:
             try:
                 line = line.decode()
             except UnicodeDecodeError:
                 pass
-            print(line,end="")
+            print(line, end="")
         process.wait()
 
         if process.returncode:
-            raise SeamlessStreamTransformationError("""
+            raise SeamlessStreamTransformationError(
+                """
 Singularity transformer exception
 ==========================
 
@@ -189,7 +211,10 @@ Error: Return code {}
 *************************************************
 {}
 *************************************************
-""".format(process.returncode, singularity_command)) from None
+""".format(
+                    process.returncode, singularity_command
+                )
+            ) from None
         if not os.path.exists(resultfile):
             msg = """
 Singularity transformer exception
@@ -202,7 +227,9 @@ Error: Result file/folder RESULT does not exist
 *************************************************
 {}
 *************************************************
-""".format(singularity_command)
+""".format(
+                singularity_command
+            )
             raise SeamlessStreamTransformationError(msg)
 
         if os.path.isdir(resultfile):
@@ -211,7 +238,7 @@ Error: Result file/folder RESULT does not exist
                 for filename in filenames:
                     full_filename = os.path.join(dirpath, filename)
                     assert full_filename.startswith(resultfile + "/")
-                    member = full_filename[len(resultfile) + 1:]
+                    member = full_filename[len(resultfile) + 1 :]
                     data = open(full_filename, "rb").read()
                     rdata = read_data(data)
                     result0[member] = rdata
@@ -229,12 +256,13 @@ Error: Result file/folder RESULT does not exist
         os.chdir(old_cwd)
         shutil.rmtree(tempdir, ignore_errors=True)
 
-    #/adapted from bash transformer
-else: # "docker" mode
+    # /adapted from bash transformer
+else:  # "docker" mode
     _dind_mounts = []
     try:
         import signal
         import docker as docker_module
+
         tempdir = tempfile.mkdtemp(prefix="seamless-docker-transformer")
         os.chdir(tempdir)
         container = None
@@ -256,12 +284,16 @@ else: # "docker" mode
                     pin_parent = os.path.dirname(pin)
                     if len(pin_parent):
                         os.makedirs(pin_parent, exist_ok=True)
-                    if os.environ.get("DOCKER_IMAGE"):  # we are running inside a Docker container
+                    if os.environ.get(
+                        "DOCKER_IMAGE"
+                    ):  # we are running inside a Docker container
                         _dind_mounts.append((v, pin))
                     os.symlink(v, pin)
                     continue
                 elif FILESYSTEM[pin]["mode"] == "directory":
-                    write_to_directory(pin, v, cleanup=False, deep=False, text_only=False)
+                    write_to_directory(
+                        pin, v, cleanup=False, deep=False, text_only=False
+                    )
                     env[pin] = pin
                     continue
             storage, form = get_form(v)
@@ -270,7 +302,8 @@ else: # "docker" mode
             if storage == "pure-plain":
                 if isinstance(form, str):
                     vv = str(v)
-                    if not vv.endswith("\n"): vv += "\n"
+                    if not vv.endswith("\n"):
+                        vv += "\n"
                     if pin.find(".") == -1 and len(vv) <= 1000:
                         env[pin] = vv.rstrip("\n")
                 else:
@@ -285,7 +318,7 @@ else: # "docker" mode
                         pinf.write(vv)
                 else:
                     with open(pin, "bw") as pinf:
-                        np.save(pinf,v,allow_pickle=False)
+                        np.save(pinf, v, allow_pickle=False)
         if _dind_mounts:
             warn0 = "\n    ".join([f"{pin} -> {v}" for v, pin in _dind_mounts])
             warn = f"""WARNING: Docker transformer launched from within a Docker container.
@@ -307,10 +340,10 @@ The following pins access their buffer through symbolic links:
 
         if "working_dir" not in options:
             options["working_dir"] = "/run"
-        with open("DOCKER-COMMAND","w") as f:
+        with open("DOCKER-COMMAND", "w") as f:
             bash_header = """set -u -e
 trap 'chmod -R 777 /run' EXIT
-""" # don't add "trap 'jobs -p | xargs -r kill' EXIT" as it gives serious problems
+"""  # don't add "trap 'jobs -p | xargs -r kill' EXIT" as it gives serious problems
 
             f.write(bash_header)
             f.write(docker_command)
@@ -321,14 +354,14 @@ ls $(pwd) > /dev/null 2>&1 || (>&2 echo \"\"\"The Docker container cannot read t
 Most likely, the container runs under a specific user ID,
 which is neither root nor the user ID under which Seamless is running.
 Docker image user ID: $(id -u)
-Seamless user ID: {}\"\"\"; exit 126) && bash DOCKER-COMMAND'''""".format(os.getuid())
+Seamless user ID: {}\"\"\"; exit 126) && bash DOCKER-COMMAND'''""".format(
+            os.getuid()
+        )
         try:
             try:
                 _creating_container = True
                 container = docker_client.containers.create(
-                    docker_image_,
-                    full_docker_command,
-                    **options
+                    docker_image_, full_docker_command, **options
                 )
                 if _to_exit:
                     raise SystemExit() from None
@@ -355,13 +388,14 @@ Seamless user ID: {}\"\"\"; exit 126) && bash DOCKER-COMMAND'''""".format(os.get
                 for bufline in logs:
                     try:
                         line = bufline.decode()
-                        print(line,end="")
+                        print(line, end="")
                     except UnicodeDecodeError:
-                        sys.stdout.buffer.write(bufline)                
-                exit_status = container.wait()['StatusCode']
+                        sys.stdout.buffer.write(bufline)
+                exit_status = container.wait()["StatusCode"]
 
                 if exit_status != 0:
-                    raise SeamlessStreamTransformationError("""
+                    raise SeamlessStreamTransformationError(
+                        """
 Docker transformer exception
 ============================
 
@@ -372,7 +406,10 @@ Exit code: {}
 *************************************************
 {}
 *************************************************
-""".format(exit_status, docker_command)) from None
+""".format(
+                            exit_status, docker_command
+                        )
+                    ) from None
             except ConnectionError as exc:
                 msg = "Unknown connection error"
                 if len(exc.args) == 1:
@@ -401,7 +438,9 @@ Error: Result file/folder RESULT does not exist
 *************************************************
 {}
 *************************************************
-""".format(docker_command)
+""".format(
+                    docker_command
+                )
                 raise SeamlessStreamTransformationError(msg)
         finally:
             if not _sys_exit:
@@ -410,14 +449,13 @@ Error: Result file/folder RESULT does not exist
                 except:
                     pass
 
-
         if os.path.isdir(resultfile):
             result0 = {}
             for dirpath, _, filenames in os.walk(resultfile):
                 for filename in filenames:
                     full_filename = os.path.join(dirpath, filename)
                     assert full_filename.startswith(resultfile + "/")
-                    member = full_filename[len(resultfile) + 1:]
+                    member = full_filename[len(resultfile) + 1 :]
                     data = open(full_filename, "rb").read()
                     rdata = read_data(data)
                     result0[member] = rdata

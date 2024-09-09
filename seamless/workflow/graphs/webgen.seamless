@@ -418,7 +418,6 @@
       "checksum": {
         "code": "e60a9d6cf9515591c4841019c1ce354b1e11eaf78a771609bd4387d86e0f3dbc",
         "input": "2a87d93425220f1a1088b84abf05651ea3142467118f938ebd15f636226ee146",
-        "input_buffer": "2a87d93425220f1a1088b84abf05651ea3142467118f938ebd15f636226ee146",
         "result_schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
         "schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c"
       },
@@ -451,9 +450,8 @@
       "SCHEMA": null,
       "checksum": {
         "code": "32a693865cc72f9d1027849ad3d379fce7819b29f8b04ba5ef93572370d52818",
-        "input": "0abc11cac224c340876d04068f27bd2633b15bc112643d1eb565e6b48c03bfb8",
+        "input": "81ca3960f4a23c56f7b259a4287b97a8490b035d7ced72175210faac51f51618",
         "input_auth": "81ca3960f4a23c56f7b259a4287b97a8490b035d7ced72175210faac51f51618",
-        "input_buffer": "0abc11cac224c340876d04068f27bd2633b15bc112643d1eb565e6b48c03bfb8",
         "result_schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
         "schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c"
       },
@@ -493,7 +491,6 @@
       "checksum": {
         "code": "35896ff633b95c7ad33d3c7c124393a7f4b57d1b013286a4d07ccca29f0ff8a3",
         "input": "8949eedee204737be9fdaba4c02a3c61c6b2833eec238d647eb97cc7b90e4bbf",
-        "input_buffer": "8949eedee204737be9fdaba4c02a3c61c6b2833eec238d647eb97cc7b90e4bbf",
         "result_schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
         "schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c"
       },
@@ -547,6 +544,10 @@
       "path": [
         "graph_rt"
       ],
+      "share": {
+        "path": null,
+        "readonly": true
+      },
       "type": "cell"
     },
     {
@@ -807,7 +808,7 @@
     {
       "celltype": "text",
       "checksum": {
-        "value": "3db1ab53b139b852acfb0e90029e0418858e3edd45c0ac1aafe7bd098f49a03a"
+        "value": "dd627a932b7538efb1eddb31fbf203361e173392422e07481cb9c03cd50f06bd"
       },
       "datatype": "mixed",
       "mimetype": "text/javascript",
@@ -856,7 +857,7 @@
     {
       "celltype": "text",
       "checksum": {
-        "value": "513b48df01db4aa47933e19cff8883f3f9eb54981dcafa1cb200ea2c3e9c1b01"
+        "value": "ed458f95a0cab3ec135149b998804a19e6312f1c99fdda17950adbb67b590f70"
       },
       "datatype": "mixed",
       "mimetype": "text/javascript",
@@ -908,9 +909,6 @@
     },
     {
       "celltype": "structured",
-      "checksum": {
-        "value": "1c15497e76175b67a0334639d988bd1a58438e50ec87089a5a688c77def27b0a"
-      },
       "mount": {
         "authority": "cell",
         "mode": "r",

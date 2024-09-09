@@ -2,7 +2,7 @@ rm -rf temp-bufferdir
 currdir=`python -c 'import os,sys;print(os.path.dirname(os.path.realpath(sys.argv[1])))' $0`
 export SEAMLESS_HASHSERVER_DIRECTORY=$currdir/temp-bufferdir
 seamless-delegate-stop >& /dev/null
-seamless-delegate none >& /dev/null
+seamless-delegate none-devel >& /dev/null
 seamless-upload testfolder
 
 function ftest() {

@@ -1,4 +1,4 @@
-raise NotImplementedError # TODO: use highlevel.direct.module
+raise NotImplementedError  # TODO: use seamless.direct.module
 
 from seamless.graphs.multi_module import mytestpackage
 from seamless.workflow import Context, Cell, Module, Transformer, Resource, FolderCell
@@ -44,22 +44,27 @@ ctx.pypackage_moduledict.celltype = "plain"
 ctx.pypackage_moduledict.mount("pypackage_moduledict.json", mode="w")
 ctx.compute()
 
-#ctx.testpackage = Module() # will not work...
+# ctx.testpackage = Module() # will not work...
 ctx.testpackage = ctx.pypackage_moduledict
+
+
 def func():
     print(testpackage, dir(testpackage))
     print(testpackage.mod4, testpackage.testvalue)
     from .testpackage import testvalue
     from .testpackage.sub.mod1 import func
     from .testpackage.sub.mod2 import func as func2
+
     print(testvalue)
     print(func is func2)
     print(func2())
     print(testpackage.testvalue)
     from .testpackage import mod3
+
     print(mod3.testvalue)
     print(mod3.testfunc(99))
     return 0
+
 
 ctx.func = func
 ctx.func.testpackage = ctx.testpackage
@@ -71,6 +76,7 @@ if ctx.pypackage_to_moduledict.result.value.unsilk is None:
     print(ctx.pypackage_to_moduledict.exception)
     print(ctx.pypackage_to_moduledict.logs)
     import sys
+
     sys.exit()
 
 if ctx.func.result.value.unsilk is None:
@@ -78,6 +84,7 @@ if ctx.func.result.value.unsilk is None:
     print(ctx.pypackage_to_moduledict.result.value.unsilk)
     print(ctx.func.exception)
     import sys
+
     sys.exit()
 
 print(ctx.func.logs)
@@ -89,10 +96,11 @@ print(ctx.func.result.value)
 # 5: Save graph and zip
 
 import os, json
-currdir=os.path.dirname(os.path.abspath(__file__))
-graph_filename=os.path.join(currdir,"../multi_module.seamless")
+
+currdir = os.path.dirname(os.path.abspath(__file__))
+graph_filename = os.path.join(currdir, "../multi_module.seamless")
 json.dump(graph, open(graph_filename, "w"), sort_keys=True, indent=2)
 
-zip_filename=os.path.join(currdir,"../multi_module.zip")
+zip_filename = os.path.join(currdir, "../multi_module.zip")
 with open(zip_filename, "bw") as f:
     f.write(zip)

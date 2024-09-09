@@ -6,11 +6,12 @@ fi
 
 rm -rf /tmp/bufferdir
 echo 0
-python buffer_remote0.py 0  # not flat
+python buffer_remote0.py 0  # vault layout.
 echo ''
 
 buffer_write_server=$SEAMLESS_WRITE_BUFFER_SERVER
 export HASHSERVER_WRITABLE=0
+export HASHSERVER_LAYOUT=vault
 unset SEAMLESS_WRITE_BUFFER_SERVER
 seamless-hashserver /tmp/bufferdir/ >& /dev/null
 
@@ -22,6 +23,7 @@ echo ''
 
 export SEAMLESS_WRITE_BUFFER_SERVER=$buffer_write_server
 export HASHSERVER_WRITABLE=1
+unset HASHSERVER_LAYOUT
 mkdir -p /tmp/bufferdir
 seamless-hashserver /tmp/bufferdir/ >& /dev/null
 
@@ -52,6 +54,5 @@ echo ''
 echo 3b
 python buffer_remote3.py
 echo ''
-
 
 rm -rf /tmp/bufferdir
