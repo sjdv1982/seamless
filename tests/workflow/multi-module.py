@@ -13,7 +13,7 @@ print(q)
 result = q
 """
 
-from seamless import Transformer, Context, Module
+from seamless.workflow import Transformer, Context, Module
 
 ctx = Context()
 ctx.testmodule = Module()

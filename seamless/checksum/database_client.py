@@ -87,6 +87,7 @@ class Database:
         if isinstance(request, bytes):
             rqbuf = request
         else:
+            request = unchecksum(request)
             rqbuf = json.dumps(request)
         with session.put(url, data=rqbuf) as response:
             if raise_exception and response.status_code != 200:
@@ -232,6 +233,7 @@ class Database:
         if isinstance(request, bytes):
             rqbuf = request
         else:
+            request = unchecksum(request)
             rqbuf = json.dumps(request)
         with session.get(url, data=rqbuf) as response:
             if response.status_code == 404:
@@ -262,6 +264,7 @@ class Database:
         if isinstance(request, bytes):
             rqbuf = request
         else:
+            request = unchecksum(request)
             rqbuf = json.dumps(request)
         async with session_async.get(url, data=rqbuf) as response:
             if response.status == 404:

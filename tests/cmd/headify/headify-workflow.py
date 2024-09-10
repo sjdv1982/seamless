@@ -26,7 +26,7 @@ import seamless
 
 seamless.delegate()
 
-from seamless import Transformer, Context, Cell
+from seamless.workflow import Transformer, Context, Cell
 
 try:
     Transformer.from_canonical_interface(tool="canonical-interface/headify")

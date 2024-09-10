@@ -14,7 +14,7 @@ cs=11cd2207ae82a0ff9d4f90c6f469809444e32351cf38f227086d615e049b76b3
 echo 1
 cat random.txt
 rm -rf random.txt
-seamless-download -c $cs
+seamless-download $cs
 cat $cs
 echo ''
 seamless-delete-buffer ../dummy-bufferfolder/ random.txt.CHECKSUM 2>&1
