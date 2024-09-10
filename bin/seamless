@@ -20,9 +20,10 @@ import logging
 os.environ["__SEAMLESS_FRUGAL"] = "1"
 import seamless
 
+from seamless import Checksum, Buffer, CacheMissError
 from seamless.checksum.buffer_cache import buffer_cache
 from seamless.checksum.deserialize import deserialize_sync as deserialize
-from seamless import CacheMissError
+from seamless.util import unchecksum
 from seamless.cmd.message import set_verbosity, message as msg, message_and_exit as err
 from seamless.cmd import parsing
 from seamless.cmd.parsing import get_commands, guess_arguments
@@ -36,7 +37,6 @@ from seamless.cmd import interface
 from seamless.cmd.exceptions import SeamlessSystemExit
 from seamless.cmd.bytes2human import human2bytes
 from seamless.cmd.download import download
-from seamless import Checksum
 from seamless.Environment import Environment
 from seamless.checksum.json import json_dumps
 from seamless.workflow.core.direct.run import fingertip, extract_dunder, tf_get_buffer
@@ -375,7 +375,7 @@ if args.extra_inputs:
         ):
             err(f"--input argument '{inp}': file/directory does not exist")
 
-argtypesstr = json.dumps(argtypes_initial, sort_keys=False, indent=2)
+argtypesstr = json.dumps(unchecksum(argtypes_initial), sort_keys=False, indent=2)
 msg(1, "initial argtypes dict:\n" + argtypesstr)
 
 file_mapping_mode = args.file_mapping_mode
@@ -394,6 +394,7 @@ try:
 except ValueError as exc:
     err(*exc.args)
 
+argtypes = unchecksum(argtypes)
 argtypesstr = json.dumps(argtypes, sort_keys=False, indent=2)
 msg(1, "argtypes dict:\n" + argtypesstr)
 
@@ -734,6 +735,13 @@ else:
 transformation_checksum = Checksum(transformation_checksum).hex()
 msg(3, f"Transformation checksum: {transformation_checksum}")
 
+
+def file_write(handle, buf):
+    if isinstance(buf, Buffer):
+        buf = buf.value
+    handle.write(buf)
+
+
 if args.dry_run:
     if args.write_job is not None:
         os.mkdir(args.write_job)
@@ -751,14 +759,14 @@ if args.dry_run:
                 _f.write(transformation_checksum)
         else:
             with open(os.path.join(args.write_job, "transformation.json"), "wb") as _f:
-                _f.write(transformation_buffer)
+                file_write(_f, transformation_buffer)
             command = buffer_cache.buffer_cache[bytes.fromhex(code_checksum)]
             with open(os.path.join(args.write_job, "command.txt"), "wb") as _f:
-                _f.write(command)
+                file_write(_f, command)
             if env_checksum is not None:
                 env_buffer = buffer_cache.buffer_cache[bytes.fromhex(env_checksum)]
                 with open(os.path.join(args.write_job, "env.json"), "wb") as _f:
-                    _f.write(env_buffer)
+                    file_write(_f, env_buffer)
 
     if args.upload or args.write_job:
         print(transformation_checksum)

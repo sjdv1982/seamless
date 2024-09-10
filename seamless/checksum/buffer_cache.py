@@ -189,6 +189,8 @@ class BufferCache:
             if buffer is None:
                 buffer = self.buffer_cache.get(checksum)
             if buffer is not None:
+                if isinstance(buffer, Buffer):
+                    buffer = buffer.value
                 assert isinstance(buffer, bytes)
                 print_debug("Found missing buffer: {}".format(checksum.hex()))
                 if self.missing.pop(checksum):

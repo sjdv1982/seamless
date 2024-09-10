@@ -184,17 +184,20 @@ def run_transformation(
     transformation_dict_py = unbashify(transformation_dict, {}, {})
     _, transformation_checksum_py = register_transformation_dict(transformation_dict_py)
     result_py = database.get_transformation_result(transformation_checksum_py)
-    if result_py is not None:
+    result_py = Checksum(result_py)
+    if result_py:
         if not undo and (not fingertip or can_read_buffer(result_py)):
             return Checksum(result_py)
     # /for caching
     _, transformation_checksum = register_transformation_dict(transformation_dict)
     if undo:
-        if result_py is None:
+        has_err = False
+        if not result_py:
             try:
                 result = transformation_cache.undo(transformation_checksum)
             except RuntimeError as exc:
                 result = "Cannot undo: " + " ".join(exc.args)
+                has_err = True
         else:
             result_checksum = result_py
             database.contest(transformation_checksum, result_checksum)
@@ -206,10 +209,10 @@ def run_transformation(
             else:
                 result = response
 
-        if isinstance(result, str):
+        if has_err:
             msg(0, result)
             return None
-        elif isinstance(result, bytes):
+        else:
             msg(
                 2,
                 f"Undo transformation {transformation_checksum.hex()} => {result.hex()}",

@@ -4,7 +4,7 @@ random=$RANDOM
 seamless --direct-print --ncores 5 -c \
   "python multi-core-transformations.py 1 5 $random > tf" & 
 t1=$!
-sleep 0.5
+sleep 1
 random=$RANDOM
 seamless --direct-print --ncores 1 -c \
   "python multi-core-transformations.py 2 2 $random > tf2" & 

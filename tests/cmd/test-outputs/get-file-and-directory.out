@@ -1,12 +1,12 @@
-seamless: Verbosity set to 1
-seamless: Upload 1 files, total 5.00 B
-seamless: Verbosity set to 1
-seamless: Upload 3 files, total 169.00 B
+seamless-upload: Verbosity set to 1
+seamless-upload: Upload 1 files, total 5.00 B
+seamless-upload: Verbosity set to 1
+seamless-upload: Upload 3 files, total 169.00 B
 Repeat, no files will be uploaded...
-seamless: Verbosity set to 1
-seamless: Upload no files
-seamless: Verbosity set to 1
-seamless: Upload no files
+seamless-upload: Verbosity set to 1
+seamless-upload: Upload no files
+seamless-upload: Verbosity set to 1
+seamless-upload: Upload no files
 Text
 
 ==> one.txt <==
