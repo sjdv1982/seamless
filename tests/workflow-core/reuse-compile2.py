@@ -1,7 +1,10 @@
 import seamless
 
-seamless.load_vault("./reuse-vault")
 seamless.delegate(level=0, force_database=True)
+
+from seamless.workflow.vault import load_vault
+
+load_vault("./reuse-vault")
 seamless.config.block_local()
 
 code = """

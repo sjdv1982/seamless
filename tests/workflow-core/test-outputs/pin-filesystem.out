@@ -7,12 +7,12 @@ D 0bd8ba492aecc071c429d7363b89d6d413ca713933b5bce60a67a706a470daa2 b'{\n  "file2
 Status: error
 c: could not find file/directory for a3b9a39c707177f10d440c071303df8beff535c40c7c25e92da187b14aac127e
 c: could not find file/directory for a3b9a39c707177f10d440c071303df8beff535c40c7c25e92da187b14aac127e
-None
+<None>
 None
 d1676bb657819efd84207076bef917e2f797f50e15f0eb3eaa45bce8f6fe5efe
 Upload folder 2
-seamless: Verbosity set to 1
-seamless: Upload 2 files, total 88.00 B
+seamless-upload: Verbosity set to 1
+seamless-upload: Upload 2 files, total 88.00 B
 Run 2
 Buffer read folder found
 A f549f48383e33954f7945f08a61729a0460bb5f24828e6fa89e99f2ddbc9b247 b'[\n  1,\n  2,\n  3\n]\n'
@@ -22,7 +22,7 @@ D 0bd8ba492aecc071c429d7363b89d6d413ca713933b5bce60a67a706a470daa2 b'{\n  "file2
 Status: error
 d: could not find file/directory for 0bd8ba492aecc071c429d7363b89d6d413ca713933b5bce60a67a706a470daa2
 d: could not find file/directory for 0bd8ba492aecc071c429d7363b89d6d413ca713933b5bce60a67a706a470daa2
-None
+<None>
 None
 d1676bb657819efd84207076bef917e2f797f50e15f0eb3eaa45bce8f6fe5efe
 Deploy folder 2
@@ -54,8 +54,8 @@ Execution time: 0.0 seconds
 OK
 d1676bb657819efd84207076bef917e2f797f50e15f0eb3eaa45bce8f6fe5efe
 Upload and deploy folder 1
-seamless: Verbosity set to 1
-seamless: Upload 2 files, total 88.00 B
+seamless-upload: Verbosity set to 1
+seamless-upload: Upload 2 files, total 88.00 B
 Run 4
 Buffer read folder found
 A f549f48383e33954f7945f08a61729a0460bb5f24828e6fa89e99f2ddbc9b247 b'[\n  1,\n  2,\n  3\n]\n'
