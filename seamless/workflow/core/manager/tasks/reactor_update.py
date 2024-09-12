@@ -231,6 +231,7 @@ class ReactorResultTask(Task):
                     manager, self.value, celltype, use_cache=True
                 ).run()
                 checksum = await CalculateChecksumTask(manager, buffer).run()
+                buffer_cache.cache_buffer(checksum, buffer)
             except asyncio.CancelledError as exc:
                 if not self._canceled:
                     manager._set_reactor_exception(reactor, pinname, exc)

@@ -3,7 +3,7 @@ import seamless
 seamless.delegate(False)
 
 from seamless.workflow import Context, SimpleDeepCell, DeepCell
-from seamless.workflow.core.protocol.json import json_dumps
+from seamless.checksum.json import json_dumps
 
 ctx = Context()
 ctx.d = SimpleDeepCell()
@@ -26,7 +26,7 @@ ctx.func.result.celltype = "deepcell"
 ctx.result = DeepCell()
 ctx.result = ctx.func.result
 ctx.compute()
-transformation = ctx.resolve(ctx.func.get_transformation_checksum(), "plain")
+transformation = ctx.func.get_transformation_checksum().resolve("plain")
 print(json_dumps(transformation))
 print(ctx.d.data)
 print(ctx.d.checksum)
