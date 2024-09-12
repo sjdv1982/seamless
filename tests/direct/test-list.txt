@@ -4,3 +4,4 @@
 #   - under seamless-bash (within Docker)
 #   - under seamless-framework (bare-metal conda)
 add-download-url.py
+resolve.py

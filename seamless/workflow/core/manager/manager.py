@@ -614,6 +614,38 @@ class Manager:
             return None
         return value
 
+    async def resolution(self, checksum: Checksum, celltype=None, copy=True):
+        """Returns the data buffer that corresponds to the checksum.
+        If celltype is provided, a value is returned instead"""
+        checksum = Checksum(checksum)
+        if not checksum:
+            return None
+        
+        checksum = Checksum(checksum)
+        if checksum.hex() == empty_dict_checksum:
+            buffer= b"{}\n"
+        elif checksum.hex() == empty_list_checksum:
+            buffer= b"[]\n"
+        else:
+            buffer = checksum_cache.get(checksum)
+        if buffer is not None:
+            assert isinstance(buffer, bytes)
+        else:
+            try:
+                buffer = await GetBufferTask(self, checksum).run()
+            except asyncio.CancelledError:
+                return None
+
+        if celltype is None:
+            return buffer
+        if asyncio.get_event_loop().is_running():
+            return deserialize_sync(buffer, checksum, celltype, copy=copy)
+        task = DeserializeBufferTask(self, buffer, checksum, celltype, copy=copy)
+        try:
+            return await task.run()
+        except asyncio.CancelledError:
+            return None
+
     def set_elision(self, macro, input_cells, output_cells):
         from ..cache.elision import Elision
 

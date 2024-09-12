@@ -95,13 +95,27 @@ class Checksum:
 
     def resolve(self, celltype=None):
         """Returns the data buffer that corresponds to the checksum.
-        If celltype is provided, a value is returned instead."""
+        If celltype is provided, a value is returned instead.
+
+        This imports seamless.workflow"""
         from seamless.workflow.core.manager import Manager
 
         if celltype in (float, str, int, bool):
             celltype = celltype.__name__
         manager = Manager()
         return manager.resolve(self.hex(), celltype=celltype, copy=True)
+
+    async def resolution(self, celltype=None):
+        """Returns the data buffer that corresponds to the checksum.
+        If celltype is provided, a value is returned instead.
+
+        This imports seamless.workflow"""
+        from seamless.workflow.core.manager import Manager
+
+        if celltype in (float, str, int, bool):
+            celltype = celltype.__name__
+        manager = Manager()
+        return await manager.resolution(self.hex(), celltype=celltype, copy=True)
 
     def find(self, verbose: bool = False) -> list | None:
         """Returns a list of URL infos to download the underlying buffer.
