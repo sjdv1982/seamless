@@ -329,15 +329,15 @@ class Transformer(Base, HelpMixin):
 
     @RESULT.setter
     def RESULT(self, value):
-        '''
+        """
         htf = self._get_htf()
         result_path = self._path + (htf["RESULT"],)
         new_result_path = self._path + (value,)
         parent = self._parent()
         htf["RESULT"] = value
-        '''
+        """
         raise NotImplementedError
-    
+
     @property
     def INPUT(self) -> str:
         """The name of the input attribute. Default is "inp".
@@ -1312,7 +1312,7 @@ class Transformer(Base, HelpMixin):
         if not tf_checksum:
             raise RuntimeError("Transformer has no defined transformation")
         result = tcache.undo(tf_checksum)
-        if not isinstance(result, bytes):
+        if not isinstance(result, Checksum):
             return result
 
     @property
@@ -1763,7 +1763,7 @@ class Transformer(Base, HelpMixin):
                 htf["checksum"].pop("code", None)
             set_mount(cell)
         else:
-            '''
+            """
             if tf is not None:
                 inp = getattr(tf, htf["INPUT"])
                 p = getattr(inp.value, attr)
@@ -1774,7 +1774,7 @@ class Transformer(Base, HelpMixin):
                 "celltype": "structured",
                 "datatype": "mixed",
             }
-            '''
+            """
             raise NotImplementedError
         child = Cell(parent=parent, path=path)  # inserts itself as child
         parent._graph[0][path] = cell
