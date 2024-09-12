@@ -483,7 +483,6 @@ def prepare_transformation_dict(transformation_dict):
             semantic_code_checksum = Checksum(semantic_code_checksum)
             if not semantic_code_checksum:
                 raise CacheMissError(code_checksum.hex())
-            assert isinstance(semantic_code_checksum, bytes)
             codebuf = None
             if code is not None:
                 codebuf = serialize_sync(code, "python")

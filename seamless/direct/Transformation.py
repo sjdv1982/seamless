@@ -74,6 +74,8 @@ class Transformation:
             if not tf_checksum:
                 raise ValueError("Cannot obtain transformation checksum")
             self._transformation_checksum = tf_checksum
+        except AssertionError:
+            self._exception = traceback.format_exc().strip("\n") + "\n"
         except Exception:
             self._exception = traceback.format_exc(limit=0).strip("\n") + "\n"
         finally:
