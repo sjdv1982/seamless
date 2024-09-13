@@ -51,6 +51,7 @@ macro-simple.py
 macro.py
 macro-elision.py
 macro-elision-database.sh: 
+  run outside Docker image.
   run as i=macro-elision-database; seamless-run ./$i.sh > test-outputs/$i.out 2>&1
 reactor-edit-macro.py
 delay.py

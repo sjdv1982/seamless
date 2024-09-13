@@ -1,4 +1,6 @@
 START
+In [3]:         
+In [3]: 
 In [3]: await main()                    
 In [3]: await main()
 10

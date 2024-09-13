@@ -1,47 +1,49 @@
    ...:     print("START")
-   ...:     raise Exception # deliberately
+   ...:     raise Exception  # deliberately
+   ...: 
+   ...: 
    ...: try:
-   ...:     func0(0,0)
+   ...:     func0(0, 0)
    ...: except SeamlessTransformationError:
    ...:     traceback.print_exc(1)
    ...: print("/exception")
    ...: print()
    ...:         
-   ...: transformation_checksum = ctx.tf.get_transformation_checksum()
-   ...: transformation_dict = ctx.resolve(transformation_checksum, "plain")
-   ...: 
-   ...: from seamless.core.direct.run import run_transformation_dict_async
-   ...: from seamless.core.cache.buffer_cache import buffer_cache
-   ...: from seamless.core.protocol.deserialize import deserialize_sync as dese                                                                               r
-   ...: ialize
-   ...: 
-   ...: result_checksum = await run_transformation_dict_async(transformation_di                                                                               c
-   ...: t, fingertip=False)
-   ...: result = deserialize(buffer_cache.get_buffer(result_checksum), result_c                                                                               h
-   ...: ecksum, "mixed", copy=True)
+   ...: result_checksum = await run_transformation_dict_async(
+   ...:     transformation_dict, fingertip=False
+   ...: )
+   ...: result = Checksum(result_checksum).resolve("mixed")
    ...: print(result)
+   ...: 
    ...: 
    ...: @transformer
    ...: def func(a, b):
    ...:     import time
+   ...: 
    ...:     time.sleep(0.5)
    ...:     return 100 * a + b
+   ...: 
+   ...: 
    ...: func = transformer(func)
    ...: 
-   ...: result = func(88, 17) # takes 0.5 sec
+   ...: result = func(88, 17)  # takes 0.5 sec
    ...: print(result)
-   ...: result = func(88, 17) # immediate
+   ...: result = func(88, 17)  # immediate
    ...: print(result)
-   ...: result = func(21, 17) # immediate
+   ...: result = func(21, 17)  # immediate
    ...: print(result)
    ...: 
    ...: print("The following will give an exception:")
+   ...: 
+   ...: 
    ...: @transformer
    ...: def func0(a, b):
    ...:     print("START")
-   ...:     raise Exception # deliberately
+   ...:     raise Exception  # deliberately
+   ...: 
+   ...: 
    ...: try:
-   ...:     func0(0,0)
+   ...:     func0(0, 0)
    ...: except SeamlessTransformationError:
    ...:     traceback.print_exc(1)
    ...: print("/exception")
@@ -60,13 +62,13 @@ The following will give an exception:
 /exception
 
 Traceback (most recent call last):
-  File "/tmp/ipykernel_1541/3721671167.py", line 47, in <module>
-    func0(0,0)
-seamless.core.transformation.SeamlessTransformationError: Traceback (most recent call last):
+  File "/tmp/ipykernel_1047/3750347486.py", line 60, in <module>
+    func0(0, 0)
+seamless.workflow.core.transformation.SeamlessTransformationError: Traceback (most recent call last):
   File "transformer", line 6, in <module>
     result = func0(a=a,b=b)
   File "transformer", line 4, in func0
-    raise Exception # deliberately
+    raise Exception  # deliberately
 Exception
 
 *************************************************

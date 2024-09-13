@@ -1,6 +1,6 @@
 import json
 import seamless
-from seamless import load_graph, Context
+from seamless.workflow import Context
 
 seamless.delegate(False)
 

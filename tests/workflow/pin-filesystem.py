@@ -18,8 +18,7 @@ except ConfigurationError:
     print("Buffer read folder not found")
     seamless.delegate(False)
 
-from seamless.Cell import FolderCell
-from seamless.workflow import Context, DeepFolderCell, Transformer
+from seamless.workflow import Context, DeepFolderCell, Transformer, FolderCell
 
 try:
     deepfolder_checksum = seamless.parse_checksum(

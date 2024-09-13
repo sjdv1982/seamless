@@ -9,7 +9,7 @@ echo 'Run 1'
 python3 -u macro-elision-database.py
 echo 'Start database'
 seamless-delegate-stop >& /dev/null
-seamless-delegate none >& /dev/null
+seamless-delegate none-devel >& /dev/null
 sleep 1
 echo
 echo 'Run 2'
