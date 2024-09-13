@@ -1,10 +1,10 @@
 # Disable LRU caches
-from seamless.workflow.core.protocol.calculate_checksum import (
+from seamless.checksum.cached_calculate_checksum import (
     calculate_checksum_cache,
     checksum_cache,
 )
-from seamless.workflow.core.protocol.deserialize import deserialize_cache
-from seamless.workflow.core.protocol.serialize import serialize_cache
+from seamless.checksum.deserialize import deserialize_cache
+from seamless.checksum.serialize import serialize_cache
 
 calculate_checksum_cache.disable()
 checksum_cache.disable()
@@ -16,7 +16,7 @@ import seamless
 seamless.delegate(False)
 
 from seamless.checksum.buffer_cache import buffer_cache
-from seamless.workflow.core.cache import CacheMissError
+from seamless import CacheMissError
 
 from seamless.workflow import Context, Cell
 from seamless.workflow.core.manager.tasks.evaluate_expression import (

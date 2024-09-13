@@ -513,7 +513,14 @@ def _assign_context(ctx, new_nodes, new_connections, path, runtime, *, fast=Fals
 
 
 def assign_context(ctx, path, value):
-    graph = value._get_graph(runtime=False, do_unchecksum=False)
+    from .Context import Context
+    from .SubContext import SubContext
+    if isinstance(value, Context):
+        graph = value._get_graph(runtime=False, do_unchecksum=False)
+    elif isinstance(value, SubContext):
+        graph = value.get_graph(runtime=False)
+    else:
+        raise TypeError(value)
     for lib in graph["lib"]:
         lpath = tuple(lib["path"])
         lib["path"] = lpath
