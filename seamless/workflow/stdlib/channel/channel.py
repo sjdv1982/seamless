@@ -6,6 +6,10 @@ there is no such thing as NextFlow queue channels
 Work in progress!
 """
 
+import seamless
+
+seamless.delegate(0)
+
 from seamless.workflow.core.transformer import Transformer
 from seamless.workflow import Context, Cell
 from seamless.workflow.highlevel.library import LibraryContainer
@@ -57,7 +61,7 @@ def fromList(self, content):
 
 def _get_source(self, function):
     from seamless.workflow.highlevel import parse_function_code
-    from seamless.workflow.core.cached_compile import analyze_code
+    from seamless.checksum.cached_compile import analyze_code
 
     source, _, _ = parse_function_code(function)
     mode, func_name = analyze_code(source, "filter")

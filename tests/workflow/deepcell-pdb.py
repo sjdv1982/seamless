@@ -45,7 +45,7 @@ print(ctx.epo.checksum)
 print(ctx.epo.value[:200])
 
 print("STAGE 4")
-from seamless.workflow.highlevel import stdlib
+from seamless.workflow import stdlib
 
 ctx.include(stdlib.select)
 ctx.pdb_code = Cell("str").set("1brs")

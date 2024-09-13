@@ -3,7 +3,7 @@ import seamless
 seamless.delegate(False)
 
 from seamless.workflow import Context
-from seamless.workflow.highlevel import stdlib
+from seamless.workflow import stdlib
 
 ctx = Context()
 ctx.include(stdlib.channel)

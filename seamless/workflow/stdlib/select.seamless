@@ -12,7 +12,7 @@
     {
       "celltype": "text",
       "checksum": {
-        "value": "49a91366623b92b73b4fc3fd3b1ad6333fa6acd78be4008ee02e67f29e097e36"
+        "value": "9d68e693e5ccf2998d0e82585825683f34fb4dc74b4336f249bfa3279e02ea53"
       },
       "datatype": "mixed",
       "file_extension": "md",
@@ -27,7 +27,7 @@
     {
       "celltype": "code",
       "checksum": {
-        "value": "9d56e327371c579f34820633441c35c8442b2df99b88bb8d246902e91afd492a"
+        "value": "05e34fe2f085bc8766bc2a0906b05d5849814e834b265a082e17378988492342"
       },
       "datatype": "mixed",
       "language": "python",
@@ -39,14 +39,38 @@
     {
       "celltype": "structured",
       "checksum": {
-        "auth": "b4a75f4effe7308b12827b073b7ba1778355d2b445c821d408cc935deeeea969",
+        "auth": "d21c1e13d479e4510e33420fbb7fdf872afafb49f2890ef931f330898c33d4e2",
         "schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
-        "value": "b4a75f4effe7308b12827b073b7ba1778355d2b445c821d408cc935deeeea969"
+        "value": "d21c1e13d479e4510e33420fbb7fdf872afafb49f2890ef931f330898c33d4e2"
       },
       "datatype": "mixed",
       "hash_pattern": null,
       "path": [
         "constructor_params"
+      ],
+      "type": "cell"
+    },
+    {
+      "celltype": "code",
+      "checksum": {
+        "value": "006a307ffa96fd14b48139d22eaaf19c4233b0f1667f82586c062024cbe0e730"
+      },
+      "datatype": "mixed",
+      "language": "python",
+      "path": [
+        "select_code1"
+      ],
+      "type": "cell"
+    },
+    {
+      "celltype": "code",
+      "checksum": {
+        "value": "b5d5368e7a41f086fcd85197ccfbc04b67ee53f0cd84304df8980720f542d724"
+      },
+      "datatype": "mixed",
+      "language": "python",
+      "path": [
+        "select_code2"
       ],
       "type": "cell"
     }

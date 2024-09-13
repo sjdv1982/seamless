@@ -182,7 +182,7 @@ class TaskManager:
 
     def add_task(self, task):
         manager = self.manager()
-        if manager is None or manager._destroyed:
+        if manager is None or manager._destroyed or manager._destroying:
             return
         if task.manager() is None:
             return task

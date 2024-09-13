@@ -21,6 +21,10 @@ exits: same as "entries", but the keys are in "exports",
     - ...
 """
 
+import seamless
+
+seamless.delegate(False)
+
 from seamless.workflow import Context, Cell
 import sys
 

@@ -15,7 +15,7 @@ AssertionError
 
             Failed validating 'validators' in schema:
                 {'methods': {'mean': {'code': 'def mean(self):\n'
-                                              '    return (self.a + self.b)/2\n',
+                                              '    return (self.a + self.b) / 2\n',
                                       'language': 'python'}},
                  'properties': {'a': {}},
                  'type': 'object',
@@ -42,7 +42,7 @@ AssertionError
 
             Failed validating 'validators' in schema:
                 {'methods': {'mean': {'code': 'def mean(self):\n'
-                                              '    return (self.a + self.b)/2\n',
+                                              '    return (self.a + self.b) / 2\n',
                                       'language': 'python'}},
                  'properties': {'a': {}, 'b': {}},
                  'type': 'object',

@@ -4,7 +4,7 @@ import warnings
 import seamless.workflow
 from seamless import Checksum, Buffer, CacheMissError
 from seamless.workflow import *
-from seamless.workflow.highlevel import stdlib
+from seamless.workflow import stdlib
 
 warnings.warn(
     "seamless.workflow.highlevel is deprecated. Use seamless.workflow instead.",

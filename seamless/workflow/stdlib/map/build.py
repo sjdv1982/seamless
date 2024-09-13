@@ -5,7 +5,7 @@ import copy
 
 def bootstrap(module):
     import inspect
-    from seamless.util import strip_decorators
+    from seamless.util.source import strip_decorators
 
     result = {}
     for objname, obj in sorted(module.__dict__.items()):
@@ -28,7 +28,7 @@ def bootstrap(module):
 
 
 def build_codeblock(module):
-    from seamless.util import strip_decorators
+    from seamless.util.source import strip_decorators
 
     result = ""
     for objname, obj in sorted(module.__dict__.items()):
@@ -53,6 +53,9 @@ def build_codeblock(module):
 
 
 if __name__ == "__main__":
+    import seamless
+
+    seamless.delegate(False)
     from seamless.workflow import Context, Cell
     import lib
     import constructors.map_list_N

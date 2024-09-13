@@ -1,3 +1,7 @@
+import seamless
+
+seamless.delegate(False)
+
 from seamless.workflow import Context, Cell
 from seamless.workflow.highlevel import set_resource
 

@@ -1,6 +1,6 @@
 import tempfile, os
-from seamless import subprocess
-from seamless.subprocess import PIPE
+from seamless.util import subprocess_ as subprocess
+from seamless.util.subprocess_ import PIPE
 
 tokens = "<|>"
 labels0 = "UPSTREAM", "BASE", "MODIFIED"

@@ -3,7 +3,7 @@ import seamless
 seamless.delegate(False)
 
 from seamless.workflow import Context, Cell
-from seamless.stdlib import map
+from seamless.workflow.stdlib import map
 
 print(str(map.map_list.help.value)[:30])
 

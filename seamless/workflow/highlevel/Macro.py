@@ -4,6 +4,7 @@ import pprint
 from copy import deepcopy
 
 from seamless import Checksum
+from seamless.util import unchecksum
 from .Cell import Cell
 from .Resource import Resource
 from .SelfWrapper import SelfWrapper
@@ -186,7 +187,7 @@ class Macro(Base):
                     code, _, _ = parse_function_code(value)
                 node["TEMP"]["code"] = code
             else:
-                get_form(value)
+                get_form(unchecksum(value))
                 node["TEMP"]["param_auth"][attr] = value
             self._parent()._translate()
             return

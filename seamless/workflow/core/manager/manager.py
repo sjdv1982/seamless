@@ -52,7 +52,7 @@ def with_cancel_cycle(func):
             return
         assert threading.current_thread() == threading.main_thread()
         manager = args[0]
-        if manager._destroyed:
+        if manager._destroyed or manager._destroying:
             return
         taskmanager = manager.taskmanager
         if not manager.cancel_cycle.cleared:
@@ -520,7 +520,7 @@ class Manager:
     @_run_in_mainthread
     def set_cell_buffer(self, cell, buffer: Buffer, checksum: Checksum):
         if self._destroyed or cell._destroyed:
-            return        
+            return
         assert cell._hash_pattern is None
         assert cell.has_independence(), "{} is not independent".format(cell)
         assert cell._structured_cell is None, cell
@@ -620,12 +620,12 @@ class Manager:
         checksum = Checksum(checksum)
         if not checksum:
             return None
-        
+
         checksum = Checksum(checksum)
         if checksum.hex() == empty_dict_checksum:
-            buffer= b"{}\n"
+            buffer = b"{}\n"
         elif checksum.hex() == empty_list_checksum:
-            buffer= b"[]\n"
+            buffer = b"[]\n"
         else:
             buffer = checksum_cache.get(checksum)
         if buffer is not None:

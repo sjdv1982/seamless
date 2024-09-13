@@ -1,5 +1,5 @@
 from seamless.workflow import Context, Transformer, Cell, FolderCell
-from seamless.workflow.highlevel import stdlib
+from seamless.workflow import stdlib
 import json
 
 import os

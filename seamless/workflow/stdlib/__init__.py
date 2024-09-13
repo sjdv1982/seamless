@@ -1,7 +1,7 @@
 import glob, os, json
-from ..library import LibraryContainer
-from ..library.library import set_library
-from ...midlevel.StaticContext import StaticContext
+from ..highlevel.library import LibraryContainer
+from ..highlevel.library.library import set_library
+from ..midlevel.StaticContext import StaticContext
 
 lib = LibraryContainer("stdlib")
 

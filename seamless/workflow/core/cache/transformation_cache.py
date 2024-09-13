@@ -1099,9 +1099,13 @@ class TransformationCache:
         sem_checksum = Checksum(sem_checksum)
 
         def ret(semsyn):
+            semsyn2 = []
             for semsyn_checksum in semsyn:
+                if isinstance(semsyn_checksum, bytes):
+                    semsyn_checksum = Checksum(semsyn_checksum)
                 assert isinstance(semsyn_checksum, Checksum), semsyn
-            return semsyn
+                semsyn2.append(semsyn_checksum)
+            return semsyn2
 
         if syntactic_is_semantic(celltype, subcelltype):
             return ret([sem_checksum])
