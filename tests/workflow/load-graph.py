@@ -3,7 +3,7 @@ import seamless
 seamless.delegate(False)
 
 import json
-from seamless import load_graph, Context
+from seamless.workflow import load_graph, Context
 
 graph = json.load(open("twopi-result.seamless"))
 zipfile = "twopi-result.zip"

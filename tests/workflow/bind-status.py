@@ -4,7 +4,7 @@ import functools
 from concurrent.futures import ThreadPoolExecutor
 import seamless
 from seamless.workflow import Context, Cell
-from seamless.metalevel.bind_status_graph import bind_status_context
+from seamless.workflow.metalevel.bind_status_graph import bind_status_context
 
 seamless.delegate(False)
 
