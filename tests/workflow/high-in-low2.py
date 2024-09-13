@@ -2,7 +2,7 @@ import seamless
 
 seamless.delegate(False)
 
-from seamless.workflow import Context, Cell, Macro
+from seamless.workflow.highlevel import Context, Cell, Macro
 
 ctx = Context()
 ctx.a = Cell("int")

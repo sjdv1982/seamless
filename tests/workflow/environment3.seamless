@@ -4,7 +4,7 @@
   "environment": {
     "ipy_templates": {
       "cython": {
-        "code": "def wrap_cython(code, parameters):    \n    tmpl = \"\"\"\nget_ipython().run_line_magic(\"load_ext\", \"Cython\")\nget_ipython().run_cell_magic(\"cython\", \"\", {})\nif \"transform\" not in globals():\n    raise Exception(\"Cython code must define a function 'transform'\")\nresult = transform(**PINS)  \n\"\"\"\n    return tmpl.format(repr(code))\n",
+        "code": "def wrap_cython(code, parameters):\n    tmpl = \"\"\"\nget_ipython().run_line_magic(\"load_ext\", \"Cython\")\nget_ipython().run_cell_magic(\"cython\", \"\", {})\nif \"transform\" not in globals():\n    raise Exception(\"Cython code must define a function 'transform'\")\nresult = transform(**PINS)  \n\"\"\"\n    return tmpl.format(repr(code))\n",
         "environment": {
           "conda": "\ndependencies:\n  - cython\n",
           "which": [
