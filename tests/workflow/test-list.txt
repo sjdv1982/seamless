@@ -127,7 +127,8 @@ imperative-async-parallel-jupyter.sh: can be run with delegation using "export D
 imperative-celltypes.py
 imperative-workflow.py
 imperative-nested.py: requires delegation level 3. Can be run with full delegation using "export DELEGATE=''"
-imperative-nested-jupyter.sh: requires delegation level 3. As of 0.12, TEST WORKS IN CONDA ENV BUT NOT IN DOCKER IMAGE. To be investigated
+imperative-nested-jupyter.sh: requires delegation level 3. 
+  As of 0.13, TEST WORKS IN CONDA ENV BUT NOT IN DOCKER IMAGE. See Seamless issue 255.
 imperative-nested-async.sh: requires delegation level 3.
 imperative-database.py: run with Seamless database and buffer dir, preferably in a clean setup
 imperative-database-async.sh: run with Seamless database and buffer dir, preferably in a clean setup

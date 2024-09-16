@@ -1484,10 +1484,15 @@ class TransformationCache:
             or (result_checksum == result_checksum2)
         )
 
+        """
+        # Below will not work, but now we have a cache miss instead
+        #  
+        if transformation_checksum in self.transformations:
+            transformation = self.transformations[transformation_checksum]
+            self.destroy_transformation(transformation, dummy=True)
+        """
         if transformation_checksum in self.transformation_results:
             self.transformation_results.pop(transformation_checksum, None)
-            if result_checksum:
-                buffer_cache.decref(result_checksum)
         self.transformation_logs.pop(transformation_checksum, None)
 
         if result_checksum2:

@@ -82,7 +82,7 @@ class Database:
     def send_put_request(self, request: dict | bytes, *, raise_exception=True):
         """Send a PUT request, which can be a parameter dict or raw data"""
         if not self.active:
-            return
+            return None, None
         url = "http://" + self.host + ":" + str(self.port)
         if isinstance(request, bytes):
             rqbuf = request

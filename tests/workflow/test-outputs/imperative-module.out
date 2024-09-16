@@ -1,5 +1,5 @@
-{'__init__.py': 'from .submodule import get_square', 'submodule.py': '\ndef get_square(value):\n    return value**2'}
-{'code': {'__init__': {'code': 'from .submodule import get_square', 'dependencies': ['.submodule'], 'language': 'python'}, 'submodule': {'code': '\ndef get_square(value):\n    return value**2', 'dependencies': [], 'language': 'python'}}, 'language': 'python', 'type': 'interpreted'}
+{'__init__.py': 'from .submodule import get_square', 'submodule.py': 'def get_square(value):\n    return value**2'}
+{'code': {'__init__': {'code': 'from .submodule import get_square', 'dependencies': ['.submodule'], 'language': 'python'}, 'submodule': {'code': 'def get_square(value):\n    return value**2', 'dependencies': [], 'language': 'python'}}, 'language': 'python', 'type': 'interpreted'}
 
 Stage 1
 <Silk: 145 >
@@ -8,7 +8,7 @@ Stage 1
 *************************************************
 <checksum 0b9fdf50adc38426b71f3a2919086df4a23632b67a0239f1410ea3edcbc2a694>
 *************************************************
-Execution time: 0.0 seconds
+Execution time: 0.1 seconds
 *************************************************
 /stage 1
 313
@@ -39,7 +39,7 @@ Execution time: 0.0 seconds
 func RESULT VALUE 145
 
 *************************************************
-Execution time: 0.2 seconds
+Execution time: 0.3 seconds
 *************************************************
 <Silk: 145 >
 /stage 2
@@ -56,12 +56,12 @@ func RESULT LOGS *************************************************
 *************************************************
 <checksum 7799ff92aef7fda668844c44a759d4b79e1435583b626cf51a7470680f06e12d>
 *************************************************
-Execution time: 0.0 seconds
+Execution time: 0.1 seconds
 *************************************************
 func RESULT VALUE 613
 
 *************************************************
-Execution time: 0.1 seconds
+Execution time: 0.3 seconds
 *************************************************
 613
 *************************************************
@@ -81,7 +81,7 @@ Execution time: 0.0 seconds
 func RESULT VALUE 181
 
 *************************************************
-Execution time: 0.2 seconds
+Execution time: 0.3 seconds
 *************************************************
 181
 /stage 3

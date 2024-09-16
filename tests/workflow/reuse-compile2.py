@@ -1,9 +1,10 @@
 import seamless
-
-seamless.load_vault("./reuse-vault")
+from seamless.workflow.vault import load_vault
 
 seamless.delegate(level=0, force_database=True)
 seamless.config.block_local()
+
+load_vault("./reuse-vault")
 
 from seamless.workflow import Context, Cell
 

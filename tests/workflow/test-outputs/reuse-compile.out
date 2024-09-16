@@ -11,13 +11,6 @@ g++ -c -O3 -ffast-math -march=native -fPIC -fopenmp -p -g -o /tmp/seamless-exten
 g++ -c -O3 -ffast-math -march=native -fPIC -fopenmp -p -g -o /tmp/seamless-extensions/seamless_module_b67ce8d847480d01aa10cbe100b696c555c937baf053f672e9263fdfcfba297e_module/main.o /tmp/seamless-extensions/seamless_module_b67ce8d847480d01aa10cbe100b696c555c937baf053f672e9263fdfcfba297e_module/main.cpp
 
 
-running build_ext
-building 'seamless_module_b67ce8d847480d01aa10cbe100b696c555c937baf053f672e9263fdfcfba297e_module' extension
-INFO: C compiler: gcc -pthread -B /home/sjoerd/miniconda3/envs/seamless-development/compiler_compat -Wno-unused-result -Wsign-compare -DNDEBUG -fwrapv -O2 -Wall -fPIC -O2 -isystem /home/sjoerd/miniconda3/envs/seamless-development/include -fPIC -O2 -isystem /home/sjoerd/miniconda3/envs/seamless-development/include -fPIC
-
-INFO: compile options: '-I/home/sjoerd/miniconda3/envs/seamless-development/include/python3.10 -c'
-INFO: gcc: _cffi_wrapper_seamless_module_b67ce8d847480d01aa10cbe100b696c555c937baf053f672e9263fdfcfba297e_module.c
-INFO: gcc -pthread -B /home/sjoerd/miniconda3/envs/seamless-development/compiler_compat -shared -Wl,--allow-shlib-undefined -Wl,-rpath,/home/sjoerd/miniconda3/envs/seamless-development/lib -Wl,-rpath-link,/home/sjoerd/miniconda3/envs/seamless-development/lib -L/home/sjoerd/miniconda3/envs/seamless-development/lib -Wl,--allow-shlib-undefined -Wl,-rpath,/home/sjoerd/miniconda3/envs/seamless-development/lib -Wl,-rpath-link,/home/sjoerd/miniconda3/envs/seamless-development/lib -L/home/sjoerd/miniconda3/envs/seamless-development/lib /tmp/_cffi-seamless_module_b67ce8d847480d01aa10cbe100b696c555c937baf053f672e9263fdfcfba297e_module/_cffi_wrapper_seamless_module_b67ce8d847480d01aa10cbe100b696c555c937baf053f672e9263fdfcfba297e_module.o /tmp/_cffi-seamless_module_b67ce8d847480d01aa10cbe100b696c555c937baf053f672e9263fdfcfba297e_module/main.o -o /tmp/_cffi-seamless_module_b67ce8d847480d01aa10cbe100b696c555c937baf053f672e9263fdfcfba297e_module/seamless_module_b67ce8d847480d01aa10cbe100b696c555c937baf053f672e9263fdfcfba297e_module.cpython-310-x86_64-linux-gnu.so -lstdc++
 40.0
 Status: OK
 ++ python3 reuse-compile2.py

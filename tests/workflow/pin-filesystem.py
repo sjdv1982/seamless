@@ -9,6 +9,7 @@ subprocess.run("docker build -t openssl -", shell=True, input=docker_file.encode
 
 
 import seamless
+from seamless import Checksum
 from seamless.config import ConfigurationError
 
 try:
@@ -21,10 +22,9 @@ except ConfigurationError:
 from seamless.workflow import Context, DeepFolderCell, Transformer, FolderCell
 
 try:
-    deepfolder_checksum = seamless.parse_checksum(
-        open("/tmp/PIN-FILESYSTEM-FOLDER.CHECKSUM").read()
-    )
+    deepfolder_checksum = Checksum.load("/tmp/PIN-FILESYSTEM-FOLDER")
 except Exception:
+    print("Deepfolder checksum not found")
     deepfolder_checksum = None
 
 ctx = Context()
