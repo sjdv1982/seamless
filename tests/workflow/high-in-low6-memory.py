@@ -10,8 +10,11 @@ seamless.workflow.core.execute.DIRECT_PRINT = True
 
 if seamless.delegate(level=3):
     exit(1)
-seamless.set_ncores(8)
-seamless.config.set_parallel_evaluations(1000)
+seamless.config.set_ncores(8)
+
+import seamless.workflow.config
+
+seamless.workflow.config.set_parallel_evaluations(1000)
 
 """
 import logging
@@ -19,7 +22,7 @@ logging.basicConfig()
 logging.getLogger("seamless").setLevel(logging.DEBUG)
 """
 
-from seamless.workflow import Context, Cell, Macro
+from seamless.workflow.highlevel import Context, Cell, Macro
 from seamless.workflow.highlevel.library import LibraryContainer
 
 mylib = LibraryContainer("mylib")

@@ -53,6 +53,7 @@ macro-elision.py
 macro-elision-database.sh: 
   run outside Docker image.
   run as i=macro-elision-database; seamless-run ./$i.sh > test-outputs/$i.out 2>&1
+  modify "none" to "none-devel" during devel testing
 reactor-edit-macro.py
 delay.py
 delay-logs-file.py
@@ -134,7 +135,11 @@ imperative-database.py: run with Seamless database and buffer dir, preferably in
 imperative-database-async.sh: run with Seamless database and buffer dir, preferably in a clean setup
 
 imperative-delegated.py: requires full delegation
-imperative-delegated-slow.py: requires full delegation. Set SEAMLESS_ASSISTANT_JOB_TIMEOUT to 15 in order to test client 202 capacity. In all cases, no Timeout should be printed
+imperative-delegated-slow.py: 
+  requires full delegation.
+  Set SEAMLESS_ASSISTANT_JOB_TIMEOUT to 15 in order to test client 202 capability.
+  If the client has this capability, the outpur will remain the same.
+  In all cases, no Timeout should be printed
 imperative-delegated-async.sh: requires full delegation
 imperative-delegated-nonlocal.py: requires nested delegation. Does not currently work, see (https://github.com/sjdv1982/seamless/issues/217)
 
@@ -155,8 +160,8 @@ cowsay-conda.py: has a conda environment name "cowsay-environment".
     then you control explicitly where the Dask scheduler/worker is being run.
     The conda environment can be built from "cowsay-environment.yml":
         conda env create -n cowsay-environment -f cowsay-environment.yml
-environment7a.py: version of environment7 where the conda environment name is specified. Will work with the mini-dask-assistant if the conda environment "pytorch-seamless" is present where the Dask worker runs
-environment7b.py: version of environment7 where the Docker image name is specified. Will work with any assistant if the Docker image "seamless-devel-pytorch" is present, which can be built using environment7b.Dockerfile
+environment7a.py: version of environment7 where the conda environment name is specified. Will work with a Dask-assistant if the conda environment "pytorch-seamless-devel" is present where the Dask worker runs.
+environment7b.py: version of environment7 where the Docker image name is specified. Will work with any assistant if the Docker image "seamless-pytorch-devel" is present, which can be built using environment7b.Dockerfile
 
 fallback.py
 eager.py: FAILS as of 0.7 (https://github.com/sjdv1982/seamless/issues/90)
@@ -182,11 +187,12 @@ high-in-low8.py
 high-in-low4-memory.py    # Quite long test.
                           # Creates 5.6 GB of buffer cache in /tmp/dummy-db
                           # Run with "source prepare-high-in-low-memory.sh"
-                          # Time is ~70 seconds, or ~25 seconds when re-executed
+                          #   (modify "none" to "none-devel" during devel testing)
+                          # Time is ~160 seconds, or ~55 seconds when re-executed
                           # Re-executing the test is faster, because the transformation results and input buffers are cached
                           # Exact output will depend on timings, test outputs stores the re-execution output
                           # After the test, "seamless-delegate-stop && rm -rf /tmp/dummy-db"
-high-in-low6-memory.py    # See above. Time is ~50 seconds, or ~25 seconds when re-executed
+high-in-low6-memory.py    # See above. Time is ~100 seconds, or ~55 seconds when re-executed
 switch-select-stdlib.py
 map-speed-test.py: long test, calculates the speed of stdlib.map_dict
 map-speed-test2.py: long test, calculates the speed of stdlib.map_dict_chunk
@@ -207,7 +213,8 @@ scratch-provenance:
           found = SSSE3,SSE41,POPCNT,SSE42,AVX,F16C,FMA3,AVX2
           not found = AVX512F,AVX512CD,AVX512_SKX,AVX512_CLX,AVX512_CNL,AVX512_ICL    
   (Using NPY_DISABLE_CPU_FEATURES does not have an effect)  
-   run as "cd scratch-provenance/version; ./run.sh". Requires delegation to be startable from command line ("seamless-delegate" etc. must be available)
+   run as "cd scratch-provenance/version-X; ./run.sh" > ../../test-outputs/scratch-provenance-versionX.out 2>&1" 
+   Requires delegation to be startable from command line ("seamless-delegate" etc. must be available)
 
 Non-automatic tests
 =========================

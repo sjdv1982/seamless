@@ -5,3 +5,4 @@
 #   - under seamless-framework (bare-metal conda)
 add-download-url.py
 resolve.py
+in_process.py

@@ -1,6 +1,5 @@
 Before 0.13 release:
-  - high level tests, bash automatic, DONE except pin-filesystem
-  - high level tests, delegation
+  - high level tests, delegation (almost done)
   - high level tests, non-automatic
   - regenerate webgen, run webgen/test
   - cleanup new-project, run tests/workflow/webinterface.sh (also interactively)

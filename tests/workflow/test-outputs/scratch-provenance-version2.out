@@ -1,12 +1,12 @@
 Transform 1
-INFO:seamless:Local execution of transformation job: 396a69adfb1027832cb6ad121fa6de01bb45e71dc61cdd28288fb66cf3a81911, forked = False
-INFO:seamless:Finished local execution of transformation job: 396a69adfb1027832cb6ad121fa6de01bb45e71dc61cdd28288fb66cf3a81911
+INFO:seamless.workflow.core.transformation:Local execution of transformation job: 396a69adfb1027832cb6ad121fa6de01bb45e71dc61cdd28288fb66cf3a81911, forked = False
+INFO:seamless.workflow.core.transformation:Finished local execution of transformation job: 396a69adfb1027832cb6ad121fa6de01bb45e71dc61cdd28288fb66cf3a81911
 
 g++ -c -O3 -ffast-math -march=native -fPIC -fopenmp -p -g -o /tmp/seamless-extensions/seamless_module_ee64cb1757cc74568f0f5eacab2e986ac94bf5a8d6eb5fb628af1618a1cddbea_module/main.o /tmp/seamless-extensions/seamless_module_ee64cb1757cc74568f0f5eacab2e986ac94bf5a8d6eb5fb628af1618a1cddbea_module/main.cpp
 
 
-INFO:seamless:Local execution of transformation job: 0f2af4793506e40080adb7cb77c64747c998056af6f7e048f674a1c99efc4252, forked = False
-INFO:seamless:Finished local execution of transformation job: 0f2af4793506e40080adb7cb77c64747c998056af6f7e048f674a1c99efc4252
+INFO:seamless.workflow.core.transformation:Local execution of transformation job: 0f2af4793506e40080adb7cb77c64747c998056af6f7e048f674a1c99efc4252, forked = False
+INFO:seamless.workflow.core.transformation:Finished local execution of transformation job: 0f2af4793506e40080adb7cb77c64747c998056af6f7e048f674a1c99efc4252
 2c819b2df5d1bd0b2ff4ed6222ff9539c624bd96119dcd8c4925f07c94f950b7
 2c819b2df5d1bd0b2ff4ed6222ff9539c624bd96119dcd8c4925f07c94f950b7
 Fingertip 0
@@ -20,8 +20,8 @@ Fingertip 1
 6590a7f7f616a11b7bbf2110c88602362607ec15d02cd7a93d3a4752d20ffc73
 6590a7f7f616a11b7bbf2110c88602362607ec15d02cd7a93d3a4752d20ffc73
 Transform 2
-INFO:seamless:Local execution of transformation job: 396a69adfb1027832cb6ad121fa6de01bb45e71dc61cdd28288fb66cf3a81911, forked = False
-INFO:seamless:Finished local execution of transformation job: 396a69adfb1027832cb6ad121fa6de01bb45e71dc61cdd28288fb66cf3a81911
+INFO:seamless.workflow.core.transformation:Local execution of transformation job: 396a69adfb1027832cb6ad121fa6de01bb45e71dc61cdd28288fb66cf3a81911, forked = False
+INFO:seamless.workflow.core.transformation:Finished local execution of transformation job: 396a69adfb1027832cb6ad121fa6de01bb45e71dc61cdd28288fb66cf3a81911
 6590a7f7f616a11b7bbf2110c88602362607ec15d02cd7a93d3a4752d20ffc73
 6590a7f7f616a11b7bbf2110c88602362607ec15d02cd7a93d3a4752d20ffc73
 Fingertip 2
@@ -34,8 +34,8 @@ Fingertip 3
 0fa8e64ef53b1cf1b298ee986909c2bbf164e36458663e04b457dd6fad7ae2c4
 0fa8e64ef53b1cf1b298ee986909c2bbf164e36458663e04b457dd6fad7ae2c4
 Transform 4
-INFO:seamless:Local execution of transformation job: 396a69adfb1027832cb6ad121fa6de01bb45e71dc61cdd28288fb66cf3a81911, forked = False
-INFO:seamless:Finished local execution of transformation job: 396a69adfb1027832cb6ad121fa6de01bb45e71dc61cdd28288fb66cf3a81911
-WARNING:seamless:buffer cache, 1 buffers undestroyed
+INFO:seamless.workflow.core.transformation:Local execution of transformation job: 396a69adfb1027832cb6ad121fa6de01bb45e71dc61cdd28288fb66cf3a81911, forked = False
+INFO:seamless.workflow.core.transformation:Finished local execution of transformation job: 396a69adfb1027832cb6ad121fa6de01bb45e71dc61cdd28288fb66cf3a81911
+WARNING:seamless.checksum.buffer_cache:buffer cache, 1 buffers undestroyed
 0fa8e64ef53b1cf1b298ee986909c2bbf164e36458663e04b457dd6fad7ae2c4
 0fa8e64ef53b1cf1b298ee986909c2bbf164e36458663e04b457dd6fad7ae2c4
