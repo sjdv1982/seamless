@@ -1,5 +1,4 @@
 Before 0.13 release:
-  - high level tests, delegation (almost done)
   - high level tests, non-automatic
   - regenerate webgen, run webgen/test
   - cleanup new-project, run tests/workflow/webinterface.sh (also interactively)
@@ -8,7 +7,6 @@ Before 0.13 release:
   - cleanup /seamless/bin
   - cleanup /seamless-tools/seamless-cli
   - direct tests
-  - fairserver tests
   - examples
   - build and publish seamless-framework conda package
   - build and publish seamless-cli-bin + seamless-cli-complement conda packages

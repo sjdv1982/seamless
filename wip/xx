@@ -1,5 +1,0 @@
-deepcell-pdb: requires a FAIR server that knows the PDB dataset
-                 Can also be run interactively, change ctx.pdb_code 
-                  and observe /tmp/pdb_structure.mmcif
-deepfolder-pdb: See above . change ctx.pdb_code to "1wej.cif", "1brs.cif" or "7cei.cif" 
-                Also, /tmp/pdb_folder will contain 1brs.cif, 1wej.cif and 7cei.cif.
