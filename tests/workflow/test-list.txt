@@ -214,6 +214,7 @@ scratch-provenance:
           not found = AVX512F,AVX512CD,AVX512_SKX,AVX512_CLX,AVX512_CNL,AVX512_ICL    
   (Using NPY_DISABLE_CPU_FEATURES does not have an effect)  
    run as "cd scratch-provenance/version-X; ./run.sh" > ../../test-outputs/scratch-provenance-versionX.out 2>&1" 
+   In run.sh, change "none" to "none-devel" if testing using a development version
    Requires delegation to be startable from command line ("seamless-delegate" etc. must be available)
 
 Non-automatic tests

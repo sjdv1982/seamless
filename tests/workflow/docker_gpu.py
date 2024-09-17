@@ -1,7 +1,10 @@
+import seamless
+seamless.delegate(False)
+
 from seamless.workflow import Context, Transformer
 
 # docker run --rm --gpus all --shm-size 1gb nvidia/cuda:11.8.0-base-ubuntu22.04 \
-# bash -c 'nvidia-smi && df /dev/shm'
+#   bash -c 'nvidia-smi && df /dev/shm'
 
 ctx = Context()
 
