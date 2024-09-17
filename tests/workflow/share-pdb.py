@@ -1,7 +1,8 @@
 import seamless
+
 seamless.delegate(False)
 
-from seamlessntext, Transformer, Cell
+from seamless.workflow import Context, Transformer, Cell
 
 ctx = Context()
 
@@ -20,7 +21,7 @@ ctx.filtered_pdb.share("filtered_pdb.pdb")
 
 ctx.fix_pdb = Transformer()
 ctx.fix_pdb.language = "bash"
-ctx.fix_pdb.code = 'head -20 filtered_pdb > RESULT'
+ctx.fix_pdb.code = "head -20 filtered_pdb > RESULT"
 ctx.fix_pdb.filtered_pdb = ctx.filtered_pdb
 
 ctx.pdb = ctx.fix_pdb
@@ -32,10 +33,11 @@ ctx.filter_code.share("filter_code.bash", readonly=False)
 ctx.filter_code.mount("/tmp/filter_code.bash")
 
 ctx.code = ctx.fix_pdb.code.pull()
-ctx.code.share("code.bash",readonly=False)
+ctx.code.share("code.bash", readonly=False)
 ctx.code.mount("/tmp/code.bash")
 
 import seamless, os
+
 seamless_dir = os.path.dirname(seamless.__file__)
 c = ctx.js = Cell()
 c.celltype = "text"

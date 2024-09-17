@@ -1335,6 +1335,8 @@ class Transformer(Base, HelpMixin):
         """Linker options for compiled modules
         They are a list of strings, for example:
         ["-lm", "-lgfortran", "-lcudart"]
+
+        Changing the link options requires a re-translation of the graph.
         """
         htf = self._get_htf()
         if not htf["compiled"]:

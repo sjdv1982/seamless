@@ -1,4 +1,8 @@
-from seamless,workflow import Transformer, Cell, Context, Module
+import seamless
+
+seamless.delegate(False)
+
+from seamless.workflow import Transformer, Cell, Context, Module
 
 ctx = Context()
 ctx.cython_module = Module()
