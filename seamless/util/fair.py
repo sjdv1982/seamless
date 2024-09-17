@@ -99,7 +99,7 @@ def find(checksum: Checksum):
     checksum = Checksum(checksum)
     if not checksum:
         return None
-    request = "/machine/find/" + checksum
+    request = "/machine/find/" + checksum.value
     urls = [urllib.parse.urljoin(server, request) for server in _servers]
     for url in urls:
         try:
