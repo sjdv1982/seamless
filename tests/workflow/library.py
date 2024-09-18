@@ -3,7 +3,7 @@ import seamless
 seamless.delegate(False)
 
 from seamless.workflow import Context
-from seamless.library import LibraryContainer
+from seamless.workflow.highlevel.library import LibraryContainer
 
 lib = LibraryContainer("lib")
 

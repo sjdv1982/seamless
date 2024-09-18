@@ -4,9 +4,10 @@ This is a simplified test for modules, treating the module as a structured Cell.
 """
 
 import seamless
+
 seamless.delegate(False)
 
-tf_code = '''
+tf_code = """
 print(__name__)
 print(testmodule)
 print(testmodule.q)
@@ -15,15 +16,14 @@ print(q)
 import sys
 print([m for m in sys.modules if m.find("testmodule") > -1])
 result = a + b
-'''
+"""
 
-from seamlessansformer, Cell, Context
+from seamless.workflow import Transformer, Cell, Context
+
 ctx = Context()
-ctx.testmodule = Cell("plain").set({
-    "type": "interpreted",
-    "language": "python",
-    "code": "q = 10"
-})
+ctx.testmodule = Cell("plain").set(
+    {"type": "interpreted", "language": "python", "code": "q = 10"}
+)
 ctx.tf = Transformer(code=tf_code)
 ctx.tf.a = 10
 ctx.tf.b = 20

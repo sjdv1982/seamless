@@ -2,10 +2,10 @@ import seamless
 
 seamless.delegate(False)
 
+from seamless import Checksum, Buffer
+from seamless.util import unchecksum
 from seamless.workflow import Context, DeepCell, Cell
-from seamless.workflow.core.protocol.serialize import serialize_sync as serialize
 from seamless.checksum.buffer_cache import buffer_cache
-from seamless import calculate_checksum
 import json
 import requests
 
@@ -33,24 +33,25 @@ for k in options:
     opt2 = {}
 
     v = opt["keyorder"]
-    buf = serialize(v, "mixed")
-    checksum = calculate_checksum(buf, hex=True)
+    buf = Buffer(v, "mixed")
+    checksum = buf.get_checksum()
     buffer_cache.cache_buffer(Checksum(checksum), buf)
     opt2["keyorder"] = checksum
 
     v = opt["checksum"]
     opt3 = {}
     for kk, vv in v.items():
-        buf = serialize(vv, "mixed")
-        checksum = calculate_checksum(buf, hex=True)
+        buf = Buffer(vv, "mixed")
+        checksum = buf.get_checksum()
         buffer_cache.cache_buffer(Checksum(checksum), buf)
         opt3[kk] = checksum
-    opt3_buf = serialize(opt3, "plain")
-    checksum = calculate_checksum(opt3_buf, hex=True)
+    opt3_buf = Buffer(opt3, "plain")
+    checksum = opt3_buf.get_checksum()
     buffer_cache.cache_buffer(Checksum(checksum), opt3_buf)
     opt2["checksum"] = checksum
 
     options2[k] = opt2
+options2 = unchecksum(options2)
 print(json.dumps(options2, sort_keys=True, indent=2))
 
 ctx = Context()

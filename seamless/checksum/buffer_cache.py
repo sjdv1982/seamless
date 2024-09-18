@@ -4,7 +4,11 @@ import time
 import functools
 import logging
 
-from silk.mixed import MAGIC_NUMPY, MAGIC_SEAMLESS_MIXED
+# from silk.mixed import MAGIC_NUMPY, MAGIC_SEAMLESS_MIXED
+# define here to speed up import
+MAGIC_NUMPY = b"\x93NUMPY"
+MAGIC_SEAMLESS_MIXED = b"\x94SEAMLESS-MIXED"
+
 
 import seamless
 from seamless.checksum import empty_dict_checksum, empty_list_checksum

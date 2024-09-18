@@ -64,20 +64,6 @@ from seamless.checksum import empty_dict_checksum
 
 def set_structured_cell_from_checksum(cell, checksum, is_deepcell=False):
     trigger = False
-    """
-    if "temp" in checksum:
-        assert len(checksum) == 1, checksum.keys()
-        temp_checksum = checksum["temp"]
-        if cell.hash_pattern is not None:
-            temp_cs = Checksum(temp_checksum)
-            temp_cs2 = apply_hash_pattern_sync(
-                temp_cs, cell.hash_pattern
-            )
-            temp_checksum = temp_cs2.hex()
-        cell.auth._set_checksum(temp_checksum, initial=True, from_structured_cell=False)
-        trigger = True
-    else:
-    """
     if "value" in checksum:
         # not done! value calculated anew...
         """
@@ -101,14 +87,14 @@ def set_structured_cell_from_checksum(cell, checksum, is_deepcell=False):
         """
 
     k = "origin" if is_deepcell else "auth"
-    if k in checksum and checksum[k] is not None:
+    if k in checksum and Checksum(checksum[k]):
         if cell.auth is None:
             if not is_deepcell:
                 msg = "Warning: {} has no independence, but an {} checksum is present"
                 print(msg.format(cell, k))
         else:
             cell.auth._set_checksum(
-                checksum[k], from_structured_cell=True, initial=True
+                Checksum(checksum[k]), from_structured_cell=True, initial=True
             )
             cell._data._void = False
             cell._data._status_reason = None
@@ -116,7 +102,7 @@ def set_structured_cell_from_checksum(cell, checksum, is_deepcell=False):
 
     schema_checksum = empty_dict_checksum
     if "schema" in checksum:
-        schema_checksum = checksum["schema"]
+        schema_checksum = Checksum(checksum["schema"])
     cell.schema._set_checksum(schema_checksum, from_structured_cell=True, initial=True)
     trigger = True
 

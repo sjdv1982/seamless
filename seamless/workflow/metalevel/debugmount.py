@@ -142,7 +142,12 @@ class DebugMount:
     def mount(self, skip_pins):
         from ..core.context import context
         from ..core.macro_mode import macro_mode_on
-        from ..core.cell import subcelltypes, extensions, cell as core_cell
+        from ..core.cell import (
+            subcelltypes,
+            extensions,
+            cell as core_cell,
+            cellclasses,
+        )
 
         skip_pins = skip_pins.copy()
         self.skip_pins = skip_pins
@@ -257,7 +262,9 @@ class DebugMount:
                     if subcelltype is not None:
                         cellclass = subcelltypes[subcelltype]
                     else:
-                        raise NotImplementedError
+                        if celltype not in cellclasses:
+                            raise NotImplementedError(celltype, cellclasses)
+                        cellclass = cellclasses[celltype]
                     c = cellclass()
                     ext = extensions[cellclass]
                 filename = os.path.join(self.path, pinname) + ext

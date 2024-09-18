@@ -52,7 +52,7 @@ def with_cancel_cycle(func):
             return
         assert threading.current_thread() == threading.main_thread()
         manager = args[0]
-        if manager._destroyed:
+        if manager._destroyed or manager._destroying:
             return
         taskmanager = manager.taskmanager
         if not manager.cancel_cycle.cleared:
@@ -520,7 +520,7 @@ class Manager:
     @_run_in_mainthread
     def set_cell_buffer(self, cell, buffer: Buffer, checksum: Checksum):
         if self._destroyed or cell._destroyed:
-            return        
+            return
         assert cell._hash_pattern is None
         assert cell.has_independence(), "{} is not independent".format(cell)
         assert cell._structured_cell is None, cell
@@ -613,6 +613,38 @@ class Manager:
         except asyncio.CancelledError:
             return None
         return value
+
+    async def resolution(self, checksum: Checksum, celltype=None, copy=True):
+        """Returns the data buffer that corresponds to the checksum.
+        If celltype is provided, a value is returned instead"""
+        checksum = Checksum(checksum)
+        if not checksum:
+            return None
+
+        checksum = Checksum(checksum)
+        if checksum.hex() == empty_dict_checksum:
+            buffer = b"{}\n"
+        elif checksum.hex() == empty_list_checksum:
+            buffer = b"[]\n"
+        else:
+            buffer = checksum_cache.get(checksum)
+        if buffer is not None:
+            assert isinstance(buffer, bytes)
+        else:
+            try:
+                buffer = await GetBufferTask(self, checksum).run()
+            except asyncio.CancelledError:
+                return None
+
+        if celltype is None:
+            return buffer
+        if asyncio.get_event_loop().is_running():
+            return deserialize_sync(buffer, checksum, celltype, copy=copy)
+        task = DeserializeBufferTask(self, buffer, checksum, celltype, copy=copy)
+        try:
+            return await task.run()
+        except asyncio.CancelledError:
+            return None
 
     def set_elision(self, macro, input_cells, output_cells):
         from ..cache.elision import Elision

@@ -6,6 +6,7 @@
 import traceback
 
 import seamless
+from seamless import Checksum
 
 seamless.delegate(False)
 

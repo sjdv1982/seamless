@@ -7,7 +7,7 @@ import seamless
 
 seamless.delegate(False)
 
-from seamless import load_graph
+from seamless.workflow import load_graph
 
 ctx = load_graph("environment3.seamless", zip="environment3.zip")
 ctx.compute()

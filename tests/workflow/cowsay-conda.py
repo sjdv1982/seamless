@@ -1,6 +1,12 @@
+import os
 import seamless
 
-seamless.delegate(False)
+if "DELEGATE" in os.environ:
+    has_err = seamless.delegate()
+    if has_err:
+        exit(1)
+else:
+    seamless.delegate(False)
 
 from seamless.workflow import Context
 

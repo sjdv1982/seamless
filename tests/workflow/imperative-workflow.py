@@ -84,8 +84,8 @@ print()
 
 print("Error run 2")
 try:
-    run(
+    run(  # errors in pq_z and xy, propagating to xy_z and result
         "pp", "qq", "x", "y", "z"
-    )  # errors in pq_z and xy, propagating to xy_z and result
+    )
 except RuntimeError:
     traceback.print_exc(1)

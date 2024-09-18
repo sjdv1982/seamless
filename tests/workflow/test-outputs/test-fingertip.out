@@ -10,17 +10,17 @@ Waiting for: Seamless transformer: .func.tf
 Execution time: 3.0 seconds
 *************************************************
 <Silk: 860 >
-9.3 seconds elapsed
+14.6 seconds elapsed
 
 Part 2
 860
-0.0 seconds elapsed
+0.7 seconds elapsed
 
 Part 3
 1ec587570668eb78b2449329ffd174fc38472f149811d9206814b741f0d7fc40
 None
 <Silk: 860 >
-0.1 seconds elapsed
+0.2 seconds elapsed
 
 Part 4
 seamless.config.ConfigurationError: No read buffer servers or folders defined
@@ -39,5 +39,5 @@ Execution time: 3.0 seconds
 Part 5
 seamless.config.ConfigurationError: No read buffer servers or folders defined
 860
-3.1 seconds elapsed
+3.9 seconds elapsed
 

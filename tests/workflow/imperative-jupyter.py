@@ -1,4 +1,4 @@
-from seamless import transformer
+from seamless import Checksum, transformer
 from seamless.workflow import Context
 from seamless.workflow.core.transformation import SeamlessTransformationError
 import traceback
@@ -21,15 +21,11 @@ transformation_checksum = ctx.tf.get_transformation_checksum()
 transformation_dict = ctx.resolve(transformation_checksum, "plain")
 
 from seamless.workflow.core.direct.run import run_transformation_dict_async
-from seamless.checksum.buffer_cache import buffer_cache
-from seamless.workflow.core.protocol.deserialize import deserialize_sync as deserialize
 
 result_checksum = await run_transformation_dict_async(
     transformation_dict, fingertip=False
 )
-result = deserialize(
-    buffer_cache.get_buffer(result_checksum), result_checksum, "mixed", copy=True
-)
+result = Checksum(result_checksum).resolve("mixed")
 print(result)
 
 

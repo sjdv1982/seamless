@@ -50,7 +50,7 @@ print(ctx.tf.exception)
 print(ctx.tf.result.value)
 
 seamless.config.unblock_local()
-seamless.set_ncores(8)
+seamless.config.set_ncores(8)
 
 
 def func2(a, b):

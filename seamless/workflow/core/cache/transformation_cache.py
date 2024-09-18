@@ -1099,9 +1099,13 @@ class TransformationCache:
         sem_checksum = Checksum(sem_checksum)
 
         def ret(semsyn):
+            semsyn2 = []
             for semsyn_checksum in semsyn:
+                if isinstance(semsyn_checksum, bytes):
+                    semsyn_checksum = Checksum(semsyn_checksum)
                 assert isinstance(semsyn_checksum, Checksum), semsyn
-            return semsyn
+                semsyn2.append(semsyn_checksum)
+            return semsyn2
 
         if syntactic_is_semantic(celltype, subcelltype):
             return ret([sem_checksum])
@@ -1480,11 +1484,15 @@ class TransformationCache:
             or (result_checksum == result_checksum2)
         )
 
+        """
+        # Below will not work, but now we have a cache miss instead
+        #  
+        if transformation_checksum in self.transformations:
+            transformation = self.transformations[transformation_checksum]
+            self.destroy_transformation(transformation, dummy=True)
+        """
         if transformation_checksum in self.transformation_results:
             self.transformation_results.pop(transformation_checksum, None)
-            if result_checksum:
-                if not result_checksum2:
-                    buffer_cache.decref(result_checksum)
         self.transformation_logs.pop(transformation_checksum, None)
 
         if result_checksum2:

@@ -2,9 +2,10 @@ import seamless
 
 seamless.delegate(False)
 from seamless.workflow.core import context, cell
+from seamless.workflow.vault import load_vault
 
 ctx = context(toplevel=True)
-seamless.vault.load_vault("./reuse-vault")
+load_vault("./reuse-vault")
 
 ctx.a = cell().set_checksum(
     "bc4bb29ce739b5d97007946aa4fdb987012c647b506732f11653c5059631cd3d"

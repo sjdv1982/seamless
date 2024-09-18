@@ -249,7 +249,7 @@ class MountItem:
                     if file_buffer0 is not None:
                         file_buffer = adjust_buffer(file_buffer0, cell._celltype)
                         update_file = True
-                    file_checksum = None
+                    file_checksum = Buffer(file_buffer).get_checksum()
                     self._after_read(file_checksum)
                 if update_file and "r" in self.mode:
                     self.set(file_buffer, checksum=file_checksum)

@@ -1,11 +1,13 @@
 START
+In [3]:         
+In [3]: 
 In [3]: await main()                    
 In [3]: await main()
 10
 20
 30
 40
-Time to complete: 2.1 seconds
+Time to complete: 2.4 seconds
 In [4]: exit()              
 In [4]: exit()
 Shutting down kernel

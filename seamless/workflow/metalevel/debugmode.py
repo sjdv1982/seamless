@@ -5,19 +5,26 @@ import os
 import asyncio
 
 python_attach_headers = {
-    ("light", "vscode") : """Python source code mount to {host_path} detected.
+    (
+        "light",
+        "vscode",
+    ): """Python source code mount to {host_path} detected.
 
 In Visual Studio Code, set breakpoints in this file.""",
-
-    ("sandbox", "vscode") : """The source code has been mounted to files inside the directory:
+    (
+        "sandbox",
+        "vscode",
+    ): """The source code has been mounted to files inside the directory:
 {main_directory} .
 
-In Visual Studio Code, set breakpoints in these files."""
-
+In Visual Studio Code, set breakpoints in these files.""",
 }
 
 python_attach_module_headers = {
-    ("light", "vscode") : """Python module {module_name}: Python source code mount to {module_mount_path} detected.
+    (
+        "light",
+        "vscode",
+    ): """Python module {module_name}: Python source code mount to {module_mount_path} detected.
 
 In Visual Studio Code, set breakpoints in this file/directory.""",
 }
@@ -32,7 +39,6 @@ Transformer execution will now be halted until the VSCode debugger attaches itse
 
 If the transformer is restarted by Seamless while the debugger is active, both may fail. 
 In that case, do Transformer.clear_exception()"""
-
 }
 
 generic_attach_messages = {
@@ -48,18 +54,19 @@ Transformer execution will now be halted until a SIGUSR1 signal is received.
 Debugging is done in VSCode as follows:
 
 - Press Ctrl+Shift+D, select the "{name}" debug entry and press F5.
-- Press F6, then press Esc to ignore the "Cannot find select.c" error message
-- Then press Ctrl+Shift+Y to go to the Debug Console
+- Press F6, then press Ctrl+Shift+Y to go to the Debug Console
 - Type "-exec signal SIGUSR1"
 """
-
 }
+
 
 class ValidationError(Exception):
     pass
 
+
 def get_code_mount(transformer):
     from ..highlevel import Cell
+
     node = transformer._get_htf()
     if "mount" in node and "code" in node["mount"]:
         return node["mount"]["code"]
@@ -72,7 +79,7 @@ def get_code_mount(transformer):
         if tuple(con["target"]) == codepath:
             codecellpath = tuple(con["source"])
             try:
-                codecell = parent._get_from_path(codecellpath)            
+                codecell = parent._get_from_path(codecellpath)
             except AttributeError:
                 continue
             if not isinstance(codecell, Cell):
@@ -84,9 +91,11 @@ def get_code_mount(transformer):
             if "mount" in node:
                 return node["mount"]
 
+
 def get_compiled_mounted_module_objects(transformer):
     mmo = {}
     from ..highlevel import Cell
+
     node = transformer._get_htf()
     modulepath = tuple(node["path"]) + ("_main_module",)
     lp = len(modulepath)
@@ -101,7 +110,7 @@ def get_compiled_mounted_module_objects(transformer):
             objectname = con["target"][-2]
             codecellpath = tuple(con["source"])
             try:
-                codecell = parent._get_from_path(codecellpath)            
+                codecell = parent._get_from_path(codecellpath)
             except AttributeError:
                 continue
             if not isinstance(codecell, Cell):
@@ -113,13 +122,15 @@ def get_compiled_mounted_module_objects(transformer):
                 mmo[objectname] = node["mount"]["path"]
     return mmo
 
+
 def find_transformer_modules(tf):
     from ..highlevel import Module
+
     modules = {}
     node = tf._get_htf()
     parent = tf._parent()
     connections = parent._graph[1]
-    
+
     for pinname, pin in node["pins"].items():
         if pin.get("celltype") != "module":
             continue
@@ -132,7 +143,7 @@ def find_transformer_modules(tf):
             if tuple(con["target"]) == modulepinpath:
                 modulepath = tuple(con["source"])
                 try:
-                    module = parent._get_from_path(modulepath)            
+                    module = parent._get_from_path(modulepath)
                 except AttributeError:
                     continue
                 if not isinstance(module, Module):
@@ -140,6 +151,7 @@ def find_transformer_modules(tf):
                 modules[pinname] = module
                 break
     return modules
+
 
 docker_container = None
 docker_warning = None
@@ -149,12 +161,15 @@ if os.path.exists(docker_container_file):
         docker_container = f.read().strip()
         docker_warning = """
 WARNING: if you are running in a Docker container: 
-  attach will not work if you started the container with a seamless-XXX-safe command"""      
-    
+  attach will not work if you started the container with a seamless-XXX-safe command"""
+
+
 def validate_light_mode(transformer):
     if transformer.language == "bash":
-        raise ValidationError("""Light debug mode does not make sense for a bash/docker transformer. 
-Use sandbox mode instead.""")
+        raise ValidationError(
+            """Light debug mode does not make sense for a bash/docker transformer. 
+Use sandbox mode instead."""
+        )
     env = os.environ
     hostcwd = env.get("HOSTCWD")
     if docker_container is not None and hostcwd is None:
@@ -164,6 +179,7 @@ Cannot do source mapping between container and host!"""
     code_mount = get_code_mount(transformer)
     if code_mount is None:
         raise ValidationError("Code is not mounted, nor connected from a mounted cell")
+
 
 class DebugMode:
     def __init__(self, transformer):
@@ -193,7 +209,7 @@ class DebugMode:
             # ipy_template and py_bridge languages.
             # py_bridge could be supported in the future
             if not force:
-                return None  
+                return None
             else:
                 msg = "Attach-and-debug with breakpoints is not possible for language '{}'"
                 raise ValueError(msg.format(node["language"]))
@@ -219,14 +235,13 @@ class DebugMode:
                 if debug == {"direct_print": False}:
                     debug = None
                 tf._debug = debug
-        
+
         tf = self._tf()
-        node = tf._get_htf()        
+        node = tf._get_htf()
         if node.get("compiled") and self._direct_print:
             tf = tf._get_tf()
             if tf is not None:
                 tf.tf.executor.SPECIAL__DIRECT_PRINT.set(True)
-
 
     def enable(self, mode, sandbox_name=None):
         if self._mode is not None:
@@ -261,7 +276,11 @@ Reason: {}"""
             code_mount = get_code_mount(tf)
             hostcwd = os.environ.get("HOSTCWD")
             code_path = os.path.abspath(code_mount["path"])
-            if hostcwd is not None and not code_path.startswith("/cwd") and not code_path.startswith("/tmp"):
+            if (
+                hostcwd is not None
+                and not code_path.startswith("/cwd")
+                and not code_path.startswith("/tmp")
+            ):
                 msg = """HOSTCWD is defined, but code path {} does not start with /cwd or /tmp
 Seamless cannot do source mapping. 
 Only sandbox debug mode is possible."""
@@ -274,14 +293,17 @@ Only sandbox debug mode is possible."""
             if node.get("compiled"):
                 tf._get_tf().tf.integrator.debug_.set(True)
             if core_transformer.status == "Status: OK":
-                from ..core.manager.tasks.transformer_update import TransformerUpdateTask
+                from ..core.manager.tasks.transformer_update import (
+                    TransformerUpdateTask,
+                )
+
                 manager = core_transformer._get_manager()
-                TransformerUpdateTask(manager, core_transformer).launch()                
+                TransformerUpdateTask(manager, core_transformer).launch()
 
     @property
     def attach(self):
         """Debugger attach.
-If True, the transformer will wait for a debugger to attach"""
+        If True, the transformer will wait for a debugger to attach"""
         return self._attach
 
     @attach.setter
@@ -292,26 +314,27 @@ If True, the transformer will wait for a debugger to attach"""
         if self.enabled:
             if value and self.mode == "sandbox":
                 if self._mount.special == "bash":
-                    raise ValidationError("Attach-and-debug with breakpoints is not supported for bash/docker transformers.")
+                    raise ValidationError(
+                        "Attach-and-debug with breakpoints is not supported for bash/docker transformers."
+                    )
             debug = self._to_lowlevel(silent=True)
             core_transformer = self._get_core_transformer(force=False)
             if core_transformer is not None:
-                on_off = "ON" if self._attach else "OFF"                
+                on_off = "ON" if self._attach else "OFF"
                 print("Debugger attach is {}".format(on_off))
                 core_transformer._debug = debug
             else:
                 print("Debugger attach has changed: no effect on current debug mode")
 
     @property
-
     def mode(self):
         return self._mode
-    
+
     @property
     def direct_print(self):
         """Causes the transformer to directly print any messages,
-instead of buffering them and storing them in Transformer.logs.
-If this value is None, direct print is True if debugging is enabled."""
+        instead of buffering them and storing them in Transformer.logs.
+        If this value is None, direct print is True if debugging is enabled."""
         return self._direct_print
 
     @direct_print.setter
@@ -321,7 +344,7 @@ If this value is None, direct print is True if debugging is enabled."""
         self._direct_print = value
         tf = self._tf()
         tf._parent()._translate()
-        node = tf._get_htf()   
+        node = tf._get_htf()
         if node.get("compiled"):
             tf = tf._get_tf()
             if tf is not None:
@@ -330,7 +353,7 @@ If this value is None, direct print is True if debugging is enabled."""
     @property
     def direct_print_file(self):
         """File name for direct print messages.
-If this value is None, the default stdout and stderr are used."""
+        If this value is None, the default stdout and stderr are used."""
         return self._direct_print_file
 
     @direct_print_file.setter
@@ -360,7 +383,7 @@ If this value is None, the default stdout and stderr are used."""
             "generic_attach_message": None,
         }
         debug.update(self._get_logs_settings())
-        mode = self._mode        
+        mode = self._mode
         if mode == "light":
             if not self._attach:
                 raise ValueError("attach=False is pointless in light debug mode")
@@ -375,7 +398,7 @@ If this value is None, the default stdout and stderr are used."""
                 host_path = code_path
                 host_project_dir = os.environ.get("HOST_PROJECT_DIR")
                 hostcwd = os.environ.get("HOSTCWD")
-                if hostcwd is not None: # source mapping is needed
+                if hostcwd is not None:  # source mapping is needed
                     if code_path.startswith("/tmp"):
                         host_path = code_path
                     else:
@@ -388,11 +411,14 @@ If this value is None, the default stdout and stderr are used."""
                     if host_project_dir is None:
                         host_project_dir = os.getcwd()
                 debug["exec-identifier"] = code_path
-                msg = python_attach_headers[mode, self._ide].format(
-                    host_path=host_path,
-                    host_project_dir=host_project_dir,
-                    name=name
-                ) + "\n"
+                msg = (
+                    python_attach_headers[mode, self._ide].format(
+                        host_path=host_path,
+                        host_project_dir=host_project_dir,
+                        name=name,
+                    )
+                    + "\n"
+                )
                 modules = find_transformer_modules(tf)
                 module_mounts = {}
                 for module_name, module in modules.items():
@@ -410,8 +436,10 @@ If this value is None, the default stdout and stderr are used."""
                             mmsg += "NOT MOUNTED"
                         else:
                             ok = True
-                            if hostcwd is not None: # source mapping is needed
-                                if not mount_path.startswith("/cwd") and not mount_path.startswith("/tmp"):
+                            if hostcwd is not None:  # source mapping is needed
+                                if not mount_path.startswith(
+                                    "/cwd"
+                                ) and not mount_path.startswith("/tmp"):
                                     mmmsg = "code path {} does not start with /cwd or /tmp, Seamless cannot do source mapping"
                                     mmsg += mmmsg.format(mount_path)
                                     ok = False
@@ -419,25 +447,30 @@ If this value is None, the default stdout and stderr are used."""
                                     if mount_path.startswith("/tmp"):
                                         host_mount_path = mount_path
                                     else:
-                                        host_mount_path = os.path.relpath(mount_path, "/cwd")
-                                        host_mount_path = os.path.join(hostcwd, host_mount_path)
+                                        host_mount_path = os.path.relpath(
+                                            mount_path, "/cwd"
+                                        )
+                                        host_mount_path = os.path.join(
+                                            hostcwd, host_mount_path
+                                        )
                             else:
                                 host_mount_path = mount_path
                             if ok:
-                                if module.multi:                        
+                                if module.multi:
                                     pass  # No special actions for multi-modules in light mode
-                                module_mounts[module_name] = {
-                                    "path": mount_path
-                                }
+                                module_mounts[module_name] = {"path": mount_path}
                                 mmsg = python_attach_module_headers[mode, self._ide]
-                    msg += "\n" + mmsg.format(
-                        module_name=module_name,
-                        module_mount_path=host_mount_path
-                    ) + "\n\n"
+                    msg += (
+                        "\n"
+                        + mmsg.format(
+                            module_name=module_name, module_mount_path=host_mount_path
+                        )
+                        + "\n\n"
+                    )
                 msg += python_attach_messages[self._ide].format(
                     host_project_dir=host_project_dir,
                     name=name,
-                    docker_warning=docker_warning
+                    docker_warning=docker_warning,
                 )
                 if module_mounts:
                     debug["module_mounts"] = module_mounts
@@ -445,10 +478,10 @@ If this value is None, the default stdout and stderr are used."""
             elif node["compiled"]:
                 debug["generic_attach"] = True
                 code_path = os.path.abspath(code_mount["path"])
-                host_path = code_path                
+                host_path = code_path
                 hostcwd = os.environ.get("HOSTCWD")
                 host_project_dir = os.environ.get("HOST_PROJECT_DIR")
-                if hostcwd is not None: # source mapping is needed
+                if hostcwd is not None:  # source mapping is needed
                     host_path = os.path.relpath(code_path, "/cwd")
                     host_path = os.path.join(hostcwd, host_path)
                     if host_project_dir is None:
@@ -457,9 +490,7 @@ If this value is None, the default stdout and stderr are used."""
                 else:
                     if host_project_dir is None:
                         host_project_dir = os.getcwd()
-                debug["mounted_module_objects"] = {
-                    "main": code_path
-                }
+                debug["mounted_module_objects"] = {"main": code_path}
                 mmo_ok = OrderedDict()
                 mmo_not_ok = OrderedDict()
                 mmo = get_compiled_mounted_module_objects(tf)
@@ -468,12 +499,12 @@ If this value is None, the default stdout and stderr are used."""
                     objpath = mmo[objname]
                     ok = True
                     host_objpath = objpath
-                    if hostcwd is not None: 
+                    if hostcwd is not None:
                         objpath2 = os.path.abspath(objpath)
                         if not objpath2.startswith("/cwd"):
                             ok = False
                         objpath3 = os.path.relpath(objpath2, "/cwd")
-                        host_objpath = os.path.join(hostcwd, objpath3)                        
+                        host_objpath = os.path.join(hostcwd, objpath3)
                     if ok:
                         debug["mounted_module_objects"][objname] = objpath
                         mmo_ok[objname] = host_objpath
@@ -482,7 +513,9 @@ If this value is None, the default stdout and stderr are used."""
                 if mmo_ok:
                     object_mount_message += "\nA source mount was detected for the following code objects:\n"
                     for objname, host_objpath in mmo_ok.items():
-                        object_mount_message += "- {} => {}\n".format(objname, host_objpath)
+                        object_mount_message += "- {} => {}\n".format(
+                            objname, host_objpath
+                        )
                     object_mount_message += "\n"
                 if mmo_not_ok:
                     object_mount_message += """
@@ -490,13 +523,15 @@ A source mount cannot be used (filename does not start with /cwd)
 for the following code objects:
 """
                     for objname, host_objpath in mmo_not_ok.items():
-                        object_mount_message += "- {} => {}\n".format(objname, host_objpath)
+                        object_mount_message += "- {} => {}\n".format(
+                            objname, host_objpath
+                        )
                     object_mount_message += "\n"
                 msg = generic_attach_messages[self._ide].format(
                     host_path=host_path,
                     host_project_dir=host_project_dir,
                     object_mount_message=object_mount_message,
-                    name=name
+                    name=name,
                 )
                 debug["generic_attach_message"] = msg
         if mode == "sandbox":
@@ -504,18 +539,26 @@ for the following code objects:
             debug["main_directory"] = self._mount.path
             node = tf._get_htf()
             if not silent:
-                print("""Entering sandbox debug mode for {}
-Mounted main directory: {}""".format(tf, debug["main_directory"]))
+                print(
+                    """Entering sandbox debug mode for {}
+Mounted main directory: {}""".format(
+                        tf, debug["main_directory"]
+                    )
+                )
                 if node["language"] == "bash":
                     self._attach = False
-                    print("""NOTE: The mounted files contents are synchronized with the Seamless sandbox, but they do NOT correspond with the files that the bash code sees
+                    print(
+                        """NOTE: The mounted files contents are synchronized with the Seamless sandbox, but they do NOT correspond with the files that the bash code sees
 To create a directory where you can manually execute bash code, do Transformer.debug.shell()
-""")
+"""
+                    )
                 else:
-                    print("Debugger attach is {}".format("ON" if self._attach else "OFF"))
-                    debug["direct_print"] = True            
+                    print(
+                        "Debugger attach is {}".format("ON" if self._attach else "OFF")
+                    )
+                    debug["direct_print"] = True
             name = str(tf.path) + " Seamless transformer"
-            debug["name"] = name    
+            debug["name"] = name
             host_project_dir = os.environ.get("HOST_PROJECT_DIR")
             hostcwd = os.environ.get("HOSTCWD")
             if hostcwd is not None:
@@ -527,14 +570,16 @@ To create a directory where you can manually execute bash code, do Transformer.d
 
             if node["language"] == "python":
                 debug["python_attach"] = True
-                msg = python_attach_headers[mode, self._ide].format(
-                    main_directory=self._mount.path,
-                    name=name
-                ) + "\n"
+                msg = (
+                    python_attach_headers[mode, self._ide].format(
+                        main_directory=self._mount.path, name=name
+                    )
+                    + "\n"
+                )
                 msg += python_attach_messages[self._ide].format(
                     host_project_dir=host_project_dir,
                     name=name,
-                    docker_warning=docker_warning
+                    docker_warning=docker_warning,
                 )
                 debug["python_attach_message"] = msg
                 code_cell = getattr(self._mount.mount_ctx, "code")
@@ -543,9 +588,7 @@ To create a directory where you can manually execute bash code, do Transformer.d
                 for module_name in self._mount.modules:
                     mod_code_cell = getattr(self._mount.mount_ctx, module_name)
                     mount_path = mod_code_cell._mount["path"]
-                    module_mounts[module_name] = {
-                        "path": mount_path
-                    }
+                    module_mounts[module_name] = {"path": mount_path}
                 if module_mounts:
                     debug["module_mounts"] = module_mounts
             elif node["compiled"]:
@@ -553,7 +596,7 @@ To create a directory where you can manually execute bash code, do Transformer.d
                 mounted_module_objects = {}
                 for objname in self._mount._object_codes:
                     code_cell = getattr(self._mount.mount_ctx, objname)
-                    module_name = objname[len(module_tag)+len("module."):]
+                    module_name = objname[len(module_tag) + len("module.") :]
                     code_path = code_cell._mount["path"]
                     mounted_module_objects[module_name] = code_path
                 debug["mounted_module_objects"] = mounted_module_objects
@@ -563,7 +606,7 @@ To create a directory where you can manually execute bash code, do Transformer.d
                         host_path=self._mount.path,
                         host_project_dir=host_project_dir,
                         object_mount_message="",
-                        name=name
+                        name=name,
                     )
                     debug["generic_attach_message"] = msg
             elif node["language"] == "bash":
@@ -603,36 +646,41 @@ To create a directory where you can manually execute bash code, do Transformer.d
         old_cs = c.checksum
         if old_cs is not None and value is None:  # glitch
             c._checksum = None
-            c.set(value) # observer should take care of the rest
+            c.set(value)  # observer should take care of the rest
         else:
-            c.set(value) # observer should take care of the rest
+            c.set(value)  # observer should take care of the rest
 
     async def _new_shell(self):
         from ..core.cache.transformation_cache import transformation_cache
         from ..core.transformation import get_transformation_inputs_output
+
         tf = self._tf()
         ctf = self._get_core_transformer(force=True)
         tf_checksum = transformation_cache.transformer_to_transformations.get(ctf)
         transformation = transformation_cache.transformations[tf_checksum]
         if transformation is None:
-            print("Cannot create shell for '{}': transformation does not exist", file=sys.stderr)
+            print(
+                "Cannot create shell for '{}': transformation does not exist",
+                file=sys.stderr,
+            )
         io = get_transformation_inputs_output(transformation)
         inputs, outputname, _, _, _ = io
-        if self._shellname is None: # No shells exist
+        if self._shellname is None:  # No shells exist
             shellname0 = str(tf.path[1:])
             if tf.language == "bash":
                 shellname = shellserver.new_bashshellhub(shellname0)
             elif tf.language in ("python", "ipython"):
-                ipython_language = (tf.language == "ipython")
+                ipython_language = tf.language == "ipython"
                 shellname = shellserver.new_pyshellhub(
-                    shellname0, inputs, outputname, ipython_language,
+                    shellname0,
+                    inputs,
+                    outputname,
+                    ipython_language,
                     push_callback=self._push_from_shell,
-                    debug_mount=tf._get_debugmount()
+                    debug_mount=tf._get_debugmount(),
                 )
-            self._shellname = shellname 
-        await shellserver.new_shell_from_transformation(
-            self._shellname, transformation
-        )
+            self._shellname = shellname
+        await shellserver.new_shell_from_transformation(self._shellname, transformation)
 
     def shell(self):
         if not self.enabled:
@@ -663,6 +711,7 @@ To create a directory where you can manually execute bash code, do Transformer.d
             debugmountmanager.remove_mount(self._mount)
         if core_transformer is not None:
             from ..core.manager.tasks.transformer_update import TransformerUpdateTask
+
             core_transformer._debug = None
             node = tf._get_htf()
             if node["compiled"]:
@@ -673,6 +722,7 @@ To create a directory where you can manually execute bash code, do Transformer.d
             shellserver.destroy_shellhub(self._shellname)
             self._shellname = None
         self._mode = None
+
 
 from .debugmount import debugmountmanager, module_tag
 from .shellserver import shellserver

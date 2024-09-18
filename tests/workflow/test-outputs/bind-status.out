@@ -137,7 +137,7 @@ http://localhost:5813/ctx/graph
 http://localhost:5813/ctx/status
 {
   "a.status": "Status: OK",
-  "b.exception": "Traceback (most recent call last):\n  File \"/home/sjoerd/seamless/seamless/core/manager/tasks/set_value.py\", line 46, in _run\n    raise ValueError(exc) from None\nValueError: invalid literal for int() with base 10: 'nonsense'\n",
+  "b.exception": "Traceback (most recent call last):\n  File \"/seamless/seamless/workflow/core/manager/tasks/set_value.py\", line 47, in _run\n    raise ValueError(exc) from None\nValueError: invalid literal for int() with base 10: 'nonsense'\n",
   "b.status": "Status: invalid"
 }
 
@@ -178,7 +178,7 @@ http://localhost:5813/ctx/graph
       "RESULT": "result",
       "SCHEMA": null,
       "checksum": {
-        "code": "a7f8ab05baf64b01477f229660a7551629ed6d9598d2224f52bb7610f6d94e60",
+        "code": "dacaccb139c5b5a047a748d84f59542aa01f19daaf72916edea29cd81aabc6ca",
         "input": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
         "input_auth": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
         "result_schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
@@ -246,7 +246,7 @@ http://localhost:5813/ctx/graph
       "RESULT": "result",
       "SCHEMA": null,
       "checksum": {
-        "code": "a7f8ab05baf64b01477f229660a7551629ed6d9598d2224f52bb7610f6d94e60",
+        "code": "dacaccb139c5b5a047a748d84f59542aa01f19daaf72916edea29cd81aabc6ca",
         "input": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
         "input_auth": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
         "result_schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
@@ -314,7 +314,7 @@ http://localhost:5813/ctx/graph
       "RESULT": "result",
       "SCHEMA": null,
       "checksum": {
-        "code": "a7f8ab05baf64b01477f229660a7551629ed6d9598d2224f52bb7610f6d94e60",
+        "code": "dacaccb139c5b5a047a748d84f59542aa01f19daaf72916edea29cd81aabc6ca",
         "input": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
         "input_auth": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
         "result": "fa2fe6c9c0556871073be9a00d6d29bd3b9b6dd560587ee6e8c163755bf669d3",
@@ -383,7 +383,7 @@ http://localhost:5813/ctx/graph
       "RESULT": "result",
       "SCHEMA": null,
       "checksum": {
-        "code": "1f4a3c054322eddd6cb5b35f241b9461dcb288cad1d360c7226d1c31f3a97efe",
+        "code": "27d83f12cb1da11c6dc2d8e936a1814b1015839ad21fe532a53b65ee81153dd6",
         "input": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
         "input_auth": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
         "result": "8664f24be9eda38a22214a13d36313d7c75c3a6905de246d9895e3039e5dd977",
@@ -417,5 +417,5 @@ http://localhost:5813/ctx/status
 }
 
 
-1f4a3c054322eddd6cb5b35f241b9461dcb288cad1d360c7226d1c31f3a97efe
-1f4a3c054322eddd6cb5b35f241b9461dcb288cad1d360c7226d1c31f3a97efe
+27d83f12cb1da11c6dc2d8e936a1814b1015839ad21fe532a53b65ee81153dd6
+27d83f12cb1da11c6dc2d8e936a1814b1015839ad21fe532a53b65ee81153dd6

@@ -2,7 +2,7 @@ import seamless
 
 seamless.delegate(False)
 
-from seamless.workflow import Context, Macro, Cell
+from seamless.workflow.highlevel import Context, Macro, Cell
 
 ctx = Context()
 m = ctx.m = Macro()

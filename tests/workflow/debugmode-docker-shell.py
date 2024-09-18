@@ -1,5 +1,7 @@
+import seamless
+
+seamless.delegate(False)
 from seamless.workflow import Context
-import traceback
 
 ctx = Context()
 ctx.code = "head -$lines testdata > RESULT"

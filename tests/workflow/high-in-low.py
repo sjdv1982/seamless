@@ -2,7 +2,7 @@ import seamless
 
 seamless.delegate(False)
 
-from seamless.workflow import Context, Cell, Macro
+from seamless.workflow.highlevel import Context, Cell, Macro
 from seamless.workflow.highlevel.assign import _assign_context
 from seamless.workflow.highlevel.synth_context import SynthContext
 
@@ -46,7 +46,7 @@ def run_macro(ctx, par_static, graph):
             con["first"] = tuple(con["first"])
             con["second"] = tuple(con["second"])
 
-    from seamless.midlevel.translate import translate
+    from seamless.workflow.midlevel.translate import translate
 
     print("RUN MACRO", par_static)
     ctx.subctx = context()

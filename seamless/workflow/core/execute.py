@@ -16,7 +16,7 @@ except ModuleNotFoundError:
     debugpy = None
 
 from silk import Silk
-from seamless import Checksum, CacheMissError
+from seamless import Checksum, Buffer, CacheMissError
 from seamless.checksum import database_client
 from seamless.checksum.database_client import database
 from seamless.checksum.serialize import serialize_sync
@@ -81,10 +81,14 @@ def fast_unpack(deep_structure, hash_pattern):
                 unpacked_buffer = unpacked_buffer0
             if celltype is None:
                 value = unpacked_buffer
+                if isinstance(value, Buffer):
+                    value = value.value
             else:
                 value = deserialize_sync(
                     unpacked_buffer, deep_checksum2, celltype, copy=False
                 )
+                if isinstance(value, Buffer):
+                    value = value.value
                 assert value is not None, deep_checksum
             unpacked_values.append(value)
 

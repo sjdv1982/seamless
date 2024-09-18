@@ -743,6 +743,7 @@ class Context(Base, HelpMixin):
         checksums = copying.get_graph_checksums(
             graph, with_libraries, with_annotations=False, skip_scratch=True
         )
+        checksums = list(set([Checksum(cs) for cs in checksums]))
         manager = self._manager
         buffer_dict = copying.get_buffer_dict_sync(manager, checksums)
         if buffer_dict is None:
@@ -762,6 +763,7 @@ class Context(Base, HelpMixin):
         checksums = copying.get_graph_checksums(
             graph, with_libraries, with_annotations=False, skip_scratch=True
         )
+        checksums = list(set([Checksum(cs) for cs in checksums]))
         manager = self._manager
         buffer_dict = await copying.get_buffer_dict(manager, checksums)
         return _get_zip(buffer_dict)

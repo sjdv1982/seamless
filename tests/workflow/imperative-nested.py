@@ -61,6 +61,11 @@ print(func2a(29, 12))
 
 # transformer within transformer within transformer...
 
+import seamless.workflow.config
+
+if "DELEGATE" in os.environ:
+    seamless.workflow.config.unblock_local()
+
 
 @transformer
 def func3(a, b):
@@ -99,6 +104,9 @@ ctx.compute()
 print(ctx.tf.logs)
 print(ctx.tf.status)
 print(ctx.tf.result.value)
+
+if "DELEGATE" in os.environ:
+    seamless.workflow.config.block_local()
 
 print(func3(7, 22))
 print(func3(101, 720))

@@ -4,7 +4,7 @@ import seamless
 seamless.delegate(False)
 
 from seamless.workflow import Context, Cell
-from seamless import stdlib
+from seamless.workflow import stdlib
 
 ctx = Context()
 ctx.include(stdlib.switch)

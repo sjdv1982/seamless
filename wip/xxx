@@ -1,0 +1,47 @@
+Non-automatic tests
+=========================
+10
+20
+30
+
+debugmode-pypackage-light.py
+  To debug a Python transformer with Python package in VSCode. Follow the instructions.
+debugmode-compiledmodule-light.py
+  To debug a multi-file C/C++ transformer in VSCode. Follow the instructions.
+debugmode-compiled-sandbox.py
+  Sandbox debugging of a simple C++ transformer in VSCode. Follow the instructions.
+debugmode-compiledmodule-sandbox.py
+  Sandbox debugging of a multi-file C/C++ transformer in VSCode. Follow the instructions.
+debugmode-py-shell.py  
+  Debug IPython shell for a Python transformer. Follow the instructions.
+debugmode-bash-shell.py  
+  Debug bash shell. Follow the instructions.
+debugmode-docker-shell.py  
+  Debug bash shell, with Docker image. Follow the instructions.
+hack-bash-transformer-translation.py
+  Run with IPython and hack /tmp/execute.py
+fallback-mount-share.py
+  Run with IPython, modify /tmp/a and /tmp/b . 
+  This will *not* update ctx.a until you leave fallback mode
+  Check "curl localhost:5813/ctx/a"
+  Do:
+  - fctx.aa = ...
+  - ctx.translate(force=True)
+  - ctx.a.fallback(None)
+  - ctx.a.fallback(fctx.aa)
+  - fctx.translate(force=True)
+imperative-manyjobs.py
+  Needs to be run with a Dask cluster, 1000x ~20 sec jobs. Submitting 1000 jobs may take a few minutes. Will calculate pi to 6 digits. Expected results: 3.141593805644 5.116277454745302e-05 3.141592653589793
+40
+
+multi-core-transformations.py
+  It is expected that job 1 finishes before job 2, and job 2 finishes after 7 seconds.
+  With DELEGATE, run this with the micro Dask assistant and a local Dask cluster with --ncores 5
+  Change ncores to 4 to have the first job fail, for a total duration of 2 seconds
+  TODO: as of Seamless 0.12, the first job stays "ready" forever
+  Change ncores to 6 to have both jobs execute in parallel. Job 2 will finish after 2.5 seconds,
+   and job 1 will still be running.
+   TODO: as of Seamless 0.12, the first job says "ready" instead of running
+slow-buffer.py
+  To detect suspected slowness issues with buffer upload, but hasn't given an error yet.
+42

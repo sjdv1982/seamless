@@ -810,11 +810,20 @@ class LiveGraph:
             path = accessor.write_accessor.path
             if path is not None:
                 sc = target._structured_cell
-                manager.cancel_scell_inpath(sc, path, void=True)
+                try:
+                    manager.cancel_scell_inpath(sc, path, void=True)
+                except Exception:
+                    # glitch
+                    pass
                 if target in self.paths_to_upstream:
                     self.paths_to_upstream[target][path] = None
             else:
-                manager.cancel_cell(target, True)
+                try:
+                    manager.cancel_cell(target, True)
+                except Exception:
+                    # glitch
+                    pass
+
                 if target in self.cell_to_upstream:
                     self.cell_to_upstream[target] = None
         elif isinstance(target, Transformer):

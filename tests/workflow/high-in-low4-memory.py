@@ -9,8 +9,10 @@ seamless.workflow.core.execute.DIRECT_PRINT = True
 
 if seamless.delegate(level=3):
     exit(1)
-seamless.set_ncores(2)
-seamless.config.set_parallel_evaluations(5)
+seamless.config.set_ncores(2)
+import seamless.workflow.config
+
+seamless.workflow.config.set_parallel_evaluations(5)
 
 """
 import logging
@@ -18,7 +20,7 @@ logging.basicConfig()
 logging.getLogger("seamless").setLevel(logging.DEBUG)
 """
 
-from seamless.workflow import Context, Cell, Macro
+from seamless.workflow.highlevel import Context, Cell, Macro
 
 sctx = Context()
 sctx.inp = Cell("mixed")

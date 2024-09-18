@@ -39,7 +39,6 @@ class CacheMissError(Exception):
     """Exception for when a checksum cannot be mapped to a buffer"""
 
 
-from silk import Silk
 from seamless.Checksum import Checksum
 from seamless.Buffer import Buffer
 from seamless.config import delegate
@@ -49,7 +48,6 @@ from . import config
 from . import multi
 
 __all__ = [
-    "Silk",
     "Checksum",
     "Buffer",
     "config",

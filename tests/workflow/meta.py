@@ -6,8 +6,6 @@ from seamless.workflow import Context
 
 
 def get_meta(tf):
-    from seamless.workflow.core.protocol.get_buffer import get_buffer
-
     ctx = tf._root()
     tf_cache = ctx._get_manager().cachemanager.transformation_cache
     tf_checksum = tf_cache.transformer_to_transformations[tf]

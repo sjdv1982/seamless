@@ -7,7 +7,7 @@ if err:
 else:
     print("Database found")
 
-from seamless.workflow import Context, Macro
+from seamless.workflow.highlevel import Context, Macro
 
 ctx = Context()
 m = ctx.m = Macro()

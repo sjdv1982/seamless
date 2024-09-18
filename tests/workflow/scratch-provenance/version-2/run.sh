@@ -7,7 +7,6 @@ export SEAMLESS_HASHSERVER_DIRECTORY=$pwd/buffers
 export SEAMLESS_DATABASE_DIRECTORY=$pwd/database
 seamless-delegate-stop >& /dev/null
 seamless-delegate none >& /dev/null
-sleep 2
 
 fing0=2c819b2df5d1bd0b2ff4ed6222ff9539c624bd96119dcd8c4925f07c94f950b7
 tf1=0f2af4793506e40080adb7cb77c64747c998056af6f7e048f674a1c99efc4252

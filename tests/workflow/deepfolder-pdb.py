@@ -59,7 +59,7 @@ ctx.compute()
 print()
 
 print("STAGE 5")
-from seamless.workflow.highlevel import stdlib
+from seamless.workflow import stdlib
 
 ctx.include(stdlib.select)
 ctx.pdb_code = Cell("str").set("2sni.cif")

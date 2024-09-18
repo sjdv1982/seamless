@@ -1,5 +1,5 @@
 from seamless.workflow import Context, Cell, Transformer, FolderCell, load_graph
-from seamless.workflow.highlevel import stdlib
+from seamless.workflow import stdlib
 import os
 
 ctx = Context()

@@ -112,7 +112,7 @@ class Elision:
             else:
                 checksum = cc._checksum
                 checksum = Checksum(checksum)
-                if checksum and not cc._void:
+                if not checksum and not cc._void:
                     return
             checksum = Checksum(checksum)
             if checksum:

@@ -75,11 +75,11 @@ def print_error(*args):
     logger.error(msg)
 
 
-class SeamlessTransformationError(Exception):
+class SeamlessTransformationError(RuntimeError):
     pass
 
 
-class SeamlessStreamTransformationError(Exception):
+class SeamlessStreamTransformationError(RuntimeError):
     pass
 
 

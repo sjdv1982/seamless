@@ -31,7 +31,7 @@ On instance:
                          'value': 'c99446f315c991d5c5e83bd65753dc1fe97448da92b5e48fe028dcbd8cb87783'},
             'datatype': 'mixed',
             'hash_pattern': None,
-            'path': ('a',),
+            'path': ['a'],
             'type': 'cell'}],
  'params': {'share_namespace': 'ctx'}}
 RUN VALIDATION <Silk: test >
@@ -72,6 +72,6 @@ AssertionError
                          'value': 'c99446f315c991d5c5e83bd65753dc1fe97448da92b5e48fe028dcbd8cb87783'},
             'datatype': 'mixed',
             'hash_pattern': None,
-            'path': ('a',),
+            'path': ['a'],
             'type': 'cell'}],
  'params': {'share_namespace': 'ctx'}}

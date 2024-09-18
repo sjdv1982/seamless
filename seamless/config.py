@@ -165,11 +165,18 @@ def _init_buffer_remote_from_env(only_level_1=False):
 
 
 def block_local():
-    """Block localm execution of transformations.
+    """Block local execution of transformations.
     All transformations must be delegated."""
     from seamless.workflow.config import block_local as inner_block_local
 
     inner_block_local()
+
+
+def unblock_local():
+    """Unblock local execution of transformations."""
+    from seamless.workflow.config import unblock_local as inner_unblock_local
+
+    inner_unblock_local()
 
 
 def delegate(level=4, *, raise_exceptions=False, force_database=False):

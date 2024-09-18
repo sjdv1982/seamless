@@ -69,6 +69,7 @@ def get_checksums(nodes, connections, *, with_annotations, skip_scratch):
                 buffer, Checksum(checksum), "plain", copy=False
             )
             deep_checksums = deep_structure_to_checksums(deep_structure, hash_pattern)
+            deep_checksums = [Checksum(c) for c in deep_checksums]
             if with_annotations:
                 deep_checksums = [(c, dependent) for c in deep_checksums]
             checksums.update(deep_checksums)

@@ -1,8 +1,11 @@
 import seamless
-from seamless.workflow.core import context, cell, transformer
 
-seamless.load_vault("./reuse-vault")
 seamless.delegate(level=0, force_database=True)
+
+from seamless.workflow.core import context, cell, transformer
+from seamless.workflow.vault import load_vault
+
+load_vault("./reuse-vault")
 
 ctx = context(toplevel=True)
 

@@ -95,13 +95,13 @@ class DeepCellBase(Base, HelpMixin):
         """
         hcell = self._get_hcell2()
         if self._get_hcell().get("UNTRANSLATED"):
-            return hcell.get("checksum", {}).get("origin")
+            return Checksum(hcell.get("checksum", {}).get("origin"))
         ctx = self._get_context()
         if len(ctx.origin.inchannels):
             origin = ctx.origin
         else:
             origin = ctx.origin_integrated
-        return origin.checksum
+        return Checksum(origin.checksum)
 
     @checksum.setter
     def checksum(self, checksum: Checksum | str):

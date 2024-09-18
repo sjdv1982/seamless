@@ -403,10 +403,10 @@ def _assign_context2(ctx, new_nodes, new_connections, path, runtime, *, fast):
     new_connections = deepcopy(new_connections)
     targets = set()
     for con in new_connections:
-        targets.add(con["target"])
+        targets.add(tuple(con["target"]))
     indexed_nodepaths = []
     for node in new_nodes:
-        old_path = node["path"]
+        old_path = tuple(node["path"])
         if old_path[0] == "HELP":
             pp = ("HELP",) + path + old_path[1:]
         else:
@@ -482,7 +482,7 @@ def _assign_context2(ctx, new_nodes, new_connections, path, runtime, *, fast):
     indexed_connections = []
     for con in new_connections:
         for attr in "source", "target":
-            old_path = con[attr]
+            old_path = tuple(con[attr])
             if old_path[0] == "HELP":
                 pp = ("HELP",) + path + old_path[1:]
             else:
@@ -513,7 +513,15 @@ def _assign_context(ctx, new_nodes, new_connections, path, runtime, *, fast=Fals
 
 
 def assign_context(ctx, path, value):
-    graph = value._get_graph(runtime=False, do_unchecksum=False)
+    from .Context import Context
+    from .SubContext import SubContext
+
+    if isinstance(value, Context):
+        graph = value._get_graph(runtime=False, do_unchecksum=False)
+    elif isinstance(value, SubContext):
+        graph = value.get_graph(runtime=False)
+    else:
+        raise TypeError(value)
     for lib in graph["lib"]:
         lpath = tuple(lib["path"])
         lib["path"] = lpath

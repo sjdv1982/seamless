@@ -7,7 +7,7 @@ os.environ["SEAMLESS_COMMUNION_PORT"] = "8602"
 
 import seamless
 
-seamless.set_ncores(0)
+seamless.config.set_ncores(0)
 from seamless import communion_server
 
 communion_server.configure_master(

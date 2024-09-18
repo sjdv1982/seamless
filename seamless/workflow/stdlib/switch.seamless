@@ -1,0 +1,69 @@
+{
+  "__seamless__": "0.11",
+  "connections": [],
+  "lib": [],
+  "nodes": [
+    {
+      "path": [
+        "HELP"
+      ],
+      "type": "context"
+    },
+    {
+      "celltype": "text",
+      "checksum": {
+        "value": "31600e2be7ebd0142981d995167d44def799457cd9475c159ee9ee11b044c58d"
+      },
+      "datatype": "mixed",
+      "file_extension": "md",
+      "hash_pattern": null,
+      "mimetype": "text/markdown",
+      "path": [
+        "HELP",
+        "INDEX"
+      ],
+      "type": "cell"
+    },
+    {
+      "celltype": "code",
+      "checksum": {
+        "value": "6013273e93b957ded2a5c17341e3278ba7ec85ba5eb2c525f4f71f8a5a711717"
+      },
+      "datatype": "mixed",
+      "language": "python",
+      "path": [
+        "constructor_code"
+      ],
+      "type": "cell"
+    },
+    {
+      "celltype": "structured",
+      "checksum": {
+        "auth": "46de9824d3fa745d4294cfba05eba4216673a974848778f4848effb3ba91777d",
+        "schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
+        "value": "46de9824d3fa745d4294cfba05eba4216673a974848778f4848effb3ba91777d"
+      },
+      "datatype": "mixed",
+      "hash_pattern": null,
+      "path": [
+        "constructor_params"
+      ],
+      "type": "cell"
+    },
+    {
+      "celltype": "code",
+      "checksum": {
+        "value": "5c4ea566d4681863cde9cc32df96a6b80dd89179dfa5c90447ca8f501052eb88"
+      },
+      "datatype": "mixed",
+      "language": "python",
+      "path": [
+        "switch_code"
+      ],
+      "type": "cell"
+    }
+  ],
+  "params": {
+    "share_namespace": "ctx"
+  }
+}
