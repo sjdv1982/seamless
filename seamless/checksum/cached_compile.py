@@ -74,7 +74,6 @@ def exec_code(
     elif mode == "expression":
         assert output is not None
         code2 = "%s = " % output + code
-    code2 = "from __future__ import annotations\n" + code2
     if with_ipython_kernel:
         ipython_execute(code2, namespace)
     else:
