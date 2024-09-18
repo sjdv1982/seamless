@@ -234,12 +234,12 @@ def _merge_objects(objects):
                     and o["compiler"] == obj["compiler"]
                 ):
                     pass
-        else:
-            curr = deepcopy(obj)
-            curr.pop("code")
-            n_merged += 1
-            result["_PACKAGE__%d.a" % n_merged] = curr
-            curr["code_dict"] = {}
+            else:
+                curr = deepcopy(obj)
+                curr.pop("code")
+                n_merged += 1
+                result["_PACKAGE__%d.a" % n_merged] = curr
+                curr["code_dict"] = {}
             curr["code_dict"][objname + "." + obj["extension"]] = obj["code"]
     return result
 

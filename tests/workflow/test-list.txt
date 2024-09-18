@@ -297,15 +297,15 @@ r.py
   The PNG should update, the SVG should not
 
 environment7.py: This will fail if executed without delegation or with the micro/mini-assistant,
-because pytorch is required. Regardless, the transformation checksum is printed out, and
-the dunder is written to file. In a standard Seamless environment, 
-"seamless-run-transformation <checksum>" will return an error: 
-"ModuleNotFoundError: No module named 'torch'"
-In contrast, "seamless-run-transformation.py <checksum> --dunder environment7-dunder.json" 
-will validate the environment and give the same error message as the main script
-("Conda package 'pytorch' not installed"). 
-Either syntax will succeed inside a proper environment 
-(where both Seamless and PyTorch are available).
+  because pytorch is required. Regardless, the transformation checksum is printed out, and
+  the dunder is written to file. In a standard Seamless environment, 
+  "seamless-run-transformation <checksum>" will return an error: 
+  "ModuleNotFoundError: No module named 'torch'"
+  In contrast, "seamless-run-transformation.py <checksum> --dunder environment7-dunder.json" 
+  will validate the environment and give the same error message as the main script
+  ("Conda package 'pytorch' not installed"). 
+  Either syntax will succeed inside a proper environment 
+  (where both Seamless and PyTorch are available).
 
 compute-ctrl-c.py: open with ipython, type "ctx.compute()" and press ctrl+c
 delay-direct-print-file: open with ipython, monitor /tmp/direct-print.out, change ctx.tf1.a and ctx.tf1.delay

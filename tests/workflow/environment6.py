@@ -108,7 +108,7 @@ except NotImplementedError as exc:
 env.set_py_bridge("php", bridge_php)
 
 # Define an environment for the PHP bridge
-from seamless.workflow.highlevel.Environment import Environment
+from seamless.Environment import Environment
 
 bridge_env = Environment()
 bridge_env.set_conda(
