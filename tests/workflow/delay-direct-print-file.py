@@ -1,5 +1,8 @@
+import seamless
+
+seamless.delegate(False)
+
 from seamless.workflow import Context
-import asyncio
 
 ctx = Context()
 

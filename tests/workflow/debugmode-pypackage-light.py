@@ -1,5 +1,8 @@
+import seamless
+
+seamless.delegate(False)
+
 from seamless.workflow import Context, Cell, Module
-import traceback
 
 ctx = Context()
 

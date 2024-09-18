@@ -1,7 +1,10 @@
-from seamlessntext, Cell
+import seamless
+
+seamless.delegate(False)
+from seamless.workflow import Context
 
 ctx = Context()
-ctx.transform = lambda a,b: a + b
+ctx.transform = lambda a, b: a + b
 ctx.transform.a = 2
 ctx.transform.b = 3
 ctx.translate()
@@ -23,7 +26,7 @@ extern "C" int transform(int a, int b, double *result) {
 }"""
 ctx.code.mount("debugmount/compiled_module/main.cpp", authority="cell")
 ctx.translate()
-ctx.transform.result.example = 0.0 #example, just to fill the schema
+ctx.transform.result.example = 0.0  # example, just to fill the schema
 
 ctx.transform.main_module.add.language = "c"
 code = """
@@ -37,7 +40,7 @@ ctx.transform.main_module.add.code = ctx.add_code
 ctx.add_code.set(code)
 
 ctx.translate()
-ctx.transform.result.example = 0.0 #example, just to fill the schema
+ctx.transform.result.example = 0.0  # example, just to fill the schema
 ctx.compute()
 print(ctx.result.value)
 

@@ -1,6 +1,8 @@
+import seamless
+
+seamless.delegate(False)
 from seamless.workflow.core.transformer import Transformer
 from seamless.workflow import Context, Cell, Module, Transformer
-import traceback
 
 ctx = Context()
 

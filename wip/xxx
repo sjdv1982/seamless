@@ -2,19 +2,6 @@ Non-automatic tests
 =========================
 10
 20
-
-
-delay-direct-print-file: open with ipython, monitor /tmp/direct-print.out, change ctx.tf1.a and ctx.tf1.delay
-debugmode-py-light.py
-  To debug a simple Python transformer in VSCode. Follow the instructions.
-debugmode-compiled-light.py
-  To debug a simple C++ transformer in VSCode. Follow the instructions.
-debugmode-py-sandbox.py
-  Sandbox debugging of a simple Python transformer in VSCode. Follow the instructions.
-debugmode-pymodule-light.py
-  To debug a Python transformer with Python single-file module in VSCode. Follow the instructions.
-debugmode-pymodule-sandbox.py
-  Sandbox debugging of a Python transformer with Python single-file module in VSCode. Follow the instructions.
 30
 
 debugmode-pypackage-light.py
