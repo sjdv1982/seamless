@@ -1,5 +1,9 @@
+import seamless
+
+seamless.delegate(False)
+
 from seamless.workflow import Context, Transformer
-from seamless.metalevel import stdgraph
+from seamless.workflow.metalevel import stdgraph
 import asyncio
 
 bash_graph, bash_zip = stdgraph.get("bash_transformer")

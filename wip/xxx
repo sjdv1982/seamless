@@ -4,22 +4,6 @@ Non-automatic tests
 20
 30
 
-debugmode-pypackage-light.py
-  To debug a Python transformer with Python package in VSCode. Follow the instructions.
-debugmode-compiledmodule-light.py
-  To debug a multi-file C/C++ transformer in VSCode. Follow the instructions.
-debugmode-compiled-sandbox.py
-  Sandbox debugging of a simple C++ transformer in VSCode. Follow the instructions.
-debugmode-compiledmodule-sandbox.py
-  Sandbox debugging of a multi-file C/C++ transformer in VSCode. Follow the instructions.
-debugmode-py-shell.py  
-  Debug IPython shell for a Python transformer. Follow the instructions.
-debugmode-bash-shell.py  
-  Debug bash shell. Follow the instructions.
-debugmode-docker-shell.py  
-  Debug bash shell, with Docker image. Follow the instructions.
-hack-bash-transformer-translation.py
-  Run with IPython and hack /tmp/execute.py
 fallback-mount-share.py
   Run with IPython, modify /tmp/a and /tmp/b . 
   This will *not* update ctx.a until you leave fallback mode

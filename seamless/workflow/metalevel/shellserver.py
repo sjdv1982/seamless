@@ -28,7 +28,7 @@ if os.path.exists(docker_container_file):
         DOCKER_CONTAINER = _f.read().strip()
 
 CODE_MOUNT_MESSAGE1 = """
-Modifying the code will update the code in the shell:
+Modifying the following file will update the code outside the sandbox:
     {code_mount_file}
 For the rest, the shell is not auto-synchronized with the sandbox."""
 

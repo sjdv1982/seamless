@@ -335,6 +335,7 @@ debugmode-docker-shell.py
   Debug bash shell, with Docker image. Follow the instructions.
 hack-bash-transformer-translation.py
   Run with IPython and hack /tmp/execute.py
+  Monitor testctx.tf.logs
 fallback-mount-share.py
   Run with IPython, modify /tmp/a and /tmp/b . 
   This will *not* update ctx.a until you leave fallback mode

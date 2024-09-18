@@ -19,7 +19,7 @@ ctx.result.celltype = "mixed"
 ctx.compute()
 print(ctx.result.value)
 
-from seamless.metalevel.debugmode import ValidationError
+from seamless.workflow.metalevel.debugmode import ValidationError
 
 try:
     ctx.tf.debug.enable("light")

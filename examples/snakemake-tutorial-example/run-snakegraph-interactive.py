@@ -4,7 +4,7 @@ from seamless.workflow import Context, Transformer, Cell
 from silk.Silk import RichValue
 import json, os
 import numpy as np
-from seamless.metalevel.bind_status_graph import bind_status_graph
+from seamless.workflow.metalevel.bind_status_graph import bind_status_graph
 
 print("Load graph...")
 graph = json.load(open("snakegraph.seamless"))
