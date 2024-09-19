@@ -1,6 +1,5 @@
 Before 0.13 release:
-  - regenerate webgen, run webgen/test
-  - cleanup new-project, run tests/workflow/webinterface.sh (also interactively)
+  - cleanup new-project (DONE), run tests/workflow/webinterface.sh (also interactively)
   - examples
   - build and publish seamless-framework conda package
   - build and publish seamless-cli-bin + seamless-cli-complement conda packages

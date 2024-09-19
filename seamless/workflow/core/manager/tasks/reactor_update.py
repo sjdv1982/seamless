@@ -83,10 +83,13 @@ class ReactorUpdateTask(Task):
                     return
 
         if status_reason is not None:
+            # TODO: investigate when this happens
+            """
             print(
                 "WARNING: reactor %s is void, shouldn't happen during reactor update"
                 % reactor
             )
+            """
             manager.cancel_reactor(reactor, True, status_reason)
             return
 
