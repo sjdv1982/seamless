@@ -1,16 +1,11 @@
 Before 0.13 release:
-
-  - imperative-manyjobs.py
-    Needs to be run with a Dask cluster, 1000x ~20 sec jobs. Submitting 1000 jobs may take a few minutes. Will calculate pi to 6 digits. Expected results: 3.141593805644 5.116277454745302e-05 3.141592653589793
-
   - regenerate webgen, run webgen/test
   - cleanup new-project, run tests/workflow/webinterface.sh (also interactively)
-  - direct tests
   - examples
   - build and publish seamless-framework conda package
   - build and publish seamless-cli-bin + seamless-cli-complement conda packages
   - build and test conda environments
-  - build and publish seamless-deps and seamless Docker images
+  - build and publish seamless-deps (DONE) and seamless Docker images
   - build, test and publish seamless-cli conda package
   - update binderhub demo
   - update Cloudless (big)
