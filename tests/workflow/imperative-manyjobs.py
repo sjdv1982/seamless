@@ -28,6 +28,8 @@ import numpy as np
 
 np.random.seed(0)
 ntrials = 1000
+if len(sys.argv) > 1:
+    ntrials = int(sys.argv[1])
 ndots = 1000000000
 seeds = np.random.randint(0, 999999, ntrials)
 transformations = [calc_pi_remote(seed, ndots) for seed in seeds]

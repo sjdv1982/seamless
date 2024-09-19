@@ -71,6 +71,7 @@ manyjobs.sh
     Needs to be run with a Dask cluster, 1000x ~20 sec jobs. 
     Submitting 1000 jobs will take 200s. Will calculate pi to 6 digits. 
     Expected results: 3.141593805644 5.116277454745302e-05 3.141592653589793
+    Instead of 1000, the number of jobs can also be given as a command-line option
 
 cowsay-docker.sh
     Requires Docker image 'cowsay' to be available. Can be built in this directory using:

@@ -348,6 +348,7 @@ fallback-mount-share.py
   - fctx.translate(force=True)
 imperative-manyjobs.py
   Needs to be run with a Dask cluster, 1000x ~20 sec jobs. Submitting 1000 jobs may take a few minutes. Will calculate pi to 6 digits. Expected results: 3.141593805644 5.116277454745302e-05 3.141592653589793
+  Instead of 1000, the number of jobs can also be given as a command-line option
 multi-core-transformations.py
   It is expected that job 1 finishes before job 2, and job 2 finishes after 7 seconds.
   With DELEGATE, run this with the micro Dask assistant and a local Dask cluster with --ncores 5
