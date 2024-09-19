@@ -2,6 +2,7 @@
 
 import os
 import sys
+import inspect
 from urllib.parse import urlparse
 from abc import ABC, abstractmethod
 from traceback import print_exc
@@ -46,7 +47,7 @@ class DatabaseConnectionError(ConnectionError, ConfigurationError):
     """Error in connecting to the Seamless database"""
 
 
-def _contact_assistant():
+def _contact_assistant(agent):
     global _assistant, _delegation_level
     env = os.environ
     host = env.get("SEAMLESS_ASSISTANT_IP")
@@ -64,7 +65,9 @@ def _contact_assistant():
         host = "http://" + host
     assistant = host + ":" + str(port)
     try:
-        response = requests.get(assistant + "/config", timeout=3)
+        response = requests.get(
+            assistant + "/config", params={"agent": agent}, timeout=3
+        )
     except requests.exceptions.ConnectionError:
         raise AssistantConnectionError(
             f"Cannot contact delegation assistant: host {host}, port {port}"
@@ -179,7 +182,7 @@ def unblock_local():
     inner_unblock_local()
 
 
-def delegate(level=4, *, raise_exceptions=False, force_database=False):
+def delegate(level=4, *, raise_exceptions=False, force_database=False, agent=None):
     """Delegate computations and/or data to remote servers and folders.
 
     - No delegation (level 0 / False): Don't delegate any computations, buffers or results.
@@ -236,6 +239,12 @@ def delegate(level=4, *, raise_exceptions=False, force_database=False):
     Failure to do so will lead to CacheMissErrors when you try to get the value of a previously
     calculated result.
 
+    - agent: This option is only meaningful for full delegation.
+    The agent name under which this Seamless instance identifies itself with the assistant.
+    May affect the level 1-3 configuration returned by the assistant.
+    If not specified, the full-path __file__ attribute of the script that calls .delegate() is used.
+    If there is no __file__, the current working directory is used instead.
+
     Return value: True if an error occurred, False if delegation was successful
     """
 
@@ -254,7 +263,17 @@ def delegate(level=4, *, raise_exceptions=False, force_database=False):
     _delegating = True
     try:
         if level == 4:
-            _contact_assistant()
+            if agent is None:
+                calling_script = inspect.currentframe().f_back.f_globals
+                agent = calling_script.get("__file__")
+                if agent is not None:
+                    try:
+                        agent = os.path.abspath(agent)
+                    except Exception:
+                        pass
+                else:
+                    agent = os.getcwd() + os.sep
+            _contact_assistant(agent)
             assert _assistant is not None  # will have been checked above
             block_local()
             return False
