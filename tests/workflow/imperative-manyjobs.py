@@ -22,7 +22,7 @@ def calc_pi(seed, ndots):
 
 calc_pi_remote = transformer(calc_pi, return_transformation=True)
 
-seamless.delegate()
+seamless.delegate(raise_exceptions=True)
 
 import numpy as np
 
