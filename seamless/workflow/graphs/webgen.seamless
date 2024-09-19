@@ -129,7 +129,7 @@
   "lib": [
     {
       "api": "pyseamless",
-      "constructor": "def constructor(\n    ctx, libctx,\n    fallback_mode,\n    upstream,\n    modified, conflict,\n    merged, state, base\n):\n    assert fallback_mode in (\"upstream\", \"modified\", \"no\"), fallback_mode\n    m = ctx.m = Macro()\n    m.code = libctx.macro_code.value\n    m.fallback_mode = fallback_mode\n    m.code_start = libctx.code_start.value\n    m.code_update = libctx.code_update.value\n\n    ctx.upstream = Cell(\"text\")\n    upstream.connect(ctx.upstream)\n    m.pins.upstream = {\"io\": \"input\", \"celltype\": \"text\"}\n    m.upstream = ctx.upstream\n\n    ctx.modified = Cell(\"text\")\n    modified.link(ctx.modified)\n    m.pins.modified = {\"io\": \"edit\", \"celltype\": \"text\"}\n    m.modified = ctx.modified\n\n    if base is not None:\n        ctx.base = Cell(\"text\")\n        base.link(ctx.base)\n        m.pins.base = {\"io\": \"edit\", \"celltype\": \"text\"}\n        m.base = ctx.base\n\n    ctx.conflict = Cell(\"text\")\n    conflict.link(ctx.conflict)\n    m.pins.conflict = {\"io\": \"edit\", \"celltype\": \"text\"}\n    m.conflict = ctx.conflict\n\n    ctx.merged = Cell(\"text\")\n    merged.connect_from(ctx.merged)\n    m.pins.merged = {\"io\": \"output\", \"celltype\": \"text\"}\n    ctx.merged = m.merged\n\n    ctx.state = Cell(\"text\")\n    state.connect_from(ctx.state)\n    m.pins.state = {\"io\": \"output\", \"celltype\": \"text\"}\n    ctx.state = m.state",
+      "constructor": "def constructor(\n    ctx, libctx, fallback_mode, upstream, modified, conflict, merged, state, base\n):\n    assert fallback_mode in (\"upstream\", \"modified\", \"no\"), fallback_mode\n    m = ctx.m = Macro()\n    m.code = libctx.macro_code.value\n    m.fallback_mode = fallback_mode\n    m.code_start = libctx.code_start.value\n    m.code_update = libctx.code_update.value\n\n    ctx.upstream = Cell(\"text\")\n    upstream.connect(ctx.upstream)\n    m.pins.upstream = {\"io\": \"input\", \"celltype\": \"text\"}\n    m.upstream = ctx.upstream\n\n    ctx.modified = Cell(\"text\")\n    modified.link(ctx.modified)\n    m.pins.modified = {\"io\": \"edit\", \"celltype\": \"text\"}\n    m.modified = ctx.modified\n\n    if base is not None:\n        ctx.base = Cell(\"text\")\n        base.link(ctx.base)\n        m.pins.base = {\"io\": \"edit\", \"celltype\": \"text\"}\n        m.base = ctx.base\n\n    ctx.conflict = Cell(\"text\")\n    conflict.link(ctx.conflict)\n    m.pins.conflict = {\"io\": \"edit\", \"celltype\": \"text\"}\n    m.conflict = ctx.conflict\n\n    ctx.merged = Cell(\"text\")\n    merged.connect_from(ctx.merged)\n    m.pins.merged = {\"io\": \"output\", \"celltype\": \"text\"}\n    ctx.merged = m.merged\n\n    ctx.state = Cell(\"text\")\n    state.connect_from(ctx.state)\n    m.pins.state = {\"io\": \"output\", \"celltype\": \"text\"}\n    ctx.state = m.state",
       "graph": {
         "__seamless__": "0.11",
         "connections": [],
@@ -144,7 +144,7 @@
           {
             "celltype": "text",
             "checksum": {
-              "value": "72372a23d44fce3b69343a2bfde92c3ef469031d1fba99ea9516432c1e4a6ac7"
+              "value": "b0bc2bc65f70588d5337a65e36f61dc1f3425ac1a50d1b827c6eb15f1ef3c9ab"
             },
             "datatype": "mixed",
             "file_extension": "md",
@@ -159,7 +159,7 @@
           {
             "celltype": "code",
             "checksum": {
-              "value": "a8cb5da0b60f54a084f55a7ee96df6af5228c48c9b672cfdc81b0c34b8ad6dc0"
+              "value": "7695e8861d8f097a677dd9108918e9abb3339a9dc4ec62b90df32a2fdbdb377d"
             },
             "datatype": "mixed",
             "language": "python",
@@ -177,7 +177,7 @@
           {
             "celltype": "code",
             "checksum": {
-              "value": "4a067f6409432b7f3f28ce21139ed3e67469341c11b6e13082488e4306b3630a"
+              "value": "26a136b22a507d1db352e36b5a39622f23a328e68e5dbc8d5d0d85d21b8bfbb6"
             },
             "datatype": "mixed",
             "language": "python",
@@ -195,7 +195,7 @@
           {
             "celltype": "code",
             "checksum": {
-              "value": "ace25e1de72c520389e765d39426f19072712fdd761b7223012ebd153e5afa8e"
+              "value": "09087f2dca2e7ad22ec35df99cffc5bbf06773b736ffe0c660bccae8c67e337e"
             },
             "datatype": "mixed",
             "language": "python",
@@ -221,7 +221,7 @@
           {
             "celltype": "code",
             "checksum": {
-              "value": "b6cc0c06fb6fba173f79124d7771f61b9b46040fecc41211bd3d6a5f5e2eb0c8"
+              "value": "937c099e4c4179812313895cd3084ee87639213d907739a40f51f03d719af7f4"
             },
             "datatype": "mixed",
             "language": "python",
@@ -450,7 +450,7 @@
       "SCHEMA": null,
       "checksum": {
         "code": "32a693865cc72f9d1027849ad3d379fce7819b29f8b04ba5ef93572370d52818",
-        "input": "81ca3960f4a23c56f7b259a4287b97a8490b035d7ced72175210faac51f51618",
+        "input": "0abc11cac224c340876d04068f27bd2633b15bc112643d1eb565e6b48c03bfb8",
         "input_auth": "81ca3960f4a23c56f7b259a4287b97a8490b035d7ced72175210faac51f51618",
         "result_schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
         "schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c"
@@ -909,6 +909,9 @@
     },
     {
       "celltype": "structured",
+      "checksum": {
+        "value": "1c15497e76175b67a0334639d988bd1a58438e50ec87089a5a688c77def27b0a"
+      },
       "mount": {
         "authority": "cell",
         "mode": "r",

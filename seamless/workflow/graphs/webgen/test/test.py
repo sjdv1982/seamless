@@ -1,6 +1,10 @@
+import os
+import seamless
+
+seamless.delegate(False)
+
 from seamless.workflow import Context, Cell, Transformer, FolderCell, load_graph
 from seamless.workflow import stdlib
-import os
 
 ctx = Context()
 ctx.include(stdlib.merge)
