@@ -10,6 +10,7 @@ webdefaults = {
     "str": "",
     "plain": {},
     "text": "",
+    "code": "",
     "cson": "",
     "yaml": "",
     "bool": False,
@@ -28,10 +29,7 @@ webform = {
     "extra_components": extra_components,
     "transformers": transformers,
 }
-default_transformer = {
-    "component": "transformer-status",
-    "params": {}
-}
+default_transformer = {"component": "transformer-status", "params": {}}
 for node in graph["nodes"]:
     if "UNTRANSLATED" in node:
         continue
@@ -92,7 +90,7 @@ for node in graph["nodes"]:
             cell["component"] = "numberinput"
             params["editable"] = False
         share["encoding"] = "json"  # also for "str", "plain", "bool"
-    elif celltype in ("text", "cson", "yaml"):
+    elif celltype in ("text", "code", "cson", "yaml"):
         params["title"] = "Cell " + cellname.capitalize()
         if not node["share"].get("readonly", True):
             cell["component"] = "input"
@@ -116,7 +114,7 @@ for node in graph["nodes"]:
         cell["component"] = "card"
         share["encoding"] = "json"
     elif celltype == "bytes":
-        params["title"] = "Cell " + cellname.capitalize()        
+        params["title"] = "Cell " + cellname.capitalize()
         if node["share"].get("readonly", True):
             cell["component"] = ""
         else:
@@ -132,17 +130,27 @@ for node in graph["nodes"]:
         share["encoding"] = "json"
     else:
         if node["celltype"] == "structured" and node["datatype"] == "mixed":
-            raise TypeError("""Need a datatype for structured cell {} .
+            raise TypeError(
+                """Need a datatype for structured cell {} .
 The web interface generator only supports structured cells if their
 datatype attribute is set to a supported celltype.
-Supported celltypes: text, int, float, bool, str, plain, or bytes.""".format(path0))
+Supported celltypes: text, int, float, bool, str, plain, or bytes.""".format(
+                    path0
+                )
+            )
         else:
-            raise TypeError("""Unsupported celltype "{}" for cell {} .
-Supported celltypes: text, int, float, bool, str, plain, or bytes.""".format(celltype, path0))
-    cell.update({
-        "params": params,
-        "share": share,
-    })
+            raise TypeError(
+                """Unsupported celltype "{}" for cell {} .
+Supported celltypes: text, int, float, bool, str, plain, or bytes.""".format(
+                    celltype, path0
+                )
+            )
+    cell.update(
+        {
+            "params": params,
+            "share": share,
+        }
+    )
     cell["webdefault"] = webdefaults[cell["celltype"]]
     cells[key] = cell
     if not len(extra_components):
@@ -169,7 +177,7 @@ for webunit_name, webunits in graph["params"].get("webunits", {}).items():
 
 if len(extra_cells):
     webform["extra_cells"] = extra_cells
-    
+
 if len(webcells):
     webform["webcells"] = webcells
 

@@ -1,7 +1,6 @@
-
 PROJNAME = "reproducible-pdb-viewer"
 
-DELEGATION_LEVEL = 0
+DELEGATION_LEVEL = 1
 
 """
 Change DELEGATION_LEVEL to the appropriate level:
@@ -38,17 +37,32 @@ using "seamless-upload"
 
 import os, sys, shutil
 import seamless, seamless.config
-from seamless import (Context, Cell, Transformer, Module, Macro, 
-                                SimpleDeepCell, FolderCell, DeepCell, DeepFolderCell)
+from seamless.workflow.highlevel import (
+    Context,
+    Cell,
+    Transformer,
+    Module,
+    Macro,
+    SimpleDeepCell,
+    FolderCell,
+    DeepCell,
+    DeepFolderCell,
+)
+
 
 def pr(*args):
     print(*args, file=sys.stderr)
+
 
 _curr_delegation_level = seamless.config.get_delegation_level()
 if _curr_delegation_level is None:
     seamless.delegate(DELEGATION_LEVEL)
 elif int(_curr_delegation_level) != DELEGATION_LEVEL:
-    pr("DELEGATION_LEVEL overridden to {} by previous seamless.delegate() call".format(_curr_delegation_level))
+    pr(
+        "DELEGATION_LEVEL overridden to {} by previous seamless.delegate() call".format(
+            _curr_delegation_level
+        )
+    )
     DELEGATION_LEVEL = int(_curr_delegation_level)
 
 
@@ -57,22 +71,26 @@ webctx = None
 save = None
 export = None
 
+
 async def define_graph(ctx):
     """Code to define the graph
-    Leave this function empty if you want load() to load the graph from graph/PROJNAME.seamless 
+    Leave this function empty if you want load() to load the graph from graph/PROJNAME.seamless
     """
     pass
 
+
 def load_ipython():
     import asyncio
-    import seamless
-    loop = seamless._original_event_loop
+    import seamless.workflow
+
+    loop = seamless.workflow._original_event_loop
     asyncio.set_event_loop(loop)
     coro = load()
     loop.run_until_complete(coro)
 
+
 async def load():
-    from seamless.metalevel.bind_status_graph import bind_status_graph_async
+    from seamless.workflow.metalevel.bind_status_graph import bind_status_graph_async
     import json
 
     global ctx, webctx, save, export
@@ -83,7 +101,9 @@ async def load():
         pass
     else:
         if ctx is not None:
-            pr('"ctx" already exists. To reload, do "ctx = None" or "del ctx" before "await load()"')
+            pr(
+                '"ctx" already exists. To reload, do "ctx = None" or "del ctx" before "await load()"'
+            )
             return
 
     for f in (
@@ -99,42 +119,39 @@ async def load():
                 continue
             dest = f + "-BAK"
             if os.path.exists(dest):
-                os.remove(dest)            
+                os.remove(dest)
             pr("Existing '{}' found, moving to '{}'".format(f, dest))
             shutil.move(f, dest)
     ctx = Context()
     empty_graph = ctx.get_graph()
-    try:
-        seamless._defining_graph = True
-        await define_graph(ctx)
-    finally:
-        try:
-            del seamless._defining_graph
-        except AttributeError:
-            pass
+    await define_graph(ctx)
     new_graph = ctx.get_graph()
     graph_file = "graph/" + PROJNAME + ".seamless"
-    if DELEGATION_LEVEL == 0: 
+    if DELEGATION_LEVEL == 0:
         ctx.load_vault("vault")
     elif DELEGATION_LEVEL == 1:
         if os.path.exists("vault"):
             ctx.load_vault("vault")
     if new_graph != empty_graph:
-        pr("*** define_graph() function detected. Not loading '{}'***\n".format(graph_file))
+        pr(
+            "*** define_graph() function detected. Not loading '{}'***\n".format(
+                graph_file
+            )
+        )
     else:
-        pr("*** define_graph() function is empty. Loading '{}' ***\n".format(graph_file))
-        graph = json.load(open(graph_file))        
+        pr(
+            "*** define_graph() function is empty. Loading '{}' ***\n".format(
+                graph_file
+            )
+        )
+        graph = json.load(open(graph_file))
         ctx.set_graph(graph, mounts=True, shares=True)
         await ctx.translation(force=True)
 
     status_graph = json.load(open("graph/" + PROJNAME + "-webctx.seamless"))
 
-    webctx = await bind_status_graph_async(
-        ctx, status_graph,
-        mounts=True,
-        shares=True
-    )
-    
+    webctx = await bind_status_graph_async(ctx, status_graph, mounts=True, shares=True)
+
     def save():
         import os, itertools, shutil
 
@@ -157,9 +174,9 @@ async def load():
         try:
             webctx.translate()
         except Exception:
-            pass        
+            pass
         webctx.save_graph(backup("graph/" + PROJNAME + "-webctx.seamless"))
-        if DELEGATION_LEVEL == 0: 
+        if DELEGATION_LEVEL == 0:
             ctx.save_vault("vault")
             webctx.save_vault("vault")
         elif DELEGATION_LEVEL == 1:
@@ -177,15 +194,18 @@ async def load():
 
     await ctx.translation(force=True)
     await ctx.translation(force=True)
-    
-    pr("""Project loaded.
+
+    _rest_port = seamless.workflow.shareserver.shareserver.rest_port
+    pr(
+        f"""Project loaded.
 
     Main context is "ctx"
     Web/status context is "webctx"
 
-    Open http://localhost:<REST server port> to see the web page
-    Open http://localhost:<REST server port>/status/status.html to see the status
+    Open http://localhost:{_rest_port} to see the web page
+    Open http://localhost:{_rest_port}/status/status.html to see the status
 
     Run save() to save the project workflow file.
     Run export() to generate zip files for web deployment.
-    """)
+    """
+    )

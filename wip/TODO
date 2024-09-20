@@ -1,6 +1,13 @@
 Before 0.13 release:
-  - cleanup new-project (DONE), run tests/workflow/webinterface.sh (also interactively)
   - examples
+      - basic example: DONE
+      - datatables: DONE
+      - grid editor: DONE
+      - reproducible PDB: DONE 
+      - BC
+      - snakemake tutorial
+      - webserver-demo
+      - webserver-example
   - build and publish seamless-framework conda package
   - build and publish seamless-cli-bin + seamless-cli-complement conda packages
   - build and test conda environments

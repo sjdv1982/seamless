@@ -8,9 +8,9 @@ seamless-serve-graph-interactive grid-editor.seamless --load-zip grid-editor.zip
 
 or:
 
-seamless-serve-graph-interactive \\
-    /home/jovyan/seamless-examples/grid-editor-example/grid-editor.seamless \\
-    --load-zip /home/jovyan/seamless-examples/grid-editor-example/grid-editor.zip \\
+seamless-serve-graph-interactive \
+    /home/jovyan/seamless-examples/grid-editor-example/grid-editor.seamless \
+    --load-zip /home/jovyan/seamless-examples/grid-editor-example/grid-editor.zip \
     --mounts
 
 Then, open the web interface: http://localhost:5813/ctx/grid-editor.html
