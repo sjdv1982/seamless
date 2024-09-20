@@ -17,6 +17,13 @@ print(webctx.autogen_webform, webctx.autogen_webform.buffer)
 print()
 print(webctx.autogen_webform0, webctx.autogen_webform0.buffer)
 print()
+
+# for interactive use...
+import asyncio
+import seamless.workflow
+
+loop = seamless.workflow._original_event_loop
+asyncio.set_event_loop(loop)
 '
 cd ..
 rm -rf webinterface-files

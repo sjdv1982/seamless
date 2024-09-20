@@ -1,5 +1,3 @@
-Opened the seamless share update server at port 5138
-Opened the seamless REST server at port 5813
 Project testproject created.
 
 - Use seamless-load-project to start up IPython
@@ -8,27 +6,30 @@ or:
   and in the Jupyter browser window,
   open /home/jovyan/cwd/testproject.ipynb
 
-If Seamless needs to execute Docker transformers:
-- Use seamless-load-project-trusted to start up IPython
+If Seamless does not need to execute Docker transformers:
+- Use seamless-load-project-safe to start up IPython
 or:
-- Use seamless-jupyter-trusted to start up Jupyter
+- Use seamless-jupyter-safe to start up Jupyter
   and in the Jupyter browser window,
   open /home/jovyan/cwd/testproject.ipynb
 
 *** define_graph() function is empty. Loading 'graph/testproject.seamless' ***
 
+Opened the seamless share update server at port 5138
+Opened the seamless REST server at port 5813
+Cannot install event loop hook for "asyncio" when running with `--simple-prompt`.
+NOTE: Tk is supported natively; use Tk apps and Tk backends with `--simple-prompt`.
 Project loaded.
 
     Main context is "ctx"
     Web/status context is "webctx"
 
-    Open http://localhost:<REST server port> to see the web page
-    Open http://localhost:<REST server port>/status/status.html to see the status
+    Open http://localhost:5813 to see the web page
+    Open http://localhost:5813/status/status.html to see the status
 
-    Run save() to save the project
+    Run save() to save the project workflow file.
+    Run export() to generate zip files for web deployment.
     
-Opened the seamless share update server at port 5138
-Opened the seamless REST server at port 5813
 
 
 
