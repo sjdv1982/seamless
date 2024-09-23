@@ -1,9 +1,11 @@
 # In general, run as: i=name_of_test; ./$i.sh > test-outputs/$i.out 2>&1
 # Needs delegation to have been set up, unless indicated otherwise
 testfolder.sh
-testfolder2.sh
-
+testfolder2.sh  
+    modify "none" to "none-devel" during devel testing
+    
 undo.sh
+    Does not work well with micro assistants
     After running, grep "UTC" in undo.out
     It should print two lines, corresponding to dates with a few seconds offset
     If the two lines are identical, something has gone wrong
@@ -25,9 +27,9 @@ multi-core-transformations.sh
     cat: tf: No such file or directory
     Job 1
     Job 2 2
-    (job hangs forever. Might be fixed when Dask will have my patch)
+    (job hangs forever. Might be fixe6d when Dask will have my patch)
 
-    micro-dask-assistant, Delegation to a local Dask cluster, --ncores 5:
+    [micro-,mini-]dask-assistant, Delegation to a local Dask cluster, --ncores 5:
     8 seconds have passed
     Job 1 1
     Job 2 2
@@ -36,6 +38,7 @@ multi-core-transformations.sh
 
     micro-dask-assistant, Delegation to a local Dask cluster, --ncores 6:
     4 seconds have passed
+    cat: tf: No such file or directory
     Job 1
     Job 2 2
     Job 1 1
@@ -47,12 +50,14 @@ future.sh. Expected output is:
     then "3 5 8"
     NOTE: as of 0.12, this test is not repeatable with the micro-dask-assistant, 
       i.e. you must restart the connected Dask workers between invocations
-    This is not so for the micro-assistant, nor for the micro-dask-assistant
+    This is not so for the micro-assistant, nor for the mini-dask-assistant
 get-file-and-directory.sh
+    No delegation beforehand.
     Needs an assistant name as input, e.g. ASSISTANT=micro-assistant-devel
     Run as: ./get-file-and-directory.sh $ASSISTANT | tee test-outputs/get-file-and-directory.out
     Otherwise, similar to the tests/highlevel version
 fingertip-deepcell.sh
+    No delegation beforehand.
     Needs an assistant name as input, e.g. ASSISTANT=micro-assistant-devel
     Run as: ./fingertip-deepcell.sh $ASSISTANT | tee test-outputs/fingertip-deepcell.out
 
@@ -66,6 +71,7 @@ manyjobs.sh
     Needs to be run with a Dask cluster, 1000x ~20 sec jobs. 
     Submitting 1000 jobs will take 200s. Will calculate pi to 6 digits. 
     Expected results: 3.141593805644 5.116277454745302e-05 3.141592653589793
+    Instead of 1000, the number of jobs can also be given as a command-line option
 
 cowsay-docker.sh
     Requires Docker image 'cowsay' to be available. Can be built in this directory using:
@@ -84,3 +90,4 @@ pilot.sh
     Current timings were obtained using the mini-assistant.
     After the run, inspect the assistant log to verify that only four jobs were submitted.
     You can remove the "--local" from the script, in which case six jobs must have been submitted
+    NOTE: removing --local does not work with the (mini-)dask assistant

@@ -129,7 +129,7 @@
   "lib": [
     {
       "api": "pyseamless",
-      "constructor": "def constructor(\n    ctx, libctx,\n    fallback_mode,\n    upstream,\n    modified, conflict,\n    merged, state, base\n):\n    assert fallback_mode in (\"upstream\", \"modified\", \"no\"), fallback_mode\n    m = ctx.m = Macro()\n    m.code = libctx.macro_code.value\n    m.fallback_mode = fallback_mode\n    m.code_start = libctx.code_start.value\n    m.code_update = libctx.code_update.value\n\n    ctx.upstream = Cell(\"text\")\n    upstream.connect(ctx.upstream)\n    m.pins.upstream = {\"io\": \"input\", \"celltype\": \"text\"}\n    m.upstream = ctx.upstream\n\n    ctx.modified = Cell(\"text\")\n    modified.link(ctx.modified)\n    m.pins.modified = {\"io\": \"edit\", \"celltype\": \"text\"}\n    m.modified = ctx.modified\n\n    if base is not None:\n        ctx.base = Cell(\"text\")\n        base.link(ctx.base)\n        m.pins.base = {\"io\": \"edit\", \"celltype\": \"text\"}\n        m.base = ctx.base\n\n    ctx.conflict = Cell(\"text\")\n    conflict.link(ctx.conflict)\n    m.pins.conflict = {\"io\": \"edit\", \"celltype\": \"text\"}\n    m.conflict = ctx.conflict\n\n    ctx.merged = Cell(\"text\")\n    merged.connect_from(ctx.merged)\n    m.pins.merged = {\"io\": \"output\", \"celltype\": \"text\"}\n    ctx.merged = m.merged\n\n    ctx.state = Cell(\"text\")\n    state.connect_from(ctx.state)\n    m.pins.state = {\"io\": \"output\", \"celltype\": \"text\"}\n    ctx.state = m.state",
+      "constructor": "def constructor(\n    ctx, libctx, fallback_mode, upstream, modified, conflict, merged, state, base\n):\n    assert fallback_mode in (\"upstream\", \"modified\", \"no\"), fallback_mode\n    m = ctx.m = Macro()\n    m.code = libctx.macro_code.value\n    m.fallback_mode = fallback_mode\n    m.code_start = libctx.code_start.value\n    m.code_update = libctx.code_update.value\n\n    ctx.upstream = Cell(\"text\")\n    upstream.connect(ctx.upstream)\n    m.pins.upstream = {\"io\": \"input\", \"celltype\": \"text\"}\n    m.upstream = ctx.upstream\n\n    ctx.modified = Cell(\"text\")\n    modified.link(ctx.modified)\n    m.pins.modified = {\"io\": \"edit\", \"celltype\": \"text\"}\n    m.modified = ctx.modified\n\n    if base is not None:\n        ctx.base = Cell(\"text\")\n        base.link(ctx.base)\n        m.pins.base = {\"io\": \"edit\", \"celltype\": \"text\"}\n        m.base = ctx.base\n\n    ctx.conflict = Cell(\"text\")\n    conflict.link(ctx.conflict)\n    m.pins.conflict = {\"io\": \"edit\", \"celltype\": \"text\"}\n    m.conflict = ctx.conflict\n\n    ctx.merged = Cell(\"text\")\n    merged.connect_from(ctx.merged)\n    m.pins.merged = {\"io\": \"output\", \"celltype\": \"text\"}\n    ctx.merged = m.merged\n\n    ctx.state = Cell(\"text\")\n    state.connect_from(ctx.state)\n    m.pins.state = {\"io\": \"output\", \"celltype\": \"text\"}\n    ctx.state = m.state",
       "graph": {
         "__seamless__": "0.11",
         "connections": [],
@@ -144,7 +144,7 @@
           {
             "celltype": "text",
             "checksum": {
-              "value": "72372a23d44fce3b69343a2bfde92c3ef469031d1fba99ea9516432c1e4a6ac7"
+              "value": "b0bc2bc65f70588d5337a65e36f61dc1f3425ac1a50d1b827c6eb15f1ef3c9ab"
             },
             "datatype": "mixed",
             "file_extension": "md",
@@ -159,7 +159,7 @@
           {
             "celltype": "code",
             "checksum": {
-              "value": "a8cb5da0b60f54a084f55a7ee96df6af5228c48c9b672cfdc81b0c34b8ad6dc0"
+              "value": "7695e8861d8f097a677dd9108918e9abb3339a9dc4ec62b90df32a2fdbdb377d"
             },
             "datatype": "mixed",
             "language": "python",
@@ -177,7 +177,7 @@
           {
             "celltype": "code",
             "checksum": {
-              "value": "4a067f6409432b7f3f28ce21139ed3e67469341c11b6e13082488e4306b3630a"
+              "value": "26a136b22a507d1db352e36b5a39622f23a328e68e5dbc8d5d0d85d21b8bfbb6"
             },
             "datatype": "mixed",
             "language": "python",
@@ -195,7 +195,7 @@
           {
             "celltype": "code",
             "checksum": {
-              "value": "ace25e1de72c520389e765d39426f19072712fdd761b7223012ebd153e5afa8e"
+              "value": "09087f2dca2e7ad22ec35df99cffc5bbf06773b736ffe0c660bccae8c67e337e"
             },
             "datatype": "mixed",
             "language": "python",
@@ -221,7 +221,7 @@
           {
             "celltype": "code",
             "checksum": {
-              "value": "b6cc0c06fb6fba173f79124d7771f61b9b46040fecc41211bd3d6a5f5e2eb0c8"
+              "value": "937c099e4c4179812313895cd3084ee87639213d907739a40f51f03d719af7f4"
             },
             "datatype": "mixed",
             "language": "python",
@@ -422,8 +422,8 @@
       "RESULT": "result",
       "SCHEMA": null,
       "checksum": {
-        "code": "e60a9d6cf9515591c4841019c1ce354b1e11eaf78a771609bd4387d86e0f3dbc",
-        "input": "51ff5845e9de506361bcce56857abb8e992efc0929892d4c04fb33e8ab414f4e",
+        "code": "94e5ea75abba435a86b086dd80261afacc839e200f2ebf1a1a64c60d4dafb2b0",
+        "input": "e78027a60ca9b2fd9f98f392f87783236a1f73c6829dc7192082d953d6c4480f",
         "result": "446d482726ab87192efa0b17b63947f224936aa82d0bb25fd70660f54c3e3c09",
         "result_schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
         "schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c"
@@ -497,8 +497,8 @@
       "RESULT": "result",
       "SCHEMA": null,
       "checksum": {
-        "code": "35896ff633b95c7ad33d3c7c124393a7f4b57d1b013286a4d07ccca29f0ff8a3",
-        "input": "6034b1945d28f6db11daff7b1a4b4a89dbaf6d5aff867f7a69ab41affae4b661",
+        "code": "7ecb3c5eb5e72adbd90637b3fd07f0cde7295044455e7659e9afef34d6e37d06",
+        "input": "1c4ea3f884ba3db38b4605ef78f1ef49ed35673fd902ea6976aa81760ded21d6",
         "result": "1e653c7258b01d85e7433a6f7ba7442f0ba14eebc74400db7f8297c5bdce907b",
         "result_schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
         "schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c"
@@ -532,7 +532,7 @@
     {
       "celltype": "plain",
       "checksum": {
-        "value": "a42c3379fc2be6fb5c2d08c68b88fd6e25bfcedb01fe7d687a9bd326ca02115d"
+        "value": "2f56caa7179d0cbb99d2a343c39c7272bf7a7e61396a2e8f033bcaa5317286c7"
       },
       "datatype": "mixed",
       "path": [
@@ -547,12 +547,16 @@
     {
       "celltype": "plain",
       "checksum": {
-        "value": "4d5f3b3e6b2d1b3a681e73e0e282505ed33aedb9d6525216a1ce8390914217f7"
+        "value": "916de859705ded93f1b33d859816a50b0c50ddb6c46c694f09ae6693ecf8f3e7"
       },
       "datatype": "mixed",
       "path": [
         "graph_rt"
       ],
+      "share": {
+        "path": null,
+        "readonly": true
+      },
       "type": "cell"
     },
     {
@@ -615,7 +619,7 @@
     {
       "celltype": "text",
       "checksum": {
-        "value": "f2f5c336d142025cd95a2001e2f3181a2aa04c307b37ffb901e5963b1fa1c641"
+        "value": "a78f2c566b2439463a2e7ca515bbfa3f92948506583cbadaebdd507f277542bd"
       },
       "datatype": "mixed",
       "mount": {
@@ -631,9 +635,6 @@
     },
     {
       "celltype": "text",
-      "checksum": {
-        "value": "36365d2b2bee8bca6907a1d8dd51ad7c94f63ca27e42d5538c24135b0676a2fb"
-      },
       "datatype": "mixed",
       "path": [
         "index_html_DUMMY"
@@ -642,9 +643,6 @@
     },
     {
       "celltype": "str",
-      "checksum": {
-        "value": "0ce9449d6a376407d21e2dcdb8c89522609bf155baefa60ca262c8f7531c07c0"
-      },
       "datatype": "mixed",
       "path": [
         "index_html_STATE"
@@ -654,7 +652,7 @@
     {
       "celltype": "text",
       "checksum": {
-        "value": "2ae7200774af1f1debfb964061af5f2a7db691382ed9483263121831806f5675"
+        "value": "1f5f740d86811c62e93e8bd1d310a1ef4698a62fd53592aab97648e4a69025d8"
       },
       "datatype": "mixed",
       "mimetype": "text/javascript",
@@ -694,7 +692,7 @@
     {
       "celltype": "text",
       "checksum": {
-        "value": "2ae7200774af1f1debfb964061af5f2a7db691382ed9483263121831806f5675"
+        "value": "1f5f740d86811c62e93e8bd1d310a1ef4698a62fd53592aab97648e4a69025d8"
       },
       "datatype": "mixed",
       "mount": {
@@ -727,9 +725,6 @@
     },
     {
       "celltype": "text",
-      "checksum": {
-        "value": "2ae7200774af1f1debfb964061af5f2a7db691382ed9483263121831806f5675"
-      },
       "datatype": "mixed",
       "path": [
         "index_js_DUMMY"
@@ -738,9 +733,6 @@
     },
     {
       "celltype": "str",
-      "checksum": {
-        "value": "0ce9449d6a376407d21e2dcdb8c89522609bf155baefa60ca262c8f7531c07c0"
-      },
       "datatype": "mixed",
       "path": [
         "index_js_STATE"
@@ -989,7 +981,7 @@
     {
       "celltype": "text",
       "checksum": {
-        "value": "f1cc450696089d41cca4cc14389f44b70739fc8b0e2838c8f67171a34a94be82"
+        "value": "446d482726ab87192efa0b17b63947f224936aa82d0bb25fd70660f54c3e3c09"
       },
       "datatype": "mixed",
       "mount": {
@@ -1022,9 +1014,6 @@
     },
     {
       "celltype": "text",
-      "checksum": {
-        "value": "4dd756599d90e02fa57fe181139af611ee7776d3c4a51fb5d37c03a7ffe2bd1a"
-      },
       "datatype": "mixed",
       "path": [
         "webform_DUMMY"
@@ -1033,9 +1022,6 @@
     },
     {
       "celltype": "str",
-      "checksum": {
-        "value": "0ce9449d6a376407d21e2dcdb8c89522609bf155baefa60ca262c8f7531c07c0"
-      },
       "datatype": "mixed",
       "path": [
         "webform_STATE"

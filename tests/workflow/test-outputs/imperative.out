@@ -1,0 +1,26 @@
+2117
+8817
+8817
+2117
+The following will give an exception:
+Traceback (most recent call last):
+  File "/cwd/tests/workflow/imperative.py", line 66, in <module>
+    func0(0, 0)
+seamless.workflow.core.transformation.SeamlessTransformationError: Traceback (most recent call last):
+  File "transformer", line 6, in <module>
+    result = func0(a=a,b=b)
+  File "transformer", line 4, in func0
+    raise Exception  # deliberately
+Exception
+
+*************************************************
+* Standard output
+*************************************************
+START
+
+*************************************************
+*************************************************
+Execution time: 0.0 seconds
+
+/exception
+

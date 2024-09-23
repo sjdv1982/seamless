@@ -1,0 +1,361 @@
+# In general, run with:
+#   python3 -u TEST.py > test-outputs/TEST.out 2>&1
+#   Best also to test using "ipython3 TEST.py", since re-translation may work differently
+#   Before each release, the test set must be run:
+#   - under seamless-bash (within Docker)
+#   - under seamless-framework (bare-metal conda)
+#   Docker tests require continuumio/anaconda3 to be pulled
+# Tests ending with .sh, run with:
+#   ./TEST.sh > test-outputs/TEST.out 2>&1
+# Tests requiring a database normally require an empty one
+
+bytes-conversion.py
+set-python-invalid.py: can also be run in interactive mode (mount /tmp/code.py)
+mime.py
+test-html.py
+auth-checksum.py
+get-file-and-directory.sh: will not work completely inside a Docker container, see get-file-and-directory-IN-DOCKER.out for the expectec output there
+independence-error-message.py
+schema.py
+schema-invalid.py
+subcell.py
+subsubcell.py
+inchannel-conflict.py
+logs.py
+deepcell-simple.py
+deepcell-filter.py: can also be run in interactive mode (mount /tmp/blacklist.json, /tmp/filt_cell.json)
+deepcell-share.py
+deepcell-transform.py
+deepfolder.py
+folder.py : writes data in ./testfolder
+folder2.py : assumes that folder.py has been run
+filesystemlike.py
+context.py
+context2.py
+conversion-transformer.py
+transformer-bracket.py
+simpler-tf-print.py
+function_like_error.py
+simplest.py
+simple-missing.py
+simple-unbound.py
+simpler-listpin.py
+simpler-result.py
+simpler-result-celltype.py
+tf-byte-dict.py
+simpler.py
+simpler-deepcell.py
+simpler-ipython.py: Run with ipython --no-term-title (not -i) (see issue 25). Output is approximate, depends on exact timings.
+scratch-save-vault.py
+macro-simple.py
+macro.py
+macro-elision.py
+macro-elision-database.sh: 
+  run outside Docker image.
+  run as i=macro-elision-database; seamless-run ./$i.sh > test-outputs/$i.out 2>&1
+  modify "none" to "none-devel" during devel testing
+reactor-edit-macro.py
+delay.py
+delay-logs-file.py
+module-simplified.py
+module.py
+special-pins.py
+special-pins-bash.py
+multi-module.py: can also be run in interactive mode (see instructions in file). FAILS FOR FUNCTION BREAKPOINTS IN CURRENT VSCODE VERSION
+module-pyaccess.py: can also be run in interactive mode (mount /tmp/module.py)
+bash.py
+bash-unbound.py
+bash-slashpins.py
+bash-debug.py
+bytes-transformer.py
+docker_.py: can be run with delegation using "export DELEGATE=''"
+docker2.py
+docker_gpu.py: run only on a machine with nvidia-docker2 installed
+docker-debug.py
+docker-singularity.py: needs singularity set up
+expression-exceptions.py
+transformer-bytedict.py
+highlink-schema.py
+highlink-schema-tf.py
+test-copy.py
+test-copy-tf-assign.py
+traitlet.py
+traitlet2.py: The exact output is dependent on random memory locations
+simple.py: can be run with level 3 delegation using "export DELEGATE=''"
+simple-deepcell.py
+simple-pi.py: Also creates twopi.seamless, twopi-result.seamless, twopi-result.zip
+simple-pi-deepcell.py: Also creates twopi-deepcell.seamless, twopi-deepcell-result.seamless, twopi-deepcell-result.zip
+simple-pi-remote.py: run with an assistant
+subcontext.py
+joincache.py
+reassign-transformer.py
+auth-relic.py
+special-methods.py
+cascade.py
+environment0.py
+mount-write.py
+foldercell-transformer.py
+transformer-compiled.py: can be run with delegation using "export DELEGATE=''"
+transformer-redefine.py
+transformer-compiled-error.py
+transformer-compiled-module.py
+transformer-compiled-header.py
+pin-filesystem.sh:
+  Run this in an environment where seamless-upload is available
+  run as i=pin-filesystem; ./$i.sh > test-outputs/$i.out 2>&1
+reuse-compile.sh: run with Seamless database
+test-fingertip.sh: run with Seamless database
+load-graph.py
+load-graph2.py
+load-graph-static.py
+build-structured-list.py
+vault.sh
+bind-status.py: can also be run in interactive mode, run with "ipython3 -i", make modifications and type "report" and monitor /tmp/graph.json and /tmp/status.json
+library.py
+library-context-argument.py
+library2.py
+library-reassign.py
+library-context-argument.py
+library-in-library.py
+library-schema.py
+undo.py: requires delegation level 3. Can be run with full delegation using "export DELEGATE=''".
+imperative.py
+imperative-undo.py: requires delegation level 3
+imperative-jupyter.sh
+imperative-async.sh
+imperative-async-parallel.py: can be run with delegation using "export DELEGATE=''"
+imperative-async-parallel-jupyter.sh: can be run with delegation using "export DELEGATE=''"
+imperative-celltypes.py
+imperative-workflow.py
+imperative-nested.py: requires delegation level 3. Can be run with full delegation using "export DELEGATE=''"
+imperative-nested-jupyter.sh: requires delegation level 3. 
+  As of 0.13, TEST WORKS IN CONDA ENV BUT NOT IN DOCKER IMAGE. See Seamless issue 255.
+imperative-nested-async.sh: requires delegation level 3.
+imperative-database.py: run with Seamless database and buffer dir, preferably in a clean setup
+imperative-database-async.sh: run with Seamless database and buffer dir, preferably in a clean setup
+
+imperative-delegated.py: requires full delegation
+imperative-delegated-slow.py: 
+  requires full delegation.
+  Set SEAMLESS_ASSISTANT_JOB_TIMEOUT to 15 in order to test client 202 capability.
+  If the client has this capability, the outpur will remain the same.
+  In all cases, no Timeout should be printed
+imperative-delegated-async.sh: requires full delegation
+imperative-delegated-nonlocal.py: requires nested delegation. Does not currently work, see (https://github.com/sjdv1982/seamless/issues/217)
+
+imperative-module.py: requires delegation level 3, definitely in a clean setup. Can be run with full delegation using "export DELEGATE=''"
+imperative-scratch.py: requires delegation level 3, definitely in a clean setup
+
+scratch.sh: make sure that level 3 delegation is available inside a clean buffer directory and database.
+
+map-list.py
+channel.py
+environment3.py
+environment7.py: requires full delegation. micro/mini-assistant will not work out-of-the-box, mini-dask-assistant can work. Can also be run non-automatically, see below.
+imperative-environment.py: Requires full delegation. micro-assistant will not work out-of-the-box
+meta.py
+cowsay-conda.py: has a conda environment name "cowsay-environment". 
+    Requires conda environment "cowsay-environment" to be present *where the job is executed*.
+    In case of delegation, where this is depends on the assistant: it is recommended to use a dask-assistant, because
+    then you control explicitly where the Dask scheduler/worker is being run.
+    The conda environment can be built from "cowsay-environment.yml":
+        conda env create -n cowsay-environment -f cowsay-environment.yml
+environment7a.py: version of environment7 where the conda environment name is specified. Will work with a Dask-assistant if the conda environment "pytorch-seamless-devel" is present where the Dask worker runs.
+environment7b.py: version of environment7 where the Docker image name is specified. Will work with any assistant if the Docker image "seamless-pytorch-devel" is present, which can be built using environment7b.Dockerfile
+
+fallback.py
+eager.py: FAILS as of 0.7 (https://github.com/sjdv1982/seamless/issues/90)
+help.py: Can also be run interactively with IPython. See the source code for mounts and shares
+help-copy.py
+webinterface.sh: open with bash inside the Seamless Docker container.
+                 Can also be run interactively, see line 6 of the code
+meta-local: 1. run without delegation:      #1 succeed, #2 fail, #3 fail
+            2. run with --delegate:         #1 succeed, #2 succeed, #3 fail
+deepcell-pdb.py: requires a FAIR server that knows the PDB dataset
+                 Can also be run interactively, change ctx.pdb_code 
+                  and observe /tmp/pdb_structure.mmcif
+deepfolder-pdb.py: See above . change ctx.pdb_code to "1wej.cif", "1brs.cif" or "7cei.cif" 
+                Also, /tmp/pdb_folder will contain 1brs.cif, 1wej.cif and 7cei.cif.
+high-in-low.py
+high-in-low2.py
+high-in-low3.py
+high-in-low4.py
+high-in-low5.py
+high-in-low6.py
+high-in-low7.py
+high-in-low8.py
+high-in-low4-memory.py    # Quite long test.
+                          # Creates 5.6 GB of buffer cache in /tmp/dummy-db
+                          # Run with "source prepare-high-in-low-memory.sh"
+                          #   (modify "none" to "none-devel" during devel testing)
+                          # Time is ~160 seconds, or ~55 seconds when re-executed
+                          # Re-executing the test is faster, because the transformation results and input buffers are cached
+                          # Exact output will depend on timings, test outputs stores the re-execution output
+                          # After the test, "seamless-delegate-stop && rm -rf /tmp/dummy-db"
+high-in-low6-memory.py    # See above. Time is ~100 seconds, or ~55 seconds when re-executed
+switch-select-stdlib.py
+map-speed-test.py: long test, calculates the speed of stdlib.map_dict
+map-speed-test2.py: long test, calculates the speed of stdlib.map_dict_chunk
+scratch-provenance: 
+  This test takes 10-20 minutes
+  Need to choose a version (non-reproducibility issue)
+    Both versions built using seamless-tools/build-devel-env.sh, seamless-tools commit 22823492f5ab42a5cfb77fc030fcfc126b5d2907
+    version 1: 
+      Intel Xeon Skylake, Ubuntu 18.04
+      Supported SIMD extensions in this NumPy install:
+        baseline = SSE,SSE2,SSE3
+        found = SSSE3,SSE41,POPCNT,SSE42,AVX,F16C,FMA3,AVX2,AVX512F,AVX512CD,AVX512_SKX
+        not found = AVX512_CLX,AVX512_CNL,AVX512_ICL
+    version 2:
+      Intel i5-1235U, Ubuntu 22.04
+      Supported SIMD extensions in this NumPy install:
+          baseline = SSE,SSE2,SSE3
+          found = SSSE3,SSE41,POPCNT,SSE42,AVX,F16C,FMA3,AVX2
+          not found = AVX512F,AVX512CD,AVX512_SKX,AVX512_CLX,AVX512_CNL,AVX512_ICL    
+  (Using NPY_DISABLE_CPU_FEATURES does not have an effect)  
+   run as "cd scratch-provenance/version-X; ./run.sh" > ../../test-outputs/scratch-provenance-versionX.out 2>&1" 
+   In run.sh, change "none" to "none-devel" if testing using a development version
+   Requires delegation to be startable from command line ("seamless-delegate" etc. must be available)
+
+Non-automatic tests
+=========================
+share-binary-and-unicode.py
+    Run with ipython -i
+    Open http://localhost:5813/ctx/cow.jpg and http://localhost:5813/ctx/unicode.txt in a browser
+    In a terminal, run seamless-http-put http://localhost:5813/ctx/cow.jpg --upload-file cow-rotate.jpg --binary
+    The cow should be upside down upon refresh
+    In a terminal, run seamless-http-put http://localhost:5813/ctx/unicode.txt --upload-file unicode.txt
+    The unicode text should change upon refresh
+docker-kill.py    The output is not important. Important is that "docker ps -a" reveals no remaining orphaned "ubuntu" Docker containers.
+bash-kill.py      The output is not important. Important is that the script finishes in ~4 sec, and that 'ps -ef' reveals no remaining orphaned "sleep" processes
+add.py:           Run with ipython -i, then change mounts /tmp/a /tmp/b /tmp/c /tmp/code.py
+simpler-share.py: Run with ipython -i, then do "curl localhost:5813/ctx/myresult".
+                  IPython values printed should be 36 then 39 (Silk); curl should return 39
+                  change ctx.a to get 3*a as the result
+mount.py:         Run with ipython -i, then continue in interactive mode.
+                  Initial output is in test-outputs/mount.out
+cython_.py        Run with ipython -i                 
+highlink-cpp.py:  Run with ipython -i, then continue in interactive mode,
+                  changing the source code (/tmp/code.cpp)
+                  Initial output is in test-outputs/highlink-cpp.out
+
+imperative-*-async.py: Run with ipython -i -c '%load '$i'.py' and press enter
+
+observe-graph.ipynb: Run "seamless-jupyter" and then open /cwd in the browser
+observe-cpp: see above. Modify /tmp/test.cpp and /tmp/schema.json
+traitlets.ipynb: same as above
+share-subcontext.py: open with seamless-ipython -i, Open in http://localhost:5813/ctx/sub/b
+share-pdb.py: open with seamless-ipython -i, Open in http://localhost:5813/ctx/index.html
+share-pdb-docker.seamless/.zip: to test using:
+      seamless-serve-graph share-pdb-docker.seamless \
+      --load-zip share-pdb-docker.zip
+    Open in http://localhost:5813/ctx/index.html
+    Potentially, add --status-graph
+    In that case, open also http://localhost:5813/status/index.html
+    Potentially, add --delegate
+parse-pdb.py: requires seamless database (delegation level 3)
+              will fail unless parse-pdb-environment.yml is installed
+              can be done in the seamless-bash Docker image,
+              or in the Dask (local.py) environment when using the Dask assistant
+              This can also be done a posteriori using seamless-run-transformation
+               on the printed-out checksum
+plotting.py. Change ctx.plot.period and ctx.plot.npoints.
+environment.py
+   Can be run automatically in a standard container (with python),
+    and will exit at some point because Rust is not installed
+    (see test-outputs/environment.out)
+  Otherwise, install Rust in the container and then run the test.
+  (Rust can be installed with "mamba install rust")
+  This will print 29, 34, 34 at the end (see code)
+environment2.py
+   Can be run automatically in a standard container  (with python),
+    and will exit at some point because Go is not installed
+    (see test-outputs/environment2.out)
+  Otherwise, install Go in the container and then run the test.
+  (Go can be installed with "mamba install go-cgo")
+  This will print "OK", 2029, 2096 at the end, and then wait for a debugger 
+  (not implemented for Go yet)
+environment4.py
+  This will fail. 
+  Install net-tools with apt and 'sympy==1.9.*' with conda/mamba to make it succeed.
+environment5.py
+  Loads and runs the graph for environment3 and then environment4.
+  Should succeed for the former (result: 11.40)
+   and fail for the latter.
+  Install net-tools with apt and 'sympy==1.9.*' with conda to make it succeed.
+environment6.py
+  Adding dynamic support for PHP. This will fail. 
+  Install php-cli with apt and python-bond with pip to make it succeed.
+r.py
+  run with ipython
+  Third line should be <Silk: 314.3% >
+  There should be two plots, in:
+   http://localhost:5813/ctx/result.svg
+   and
+   http://localhost:5813/ctx/result.png
+  edit plot.R
+  The PNG should update, the SVG should not
+
+environment7.py: This will fail if executed without delegation or with the micro/mini-assistant,
+  because pytorch is required. Regardless, the transformation checksum is printed out, and
+  the dunder is written to file. In a standard Seamless environment, 
+  "seamless-run-transformation <checksum>" will return an error: 
+  "ModuleNotFoundError: No module named 'torch'"
+  In contrast, "seamless-run-transformation.py <checksum> --dunder environment7-dunder.json" 
+  will validate the environment and give the same error message as the main script
+  ("Conda package 'pytorch' not installed"). 
+  Either syntax will succeed inside a proper environment 
+  (where both Seamless and PyTorch are available).
+
+compute-ctrl-c.py: open with ipython, type "ctx.compute()" and press ctrl+c
+delay-direct-print-file: open with ipython, monitor /tmp/direct-print.out, change ctx.tf1.a and ctx.tf1.delay
+debugmode-py-light.py
+  To debug a simple Python transformer in VSCode. Follow the instructions.
+debugmode-compiled-light.py
+  To debug a simple C++ transformer in VSCode. Follow the instructions.
+debugmode-py-sandbox.py
+  Sandbox debugging of a simple Python transformer in VSCode. Follow the instructions.
+debugmode-pymodule-light.py
+  To debug a Python transformer with Python single-file module in VSCode. Follow the instructions.
+debugmode-pymodule-sandbox.py
+  Sandbox debugging of a Python transformer with Python single-file module in VSCode. Follow the instructions.
+debugmode-pypackage-light.py
+  To debug a Python transformer with Python package in VSCode. Follow the instructions.
+debugmode-compiledmodule-light.py
+  To debug a multi-file C/C++ transformer in VSCode. Follow the instructions.
+debugmode-compiled-sandbox.py
+  Sandbox debugging of a simple C++ transformer in VSCode. Follow the instructions.
+debugmode-compiledmodule-sandbox.py
+  Sandbox debugging of a multi-file C/C++ transformer in VSCode. Follow the instructions.
+debugmode-py-shell.py  
+  Debug IPython shell for a Python transformer. Follow the instructions.
+debugmode-bash-shell.py  
+  Debug bash shell. Follow the instructions.
+debugmode-docker-shell.py  
+  Debug bash shell, with Docker image. Follow the instructions.
+hack-bash-transformer-translation.py
+  Run with IPython and hack /tmp/execute.py
+  Monitor testctx.tf.logs
+fallback-mount-share.py
+  Run with IPython, modify /tmp/a and /tmp/b . 
+  This will *not* update ctx.a until you leave fallback mode
+  Check "curl localhost:5813/ctx/a"
+  Do:
+  - fctx.aa = ...
+  - ctx.translate(force=True)
+  - ctx.a.fallback(None)
+  - ctx.a.fallback(fctx.aa)
+  - fctx.translate(force=True)
+imperative-manyjobs.py
+  Needs to be run with a Dask cluster, 1000x ~20 sec jobs. Submitting 1000 jobs may take a few minutes. Will calculate pi to 6 digits. Expected results: 3.141593805644 5.116277454745302e-05 3.141592653589793
+  Instead of 1000, the number of jobs can also be given as a command-line option
+multi-core-transformations.py
+  It is expected that job 1 finishes before job 2, and job 2 finishes after 7 seconds.
+  With DELEGATE, run this with the micro Dask assistant and a local Dask cluster with --ncores 5
+  Change ncores to 4 to have the first job fail, for a total duration of 2 seconds
+  TODO: as of Seamless 0.12, the first job stays "ready" forever
+  Change ncores to 6 to have both jobs execute in parallel. Job 2 will finish after 2.5 seconds,
+   and job 1 will still be running.
+   TODO: as of Seamless 0.12, the first job says "ready" instead of running
+slow-buffer.py
+  To detect suspected slowness issues with buffer upload, but hasn't given an error yet.

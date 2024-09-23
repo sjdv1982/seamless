@@ -2,7 +2,7 @@ channels:
   - conda-forge
   - rpbs
 dependencies:
-  - python>=3.9
+  - python>=3.10
   - conda
   - numpy
   - ruamel.yaml
@@ -14,6 +14,3 @@ dependencies:
   - rpbs::silk
   - pip
   - ipykernel
-  - pip:
-    - speg
-    - cson

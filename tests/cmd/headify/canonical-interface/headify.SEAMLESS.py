@@ -1,4 +1,3 @@
-
 import os
 import argparse
 import sys
@@ -22,9 +21,11 @@ parser.add_argument(
 
 args = parser.parse_args()
 
+
 def get_output_file(input_file):
     root, ext = os.path.splitext(input_file)
     return root + "-head" + ext
+
 
 # The batch section is identical to the previous interface.
 #  headify_lib.py is added explicitly because the .yaml file no longer does.
@@ -42,23 +43,14 @@ if args.batch:
             result_files.append(get_output_file(input_file))
 else:
     input_files = [
-        {
-            "name": "infile",
-            "mapping": args.input
-        },
-        {
-            "name": "headify",
-            "mapping": sys.argv[0][:-len(".SEAMLESS.py")]
-        },
+        {"name": "infile", "mapping": args.input},
+        {"name": "headify", "mapping": sys.argv[0][: -len(".SEAMLESS.py")]},
         {
             "name": "headify_lib.py",
-            "mapping": os.path.join(os.path.dirname(sys.argv[0]), "headify_lib.py")
+            "mapping": os.path.join(os.path.dirname(sys.argv[0]), "headify_lib.py"),
         },
-
     ]
-    result_files = {
-        "infile-head": get_output_file(args.input)
-    }
+    result_files = {"infile-head": get_output_file(args.input)}
 
 #############################################################
 
@@ -68,4 +60,5 @@ interface = {
 }
 
 import json
+
 print(json.dumps(interface))

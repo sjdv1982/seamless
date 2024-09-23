@@ -1,0 +1,27 @@
+START
+8817
+8817
+2117
+None
+Status: OK
+None
+<Silk: 2117 >
+Waiting for: Seamless transformer: .tf.tf
+Waiting for: Seamless transformer: .tf.tf
+Waiting for: Seamless transformer: .tf.tf
+*************************************************
+* Result
+*************************************************
+<checksum 0c6a7b06f7f95aef0d134c75080744103f650c4b3f8c0c2c15bba458ae41dfde>
+*************************************************
+Execution time: 4.5 seconds
+*************************************************
+Status: OK
+None
+<Silk: 3838 >
+3838
+6666
+2929
+In [3]: exit()              
+In [3]: exit()
+Shutting down kernel

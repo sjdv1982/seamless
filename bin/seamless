@@ -1,6 +1,10 @@
 #!/usr/bin/env -S python3 -u
+# type: ignore   # disable PyLance, as it cannot import seamless from here. Pylint still works correctly
+# pylint: disable=import-self, wrong-import-position
 
-__version__ = "0.12"
+"""Main command-line seamless executable script"""
+
+__version__ = "0.13"
 
 import argparse
 from copy import copy
@@ -11,15 +15,15 @@ import json
 import time
 import traceback
 import threading
-
-stdout_lock = threading.Lock()
+import logging
 
 os.environ["__SEAMLESS_FRUGAL"] = "1"
 import seamless
 
-from seamless.core.cache.buffer_cache import buffer_cache
-from seamless.core.protocol.deserialize import deserialize_sync as deserialize
-from seamless import CacheMissError
+from seamless import Checksum, Buffer, CacheMissError
+from seamless.checksum.buffer_cache import buffer_cache
+from seamless.checksum.deserialize import deserialize_sync as deserialize
+from seamless.util import unchecksum
 from seamless.cmd.message import set_verbosity, message as msg, message_and_exit as err
 from seamless.cmd import parsing
 from seamless.cmd.parsing import get_commands, guess_arguments
@@ -33,11 +37,12 @@ from seamless.cmd import interface
 from seamless.cmd.exceptions import SeamlessSystemExit
 from seamless.cmd.bytes2human import human2bytes
 from seamless.cmd.download import download
-from seamless.highlevel import Checksum
-from seamless.highlevel.Environment import Environment
-from seamless.core.protocol.json import json_dumps
-from seamless.core.direct.run import fingertip, extract_dunder, tf_get_buffer
-from seamless import calculate_checksum
+from seamless.Environment import Environment
+from seamless.checksum.json import json_dumps
+from seamless.workflow.core.direct.run import fingertip, extract_dunder, tf_get_buffer
+from seamless.checksum.calculate_checksum import calculate_checksum
+
+stdout_lock = threading.Lock()
 
 parser = argparse.ArgumentParser()
 parser.add_argument(
@@ -181,15 +186,18 @@ parser.add_argument(
 )
 
 parser.add_argument(
-    "--docker", "--docker-image",
+    "--docker",
+    "--docker-image",
     dest="docker_image",
-    help="Specify Docker image where transformation is to run in"
+    help="Specify Docker image where transformation is to run in",
 )
 
 parser.add_argument(
-    "--conda", "--conda-env", "--conda-environment",
+    "--conda",
+    "--conda-env",
+    "--conda-environment",
     dest="conda_environment",
-    help="Specify an existing conda environment where the transformation could run in."
+    help="Specify an existing conda environment where the transformation could run in.",
 )
 
 parser.add_argument(
@@ -220,15 +228,17 @@ This is most useful for scripts that contain themselves /bin/seamless commands""
 )
 
 parser.add_argument(
-    "--dry", "--dry-run",
+    "--dry",
+    "--dry-run",
     dest="dry_run",
     help="Only parse the arguments and prepare a transformation job, do not execute it",
     action="store_true",
-    default=False
+    default=False,
 )
 
 parser.add_argument(
-    "-j", "--write-job",
+    "-j",
+    "--write-job",
     dest="write_job",
     help="Requires --dry. Write out the (small) transformation job buffers into a job directory for seamless-run-transformation",
 )
@@ -236,7 +246,7 @@ parser.add_argument(
 parser.add_argument(
     "--upload",
     help="Requires --dry. Upload input files and the (small) transformation job buffers",
-    action="store_true"
+    action="store_true",
 )
 
 
@@ -264,9 +274,11 @@ if len(command) == 0:
 workdir = os.getcwd()
 if args.workdir is not None:
     if os.environ.get("DOCKER_IMAGE"):
-        err("""DOCKER_IMAGE environment variable has been set.
+        err(
+            """DOCKER_IMAGE environment variable has been set.
   We are running from inside a Docker container.
-  Setting workdir is not supported.""")
+  Setting workdir is not supported."""
+        )
     workdir = os.path.expanduser(args.workdir)
     msg(1, "set argtyping working directory to: {}".format(workdir))
 
@@ -357,10 +369,13 @@ if args.extra_inputs:
     )
     for inp in args.extra_inputs:
         assert inp in argtypes_extra_inputs
-        if argtypes_extra_inputs[inp] == "value" or argtypes_extra_inputs[inp]["type"] == "value":
+        if (
+            argtypes_extra_inputs[inp] == "value"
+            or argtypes_extra_inputs[inp]["type"] == "value"
+        ):
             err(f"--input argument '{inp}': file/directory does not exist")
 
-argtypesstr = json.dumps(argtypes_initial, sort_keys=False, indent=2)
+argtypesstr = json.dumps(unchecksum(argtypes_initial), sort_keys=False, indent=2)
 msg(1, "initial argtypes dict:\n" + argtypesstr)
 
 file_mapping_mode = args.file_mapping_mode
@@ -379,6 +394,7 @@ try:
 except ValueError as exc:
     err(*exc.args)
 
+argtypes = unchecksum(argtypes)
 argtypesstr = json.dumps(argtypes, sort_keys=False, indent=2)
 msg(1, "argtypes dict:\n" + argtypesstr)
 
@@ -463,12 +479,12 @@ for commandnr, command in enumerate(commands):
     shim = None
     if interface_file is not None:
         msg(2, f"loading {interface_file}")
-        new_interface_data = interface.load(interface_file.as_posix())
-        msg(3, f"{interface_file} content: {json.dumps(new_interface_data, indent=2)}")
-        new_shim = new_interface_data.get("shim")
+        _new_interface_data = interface.load(interface_file.as_posix())
+        msg(3, f"{interface_file} content: {json.dumps(_new_interface_data, indent=2)}")
+        new_shim = _new_interface_data.get("shim")
         if new_shim is not None:
             shim = new_shim
-        update_interface_data(new_interface_data, first=(commandnr == 0))
+        update_interface_data(_new_interface_data, first=(commandnr == 0))
 
     if commandnr == 0:
         interface_py_file = None
@@ -481,16 +497,17 @@ for commandnr, command in enumerate(commands):
                 command_words[0] = mapped_execarg
 
         arguments = command_words[interface_argindex + 1 :]
-        new_interface_data = interface.interface_from_py_file(
+        _new_interface_data = interface.interface_from_py_file(
             interface_py_file, arguments
         )
         msg(
-            3, f"{interface_py_file} result: {json.dumps(new_interface_data, indent=2)}"
+            3,
+            f"{interface_py_file} result: {json.dumps(_new_interface_data, indent=2)}",
         )
-        new_shim = new_interface_data.get("shim")
+        new_shim = _new_interface_data.get("shim")
         if new_shim is not None:
             shim = new_shim
-        update_interface_data(new_interface_data, first=(commandnr == 0))
+        update_interface_data(_new_interface_data, first=(commandnr == 0))
 
         if shim:
             wordnode = command.wordnodes[interface_argindex]
@@ -522,11 +539,11 @@ else:
     decal = os.path.relpath(os.getcwd(), workdir)
     if decal != ".":
         results_initial2 = results_initial.copy()
-        for k, v in results_initial.items():
-            if v is None:
-                kk = os.path.join(decal, k)
-                results_initial2.pop(k)
-                results_initial2[kk] = v
+        for _k, _v in results_initial.items():
+            if _v is None:
+                _kk = os.path.join(decal, _k)
+                results_initial2.pop(_k)
+                results_initial2[_kk] = _v
         results_initial = results_initial2
 
 results = results_initial.copy()
@@ -638,7 +655,7 @@ try:
         max_upload_files=max_upload_files,
         directories=directories,
         auto_confirm=args.auto_confirm,
-        dry_run=(args.dry_run and not args.upload)
+        dry_run=(args.dry_run and not args.upload),
     )
 except SeamlessSystemExit as exc:
     err(*exc.args)
@@ -700,7 +717,7 @@ transformation_checksum, transformation_dict = prepare_bash_transformation(
     environment=env._to_lowlevel(bash=True),
     variables=variables,
     meta=meta,
-    dry_run=(args.dry_run and not args.upload)
+    dry_run=(args.dry_run and not args.upload),
 )
 
 if make_executables:
@@ -718,41 +735,50 @@ else:
 transformation_checksum = Checksum(transformation_checksum).hex()
 msg(3, f"Transformation checksum: {transformation_checksum}")
 
+
+def file_write(handle, buf):
+    if isinstance(buf, Buffer):
+        buf = buf.value
+    handle.write(buf)
+
+
 if args.dry_run:
     if args.write_job is not None:
         os.mkdir(args.write_job)
         transformation_buffer = tf_get_buffer(transformation_dict)
         dunder = extract_dunder(transformation_dict)
         if dunder:
-            with open(os.path.join(args.write_job, "dunder.json"), "wb") as f:
-                f.write(json_dumps(dunder, as_bytes=True) + b"\n")
+            with open(os.path.join(args.write_job, "dunder.json"), "wb") as _f:
+                _f.write(json_dumps(dunder, as_bytes=True) + b"\n")
         code_checksum = transformation_dict["code"][2]
         env_checksum = transformation_dict.get("__env__")
         if args.upload:
-            with open(os.path.join(args.write_job, "transformation.json.CHECKSUM"), "w") as f:
-                f.write(transformation_checksum)
-        else:   
-            with open(os.path.join(args.write_job, "transformation.json"), "wb") as f:
-                f.write(transformation_buffer)
+            with open(
+                os.path.join(args.write_job, "transformation.json.CHECKSUM"), "w"
+            ) as _f:
+                _f.write(transformation_checksum)
+        else:
+            with open(os.path.join(args.write_job, "transformation.json"), "wb") as _f:
+                file_write(_f, transformation_buffer)
             command = buffer_cache.buffer_cache[bytes.fromhex(code_checksum)]
-            with open(os.path.join(args.write_job, "command.txt"), "wb") as f:
-                f.write(command)
+            with open(os.path.join(args.write_job, "command.txt"), "wb") as _f:
+                file_write(_f, command)
             if env_checksum is not None:
                 env_buffer = buffer_cache.buffer_cache[bytes.fromhex(env_checksum)]
-                with open(os.path.join(args.write_job, "env.json"), "wb") as f:
-                    f.write(env_buffer)
+                with open(os.path.join(args.write_job, "env.json"), "wb") as _f:
+                    file_write(_f, env_buffer)
 
     if args.upload or args.write_job:
         print(transformation_checksum)
-        
+
         # kludge to hide spurious "buffers undestroyed" warnings
-        import logging
 
         logger = logging.getLogger("seamless")
         logger.setLevel(logging.ERROR)
 
     sys.exit(0)
-    
+
+
 def write_future(filename, result_target):
     filename = os.path.join(workdir, filename)
     try:
@@ -806,12 +832,13 @@ def maintain_futures():
             download_target = result_target
         remove_future(download_target, result_target)
 
+
 if result_targets:
     maintain_futures_thread = threading.Thread(
         target=maintain_futures, name=maintain_futures
     )
     maintain_futures_thread.start()
-from seamless import SeamlessTransformationError
+from seamless.workflow.core.transformation import SeamlessTransformationError
 
 try:
     result_fingertip = True
@@ -820,9 +847,10 @@ try:
     if result_targets:
         result_fingertip = True
     result_checksum = run_transformation(
-        transformation_dict, undo=args.undo, 
+        transformation_dict,
+        undo=args.undo,
         fingertip=result_fingertip,
-        scratch=args.scratch
+        scratch=args.scratch,
     )
 except SeamlessTransformationError as exc:
     traceback.print_exc(limit=0)
@@ -885,8 +913,6 @@ def download_result(filename, file_checksum):
 
 
 # kludge to hide spurious "buffers undestroyed" warnings
-import logging
-
 logger = logging.getLogger("seamless")
 logger.setLevel(logging.ERROR)
 
@@ -926,32 +952,34 @@ else:
         directories_to_download = []
         download_checksum_dict = {}
 
-        for result_target, download_target in result_targets.items():
-            if download_target is None:
-                download_target = result_target
-            if result_target in result_checksum_dict:  # file
-                result = result_checksum_dict[result_target]
-                download_checksum_dict[download_target] = result
-                write_result_checksum(download_target, result)                
-                files_to_download.append(download_target)
+        for _result_target, _download_target in result_targets.items():
+            if _download_target is None:
+                _download_target = _result_target
+            if _result_target in result_checksum_dict:  # file
+                _result = result_checksum_dict[_result_target]
+                download_checksum_dict[_download_target] = _result
+                write_result_checksum(_download_target, _result)
+                files_to_download.append(_download_target)
             else:
                 curr_files = [
-                    f for f in result_checksum_dict if f.startswith(result_target + "/")
+                    f
+                    for f in result_checksum_dict
+                    if f.startswith(_result_target + "/")
                 ]
                 if not len(curr_files):
-                    msg(0, f"No result for '{download_target}' was returned")
+                    msg(0, f"No result for '{_download_target}' was returned")
                     continue
-                striplen = len(result_target) + 1
+                striplen = len(_result_target) + 1
                 result = {f[striplen:]: result_checksum_dict[f] for f in curr_files}
 
-                index_checksum = write_result_index(download_target, result)
-                if index_checksum is not None:
-                    write_result_checksum(download_target, index_checksum)
+                _index_checksum = write_result_index(_download_target, result)
+                if _index_checksum is not None:
+                    write_result_checksum(_download_target, _index_checksum)
 
-                for f in result:
-                    ff = download_target + "/" + f
-                    download_checksum_dict[ff] = result[f]
-                directories_to_download.append(download_target)
+                for _f in result:
+                    _ff = _download_target + "/" + _f
+                    download_checksum_dict[_ff] = result[_f]
+                directories_to_download.append(_download_target)
 
         if not args.no_download and not args.scratch:
             download(

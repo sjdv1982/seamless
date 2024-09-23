@@ -1,0 +1,39 @@
+<Silk: 12 >
+{}
+START
+<Silk: {'a': 1} > <Silk: 3 >
+<Silk: 12 > <Silk: {'a': 12} >
+{}
+<Silk: 36 >
+36
+7
+The result is: 7.5
+bork!bork!bork!
+None
+Traceback (most recent call last):
+  File "/seamless/seamless/workflow/core/execute.py", line 321, in _execute
+    result_buffer = serialize(result, output_celltype)
+  File "/seamless/seamless/checksum/serialize.py", line 39, in _serialize
+    value = int(value)
+ValueError: invalid literal for int() with base 10: 'bork!bork!bork!'
+*************************************************
+Execution time: 0.0 seconds
+
+
+Bash
+<Silk: 60 >
+60
+12
+The result is: 12.5
+bork!bork!bork!bork!bork!
+
+None
+Traceback (most recent call last):
+  File "/seamless/seamless/workflow/core/execute.py", line 321, in _execute
+    result_buffer = serialize(result, output_celltype)
+  File "/seamless/seamless/checksum/serialize.py", line 39, in _serialize
+    value = int(value)
+ValueError: invalid literal for int() with base 10: 'bork!bork!bork!bork!bork!\n'
+*************************************************
+Execution time: 0.0 seconds
+

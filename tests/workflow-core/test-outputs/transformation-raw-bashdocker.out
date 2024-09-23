@@ -1,0 +1,16 @@
+{
+  "__language__": "bash",
+  "__output__": [
+    "result",
+    "bytes",
+    null
+  ],
+  "code": [
+    "text",
+    null,
+    "80ef3f70edd01f918d23689223ab5578bdbc3a594e9054391e7e01f9fde3e5fa"
+  ]
+}
+
+nginx version: nginx/1.25.2
+

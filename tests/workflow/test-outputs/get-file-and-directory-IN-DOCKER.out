@@ -1,0 +1,63 @@
+seamless-upload: Verbosity set to 1
+seamless-upload: Upload 1 files, total 5.00 B
+seamless-upload: Verbosity set to 1
+seamless-upload: Upload 3 files, total 169.00 B
+Repeat, no files will be uploaded...
+seamless-upload: Verbosity set to 1
+seamless-upload: Upload no files
+seamless-upload: Verbosity set to 1
+seamless-upload: Upload no files
+Stage 1
+
+None
+Text
+
+Stage 2
+
+Status: OK
+None
+==> inputfolder/one.txt <==
+1
+
+==> inputfolder/two.txt <==
+2
+
+Stage 3
+
+*tf*: Status: error
+
+Docker transformer exception
+============================
+
+Exit code: 1
+
+*************************************************
+* Command
+*************************************************
+echo 'START' > RESULT; head inputfolder/* >> RESULT
+*************************************************
+
+
+*************************************************
+* Standard output
+*************************************************
+head: cannot open 'inputfolder/*' for reading: No such file or directory
+
+*************************************************
+*************************************************
+* Standard error
+*************************************************
+WARNING: Docker transformer launched from within a Docker container.
+The Docker containers will run side by side under the host, symbolic links will not normally work.
+
+The following pins access their buffer through symbolic links:
+
+    inputfolder -> /cwd/tests/workflow/dummy-bufferfolder/deployed/069a577ce64ff98c9730e55b8f13f94ba3eaba9f3066be0df90942ed0f7096e5
+
+
+
+*************************************************
+*************************************************
+Execution time: 0.5 seconds
+
+None

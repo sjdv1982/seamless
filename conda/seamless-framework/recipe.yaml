@@ -1,6 +1,6 @@
 package:
   name: seamless-framework
-  version: "0.12"
+  version: "0.13"
 
 build:
   noarch: python
@@ -15,7 +15,7 @@ requirements:
     - numpy
     - setuptools
   run:
-    - python>=3.9
+    - python>=3.10
     - jsonschema=4.18.*
     - conda
     - numpy

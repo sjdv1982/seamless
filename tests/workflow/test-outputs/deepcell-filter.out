@@ -1,0 +1,37 @@
+Status: exception
+seamless.CacheMissError: 0000000000000000000000000000000000000000000000000000000000000000
+
+Status: OK
+Status: OK
+*apply_blackwhite*: Status: error
+*apply_blackwhite*: Traceback (most recent call last):
+  File "Seamless transformer: .a.apply_blackwhite", line 21, in <module>
+    result = apply_blackwhitelist(blackwhitelist=blackwhitelist,keyorder=keyorder,origin=origin)
+  File "Seamless transformer: .a.apply_blackwhite", line 3, in apply_blackwhitelist
+    assert keyorder is None or isinstance(
+AssertionError: nonsense
+*************************************************
+Execution time: 0.0 seconds
+
+Status: OK
+
+{'test1': '6132e913fd0ae2c9aeacc8d99a02880df196fbab2ef62dbb62a6a4ae6d3f5fdd', 'test2': '8e843baef228089dc379d4c3b6e28c1bb5d44eee257f1206b5dfee44ef6b05ad', 'test3': 'c2f4cccc4cff9eae7dd14ac75a6a01d23338c2007d38fdb4d6fd127a15c773a6'}
+<Silk: {'test1': 10, 'test3': 30} >
+{'test1': '6132e913fd0ae2c9aeacc8d99a02880df196fbab2ef62dbb62a6a4ae6d3f5fdd', 'test3': 'c2f4cccc4cff9eae7dd14ac75a6a01d23338c2007d38fdb4d6fd127a15c773a6'}
+[]
+['test3', 'whatever', 'test1']
+['test3', 'test1']
+
+None
+{'test1': '6132e913fd0ae2c9aeacc8d99a02880df196fbab2ef62dbb62a6a4ae6d3f5fdd', 'test2': '8e843baef228089dc379d4c3b6e28c1bb5d44eee257f1206b5dfee44ef6b05ad', 'test3': 'c2f4cccc4cff9eae7dd14ac75a6a01d23338c2007d38fdb4d6fd127a15c773a6'}
+
+{'test2': '8e843baef228089dc379d4c3b6e28c1bb5d44eee257f1206b5dfee44ef6b05ad', 'test3': 'c2f4cccc4cff9eae7dd14ac75a6a01d23338c2007d38fdb4d6fd127a15c773a6'}
+{'test1': '6132e913fd0ae2c9aeacc8d99a02880df196fbab2ef62dbb62a6a4ae6d3f5fdd', 'test2': '8e843baef228089dc379d4c3b6e28c1bb5d44eee257f1206b5dfee44ef6b05ad', 'test3': 'c2f4cccc4cff9eae7dd14ac75a6a01d23338c2007d38fdb4d6fd127a15c773a6'}
+
+{'test1': '6132e913fd0ae2c9aeacc8d99a02880df196fbab2ef62dbb62a6a4ae6d3f5fdd', 'test3': 'c2f4cccc4cff9eae7dd14ac75a6a01d23338c2007d38fdb4d6fd127a15c773a6'}
+
+{'test1': '6132e913fd0ae2c9aeacc8d99a02880df196fbab2ef62dbb62a6a4ae6d3f5fdd', 'test3': 'c2f4cccc4cff9eae7dd14ac75a6a01d23338c2007d38fdb4d6fd127a15c773a6'}
+
+{'a': '6132e913fd0ae2c9aeacc8d99a02880df196fbab2ef62dbb62a6a4ae6d3f5fdd', 'b': '8e843baef228089dc379d4c3b6e28c1bb5d44eee257f1206b5dfee44ef6b05ad', 'c': 'c2f4cccc4cff9eae7dd14ac75a6a01d23338c2007d38fdb4d6fd127a15c773a6'}
+<Silk: {'a': 10, 'b': 20, 'c': 30} >
+

@@ -6,10 +6,10 @@ dependencies:
   - python
   - pip
   - numpy
-  - rpbs::seamless-framework==0.12
+  - rpbs::seamless-framework==0.13
   - rpbs::silk>=0.1.11
   - rpbs::seamless-cli-complement
-  - rpbs::seamless-cli-bin
+  - rpbs::seamless-cli-bin==0.13
   - bashlex
   - conda
   - aiohttp-cors
@@ -18,7 +18,7 @@ dependencies:
   - psutil
   - jinja2
   - traitlets
-  - datrie  # required to build some pip packages
+  - datrie # required to build some pip packages
   - jsonschema=4.18.*
   - ipython<=8.16
   - ipykernel
@@ -44,16 +44,14 @@ dependencies:
   - rpy2
   - sympy
   - pip:
-    - websockets
-    - cson
-    - speg    
-    - docker
-    - makefun
-    - nglview
-    - matplotlib 
-    - snakemake==7.18.*
-    - jupyter-console
-    - itables==1.4.*
+      - websockets
+      - docker
+      - makefun
+      - nglview
+      - matplotlib
+      - snakemake==7.18.*
+      - jupyter-console
+      - itables==1.4.*
 variables:
   SEAMLESS_CONDA_ENVIRONMENT: 1
   SEAMLESS_DEFAULT_ASSISTANT_IP: 127.0.0.1

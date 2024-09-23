@@ -1,0 +1,15 @@
+Traceback (most recent call last):
+  File "/seamless/seamless/workflow/core/transformation.py", line 633, in _execute
+    result, logs = await self._execute_local(prelim_callback, progress_callback)
+  File "/seamless/seamless/workflow/core/transformation.py", line 820, in _execute_local
+    validate_environment(env)
+  File "/seamless/seamless/util/environment.py", line 185, in validate_environment
+    raise ValueError("Environment error:\n" + err)
+ValueError: Environment error:
+Docker:
+  Cannot execute code locally:
+current Docker image name is 'rpbs/seamless', whereas 'nonsense' is required
+
+
+Status: OK
+<Silk: 112 >

@@ -38,7 +38,7 @@ using "seamless-upload"
 
 import os, sys, shutil
 import seamless, seamless.config
-from seamless.highlevel import (Context, Cell, Transformer, Module, Macro, 
+from seamless.workflow.highlevel import (Context, Cell, Transformer, Module, Macro, 
                                 SimpleDeepCell, FolderCell, DeepCell, DeepFolderCell)
 
 def pr(*args):
@@ -65,14 +65,14 @@ async def define_graph(ctx):
 
 def load_ipython():
     import asyncio
-    import seamless
-    loop = seamless._original_event_loop
+    import seamless.workflow
+    loop = seamless.workflow._original_event_loop
     asyncio.set_event_loop(loop)
     coro = load()
     loop.run_until_complete(coro)
 
 async def load():
-    from seamless.metalevel.bind_status_graph import bind_status_graph_async
+    from seamless.workflow.metalevel.bind_status_graph import bind_status_graph_async
     import json
 
     global ctx, webctx, save, export
@@ -104,14 +104,7 @@ async def load():
             shutil.move(f, dest)
     ctx = Context()
     empty_graph = ctx.get_graph()
-    try:
-        seamless._defining_graph = True
-        await define_graph(ctx)
-    finally:
-        try:
-            del seamless._defining_graph
-        except AttributeError:
-            pass
+    await define_graph(ctx)
     new_graph = ctx.get_graph()
     graph_file = "graph/" + PROJNAME + ".seamless"
     if DELEGATION_LEVEL == 0: 
@@ -178,13 +171,14 @@ async def load():
     await ctx.translation(force=True)
     await ctx.translation(force=True)
     
-    pr("""Project loaded.
+    _rest_port = seamless.workflow.shareserver.shareserver.rest_port
+    pr(f"""Project loaded.
 
     Main context is "ctx"
     Web/status context is "webctx"
 
-    Open http://localhost:<REST server port> to see the web page
-    Open http://localhost:<REST server port>/status/status.html to see the status
+    Open http://localhost:{_rest_port} to see the web page
+    Open http://localhost:{_rest_port}/status/status.html to see the status
 
     Run save() to save the project workflow file.
     Run export() to generate zip files for web deployment.

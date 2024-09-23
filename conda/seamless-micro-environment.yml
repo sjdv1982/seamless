@@ -5,15 +5,13 @@ channels:
 dependencies:
   - python
   - pip
-  - rpbs::seamless-framework==0.12
+  - rpbs::seamless-framework==0.13
   - rpbs::silk>=0.1.11
   - rpbs::seamless-cli-complement
   - rpbs::seamless-cli-bin
   - conda
   - pip:
-    - websockets
-    - cson
-    - speg
+      - websockets
 variables:
   SEAMLESS_CONDA_ENVIRONMENT: 1
   SEAMLESS_DEFAULT_ASSISTANT_IP: 127.0.0.1

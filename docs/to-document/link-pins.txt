@@ -1,7 +1,0 @@
-Link pins
-=========
-
-They link to paths in the .auth of structured cells. 
-Can only be connected to simple cells, using high links.
-Whenever the simple cell changes, the .auth will change, and vice versa.
-The main application is to support .share and .mount, which is only for simple cells.

@@ -19,7 +19,7 @@ and then to HTML using itables.
 import seamless
 seamless.delegate(False)
 
-from seamless.highlevel import Context, Cell
+from seamless.workflow import Context, Cell
 ctx = Context()
 
 # Create "first", "step", "length" parameters for sequence A

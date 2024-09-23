@@ -1,5 +1,5 @@
 {% set name = "seamless-framework" %}
-{% set version = "0.12.1" %}
+{% set version = "0.13" %}
 
 package:
   name: "{{ name|lower }}"
@@ -7,7 +7,7 @@ package:
 
 build:
   noarch: python
-  number: 1
+  number: 2
 
 source:
   path: ../..
@@ -17,7 +17,7 @@ requirements:
     - python {{ python }}
     - setuptools
   run:
-    - python>=3.9
+    - python>=3.10
     - jsonschema=4.18
     - conda
     - numpy

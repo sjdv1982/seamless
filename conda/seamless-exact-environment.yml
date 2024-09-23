@@ -7,10 +7,10 @@ dependencies:
   - python=3.10.*
   - pip=23.0.*
   - numpy=1.24.*
-  - rpbs::seamless-framework==0.12
+  - rpbs::seamless-framework==0.13
   - rpbs::silk==0.1.11
   - rpbs::seamless-cli-complement
-  - rpbs::seamless-cli-bin
+  - rpbs::seamless-cli-bin==0.13
   - rpbs::seamless-scripts
   - bashlex=0.18
   - conda=23.1.*
@@ -20,13 +20,13 @@ dependencies:
   - psutil=5.9.*
   - jinja2=3.1.*
   - traitlets=5.9.*
-  - datrie  # required to build some pip packages
+  - datrie # required to build some pip packages
   - jsonschema=4.18.*
   - ipython=8.15.*
   - ipykernel=6.21.*
 
   - cffi=1.15.*
-  - ipywidgets=8.0.*  
+  - ipywidgets=8.0.*
   - debugpy=1.6.*
   - openmp=8.0.*
   - requests=2.31.*
@@ -46,16 +46,14 @@ dependencies:
   - rpy2==3.5.*
   - sympy
   - pip:
-    - websockets==10.3.*
-    - cson==0.8.*
-    - speg    
-    - docker==7.0.*
-    - makefun
-    - nglview
-    - matplotlib 
-    - snakemake==7.18.*
-    - jupyter-console==6.6.*
-    - itables==1.4.*
+      - websockets==10.3.*
+      - docker==7.0.*
+      - makefun
+      - nglview
+      - matplotlib
+      - snakemake==7.18.*
+      - jupyter-console==6.6.*
+      - itables==1.4.*
 variables:
   SEAMLESS_CONDA_ENVIRONMENT: 1
   SEAMLESS_DEFAULT_ASSISTANT_IP: 127.0.0.1

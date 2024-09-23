@@ -1,0 +1,50 @@
+{
+  "__seamless__": "0.11",
+  "connections": [],
+  "lib": [],
+  "nodes": [
+    {
+      "celltype": "structured",
+      "checksum": {
+        "auth": "b5093d18003bc405e78703af0d74feb09e67bc01f1ac7a0c31b5ac7204756046",
+        "schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
+        "value": "b5093d18003bc405e78703af0d74feb09e67bc01f1ac7a0c31b5ac7204756046"
+      },
+      "datatype": "mixed",
+      "hash_pattern": null,
+      "path": [
+        "api_schema"
+      ],
+      "type": "cell"
+    },
+    {
+      "celltype": "code",
+      "checksum": {
+        "value": "aa512203cfbbf61e9b72c755c6bbcc8852d939e3933fc9a25007fced9db88d47"
+      },
+      "datatype": "mixed",
+      "language": "python",
+      "path": [
+        "constructor_code"
+      ],
+      "type": "cell"
+    },
+    {
+      "celltype": "structured",
+      "checksum": {
+        "auth": "5fd66abb7f10876cf512ad319362d042048e0696567e7cd911426d879d8b040f",
+        "schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
+        "value": "5fd66abb7f10876cf512ad319362d042048e0696567e7cd911426d879d8b040f"
+      },
+      "datatype": "mixed",
+      "hash_pattern": null,
+      "path": [
+        "constructor_params"
+      ],
+      "type": "cell"
+    }
+  ],
+  "params": {
+    "share_namespace": "ctx"
+  }
+}

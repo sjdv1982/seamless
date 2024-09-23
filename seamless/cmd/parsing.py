@@ -1,13 +1,18 @@
+"""Command-line argument parsing for command-line seamless.
+Command-line arguments can be files, directories, constants, or bash code."""
+
 import time
 from typing import Any
 from pathlib import Path
 import os
-import bashlex
 from collections import namedtuple
 
+import bashlex
+
+from seamless.checksum.calculate_checksum import calculate_file_checksum
 from .message import message as msg, message_and_exit as err
 from .file_load import read_checksum_file
-from ..calculate_checksum import calculate_file_checksum
+
 
 def guess_arguments_with_custom_error_messages(
     args: list[str],
@@ -53,7 +58,7 @@ def guess_arguments_with_custom_error_messages(
     - overrule_ext: if True, rule 1. does not apply.
 
     - overrule_no_ext: if True, rule 2. does not apply.
-    
+
     Output:
     dict of argname -> mode
     where mode is "file", "directory" or "value"
@@ -87,13 +92,29 @@ def guess_arguments_with_custom_error_messages(
             item = {}
             if index_path.exists():
                 item["type"] = "directory"
-                msg(3, "Argument #{} '{}', .CHECKSUM and .INDEX file exist, read directory checksum".format(argindex, arg))
+                msg(
+                    3,
+                    # pylint: disable=line-too-long
+                    "Argument #{} '{}', .CHECKSUM and .INDEX file exist, read directory checksum".format(
+                        argindex, arg
+                    ),
+                )
             else:
                 item["type"] = "file"
-                msg(3, "Argument #{} '{}', .CHECKSUM file exists, read file checksum".format(argindex, arg))
+                msg(
+                    3,
+                    "Argument #{} '{}', .CHECKSUM file exists, read file checksum".format(
+                        argindex, arg
+                    ),
+                )
             checksum = read_checksum_file(checksum_path.as_posix())
-            if checksum is None:
-                err("Argument #{} '{}', .CHECKSUM file exists, but does not contain a valid checksum".format(argindex, arg))
+            if not checksum:
+                err(
+                    # pylint: disable=line-too-long
+                    "Argument #{} '{}', .CHECKSUM file exists, but does not contain a valid checksum".format(
+                        argindex, arg
+                    )
+                )
             item["checksum"] = checksum
             result[arg] = item
 
@@ -111,12 +132,15 @@ def guess_arguments_with_custom_error_messages(
             except ValueError:
                 pass
 
-        if checksum is not None:
+        if checksum:
             if exists and not is_dir:
                 arg2 = os.path.expanduser(arg)
                 file_checksum = calculate_file_checksum(arg2)
                 if file_checksum != checksum:
-                    raise ValueError("Argument exists as file and .CHECKSUM file, but the checksums are not the same")
+                    raise ValueError(
+                        # pylint: disable=line-too-long
+                        "Argument exists as file and .CHECKSUM file, but the checksums are not the same"
+                    )
             continue
 
         # Rule 1.: Any argument with extension must exist as a file, but not as a directory.
@@ -186,9 +210,9 @@ def guess_arguments(
        (directories are fine)
     3. Any argument ending with a slash must be a directory
 
-    Special case: if argument.CHECKSUM exists, the checksum is read directly 
-    from argument.CHECKSUM. In that case, if argument.INDEX exists as well, 
-    (regardless of its contents). the argument is considered as a directory, 
+    Special case: if argument.CHECKSUM exists, the checksum is read directly
+    from argument.CHECKSUM. In that case, if argument.INDEX exists as well,
+    (regardless of its contents). the argument is considered as a directory,
     else as a file.
 
     Input:
@@ -218,9 +242,13 @@ Therefore, it must be a directory."""
         rule_no_slash_error_message=rule_no_slash_error_message,
     )
 
-Command = namedtuple("Command", ("start", "end", "main_node", "wordnodes", "words", "commandstring"))
 
-class WordVisitor(bashlex.ast.nodevisitor):
+Command = namedtuple(
+    "Command", ("start", "end", "main_node", "wordnodes", "words", "commandstring")
+)
+
+
+class _WordVisitor(bashlex.ast.nodevisitor):
     def __init__(self):
         self.words = []
         self.nodes = []
@@ -228,51 +256,65 @@ class WordVisitor(bashlex.ast.nodevisitor):
         # The words must be the correct ones for the interface .py file to get the correct arguments
         self.barrier = None
         super().__init__()
-    def visitword(self, node, _):
+
+    def visitword(self, n, _):
+        node = n
         self.nodes.append(node)
         self.words.append(node.word)
         return True
-    def visitredirect(self, node, *args):
+
+    def visitredirect(
+        self, node, *args, **kwargs
+    ):  # pylint: disable = arguments-differ, unused-argument
         start = node.pos[0]
         if self.barrier is None or self.barrier < start:
             self.barrier = start
         return False
-    def filter(self):
+
+    def _filter(self):
         if self.barrier is None:
             return
         self.nodes[:] = [node for node in self.nodes if node.pos[1] < self.barrier]
         self.words[:] = [node.word for node in self.nodes]
 
-class CommandVisitor(bashlex.ast.nodevisitor):
+
+class _CommandVisitor(bashlex.ast.nodevisitor):
     def __init__(self, full_commandstring):
         self.commands = []
         self.full_commandstring = full_commandstring
         super().__init__()
-    def visitcommand(self, node, _):
-        wordvisitor = WordVisitor()
+
+    def visitcommand(self, n, _):
+        node = n
+        wordvisitor = _WordVisitor()
         wordvisitor.visit(node)
-        wordvisitor.filter()
-        start, end = node.pos        
-        cmd = Command (
-            main_node = node,
-            start = start,
-            end = end,
-            wordnodes = wordvisitor.nodes,
-            words = wordvisitor.words,
-            commandstring = self.full_commandstring[start:end]
+        wordvisitor._filter()
+        start, end = node.pos
+        cmd = Command(
+            main_node=node,
+            start=start,
+            end=end,
+            wordnodes=wordvisitor.nodes,
+            words=wordvisitor.words,
+            commandstring=self.full_commandstring[start:end],
         )
         self.commands.append(cmd)
         return True
 
-def get_commands(commandstring):
+
+def get_commands(commandstring: str) -> tuple[list[Command], int | None]:
+    """Parse a bash command string into a list of Command instances.
+    The length of the first bash pipeline is also returned.
+
+    """
     try:
         bashtrees = bashlex.parse(commandstring)
     except Exception:
         raise ValueError("Unrecognized bash syntax") from None
-    visitor = CommandVisitor(commandstring)
+    visitor = _CommandVisitor(commandstring)
     for bashtree in bashtrees:
         visitor.visit(bashtree)
-    commands = sorted(visitor.commands, key= lambda command: command.start)
+    commands = sorted(visitor.commands, key=lambda command: command.start)
     first_pipeline = None
     if len(bashtrees):
         first = bashtrees[0]
@@ -290,12 +332,15 @@ def get_commands(commandstring):
                 first_pipeline = len(commands)
     return commands, first_pipeline
 
-class RedirectionVisitor(bashlex.ast.nodevisitor):
+
+class _RedirectionVisitor(bashlex.ast.nodevisitor):
     def __init__(self):
         self.redirect = None
         self.maybe_redirect = None
         super().__init__()
-    def visitredirect(self, node, *args):
+
+    def visitredirect(self, node, *args, **kwargs):
+        # pylint: disable = arguments-differ, unused-argument
         maybe = False
         if node.output.word.startswith("<"):
             return
@@ -310,10 +355,11 @@ class RedirectionVisitor(bashlex.ast.nodevisitor):
                 msg(-1, "Multiple redirects in the last command")
                 exit(1)
             self.redirect = node
-        
+
 
 def get_redirection(command: Command):
-    visitor = RedirectionVisitor()
+    """Return the redirection output of a bash command"""
+    visitor = _RedirectionVisitor()
     visitor.visit(command.main_node)
     redirect = visitor.redirect
     if redirect is None:
@@ -321,4 +367,3 @@ def get_redirection(command: Command):
     if redirect is None:
         return None
     return redirect.output
-

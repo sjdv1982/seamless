@@ -1,7 +1,0 @@
-{
-  "uniforms": {
-    "must_be_defined": false,
-    "dtype": "json",
-    "pin": "edit"
-  }
-}

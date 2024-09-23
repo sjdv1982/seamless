@@ -1,0 +1,46 @@
+*** executor ***
+Traceback (most recent call last):
+  File "/seamless/seamless/workflow/core/transformation.py", line 633, in _execute
+    result, logs = await self._execute_local(prelim_callback, progress_callback)
+  File "/seamless/seamless/workflow/core/transformation.py", line 847, in _execute_local
+    full_module_names = build_all_modules(
+  File "/seamless/seamless/workflow/core/build_module.py", line 499, in build_all_modules
+    mod = build_module(
+  File "/seamless/seamless/workflow/core/build_module.py", line 451, in build_module
+    mod = build_compiled_module(
+  File "/seamless/seamless/workflow/core/build_module.py", line 388, in build_compiled_module
+    raise exception from None
+  File "/seamless/seamless/workflow/core/build_module.py", line 323, in build_compiled_module
+    raise BuildModuleError(stderr)
+seamless.workflow.core.build_module.BuildModuleError: 
+g++ -c -O3 -ffast-math -march=native -fPIC -fopenmp -p -g -o /tmp/seamless-extensions/seamless_module_9435b684c69725c375de33144a739526f343b22851e0d2a7b59555dd95a7d108_module/main.o /tmp/seamless-extensions/seamless_module_9435b684c69725c375de33144a739526f343b22851e0d2a7b59555dd95a7d108_module/main.cpp
+******************** ERROR ********************
+/tmp/seamless-extensions/seamless_module_9435b684c69725c375de33144a739526f343b22851e0d2a7b59555dd95a7d108_module/main.cpp:1:1: error: ‘lambda’ does not name a type
+    1 | lambda a, b: a + b
+      | ^~~~~~
+
+******************** /ERROR ********************
+*** /executor ***
+
+********************************************************************************
+
+/*
+The following C header has been auto-generated from the transformer schema
+It will be used to generate bindings, but it will not be automatically
+added to the compiled transformer code.
+
+If your transformer code is written in C/C++, you may do so yourself.
+For C, you may need to include "stdint.h" and "stdbool.h".
+If your transform() function is written in C++, don't forget to add 'extern "C" '
+*/
+
+int transform(int a, int b, double *result);
+********************************************************************************
+
+g++ -c -O3 -ffast-math -march=native -fPIC -fopenmp -p -g -o /tmp/seamless-extensions/seamless_module_96768b70fa19baed926181b8a8816a17ce57ccae650bace69d90119a65a36776_module/main.o /tmp/seamless-extensions/seamless_module_96768b70fa19baed926181b8a8816a17ce57ccae650bace69d90119a65a36776_module/main.cpp
+
+
+5.0
+Status: OK
+None
+25

@@ -1,5 +1,12 @@
-seamless: Upload 8 files, total 2.21 kB
+seamless-upload: Upload 8 files, total 2.21 kB
 1
+seamless-download: Download 8 files
 1a
+seamless-download: Removed 1 extra files in download directories
+seamless-download: Skip 8 files that already exist
+1b
+seamless-download: Skip 6 files that already exist
+seamless-download: Download 2 files
+1c
 2
 3

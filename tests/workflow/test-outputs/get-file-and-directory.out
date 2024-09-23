@@ -1,0 +1,35 @@
+seamless-upload: Verbosity set to 1
+seamless-upload: Upload 1 files, total 5.00 B
+seamless-upload: Verbosity set to 1
+seamless-upload: Upload 3 files, total 169.00 B
+Repeat, no files will be uploaded...
+seamless-upload: Verbosity set to 1
+seamless-upload: Upload no files
+seamless-upload: Verbosity set to 1
+seamless-upload: Upload no files
+Stage 1
+
+None
+Text
+
+Stage 2
+
+Status: OK
+None
+==> inputfolder/one.txt <==
+1
+
+==> inputfolder/two.txt <==
+2
+
+Stage 3
+
+Status: OK
+None
+START
+==> inputfolder/one.txt <==
+1
+
+==> inputfolder/two.txt <==
+2
+

@@ -1,5 +1,0 @@
- Two consecutive capitals in a cell name gives trouble???
- At least with mounting, in Jupyter... Mount of an existing file is never done,
-   await ctx.translation(force=True) gives an error
-
-UPDATE: as of Seamless 0.5.3, this seems to have been resolved.

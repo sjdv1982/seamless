@@ -1,0 +1,76 @@
+Traceback (most recent call last):
+  File "/cwd/tests/workflow/special-pins-bash.py", line 33, in <module>
+    ctx.tf.SPECIAL__WRONG = 12
+AttributeError: Cannot define new special pins before translation
+Traceback (most recent call last):
+  File "/cwd/tests/workflow/special-pins-bash.py", line 40, in <module>
+    ctx.tf["SPECIAL__WRONG"] = 12
+AttributeError: Cannot define new special pins before translation
+Traceback (most recent call last):
+  File "/cwd/tests/workflow/special-pins-bash.py", line 48, in <module>
+    ctx.tf.SPECIAL__WRONG = 12
+AttributeError: Cannot define new special pins like this, use add_special_pin
+Traceback (most recent call last):
+  File "/cwd/tests/workflow/special-pins-bash.py", line 55, in <module>
+    ctx.tf["SPECIAL__WRONG"] = 12
+AttributeError: Cannot define new special pins like this, use add_special_pin
+Traceback (most recent call last):
+  File "/cwd/tests/workflow/special-pins-bash.py", line 62, in <module>
+    ctx.tf.add_special_pin("nonsense", "bool")
+ValueError: Special pinname must start with SPECIAL__
+None
+Status: {'tf': '*tf*: Status: upstream => SPECIAL__X undefined'}
+Traceback (most recent call last):
+  File "/cwd/tests/workflow/special-pins-bash.py", line 83, in <module>
+    ctx.tf.SPECIAL__X = 12
+AttributeError: Special pins must be set using bracket syntax
+OK
+*************************************************
+* Result
+*************************************************
+42
+*************************************************
+* Standard output
+*************************************************
+3
+4
+SPECIAL__X This must be printed
+
+*************************************************
+Execution time: 0.0 seconds
+*************************************************
+9d9900b890ac9d972233f743d088002c2d2853e9505d58de87151f3cdc8635e4
+*************************************************
+* Result
+*************************************************
+42
+*************************************************
+* Standard output
+*************************************************
+3
+4
+SPECIAL__X This must be printed
+
+*************************************************
+Execution time: 0.0 seconds
+*************************************************
+9d9900b890ac9d972233f743d088002c2d2853e9505d58de87151f3cdc8635e4
+Nothing printed
+/Nothing printed
+3
+4
+SPECIAL__X This will be printed IN THE END
+*************************************************
+* Result
+*************************************************
+42
+*************************************************
+* Standard output
+*************************************************
+3
+4
+SPECIAL__X This will be printed IN THE END
+
+*************************************************
+Execution time: 0.0 seconds
+*************************************************

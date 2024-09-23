@@ -1,5 +1,6 @@
 import os
 import json
+
 FAIRSERVER = os.environ["FAIRSERVER"]
 import seamless
 
@@ -7,7 +8,8 @@ seamless.delegate(level=1)
 
 seamless.fair.add_server(FAIRSERVER)
 
-from seamless.highlevel import Context, DeepFolderCell, Cell
+from seamless.workflow import Context, DeepFolderCell, Cell
+
 distribution = DeepFolderCell.find_distribution("mydataset", version=1)
 print(json.dumps(distribution, indent=2))
 
@@ -16,9 +18,9 @@ ctx.dataset = DeepFolderCell()
 ctx.dataset.define(distribution)
 ctx.compute()
 
-print("Number of index keys (files):", ctx.dataset.nkeys )
+print("Number of index keys (files):", ctx.dataset.nkeys)
 index_size = "{:d} bytes".format(int(ctx.dataset.index_size))
-print("Size of the checksum index file: ", index_size )
+print("Size of the checksum index file: ", index_size)
 if ctx.dataset.content_size is None:
     datasize = "<Unknown>"
 else:

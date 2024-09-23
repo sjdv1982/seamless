@@ -1,4 +1,3 @@
-
 import os
 import argparse
 
@@ -21,9 +20,11 @@ parser.add_argument(
 
 args = parser.parse_args()
 
+
 def get_output_file(input_file):
     root, ext = os.path.splitext(input_file)
     return root + "-head" + ext
+
 
 if args.batch:
     if not os.path.exists(args.input):
@@ -43,10 +44,8 @@ else:
 
 #############################################################
 
-interface = {
-    "files": input_files,
-    "results": result_files
-}
+interface = {"files": input_files, "results": result_files}
 
 import json
+
 print(json.dumps(interface))

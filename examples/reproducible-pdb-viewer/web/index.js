@@ -41,9 +41,9 @@ seamless_read_paths = {
     "nglviewer_1__structures.json"
   ],
   "json": [
-    "bigselect_1__selected.json",
     "nglviewer_1__representation.json",
-    "bigselect_1__options.json"
+    "bigselect_1__options.json",
+    "bigselect_1__selected.json"
   ]
 }
 seamless_write_paths = {
@@ -56,16 +56,16 @@ seamless_write_paths = {
 }
 seamless_auto_read_paths = [
   "representation",
-  "bigselect_1__selected.json",
   "nglviewer_1__representation.json",
-  "nglviewer_1__structures.json",
-  "bigselect_1__options.json"
+  "bigselect_1__options.json",
+  "bigselect_1__selected.json",
+  "nglviewer_1__structures.json"
 ]
 seamless_path_to_cell = {
-  "bigselect_1__selected.json": "pdb_code",
   "nglviewer_1__representation.json": "representation2",
-  "nglviewer_1__structures.json": "pdb_structure",
-  "bigselect_1__options.json": "all_pdb_codes"
+  "bigselect_1__options.json": "all_pdb_codes",
+  "bigselect_1__selected.json": "pdb_code",
+  "nglviewer_1__structures.json": "pdb_structure"
 }
 
 ctx = connect_seamless()
@@ -157,21 +157,21 @@ const app = new Vue({
           "checksum": null,
           "value": ""
         },
-        "pdb_code": {
-          "checksum": null,
-          "value": ""
-        },
         "representation2": {
           "checksum": null,
           "value": {}
         },
-        "pdb_structure": {
-          "checksum": null,
-          "value": ""
-        },
         "all_pdb_codes": {
           "checksum": null,
           "value": {}
+        },
+        "pdb_code": {
+          "checksum": null,
+          "value": ""
+        },
+        "pdb_structure": {
+          "checksum": null,
+          "value": ""
         },
         "bigselect_1_input": {
           "value": ""

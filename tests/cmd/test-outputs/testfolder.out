@@ -1,6 +1,7 @@
-seamless: Upload 9 files, total 2.92 kB
+seamless: Upload 9 files, total 2.22 kB
 052764c3aaa2fd3c49b3d87e7eaa657f  testfolder/test2.dat
 3f867913288aa9ca64bee82fa754229a  testfolder/test.txt
+4b368c4b34bc9067e2c81dc6a09a7042  testfolder/test-copy.dat
 4b368c4b34bc9067e2c81dc6a09a7042  testfolder/test.dat
 b73936aa05f29a2b15586debce4ae796  testfolder/sub/test2.txt
 c2fdc52401bd4540c469645448a0c89a  testfolder/test.npy
@@ -9,12 +10,13 @@ d8d6aa6543ad66e6252306184b40c7a3  testfolder/sub/test3.npy
 RESULT
 STDOUT
 testfolder
-test-list.txt
-70d73f5dd407df51f8bde2b4fa9d0e2923132a07f2b37c56a2ae133d08d357d1
-11ca1826a2a01811d5f62e4046f47d4a17a24e57a0f5915c828bd3bc6da10047
+testfolder.txt
+9af97f175e03d0b23ab64d2fd2cb9b689fdf0283f3c0d3f6fe70ba755a87df65
+e3cb8a1093a739e413c73b37288fafea1d1080532ee9020b6ed48903fee63c07
 {
   "sub/test2.txt": "4a8ed052bc1d65216c5a85de0356f8eb4495d90d67bfb2b05ee088fd5006caf4",
   "sub/test3.npy": "ad865888dff4c3bec94697416a9554810304b471b377c2ff86ba8c5121124862",
+  "test-copy.dat": "7079140a8a96995be8584b9b1bba45b0393f589d9c6ee6556613cc579e5280ea",
   "test.dat": "7079140a8a96995be8584b9b1bba45b0393f589d9c6ee6556613cc579e5280ea",
   "test.json": "6879d0d891fd12c6e198afef2457fef3598a64e5f2d81f537d7ae6877f3b7a22",
   "test.npy": "cd07eacd36105d61bf2857d6a5721934be62911a9ef12bea12eead382e7606a3",

@@ -1,0 +1,43 @@
+Project testproject created.
+
+- Use seamless-load-project to start up IPython
+or:
+- Use seamless-jupyter to start up Jupyter
+  and in the Jupyter browser window,
+  open /home/jovyan/cwd/testproject.ipynb
+
+If Seamless does not need to execute Docker transformers:
+- Use seamless-load-project-safe to start up IPython
+or:
+- Use seamless-jupyter-safe to start up Jupyter
+  and in the Jupyter browser window,
+  open /home/jovyan/cwd/testproject.ipynb
+
+*** define_graph() function is empty. Loading 'graph/testproject.seamless' ***
+
+Opened the seamless share update server at port 5138
+Opened the seamless REST server at port 5813
+Cannot install event loop hook for "asyncio" when running with `--simple-prompt`.
+NOTE: Tk is supported natively; use Tk apps and Tk backends with `--simple-prompt`.
+Project loaded.
+
+    Main context is "ctx"
+    Web/status context is "webctx"
+
+    Open http://localhost:5813 to see the web page
+    Open http://localhost:5813/status/status.html to see the status
+
+    Run save() to save the project workflow file.
+    Run export() to generate zip files for web deployment.
+    
+
+
+
+Seamless Cell: .webform b'{\n  "cells": {\n    "a": {\n      "celltype": "int",\n      "component": "numberinput",\n      "params": {\n        "editable": false,\n        "title": "Cell A"\n      },\n      "share": {\n        "auto_read": true,\n        "encoding": "json",\n        "read": true\n      },\n      "webdefault": 0\n    }\n  },\n  "extra_components": [\n    {\n      "cell": "a",\n      "component": "",\n      "id": "EXAMPLE_ID",\n      "params": {}\n    }\n  ],\n  "index": {\n    "title": "Seamless webform"\n  },\n  "transformers": {}\n}\n'
+
+Seamless Cell: .webform0 b'{\n  "cells": {\n    "a": {\n      "celltype": "int",\n      "component": "numberinput",\n      "params": {\n        "editable": false,\n        "title": "Cell A"\n      },\n      "share": {\n        "auto_read": true,\n        "encoding": "json",\n        "read": true\n      },\n      "webdefault": 0\n    }\n  },\n  "extra_components": [\n    {\n      "cell": "a",\n      "component": "",\n      "id": "EXAMPLE_ID",\n      "params": {}\n    }\n  ],\n  "index": {\n    "title": "Seamless webform"\n  },\n  "transformers": {}\n}\n'
+
+Seamless Cell: .autogen_webform b'{\n  "cells": {\n    "a": {\n      "celltype": "int",\n      "component": "numberinput",\n      "params": {\n        "editable": false,\n        "title": "Cell A"\n      },\n      "share": {\n        "auto_read": true,\n        "encoding": "json",\n        "read": true\n      },\n      "webdefault": 0\n    }\n  },\n  "extra_components": [\n    {\n      "cell": "a",\n      "component": "",\n      "id": "EXAMPLE_ID",\n      "params": {}\n    }\n  ],\n  "index": {\n    "title": "Seamless webform"\n  },\n  "transformers": {}\n}\n'
+
+Seamless Cell: .autogen_webform0 b'{\n  "cells": {\n    "a": {\n      "celltype": "int",\n      "component": "numberinput",\n      "params": {\n        "editable": false,\n        "title": "Cell A"\n      },\n      "share": {\n        "auto_read": true,\n        "encoding": "json",\n        "read": true\n      },\n      "webdefault": 0\n    }\n  },\n  "extra_components": [\n    {\n      "cell": "a",\n      "component": "",\n      "id": "EXAMPLE_ID",\n      "params": {}\n    }\n  ],\n  "index": {\n    "title": "Seamless webform"\n  },\n  "transformers": {}\n}\n'
+

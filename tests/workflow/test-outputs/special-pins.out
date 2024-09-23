@@ -1,0 +1,68 @@
+Traceback (most recent call last):
+  File "/cwd/tests/workflow/special-pins.py", line 33, in <module>
+    ctx.tf.SPECIAL__WRONG = 12
+AttributeError: Cannot define new special pins before translation
+Traceback (most recent call last):
+  File "/cwd/tests/workflow/special-pins.py", line 40, in <module>
+    ctx.tf["SPECIAL__WRONG"] = 12
+AttributeError: Cannot define new special pins before translation
+Traceback (most recent call last):
+  File "/cwd/tests/workflow/special-pins.py", line 48, in <module>
+    ctx.tf.SPECIAL__WRONG = 12
+AttributeError: Cannot define new special pins like this, use add_special_pin
+Traceback (most recent call last):
+  File "/cwd/tests/workflow/special-pins.py", line 55, in <module>
+    ctx.tf["SPECIAL__WRONG"] = 12
+AttributeError: Cannot define new special pins like this, use add_special_pin
+Traceback (most recent call last):
+  File "/cwd/tests/workflow/special-pins.py", line 62, in <module>
+    ctx.tf.add_special_pin("nonsense", "bool")
+ValueError: Special pinname must start with SPECIAL__
+Status: {'tf': '*tf*: Status: upstream => SPECIAL__X undefined'}
+Traceback (most recent call last):
+  File "/cwd/tests/workflow/special-pins.py", line 81, in <module>
+    ctx.tf.SPECIAL__X = 12
+AttributeError: Special pins must be set using bracket syntax
+OK
+*************************************************
+* Result
+*************************************************
+7
+*************************************************
+* Standard output
+*************************************************
+SPECIAL__X: This must be printed
+
+*************************************************
+Execution time: 0.0 seconds
+*************************************************
+c9768f217eaad8d3ffda9ac319761222b845c43643b273a0ae481a19af232a7d
+*************************************************
+* Result
+*************************************************
+7
+*************************************************
+* Standard output
+*************************************************
+SPECIAL__X: This must be printed
+
+*************************************************
+Execution time: 0.0 seconds
+*************************************************
+c9768f217eaad8d3ffda9ac319761222b845c43643b273a0ae481a19af232a7d
+Nothing printed
+/Nothing printed
+SPECIAL__X: This will be printed IN THE END
+*************************************************
+* Result
+*************************************************
+7
+*************************************************
+* Standard output
+*************************************************
+SPECIAL__X: This will be printed IN THE END
+
+*************************************************
+Execution time: 0.0 seconds
+*************************************************
+/logs

@@ -3,9 +3,9 @@ cat: three.txt: No such file or directory
 
 a3b9a39c707177f10d440c071303df8beff535c40c7c25e92da187b14aac127e
 
-seamless: Cannot download contents of file 'three.txt, checksum a3b9a39c707177f10d440c071303df8beff535c40c7c25e92da187b14aac127e'
-seamless: Cannot download file 'three.txt'
+seamless-download: Cannot download contents of file 'three.txt, checksum a3b9a39c707177f10d440c071303df8beff535c40c7c25e92da187b14aac127e'
 
+cat: three.txt: No such file or directory
 
 Fingertip...
 3
@@ -17,9 +17,9 @@ cat: six.txt: No such file or directory
 
 0f91abf611686bc372fc850fbe9023f44922ec730400d7e17452d927d9970eb2
 
-seamless: Cannot download contents of file 'six.txt, checksum 0f91abf611686bc372fc850fbe9023f44922ec730400d7e17452d927d9970eb2'
-seamless: Cannot download file 'six.txt'
+seamless-download: Cannot download contents of file 'six.txt, checksum 0f91abf611686bc372fc850fbe9023f44922ec730400d7e17452d927d9970eb2'
 
+cat: six.txt: No such file or directory
 
 Fingertip...
 6

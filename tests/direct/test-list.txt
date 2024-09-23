@@ -1,0 +1,8 @@
+# In general, run with:
+#   python3 -u TEST.py > test-outputs/TEST.out 2>&1
+#   Before each release, the test set must be run:
+#   - under seamless-bash (within Docker)
+#   - under seamless-framework (bare-metal conda)
+add-download-url.py
+resolve.py
+in_process.py

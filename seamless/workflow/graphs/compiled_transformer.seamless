@@ -1,0 +1,401 @@
+{
+  "__seamless__": "0.11",
+  "connections": [
+    {
+      "source": [
+        "gen_header"
+      ],
+      "target": [
+        "header"
+      ],
+      "type": "connection"
+    },
+    {
+      "source": [
+        "inputpins"
+      ],
+      "target": [
+        "gen_header",
+        "inputpins"
+      ],
+      "type": "connection"
+    },
+    {
+      "source": [
+        "input_schema"
+      ],
+      "target": [
+        "gen_header",
+        "input_schema"
+      ],
+      "type": "connection"
+    },
+    {
+      "source": [
+        "result_schema"
+      ],
+      "target": [
+        "gen_header",
+        "result_schema"
+      ],
+      "type": "connection"
+    },
+    {
+      "source": [
+        "input_name"
+      ],
+      "target": [
+        "gen_header",
+        "input_name"
+      ],
+      "type": "connection"
+    },
+    {
+      "source": [
+        "result_name"
+      ],
+      "target": [
+        "gen_header",
+        "result_name"
+      ],
+      "type": "connection"
+    },
+    {
+      "source": [
+        "header"
+      ],
+      "target": [
+        "integrator",
+        "header_"
+      ],
+      "type": "connection"
+    },
+    {
+      "source": [
+        "integrator"
+      ],
+      "target": [
+        "module"
+      ],
+      "type": "connection"
+    },
+    {
+      "source": [
+        "input_schema"
+      ],
+      "target": [
+        "executor",
+        "input_schema"
+      ],
+      "type": "connection"
+    },
+    {
+      "source": [
+        "result_schema"
+      ],
+      "target": [
+        "executor",
+        "result_schema"
+      ],
+      "type": "connection"
+    },
+    {
+      "source": [
+        "input_name"
+      ],
+      "target": [
+        "executor",
+        "input_name"
+      ],
+      "type": "connection"
+    },
+    {
+      "source": [
+        "result_name"
+      ],
+      "target": [
+        "executor",
+        "result_name"
+      ],
+      "type": "connection"
+    },
+    {
+      "source": [
+        "executor"
+      ],
+      "target": [
+        "result"
+      ],
+      "type": "connection"
+    },
+    {
+      "source": [
+        "kwargs"
+      ],
+      "target": [
+        "executor",
+        "kwargs"
+      ],
+      "type": "connection"
+    }
+  ],
+  "lib": [],
+  "nodes": [
+    {
+      "INPUT": "inp",
+      "RESULT": "result",
+      "SCHEMA": null,
+      "checksum": {
+        "code": "2153e45513036f6d1d5a467bc21dc806039f686d002e3dd876b1446718cf3a06",
+        "input": "ab215b3ab84969e8e0062fc797a09f0137f2f294f1aea3cd4957abe86f869d7c",
+        "input_auth": "ab215b3ab84969e8e0062fc797a09f0137f2f294f1aea3cd4957abe86f869d7c",
+        "result_schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
+        "schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c"
+      },
+      "compiled": false,
+      "hash_pattern": {
+        "*": "#"
+      },
+      "language": "python",
+      "mount": {
+        "code": {
+          "authority": "file",
+          "mode": "r",
+          "path": "executor.py",
+          "persistent": true
+        }
+      },
+      "path": [
+        "executor"
+      ],
+      "pins": {
+        "SPECIAL__DIRECT_PRINT": {
+          "celltype": "bool"
+        },
+        "input_name": {
+          "celltype": "text"
+        },
+        "input_schema": {
+          "celltype": "plain"
+        },
+        "kwargs": {
+          "celltype": "deepcell"
+        },
+        "module": {
+          "celltype": "module"
+        },
+        "pins": {
+          "celltype": "default"
+        },
+        "result_name": {
+          "celltype": "text"
+        },
+        "result_schema": {
+          "celltype": "plain"
+        }
+      },
+      "type": "transformer"
+    },
+    {
+      "celltype": "plain",
+      "checksum": {
+        "value": "e362a885d95e8ae7fe206599fad6c9f1d2800a07bf2650b9d482d6f6c341203d"
+      },
+      "datatype": "mixed",
+      "path": [
+        "executor_params"
+      ],
+      "type": "cell"
+    },
+    {
+      "INPUT": "inp",
+      "RESULT": "result",
+      "SCHEMA": null,
+      "checksum": {
+        "code": "820fe7835432fb9229fdf86b962587cd0a9b1d3d98f04db79188732d4a5ee300",
+        "result_schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
+        "schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c"
+      },
+      "compiled": false,
+      "hash_pattern": {
+        "*": "#"
+      },
+      "language": "python",
+      "mount": {
+        "code": {
+          "authority": "file",
+          "mode": "r",
+          "path": "gen_header.py",
+          "persistent": true
+        }
+      },
+      "path": [
+        "gen_header"
+      ],
+      "pins": {
+        "input_name": {
+          "celltype": "str"
+        },
+        "input_schema": {
+          "celltype": "plain"
+        },
+        "inputpins": {
+          "celltype": "default"
+        },
+        "result_name": {
+          "celltype": "str"
+        },
+        "result_schema": {
+          "celltype": "plain"
+        }
+      },
+      "type": "transformer"
+    },
+    {
+      "celltype": "plain",
+      "checksum": {
+        "value": "89bbdd54804e95e9c16b6f141c2af5e553cb225411e449a0fd40b62d4cbdd756"
+      },
+      "datatype": "mixed",
+      "path": [
+        "gen_header_params"
+      ],
+      "type": "cell"
+    },
+    {
+      "celltype": "text",
+      "datatype": "mixed",
+      "path": [
+        "header"
+      ],
+      "type": "cell"
+    },
+    {
+      "celltype": "text",
+      "datatype": "mixed",
+      "path": [
+        "input_name"
+      ],
+      "type": "cell"
+    },
+    {
+      "celltype": "plain",
+      "datatype": "mixed",
+      "path": [
+        "input_schema"
+      ],
+      "type": "cell"
+    },
+    {
+      "celltype": "plain",
+      "datatype": "mixed",
+      "path": [
+        "inputpins"
+      ],
+      "type": "cell"
+    },
+    {
+      "INPUT": "inp",
+      "RESULT": "result",
+      "SCHEMA": null,
+      "checksum": {
+        "code": "58d3eabc2e72543e49179a9a02e590ad95566b5f170197c18c86ff03cdf1dbc2",
+        "result_schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
+        "schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c"
+      },
+      "compiled": false,
+      "hash_pattern": {
+        "*": "#"
+      },
+      "language": "python",
+      "mount": {
+        "code": {
+          "authority": "file",
+          "mode": "r",
+          "path": "integrator.py",
+          "persistent": true
+        }
+      },
+      "path": [
+        "integrator"
+      ],
+      "pins": {
+        "compiled_code": {
+          "celltype": "text"
+        },
+        "debug_": {
+          "celltype": "bool"
+        },
+        "header_": {
+          "as": "header",
+          "celltype": "text"
+        },
+        "lang": {
+          "celltype": "str"
+        },
+        "main_module": {
+          "celltype": "plain"
+        }
+      },
+      "type": "transformer"
+    },
+    {
+      "celltype": "plain",
+      "checksum": {
+        "value": "3b49a53f7a604ee99cfd6eb68cc3f93e315954e9163c0a936e790b1d1df827c6"
+      },
+      "datatype": "mixed",
+      "path": [
+        "integrator_params"
+      ],
+      "type": "cell"
+    },
+    {
+      "celltype": "structured",
+      "datatype": "mixed",
+      "hash_pattern": {
+        "*": "#"
+      },
+      "path": [
+        "kwargs"
+      ],
+      "type": "cell"
+    },
+    {
+      "celltype": "structured",
+      "datatype": "mixed",
+      "hash_pattern": null,
+      "path": [
+        "module"
+      ],
+      "type": "cell"
+    },
+    {
+      "celltype": "float",
+      "datatype": "mixed",
+      "path": [
+        "result"
+      ],
+      "type": "cell"
+    },
+    {
+      "celltype": "text",
+      "datatype": "mixed",
+      "path": [
+        "result_name"
+      ],
+      "type": "cell"
+    },
+    {
+      "celltype": "plain",
+      "datatype": "mixed",
+      "path": [
+        "result_schema"
+      ],
+      "type": "cell"
+    }
+  ],
+  "params": {
+    "share_namespace": "ctx"
+  }
+}

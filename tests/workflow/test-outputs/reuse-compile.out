@@ -1,0 +1,21 @@
+++ rm -rf reuse-vault
+++ python3 reuse-compile1.py
+Waiting for: Seamless transformer: .transform.tf
+5
+
+g++ -c -O3 -ffast-math -march=native -fPIC -fopenmp -p -g -o /tmp/seamless-extensions/seamless_module_96768b70fa19baed926181b8a8816a17ce57ccae650bace69d90119a65a36776_module/main.o /tmp/seamless-extensions/seamless_module_96768b70fa19baed926181b8a8816a17ce57ccae650bace69d90119a65a36776_module/main.cpp
+
+
+5.0
+
+g++ -c -O3 -ffast-math -march=native -fPIC -fopenmp -p -g -o /tmp/seamless-extensions/seamless_module_b67ce8d847480d01aa10cbe100b696c555c937baf053f672e9263fdfcfba297e_module/main.o /tmp/seamless-extensions/seamless_module_b67ce8d847480d01aa10cbe100b696c555c937baf053f672e9263fdfcfba297e_module/main.cpp
+
+
+40.0
+Status: OK
+++ python3 reuse-compile2.py
+5
+None
+40.0
+Status: OK
+++ rm -rf reuse-vault

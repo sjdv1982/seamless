@@ -1,35 +1,48 @@
+"""Client to interact with the Seamless assistant"""
+
 import asyncio
-import aiohttp
 import os
-#session = aiohttp.ClientSession()
+import aiohttp
 from aiohttp.client_exceptions import ServerDisconnectedError
-    
-async def run_job(checksum, tf_dunder, *, fingertip, scratch):
-    from seamless.highlevel import Checksum
-    from . import parse_checksum
-    from seamless import calculate_checksum
-    from seamless.core.cache.buffer_cache import buffer_cache
-    from .config import get_assistant, InProcessAssistant
+
+from seamless import Buffer, Checksum
+
+
+async def run_job(
+    checksum: Checksum, tf_dunder, *, fingertip: bool, scratch: bool
+) -> Checksum:
+    """Runs a transformation job via the Seamless assistant"""
+    from seamless.checksum.buffer_cache import buffer_cache
+    from seamless.config import get_assistant, InProcessAssistant
 
     timeout = os.environ.get("SEAMLESS_ASSISTANT_JOB_TIMEOUT", None)
     if timeout is not None:
         timeout = float(timeout)
-    checksum = parse_checksum(checksum)
+    checksum = Checksum(checksum)
     assistant = get_assistant()
     if assistant is None:
         return None
     if isinstance(assistant, InProcessAssistant):
-        result = await assistant.run_job(checksum, tf_dunder, fingertip=fingertip, scratch=scratch)
+        result = await assistant.run_job(
+            checksum, tf_dunder, fingertip=fingertip, scratch=scratch
+        )
         result = Checksum(result).hex()
         return result
 
     # One session per request is really bad... but what can we do?
-    async with aiohttp.ClientSession() as session:        
-        data={"checksum":checksum, "dunder":tf_dunder, "scratch": scratch, "fingertip": fingertip}
-        for retry in range(5):
+    async with aiohttp.ClientSession() as session:
+        data = {
+            "checksum": Checksum(checksum).hex(),
+            "dunder": tf_dunder,
+            "scratch": scratch,
+            "fingertip": fingertip,
+        }
+        for _retry in range(5):
             try:
                 while 1:
-                    async with session.put(assistant, json=data,timeout=timeout) as response:
+                    async with session.put(
+                        assistant, json=data, timeout=timeout
+                    ) as response:
                         content = await response.read()
                         if response.status == 202:
                             await asyncio.sleep(0.1)
@@ -38,9 +51,9 @@ async def run_job(checksum, tf_dunder, *, fingertip, scratch):
                             try:
                                 content = content.decode()
                             except UnicodeDecodeError:
-                                pass                
+                                pass
                         if response.status != 200:
-                            msg1 = (f"Error {response.status} from assistant:")
+                            msg1 = f"Error {response.status} from assistant:"
                             if isinstance(content, bytes):
                                 msg1 = msg1.encode()
                             err = msg1 + content
@@ -48,7 +61,7 @@ async def run_job(checksum, tf_dunder, *, fingertip, scratch):
                                 if isinstance(err, bytes):
                                     err = err.decode()
                             except UnicodeDecodeError:
-                                pass                                            
+                                pass
                             raise RuntimeError(err)
                         break
                 break
@@ -57,10 +70,8 @@ async def run_job(checksum, tf_dunder, *, fingertip, scratch):
 
     if scratch and fingertip:
         result_buffer = content
-        result_checksum = calculate_checksum(result_buffer)
+        result_checksum = Buffer(result_buffer).get_checksum()
         buffer_cache.cache_buffer(result_checksum, result_buffer)
-        result_checksum = parse_checksum(result_checksum)
     else:
-        result_checksum = parse_checksum(content)
+        result_checksum = Checksum(content)
     return result_checksum
-    

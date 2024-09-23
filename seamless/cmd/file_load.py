@@ -1,16 +1,20 @@
+"""Utilities to load files"""
+
 from concurrent.futures import ThreadPoolExecutor
 import functools
 import os
 
+from seamless.checksum.serialize import serialize_sync as serialize
+from seamless import Checksum
 from .message import message as msg
 from .register import register_file, check_file, check_buffer, register_buffer
 from .bytes2human import bytes2human
 from .confirm import confirm_yn
 from .exceptions import SeamlessSystemExit
-from ..core.protocol.serialize import serialize_sync as serialize
-from ..highlevel import Checksum
+
 
 def strip_textdata(data):
+    """Strip textdata"""
     while 1:
         old_len = len(data)
         data = data.strip("\n")
@@ -21,25 +25,27 @@ def strip_textdata(data):
     return "\n".join(lines)
 
 
-def read_checksum_file(filename):
+def read_checksum_file(filename) -> Checksum:
+    """Read .CHECKSUM file"""
     with open(filename) as f:
         checksum = f.read()
     checksum = strip_textdata(checksum)
     try:
-        checksum = Checksum(checksum)
-        return checksum.hex()
+        return Checksum(checksum)
     except Exception:
-        return None
+        return Checksum(None)
+
 
 def files_to_checksums(
     filelist: list[str],
     *,
-    directories = dict[str, str],
+    directories=dict[str, str],
     max_upload_files: int | None,
     max_upload_size: int | None,
     nparallel: int = 20,
     auto_confirm: str | None,
     destination_folder: str | None = None,
+    hardlink_destination: bool = False,
     dry_run: bool = False
 ):
     """Convert a list of filenames to a dict of filename-to-checksum items
@@ -48,10 +54,11 @@ def files_to_checksums(
     max_upload_files: the maximum number of files to send to the database.
     max_upload_size: the maximum data size (in bytes) to send to the database.
     nparallel: number of files to process simultaneously
-    directories: 
+    directories:
       keys are entries in filelist that are directories instead of files.
       values are the mapped directory paths (as they will appear on the server)
     destination_folder: instead of uploading to a buffer server, write to this folder
+    hardlink_destination: in the destination folder, don't write files, create hardlinks instead.
     """
 
     all_filelist = [f for f in filelist if f not in directories]
@@ -60,7 +67,7 @@ def files_to_checksums(
         directory_files[dirname] = []
         for dirpath, _, filenames in os.walk(dirname):
             assert dirpath.startswith(dirname), (dirpath, dirname)
-            dirtail = dirpath[len(dirname)+1:]
+            dirtail = dirpath[len(dirname) + 1 :]
             for filename in filenames:
                 full_filename = os.path.join(dirpath, filename)
                 mapped_filename = os.path.join(dirtail, filename)
@@ -72,7 +79,9 @@ def files_to_checksums(
     with ThreadPoolExecutor(max_workers=nparallel) as executor:
         upload_filelist = []
         datasize = 0
-        for filename, curr_result in zip(all_filelist, executor.map(check_file, all_filelist)):
+        for filename, curr_result in zip(
+            all_filelist, executor.map(check_file, all_filelist)
+        ):
             has_buffer, checksum, buffer_length = curr_result
             all_result[filename] = checksum
             if not has_buffer:
@@ -102,14 +111,17 @@ def files_to_checksums(
 
     deepfolder_buffers = {}
     for dirname in directories:
-        deepfolder = {d[1]:all_result[d[0]] for d in directory_files[dirname]}
+        deepfolder = {d[1]: all_result[d[0]] for d in directory_files[dirname]}
         deepfolder_buffers[dirname] = serialize(deepfolder, "plain")
 
     directory_indices = {}
     upload_buffers = {}
     if directories:
         with ThreadPoolExecutor(max_workers=nparallel) as executor:
-            for dirname, curr_result in zip(deepfolder_buffers.keys(), executor.map(check_buffer, deepfolder_buffers.values())):
+            for dirname, curr_result in zip(
+                deepfolder_buffers.keys(),
+                executor.map(check_buffer, deepfolder_buffers.values()),
+            ):
                 has_buffer, checksum = curr_result
                 buffer = deepfolder_buffers[dirname]
                 directory_indices[dirname] = buffer, checksum
@@ -141,7 +153,7 @@ def files_to_checksums(
                     )
 
     datasize = sum(upload_buffer_lengths.values())
-    size = bytes2human(datasize, format='%(value).2f %(symbol)s')
+    size = bytes2human(datasize, format="%(value).2f %(symbol)s")
     ask_confirmation = False
     if max_upload_files is not None and len(upload_buffer_lengths) > max_upload_files:
         ask_confirmation = True
@@ -153,9 +165,16 @@ def files_to_checksums(
         ask_confirmation = False
     if ask_confirmation:
         if auto_confirm == "no":
-            err = "Cannot confirm upload of {} files, total {}. Exiting.".format(len(upload_buffer_lengths), size)
+            err = "Cannot confirm upload of {} files, total {}. Exiting.".format(
+                len(upload_buffer_lengths), size
+            )
             raise SeamlessSystemExit(err)
-        confirmation = confirm_yn("Confirm upload of {} files, total {}?".format(len(upload_buffer_lengths), size), default="no")
+        confirmation = confirm_yn(
+            "Confirm upload of {} files, total {}?".format(
+                len(upload_buffer_lengths), size
+            ),
+            default="no",
+        )
         if not confirmation:
             raise SeamlessSystemExit("Exiting.")
     if len(upload_buffer_lengths):
@@ -164,17 +183,25 @@ def files_to_checksums(
         msg(1, "Upload no files")
 
     if upload_filelist and not dry_run:
-        reg_file = functools.partial(register_file, destination_folder=destination_folder)
+        reg_file = functools.partial(
+            register_file, destination_folder=destination_folder, hardlink=hardlink_destination
+        )
         with ThreadPoolExecutor(max_workers=nparallel) as executor:
-            for filename, checksum in zip(upload_filelist, executor.map(reg_file, upload_filelist)):
-                assert all_result[filename] == checksum, (filename, checksum, all_result[filename])
+            for filename, checksum in zip(
+                upload_filelist, executor.map(reg_file, upload_filelist)
+            ):
+                assert all_result[filename] == checksum, (
+                    filename,
+                    checksum,
+                    all_result[filename],
+                )
 
     if upload_buffers and not dry_run:
-        reg_buf = functools.partial(register_buffer, destination_folder=destination_folder)
+        reg_buf = functools.partial(
+            register_buffer, destination_folder=destination_folder
+        )
         with ThreadPoolExecutor(max_workers=nparallel) as executor:
-            executor.map(reg_buf, 
-                         upload_buffers.values()
-                        )
+            executor.map(reg_buf, upload_buffers.values())
 
     result = {filename: all_result[filename] for filename in filelist}
 

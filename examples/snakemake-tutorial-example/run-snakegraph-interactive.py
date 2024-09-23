@@ -1,32 +1,38 @@
-from turtle import st
 import seamless
-from seamless.highlevel import Context, Transformer, Cell
+seamless.delegate(False)
+
+from turtle import st
 from silk.Silk import RichValue
 import json, os
 import numpy as np
-from seamless.metalevel.bind_status_graph import bind_status_graph
+from seamless.workflow.metalevel.bind_status_graph import bind_status_graph
 
 print("Load graph...")
 graph = json.load(open("snakegraph.seamless"))
-ctx = seamless.highlevel.load_graph(graph)
+ctx = seamless.workflow.highlevel.load_graph(graph)
 ctx.add_zip("snakegraph.zip")
 ctx.translate()
 
 print("Load status visualization context (adapted from visualize-graph test)")
 
 seamless_dir = os.path.dirname(seamless.__file__)
-status_graph0 = seamless_dir + "/graphs/status-visualization"
-status_graph_file, status_graph_zip = status_graph0 + ".seamless", status_graph0 + ".zip"
+status_graph0 = seamless_dir + "/workflow/graphs/status-visualization"
+status_graph_file, status_graph_zip = (
+    status_graph0 + ".seamless",
+    status_graph0 + ".zip",
+)
 
 bind_status_graph(ctx, status_graph_file, zips=[status_graph_zip])
 
 print("Setup binding of files")
+
 
 def bind(file, mode):
     data = open(file, "r" + mode).read()
     if mode == "b":
         data = np.frombuffer(data, dtype=np.uint8)
     setattr(ctx.fs, file, data)
+
 
 def list_files():
     print("Virtual file system contents:")
@@ -39,14 +45,15 @@ def list_files():
         if value2.storage == "pure-plain":
             v = str(value2.value)
             if len(v) > 80:
-                v = v[:35] + "." * 10  + v[-35:]
+                v = v[:35] + "." * 10 + v[-35:]
         else:
             v = "< Binary data, length %d >" % len(value)
         print(fs_cellname + ":", v)
         print()
 
 
-print("""
+print(
+    """
 *********************************************************************
 *  Interactive setup complete.
 *********************************************************************
@@ -59,6 +66,6 @@ print("""
   bind("data/samples/A.fastq", "t")
   bind("data/samples/B.fastq", "t")
 
-- "ctx.compute()" or "await ctx.computation()"
-   will block until the workflow is complete
-""")
+- "ctx.compute()" will block until the workflow is complete
+"""
+)

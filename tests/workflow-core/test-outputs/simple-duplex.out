@@ -1,0 +1,145 @@
+PROGRESS 1
+TF        Status: executing, 10.0 %
+TF DUPLEX Status: executing, 10.0 %
+RESULT        0.300 Status: preliminary
+RESULT DUPLEX 0.300 Status: preliminary
+
+TF        Status: executing, 10.0 %
+TF DUPLEX Status: executing, 10.0 %
+RESULT        0.300 Status: preliminary
+RESULT DUPLEX 0.300 Status: preliminary
+
+PROGRESS 2
+TF        Status: executing, 20.0 %
+TF DUPLEX Status: executing, 20.0 %
+RESULT        0.300 Status: preliminary
+RESULT DUPLEX 0.300 Status: preliminary
+
+TF        Status: error
+TF DUPLEX Status: error
+RESULT        None Status: upstream
+RESULT DUPLEX None Status: upstream
+
+EXCEPTION        seamless.workflow.core.cache.transformation_cache.HardCancelError: HardCancelError
+
+EXCEPTION DUPLEX seamless.workflow.core.cache.transformation_cache.HardCancelError: HardCancelError
+
+
+EXCEPTION        None
+EXCEPTION DUPLEX None
+
+PROGRESS 1
+TF        Status: executing, 10.0 %
+TF DUPLEX Status: executing, 10.0 %
+RESULT        0.300 Status: preliminary
+RESULT DUPLEX 0.300 Status: preliminary
+
+TF        Status: executing, 10.0 %
+TF DUPLEX Status: executing, 10.0 %
+RESULT        0.300 Status: preliminary
+RESULT DUPLEX 0.300 Status: preliminary
+
+PROGRESS 2
+TF        Status: executing, 20.0 %
+TF DUPLEX Status: executing, 20.0 %
+RESULT        0.300 Status: preliminary
+RESULT DUPLEX 0.300 Status: preliminary
+
+TF        Status: executing, 20.0 %
+TF DUPLEX Status: executing, 20.0 %
+RESULT        0.300 Status: preliminary
+RESULT DUPLEX 0.300 Status: preliminary
+
+PROGRESS 3
+TF        Status: executing, 30.0 %
+TF DUPLEX Status: executing, 30.0 %
+RESULT        0.900 Status: preliminary
+RESULT DUPLEX 0.900 Status: preliminary
+
+TF       PROGRESS Status: executing, 30.0 % 
+4
+TF DUPLEX Status: executing, 30.0 %
+RESULT        0.900 Status: preliminary
+RESULT DUPLEX 0.900 Status: preliminary
+
+TF        Status: executing, 40.0 %
+TF DUPLEX Status: executing, 40.0 %
+RESULT        0.900 Status: preliminary
+RESULT DUPLEX 0.900 Status: preliminary
+
+PROGRESS 5
+TF        Status: executing, 40.0 %
+TF DUPLEX Status: executing, 40.0 %
+RESULT        0.900 Status: preliminary
+RESULT DUPLEX 0.900 Status: preliminary
+
+TF        Status: executing, 50.0 %
+TF DUPLEX Status: executing, 50.0 %
+RESULT        1.500 Status: preliminary
+RESULT DUPLEX 1.500 Status: preliminary
+
+PROGRESS 6
+TF        Status: executing, 60.0 %
+TF DUPLEX Status: executing, 60.0 %
+RESULT        1.500 Status: preliminary
+RESULT DUPLEX 1.500 Status: preliminary
+
+TF        Status: executing, 60.0 %
+TF DUPLEX Status: executing, 60.0 %
+RESULT        1.500 Status: preliminary
+RESULT DUPLEX 1.500 Status: preliminary
+
+PROGRESS 7
+TF        Status: executing, 70.0 %
+TF DUPLEX Status: executing, 70.0 %
+RESULT        1.500 Status: pending
+RESULT DUPLEX None Status: pending
+
+TF        Status: executing, 70.0 %
+TF DUPLEX Status: executing, 70.0 %
+RESULT        2.100 Status: preliminary
+RESULT DUPLEX 2.100 Status: preliminary
+
+PROGRESS 8
+TF        Status: executing, 80.0 %
+TF DUPLEX Status: executing, 80.0 %
+RESULT        2.100 Status: preliminary
+RESULT DUPLEX 2.100 Status: preliminary
+
+TF        Status: executing, 80.0 %
+TF DUPLEX Status: executing, 80.0 %
+RESULT        2.100 Status: preliminary
+RESULT DUPLEX 2.100 Status: preliminary
+
+PROGRESS 9
+TF        Status: executing, 90.0 %
+TF DUPLEX Status: executing, 90.0 %
+RESULT        2.700 Status: preliminary
+RESULT DUPLEX 2.700 Status: preliminary
+
+TF        Status: executing, 90.0 %
+TF DUPLEX Status: executing, 90.0 %
+RESULT        2.700 Status: preliminary
+RESULT DUPLEX 2.700 Status: preliminary
+
+PROGRESS 10
+TF        Status: executing, 100.0 %
+TF DUPLEX Status: executing, 100.0 %
+RESULT        2.700 Status: preliminary
+RESULT DUPLEX 2.700 Status: preliminary
+
+TF        Status: executing, 100.0 %
+TF DUPLEX Status: executing, 100.0 %
+RESULT        2.700 Status: preliminary
+RESULT DUPLEX 2.700 Status: preliminary
+
+TF        Status: OK
+TF DUPLEX Status: OK
+RESULT        3.000 Status: OK
+RESULT DUPLEX 3.000 Status: OK
+
+TF        Status: OK
+TF DUPLEX Status: OK
+RESULT        3.000 Status: OK
+RESULT DUPLEX 3.000 Status: OK
+

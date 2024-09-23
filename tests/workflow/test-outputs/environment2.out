@@ -1,0 +1,90 @@
+{'properties': {'a': {'type': 'integer'}, 'b': {'type': 'integer'}}, 'type': 'object'}
+{'type': 'integer'}
+<Silk: 13 >
+KeyError: 'Unknown language: go'
+
+# Specifications and default settings for supported languages
+{
+  "python": {
+    "extension": "py",
+    "mode": "interpreted"
+  }
+  "ipython": {
+    "extension": "ipy",
+    "mode": "interpreted"
+  }
+
+
+/*
+The following C header has been auto-generated from the transformer schema
+It will be used to generate bindings, but it will not be automatically
+added to the compiled transformer code.
+
+If your transformer code is written in C/C++, you may do so yourself.
+For C, you may need to include "stdint.h" and "stdbool.h".
+If your transform() function is written in C++, don't forget to add 'extern "C" '
+*/
+
+int transform(int a, int b, int *result);
+
+*** executor ***
+Traceback (most recent call last):
+  File "/seamless/seamless/workflow/core/transformation.py", line 633, in _execute
+    result, logs = await self._execute_local(prelim_callback, progress_callback)
+  File "/seamless/seamless/workflow/core/transformation.py", line 847, in _execute_local
+    full_module_names = build_all_modules(
+  File "/seamless/seamless/workflow/core/build_module.py", line 499, in build_all_modules
+    mod = build_module(
+  File "/seamless/seamless/workflow/core/build_module.py", line 445, in build_module
+    completed_module_definition = complete(
+  File "/seamless/seamless/compiler/compile.py", line 143, in complete
+    raise ValueError(
+ValueError: No compiler defined for compiled language 'go'
+*** /executor ***
+
+
+# Defaults for various compilers
+# NOTE: Seamless does not take (the checksum of) a compiler or compiler setting as explicit dependency
+# Therefore, Seamless does not re-execute a computation when compiler settings change
+# and it is assumed that compiler settings have no impact on reproducibility,
+#  i.e. a computation is reproducible or irreproducible no matter the compiler settings
+{
+  #GNU compiler collection; no "location"; use `which` or implicit shell execution
+  "gcc": {
+      "mode": "object",   # compiles source files into .o files one by one
+                          # alternatives:  
+                          # - "archive", that compiles each source file into an .a file
+                          # - "package", that compiles *all* source files into a single .a file
+      "compile_flag": "-c"
+      "output_flag": "-o"
+      "options": ["-O3", "-ffast-math", "-march=native", "-fPIC", "-fopenmp"],
+      "public_options": ["-fPIC"],
+      "debug_options": ["-fPIC", "-g", "-O0", "-fno-inline" , "-Wall"],
+      "profile_options": ["-p", "-g"],
+  }
+  "g++": {
+
+*** executor ***
+Traceback (most recent call last):
+  File "/seamless/seamless/workflow/core/transformation.py", line 633, in _execute
+    result, logs = await self._execute_local(prelim_callback, progress_callback)
+  File "/seamless/seamless/workflow/core/transformation.py", line 847, in _execute_local
+    full_module_names = build_all_modules(
+  File "/seamless/seamless/workflow/core/build_module.py", line 499, in build_all_modules
+    mod = build_module(
+  File "/seamless/seamless/workflow/core/build_module.py", line 451, in build_module
+    mod = build_compiled_module(
+  File "/seamless/seamless/workflow/core/build_module.py", line 388, in build_compiled_module
+    raise exception from None
+  File "/seamless/seamless/workflow/core/build_module.py", line 323, in build_compiled_module
+    raise BuildModuleError(stderr)
+seamless.workflow.core.build_module.BuildModuleError: 
+go build  -buildmode=c-archive -o /tmp/seamless-extensions/seamless_module_89163f967bf41fb3f3166f6f89d9b911086fdb9088c50e49dbc644d1b60cf034_module/_PACKAGE__1.a /tmp/seamless-extensions/seamless_module_89163f967bf41fb3f3166f6f89d9b911086fdb9088c50e49dbc644d1b60cf034_module/main.go
+******************** ERROR ********************
+/bin/sh: 1: go: not found
+
+******************** /ERROR ********************
+*** /executor ***
+
+
+ValueError: which: 'go' is not available in command line path'

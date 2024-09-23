@@ -66,7 +66,7 @@ Visualization of the web interface alone
 
   or: 
   
-  seamless-serve-graph \\
+  seamless-serve-graph \
       /home/jovyan/seamless-examples/datatables-example/datatables.seamless \
       --load-zip /home/jovyan/seamless-examples/datatables-example/datatables.zip
 

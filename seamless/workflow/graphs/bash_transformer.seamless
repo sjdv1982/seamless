@@ -1,0 +1,29 @@
+{
+  "__seamless__": "0.11",
+  "connections": [],
+  "lib": [],
+  "nodes": [
+    {
+      "celltype": "code",
+      "checksum": {
+        "value": "a6d9bde6421d9147a494555327523302230bf3294860637e8c54f4c415dcdcab"
+      },
+      "datatype": "mixed",
+      "language": "python",
+      "mount": {
+        "authority": "file",
+        "mode": "r",
+        "path": "executor.py",
+        "persistent": true
+      },
+      "path": [
+        "executor_code"
+      ],
+      "transformer": true,
+      "type": "cell"
+    }
+  ],
+  "params": {
+    "share_namespace": "ctx"
+  }
+}

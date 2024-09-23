@@ -1,0 +1,11 @@
+Cannot install event loop hook for "asyncio" when running with `--simple-prompt`.
+NOTE: Tk is supported natively; use Tk apps and Tk backends with `--simple-prompt`.
+71.5 ns +- 8 ns per loop (mean +- std. dev. of 7 runs, 10,000,000 loops each)
+Waiting for: Seamless transformer: .transform.tf
+Waiting for: Seamless transformer: .transform.tf
+<Silk: None >
+70.1 ns +- 3.91 ns per loop (mean +- std. dev. of 7 runs, 10,000,000 loops each)
+Waiting for: Seamless transformer: .transform.tf
+Waiting for: Seamless transformer: .transform.tf
+<Silk: None >
+Status: OK

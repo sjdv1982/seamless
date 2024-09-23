@@ -1,26 +1,30 @@
 import seamless
-from seamless.highlevel import Context
+seamless.delegate(False)
+
 from silk.Silk import RichValue
 import json
 import numpy as np
 
 print("Load graph...")
 graph = json.load(open("snakegraph.seamless"))
-ctx = seamless.highlevel.load_graph(graph)
+ctx = seamless.workflow.highlevel.load_graph(graph)
 ctx.add_zip("snakegraph.zip")
 ctx.translate()
 
 print("Bind files...")
-files = [("data/genome.tgz", "b"),
-        ("data/samples/A.fastq", "t"),
-        ("data/samples/B.fastq", "t")
+files = [
+    ("data/genome.tgz", "b"),
+    ("data/samples/A.fastq", "t"),
+    ("data/samples/B.fastq", "t"),
 ]
+
 
 def bind(file, mode):
     data = open(file, "r" + mode).read()
     if mode == "b":
         data = np.frombuffer(data, dtype=np.uint8)
     setattr(ctx.fs, file, data)
+
 
 for file, mode in files:
     bind(file, mode)
@@ -41,13 +45,14 @@ for fs_cellname in ctx.fs.get_children("cell"):
     if value2.storage == "pure-plain":
         v = str(value2.value)
         if len(v) > 80:
-            v = v[:35] + "." * 10  + v[-35:]
+            v = v[:35] + "." * 10 + v[-35:]
     else:
         v = "< Binary data, length %d >" % len(value)
     print(fs_cellname + ":", v)
     print()
 
 import os
+
 if "calls/all.vcf" in finished:
     print("SUCCESS, calls/all.vcf created")
     os.system("mkdir -p calls")

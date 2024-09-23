@@ -1,30 +1,30 @@
 Run 1
-seamless: Upload 6 files, total 811.00 B
+seamless: Upload 6 files, total 815.00 B
 8
 9
 
 
-real	0m23.628s
-user	0m16.884s
-sys	0m4.036s
+real	0m14.700s
+user	0m9.801s
+sys	0m0.552s
 
 Run 2a
 8
 9
 
 
-real	0m1.524s
-user	0m1.631s
-sys	0m0.860s
+real	0m0.573s
+user	0m1.640s
+sys	0m0.053s
 
 Run 2b
 8
 9
 
 
-real	0m1.365s
-user	0m1.502s
-sys	0m0.831s
+real	0m0.543s
+user	0m1.603s
+sys	0m0.041s
 
 Run 3
 seamless: Upload 1 files, total 371.00 B
@@ -33,6 +33,6 @@ seamless: Upload 1 files, total 371.00 B
 OK
 
 
-real	0m14.054s
-user	0m13.722s
-sys	0m3.824s
+real	0m10.234s
+user	0m9.390s
+sys	0m0.511s
