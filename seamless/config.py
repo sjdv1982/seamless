@@ -159,12 +159,13 @@ def _init_buffer_remote_from_env(only_level_1=False):
 
     set_read_buffer_folders(read_buffer_folders)
     set_read_buffer_servers(read_buffer_servers)
-    try:
-        set_write_buffer_server(write_buffer_server)
-    except (ConnectionError, requests.exceptions.ConnectionError):
-        raise BufferServerConnectionError(
-            f"Cannot connect to write buffer server {write_buffer_server}"
-        ) from None
+    if not only_level_1:
+        try:
+            set_write_buffer_server(write_buffer_server)
+        except (ConnectionError, requests.exceptions.ConnectionError):
+            raise BufferServerConnectionError(
+                f"Cannot connect to write buffer server {write_buffer_server}"
+            ) from None
 
 
 def block_local():

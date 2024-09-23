@@ -229,6 +229,8 @@ def set_write_buffer_server(write_buffer_server):
     """Set the write buffer server.
     There can only be one."""
     global _write_server
+    if write_buffer_server is None:
+        raise ValueError("No write buffer server defined")
     if write_buffer_server == _write_server:
         return
 
