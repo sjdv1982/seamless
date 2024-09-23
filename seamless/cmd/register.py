@@ -75,14 +75,21 @@ def check_file(filename: str) -> tuple[bool, str, int]:
     return result, checksum, len(buffer)
 
 
-def register_file(filename: str, destination_folder: str | None = None) -> str:
+def register_file(filename: str, destination_folder: str | None = None, hardlink: bool = False) -> str:
     """Calculate a file checksum and register its contents.
 
     destination_folder: instead of uploading to a buffer server, write to this folder
     """
     with open(filename, "rb") as f:
         buffer = f.read()
-    return register_buffer(buffer, destination_folder=destination_folder)
+        
+    if hardlink and destination_folder is not None:
+        checksum = calculate_checksum(buffer)
+        destlink = os.path.join(destination_folder, checksum.hex())
+        os.link(filename, destlink)
+        return checksum.hex()
+    else:
+        return register_buffer(buffer, destination_folder=destination_folder)
 
 
 def check_buffer(buffer: bytes) -> tuple[bool, str]:

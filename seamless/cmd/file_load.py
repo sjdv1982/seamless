@@ -45,6 +45,7 @@ def files_to_checksums(
     nparallel: int = 20,
     auto_confirm: str | None,
     destination_folder: str | None = None,
+    hardlink_destination: bool = False,
     dry_run: bool = False
 ):
     """Convert a list of filenames to a dict of filename-to-checksum items
@@ -57,6 +58,7 @@ def files_to_checksums(
       keys are entries in filelist that are directories instead of files.
       values are the mapped directory paths (as they will appear on the server)
     destination_folder: instead of uploading to a buffer server, write to this folder
+    hardlink_destination: in the destination folder, don't write files, create hardlinks instead.
     """
 
     all_filelist = [f for f in filelist if f not in directories]
@@ -182,7 +184,7 @@ def files_to_checksums(
 
     if upload_filelist and not dry_run:
         reg_file = functools.partial(
-            register_file, destination_folder=destination_folder
+            register_file, destination_folder=destination_folder, hardlink=hardlink_destination
         )
         with ThreadPoolExecutor(max_workers=nparallel) as executor:
             for filename, checksum in zip(
