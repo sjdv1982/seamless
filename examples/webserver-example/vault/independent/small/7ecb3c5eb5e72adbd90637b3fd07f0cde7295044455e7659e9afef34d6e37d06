@@ -1,3 +1,4 @@
+import json
 import textwrap
 
 rnodes = []
@@ -28,7 +29,7 @@ for node in graph["nodes"]:
             path + (node["INPUT"],),
         ]
     elif node["type"] == "reactor":
-        continue # TODO
+        continue  # TODO
     elif node["type"] == "macro":
         paths = [path]
     elif node["type"] == "context":
@@ -37,8 +38,8 @@ for node in graph["nodes"]:
         continue
     elif node["type"] == "deepfoldercell":
         continue
-    else: 
-        #raise Exception(node["type"])
+    else:
+        # raise Exception(node["type"])
         continue
 
     color = 5
@@ -55,7 +56,7 @@ for node in graph["nodes"]:
             state = ""
         h = "*tf*: "
         if state.startswith(h):
-            state = state[len(h):]
+            state = state[len(h) :]
         if len(state.split()) > 2:
             if subpath != path:
                 cstate += "*** " + subpath2 + " ***\n"
@@ -75,6 +76,8 @@ for node in graph["nodes"]:
         exc = status.get(subpath2 + ".exception", "")
         if exc is None:
             exc = ""
+        if isinstance(exc, dict):
+            exc = json.dumps(exc)
         if len(exc.split()) > 2:
             if subpath != path:
                 cstate += "*** " + subpath2 + " ***\n"

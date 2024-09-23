@@ -1,12 +1,13 @@
 def write_tmp(content):
     tmp = tempfile.mkstemp()[1]
-    with open(tmp,"w") as f:
+    with open(tmp, "w") as f:
         if content is not None:
             f.write(content)
     return tmp
 
+
 def merge(upstream, base, modified, labels):
-    #NamedTemporaryFile does NOT work properly with diff3!
+    # NamedTemporaryFile does NOT work properly with diff3!
     tmp1 = write_tmp(upstream)
     tmp2 = write_tmp(base)
     tmp3 = write_tmp(modified)
@@ -17,7 +18,7 @@ def merge(upstream, base, modified, labels):
             cmd += ["-L", labels[n]]
 
         cmd = " ".join(cmd)
-        process = subprocess.run(cmd,shell=True,stdout=PIPE,stderr=PIPE)
+        process = subprocess.run(cmd, shell=True, stdout=PIPE, stderr=PIPE)
 
         if process.returncode == 2:
             print(process.stderr.decode())
@@ -28,6 +29,7 @@ def merge(upstream, base, modified, labels):
         os.unlink(tmp2)
         os.unlink(tmp3)
     return stdout, process.returncode
+
 
 def analyze_conflict(conflict, labels):
     for token in tokens:
@@ -44,10 +46,10 @@ def main():
     violations = []
     if PINS.upstream_stage.updated:
         violations.append("upstream_stage")
-    #if PINS.base.updated and state != "passthrough":
+    # if PINS.base.updated and state != "passthrough":
     #    violations.append("base")
 
-    zero_modify = (not PINS.modified.defined)
+    zero_modify = not PINS.modified.defined
 
     if PINS.modified.updated:
         modified = PINS.modified.value
@@ -68,17 +70,31 @@ def main():
             print()
             state = "modify"
 
-    if state == "passthrough": #no modifications at all
-        if PINS.conflict.updated and PINS.conflict.value.strip("\n ") not in ("", no_conflict):
-            print("warning: edit pin 'conflict' should not be modified when there is no conflict")
+    if state == "passthrough":  # no modifications at all
+        if PINS.conflict.updated and PINS.conflict.value.strip("\n ") not in (
+            "",
+            no_conflict,
+        ):
+            print(
+                "warning: edit pin 'conflict' should not be modified when there is no conflict"
+            )
         v = PINS.upstream.value
         PINS.base.set(v)
         PINS.modified.set(v)
         PINS.merged.set(v)
     elif state == "modify":
-        if PINS.conflict.updated and PINS.conflict.value.strip("\n ") not in ("", no_conflict):
-            print("warning: edit pin 'conflict' should not be modified when there is no conflict")
-        upstream, base, modified = PINS.upstream.value, PINS.base.value, PINS.modified.value
+        if PINS.conflict.updated and PINS.conflict.value.strip("\n ") not in (
+            "",
+            no_conflict,
+        ):
+            print(
+                "warning: edit pin 'conflict' should not be modified when there is no conflict"
+            )
+        upstream, base, modified = (
+            PINS.upstream.value,
+            PINS.base.value,
+            PINS.modified.value,
+        )
         if base is None:
             base = upstream
         labels = build_labels(upstream, base, modified)
@@ -130,6 +146,7 @@ def main():
         PINS.merged.set(m)
     for violation in violations:
         print("warning: edit pin '%s' should not be modified" % violation)
+
 
 if PINS.fallback_mode.updated:
     fallback_mode = PINS.fallback_mode.value

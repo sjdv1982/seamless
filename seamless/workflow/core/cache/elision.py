@@ -78,6 +78,8 @@ class Elision:
                 return Checksum(None)
             if not Checksum(c._checksum) and not c._void:
                 return Checksum(None)
+        if self.macro._last_inputs is None:
+            return Checksum(None)
         elision_dict = {}
         elision_dict["params"] = {}
         for k, v in self.macro._last_inputs.items():

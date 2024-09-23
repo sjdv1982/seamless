@@ -1,9 +1,5 @@
 def constructor(
-    ctx, libctx,
-    fallback_mode,
-    upstream,
-    modified, conflict,
-    merged, state, base
+    ctx, libctx, fallback_mode, upstream, modified, conflict, merged, state, base
 ):
     assert fallback_mode in ("upstream", "modified", "no"), fallback_mode
     m = ctx.m = Macro()

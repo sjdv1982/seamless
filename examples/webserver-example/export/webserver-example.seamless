@@ -322,7 +322,7 @@
       "checksum": {
         "code": "667daf3d3c85ac1427697ea69a0545fff649a8fb662ff5e617a1fa0b6cc95d5c",
         "input": "490043d1d9961d100d1935e043d01b621f1c81ddc7e0815d51ab1a9fbbe7a5b2",
-        "result": "f9caa77737108d5883a7c54e6d49858ba88382feba7a2f9b708c7ada489ededc",
+        "result": "6c76d3e376afd06a19acc219a50f7a09598012a9ba207f996daed1d316ceb06f",
         "result_schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
         "schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c"
       },
@@ -376,7 +376,7 @@
     {
       "celltype": "bytes",
       "checksum": {
-        "value": "fa9fe91d91808b79641bff902fd15e6ed0c89c06b285d71881140e43ec4b1580"
+        "value": "46995d80ee99b116ff154fb8b13bad93eaf95ee6fe61475d7f28ee8aa2cf3418"
       },
       "datatype": "mixed",
       "file_extension": "png",

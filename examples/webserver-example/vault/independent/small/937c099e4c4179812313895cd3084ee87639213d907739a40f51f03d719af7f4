@@ -2,7 +2,7 @@ def macro_code(ctx, fallback_mode, code_start, code_update):
     reactor_params = {
         "fallback_mode": {"io": "input", "celltype": "str"},
         "upstream": {"io": "input", "celltype": "text"},
-        "merged":  {"io": "output", "celltype": "text"},
+        "merged": {"io": "output", "celltype": "text"},
         "state": {"io": "output", "celltype": "str"},
     }
     for k in "upstream_stage", "base", "modified", "conflict":
