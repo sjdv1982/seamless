@@ -5,7 +5,7 @@ channels:
 dependencies:
   - python
   - pip
-  - rpbs::seamless-framework==0.12
+  - rpbs::seamless-framework==0.13
   - rpbs::silk>=0.1.11
   - rpbs::seamless-cli-complement
   - rpbs::seamless-cli-bin
@@ -13,7 +13,7 @@ dependencies:
   - aiohttp-cors
   - jinja2
   - traitlets
-  - datrie  # required to build some pip packages
+  - datrie # required to build some pip packages
   - ipython<=8.16
   - ipykernel
 
@@ -28,8 +28,8 @@ dependencies:
   - commentjson
   - expandvars
   - pip:
-    - websockets
-    - makefun
+      - websockets
+      - makefun
 variables:
   SEAMLESS_CONDA_ENVIRONMENT: 1
   SEAMLESS_DEFAULT_ASSISTANT_IP: 127.0.0.1

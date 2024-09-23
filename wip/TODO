@@ -1,4 +1,4 @@
-Before 0.13 release: seamless-upload --dest with hardlink
+Before 0.13 release:
   - build and publish seamless-framework conda package
   - build and publish seamless-cli-bin + seamless-cli-complement conda packages
   - build and test conda environments

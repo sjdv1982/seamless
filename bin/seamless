@@ -4,7 +4,7 @@
 
 """Main command-line seamless executable script"""
 
-__version__ = "0.12"
+__version__ = "0.13"
 
 import argparse
 from copy import copy

@@ -1,6 +1,6 @@
 package:
   name: seamless-framework
-  version: "0.12"
+  version: "0.13"
 
 build:
   noarch: python
