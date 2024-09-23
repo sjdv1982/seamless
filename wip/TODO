@@ -1,12 +1,13 @@
 Before 0.13 release:
+  - issue #251: DONE
   - examples
       - basic example: DONE
       - datatables: DONE
       - grid editor: DONE
       - reproducible PDB: DONE 
-      - BC
-      - snakemake tutorial
-      - webserver-demo
+      - BC: DONE
+      - snakemake tutorial: DONE
+      - webserver-demo: DONE
       - webserver-example
   - build and publish seamless-framework conda package
   - build and publish seamless-cli-bin + seamless-cli-complement conda packages

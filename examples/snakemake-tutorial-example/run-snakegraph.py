@@ -1,5 +1,6 @@
 import seamless
-from seamless.workflow import Context
+seamless.delegate(False)
+
 from silk.Silk import RichValue
 import json
 import numpy as np

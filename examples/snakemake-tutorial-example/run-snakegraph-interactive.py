@@ -1,6 +1,7 @@
-from turtle import st
 import seamless
-from seamless.workflow import Context, Transformer, Cell
+seamless.delegate(False)
+
+from turtle import st
 from silk.Silk import RichValue
 import json, os
 import numpy as np
@@ -15,7 +16,7 @@ ctx.translate()
 print("Load status visualization context (adapted from visualize-graph test)")
 
 seamless_dir = os.path.dirname(seamless.__file__)
-status_graph0 = seamless_dir + "/graphs/status-visualization"
+status_graph0 = seamless_dir + "/workflow/graphs/status-visualization"
 status_graph_file, status_graph_zip = (
     status_graph0 + ".seamless",
     status_graph0 + ".zip",
@@ -65,7 +66,6 @@ print(
   bind("data/samples/A.fastq", "t")
   bind("data/samples/B.fastq", "t")
 
-- "ctx.compute()" or "await ctx.computation()"
-   will block until the workflow is complete
+- "ctx.compute()" will block until the workflow is complete
 """
 )
