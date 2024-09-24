@@ -1,4 +1,7 @@
-from seamless.workflow.core.transformation import SeamlessStreamTransformationError, SeamlessTransformationError
+from seamless.workflow.core.transformation import (
+    SeamlessStreamTransformationError,
+    SeamlessTransformationError,
+)
 from silk import Silk
 import numpy as np
 import operator, functools
@@ -12,12 +15,13 @@ try:
 except NameError:
     SPECIAL__DIRECT_PRINT = False
 
-ARRAYS = [] #a list of Numpy arrays whose references must be kept alive
-FFI_OBJS = [] #a list of FFI objects whose references must be kept alive
+ARRAYS = []  # a list of Numpy arrays whose references must be kept alive
+FFI_OBJS = []  # a list of FFI objects whose references must be kept alive
 
-def get_dtype(type, unsigned, bytesize): #adapted from _form_to_dtype_scalar
+
+def get_dtype(type, unsigned, bytesize):  # adapted from _form_to_dtype_scalar
     if type == "string":
-        return np.dtype('S1')
+        return np.dtype("S1")
     if type == "integer":
         result = "="
         if unsigned:
@@ -35,6 +39,7 @@ def get_dtype(type, unsigned, bytesize): #adapted from _form_to_dtype_scalar
         raise TypeError(type)
     return np.dtype(result)
 
+
 json_to_c = {
     "integer": "int",
     ("integer", 1): "int8_t",
@@ -47,6 +52,8 @@ json_to_c = {
     "boolean": "bool",
     "string": "char",
 }
+
+
 def get_maxshape(shape):
     maxshape = []
     for item in shape:
@@ -63,6 +70,7 @@ def get_maxshape(shape):
             )
         maxshape.append(item)
     return maxshape
+
 
 def gen_basic_type(schema):
     warnings = []
@@ -84,16 +92,19 @@ def gen_basic_type(schema):
             if result.endswith("_t"):
                 result = "u" + result
             else:
-                result = "unsigned " +  result
+                result = "unsigned " + result
     return result
 
-#TODO: share with gen-header code
+
+# TODO: share with gen-header code
 def gen_struct_name(name):
     def capitalize(subname):
         return "".join([subsubname.capitalize() for subsubname in subname.split("_")])
+
     if isinstance(name, str):
         name = (name,)
     return "".join([capitalize(subname) for subname in name]) + "Struct"
+
 
 def build_array_struct(name, arr, with_strides):
     array_struct_name = gen_struct_name(name)
@@ -103,12 +114,13 @@ def build_array_struct(name, arr, with_strides):
     array_struct = ffi.new(array_struct_name + " *")
     if not len(arr.shape):
         array_struct.shape[0] = arr.nbytes
-    else:    
-        array_struct.shape[0:len(arr.shape)] = arr.shape[:]
+    else:
+        array_struct.shape[0 : len(arr.shape)] = arr.shape[:]
     if with_strides:
-        array_struct.strides[0:len(arr.strides)] = arr.strides[:]
+        array_struct.strides[0 : len(arr.strides)] = arr.strides[:]
     array_struct.data = ffi.cast(ffi.typeof(array_struct.data), ptr)
     return array_struct
+
 
 def build_result_array_struct(name, schema):
     array_struct_name = gen_struct_name(name)
@@ -122,22 +134,23 @@ def build_result_array_struct(name, schema):
     bytesize = schema["items"]["form"].get("bytesize")
     dtype = get_dtype(type, unsigned, bytesize)
     array_struct = ffi.new(array_struct_name + " *")
-    array_struct.shape[0:len(shape)] = shape[:]
-    arr = np.zeros(shape=maxshape,dtype=dtype)
+    array_struct.shape[0 : len(shape)] = shape[:]
+    arr = np.zeros(shape=maxshape, dtype=dtype)
     ARRAYS.append(arr)
     arr_ptr = ffi.from_buffer(arr)
     array_struct.data = ffi.cast(ffi.typeof(array_struct.data), arr_ptr)
     return array_struct
 
+
 def build_result_struct(schema):
     global result_struct
     result_struct_name = gen_struct_name(result_name)
-    result_struct = ffi.new(result_struct_name+" *")
+    result_struct = ffi.new(result_struct_name + " *")
     props = schema["properties"]
     for propname, propschema in props.items():
         proptype = propschema["type"]
         if proptype == "object":
-            raise NotImplementedError #nested result struct
+            raise NotImplementedError  # nested result struct
         elif proptype == "array":
             full_propname = (result_name, propname)
             form = propschema.get("form", {})
@@ -148,6 +161,7 @@ def build_result_struct(schema):
             pass
     return result_struct
 
+
 def build_result_array(schema):
     global result_struct
     result_struct_name = gen_struct_name(result_name)
@@ -155,7 +169,9 @@ def build_result_array(schema):
     maxshape = tuple(get_maxshape(shape))
     for dim in maxshape:
         if dim <= 0:
-            raise SeamlessTransformationError("Result shape {} contains non-positive numbers".format(shape))
+            raise SeamlessTransformationError(
+                "Result shape {} contains non-positive numbers".format(shape)
+            )
     try:
         type = schema["items"]["type"]
     except KeyError:
@@ -164,15 +180,16 @@ def build_result_array(schema):
     bytesize = schema["items"]["form"].get("bytesize")
     dtype = get_dtype(type, unsigned, bytesize)
     result_struct = ffi.new(result_struct_name + " *")
-    result_struct.shape[0:len(shape)] = maxshape[:]
-    arr = np.zeros(shape=maxshape,dtype=dtype)
+    result_struct.shape[0 : len(shape)] = maxshape[:]
+    arr = np.zeros(shape=maxshape, dtype=dtype)
     ARRAYS.append(arr)
     arr_ptr = ffi.from_buffer(arr)
     result_struct.data = ffi.cast(ffi.typeof(result_struct.data), arr_ptr)
     return result_struct
 
+
 def unpack_result_array_struct(array_struct, schema):
-    ""
+    """"""
     shape = schema["form"]["shape"]
     maxshape = tuple(get_maxshape(shape))
     try:
@@ -190,7 +207,7 @@ def unpack_result_array_struct(array_struct, schema):
     # In theory, no copy needs to be made, but in practice, still...
     arr = arr.copy()
     """
-    #instead, just pop off the array...
+    # instead, just pop off the array...
     arr = ARRAYS.pop(0)
     assert arr.dtype == dtype
     assert arr.shape == maxshape
@@ -198,9 +215,10 @@ def unpack_result_array_struct(array_struct, schema):
     if array_struct.shape == maxshape:
         return arr
     else:
-        slices = tuple([slice(0,i) for i in array_struct.shape])
+        slices = tuple([slice(0, i) for i in array_struct.shape])
         sub = arr[slices].copy()
         return sub
+
 
 def unpack_result_struct(result_struct, schema):
     result_dict = {}
@@ -208,18 +226,21 @@ def unpack_result_struct(result_struct, schema):
     for propname, propschema in props.items():
         proptype = propschema["type"]
         if proptype == "object":
-            raise NotImplementedError #nested result struct
+            raise NotImplementedError  # nested result struct
         elif proptype == "array":
             result_array_struct = getattr(result_struct, propname)
-            result_dict[propname] = unpack_result_array_struct(result_array_struct, propschema)
+            result_dict[propname] = unpack_result_array_struct(
+                result_array_struct, propschema
+            )
         else:
             result_dict[propname] = getattr(result_struct, propname)
     return result_dict
 
+
 ### Start
 
 input_pins = []
-for k,v in pins.items():
+for k, v in pins.items():
     vv = v if isinstance(v, str) else v["io"]
     if vv == "input":
         input_pins.append(k)
@@ -237,15 +258,17 @@ for prop in sorted(input_props.keys()):
         order.append(prop)
 for propnr, prop in enumerate(order):
     if prop not in kwargs:
-        raise SeamlessTransformationError("required property '{}' missing or undefined".format(prop))
+        raise SeamlessTransformationError(
+            "required property '{}' missing or undefined".format(prop)
+        )
     value = kwargs[prop]
     propschema = input_props[prop]
     proptype = propschema["type"]
     if proptype == "object":
-        raise NotImplementedError #binary struct in input
+        raise NotImplementedError  # binary struct in input
     elif proptype == "array":
         form = propschema.get("form", {})
-        with_strides = ("contiguous" not in form or not form["contiguous"])
+        with_strides = "contiguous" not in form or not form["contiguous"]
         array_struct = build_array_struct(prop, value, with_strides)
         args.append(array_struct)
     else:
@@ -257,8 +280,9 @@ elif result_schema["type"] == "array":
     result_arg = build_result_array(result_schema)
 else:
     result_arg_name = gen_basic_type(result_schema)
-    result_arg = ffi.new(result_arg_name+" *")
+    result_arg = ffi.new(result_arg_name + " *")
 args.append(result_arg)
+
 
 def run():
     error_code = module.lib.transform(*args)
@@ -272,6 +296,7 @@ def run():
         result = args[-1][0]
     return 0, result
 
+
 if SPECIAL__DIRECT_PRINT:
     error_code, result = run()
 else:
@@ -281,4 +306,6 @@ else:
     sys.stdout.write(stdout.read())
 ARRAYS.clear()
 if error_code != 0:
-    raise SeamlessStreamTransformationError("Compiled transformer returned non-zero value: {}".format(error_code))
+    raise SeamlessStreamTransformationError(
+        "Compiled transformer returned non-zero value: {}".format(error_code)
+    )

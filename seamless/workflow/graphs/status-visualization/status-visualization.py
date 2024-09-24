@@ -9,6 +9,7 @@ Input cells are filled by bind_status_graph.
 - webctx.graph_rt with the real-time workflow graph of ctx 
   (Unwrapping LibInstances, and including core.HighLevelContext instances)  
 """
+
 from seamless.workflow import Context, Transformer, Cell
 
 webctx = Context()
@@ -44,6 +45,7 @@ c.mimetype = "text/html"
 c.share(path="index.html")
 
 import seamless, os
+
 seamless_dir = os.path.dirname(seamless.__file__)
 c = webctx["seamless-client.js"] = Cell()
 c.celltype = "text"

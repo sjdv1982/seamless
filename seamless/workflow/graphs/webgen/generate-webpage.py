@@ -23,12 +23,15 @@ last_resort_webdefaults = {
 }
 
 idents = set()
+
+
 def ident():
     while 1:
-        result = "id-%d" % random.randint(1,10000)
+        result = "id-%d" % random.randint(1, 10000)
         if result not in idents:
             idents.add(result)
             return result
+
 
 encodings = ["text", "json"]
 
@@ -48,7 +51,7 @@ for comp in webform["extra_components"]:
     if "cells" in comp:
         for k, v in comp["cells"].items():
             comp["cells"][k] = v.replace("/", "__")
-    
+
 # / rewrite
 
 result = {}
@@ -58,8 +61,8 @@ random.seed(seed)
 COMPONENT_JS = ""
 COMPONENTS = ""
 WATCHERS = ""
-SEAMLESS_READ_PATHS = {k:[] for k in encodings}
-SEAMLESS_WRITE_PATHS = {k:[] for k in encodings}
+SEAMLESS_READ_PATHS = {k: [] for k in encodings}
+SEAMLESS_WRITE_PATHS = {k: [] for k in encodings}
 SEAMLESS_AUTO_READ_PATHS = []
 SEAMLESS_PATH_TO_CELL = {}
 INIT_CODE = ""
@@ -85,21 +88,33 @@ for extra_component in webform.get("extra_components", []):
     if id is None:
         raise ValueError("All extra components must have a field 'id'")
     if id in webform["cells"]:
-        raise ValueError("Extra component cannot have id '{}': cell with that name already exists".format(id))
+        raise ValueError(
+            "Extra component cannot have id '{}': cell with that name already exists".format(
+                id
+            )
+        )
     cell = extra_component.get("cell", None)
     if cell is not None:
         if cell not in webform["cells"]:
-            raise ValueError("Extra component cannot have cell '{}': no cell with that name exists".format(cell))
+            raise ValueError(
+                "Extra component cannot have cell '{}': no cell with that name exists".format(
+                    cell
+                )
+            )
     cells = extra_component.get("cells", {})
-    for k,cell in cells.items():
+    for k, cell in cells.items():
         if cell in webform["cells"]:
             pass
         elif cell in webform.get("extra_cells", {}):
             used_extra_cells.add(cell)
         elif cell in webform.get("webcells", {}):
-            pass 
+            pass
         else:
-            raise ValueError("Extra component cannot have cell '{}': no cell, extra cell or webcell with that name exists".format(cell))
+            raise ValueError(
+                "Extra component cannot have cell '{}': no cell, extra cell or webcell with that name exists".format(
+                    cell
+                )
+            )
     extra_components[id] = extra_component
     if id not in order:
         order.append(id)
@@ -119,11 +134,11 @@ for cell_or_tf_or_id in order:
         component = extra_component["component"]
         if component == "":
             continue
-        par = extra_component.get("params",{}).copy()
+        par = extra_component.get("params", {}).copy()
         cell = extra_component.get("cell")
         if cell is not None:
             for n in range(10):
-                par["ID%d" % (n+1)] = ident()
+                par["ID%d" % (n + 1)] = ident()
             par["CELL"] = cell
         cells = extra_component.get("cells")
         if cells is not None:
@@ -135,7 +150,7 @@ for cell_or_tf_or_id in order:
         html = template.render(**par)
         COMPONENTS += html + "\n"
 
-        used_components.add(component)        
+        used_components.add(component)
 
         component_params = components.get(component + ".json")
         if component_params is not None:
@@ -175,6 +190,7 @@ for cell_or_tf_or_id in order:
 
                 except Exception:
                     import traceback
+
                     traceback.print_exc()
                     continue
 
@@ -193,9 +209,9 @@ for cell_or_tf_or_id in order:
         component = transformer["component"]
         if component == "":
             continue
-        par = transformer.get("params",{}).copy()
+        par = transformer.get("params", {}).copy()
         for n in range(10):
-            par["ID%d" % (n+1)] = ident()
+            par["ID%d" % (n + 1)] = ident()
         par["TRANSFORMER"] = tf
 
         component_template = components[component + ".jinja.html"]
@@ -203,11 +219,11 @@ for cell_or_tf_or_id in order:
         html = template.render(**par)
         COMPONENTS += html + "\n"
 
-        used_components.add(component)        
+        used_components.add(component)
         continue
 
     cell = cell_or_tf_or_id
-    cell = cell.replace("/", "__") 
+    cell = cell.replace("/", "__")
     if cell in used_extra_cells and cell not in webform["cells"]:
         config = webform["extra_cells"][cell]
     elif cell in webform.get("webcells", {}):
@@ -215,7 +231,7 @@ for cell_or_tf_or_id in order:
     else:
         config = webform["cells"][cell]
     webdefault = config.get("webdefault")
-    
+
     if webdefault is None:
         webdefault = last_resort_webdefaults[config["celltype"]]
 
@@ -233,7 +249,9 @@ for cell_or_tf_or_id in order:
             SEAMLESS_WRITE_PATHS[encoding].append(path)
             code = """function (value) {{
       seamless_update("{path}", value, "{encoding}")
-    }}""".format(path=path, encoding=encoding)
+    }}""".format(
+                path=path, encoding=encoding
+            )
             wkey = cell + ".value"
             if wkey not in watchers:
                 watchers[wkey] = []
@@ -244,26 +262,23 @@ for cell_or_tf_or_id in order:
     }},""".format(cell=cell, path=path, encoding=encoding)
             WATCHERS += code + "\n    "
             '''
-    VUE_DATA[cell] = {
-        "checksum": None,
-        "value": webdefault
-    }
+    VUE_DATA[cell] = {"checksum": None, "value": webdefault}
     if "component" not in config:
         continue
     component = config["component"]
     if component == "":
         continue
     used_components.add(component)
-    par = config.get("params",{}).copy()
+    par = config.get("params", {}).copy()
     for n in range(10):
-        par["ID%d" % (n+1)] = ident()
+        par["ID%d" % (n + 1)] = ident()
     par["CELL"] = cell
 
     component_template = components[component + ".jinja.html"]
     template = Template(component_template)
     html = template.render(**par)
     COMPONENTS += html + "\n"
-    
+
     component_params = components.get(component + ".json")
     if component_params is not None:
         component_params = json.loads(component_params)
@@ -275,7 +290,7 @@ for component in used_components:
     component_js = components.get(component + ".js")
     if component_js is not None:
         COMPONENT_JS += component_js + "\n"
-        
+
     component_head_html = components.get(component + ".HEAD.html")
     if component_head_html is not None:
         HEAD_HTML += component_head_html
@@ -287,7 +302,9 @@ for component in used_components:
 for cell in has_file:
     code = """function (file) {{
       this.METHOD_file_upload("{cell}", file)
-    }}""".format(cell=cell)
+    }}""".format(
+        cell=cell
+    )
     wkey = cell + ".file"
     if wkey not in watchers:
         watchers[wkey] = []
@@ -300,14 +317,14 @@ for cell in has_file:
     '''
 
 for cell, default in webform.get("webcells", {}).items():
-    VUE_DATA[cell] = {
-        "value": default
-    }
+    VUE_DATA[cell] = {"value": default}
 
 component_template = components["INDEX.jinja.html"]
 template = Template(component_template)
 par = webform["index"]
-index_html = template.render(HEAD=HEAD_HTML, BODY=BODY_HTML, COMPONENTS=COMPONENTS, **par)
+index_html = template.render(
+    HEAD=HEAD_HTML, BODY=BODY_HTML, COMPONENTS=COMPONENTS, **par
+)
 result["index.html"] = index_html
 
 component_template = components["INDEX.jinja.js"]
@@ -329,6 +346,6 @@ index_js = template.render(
     SEAMLESS_PATH_TO_CELL=json.dumps(SEAMLESS_PATH_TO_CELL, indent=2),
     INIT_CODE=INIT_CODE,
     VUE_DATA=json.dumps(VUE_DATA, indent=2).replace("\n", "\n      "),
-    WATCHERS=WATCHERS.rstrip()
+    WATCHERS=WATCHERS.rstrip(),
 )
 result["index.js"] = index_js
