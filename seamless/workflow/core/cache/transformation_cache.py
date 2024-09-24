@@ -965,7 +965,10 @@ class TransformationCache:
         transformers = self.transformations_to_transformers[tf_checksum]
 
         if exc is not None:
-            if isinstance(exc, SeamlessTransformationError):
+            if isinstance(exc, CacheMissError):
+                exc_str = "CacheMissError: " + exc.args[0]
+                exc = SeamlessTransformationError(exc_str)
+            elif isinstance(exc, SeamlessTransformationError):
                 exc_str = None
                 if len(exc.args):
                     exc_str = exc.args[0]
