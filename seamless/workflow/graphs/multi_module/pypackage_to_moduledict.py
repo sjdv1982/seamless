@@ -2,8 +2,10 @@ code = {}
 if internal_package_name is not None and len(internal_package_name):
     code["__name__"] = internal_package_name
 from .get_pypackage_dependencies import get_pypackage_dependencies
+
+
 def analyze(d, prefix):
-    for k,v in d.items():
+    for k, v in d.items():
         if isinstance(v, dict):
             new_prefix = prefix
             if len(new_prefix):
@@ -36,7 +38,7 @@ def analyze(d, prefix):
                         continue
                     d = pos * "."
                 else:
-                    d = pos * "." + dep[ind+1:]
+                    d = pos * "." + dep[ind + 1 :]
             while d.startswith("."):
                 dots += 1
                 d = d[1:]
@@ -44,13 +46,13 @@ def analyze(d, prefix):
                 dep2 = ""
                 dpref = ".".join(ff[:-dots])
                 if len(dpref):
-                    dep2 += "." + dpref + "." 
+                    dep2 += "." + dpref + "."
                 dep2 += "__init__"
             else:
-                dep2 = "."    
+                dep2 = "."
                 dpref = ".".join(ff[:-dots])
                 if len(dpref):
-                    dep2 += dpref + "." 
+                    dep2 += dpref + "."
                 dep2 += d
             if dep2 == f:
                 continue
@@ -62,8 +64,10 @@ def analyze(d, prefix):
             "dependencies": deps,
         }
         code[f] = item
+
+
 dirdict = {}
-for k,v in pypackage_dirdict.items():
+for k, v in pypackage_dirdict.items():
     if not isinstance(v, str):
         dirdict[k] = v
         continue

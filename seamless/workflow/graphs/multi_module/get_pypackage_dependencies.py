@@ -1,5 +1,7 @@
 import ast
-def get_pypackage_dependencies(pycode:str, package_name:str, is_init:bool):
+
+
+def get_pypackage_dependencies(pycode: str, package_name: str, is_init: bool):
     tree = ast.parse(pycode)
     deps = set()
     for node in tree.body:
@@ -17,16 +19,19 @@ def get_pypackage_dependencies(pycode:str, package_name:str, is_init:bool):
                 for name in node.names:
                     deps.add("." + name.name)
                 continue
-            dep = "." * node.level 
+            dep = "." * node.level
             if node.module is not None:
                 dep += node.module
             deps.add(dep)
         else:
             continue
-        
+
     return sorted(list(deps))
+
+
 if __name__ == "__main__":
     import sys
+
     pycode = open(sys.argv[1]).read()
     if len(sys.argv) == 3:
         package_name = sys.argv[2]

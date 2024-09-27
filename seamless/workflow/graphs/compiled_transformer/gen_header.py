@@ -1,6 +1,4 @@
-
 from seamless.workflow.core.transformation import SeamlessTransformationError
-
 
 header = """
 /*
@@ -16,7 +14,9 @@ If your transform() function is written in C++, don't forget to add 'extern "C" 
 """
 
 if "type" not in input_schema:
-    raise SeamlessTransformationError("Input schema (transformer.inp.schema) needs to be defined in JSON schema format, containing at least 'type'")
+    raise SeamlessTransformationError(
+        "Input schema (transformer.inp.schema) needs to be defined in JSON schema format, containing at least 'type'"
+    )
 
 json_to_c = {
     "integer": "int",
@@ -31,12 +31,15 @@ json_to_c = {
     "string": "char",
 }
 
+
 def gen_struct_name(name, postfix="Struct"):
     def capitalize(subname):
         return "".join([subsubname.capitalize() for subsubname in subname.split("_")])
+
     if isinstance(name, str):
         name = (name,)
     return "".join([capitalize(subname) for subname in name]) + postfix
+
 
 def gen_basic_type(name, schema, *, verify_integer_bytesize, item=False):
     name2 = name
@@ -54,7 +57,11 @@ def gen_basic_type(name, schema, *, verify_integer_bytesize, item=False):
             type = schema["type"]
         else:
             if not has_form or "type" not in form:
-                raise SeamlessTransformationError("Item schema {0} must contain 'type' in its schema or form schema".format(name2))
+                raise SeamlessTransformationError(
+                    "Item schema {0} must contain 'type' in its schema or form schema".format(
+                        name2
+                    )
+                )
             type = form["type"]
     else:
         type = schema["type"]
@@ -63,7 +70,9 @@ def gen_basic_type(name, schema, *, verify_integer_bytesize, item=False):
     if type in ("integer", "number"):
         if not has_form or "bytesize" not in form:
             if type != "integer" or verify_integer_bytesize:
-                warnings.append(err + "'bytesize', assuming default type ('%s')" % ctype)
+                warnings.append(
+                    err + "'bytesize', assuming default type ('%s')" % ctype
+                )
             result = ctype
         else:
             result = json_to_c[type, form["bytesize"]]
@@ -75,10 +84,11 @@ def gen_basic_type(name, schema, *, verify_integer_bytesize, item=False):
                 if result.endswith("_t"):
                     result = "u" + result
                 else:
-                    result = "unsigned " +  result
+                    result = "unsigned " + result
     ###for warning in warnings:
     ###    print("WARNING: " + warning)
     return result
+
 
 def gen_array(name, schema, *, verify_shape, const):
     name2 = name
@@ -86,15 +96,21 @@ def gen_array(name, schema, *, verify_shape, const):
         name2 = ".".join(name)
 
     if "form" not in schema:
-        raise SeamlessTransformationError("'{0}' schema must have form schema".format(name2))
+        raise SeamlessTransformationError(
+            "'{0}' schema must have form schema".format(name2)
+        )
 
     form = schema["form"]
     array_struct_name = gen_struct_name(name)
     array_struct_members = []
     if verify_shape and "shape" not in form:
-        raise SeamlessTransformationError("'{0}' form schema must have 'shape'".format(name2))
+        raise SeamlessTransformationError(
+            "'{0}' form schema must have 'shape'".format(name2)
+        )
     if "ndim" not in form:
-        raise SeamlessTransformationError("'{0}' form schema must have 'ndim'".format(name2))
+        raise SeamlessTransformationError(
+            "'{0}' form schema must have 'ndim'".format(name2)
+        )
     array_struct_members.append(("unsigned int", "shape[%d]" % form["ndim"]))
 
     warnings = []
@@ -102,26 +118,26 @@ def gen_array(name, schema, *, verify_shape, const):
         if "contiguous" not in form or not form["contiguous"]:
             if "contiguous" not in form or "strides" not in form:
                 warn = "'{0}' form schema does not contain 'contiguous'. \
-     Explicit stride values will be provided.".format(name2)
+     Explicit stride values will be provided.".format(
+                    name2
+                )
                 warnings.append(warn)
             array_struct_members.append(("unsigned int", "strides[%d]" % form["ndim"]))
 
     itemschema = schema["items"]
     if isinstance(itemschema, list):
-        raise NotImplementedError(name2) #heterogeneous arrays (tuples)
+        raise NotImplementedError(name2)  # heterogeneous arrays (tuples)
 
     tname = name
     struct_code = ""
     if isinstance(name, str):
         tname = (name,)
     if type == "array":
-        raise NotImplementedError(name2) #nested array
+        raise NotImplementedError(name2)  # nested array
     elif type == "object":
         req_storage = "pure-binary"
         ctype, nested_struct_code = gen_struct(
-          tname+ ("item",), itemschema,
-          verify_pure_binary=True,
-          const=const
+            tname + ("item",), itemschema, verify_pure_binary=True, const=const
         )
         if const:
             ctype = "const " + ctype
@@ -130,13 +146,12 @@ def gen_array(name, schema, *, verify_shape, const):
     else:
         req_storage = "binary"
         ctype = gen_basic_type(
-            tname+ ("item",),
-            itemschema,
-            verify_integer_bytesize=True,
-            item=True
+            tname + ("item",), itemschema, verify_integer_bytesize=True, item=True
         )
     if "storage" not in schema or not schema["storage"].endswith(req_storage):
-        raise SeamlessTransformationError("'{0}' schema must have {1} storage defined".format(name2, req_storage))
+        raise SeamlessTransformationError(
+            "'{0}' schema must have {1} storage defined".format(name2, req_storage)
+        )
     ctype2 = ctype
     if const and not ctype2.startswith("const "):
         ctype2 = "const " + ctype
@@ -146,6 +161,7 @@ def gen_array(name, schema, *, verify_shape, const):
         print("WARNING: " + warning)
     struct_code += array_struct_code
     return array_struct_name, struct_code
+
 
 def gen_struct_code(name, members):
     struct_code = "typedef struct {0} {{\n".format(name)
@@ -157,6 +173,7 @@ def gen_struct_code(name, members):
     struct_code += "}} {0};\n\n".format(name)
     return struct_code
 
+
 def gen_struct(name, schema, *, verify_pure_binary, const):
     name2 = name
     if isinstance(name, (tuple, list)):
@@ -164,7 +181,9 @@ def gen_struct(name, schema, *, verify_pure_binary, const):
     if verify_pure_binary is not None:
         req_storage = "pure-binary" if verify_pure_binary else "binary"
         if "storage" not in schema or not schema["storage"].endswith(req_storage):
-            raise SeamlessTransformationError("'{0}' schema must have {1} storage defined".format(name2, req_storage))
+            raise SeamlessTransformationError(
+                "'{0}' schema must have {1} storage defined".format(name2, req_storage)
+            )
     struct_name = gen_struct_name(name)
     struct_members = []
     tname = name
@@ -176,9 +195,7 @@ def gen_struct(name, schema, *, verify_pure_binary, const):
         pname = tname + (propname,)
         if type == "array":
             ctype, nested_struct_code = gen_array(
-              pname, propschema,
-              verify_shape=True,
-              const=const
+                pname, propschema, verify_shape=True, const=const
             )
             if const:
                 ctype = "const " + ctype
@@ -186,8 +203,7 @@ def gen_struct(name, schema, *, verify_pure_binary, const):
             struct_code += nested_struct_code
         elif type == "object":
             ctype, nested_struct_code = gen_struct(
-              pname, propschema,
-              verify_pure_binary=True
+                pname, propschema, verify_pure_binary=True
             )
             if const:
                 ctype = "const " + ctype
@@ -199,6 +215,7 @@ def gen_struct(name, schema, *, verify_pure_binary, const):
 
     struct_code += gen_struct_code(struct_name, struct_members)
     return struct_name, struct_code
+
 
 ###print("input schema:", input_schema)
 ###print("result schema:", result_schema)
@@ -223,12 +240,16 @@ for propname in sorted(input_props.keys()):
 for propnr, propname in enumerate(order):
     propschema = input_props[propname]
     if "type" not in propschema:
-        raise SeamlessTransformationError("Property '%s' needs to have its type defined" % propname)
+        raise SeamlessTransformationError(
+            "Property '%s' needs to have its type defined" % propname
+        )
     prop_jtype = propschema["type"]
     if prop_jtype == "object":
-        raise NotImplementedError #input structs
+        raise NotImplementedError  # input structs
     elif prop_jtype == "array":
-        prop_ctype, array_struct_header = gen_array(propname, propschema, verify_shape=False, const=True)
+        prop_ctype, array_struct_header = gen_array(
+            propname, propschema, verify_shape=False, const=True
+        )
         prop_ctype = "const " + prop_ctype + "*"
         header += array_struct_header
     else:
@@ -237,24 +258,29 @@ for propnr, propname in enumerate(order):
 
 
 if "type" not in result_schema:
-    raise SeamlessTransformationError("Result schema (transformer.result.schema) needs to be defined in JSON schema format, containing at least 'type'")    
+    raise SeamlessTransformationError(
+        "Result schema (transformer.result.schema) needs to be defined in JSON schema format, containing at least 'type'"
+    )
 
 return_jtype = result_schema["type"]
 if return_jtype == "object":
     return_ctype = "void"
-    output_ctype, struct_header = gen_struct(result_name, result_schema, verify_pure_binary=None, const=False)
+    output_ctype, struct_header = gen_struct(
+        result_name, result_schema, verify_pure_binary=None, const=False
+    )
     header += struct_header
     input_args.append(output_ctype + " *" + result_name)
 elif return_jtype == "array":
     return_ctype = "void"
     output_ctype, struct_header = gen_array(
-        result_name, result_schema, 
-        verify_shape=True, const=False
+        result_name, result_schema, verify_shape=True, const=False
     )
     header += struct_header
     input_args.append(output_ctype + " *" + result_name)
 else:
-    output_ctype = gen_basic_type(result_name, result_schema, verify_integer_bytesize=False)
+    output_ctype = gen_basic_type(
+        result_name, result_schema, verify_integer_bytesize=False
+    )
     input_args.append(output_ctype + " *" + result_name)
 
 input_args = ", ".join(input_args)

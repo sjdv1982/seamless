@@ -411,11 +411,13 @@ def transformation_from_dict(
 
     def resolver_sync(transformation_obj):  # pylint: disable=unused-argument
         from seamless.checksum.buffer_cache import buffer_cache
+        from seamless.checksum import buffer_remote
 
         prepare_transformation_dict(transformation_dict)
         transformation_buffer = tf_get_buffer(transformation_dict)
         transformation = calculate_checksum(transformation_buffer)
         buffer_cache.cache_buffer(transformation, transformation_buffer)
+        buffer_remote.write_buffer(transformation, transformation_buffer)
         return transformation
 
     async def resolver_async(transformation_obj):
