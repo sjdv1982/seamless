@@ -1,12 +1,1 @@
-seamless/workflow/core/cache/transformation_cache.py
-seamless/workflow/graphs/compiled_transformer.seamless
-seamless/workflow/graphs/compiled_transformer.zip
-seamless/workflow/graphs/compiled_transformer/executor.py
-seamless/workflow/graphs/compiled_transformer/gen_header.py
-seamless/workflow/graphs/compiled_transformer/integrator.py
-seamless/workflow/graphs/multi_module/get_pypackage_dependencies.py
-seamless/workflow/graphs/multi_module/pypackage_to_moduledict.py
-seamless/workflow/graphs/status-visualization/status-visualization.py
-seamless/workflow/graphs/webgen.seamless
-seamless/workflow/graphs/webgen.zip
-seamless/workflow/graphs/webgen/generate-webpage.py
+seamless/workflow/stdlib/__init__.py
