@@ -205,10 +205,11 @@ class ContextPool:
 
         This is repeated until every N has been processed
         """
+        from seamless.workflow import Context
 
         contexts = self._contexts
 
-        async def runner(ctx):
+        async def runner(ctx: Context):
             await ctx.computation(report=None)
             await ctx.computation(report=None)
 
@@ -216,7 +217,7 @@ class ContextPool:
         task_indices = []
         initial_counter = min(self.nparallel, nindices)
         for n in range(initial_counter):
-            ctx = contexts[n]
+            ctx: Context = contexts[n]
             setup_func(ctx, n)
             task_indices.append(n)
             assert len(tasks) == n
@@ -237,7 +238,7 @@ class ContextPool:
                 else:
                     raise Exception  # shouldn't happen  # pylint: disable=broad-exception-raised
 
-                ctx = contexts[done_task]
+                ctx: Context = contexts[done_task]
                 result_func(ctx, task_index)
 
                 if counter < nindices:

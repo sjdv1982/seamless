@@ -31,7 +31,7 @@ for graph_file in graph_files:
             api_schema = None
             if hasattr(ssctx, "api_schema"):
                 api_schema = ssctx.api_schema.value
-            path = ("stdlib", graph_name[len("lib-") :], child)
+            path = ("workflow", "stdlib", graph_name[len("lib-") :], child)
             sub_graph = ssctx.static.get_graph()
             set_library(
                 path,
@@ -51,7 +51,7 @@ for graph_file in graph_files:
         api_schema = None
         if hasattr(sctx, "api_schema"):
             api_schema = sctx.api_schema.value
-        path = ("stdlib", graph_name)
+        path = ("workflow", "stdlib", graph_name)
         set_library(
             path,
             graph,
@@ -61,8 +61,8 @@ for graph_file in graph_files:
             constructor_schema=constructor_schema,
             api_schema=api_schema,
         )
-    globals()[path[1]] = getattr(lib, path[1])
-    __all__.append(path[1])
+    globals()[path[-1]] = getattr(lib, path[-1])
+    __all__.append(path[-1])
 
 
 def __dir__():
