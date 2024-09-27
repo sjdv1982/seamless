@@ -17,7 +17,7 @@ setup(
             "workflow/graphs/*.zip",
             "workflow/stdlib/*.seamless",
             "workflow/stdlib/*.zip",
-            "workflow/webunits/*.yaml",
+            "workflow/highlevel/webunits/*.yaml",
         ],
     },
     zip_safe=False,
