@@ -13,3 +13,5 @@ tests/highlevel/data/*
 tests/highlevel/context2-graph-raw.txt
 tests/highlevel/debugmount/*
 tests/cmd/*.job-*
+examples/wikipedia/buffers/c953f648215413c5c7a3ae179a57d74e5ca495290a8e5a06a474baa158178d15
+examples/wikipedia/BAK

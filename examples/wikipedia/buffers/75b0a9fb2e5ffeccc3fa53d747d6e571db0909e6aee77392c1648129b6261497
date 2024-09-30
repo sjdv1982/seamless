@@ -1,0 +1,23 @@
+def count_vowels(abstracts):
+    import re
+    import xml.etree.ElementTree as ET
+    from io import BytesIO
+
+    abstracts_reader = BytesIO(abstracts)
+
+    vowels = re.compile("[aeiou]")
+    count = 0
+    for event, elem in ET.iterparse(abstracts_reader, events=["end"]):
+        try:
+            if elem.tag != "abstract":
+                continue
+            text = elem.text
+            if text is None:
+                continue
+            if text.startswith("|"):
+                continue
+            count += len(re.findall(vowels, text))
+        finally:
+            elem.clear()
+
+    return count
