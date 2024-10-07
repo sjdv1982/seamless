@@ -1,0 +1,30 @@
+Saving your computation
+    Precisely defining it
+    Reusing it
+    Sharing it with others
+        Including big data. Wikipedia example: 200 KB cache to reuse a 6.7 GB computation
+    Deploying it anywhere
+        seamless-run-transformation <checksum>
+    Computation is just data
+        Polyglot
+        You can throw away the (Python) code that defined the computation (unless didactic)
+        Reproducible, all dependencies are in it
+        Deploy it anywhere, computation where the data is
+        Checksum metadata (on inputs and results and computation)
+        Workflows are also just data
+        (under the hood: checksum => transformation dict; deep checksum of nested computations)
+
+More productive computational work
+    Three styles: direct (Python), command-line (bash), workflow (polyglot)
+    Re-using computation
+        Instant re-execution
+        Building upon existing computation
+        (incremental computing)
+    Interactive reactive workflows
+        => Automatic collaborative webservers
+
+Optimization
+    Often, the checksum is all your need (don't save intermediate data)
+    Save time using precompute (instant re-execution)
+    Save space using recompute
+    Modularity: choose the correct programming language, claim resources when you need them, computation where the data is.
