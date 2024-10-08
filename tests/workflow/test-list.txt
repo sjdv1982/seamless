@@ -366,7 +366,8 @@ webserver-nested
      seamless-new-project webserver-nested
      in load-project.py, change DELEGATION_LEVEL to 4
      seamless-load-project
-     %run -i history.py     
+     %run -i history.py
+     !cp webform-CUSTOM.json web/webform.json     
      save()
      export()
   Version of manyjobs where the number of jobs is parametrized.
