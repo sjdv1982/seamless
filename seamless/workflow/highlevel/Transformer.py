@@ -312,7 +312,11 @@ class Transformer(Base, HelpMixin):
 
     @local.setter
     def local(self, value: bool):
-        self.meta["local"] = value
+        meta = self.meta
+        if meta is None:
+            meta = {}
+        meta["local"] = value
+        self.meta = meta
 
     @property
     def RESULT(self) -> str:

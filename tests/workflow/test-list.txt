@@ -359,3 +359,16 @@ multi-core-transformations.py
    TODO: as of Seamless 0.12, the first job says "ready" instead of running
 slow-buffer.py
   To detect suspected slowness issues with buffer upload, but hasn't given an error yet.
+webserver-nested
+  Run with:
+     cd webserver-nested
+     rm -rf vault web graph load-project.py webserver-nested.ipynb
+     seamless-new-project webserver-nested
+     in load-project.py, change DELEGATION_LEVEL to 4
+     seamless-load-project
+     %run -i history.py     
+     save()
+     export()
+  Version of manyjobs where the number of jobs is parametrized.
+  Half of the jobs are calculated with the direct style (like imperative-manyjobs.py).
+  The other half are calculated with the command-line style (like ../cmd/manyjobs.sh)

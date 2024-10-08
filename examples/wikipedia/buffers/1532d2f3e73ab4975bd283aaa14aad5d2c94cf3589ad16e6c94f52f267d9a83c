@@ -1,0 +1,52 @@
+{
+  "__format__": {
+    "file1.py": {
+      "filesystem": {
+        "mode": "file",
+        "optional": true
+      }
+    },
+    "file2.xml": {
+      "filesystem": {
+        "mode": "file",
+        "optional": true
+      }
+    }
+  },
+  "__language__": "python",
+  "__output__": [
+    "result",
+    "bytes",
+    null
+  ],
+  "bashcode": [
+    "text",
+    null,
+    "1beb12f89eadc9ea9df5da7c8e5cdc3620769d7b5db5d8e86b7a4c29fe89576e"
+  ],
+  "code": [
+    "python",
+    "transformer",
+    "67217f57baa4f51147373aac3840c53298f3b4baf3cb0ce0cc54d5514677e306"
+  ],
+  "conda_environment_": [
+    "str",
+    null,
+    "ed2b555cdbacb1672ae4b2a0b7ab2270d9c40fde2693ff47ad46e3a559bc0615"
+  ],
+  "file1.py": [
+    "bytes",
+    null,
+    "349a68c11daaedf1c0c0e3bcc1cc0bed345b17a8661e6c00d4499181744a3e34"
+  ],
+  "file2.xml": [
+    "bytes",
+    null,
+    "c953f648215413c5c7a3ae179a57d74e5ca495290a8e5a06a474baa158178d15"
+  ],
+  "pins_": [
+    "plain",
+    null,
+    "d68728cf5a706dd12cb3b1ce57a2e5003e56f960e0ab6ff6698e00783a44b8e6"
+  ]
+}

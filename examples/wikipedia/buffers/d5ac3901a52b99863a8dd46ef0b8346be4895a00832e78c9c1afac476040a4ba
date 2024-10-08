@@ -1,0 +1,37 @@
+{
+  "__format__": {
+    "file1.py": {
+      "filesystem": {
+        "mode": "file",
+        "optional": true
+      }
+    },
+    "file2.xml": {
+      "filesystem": {
+        "mode": "file",
+        "optional": true
+      }
+    }
+  },
+  "__language__": "bash",
+  "__output__": [
+    "result",
+    "bytes",
+    null
+  ],
+  "code": [
+    "text",
+    null,
+    "1beb12f89eadc9ea9df5da7c8e5cdc3620769d7b5db5d8e86b7a4c29fe89576e"
+  ],
+  "file1.py": [
+    "bytes",
+    null,
+    "349a68c11daaedf1c0c0e3bcc1cc0bed345b17a8661e6c00d4499181744a3e34"
+  ],
+  "file2.xml": [
+    "bytes",
+    null,
+    "c953f648215413c5c7a3ae179a57d74e5ca495290a8e5a06a474baa158178d15"
+  ]
+}

@@ -1,0 +1,18 @@
+{
+  "__language__": "python",
+  "__output__": [
+    "result",
+    "mixed",
+    null
+  ],
+  "abstracts": [
+    "bytes",
+    null,
+    "c953f648215413c5c7a3ae179a57d74e5ca495290a8e5a06a474baa158178d15"
+  ],
+  "code": [
+    "python",
+    "transformer",
+    "3125845da48f4ac57843cdabcef3c9bb81186ef8dafe9a6a8bd0674c5dc64eb3"
+  ]
+}
