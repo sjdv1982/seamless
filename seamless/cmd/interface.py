@@ -17,6 +17,9 @@ def load(yamlfile):
     """Load interface from YAML file"""
     with open(yamlfile) as f:
         data = yaml.load(f)
+    if data is None:
+        msg(1, f"{yamlfile} is empty")
+        return {}
     if not isinstance(data, dict):
         raise TypeError("Must be dict, not {}".format(type(data)))
     # TODO: validation!
@@ -234,6 +237,8 @@ def get_argtypes_and_results(
 
     order = []
     order[:] = [original_binary] + command[1:]
+    if "@order" in interface_py_data:
+        order = interface_py_data["@order"]
     argtypes = {"@order": order}
     argtypes.update(interface_data.get("argtypes", {}))
     argtypes.update(interface_py_data.get("argtypes", {}))
@@ -259,6 +264,9 @@ def get_argtypes_and_results(
         if files:
             msg(3, f"Read 'files' from {if_filename}:\n  {files}")
         directories = if_data.get("directories", [])
+        values = if_data.get("values", [])
+        if values:
+            msg(3, f"Read 'values' from {if_filename}:\n  {values}")
         shim = if_data.get("shim")
         fdir = os.path.split(command[0])[0]
         results = if_data.get("results", [])
@@ -286,6 +294,7 @@ def get_argtypes_and_results(
                 else:
                     fname = f
                     f2 = os.path.expanduser(f)
+                    fixed_mapping = True
                     if f2 != f:
                         mapping = f2
                         fixed_mapping = False
@@ -309,6 +318,8 @@ def get_argtypes_and_results(
                     }
                 else:
                     argtypes[fname] = ftype
+        for val in values:
+            argtypes[val] = "value"
         if shim is not None:
             argtypes["@shim"] = shim
     return argtypes, initial_results

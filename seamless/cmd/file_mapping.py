@@ -91,69 +91,75 @@ def get_file_mapping(
                 nfiles += 1
             else:
                 ndirectories += 1
-            fullpath = Path(path).absolute().as_posix()
-            if mapping_mode == "literal":
-                path2 = path
-                cwd0 = "" if cwd == os.sep else cwd
-                if not fullpath.startswith(cwd0 + os.sep):
-                    errmsg = """Argument {} is not under the current working directory.
+            if fixed_mapping:
+                new_path = path
+                new_entry = {"type": argtype, "mapping": path}
+            else:
+                fullpath = Path(path).absolute().as_posix()
+                if mapping_mode == "literal":
+                    path2 = path
+                    cwd0 = "" if cwd == os.sep else cwd
+                    if not fullpath.startswith(cwd0 + os.sep):
+                        errmsg = """Argument {} is not under the current working directory.
 This is required under 'literal' file mapping. 
 To solve this problem:
 - Select a different file mapping mode (-ms or -mx)
 or:
 - Specify a different working directory (-w or -W)
 """
-                    raise ValueError(errmsg.format(argdescr))
-                if fullpath == cwd:
-                    relpath = "."
-                elif cwd == os.sep:
-                    relpath = fullpath[1:]
-                else:
-                    relpath = fullpath[len(cwd) + 1 :]
-                if path != relpath:
-                    msg(
-                        3,
-                        "Resolve {} to relative path '{}'".format(argdescr, relpath),
-                    )
-                new_path = relpath
-                new_entry = {"type": argtype, "mapping": fullpath}
+                        raise ValueError(errmsg.format(argdescr))
+                    if fullpath == cwd:
+                        relpath = "."
+                    elif cwd == os.sep:
+                        relpath = fullpath[1:]
+                    else:
+                        relpath = fullpath[len(cwd) + 1 :]
+                    if path != relpath:
+                        msg(
+                            3,
+                            "Resolve {} to relative path '{}'".format(
+                                argdescr, relpath
+                            ),
+                        )
+                    new_path = relpath
+                    new_entry = {"type": argtype, "mapping": fullpath}
 
-            elif mapping_mode == "strip":
-                spath = path
-                path2 = os.path.split(spath)[1]
-                if not path2:
-                    assert argtype == "directory", (argdescr, argtype)
-                    # Take the last element of the parent directory as name
-                    path2 = os.path.split(path)[0].split(os.sep)[-1]
-                assert len(path2), (argdescr, path)
+                elif mapping_mode == "strip":
+                    spath = path
+                    path2 = os.path.split(spath)[1]
+                    if not path2:
+                        assert argtype == "directory", (argdescr, argtype)
+                        # Take the last element of the parent directory as name
+                        path2 = os.path.split(path)[0].split(os.sep)[-1]
+                    assert len(path2), (argdescr, path)
 
-                msg(3, "Resolve {} to '{}'".format(argdescr, fullpath))
-                msg(2, "Map {} to '{}'".format(argdescr, path2))
+                    msg(3, "Resolve {} to '{}'".format(argdescr, fullpath))
+                    msg(2, "Map {} to '{}'".format(argdescr, path2))
 
-                new_path = path2
-                new_entry = {"type": argtype, "mapping": fullpath}
+                    new_path = path2
+                    new_entry = {"type": argtype, "mapping": fullpath}
 
-            else:  # extension
-                if argtype == "file":
-                    path2 = f"file{nfiles}"
-                    extension = os.path.splitext(path)[1]
-                    if len(extension):
-                        path2 += extension
-                else:
-                    path2 = path
-                    cwd0 = "" if cwd == os.sep else cwd
-                    if not fullpath.startswith(cwd0 + os.sep):
-                        errmsg = """Argument {} is not under the current working directory.
+                else:  # extension
+                    if argtype == "file":
+                        path2 = f"file{nfiles}"
+                        extension = os.path.splitext(path)[1]
+                        if len(extension):
+                            path2 += extension
+                    else:
+                        path2 = path
+                        cwd0 = "" if cwd == os.sep else cwd
+                        if not fullpath.startswith(cwd0 + os.sep):
+                            errmsg = """Argument {} is not under the current working directory.
 This is required under 'extension' file mapping for directories. 
 To solve this problem:
 - Specify a different working directory (-w or -W)
 """
-                        raise ValueError(errmsg.format(argdescr))
+                            raise ValueError(errmsg.format(argdescr))
 
-                msg(3, "Resolve {} to '{}'".format(argdescr, fullpath))
-                msg(2, "Map {} to '{}'".format(argdescr, path2))
-                new_path = path2
-                new_entry = {"type": argtype, "mapping": fullpath}
+                    msg(3, "Resolve {} to '{}'".format(argdescr, fullpath))
+                    msg(2, "Map {} to '{}'".format(argdescr, path2))
+                    new_path = path2
+                    new_entry = {"type": argtype, "mapping": fullpath}
 
             if new_path in result and result[new_path] != new_entry:
                 errmsg = f"""Two different mappings for argument "{new_path}":
