@@ -164,16 +164,9 @@ def prepare_bash_transformation(
     return Checksum(transformation_checksum), transformation_dict
 
 
-def run_transformation(
-    transformation_dict: dict, *, undo: bool, fingertip=False, scratch=False
-):
-    """Run a cmd-seamless transformation dict.
-    First convert it into a bash transformation."""
+def _run_transformation0(transformation_dict: dict, *, undo: bool, fingertip=False):
     from seamless.workflow.metalevel.unbashify import unbashify
-    from seamless.workflow.core.direct.run import (
-        run_transformation_dict,
-        register_transformation_dict,
-    )
+    from seamless.workflow.core.direct.run import register_transformation_dict
     from seamless.workflow.core.cache.transformation_cache import transformation_cache
 
     if not fingertip:
@@ -219,7 +212,48 @@ def run_transformation(
             )
             return Checksum(result)
     else:
+        return transformation_checksum_py
+
+
+def run_transformation(
+    transformation_dict: dict, *, undo: bool, fingertip=False, scratch=False
+):
+    """Run a cmd-seamless transformation dict.
+    First convert it into a bash transformation."""
+
+    from seamless.workflow.core.direct.run import run_transformation_dict
+
+    result0 = _run_transformation0(transformation_dict, undo=undo, fingertip=fingertip)
+    if undo:
+        return result0
+    else:
+        transformation_checksum_py = result0
         result_checksum = run_transformation_dict(
+            transformation_dict, fingertip=fingertip, scratch=scratch
+        )
+        result_checksum = Checksum(result_checksum)
+        if result_checksum:
+            # while https://github.com/sjdv1982/seamless/issues/247 is open:
+            database.set_transformation_result(
+                transformation_checksum_py, result_checksum
+            )
+        return Checksum(result_checksum)
+
+
+async def run_transformation_async(
+    transformation_dict: dict, *, undo: bool, fingertip=False, scratch=False
+):
+    """Run a cmd-seamless transformation dict.
+    First convert it into a bash transformation."""
+
+    from seamless.workflow.core.direct.run import run_transformation_dict_async
+
+    result0 = _run_transformation0(transformation_dict, undo=undo, fingertip=fingertip)
+    if undo:
+        return result0
+    else:
+        transformation_checksum_py = result0
+        result_checksum = await run_transformation_dict_async(
             transformation_dict, fingertip=fingertip, scratch=scratch
         )
         result_checksum = Checksum(result_checksum)

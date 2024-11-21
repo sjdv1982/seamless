@@ -8,6 +8,7 @@ seamless.code-workspace
 */__pycache__/
 */.ipynb_checkpoints/
 */*-BAK*/
+**/.seamless-queue
 tests/workflow/*.json
 tests/workflow/data/*
 tests/workflow/context2-graph-raw.txt

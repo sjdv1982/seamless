@@ -9,6 +9,8 @@ seamless-fingertip
 seamless-get-global-info
 seamless-http-put
 seamless-new-project
+seamless-queue
+seamless-queue-finish
 seamless-run-transformation
 seamless-serve-graph
 seamless-serve-graph-interactive

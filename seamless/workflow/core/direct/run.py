@@ -110,6 +110,20 @@ def fingertip(checksum, dunder=None):
     return result
 
 
+async def fingertip_async(checksum, dunder=None):
+
+    checksum = parse_checksum(checksum, as_bytes=True)
+    result = _get_buffer(checksum, remote=True)
+    if result is not None:
+        return result
+    set_dummy_manager()
+
+    result = await _dummy_manager.cachemanager.fingertip(checksum, dunder=dunder)
+    if result is None:
+        raise CacheMissError(checksum.hex())
+    return result
+
+
 def _register_transformation_dict(
     transformation_checksum, transformation_buffer, transformation_dict
 ):

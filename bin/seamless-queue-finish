@@ -1,0 +1,20 @@
+#!/usr/bin/env -S python3 -u
+# type: ignore   # disable PyLance, as it cannot import seamless from here. Pylint still works correctly
+
+import os
+import json
+import time
+
+queue_file = os.environ.get("SEAMLESS_QUEUE_FILE")
+if queue_file is None:
+    queue_file = ".seamless-queue"
+
+exists = os.path.exists(queue_file)
+
+with open(queue_file, "ab") as fp:
+    msg = json.dumps({"queue_command": "EOF"})
+    fp.write(msg.encode() + b"\x00")
+
+if exists:
+    while os.path.exists(queue_file):
+        time.sleep(0.1)

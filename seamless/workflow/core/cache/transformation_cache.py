@@ -1261,6 +1261,12 @@ class TransformationCache:
             self.register_known_transformation(tf_checksum, result_checksum)
             if not fingertip:
                 return result_checksum
+            else:
+                result_buffer = get_buffer(result_checksum, remote=True)
+                if result_buffer is not None:
+                    buffer_cache.cache_buffer(result_checksum, result_buffer)
+                    return result_checksum
+
         if cache_only:
             return None
         transformation = await self.serve_get_transformation(tf_checksum, None)

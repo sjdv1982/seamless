@@ -17,14 +17,14 @@ for i in $(seq $ntrials); do
     i2=$((i-1))
     export seed="${seeds[$i2]}"
     cmd="python3 calc_pi.py --seed $seed --ndots 1000000000 > calc_pi.job-$i"
-    seamless --fingertip -c "$cmd" &
-    sleep 0.2  # bin/seamless needs 0.5-1s to start up, at full CPU, accessing hard disk
-    while [ $(jobs -r | wc -l) -gt 300 ]; do  # limiting factor is memory (~50 MB per process)
-        echo WAIT... $i
-        wait -n
-    done
+    seamless --qsub --fingertip --ncores 2 -c "$cmd" &
+    sleep 0.25
+    echo $i
 done
-wait
+echo 'Jobs submitted'
+seamless-queue &
+seamless-queue-finish
+
 python3 -c '
 import sys
 import numpy as np
