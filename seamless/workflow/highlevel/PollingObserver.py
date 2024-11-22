@@ -29,6 +29,9 @@ class PollingObserver:
             self._run_once()
 
     def _run_once(self):
+        from silk.Silk import Silk
+        from silk.mixed import MixedObject
+
         class PathException(Exception):
             pass
 
@@ -100,5 +103,3 @@ class PollingObserver:
 
 from .Context import Context, Base
 from ..core.macro import Path
-from silk.Silk import Silk
-from silk.mixed import MixedObject

@@ -1,8 +1,6 @@
 import asyncio
 from copy import deepcopy
-import numpy as np
 from io import BytesIO
-from silk.mixed import MAGIC_NUMPY, MAGIC_SEAMLESS_MIXED
 from seamless import Checksum, Buffer
 
 
@@ -252,6 +250,9 @@ def _deep_structure_to_value(deep_structure, hash_pattern, value_dict, copy):
 
 
 def deserialize_raw(buffer: Buffer | bytes):
+    import numpy as np
+    from silk.mixed import MAGIC_NUMPY, MAGIC_SEAMLESS_MIXED
+
     if isinstance(buffer, Buffer):
         buffer = buffer.value
     if buffer.startswith(MAGIC_SEAMLESS_MIXED):
@@ -276,6 +277,8 @@ async def _deserialize_raw_async(buffer):
 
 
 def serialize_raw(value, use_cache=True):
+    import numpy as np
+
     if isinstance(value, np.ndarray) and value.dtype.char == "S":
         return value.tobytes()
     elif isinstance(value, bytes):
@@ -287,6 +290,8 @@ def serialize_raw(value, use_cache=True):
 
 
 async def serialize_raw_async(value, use_cache=True):
+    import numpy as np
+
     if isinstance(value, np.ndarray) and value.dtype.char == "S":
         return value.tobytes()
     elif isinstance(value, bytes):
@@ -415,6 +420,8 @@ def _value_to_objects(value, hash_pattern, objects):
             result[key] = _value_to_objects(value[key], sub_hash_pattern, objects)
         return result
     else:
+        import numpy as np
+
         for key in hash_pattern:
             if key.startswith("!"):
                 result = []
@@ -669,6 +676,8 @@ async def apply_hash_pattern(checksum: Checksum, hash_pattern):
     else:
         buffer = get_buffer(checksum, remote=True)
         if hash_pattern == "##":
+            from silk.mixed import MAGIC_NUMPY, MAGIC_SEAMLESS_MIXED
+
             if not buffer.startswith(MAGIC_SEAMLESS_MIXED):
                 if not buffer.startswith(MAGIC_NUMPY):
                     try:
@@ -678,6 +687,8 @@ async def apply_hash_pattern(checksum: Checksum, hash_pattern):
                     return checksum
         value = await deserialize(buffer, checksum, "mixed", False)
         if hash_pattern == "##":
+            import numpy as np
+
             if isinstance(value, np.ndarray) and value.dtype.char == "S":
                 deep_buffer = value.tobytes()
             else:  # probably a truly mixed Seamless object, or a true Numpy array. Just return the buffer

@@ -8,7 +8,6 @@ from seamless.checksum.buffer_cache import buffer_cache
 from seamless.checksum.deserialize import deserialize_sync as deserialize
 from seamless.cmd.download import download
 from seamless.checksum.json import json_dumps
-from seamless.workflow.core.direct.run import fingertip, fingertip_async
 from seamless.checksum.calculate_checksum import calculate_checksum
 
 stdout_lock = threading.Lock()
@@ -126,6 +125,8 @@ def download_result(filename, file_checksum, *, msg_func):
 def get_result_buffer(
     result_checksum, *, do_fingertip, do_scratch, has_result_targets, err_func
 ):
+    from seamless.workflow.core.direct.run import fingertip
+
     try:
         if do_fingertip or do_scratch:
             result_buffer = fingertip(result_checksum.bytes())
@@ -150,6 +151,8 @@ def get_result_buffer(
 async def get_result_buffer_async(
     result_checksum, *, do_fingertip, do_scratch, has_result_targets, err_func
 ):
+    from seamless.workflow.core.direct.run import fingertip_async
+
     try:
         if do_fingertip or do_scratch:
             result_buffer = await fingertip_async(result_checksum.bytes())

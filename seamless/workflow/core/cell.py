@@ -5,6 +5,7 @@ from weakref import WeakSet
 from seamless import Checksum, Buffer
 from seamless.util.source import strip_decorators
 
+
 from . import SeamlessBase
 from .status import StatusReasonEnum
 
@@ -275,6 +276,7 @@ class Cell(SeamlessBase):
 
     def from_file(self, filepath):
         ok = False
+        encoding = "utf-8"
         if self._mount_kwargs is not None:
             if "binary" in self._mount_kwargs:
                 binary = self._mount_kwargs["binary"]
@@ -517,18 +519,22 @@ class MixedCell(Cell):
 
     @property
     def storage(self):
+        from silk.mixed.get_form import get_form
 
         v = super().value
         if v is None:
             return None
+
         return get_form(v)[0]
 
     @property
     def form(self):
+        from silk.mixed.get_form import get_form
 
         v = super().value
         if v is None:
             return None
+
         return get_form(v)[1]
 
     @property
@@ -749,10 +755,11 @@ subcelltypes = {
 }
 subcelltypes["module"] = None
 
+
 from .unbound_context import UnboundManager
+
 from .mount import MountItem
 from .mount import is_dummy_mount
-from silk.mixed.get_form import get_form
 from .structured_cell import Inchannel, Outchannel
 from .macro_mode import get_macro_mode
 from .share import sharemanager

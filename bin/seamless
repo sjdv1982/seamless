@@ -39,8 +39,7 @@ from seamless.cmd.bytes2human import human2bytes
 from seamless.cmd.get_results import get_results, get_result_buffer, maintain_futures
 from seamless.Environment import Environment
 from seamless.checksum.json import json_dumps
-from seamless.workflow.core.direct.run import extract_dunder, tf_get_buffer
-from seamless.workflow.core.transformation import SeamlessTransformationError
+from seamless.util.transformation import extract_dunder, tf_get_buffer
 
 parser = argparse.ArgumentParser()
 parser.add_argument(
@@ -872,6 +871,8 @@ elif args.qsubmit:
     msg(1, "Command submitted to queue file")
 
     sys.exit(0)
+
+from seamless.workflow.core.transformation import SeamlessTransformationError
 
 delete_futures_event = threading.Event()
 

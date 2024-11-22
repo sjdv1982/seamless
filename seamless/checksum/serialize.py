@@ -2,13 +2,6 @@
 
 import logging
 
-import numpy as np
-
-from silk.mixed.io import (  # pylint: disable=no-name-in-module
-    serialize as mixed_serialize,
-)
-from silk.Silk import Silk
-
 from seamless.util import lrucache2
 from seamless.util import unchecksum
 from seamless.checksum.celltypes import text_types
@@ -47,18 +40,6 @@ def _serialize(value, celltype: str):
     elif celltype == "plain":
         value = unchecksum(value)
         buffer = json_dumps(value, as_bytes=True) + b"\n"
-    elif celltype == "mixed":
-        if isinstance(value, Silk):
-            value = value.unsilk
-        else:
-            value = unchecksum(value)
-        buffer = mixed_serialize(value)
-    elif celltype == "binary":
-        if isinstance(value, bytes):
-            buffer = value
-        else:
-            value = np.array(value)
-            buffer = mixed_serialize(value)
     elif celltype == "bytes":
         buffer = None
         if isinstance(value, bytes):
@@ -73,7 +54,31 @@ def _serialize(value, celltype: str):
     elif celltype == "checksum":
         buffer = json_dumps(value, as_bytes=True) + b"\n"
     else:
-        raise TypeError(celltype)
+        if celltype == "mixed":
+            import numpy as np  # delayed import, since it takes ~1 sec in user time
+            from silk.Silk import Silk
+            from silk.mixed.io import (  # pylint: disable=no-name-in-module
+                serialize as mixed_serialize,
+            )
+
+            if isinstance(value, Silk):
+                value = value.unsilk
+            else:
+                value = unchecksum(value)
+            buffer = mixed_serialize(value)
+        elif celltype == "binary":
+            if isinstance(value, bytes):
+                buffer = value
+            else:
+                import numpy as np  # delayed import, since it takes ~1 sec in user time
+                from silk.mixed.io import (  # pylint: disable=no-name-in-module
+                    serialize as mixed_serialize,
+                )
+
+                value = np.array(value)
+                buffer = mixed_serialize(value)
+        else:
+            raise TypeError(celltype)
     logger.debug("SERIALIZE: buffer of length {}".format(len(buffer)))
     return buffer
 

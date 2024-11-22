@@ -15,7 +15,6 @@ try:
 except ModuleNotFoundError:
     debugpy = None
 
-from silk import Silk
 from seamless import Checksum, Buffer, CacheMissError
 from seamless.checksum import database_client
 from seamless.checksum.database_client import database
@@ -184,6 +183,8 @@ def fast_pack(unpacked_values, hash_pattern, *, scratch, result_queue):
 
 
 def unsilk(value):
+    from silk import Silk
+
     if isinstance(value, Silk):
         return unsilk(value.unsilk)
     elif isinstance(value, list):

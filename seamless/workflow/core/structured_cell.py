@@ -4,7 +4,6 @@ from copy import deepcopy
 from seamless import Checksum
 from . import SeamlessBase
 from .status import StatusReasonEnum
-from .utils import overlap_path
 
 
 class Inchannel:
@@ -75,8 +74,6 @@ class StructuredCell(SeamlessBase):
         hash_pattern=None,
         validate_inchannels=True
     ):
-        from .unbound_context import UnboundManager
-
         self.no_auth = False
         if auth is None:
             if not len(inchannels):
@@ -342,6 +339,19 @@ class StructuredCell(SeamlessBase):
         # Silk structure using self.auth
         # (_set_auth_path, _get_auth_path, wrapped in a Backend)
         # This is to control the authoritative part
+
+        from silk.mixed.Monitor import Monitor
+        from silk.mixed.Backend import (
+            StructuredCellBackend,
+            StructuredCellSchemaBackend,
+        )
+        from silk.mixed import MixedObject, MixedDict
+        from silk.Silk import Silk
+        from silk.policy import (
+            default_policy as silk_default_policy,
+            no_infer_policy as silk_no_infer_policy,
+        )
+
         backend = StructuredCellBackend(self)
         monitor = Monitor(backend)
         mixed_object = MixedObject(monitor, ())
@@ -369,6 +379,11 @@ class StructuredCell(SeamlessBase):
     def handle_hash(self):
         if self.hash_pattern is None:
             return self.handle
+
+        from silk.mixed.Monitor import Monitor
+        from silk.mixed.Backend import StructuredCellBackend
+        from silk.mixed import MixedDict, MixedList
+
         backend = StructuredCellBackend(self)
         monitor = Monitor(backend)
         if self.hash_pattern in ({"*": "#"}, {"*": "##"}):
@@ -409,6 +424,8 @@ class StructuredCell(SeamlessBase):
         # i.e. modification is useless
         # i.e. any external modification to self._data will make it out-of-date
         # i.e. does NOT use the StructuredCellBackend, but DefaultBackend
+        from silk.Silk import Silk
+
         value = self._data.value
         schema = None
         schema = self.get_schema()
@@ -430,7 +447,6 @@ class StructuredCell(SeamlessBase):
         return self._data.data
 
     def _set_context(self, context, name):
-        from .unbound_context import UnboundManager
 
         has_ctx = self._context is not None
         super()._set_context(context, name)
@@ -470,18 +486,14 @@ class PathDict(dict):
 
 
 from .cell import Cell
+
 from .unbound_context import UnboundManager
+
 from seamless.checksum.expression import validate_hash_pattern
+
 from .protocol.expression import (
     get_subpath_sync as get_subpath,
     set_subpath_sync as set_subpath,
 )
-from silk.mixed.Monitor import Monitor
-from silk.mixed.Backend import StructuredCellBackend, StructuredCellSchemaBackend
-from silk.mixed import MixedObject, MixedDict, MixedList
-from silk.Silk import Silk
-from silk.policy import (
-    default_policy as silk_default_policy,
-    no_infer_policy as silk_no_infer_policy,
-)
+
 from seamless.checksum.buffer_cache import buffer_cache

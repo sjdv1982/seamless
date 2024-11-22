@@ -16,14 +16,18 @@ from types import LambdaType
 from ast import PyCF_ONLY_AST, FunctionDef, Expr, Lambda
 import textwrap
 
-from silk.mixed import MixedBase
-from silk import Silk
-from silk.validation import _allowed_types
 from seamless.util.lambdacode import lambdacode
 from seamless.util.source import strip_decorators
 from seamless.checksum.cached_compile import cached_compile
 
-ConstantTypes = _allowed_types + (Silk, MixedBase, tuple)
+
+def getConstantTypes():
+    from silk.mixed import MixedBase
+    from silk import Silk
+    from silk.validation import _allowed_types
+
+    return _allowed_types + (Silk, MixedBase, tuple)
+
 
 import inspect
 import os

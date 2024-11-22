@@ -199,8 +199,15 @@ class BufferCache:
                 print_debug("Found missing buffer: {}".format(checksum.hex()))
                 if self.missing.pop(checksum):
                     persistent = True
-                if persistent and not buffer_remote.is_known(checksum):
-                    if buffer_remote.can_write():
+                if persistent:
+                    store_remote = False
+                    if checksum not in (empty_dict_checksum, empty_list_checksum):
+                        if (
+                            not buffer_remote.is_known(checksum)
+                            and buffer_remote.can_write()
+                        ):
+                            store_remote = True
+                    if store_remote:
                         buffer_remote.write_buffer(checksum, buffer)
                     else:
                         self.buffer_cache[checksum] = buffer

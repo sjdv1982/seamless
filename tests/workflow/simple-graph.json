@@ -34,22 +34,27 @@
   "lib": [],
   "nodes": [
     {
-      "celltype": "int",
+      "celltype": "structured",
       "checksum": {
+        "auth": "08d2d6aba49b53a764f897cf54cc0984e6568e3081d4dc31936eff54d90e79bd",
+        "schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
         "value": "08d2d6aba49b53a764f897cf54cc0984e6568e3081d4dc31936eff54d90e79bd"
       },
       "datatype": "mixed",
+      "hash_pattern": null,
       "path": [
         "a"
       ],
       "type": "cell"
     },
     {
-      "celltype": "int",
+      "celltype": "structured",
       "checksum": {
+        "schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
         "value": "a768afb52fb0be2c8bf1657ea5c892df910a2a70bac7310cd8595e0f62b89fbf"
       },
       "datatype": "mixed",
+      "hash_pattern": null,
       "path": [
         "myresult"
       ],

@@ -17,10 +17,12 @@ def check_libinstance_subcontext_binding(ctx, path):
                             return
 
 
-from . import ConstantTypes
+from . import getConstantTypes
 from .Cell import Cell, FolderCell, get_new_cell, get_new_foldercell
 from .DeepCell import DeepCellBase, DeepCell, DeepFolderCell
 from .Module import Module, get_new_module
+
+
 from .Resource import Resource
 from .Transformer import Transformer
 from .Macro import Macro
@@ -507,7 +509,9 @@ def _assign_context(ctx, new_nodes, new_connections, path, runtime, *, fast=Fals
     if runtime:
         if not fast:
             graph2 = deepcopy(ctx._graph)
-            assert old_graph == graph2
+            assert (
+                old_graph == graph2  # pylint: disable=possibly-used-before-assignment
+            )
     else:
         ctx._translate()
 
@@ -531,6 +535,8 @@ def assign_context(ctx, path, value):
 
 
 def assign_to_deep_subcell(cell, attr, value):
+    ConstantTypes = getConstantTypes()
+
     hcell = cell._get_hcell()
     ctx = cell._parent()
     if isinstance(value, Cell):
@@ -580,6 +586,8 @@ def assign_to_deep_subcell(cell, attr, value):
 
 def assign_to_subcell(cell, path, value):
     from ..core.structured_cell import StructuredCell
+
+    ConstantTypes = getConstantTypes()
 
     hcell = cell._get_hcell()
     if hcell.get("constant"):
@@ -635,6 +643,8 @@ def assign(ctx, path, value, *, help_context=False):
     from .library import Library, LibraryContainer
     from .library.include import IncludedLibrary, IncludedLibraryContainer
     from .Transformer import TransformerCopy
+
+    ConstantTypes = getConstantTypes()
 
     nodedict = ctx._graph[0]
     if under_libinstance_control(nodedict, path):

@@ -5,6 +5,7 @@ from copy import deepcopy
 import traceback
 
 from seamless import Checksum, CacheMissError
+from seamless.util.transformation import tf_get_buffer
 from seamless.checksum.get_buffer import get_buffer
 from seamless.checksum.deserialize import deserialize_sync
 
@@ -396,7 +397,6 @@ def transformation_from_dict(
         run_transformation_dict_async,
         prepare_transformation_dict,
     )
-    from seamless.workflow.core.cache.transformation_cache import tf_get_buffer
     from seamless.checksum.calculate_checksum import calculate_checksum
 
     transformation_dict_original = transformation_dict

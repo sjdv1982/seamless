@@ -4,10 +4,8 @@
 import functools
 import traceback, asyncio
 import warnings
-import numpy as np
 
 from . import Task
-from silk.json_util import json_encode
 
 from seamless import Checksum, Buffer
 
@@ -115,10 +113,15 @@ async def value_conversion(
     conv = (source_celltype, target_celltype)
     try:
         if conv == ("binary", "plain"):
+            from silk.json_util import json_encode
+
             target_value = json_encode(source_value)
         elif conv == ("plain", "binary"):
             try:
+                import numpy as np
+
                 if isinstance(source_value, (int, float, bool)):
+
                     target_value = np.array(source_value)
                     buffer_cache.update_buffer_info(
                         checksum, "is_json_numeric_scalar", True, sync_remote=True
@@ -412,6 +415,7 @@ async def _evaluate_expression(
                     manager, buffer, source_checksum, source_celltype, copy=False
                 ).run()
                 full_value = True
+                use_value = False
                 if trivial_path:
                     result_value = await inter_deepcell_conversion(
                         value, source_hash_pattern, target_hash_pattern
@@ -455,6 +459,8 @@ async def _evaluate_expression(
 
                 if (not done) and use_value:
                     if result_hash_pattern == {"*": "##"} and value is not None:
+                        import numpy as np
+
                         for k, v in list(result_value.items()):
                             if isinstance(v, bytes):
                                 result_value[k] = np.array(v, "S")

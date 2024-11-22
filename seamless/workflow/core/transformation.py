@@ -3,26 +3,32 @@
 from copy import deepcopy
 import weakref
 import asyncio
+
+
 import multiprocessing
 import multiprocessing.util  # to register the atexit function
 from multiprocessing import Process, JoinableQueue as Queue
+
 import sys
 import traceback
 import functools
 import time
 import atexit
 import json
+
+
 import orjson
+
 import logging
 import importlib
 import os
+
 import subprocess
 
 try:
     from prompt_toolkit.patch_stdout import StdoutProxy
 except ImportError:
     StdoutProxy = None
-
 
 from seamless import Buffer
 
@@ -292,6 +298,8 @@ async def build_transformation_namespace(transformation, semantic_cache, codenam
         celltype, _, _ = transformation[pinname]
         if celltype != "silk":
             continue
+        from silk import Silk, Scalar
+
         schema_pinname = pinname + "_SCHEMA"
         schema_pin = transformation.get(schema_pinname)
         schema = None
@@ -426,6 +434,8 @@ def build_transformation_namespace_sync(transformation, semantic_cache, codename
         celltype, _, _ = transformation[pinname]
         if celltype != "silk":
             continue
+        from silk import Silk, Scalar
+
         schema_pinname = pinname + "_SCHEMA"
         schema_pin = transformation.get(schema_pinname)
         schema = None
@@ -1220,14 +1230,19 @@ Execution time: {} seconds
         return result_checksum, logstr
 
 
-from silk import Silk, Scalar
 from .execute import execute
+
 from .injector import transformer_injector as injector
+
+
 from .build_module import build_all_modules
+
 from seamless.compiler import (
     compilers as default_compilers,
     languages as default_languages,
 )
+
+
 from seamless.checksum.get_buffer import get_buffer
 from seamless.checksum.deserialize import deserialize, deserialize_sync
 from seamless.checksum.value_conversion import validate_evaluation_subcelltype
@@ -1238,10 +1253,12 @@ from .cache.transformation_cache import (
     syntactic_is_semantic,
     syntactic_to_semantic,
 )
+
 from .status import SeamlessInvalidValueError
 from seamless.util.environment import validate_environment
 from seamless.util.subprocess_ import kill_children
 from seamless import __version__
+
 
 execution_metadata0 = {}
 

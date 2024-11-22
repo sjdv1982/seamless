@@ -8,10 +8,7 @@ Conversions involving paths or hash patterns are also out-of-scope
 import ast
 import builtins
 import orjson
-import numpy as np
 import ruamel.yaml
-
-from silk.mixed import MAGIC_NUMPY, MAGIC_SEAMLESS_MIXED
 
 from seamless import Buffer, Checksum
 
@@ -238,6 +235,8 @@ def _convert_reinterpret(checksum, buffer, target_celltype, *, source_celltype):
     # conversions that do not change checksum, but are not guaranteed to work (raise exception).
     exc = None
     if target_celltype == "binary":
+        from silk.mixed import MAGIC_NUMPY
+
         ok = buffer.startswith(MAGIC_NUMPY)
         buffer_cache.update_buffer_info(checksum, "is_numpy", ok, sync_remote=True)
         if not ok:
@@ -287,6 +286,9 @@ def _convert_reformat(checksum, buffer, source_celltype, target_celltype):
     else:
         conv = (source_celltype, target_celltype)
         if conv == ("bytes", "binary") or conv == ("bytes", "mixed"):
+            import numpy as np
+            from silk.mixed import MAGIC_NUMPY, MAGIC_SEAMLESS_MIXED
+
             if buffer.startswith(MAGIC_NUMPY):
                 buffer_cache.guarantee_buffer_info(
                     checksum, "binary", sync_to_remote=True
@@ -340,6 +342,8 @@ def _convert_reformat(checksum, buffer, source_celltype, target_celltype):
                     target_value = np.array(buffer)
 
         elif conv == ("binary", "bytes") or conv == ("mixed", "bytes"):
+            from silk.mixed import MAGIC_NUMPY, MAGIC_SEAMLESS_MIXED
+
             if source_celltype == "binary" or buffer.startswith(MAGIC_NUMPY):
                 source_value = deserialize_sync(buffer, checksum, "binary", copy=False)
                 if source_value.dtype.char == "S":
@@ -414,6 +418,9 @@ def _convert_possible(checksum, buffer, source_celltype, target_celltype):
     exc = None
     try:
         if (source_celltype, target_celltype) == ("mixed", "str"):
+            import numpy as np
+            from silk.mixed import MAGIC_NUMPY, MAGIC_SEAMLESS_MIXED
+
             if buffer.startswith(MAGIC_NUMPY):
                 raise TypeError("Numpy format")
             if buffer.startswith(MAGIC_SEAMLESS_MIXED):
@@ -421,7 +428,9 @@ def _convert_possible(checksum, buffer, source_celltype, target_celltype):
         source_value = deserialize_sync(buffer, checksum, source_celltype, copy=False)
         if isinstance(source_value, (dict, list)):
             raise TypeError(type(source_value))
-        elif isinstance(source_value, np.ndarray):
+        import numpy as np
+
+        if isinstance(source_value, np.ndarray):
             if source_value.ndim:
                 raise TypeError((type(source_value), source_value.ndim))
         type_class = getattr(builtins, target_celltype)

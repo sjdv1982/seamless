@@ -19,11 +19,11 @@ from seamless.checksum.cached_compile import exec_code
 from seamless.checksum.serialize import serialize_sync
 from seamless.util import parse_checksum
 from seamless.util.source import ast_dump
+from seamless.util.transformation import tf_get_buffer, extract_dunder
 from seamless.direct import transformer, Transformation
 
 from ...core.cache.transformation_cache import (
     transformation_cache,
-    tf_get_buffer,
     incref_transformation,
     syntactic_is_semantic,
     DummyTransformer,
@@ -169,17 +169,6 @@ def register_transformation_dict(transformation_dict, dry_run=False):
     else:
         increfed = False
     return increfed, transformation
-
-
-def extract_dunder(transformation_dict):
-    tf_dunder = {}
-    for k in ("__compilers__", "__languages__", "__meta__", "__env__"):
-        if k in transformation_dict:
-            tf_dunder[k] = transformation_dict[k]
-    if not len(tf_dunder):
-        return None
-
-    return tf_dunder
 
 
 def run_transformation_dict(

@@ -1,14 +1,16 @@
-from silk.mixed import _array_types
-
 from seamless import Checksum, CacheMissError
 from seamless.checksum.cached_calculate_checksum import (
     cached_calculate_checksum,
     cached_calculate_checksum_sync,
 )
+
+
 from seamless.checksum.deserialize import deserialize, deserialize_sync
 from seamless.checksum.serialize import serialize, serialize_sync
+
 from seamless.checksum.get_buffer import get_buffer
 from seamless.checksum.buffer_cache import buffer_cache
+
 
 from .deep_structure import (
     deserialize_raw,
@@ -62,6 +64,8 @@ def _get_subpath(value, path):
         return None
     if not len(path):
         return value
+    from silk.mixed import _array_types
+
     head = path[0]
     if isinstance(value, _array_types):
         if not isinstance(head, int):
