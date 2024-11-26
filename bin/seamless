@@ -41,7 +41,7 @@ from seamless.Environment import Environment
 from seamless.checksum.json import json_dumps
 from seamless.util.transformation import extract_dunder, tf_get_buffer
 
-parser = argparse.ArgumentParser()
+parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument(
     "-v",
     dest="verbosity",

@@ -1,0 +1,799 @@
+#!/usr/bin/env -S python3 -u
+# type: ignore   # disable PyLance, as it cannot import seamless from here. Pylint still works correctly
+# pylint: disable=import-self, wrong-import-position
+
+"""Command-line seamless executable script, for multiple job commands. 
+For each job command, parse the arguments and write the job to a queue file"""
+
+__version__ = "0.14"
+
+import argparse
+from copy import copy
+import sys
+import os
+import json
+from collections import namedtuple
+import logging
+import time
+import pathlib
+
+os.environ["__SEAMLESS_FRUGAL"] = "1"
+import seamless
+
+from seamless import Checksum, Buffer
+from seamless.util import unchecksum
+from seamless.cmd.message import set_verbosity, message as msg, message_and_exit as err
+from seamless.cmd import parsing
+from seamless.cmd.parsing import get_commands, guess_arguments
+from seamless.cmd.file_mapping import get_file_mapping
+from seamless.cmd.file_load import files_to_checksums
+from seamless.cmd.bash_transformation import (
+    prepare_bash_transformation,
+)
+from seamless.cmd import interface
+from seamless.cmd.exceptions import SeamlessSystemExit
+from seamless.cmd.bytes2human import human2bytes
+from seamless.Environment import Environment
+
+parser = argparse.ArgumentParser(description=__doc__)
+parser.add_argument(
+    "commands_file", help="File with bash commands, separated by two empty lines."
+)
+parser.add_argument(
+    "-v",
+    dest="verbosity",
+    help="""Verbose mode.
+Multiple -v options increase the verbosity. The maximum is 3""",
+    action="count",
+    default=0,
+)
+parser.add_argument(
+    "-q", dest="verbosity", help="Quiet mode", action="store_const", const=-1
+)
+
+parser.add_argument(
+    "-g1",
+    help="""Disable argtyping guess rule 1.
+This rule states that any argument with a file extension must exist as a file.""",
+    action="store_true",
+)
+
+parser.add_argument(
+    "-g2",
+    help="""Disable argtyping guess rule 2.
+This rule states that any argument without file extension must not exist as a file.""",
+    action="store_true",
+)
+
+parser.add_argument(
+    "-w",
+    help="""Set the argtyping working directory to DIR.
+This allows any file in DIR to be specified as argument.""",
+    dest="workdir",
+)
+
+parser.add_argument(
+    "-W",
+    help="""Set the argtyping working directory to /.
+This allows any file to be specified as argument.""",
+    dest="workdir",
+    action="store_const",
+    const="/",
+)
+
+parser.add_argument(
+    "-ms",
+    help="""Set the argtyping file mapping mode to 'strip'.
+Strip directory names. After stripping, all files must be unique.""",
+    dest="file_mapping_mode",
+    action="store_const",
+    const="strip",
+)
+
+
+parser.add_argument(
+    "-mx",
+    help="""Set the argtyping file mapping mode to 'extension'.
+Keep only file extensions. Rename the file name body to file1, file2, ...
+Example: 
+  python script.py data.txt 
+  => 
+  python file1.py file2.txt
+
+Directories remain unchanged.""",
+    dest="file_mapping_mode",
+    action="store_const",
+    const="extension",
+)
+
+parser.add_argument(
+    "-y",
+    "--yes",
+    dest="auto_confirm",
+    help="""Sets any confirmation values to 'yes' automatically. Users will not be asked to confirm any file upload or download.
+Uploads will happen without confirmation for up to 400 files and up to 100 MB in total.
+Downloads will happen without confirmation for up to 2000 files and up to 500 MB in total.
+These thresholds can be controlled by the environment variables:
+SEAMLESS_MAX_UPLOAD_FILES, SEAMLESS_MAX_UPLOAD_SIZE, SEAMLESS_MAX_DOWNLOAD_FILES, SEAMLESS_MAX_DOWNLOAD_SIZE.""",
+    action="store_const",
+    const="yes",
+)
+
+parser.add_argument(
+    "-n",
+    "--no",
+    dest="auto_confirm",
+    help="""Sets any confirmation values to 'no' automatically. Users will not be asked to confirm any file upload or download.
+Uploads will happen without confirmation for up to 400 files and up to 100 MB in total.
+Downloads will happen without confirmation for up to 2000 files and up to 500 MB in total.
+These thresholds can be controlled by the environment variables:
+SEAMLESS_MAX_UPLOAD_FILES, SEAMLESS_MAX_UPLOAD_SIZE, SEAMLESS_MAX_DOWNLOAD_FILES, SEAMLESS_MAX_DOWNLOAD_SIZE.""",
+    action="store_const",
+    const="no",
+)
+
+parser.add_argument(
+    "-nd",
+    "--no-download",
+    dest="no_download",
+    help="Do not download any result files or directories, only their checksums",
+    action="store_true",
+)
+
+parser.add_argument(
+    "--scratch",
+    help="Don't store any result values, only store the overall result checksum",
+    default=False,
+    action="store_true",
+)
+
+parser.add_argument(
+    "--docker",
+    "--docker-image",
+    dest="docker_image",
+    help="Specify Docker image where all transformations are to run in",
+)
+
+parser.add_argument(
+    "--conda",
+    "--conda-env",
+    "--conda-environment",
+    dest="conda_environment",
+    help="Specify an existing conda environment where all transformations could run in.",
+)
+
+parser.add_argument(
+    "--ncores",
+    help="Number of cores required per command. -1 means all available cores",
+    type=int,
+)
+
+parser.add_argument(
+    "--fingertip",
+    help="If the result checksum is known but the result unavailable: force evaluation",
+    default=False,
+    action="store_true",
+)
+
+parser.add_argument("--undo", help="Undo each seamless command", action="store_true")
+
+parser.add_argument(
+    "--direct-print",
+    dest="direct_print",
+    help="Attempt to print out stderr messages directly in the executor log",
+    action="store_true",
+)
+
+args = parser.parse_args()
+
+
+verbosity = min(args.verbosity, 3)
+set_verbosity(verbosity)
+msg(1, "Verbosity set to {}".format(verbosity))
+msg(1, "seamless {}".format(__version__))
+msg(3, "Command file:", args.commands_file)
+
+commands0 = []
+with open(args.commands_file) as fp:
+    lines = fp.readlines()
+pos = 0
+last_command_pos = 0
+while pos < len(lines) - 2:
+    if not any([len(ll.strip()) for ll in lines[pos : pos + 2]]):
+        commands0.append(lines[last_command_pos:pos])
+        pos += 2
+        last_command_pos = pos
+        continue
+    pos += 1
+commands0.append(lines[last_command_pos:])
+
+all_commands = []
+for com in commands0:
+    for lnr in range(len(com) - 1, -1, -1):
+        l = com[lnr]
+        if len(l.strip()):
+            break
+    else:
+        continue
+    com = com[: lnr + 1]
+    all_commands.append("\n".join(com))
+
+msg(1, f"{len(all_commands)} commands read")
+
+if len(all_commands) == 0:
+    sys.exit(0)
+
+################################################################
+
+workdir = os.getcwd()
+if args.workdir is not None:
+    if os.environ.get("DOCKER_IMAGE"):
+        err(
+            """DOCKER_IMAGE environment variable has been set.
+We are running from inside a Docker container.
+Setting workdir is not supported."""
+        )
+    workdir = os.path.expanduser(args.workdir)
+    msg(1, "set argtyping working directory to: {}".format(workdir))
+
+queue_file = os.environ.get("SEAMLESS_QUEUE_FILE")
+if queue_file is None:
+    queue_file = ".seamless-queue"
+    msg(1, f"SEAMLESS_QUEUE_FILE not defined. Set queue file to '{queue_file}'")
+else:
+    msg(1, f"Read queue file from SEAMLESS_QUEUE_FILE: '{queue_file}'")
+
+################################################################
+
+meta = None
+if args.direct_print:
+    if meta is None:
+        meta = {}
+    meta["__direct_print__"] = True
+
+if args.ncores:
+    if meta is None:
+        meta = {}
+    meta["ncores"] = args.ncores
+
+################################################################
+
+
+def update_interface_data(interface_data, new_interface_data, first):
+    changed = False
+    for k, v in new_interface_data.items():
+        if k in ("argtypes", "files", "directories", "shim"):
+            continue
+        curr = interface_data.get(k)
+        if k == "results":
+            if first:
+                continue
+            if isinstance(v, list):
+                v = {kk: None for kk in v}
+            if k not in interface_data:
+                interface_data[k] = {}
+            if v:
+                interface_data[k].update(v)
+                changed = True
+            continue
+        if k == "environment":
+            if curr is None:
+                interface_data[k] = v
+                continue
+            if curr == v:
+                continue
+            raise NotImplementedError("Multiple environments")
+
+        changed = True
+        if curr is None:
+            interface_data[k] = v
+        else:
+            if isinstance(v, list) != isinstance(curr, list):
+                interface_data[k] = v
+            elif isinstance(curr, list):
+                interface_data[k] += v
+            else:
+                interface_data[k] = v
+    if changed:
+        msg(3, f"Updated interface data: {json.dumps(interface_data, indent=2)}")
+
+
+################################################################
+
+if args.auto_confirm not in ("yes", "no"):
+    msg(
+        1,
+        "qsubmit: download confirmation cannot be interactive. --yes not present => default to --no.",
+    )
+    auto_confirm = "no"
+else:
+    auto_confirm = args.auto_confirm
+
+max_upload_files = os.environ.get("SEAMLESS_MAX_UPLOAD_FILES", "400")
+max_upload_files = int(max_upload_files)
+max_upload_size = os.environ.get("SEAMLESS_MAX_UPLOAD_SIZE", "100 MB")
+max_upload_size = human2bytes(max_upload_size)
+
+max_download_files = os.environ.get("SEAMLESS_MAX_DOWNLOAD_FILES", "2000")
+max_download_files = int(max_download_files)
+max_download_size = os.environ.get("SEAMLESS_MAX_DOWNLOAD_SIZE", "500 MB")
+max_download_size = human2bytes(max_download_size)
+
+ProcessedCommand = namedtuple(
+    "ProcessedCommand",
+    [
+        "commandstring",
+        "variables",
+        "make_executables",
+        "capture_stdout",
+        "result_targets",
+        "env",
+        "paths",
+        "directories",
+        "mapping",
+        "direct_checksums",
+        "direct_checksum_directories",
+    ],
+)
+
+
+def process_command(commandstring):
+    msg(2, f"Command string: {commandstring}")
+
+    commands, first_pipeline, pipeline_redirect = get_commands(commandstring)
+
+    first_command = commands[0]
+
+    (
+        interface_argindex,
+        interface_file,
+        interface_py_file,
+        mapped_execarg,
+    ) = interface.locate_files(first_command.words)
+
+    msg(3, f"First command: {first_command.commandstring}")
+
+    first_command_words = copy(first_command.words)
+    if mapped_execarg:
+        first_command_words[0] = mapped_execarg
+    first_pipeline_words = copy(first_command_words)
+
+    argtypes_initial, results_initial = interface.get_argtypes_and_results(
+        interface_file,
+        interface_py_file,
+        interface_argindex,
+        first_command_words,
+        first_command.words[0],
+    )
+
+    if interface_py_file is None:
+        msg(3, "Try to obtain argtypes from rules")
+
+        overrule_ext, overrule_no_ext = False, False
+        if args.g1:
+            overrule_ext = True
+        if args.g2:
+            overrule_no_ext = True
+
+        try:
+            if first_pipeline:
+                for com0 in commands[1:first_pipeline]:
+                    first_pipeline_words += com0.words
+            argtypes_guess = guess_arguments(
+                first_pipeline_words,
+                overrule_ext=overrule_ext,
+                overrule_no_ext=overrule_no_ext,
+            )
+        except ValueError as exc:
+            err(*exc.args)
+        if argtypes_initial is None:
+            argtypes_initial = argtypes_guess
+        else:
+            argtypes_temp = argtypes_initial
+            argtypes_initial = {}
+            argtypes_initial.update(argtypes_guess)
+            argtypes_initial.update(argtypes_temp)
+
+    argtypesstr = json.dumps(unchecksum(argtypes_initial), sort_keys=False, indent=2)
+    msg(3, "initial argtypes dict:\n" + argtypesstr)
+
+    file_mapping_mode = args.file_mapping_mode
+    if file_mapping_mode is None:
+        file_mapping_mode = "literal"
+
+    try:
+        argtypes = get_file_mapping(
+            argtypes_initial, mapping_mode=file_mapping_mode, working_directory=workdir
+        )
+    except ValueError as exc:
+        err(*exc.args)
+
+    argtypes = unchecksum(argtypes)
+    argtypesstr = json.dumps(argtypes, sort_keys=False, indent=2)
+    msg(3, "argtypes dict:\n" + argtypesstr)
+
+    mapped_first_pipeline = argtypes["@order"]
+
+    ################################################################
+    assert len(mapped_first_pipeline) == len(first_pipeline_words)
+    word_substitutions = {}
+    for wordnr, word in enumerate(mapped_first_pipeline):
+        offset = 0
+        for com0 in commands:
+            if wordnr >= len(com0.words) + offset:
+                offset += len(com0.words)
+                continue
+            else:
+                break
+        old_word = com0.words[wordnr - offset]
+        if word != old_word:
+            node = com0.wordnodes[wordnr - offset]
+            word_substitutions[node] = word
+
+    ################################################################
+    interface_data = {}
+    make_executables = []
+
+    for commandnr, command in enumerate(commands):
+        if commandnr > 0:
+            msg(3, f"Command #{commandnr+1}: {command.commandstring}")
+            (
+                interface_argindex,
+                interface_file,
+                interface_py_file,
+                mapped_execarg,
+            ) = interface.locate_files(command.words)
+        if interface_file is not None or interface_py_file is not None:
+            if commandnr > 0:
+                msg(
+                    2,
+                    f"Interface files found for command #{commandnr+1}: {command.commandstring}",
+                )
+
+        shim = None
+        if interface_file is not None:
+            msg(3, f"loading {interface_file}")
+            _new_interface_data = interface.load(interface_file.as_posix())
+            new_shim = _new_interface_data.get("shim")
+            if new_shim is not None:
+                shim = new_shim
+            update_interface_data(
+                interface_data, _new_interface_data, first=(commandnr == 0)
+            )
+
+        if commandnr == 0:
+            interface_py_file = None
+        if interface_py_file is not None:
+            if commandnr == 0:
+                command_words = mapped_first_pipeline
+            else:
+                command_words = copy(command.words)
+                if mapped_execarg:
+                    command_words[0] = mapped_execarg
+
+            arguments = command_words[interface_argindex + 1 :]
+            _new_interface_data = interface.interface_from_py_file(
+                interface_py_file, arguments
+            )
+            new_shim = _new_interface_data.get("shim")
+            if new_shim is not None:
+                shim = new_shim
+            update_interface_data(
+                interface_data, _new_interface_data, first=(commandnr == 0)
+            )
+
+            if shim:
+                wordnode = command.wordnodes[interface_argindex]
+                word_substitutions[wordnode] = shim
+
+        if mapped_execarg and not shim:
+            wordnode = command.wordnodes[0]
+            word = command.words[0]
+            word = word_substitutions.get(wordnode, word)
+            if word not in ("cd", "echo", "eval", "exec", "export", "set", "source"):
+                make_executables.append(word)
+
+    ################################################################
+
+    redirection = None
+    if pipeline_redirect:
+        redirection_node = pipeline_redirect
+    else:
+        redirection_node = parsing.get_redirection(commands[-1])
+    if redirection_node is not None:
+        redirection = redirection_node.word
+        redirection = os.path.expanduser(redirection)
+        if workdir is not None and redirection.startswith(workdir):
+            redirection = redirection[len(workdir) :]
+        if redirection != redirection_node.word:
+            word_substitutions[redirection_node] = redirection
+
+    if results_initial is None:
+        results_initial = {}
+    else:
+        msg(3, f"Initial result targets from first command: {results_initial}")
+        decal = os.path.relpath(os.getcwd(), workdir)
+        if decal != ".":
+            results_initial2 = results_initial.copy()
+            for _k, _v in results_initial.items():
+                if _v is None:
+                    _kk = os.path.join(decal, _k)
+                    results_initial2.pop(_k)
+                    results_initial2[_kk] = _v
+            results_initial = results_initial2
+
+    results = results_initial.copy()
+    results.update(interface_data.get("results", {}))
+
+    if not results and not redirection:
+        if args.no_download or args.scratch:
+            err("Download disabled. Refuse to print output to screen.")
+        elif args.qsubmit:
+            err(
+                "Submit to a queue, but no capture/download targets. Refuse to print output to screen."
+            )
+        capture_stdout = True
+        result_targets = None
+    else:
+        if "STDOUT" in results:
+            capture_stdout = True
+        else:
+            capture_stdout = False
+        result_targets = results.copy()
+        if redirection:
+            result_targets[redirection] = None
+        msg(3, f"Identify result targets: {result_targets}")
+
+    assert result_targets
+
+    paths = set()
+    directories = {}
+    mapping = {}
+    direct_checksums = {}
+    direct_checksum_directories = {}
+    for argname, arg in argtypes.items():
+        direct_checksum = None
+        if isinstance(arg, dict):
+            argtype = arg.get("type")
+            path = arg.get("mapping", argname)
+            direct_checksum = arg.get("checksum")
+        else:
+            argtype = arg
+            path = argname
+        if argtype in ("file", "directory"):
+            if direct_checksum:
+                if argtype == "directory":
+                    direct_checksum_directories[argname] = argname
+                direct_checksums[argname] = direct_checksum
+            else:
+                paths.add(path)
+                if argtype == "directory":
+                    directories[path] = argname
+                mapping[argname] = path
+
+    env = Environment()
+
+    docker_image = args.docker_image
+    if docker_image is None:
+        docker_image = interface_data.get("environment", {}).get("docker_image")
+
+    if docker_image is not None:
+        msg(3, f'Set Docker image to "{docker_image}"')
+        env.set_docker({"name": docker_image})
+
+    conda_environment = args.conda_environment
+    if conda_environment is None:
+        conda_environment = interface_data.get("environment", {}).get(
+            "conda_environment"
+        )
+
+    if conda_environment is not None:
+        msg(3, f'Set conda environment to "{conda_environment}"')
+        env.set_conda_env(conda_environment)
+
+    ################################################################
+
+    for node in sorted(word_substitutions.keys(), key=lambda node: -node.pos[0]):
+        word = word_substitutions[node]
+        commandstring = (
+            commandstring[: node.pos[0]] + word + commandstring[node.pos[1] :]
+        )
+
+    msg(3, "bash command:\n", commandstring, "\n")
+
+    ################################################################
+
+    command = commandstring.split()
+    variables = None
+    if len(commands) == 1:
+        canonical = interface_data.get("canonical", [])
+        for canon in canonical:
+            vars = canon.get("variables", [])
+            varnames = [var["name"] for var in vars]
+            vartypes = {var["name"]: var["celltype"] for var in vars}
+            canon_cmd = canon["command"].split()
+            if len(canon_cmd) != len(command):
+                continue
+            for w1, w2 in zip(canon_cmd, command):
+                if w1 == w2:
+                    continue
+                if w1[0] == "$" and w1[1:] in varnames:
+                    continue
+                break
+            else:
+                msg(2, f"Found canonical command match:\n  {canon['command']}")
+                variables = {}
+                for w1, w2 in zip(canon_cmd, command):
+                    if w1[0] == "$" and w1[1:] in varnames:
+                        varname = w1[1:]
+                        variables[varname] = (w2, vartypes[varname])
+                msg(3, f"Variables:\n  {variables}")
+                commandstring = canon["command"]
+
+    ################################################################
+
+    processed_command = ProcessedCommand(
+        commandstring=commandstring,
+        variables=variables,
+        make_executables=make_executables,
+        capture_stdout=capture_stdout,
+        result_targets=result_targets,
+        env=env,
+        paths=paths,
+        directories=directories,
+        mapping=mapping,
+        direct_checksums=direct_checksums,
+        direct_checksum_directories=direct_checksum_directories,
+    )
+    return processed_command
+
+
+processed_commands: list[ProcessedCommand] = []
+for commandstring0 in all_commands:
+    pcommand = process_command(commandstring0)
+    processed_commands.append(pcommand)
+
+msg(1, "All commands processed")
+
+if seamless.delegate(level=2):
+    sys.exit(1)
+
+all_directories = {}
+all_paths = set()
+for pcommand in processed_commands:
+    all_directories.update(pcommand.directories)
+    all_paths.update(pcommand.paths)
+
+try:
+    file_checksum_dict, _ = files_to_checksums(
+        all_paths,
+        max_upload_size=max_upload_size,
+        max_upload_files=max_upload_files,
+        directories=all_directories,
+        auto_confirm=args.auto_confirm,
+        dry_run=False,
+    )
+except SeamlessSystemExit as exc:
+    err(*exc.args)
+
+msg(1, "All files uploaded")
+
+
+def file_write(handle, buf):
+    if isinstance(buf, Buffer):
+        buf = buf.value
+    handle.write(buf)
+
+
+def build_queue_commands(processed_commands):
+    queue_commands = []
+
+    for processed_command in processed_commands:
+
+        commandstring = processed_command.commandstring
+        variables = processed_command.variables
+        make_executables = processed_command.make_executables
+        capture_stdout = processed_command.capture_stdout
+        result_targets = processed_command.result_targets
+        env = processed_command.env
+        directories = processed_command.directories
+        mapping = processed_command.mapping
+        direct_checksums = processed_command.direct_checksums
+        direct_checksum_directories = processed_command.direct_checksum_directories
+
+        checksum_dict = {k: file_checksum_dict[v] for k, v in mapping.items()}
+        checksum_dict.update(direct_checksums)
+        checksum_dictstr = json.dumps(checksum_dict, sort_keys=True, indent=2)
+        msg(2, "file/directory checksum dict:\n" + checksum_dictstr)
+        directories.update(direct_checksum_directories)
+        if len(directories):
+            msg(2, "directories:", directories)
+
+        transformation_checksum, transformation_dict = prepare_bash_transformation(
+            commandstring,
+            checksum_dict,
+            directories=list(directories.values()),
+            make_executables=make_executables,
+            capture_stdout=capture_stdout,
+            result_targets=result_targets,
+            environment=env._to_lowlevel(bash=True),
+            variables=variables,
+            meta=meta,
+            dry_run=False,
+        )
+
+        if make_executables:
+            msg(
+                2,
+                "The following files will be made executable inside the transformer\n:\n  {}".format(
+                    "\n  ".join(make_executables)
+                ),
+            )
+        else:
+            msg(3, "No files will be made executable inside the transformer")
+
+        ################################################################
+
+        transformation_checksum = Checksum(transformation_checksum).hex()
+        msg(3, f"Transformation checksum: {transformation_checksum}")
+
+        commandstring2 = commandstring.rstrip("\n")
+        original_command = f"seamless-multi <{commandstring2}>"
+        params = {
+            "undo": args.undo,
+            "scratch": args.scratch,
+            "workdir": workdir,
+            "download": not args.no_download,
+            "auto_confirm": auto_confirm,
+            "capture_stdout": capture_stdout,
+            "max_download_size": max_download_size,
+            "max_download_files": max_download_files,
+        }
+        queue_command = {
+            "queue_command": "SUBMIT",
+            "original_command": original_command,
+            "transformation_checksum": str(transformation_checksum),
+            "transformation_dict": transformation_dict,
+            "result_targets": result_targets,
+            "params": params,
+        }
+        queue_commands.append(queue_command)
+    return queue_commands
+
+
+queue_commands = build_queue_commands(processed_commands)
+
+msg(1, "All queue commands built")
+
+lockpath = queue_file + ".LOCK"
+
+while 1:
+    try:
+        lock_stat_result = os.stat(lockpath)
+    except FileNotFoundError:
+        break
+    lock_mtime = lock_stat_result.st_mtime
+    if time.time() - lock_mtime > 30:
+        msg(1, f"Stale lock on {queue_file}, breaking it...")
+        break
+    time.sleep(1)
+
+try:
+    pathlib.Path(lockpath).touch()
+    with open(queue_file, "ab") as fp:
+        for queue_command in queue_commands:
+            qcj = json.dumps(queue_command, indent=2)
+            fp.write(qcj.encode() + b"\x00")
+
+finally:
+    try:
+        pathlib.Path(lockpath).unlink()
+    except FileNotFoundError:
+        pass
+
+# kludge to hide spurious "buffers undestroyed" warnings
+
+logger = logging.getLogger("seamless")
+logger.setLevel(logging.ERROR)
+
+msg(1, "All commands submitted to queue file")
