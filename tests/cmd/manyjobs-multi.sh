@@ -21,7 +21,7 @@ for i in $(seq $ntrials); do
     echo >> manyjobs-multi.jobfile
     echo >> manyjobs-multi.jobfile
 done
-seamless-multi --fingertip --ncores 2 manyjobs-multi.jobfile
+seamless-multi -v --fingertip --ncores 2 manyjobs-multi.jobfile
 echo 'Jobs submitted'
 seamless-queue-finish
 
