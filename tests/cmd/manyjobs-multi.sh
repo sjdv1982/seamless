@@ -4,7 +4,7 @@ export ntrials=${1:-1000}
 seeds=$(python -c '
 import sys
 import numpy as np
-np.random.seed(0)
+np.random.seed(3)
 ntrials = int(sys.argv[1])
 seeds = np.random.randint(0, 999999, ntrials)
 print(" ".join([str(seed) for seed in seeds]))
@@ -12,7 +12,7 @@ print(" ".join([str(seed) for seed in seeds]))
 )
 seeds=($seeds)
 rm -f calc_pi.job-* manyjobs-multi.jobfile
-seamless-queue &   # start working immediately
+seamless-queue &   # start working immediately. You can use -q to get better timings
 for i in $(seq $ntrials); do
     i2=$((i-1))
     export seed="${seeds[$i2]}"
@@ -21,7 +21,10 @@ for i in $(seq $ntrials); do
     echo >> manyjobs-multi.jobfile
     echo >> manyjobs-multi.jobfile
 done
-seamless-multi -v --fingertip --ncores 2 manyjobs-multi.jobfile
+
+# You can use -q to get better timings, or -v/-vv to get better progress
+seamless-multi --fingertip --ncores 2 manyjobs-multi.jobfile  
+
 echo 'Jobs submitted'
 seamless-queue-finish
 

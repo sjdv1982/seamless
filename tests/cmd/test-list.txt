@@ -76,6 +76,9 @@ manyjobs.sh
 manyjobs-multi.sh
     /bin/seamless-multi version of manyjobs.sh.
     Submitting 1000 jobs will take ~30s
+    For grid5k (ssh tunnel to the front-end), it takes:
+         50s to submit to seamless-queue
+         4m30 minutes to verify that all jobs have been completed.
 
 cowsay-docker.sh
     Requires Docker image 'cowsay' to be available. Can be built in this directory using:

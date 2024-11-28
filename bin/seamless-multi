@@ -757,6 +757,7 @@ def build_queue_commands(processed_commands):
             "result_targets": result_targets,
             "params": params,
         }
+        msg(2, f"Built queue command: {original_command}")
         queue_commands.append(queue_command)
     return queue_commands
 
@@ -793,7 +794,7 @@ finally:
 
 # kludge to hide spurious "buffers undestroyed" warnings
 
-logger = logging.getLogger("seamless")
+logger = logging.getLogger("seamless-multi")
 logger.setLevel(logging.ERROR)
 
 msg(1, "All commands submitted to queue file")

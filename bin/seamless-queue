@@ -10,7 +10,7 @@ import asyncio
 import functools
 import logging
 import threading
-import anyio
+import argparse
 
 import seamless
 from seamless.cmd.bash_transformation import run_transformation_async
@@ -21,6 +21,12 @@ from seamless.cmd.get_results import (
 )
 
 __version__ = "0.14"
+
+parser = argparse.ArgumentParser(description=__doc__)
+parser.add_argument(
+    "-q", "--quiet", dest="quiet", help="Quiet mode", action="store_true"
+)
+args = parser.parse_args()
 
 if seamless.delegate():
     sys.exit(1)
@@ -57,18 +63,18 @@ async def process_job(command):
         capture_stdout = params["capture_stdout"]
         download = params["download"]
     except KeyError:
-        print(
+        msg(
             f"""
 *** Job {_job_count}: {original_command} ***
 Malformed command
-""",
-            file=sys.stderr,
+"""
         )
         return
 
-    print(f"Job {job_count}, run command:")
-    print(original_command)
-    print()
+    if not args.quiet:
+        msg(f"Job {job_count}, run command:")
+        msg(original_command)
+        msg()
 
     delete_futures_event = threading.Event()
 
@@ -108,7 +114,8 @@ Malformed command
             max_download_files=max_download_files,
             msg_func=functools.partial(msg, header),
         )
-        print(f"*** Job {job_count}: {original_command}, FINISHED ***")
+        if not args.quiet:
+            msg(f"*** Job {job_count}: {original_command}, FINISHED ***")
     finally:
         delete_futures_event.set()
 
@@ -163,7 +170,8 @@ async def main(queue_file):
                 running_jobs[:] = [job for job in running_jobs if not job.done()]
                 await asyncio.sleep(0.1)
             except asyncio.CancelledError:
-                print("CANCEL")
+                if not args.quiet:
+                    msg("CANCEL")
                 break
     if eof:
         await asyncio.gather(*running_jobs, return_exceptions=True)
@@ -175,7 +183,8 @@ loop = asyncio.get_event_loop()
 queue_file = os.environ.get("SEAMLESS_QUEUE_FILE")
 if queue_file is None:
     queue_file = ".seamless-queue"
-    msg(f"SEAMLESS_QUEUE_FILE not defined. Set queue file to '{queue_file}'")
+    if not args.quiet:
+        msg(f"SEAMLESS_QUEUE_FILE not defined. Set queue file to '{queue_file}'")
 
 try:
     loop.run_until_complete(main(queue_file))
