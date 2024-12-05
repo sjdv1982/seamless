@@ -216,7 +216,7 @@ for com in commands0:
     else:
         continue
     com = com[: lnr + 1]
-    all_commands.append("\n".join(com))
+    all_commands.append("".join(com).rstrip("\n"))
 
 msg(1, f"{len(all_commands)} commands read")
 
