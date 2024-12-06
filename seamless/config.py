@@ -393,3 +393,7 @@ def add_download_urls(download_url_dict):
     from seamless.util.fair import add_direct_urls
 
     return add_direct_urls(download_url_dict)
+
+# Fingertip all inputs of transformations.
+#  Use case: database + transformation with scratch inputs
+fingertip_all: bool = False

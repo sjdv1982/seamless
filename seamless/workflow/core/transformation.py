@@ -186,6 +186,8 @@ def get_transformation_inputs_output(transformation):
 
 
 async def build_transformation_namespace(transformation, semantic_cache, codename):
+    import seamless.config
+    from seamless.workflow.core.direct.run import fingertip_async
     namespace = {
         "__name__": "transformer",
         "__package__": "transformer",
@@ -226,6 +228,10 @@ async def build_transformation_namespace(transformation, semantic_cache, codenam
         checksum = Checksum(checksum)
         if not checksum:
             continue
+        
+        if seamless.config.fingertip_all:
+            await fingertip_async(checksum)
+
         from_filesystem = False
         hash_pattern = None
         fmt = transformation.get("__format__", {}).get(pinname)
