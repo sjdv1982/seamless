@@ -59,7 +59,9 @@ def validate_text(text: str, celltype: str, code_filename):
 
 def validate_checksum(v):
     """Validate a checksum, list or dict recursively"""
-    if isinstance(v, str):
+    if isinstance(v, Checksum):
+        pass
+    elif isinstance(v, str):
         if len(v) != 64:
             msg = v
             if len(v) > 1000:

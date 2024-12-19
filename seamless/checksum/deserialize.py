@@ -81,6 +81,9 @@ def _deserialize(buffer: bytes, checksum: Checksum, celltype: str):
             value = buffer.decode()
             validate_checksum(value)
         except (ValueError, UnicodeDecodeError):
+            from silk.mixed.io import (  # pylint: disable=no-name-in-module
+                deserialize as mixed_deserialize,
+            )
             value, storage = mixed_deserialize(buffer)
             if storage != "pure-plain":
                 raise TypeError from None
