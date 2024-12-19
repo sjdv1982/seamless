@@ -39,7 +39,7 @@ Waiting for: Seamless transformer: .mymacro.ctx.tf
 False
 3000
 Change 6
-  File "Seamless macro: .mymacro", line 16, in macro_code
+  File "Seamless macro: .mymacro", line 15, in macro_code
     assert param != 999  # on purpose
 AssertionError
 
