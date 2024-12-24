@@ -12,7 +12,7 @@
 bytes-conversion.py
 set-python-invalid.py: can also be run in interactive mode (mount /tmp/code.py)
 mime.py
-test-html.py
+test-html.py: if testing under conda, make sure that there is no Seamless Docker image running, else the HTTP port will be blocked
 auth-checksum.py
 get-file-and-directory.sh: will not work completely inside a Docker container, see get-file-and-directory-IN-DOCKER.out for the expectec output there
 independence-error-message.py
@@ -24,7 +24,7 @@ inchannel-conflict.py
 logs.py
 deepcell-simple.py
 deepcell-filter.py: can also be run in interactive mode (mount /tmp/blacklist.json, /tmp/filt_cell.json)
-deepcell-share.py
+deepcell-share.py: if testing under conda, make sure that there is no Seamless Docker image running, else the HTTP port will be blocked
 deepcell-transform.py
 deepfolder.py
 folder.py : writes data in ./testfolder
@@ -110,7 +110,9 @@ load-graph2.py
 load-graph-static.py
 build-structured-list.py
 vault.sh
-bind-status.py: can also be run in interactive mode, run with "ipython3 -i", make modifications and type "report" and monitor /tmp/graph.json and /tmp/status.json
+bind-status.py:
+  If testing under conda, make sure that there is no Seamless Docker image running, else the HTTP port will be blocked
+  Can also be run in interactive mode, run with "ipython3 -i", make modifications and type "report" and monitor /tmp/graph.json and /tmp/status.json
 library.py
 library-context-argument.py
 library2.py
@@ -121,7 +123,7 @@ library-schema.py
 undo.py: requires delegation level 3. Can be run with full delegation using "export DELEGATE=''".
 imperative.py
 imperative-undo.py: requires delegation level 3
-imperative-jupyter.sh
+imperative-jupyter.sh: As of 0.13, TEST WORKS IN CONDA ENV BUT ***SOMETIMES*** HANGS IN DOCKER IMAGE. See Seamless issue 255 (?)
 imperative-async.sh
 imperative-async-parallel.py: can be run with delegation using "export DELEGATE=''"
 imperative-async-parallel-jupyter.sh: can be run with delegation using "export DELEGATE=''"
