@@ -7,9 +7,9 @@ Status: OK None
 
 Error run 0
 seamless.workflow.core.transformation.SeamlessTransformationError: Traceback (most recent call last):
-  File "transformer", line 8, in <module>
+  File "transformer", line 7, in <module>
     result = add(a=a,b=b)
-  File "transformer", line 6, in add
+  File "transformer", line 5, in add
     return a + b
 TypeError: can only concatenate str (not "int") to str
 *************************************************
@@ -30,9 +30,9 @@ pq: Status: OK, None
 pq_z: Status: OK, None
 xy: Status: OK, None
 xy_z: Status: exception, seamless.workflow.core.transformation.SeamlessTransformationError: Traceback (most recent call last):
-  File "transformer", line 8, in <module>
+  File "transformer", line 7, in <module>
     result = add(a=a,b=b)
-  File "transformer", line 6, in add
+  File "transformer", line 5, in add
     return a + b
 TypeError: can only concatenate str (not "int") to str
 *************************************************
@@ -40,9 +40,9 @@ Execution time: 1.0 seconds
 
 result: Status: exception, RuntimeError: Dependency 'a' has an exception:
 seamless.workflow.core.transformation.SeamlessTransformationError: Traceback (most recent call last):
-  File "transformer", line 8, in <module>
+  File "transformer", line 7, in <module>
     result = add(a=a,b=b)
-  File "transformer", line 6, in add
+  File "transformer", line 5, in add
     return a + b
 TypeError: can only concatenate str (not "int") to str
 *************************************************
@@ -59,18 +59,18 @@ RuntimeError: Something went wrong.
 Status and exceptions:        
 pq: Status: OK, None
 pq_z: Status: exception, seamless.workflow.core.transformation.SeamlessTransformationError: Traceback (most recent call last):
-  File "transformer", line 8, in <module>
+  File "transformer", line 7, in <module>
     result = mul(a=a,b=b)
-  File "transformer", line 6, in mul
+  File "transformer", line 5, in mul
     return a * b
 TypeError: can't multiply sequence by non-int of type 'str'
 *************************************************
 Execution time: 1.0 seconds
 
 xy: Status: exception, seamless.workflow.core.transformation.SeamlessTransformationError: Traceback (most recent call last):
-  File "transformer", line 8, in <module>
+  File "transformer", line 7, in <module>
     result = mul(a=a,b=b)
-  File "transformer", line 6, in mul
+  File "transformer", line 5, in mul
     return a * b
 TypeError: can't multiply sequence by non-int of type 'str'
 *************************************************
@@ -78,9 +78,9 @@ Execution time: 1.0 seconds
 
 xy_z: Status: exception, RuntimeError: Dependency 'a' has an exception:
 seamless.workflow.core.transformation.SeamlessTransformationError: Traceback (most recent call last):
-  File "transformer", line 8, in <module>
+  File "transformer", line 7, in <module>
     result = mul(a=a,b=b)
-  File "transformer", line 6, in mul
+  File "transformer", line 5, in mul
     return a * b
 TypeError: can't multiply sequence by non-int of type 'str'
 *************************************************
@@ -89,9 +89,9 @@ Execution time: 1.0 seconds
 result: Status: exception, RuntimeError: Dependency 'a' has an exception:
 RuntimeError: Dependency 'a' has an exception:
 seamless.workflow.core.transformation.SeamlessTransformationError: Traceback (most recent call last):
-  File "transformer", line 8, in <module>
+  File "transformer", line 7, in <module>
     result = mul(a=a,b=b)
-  File "transformer", line 6, in mul
+  File "transformer", line 5, in mul
     return a * b
 TypeError: can't multiply sequence by non-int of type 'str'
 *************************************************

@@ -92,7 +92,7 @@ reassign-transformer.py
 auth-relic.py
 special-methods.py
 cascade.py
-environment0.py
+environment0.py: if inside a devel Docker image, do "export DOCKER_IMAGE=rpbs/seamless"
 mount-write.py
 foldercell-transformer.py
 transformer-compiled.py: can be run with delegation using "export DELEGATE=''"
