@@ -39,7 +39,7 @@ Stage 2
 None
 None
 
-None
+<None>
 <None> None
 ['sub/test2.txt', 'sub/test3.npy']
 
@@ -104,14 +104,14 @@ None
 11ca1826a2a01811d5f62e4046f47d4a17a24e57a0f5915c828bd3bc6da10047
 
 *tf*: Status: error
-deepfolderpin: could not find file/directory for 11ca1826a2a01811d5f62e4046f47d4a17a24e57a0f5915c828bd3bc6da10047
-deepfolderpin: could not find file/directory for 11ca1826a2a01811d5f62e4046f47d4a17a24e57a0f5915c828bd3bc6da10047
+CacheMissError: deepfolderpin: could not find file/directory for 11ca1826a2a01811d5f62e4046f47d4a17a24e57a0f5915c828bd3bc6da10047
+CacheMissError: deepfolderpin: could not find file/directory for 11ca1826a2a01811d5f62e4046f47d4a17a24e57a0f5915c828bd3bc6da10047
 
 Stage 2
 {'deepfolderpin': {'celltype': 'deepfolder'}, 'folder_sub_pin': {'celltype': 'deepfolder'}}
 *tf*: Status: error
-deepfolderpin: could not find file/directory for 11ca1826a2a01811d5f62e4046f47d4a17a24e57a0f5915c828bd3bc6da10047
-deepfolderpin: could not find file/directory for 11ca1826a2a01811d5f62e4046f47d4a17a24e57a0f5915c828bd3bc6da10047
+CacheMissError: deepfolderpin: could not find file/directory for 11ca1826a2a01811d5f62e4046f47d4a17a24e57a0f5915c828bd3bc6da10047
+CacheMissError: deepfolderpin: could not find file/directory for 11ca1826a2a01811d5f62e4046f47d4a17a24e57a0f5915c828bd3bc6da10047
 
 11ca1826a2a01811d5f62e4046f47d4a17a24e57a0f5915c828bd3bc6da10047
 0bc1f7e12a942d58124b0247ab307b4514e9ab583312c29e7c47413e831ee3d8 []
@@ -123,31 +123,31 @@ dict_keys(['sub/test2.txt', 'sub/test3.npy'])
 0bc1f7e12a942d58124b0247ab307b4514e9ab583312c29e7c47413e831ee3d8
 {'deepfolderpin': {'celltype': 'deepfolder'}, 'folder_sub_pin': {'celltype': 'folder'}}
 *tf*: Status: error
-deepfolderpin: could not find file/directory for 11ca1826a2a01811d5f62e4046f47d4a17a24e57a0f5915c828bd3bc6da10047
-deepfolderpin: could not find file/directory for 11ca1826a2a01811d5f62e4046f47d4a17a24e57a0f5915c828bd3bc6da10047
+CacheMissError: deepfolderpin: could not find file/directory for 11ca1826a2a01811d5f62e4046f47d4a17a24e57a0f5915c828bd3bc6da10047
+CacheMissError: deepfolderpin: could not find file/directory for 11ca1826a2a01811d5f62e4046f47d4a17a24e57a0f5915c828bd3bc6da10047
 
 Stage 4
 Warning: Seamless structured cell: .folder_sub has no independence, but an auth checksum is present
 dict_keys(['sub/test2.txt', 'sub/test3.npy'])
 0bc1f7e12a942d58124b0247ab307b4514e9ab583312c29e7c47413e831ee3d8
 *tf*: Status: error
-deepfolderpin: could not find file/directory for 11ca1826a2a01811d5f62e4046f47d4a17a24e57a0f5915c828bd3bc6da10047
-deepfolderpin: could not find file/directory for 11ca1826a2a01811d5f62e4046f47d4a17a24e57a0f5915c828bd3bc6da10047
+CacheMissError: deepfolderpin: could not find file/directory for 11ca1826a2a01811d5f62e4046f47d4a17a24e57a0f5915c828bd3bc6da10047
+CacheMissError: deepfolderpin: could not find file/directory for 11ca1826a2a01811d5f62e4046f47d4a17a24e57a0f5915c828bd3bc6da10047
 Stage 4a
 Warning: Seamless structured cell: .folder_sub has no independence, but an auth checksum is present
 *tf*: Status: error
-deepfolderpin: could not find file/directory for 11ca1826a2a01811d5f62e4046f47d4a17a24e57a0f5915c828bd3bc6da10047
-deepfolderpin: could not find file/directory for 11ca1826a2a01811d5f62e4046f47d4a17a24e57a0f5915c828bd3bc6da10047
+CacheMissError: deepfolderpin: could not find file/directory for 11ca1826a2a01811d5f62e4046f47d4a17a24e57a0f5915c828bd3bc6da10047
+CacheMissError: deepfolderpin: could not find file/directory for 11ca1826a2a01811d5f62e4046f47d4a17a24e57a0f5915c828bd3bc6da10047
 Stage 5
 Warning: Seamless structured cell: .folder_sub has no independence, but an auth checksum is present
 *tf*: Status: error
-deepfolderpin: could not find file/directory for 11ca1826a2a01811d5f62e4046f47d4a17a24e57a0f5915c828bd3bc6da10047
-deepfolderpin: could not find file/directory for 11ca1826a2a01811d5f62e4046f47d4a17a24e57a0f5915c828bd3bc6da10047
+CacheMissError: deepfolderpin: could not find file/directory for 11ca1826a2a01811d5f62e4046f47d4a17a24e57a0f5915c828bd3bc6da10047
+CacheMissError: deepfolderpin: could not find file/directory for 11ca1826a2a01811d5f62e4046f47d4a17a24e57a0f5915c828bd3bc6da10047
 Stage 5a
 Warning: Seamless structured cell: .folder_sub has no independence, but an auth checksum is present
 *tf*: Status: error
-deepfolderpin: could not find file/directory for 11ca1826a2a01811d5f62e4046f47d4a17a24e57a0f5915c828bd3bc6da10047
-deepfolderpin: could not find file/directory for 11ca1826a2a01811d5f62e4046f47d4a17a24e57a0f5915c828bd3bc6da10047
+CacheMissError: deepfolderpin: could not find file/directory for 11ca1826a2a01811d5f62e4046f47d4a17a24e57a0f5915c828bd3bc6da10047
+CacheMissError: deepfolderpin: could not find file/directory for 11ca1826a2a01811d5f62e4046f47d4a17a24e57a0f5915c828bd3bc6da10047
 Deploy folder 
 Run 3
 #0 building with "default" instance using docker driver
@@ -201,8 +201,8 @@ Execution time: 0.0 seconds
 Stage 2
 {'deepfolderpin': {'celltype': 'deepfolder'}, 'folder_sub_pin': {'celltype': 'deepfolder'}}
 *tf*: Status: error
-folder_sub_pin: could not find file/directory for 0bc1f7e12a942d58124b0247ab307b4514e9ab583312c29e7c47413e831ee3d8
-folder_sub_pin: could not find file/directory for 0bc1f7e12a942d58124b0247ab307b4514e9ab583312c29e7c47413e831ee3d8
+CacheMissError: folder_sub_pin: could not find file/directory for 0bc1f7e12a942d58124b0247ab307b4514e9ab583312c29e7c47413e831ee3d8
+CacheMissError: folder_sub_pin: could not find file/directory for 0bc1f7e12a942d58124b0247ab307b4514e9ab583312c29e7c47413e831ee3d8
 
 11ca1826a2a01811d5f62e4046f47d4a17a24e57a0f5915c828bd3bc6da10047
 0bc1f7e12a942d58124b0247ab307b4514e9ab583312c29e7c47413e831ee3d8 []
@@ -371,7 +371,7 @@ The following pins access their buffer through symbolic links:
 
 
 *************************************************
-Execution time: 0.7 seconds
+Execution time: 0.8 seconds
 *************************************************
 Stage 5a
 Warning: Seamless structured cell: .folder_sub has no independence, but an auth checksum is present
@@ -426,5 +426,5 @@ The following pins access their buffer through symbolic links:
 
 
 *************************************************
-Execution time: 0.8 seconds
+Execution time: 1.0 seconds
 *************************************************

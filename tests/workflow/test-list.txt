@@ -52,7 +52,7 @@ macro.py
 macro-elision.py
 macro-elision-database.sh: 
   run outside Docker image.
-  run as i=macro-elision-database; seamless-run ./$i.sh > test-outputs/$i.out 2>&1
+  run as i=macro-elision-database; ./$i.sh > test-outputs/$i.out 2>&1
   modify "none" to "none-devel" during devel testing
 reactor-edit-macro.py
 delay.py
@@ -61,7 +61,7 @@ module-simplified.py
 module.py
 special-pins.py
 special-pins-bash.py
-multi-module.py: can also be run in interactive mode (see instructions in file). FAILS FOR FUNCTION BREAKPOINTS IN CURRENT VSCODE VERSION
+multi-module.py: can also be run in interactive mode (see instructions in file)
 module-pyaccess.py: can also be run in interactive mode (mount /tmp/module.py)
 bash.py
 bash-unbound.py
@@ -154,7 +154,7 @@ map-list.py
 channel.py
 environment3.py
 environment7.py: requires full delegation. micro/mini-assistant will not work out-of-the-box, mini-dask-assistant can work. Can also be run non-automatically, see below.
-imperative-environment.py: Requires full delegation. micro-assistant will not work out-of-the-box
+imperative-environment.py: Requires full delegation. micro-assistant will not work out-of-the-box. Can take up to 10-20 mins in the absence of a GPU.
 meta.py
 cowsay-conda.py: has a conda environment name "cowsay-environment". 
     Requires conda environment "cowsay-environment" to be present *where the job is executed*.
@@ -163,8 +163,22 @@ cowsay-conda.py: has a conda environment name "cowsay-environment".
     The conda environment can be built from "cowsay-environment.yml":
         conda env create -n cowsay-environment -f cowsay-environment.yml
 environment7a.py: version of environment7 where the conda environment name is specified. Will work with a Dask-assistant if the conda environment "pytorch-seamless-devel" is present where the Dask worker runs.
-environment7b.py: version of environment7 where the Docker image name is specified. Will work with any assistant if the Docker image "seamless-pytorch-devel" is present, which can be built using environment7b.Dockerfile
+environment7b.py: 
+  version of environment7 where the Docker image name is specified. Will work with any assistant if the Docker image "seamless-devel-pytorch" is present, which can be built using environment7b.Dockerfile
+  
+  To run this test, do first:
+  docker build -t seamless-devel-pytorch -f environment7b.Dockerfile .
+  seamless-delegate none 
+  
+  Then, do in a separate window:
+  export SEAMLESS_DOCKER_IMAGE=seamless-devel-pytorch
+  export SEAMLESS_DOCKER_PUBLISH_SHARESERVER_PORTS="-p 5533:5533"
+  export SEAMLESS_DOCKER_PUBLISH_DEBUG_PORTS=""                  
+  seamless-bash
+  python3 micro-assistant.py --host 0.0.0.0
 
+  Finally, run the test.
+  Note that a Docker image deriving from seamless-devel must have its name start with seamless-devel.
 fallback.py
 eager.py: FAILS as of 0.7 (https://github.com/sjdv1982/seamless/issues/90)
 help.py: Can also be run interactively with IPython. See the source code for mounts and shares
@@ -173,7 +187,8 @@ webinterface.sh: open with bash inside the Seamless Docker container.
                  Can also be run interactively, see line 6 of the code
 meta-local: 1. run without delegation:      #1 succeed, #2 fail, #3 fail
             2. run with --delegate:         #1 succeed, #2 succeed, #3 fail
-deepcell-pdb.py: requires a FAIR server that knows the PDB dataset
+deepcell-pdb.py: requires a FAIR server that knows the PDB dataset 
+                 (https://fair.rpbs.univ-paris-diderot.fr)
                  Can also be run interactively, change ctx.pdb_code 
                   and observe /tmp/pdb_structure.mmcif
 deepfolder-pdb.py: See above . change ctx.pdb_code to "1wej.cif", "1brs.cif" or "7cei.cif" 
@@ -190,11 +205,14 @@ high-in-low4-memory.py    # Quite long test.
                           # Creates 5.6 GB of buffer cache in /tmp/dummy-db
                           # Run with "source prepare-high-in-low-memory.sh"
                           #   (modify "none" to "none-devel" during devel testing)
-                          # Time is ~160 seconds, or ~55 seconds when re-executed
+                          # Laptop: Time is ~320 seconds, or ~90 seconds when re-executed
+                          # Desktop: Time is ~280 seconds, or ~55 seconds when re-executed
                           # Re-executing the test is faster, because the transformation results and input buffers are cached
                           # Exact output will depend on timings, test outputs stores the re-execution output
                           # After the test, "seamless-delegate-stop && rm -rf /tmp/dummy-db"
-high-in-low6-memory.py    # See above. Time is ~100 seconds, or ~55 seconds when re-executed
+high-in-low6-memory.py    # See above. 
+                          # Laptop: Time is ~200 seconds, or ~115 seconds when re-executed
+                          # Desktop: Time is ~200 seconds, or ~55 seconds when re-executed
 switch-select-stdlib.py
 map-speed-test.py: long test, calculates the speed of stdlib.map_dict
 map-speed-test2.py: long test, calculates the speed of stdlib.map_dict_chunk
