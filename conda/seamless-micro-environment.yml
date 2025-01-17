@@ -10,6 +10,7 @@ dependencies:
   - rpbs::seamless-cli-complement
   - rpbs::seamless-cli-bin
   - conda
+  - traitlets
   - pip:
       - websockets
 variables:
