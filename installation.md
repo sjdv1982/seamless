@@ -27,6 +27,10 @@ docker pull rpbs/seamless
 conda create -n seamless -c rpbs -c conda-forge seamless-cli
 ```
 
+#### Upgrading your Seamless installation
+
+run `seamless-upgrade-installation`. This will pull the latest Seamless Docker image, update `seamless-cli`, and rebuild the Docker images for delegation.
+
 #### Installing a specific Seamless version
 
 By default, the Seamless CLI creates `rpbs/seamless` Docker containers.
@@ -65,7 +69,7 @@ The command is:
 
 where `<environment>` can have the following values:
 
-- `seamless-exact`. This is the most compatible installation. This specifies the versions of Python and all packages to be exactly the same as in the Docker image. (For Seamless 0.13, this is Python 3.10). Note that Seamless is tested only with these package versions. The environment is 1.9 GB in size.
+- `seamless-exact`. This is the most compatible installation. This specifies the versions of Python and all packages to be exactly the same as in the Docker image. (For Seamless 0.14, this is Python 3.10). Note that Seamless is tested only with these package versions. The environment is 1.9 GB in size.
 
 - `seamless-framework`. This works like `seamless-exact`, but does not specify package versions unless necessary. As of mid 2024, this will install Python 3.12. Note that Seamless is *not* extensively tested with these Python/package versions: if you encounter a bug, switching to `seamless-exact` may solve it (a bug report is still welcome).
 

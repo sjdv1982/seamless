@@ -1,4 +1,4 @@
-{% set version = "0.13" %}
+{% set version = "0.14" %}
 package:
     name: seamless-cli-bin
     version: {{ version }}
@@ -10,6 +10,6 @@ requirements:
   build:
     - python>=3.10
   run:
-    - seamless-framework=0.13
+    - seamless-framework=0.14
 about:
   summary: This is a re-implementation of seamless-cli, invoking the underlying tools directly.

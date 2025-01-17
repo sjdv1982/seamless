@@ -6,10 +6,10 @@ dependencies:
   - python
   - pip
   - numpy
-  - rpbs::seamless-framework==0.13.*
+  - rpbs::seamless-framework==0.14.*
   - rpbs::silk>=0.1.11
   - rpbs::seamless-cli-complement
-  - rpbs::seamless-cli-bin==0.13.*
+  - rpbs::seamless-cli-bin==0.14.*
   - bashlex
   - conda
   - aiohttp-cors
