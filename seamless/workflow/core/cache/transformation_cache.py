@@ -5,7 +5,7 @@
 #  from the semantic-to-syntactic checksum cache
 
 from seamless import Checksum, Buffer, CacheMissError
-from seamless.checksum.json import json_dumps
+from seamless.util.transformation import tf_get_buffer
 from seamless.checksum.buffer_remote import write_buffer
 
 transformation_cache = None
@@ -149,32 +149,6 @@ def incref_transformation(tf_checksum: Checksum, tf_buffer, transformation):
         sem_checksum = Checksum(sem_checksum)
         if sem_checksum:
             buffer_cache.incref(sem_checksum, persistent=(pinname == "__env__"))
-
-
-def tf_get_buffer(transformation):
-    assert isinstance(transformation, dict)
-    d = {}
-    for k in transformation:
-        if k in (
-            "__compilers__",
-            "__languages__",
-            "__meta__",
-            "__env__",
-            "__code_checksum__",
-        ):
-            continue
-        v = transformation[k]
-        if k in ("__language__", "__output__", "__as__", "__format__"):
-            d[k] = v
-            continue
-        if k.startswith("SPECIAL__"):
-            continue
-        celltype, subcelltype, checksum = v
-        if isinstance(checksum, Checksum):
-            checksum = checksum.value
-        d[k] = celltype, subcelltype, checksum
-    buffer = json_dumps(d, as_bytes=True) + b"\n"
-    return buffer
 
 
 def syntactic_is_semantic(celltype, subcelltype):
@@ -1261,6 +1235,12 @@ class TransformationCache:
             self.register_known_transformation(tf_checksum, result_checksum)
             if not fingertip:
                 return result_checksum
+            else:
+                result_buffer = get_buffer(result_checksum, remote=True)
+                if result_buffer is not None:
+                    buffer_cache.cache_buffer(result_checksum, result_buffer)
+                    return result_checksum
+
         if cache_only:
             return None
         transformation = await self.serve_get_transformation(tf_checksum, None)
@@ -1534,17 +1514,22 @@ class TransformationCache:
 
 transformation_cache = TransformationCache()
 
+
 from seamless.workflow.tempref import temprefmanager
+
 from seamless.checksum.buffer_cache import buffer_cache
 from seamless.checksum.get_buffer import get_buffer
 from seamless.checksum.deserialize import deserialize
+
 from seamless.checksum.database_client import database
+
 from ..transformation import (
     TransformationJob,
     SeamlessTransformationError,
     SeamlessStreamTransformationError,
     RemoteJobError,
 )
+
 from ..status import SeamlessInvalidValueError, SeamlessUndefinedError, StatusReasonEnum
 from ..transformer import Transformer
 from seamless.checksum.convert import try_convert

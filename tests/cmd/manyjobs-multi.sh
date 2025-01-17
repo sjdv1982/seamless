@@ -11,23 +11,23 @@ print(" ".join([str(seed) for seed in seeds]))
 ' $ntrials
 )
 seeds=($seeds)
-rm -f calc_pi.job-*
-trap 'kill -1 $(jobs -p); kill $(jobs -p); kill -9 $(jobs -p)' EXIT
-seamless-queue &   # start working immediately
+rm -f calc_pi.job-* manyjobs-multi.jobfile .seamless-queue
+seamless-queue &   # start working immediately. You can use -q to get better timings
 for i in $(seq $ntrials); do
     i2=$((i-1))
     export seed="${seeds[$i2]}"
     cmd="python3 calc_pi.py --seed $seed --ndots 1000000000 > calc_pi.job-$i"
-    seamless --qsub --fingertip --ncores 2 -c "$cmd" &
-    sleep 0.4  # wait a bit; count a CPU second for squb, and a continuous CPU for seamless-queue
-    # sleep 0.2   # wait shorter if:
-                  # - we start working when all has been submitted
-                  # - we submit to a remote cluster on a fast network
-    echo $i
+    echo $cmd >> manyjobs-multi.jobfile
+    echo >> manyjobs-multi.jobfile
+    echo >> manyjobs-multi.jobfile
 done
+
+trap 'kill -1 $(jobs -p); kill $(jobs -p); kill -9 $(jobs -p)' EXIT
+
+# You can use -q to get better timings, or -v/-vv to get better progress
+seamless-multi --fingertip --ncores 2 manyjobs-multi.jobfile  
+
 echo 'Jobs submitted'
-sleep 10 # make sure all jobs have arrived in the queue (if start working immediately)
-# seamless-queue &   # start working when all has been submitted
 seamless-queue-finish
 
 python3 -c '
@@ -49,3 +49,5 @@ for n in range(ntrials):
 results = np.array(results)
 print(results.mean(), results.std(), np.pi)    
 ' $ntrials
+
+rm -f manyjobs-multi.jobfile

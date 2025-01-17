@@ -35,8 +35,6 @@ import functools
 import json
 from copy import deepcopy
 
-from silk.mixed.get_form import get_form
-
 from seamless import Checksum
 from seamless.checksum.mime import language_to_mime
 from seamless.direct import Transformation, transformation_from_dict
@@ -672,6 +670,8 @@ class Transformer(Base, HelpMixin):
                 htf["TEMP"]["code"] = code
             else:
                 if not isinstance(value, (Cell, Module, DeepCellBase)):
+                    from silk.mixed.get_form import get_form
+
                     get_form(value)
                 if "input_auth" not in htf["TEMP"]:
                     htf["TEMP"]["input_auth"] = {}
@@ -1644,6 +1644,8 @@ class Transformer(Base, HelpMixin):
             raise AttributeError(attr)
 
         if not self._has_tf():
+            from silk.mixed.get_form import get_form
+
             if isinstance(value, Resource):
                 value = value.data
             if "TEMP" not in htf or htf["TEMP"] is None:

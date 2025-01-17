@@ -2,7 +2,7 @@ Status: {
   "tf": "error"
 }
 Traceback (most recent call last):
-  File "Seamless transformer: .tf", line 2, in <module>
+  File "Seamless transformer: .tf", line 1, in <module>
     print('TEST'); raise Exception(a)
 Exception: 1
 

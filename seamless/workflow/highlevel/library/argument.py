@@ -6,6 +6,7 @@ from seamless.util.source import strip_decorators
 
 
 def _get_value(name, value):
+    from silk.Silk import RichValue
 
     if callable(value):
         value = inspect.getsource(value)
@@ -89,7 +90,6 @@ def parse_argument(argname, argvalue, parameter, *, parent=None):
     return value
 
 
-from silk.Silk import RichValue
 from ..Base import Base
 from ..Cell import Cell
 from ..DeepCell import DeepCell, DeepFolderCell

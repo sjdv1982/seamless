@@ -2,6 +2,7 @@
 
 import seamless
 from seamless import Checksum
+from seamless.util.transformation import tf_get_buffer
 from seamless.checksum.buffer_cache import buffer_cache
 
 DEBUG = True
@@ -9,10 +10,7 @@ REMOTE_TIMEOUT = 5.0
 
 
 def _get_buffer_from_transformation_cache(checksum):
-    from seamless.workflow.core.cache.transformation_cache import (
-        transformation_cache,
-        tf_get_buffer,
-    )
+    from seamless.workflow.core.cache.transformation_cache import transformation_cache
 
     transformation = transformation_cache.transformations.get(checksum)
     if transformation is not None:

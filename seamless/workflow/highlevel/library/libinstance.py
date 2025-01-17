@@ -226,7 +226,11 @@ class LibInstance:
 
         # Fill namespace, part 2: validation
         if constructor_schema is not None:
-            instance = LibInstanceSilk(
+            from silk.validation import ValidationError
+
+            if LibInstanceSilk is None:
+                _buildLibInstanceSilk()
+            instance = LibInstanceSilk(  # pylint: disable=not-callable
                 data=deepcopy(namespace), schema=constructor_schema
             )
             try:
@@ -442,10 +446,15 @@ class LibInstance:
         return sorted(list(schema.get("methods", {}).keys()))
 
     def _build_api(self, arguments):
+        if LibInstanceSilk is None:
+            _buildLibInstanceSilk()
+
         lib = self._get_lib(copy=False)
         schema = lib.get("api_schema")
         assert schema is not None
-        result = LibInstanceSilk(data=arguments, schema=schema)
+        result = LibInstanceSilk(  # pylint: disable=not-callable
+            data=arguments, schema=schema
+        )
         result._libinstance = self
         return result
 
@@ -495,6 +504,7 @@ from .iowrappers import (
     OutputCellWrapper,
     EditCellWrapper,
 )
+
 from ..synth_context import SynthContext
 from ..Cell import Cell, FolderCell, SimpleDeepCell
 from ..DeepCell import DeepCell, DeepFolderCell
@@ -507,13 +517,20 @@ from ..Macro import Macro
 from ..Module import Module
 from seamless.checksum.cached_compile import exec_code
 from ..proxy import Proxy
-from silk.Silk import Silk
-from silk.validation import ValidationError
+
+LibInstanceSilk = None
 
 
-class LibInstanceSilk(Silk):
-    __slots__ = list(Silk.__slots__) + ["_libinstance"]
+def _buildLibInstanceSilk():
+    global LibInstanceSilk
 
-    @property
-    def libinstance(self):
-        return self._libinstance
+    from silk.Silk import Silk
+
+    class LibInstanceSilk0(Silk):  # pylint: disable=redefined-outer-name
+        __slots__ = list(Silk.__slots__) + ["_libinstance"]
+
+        @property
+        def libinstance(self):
+            return self._libinstance
+
+    LibInstanceSilk = LibInstanceSilk0

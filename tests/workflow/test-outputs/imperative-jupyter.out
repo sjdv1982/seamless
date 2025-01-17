@@ -62,12 +62,12 @@ The following will give an exception:
 /exception
 
 Traceback (most recent call last):
-  File "/tmp/ipykernel_1047/3750347486.py", line 60, in <module>
+  File "/tmp/ipykernel_111709/3750347486.py", line 60, in <module>
     func0(0, 0)
 seamless.workflow.core.transformation.SeamlessTransformationError: Traceback (most recent call last):
-  File "transformer", line 6, in <module>
+  File "transformer", line 5, in <module>
     result = func0(a=a,b=b)
-  File "transformer", line 4, in func0
+  File "transformer", line 3, in func0
     raise Exception  # deliberately
 Exception
 

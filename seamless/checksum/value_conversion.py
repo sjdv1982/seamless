@@ -3,7 +3,6 @@
 
 import warnings
 from typing import Coroutine
-import numpy as np
 from seamless import Buffer, Checksum, CacheMissError
 from seamless.checksum.celltypes import text_types2
 from seamless.checksum.cached_compile import analyze_code
@@ -252,7 +251,10 @@ async def value_conversion(
             target_value = json_encode(source_value)
         elif conv == ("plain", "binary"):
             try:
+                import numpy as np
+
                 if isinstance(source_value, (int, float, bool)):
+
                     target_value = np.array(source_value)
                     buffer_cache.update_buffer_info(
                         checksum, "is_json_numeric_scalar", True, sync_remote=True

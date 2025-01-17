@@ -5,9 +5,9 @@ Status: OK
 Status: OK
 *apply_blackwhite*: Status: error
 *apply_blackwhite*: Traceback (most recent call last):
-  File "Seamless transformer: .a.apply_blackwhite", line 21, in <module>
+  File "Seamless transformer: .a.apply_blackwhite", line 20, in <module>
     result = apply_blackwhitelist(blackwhitelist=blackwhitelist,keyorder=keyorder,origin=origin)
-  File "Seamless transformer: .a.apply_blackwhite", line 3, in apply_blackwhitelist
+  File "Seamless transformer: .a.apply_blackwhite", line 2, in apply_blackwhitelist
     assert keyorder is None or isinstance(
 AssertionError: nonsense
 *************************************************

@@ -7,9 +7,9 @@ Traceback (most recent call last):
   File "/cwd/tests/workflow/imperative.py", line 66, in <module>
     func0(0, 0)
 seamless.workflow.core.transformation.SeamlessTransformationError: Traceback (most recent call last):
-  File "transformer", line 6, in <module>
+  File "transformer", line 5, in <module>
     result = func0(a=a,b=b)
-  File "transformer", line 4, in func0
+  File "transformer", line 3, in func0
     raise Exception  # deliberately
 Exception
 

@@ -31,10 +31,6 @@ from typing import *
 from copy import deepcopy
 from functools import partialmethod
 
-from silk import Silk
-from silk.mixed import MixedBase
-from silk.SilkBase import binary_special_method_names
-
 from seamless import Checksum
 from seamless.checksum.expression import validate_hash_pattern
 from seamless.checksum.mime import get_mime, language_to_mime, ext_to_mime
@@ -507,7 +503,7 @@ This cell is not fully independent, i.e. it has incoming connections"""
         return value
 
     @property
-    def example(self) -> Silk:
+    def example(self):
         """For a structured cell, return a dummy Silk handle.
 
         The handle does not store any values, but has type inference,
@@ -752,6 +748,9 @@ This cell is not fully independent, i.e. it has incoming connections"""
                         "Mounting is only supported for non-structured cells"
                     )
             cellvalue = self.value
+        from silk import Silk
+        from silk.mixed import MixedBase
+
         if isinstance(cellvalue, Silk):
             cellvalue = cellvalue.data
         if isinstance(cellvalue, MixedBase):
@@ -1230,6 +1229,58 @@ def SimpleDeepCell():
     node["hash_pattern"] = {"*": "#"}
     return cell
 
+
+# from silk import binary_special_method_names  # too slow...
+
+binary_special_method_names = (
+    "__add__",
+    "__sub__",
+    "__mul__",
+    "__matmul__",
+    "__truediv__",
+    "__floordiv__",
+    "__mod__",
+    "__divmod__",
+    "__pow__",
+    "__lshift__",
+    "__rshift__",
+    "__and__",
+    "__xor__",
+    "__or__",
+    "__radd__",
+    "__rsub__",
+    "__rmul__",
+    "__rmatmul__",
+    "__rtruediv__",
+    "__rfloordiv__",
+    "__rmod__",
+    "__rdivmod__",
+    "__rpow__",
+    "__rlshift__",
+    "__rrshift__",
+    "__rand__",
+    "__rxor__",
+    "__ror__",
+    "__iadd__",
+    "__isub__",
+    "__imul__",
+    "__imatmul__",
+    "__itruediv__",
+    "__ifloordiv__",
+    "__imod__",
+    "__ipow__",
+    "__ilshift__",
+    "__irshift__",
+    "__iand__",
+    "__ixor__",
+    "__ior__",
+    "__lt__",
+    "__le__",
+    "__eq__",
+    "__gt__",
+    "__ge__",
+    # TODO: __ne__ (optional)
+)
 
 for _ in binary_special_method_names:
     if _ in Cell.__dict__:

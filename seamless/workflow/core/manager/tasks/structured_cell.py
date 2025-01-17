@@ -693,6 +693,8 @@ class StructuredCellJoinTask(StructuredCellTask):
                             sc._exception = traceback.format_exc()
                             ok = False
                 if ok:
+                    from silk.Silk import Silk, ValidationError
+
                     s = Silk(data=true_value, schema=schema)
                     try:
                         s.validate()
@@ -753,7 +755,6 @@ from .checksum import CalculateChecksumTask
 from .accessor_update import AccessorUpdateTask
 from .upon_connection import UponConnectionTask
 from seamless.checksum.buffer_cache import buffer_cache
-from silk.Silk import Silk, ValidationError
 from ..cancel import SCModeEnum
 from ...protocol.expression import get_subpath, set_subpath_checksum
 from . import acquire_evaluation_lock, release_evaluation_lock

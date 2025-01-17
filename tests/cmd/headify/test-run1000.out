@@ -1,17 +1,4 @@
-seamless.workflow.core.transformation.SeamlessTransformationError: Error 400 from assistant:ERROR: Unknown error
-Output:
-Traceback (most recent call last):
-  File "/home/jovyan/seamless-scripts/run-transformation.py", line 182, in <module>
-    result = seamless.run_transformation(
-  File "/seamless/seamless/direct/run_transformation.py", line 47, in run_transformation
-    return tf_cache.run_transformation(
-  File "/seamless/seamless/workflow/core/cache/transformation_cache.py", line 1464, in run_transformation
-    asyncio.get_event_loop().run_until_complete(fut)
-  File "/opt/conda/lib/python3.10/asyncio/base_events.py", line 649, in run_until_complete
-    return future.result()
-  File "/seamless/seamless/workflow/core/cache/transformation_cache.py", line 1378, in run_transformation_async
-    raise self.transformation_exceptions[tf_checksum]
-seamless.workflow.core.transformation.SeamlessTransformationError: 
+seamless.workflow.core.transformation.SeamlessTransformationError: Error 400 from assistant:ERROR: 
 Bash transformer exception
 ==========================
 
@@ -40,7 +27,6 @@ mv: cannot stat 'infile-head': No such file or directory
 *************************************************
 *************************************************
 Execution time: 0.1 seconds
-
 
 buffer cache, 8 buffers undestroyed
 mv: cannot stat 'TEST*': No such file or directory

@@ -11,9 +11,9 @@ The result is: 7.5
 bork!bork!bork!
 None
 Traceback (most recent call last):
-  File "/seamless/seamless/workflow/core/execute.py", line 321, in _execute
+  File "/seamless/seamless/workflow/core/execute.py", line 322, in _execute
     result_buffer = serialize(result, output_celltype)
-  File "/seamless/seamless/checksum/serialize.py", line 39, in _serialize
+  File "/seamless/seamless/checksum/serialize.py", line 32, in _serialize
     value = int(value)
 ValueError: invalid literal for int() with base 10: 'bork!bork!bork!'
 *************************************************
@@ -29,9 +29,9 @@ bork!bork!bork!bork!bork!
 
 None
 Traceback (most recent call last):
-  File "/seamless/seamless/workflow/core/execute.py", line 321, in _execute
+  File "/seamless/seamless/workflow/core/execute.py", line 322, in _execute
     result_buffer = serialize(result, output_celltype)
-  File "/seamless/seamless/checksum/serialize.py", line 39, in _serialize
+  File "/seamless/seamless/checksum/serialize.py", line 32, in _serialize
     value = int(value)
 ValueError: invalid literal for int() with base 10: 'bork!bork!bork!bork!bork!\n'
 *************************************************

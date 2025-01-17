@@ -70,7 +70,7 @@ ctx.compute()
 print("6a", ctx.myresult.value)
 
 graph = ctx.get_graph()
-json.dump(graph, open("simple-graph.json", "w"), sort_keys=True, indent=2)
+json.dump(graph, open("simple-graph-deepcell.json", "w"), sort_keys=True, indent=2)
 
 inp = ctx.transform.inp
 print(inp.value.unsilk)

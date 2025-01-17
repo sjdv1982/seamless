@@ -9,7 +9,7 @@ import numpy as np
 ctx = Context()
 
 
-def code() -> dict[str, np.ndarray]:
+def code() -> dict[str, "np.ndarray"]:
     import numpy as np
 
     a = np.arange(20, 80).astype(np.int8)

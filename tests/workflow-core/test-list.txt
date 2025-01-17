@@ -8,7 +8,7 @@ jupyter.sh
 bytecell.py
 bytecell2.py
 bytecell3.py
-buffer_remote.sh
+buffer_remote.sh: no pre-delegation
 cachehit-semantic.py
 conversions.py: the output is approximate, depends on exact timings
 simple.py: can be run with level 3 delegation (export DELEGATE=""), in which case the execution metadata is printed
@@ -75,7 +75,7 @@ macro2.py
 macro3.py
 pin-as.py
 pin-filesystem.sh:
-  Run this in an environment where seamless-upload is available
+  Run this in an environment where seamless-upload is available (no pre-delegation)
   run as i=pin-filesystem; ./$i.sh > test-outputs/$i.out 2>&1
 checksum-cell.py
 structured_cell/simple-deepcell.py

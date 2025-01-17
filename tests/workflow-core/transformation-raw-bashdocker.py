@@ -7,10 +7,9 @@ from seamless.checksum.buffer_cache import buffer_cache
 from seamless.checksum.buffer_remote import (
     write_buffer as remote_write_buffer,
 )
-from seamless.workflow.core.cache.transformation_cache import (
-    transformation_cache,
-    tf_get_buffer,
-)
+
+from seamless.util.transformation import tf_get_buffer
+from seamless.workflow.core.cache.transformation_cache import transformation_cache
 
 if "DELEGATE" in os.environ:
     delegation = True

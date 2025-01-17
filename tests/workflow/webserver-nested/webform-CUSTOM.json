@@ -1,0 +1,120 @@
+{
+  "cells": {
+    "master_seed": {
+      "celltype": "int",
+      "component": "slider",
+      "params": {
+        "max": 1000,
+        "min": 0,
+        "step": 1,
+        "title": "Master seed to generate a list of individual seeds"
+      },
+      "share": {
+        "auto_read": true,
+        "encoding": "json",
+        "read": true,
+        "write": true
+      },
+      "webdefault": 0
+    },
+    "ndots_oom": {
+      "celltype": "int",
+      "component": "slider",
+      "params": {
+        "max": 9,
+        "min": 0,
+        "step": 1,
+        "title": "Order of magnitude for the number of dots inside each circle.\n\n1 = 10, 3 = 1000, etc."
+      },
+      "share": {
+        "auto_read": true,
+        "encoding": "json",
+        "read": true,
+        "write": true
+      },
+      "webdefault": 0
+    },
+    "njobs": {
+      "celltype": "int",
+      "component": "slider",
+      "params": {
+        "max": 100,
+        "min": 0,
+        "step": 1,
+        "title": "Number of jobs to run.\nEach job will generate one circle full of dots, using one seed.\nHalf of the jobs are run using the direct style, half using the command-line style."
+      },
+      "share": {
+        "auto_read": true,
+        "encoding": "json",
+        "read": true,
+        "write": true
+      },
+      "webdefault": 0
+    },
+    "pi_cmd_job": {
+      "celltype": "float",
+      "component": "numberinput",
+      "params": {
+        "editable": false,
+        "title": "Estimate of pi calculated by the command-line style jobs"
+      },
+      "share": {
+        "auto_read": true,
+        "encoding": "json",
+        "read": true
+      },
+      "webdefault": 0.0
+    },
+    "pi_direct_job": {
+      "celltype": "float",
+      "component": "numberinput",
+      "params": {
+        "editable": false,
+        "title": "Estimate of pi calculated by the direct style jobs"
+      },
+      "share": {
+        "auto_read": true,
+        "encoding": "json",
+        "read": true
+      },
+      "webdefault": 0.0
+    }
+  },
+  "extra_components": [
+    {
+      "cell": "master_seed",
+      "component": "",
+      "id": "EXAMPLE_ID",
+      "params": {}
+    }
+  ],
+  "index": {
+    "title": "Calculate pi in two different code styles"
+  },
+  "transformers": {
+    "calc_ndots": {
+      "component": "transformer-status",
+      "params": {
+        "title": "Calculate the number of dots per circle"
+      }
+    },
+    "calc_seeds": {
+      "component": "transformer-status",
+      "params": {
+        "title": "Calculate the list of seeds"
+      }
+    },
+    "cmd_job": {
+      "component": "transformer-status",
+      "params": {
+        "title": "The command-line style jobs"
+      }
+    },
+    "direct_job": {
+      "component": "transformer-status",
+      "params": {
+        "title": "The direct style jobs"
+      }
+    }
+  }
+}

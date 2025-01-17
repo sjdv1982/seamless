@@ -1,5 +1,5 @@
 seamless.config.unblock_local()
-ctx.load_vault("vault/")  # bug in new-project.py
+ctx.load_vault("vault/")  # bug/gotcha in new-project.py
 
 ctx.master_seed = Cell("int").set(0)
 ctx.master_seed.share(readonly=False)
@@ -42,22 +42,18 @@ ctx.calc_pi = Cell("text").mount("calc_pi.py")
 ctx.cmd_job = Transformer()
 ctx.cmd_job.language = "bash"
 
-# nested delegation for cmd style doesn't quite work for mini-assistant
-# ctx.cmd_job.local = True # bug in Seamless
-ctx.cmd_job.meta = {"local": True}
-
 ctx.cmd_job.code.mount("cmd-job.sh")
 ctx.cmd_job["seeds.npy"] = ctx.cmd_job_seeds
 ctx.cmd_job["seeds.npy"].celltype = "binary"
 ctx.cmd_job["calc_pi.py"] = ctx.calc_pi
 ctx.cmd_job.ndots = ctx.ndots
 
-ctx.pi_direct_job = Cell("float")
-ctx.pi_direct_job.share()
 ctx.pi_direct_job = ctx.direct_job.result
+ctx.pi_direct_job.celltype = "float"
+ctx.pi_direct_job.share()
 
-ctx.pi_cmd_job = Cell("float")
-ctx.pi_cmd_job.share()
 ctx.pi_cmd_job = ctx.cmd_job.result
+ctx.pi_cmd_job.celltype = "float"
+ctx.pi_cmd_job.share()
 
-ctx.compute()
+ctx.translate()

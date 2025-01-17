@@ -16,6 +16,7 @@ unset SEAMLESS_WRITE_BUFFER_SERVER
 seamless-hashserver /tmp/bufferdir/ >& /dev/null
 
 echo 1
+echo "The following script will give an error: No write buffer server defined"
 python buffer_remote1.py
 docker stop hashserver-hashserver-1
 rm -rf /tmp/bufferdir

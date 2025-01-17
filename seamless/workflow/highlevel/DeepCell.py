@@ -195,12 +195,15 @@ class DeepCellBase(Base, HelpMixin):
         try:
             distribution2 = None
             result = fair.find(distribution["checksum"])
+            dataset = None
             if result is not None:
                 dataset, distribution2 = result["dataset"], result["distribution"]
             else:
                 distribution2 = distribution
             if distribution2 is not None:
-                metadata = {"dataset": dataset}
+                metadata = {}
+                if dataset:
+                    metadata = {"dataset": dataset}
                 for key in meta_keys:
                     if key in distribution2:
                         metadata[key] = distribution2[key]

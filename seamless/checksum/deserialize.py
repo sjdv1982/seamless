@@ -5,10 +5,6 @@ import logging
 from copy import deepcopy
 import json
 import orjson
-from silk.mixed.io import (  # pylint: disable=no-name-in-module
-    deserialize as mixed_deserialize,
-)
-from silk.mixed import MAGIC_NUMPY
 from seamless import Checksum
 
 from seamless.util import lrucache2
@@ -60,10 +56,19 @@ def _deserialize(buffer: bytes, checksum: Checksum, celltype: str):
     elif celltype == "plain":
         value = _deserialize_plain(buffer)
     elif celltype == "binary":
+        from silk.mixed.io import (  # pylint: disable=no-name-in-module
+            deserialize as mixed_deserialize,
+        )
+        from silk.mixed import MAGIC_NUMPY
+
         if not buffer.startswith(MAGIC_NUMPY):
             raise TypeError
         value, _ = mixed_deserialize(buffer)  # fast enough for pure binary
     elif celltype == "mixed":
+        from silk.mixed.io import (  # pylint: disable=no-name-in-module
+            deserialize as mixed_deserialize,
+        )
+
         value, _ = mixed_deserialize(buffer)
     elif celltype == "bytes":
         value = buffer
@@ -76,6 +81,9 @@ def _deserialize(buffer: bytes, checksum: Checksum, celltype: str):
             value = buffer.decode()
             validate_checksum(value)
         except (ValueError, UnicodeDecodeError):
+            from silk.mixed.io import (  # pylint: disable=no-name-in-module
+                deserialize as mixed_deserialize,
+            )
             value, storage = mixed_deserialize(buffer)
             if storage != "pure-plain":
                 raise TypeError from None

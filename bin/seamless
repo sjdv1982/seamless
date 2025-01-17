@@ -4,25 +4,25 @@
 
 """Main command-line seamless executable script"""
 
-__version__ = "0.13"
+__version__ = "0.14"
 
 import argparse
 from copy import copy
-import pathlib
 import sys
 import os
 import json
-import time
 import traceback
 import threading
 import logging
+import functools
+import time
+import pathlib
 
 os.environ["__SEAMLESS_FRUGAL"] = "1"
 import seamless
 
-from seamless import Checksum, Buffer, CacheMissError
+from seamless import Checksum, Buffer
 from seamless.checksum.buffer_cache import buffer_cache
-from seamless.checksum.deserialize import deserialize_sync as deserialize
 from seamless.util import unchecksum
 from seamless.cmd.message import set_verbosity, message as msg, message_and_exit as err
 from seamless.cmd import parsing
@@ -36,15 +36,12 @@ from seamless.cmd.bash_transformation import (
 from seamless.cmd import interface
 from seamless.cmd.exceptions import SeamlessSystemExit
 from seamless.cmd.bytes2human import human2bytes
-from seamless.cmd.download import download
+from seamless.cmd.get_results import get_results, get_result_buffer, maintain_futures
 from seamless.Environment import Environment
 from seamless.checksum.json import json_dumps
-from seamless.workflow.core.direct.run import fingertip, extract_dunder, tf_get_buffer
-from seamless.checksum.calculate_checksum import calculate_checksum
+from seamless.util.transformation import extract_dunder, tf_get_buffer
 
-stdout_lock = threading.Lock()
-
-parser = argparse.ArgumentParser()
+parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument(
     "-v",
     dest="verbosity",
@@ -249,14 +246,30 @@ parser.add_argument(
     action="store_true",
 )
 
+parser.add_argument(
+    "--qsubmit",
+    "--qsub",
+    help="Parse the arguments and write the job to a queue file",
+    action="store_true",
+    default=False,
+)
+
 
 parser.add_argument("command", nargs=argparse.REMAINDER)
 
 args = parser.parse_args()
 
-if args.write_job is not None:
+if args.dry_run:
+    if args.qsubmit:
+        err("--qsubmit and --dry cannot be used together")
+else:
+    if args.write_job:
+        err("-j/--write-job requires --dry")
+    if args.upload:
+        err("--upload requires --dry")
+if args.write_job:
     if os.path.exists(args.write_job):
-        raise Exception(f"Output job directory '{args.write_job}' already exists")
+        err(f"Output job directory '{args.write_job}' already exists")
 command = args.command
 
 verbosity = min(args.verbosity, 3)
@@ -276,11 +289,19 @@ if args.workdir is not None:
     if os.environ.get("DOCKER_IMAGE"):
         err(
             """DOCKER_IMAGE environment variable has been set.
-  We are running from inside a Docker container.
-  Setting workdir is not supported."""
+We are running from inside a Docker container.
+Setting workdir is not supported."""
         )
     workdir = os.path.expanduser(args.workdir)
     msg(1, "set argtyping working directory to: {}".format(workdir))
+
+if args.qsubmit:
+    queue_file = os.environ.get("SEAMLESS_QUEUE_FILE")
+    if queue_file is None:
+        queue_file = ".seamless-queue"
+        msg(1, f"SEAMLESS_QUEUE_FILE not defined. Set queue file to '{queue_file}'")
+    else:
+        msg(1, f"Read queue file from SEAMLESS_QUEUE_FILE: '{queue_file}'")
 
 ################################################################
 
@@ -304,7 +325,7 @@ if args.unquote:
 else:
     commandstring = " ".join(command)
 
-commands, first_pipeline = get_commands(commandstring)
+commands, first_pipeline, pipeline_redirect = get_commands(commandstring)
 
 first_command = commands[0]
 
@@ -523,7 +544,10 @@ for commandnr, command in enumerate(commands):
 ################################################################
 
 redirection = None
-redirection_node = parsing.get_redirection(commands[-1])
+if pipeline_redirect:
+    redirection_node = pipeline_redirect
+else:
+    redirection_node = parsing.get_redirection(commands[-1])
 if redirection_node is not None:
     redirection = redirection_node.word
     redirection = os.path.expanduser(redirection)
@@ -562,6 +586,10 @@ if args.extra_results:
 if not results and not redirection:
     if args.no_download or args.scratch:
         err("Download disabled. Refuse to print output to screen.")
+    elif args.qsubmit:
+        err(
+            "Submit to a queue, but no capture/download targets. Refuse to print output to screen."
+        )
     capture_stdout = True
     result_targets = None
 else:
@@ -594,8 +622,8 @@ if conda_environment is not None:
     msg(1, f'Set conda environment to "{conda_environment}"')
     env.set_conda_env(conda_environment)
 
-if args.dry_run:
-    if args.upload:
+if args.dry_run or args.qsubmit:
+    if args.upload or args.qsubmit:
         if seamless.delegate(level=2):
             sys.exit(1)
     else:
@@ -778,67 +806,90 @@ if args.dry_run:
 
     sys.exit(0)
 
+elif args.qsubmit:
+    if args.auto_confirm not in ("yes", "no"):
+        msg(
+            1,
+            "qsubmit: download confirmation cannot be interactive. --yes not present => default to --no.",
+        )
+        auto_confirm = "no"
+    else:
+        auto_confirm = args.auto_confirm
 
-def write_future(filename, result_target):
-    filename = os.path.join(workdir, filename)
-    try:
-        with open(filename + ".FUTURE", "w") as f:
-            f.write(f"{transformation_checksum}.{result_target}\n")
-    except Exception:
-        msg(0, f"Cannot write future file '{filename}.FUTURE'")
-        return
+    assert result_targets
 
+    original_command = "seamless " + " ".join(sys.argv[1:])
+    params = {
+        "undo": args.undo,
+        "scratch": args.scratch,
+        "workdir": workdir,
+        "download": not args.no_download,
+        "auto_confirm": auto_confirm,
+        "capture_stdout": capture_stdout,
+        "max_download_size": max_download_size,
+        "max_download_files": max_download_files,
+    }
+    queue_command = {
+        "queue_command": "SUBMIT",
+        "original_command": original_command,
+        "transformation_checksum": str(transformation_checksum),
+        "transformation_dict": transformation_dict,
+        "result_targets": result_targets,
+        "params": params,
+    }
+    qcj = json.dumps(queue_command, indent=2)
 
-def touch_future(filename):
-    filename = os.path.join(workdir, filename)
-    try:
-        pathlib.Path(filename + ".FUTURE").touch()
-    except Exception:
-        msg(0, f"Cannot touch future file '{filename}.FUTURE'")
-        return
+    lockpath = queue_file + ".LOCK"
 
-
-def remove_future(filename, result_target):
-    filename = os.path.join(workdir, filename)
-    try:
-        os.unlink(filename + ".FUTURE")
-    except Exception:
-        msg(0, f"Cannot remove future file '{filename}.FUTURE'")
-        return
-
-
-delete_futures = threading.Event()
-
-
-def maintain_futures():
-    for result_target, download_target in result_targets.items():
-        if download_target is None:
-            download_target = result_target
-        write_future(download_target, result_target)
-
-    count = 0
-    while not delete_futures.is_set():
+    while 1:
+        try:
+            lock_stat_result = os.stat(lockpath)
+        except FileNotFoundError:
+            break
+        lock_mtime = lock_stat_result.st_mtime
+        if time.time() - lock_mtime > 30:
+            msg(1, f"Stale lock on {queue_file}, breaking it...")
+            break
         time.sleep(1)
-        count += 1
-        if count == 30:
-            count = 0
-            for result_target, download_target in result_targets.items():
-                if download_target is None:
-                    download_target = result_target
-                touch_future(download_target)
 
-    for result_target, download_target in result_targets.items():
-        if download_target is None:
-            download_target = result_target
-        remove_future(download_target, result_target)
+    try:
+        pathlib.Path(lockpath).touch()
+        with open(queue_file, "ab") as fp:
+            fp.write(qcj.encode() + b"\x00")
 
+    finally:
+        try:
+            pathlib.Path(lockpath).unlink()
+        except FileNotFoundError:
+            pass
+
+    # kludge to hide spurious "buffers undestroyed" warnings
+
+    logger = logging.getLogger("seamless")
+    logger.setLevel(logging.ERROR)
+
+    msg(1, "Command submitted to queue file")
+
+    sys.exit(0)
+
+from seamless.workflow.core.transformation import SeamlessTransformationError
+
+delete_futures_event = threading.Event()
+
+maintain_fut = functools.partial(
+    maintain_futures,
+    workdir,
+    transformation_checksum,
+    result_targets,
+    delete_futures_event=delete_futures_event,
+    msg_func=msg,
+)
 
 if result_targets:
     maintain_futures_thread = threading.Thread(
-        target=maintain_futures, name=maintain_futures
+        target=maintain_fut, name=maintain_futures
     )
     maintain_futures_thread.start()
-from seamless.workflow.core.transformation import SeamlessTransformationError
 
 try:
     result_fingertip = True
@@ -856,60 +907,12 @@ except SeamlessTransformationError as exc:
     traceback.print_exc(limit=0)
     sys.exit(1)
 finally:
-    delete_futures.set()
+    delete_futures_event.set()
 ################################################################
 
 if not args.undo:
     msg(1, "Transformation finished")
     msg(2, "Result checksum: {}".format(result_checksum))
-
-
-def write_result_index(dirname, index):
-    dirname = os.path.join(workdir, dirname)
-    try:
-        index_buffer = json_dumps(index, as_bytes=True) + b"\n"
-        with open(dirname + ".INDEX", "wb") as f:
-            f.write(index_buffer)
-    except Exception:
-        msg(0, f"Cannot write directory result index to file '{dirname}.INDEX'")
-        return
-    index_checksum = calculate_checksum(index_buffer)
-    return index_checksum
-
-
-def write_result_checksum(filename, file_checksum):
-    file_checksum = Checksum(file_checksum)
-    if file_checksum.value is None:
-        return
-    filename = os.path.join(workdir, filename)
-    try:
-        with open(filename + ".CHECKSUM", "w") as f:
-            f.write(file_checksum.hex() + "\n")
-    except Exception:
-        msg(0, f"Cannot write checksum to result file '{filename}.CHECKSUM'")
-        return
-
-
-def download_result(filename, file_checksum):
-    file_checksum = Checksum(file_checksum)
-    if file_checksum.value is None:
-        return
-    try:
-        file_buffer = buffer_cache.get_buffer(file_checksum.bytes())
-        if file_buffer is None:
-            raise CacheMissError(file_checksum)
-    except CacheMissError:
-        with stdout_lock:
-            msg(
-                0, f"Cannot obtain contents of result file '{filename}', CacheMissError"
-            )
-    try:
-        with open(filename, "wb") as f:
-            f.write(file_buffer)
-    except Exception:
-        with stdout_lock:
-            msg(0, f"Cannot write to result file '{filename}'")
-        return
 
 
 # kludge to hide spurious "buffers undestroyed" warnings
@@ -925,79 +928,25 @@ if args.undo:
         exit(0)
 
 else:
-    try:
-        if args.fingertip or args.scratch:
-            result_buffer = fingertip(result_checksum.bytes())
-        else:
-            result_buffer = buffer_cache.get_buffer(result_checksum.bytes())
-        if result_buffer is None:
-            raise CacheMissError(result_checksum)
-        cannot_download = False
-    except CacheMissError:
-        # traceback.print_exc(limit=1)
-        # exit(1)
-        cannot_download = True
-
-    if result_targets:
-        if cannot_download:
-            err(
-                "Cannot download result. Cannot write checksum for one or more result targets"
-            )
-
-        result_checksum_dict = deserialize(
-            result_buffer, result_checksum.bytes(), "plain", copy=False
-        )
-
-        files_to_download = []
-        directories_to_download = []
-        download_checksum_dict = {}
-
-        for _result_target, _download_target in result_targets.items():
-            if _download_target is None:
-                _download_target = _result_target
-            if _result_target in result_checksum_dict:  # file
-                _result = result_checksum_dict[_result_target]
-                download_checksum_dict[_download_target] = _result
-                write_result_checksum(_download_target, _result)
-                files_to_download.append(_download_target)
-            else:
-                curr_files = [
-                    f
-                    for f in result_checksum_dict
-                    if f.startswith(_result_target + "/")
-                ]
-                if not len(curr_files):
-                    msg(0, f"No result for '{_download_target}' was returned")
-                    continue
-                striplen = len(_result_target) + 1
-                result = {f[striplen:]: result_checksum_dict[f] for f in curr_files}
-
-                _index_checksum = write_result_index(_download_target, result)
-                if _index_checksum is not None:
-                    write_result_checksum(_download_target, _index_checksum)
-
-                for _f in result:
-                    _ff = _download_target + "/" + _f
-                    download_checksum_dict[_ff] = result[_f]
-                directories_to_download.append(_download_target)
-
-        if not args.no_download and not args.scratch:
-            download(
-                files_to_download,
-                directories_to_download,
-                checksum_dict=download_checksum_dict,
-                max_download_size=max_download_size,
-                max_download_files=max_download_files,
-                auto_confirm=args.auto_confirm,
-            )
-    else:
-        assert capture_stdout
-        if cannot_download:
-            err("Cannot download result")
-
-        try:
-            result = result_buffer.decode()
-        except UnicodeDecodeError:
-            result = result_buffer
-
+    result_buffer = get_result_buffer(
+        result_checksum,
+        do_fingertip=args.fingertip,
+        do_scratch=args.scratch,
+        has_result_targets=(True if result_targets else False),
+        err_func=err,
+    )
+    result = get_results(
+        result_targets,
+        result_checksum,
+        result_buffer,
+        workdir=workdir,
+        do_scratch=args.scratch,
+        do_download=not args.no_download,
+        do_capture_stdout=capture_stdout,
+        max_download_size=max_download_size,
+        max_download_files=max_download_files,
+        do_auto_confirm=args.auto_confirm,
+        msg_func=msg,
+    )
+    if result is not None:
         print(result)

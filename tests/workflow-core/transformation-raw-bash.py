@@ -4,10 +4,10 @@ seamless.delegate(False)
 
 from seamless import Checksum, Buffer
 from seamless.checksum.buffer_cache import buffer_cache
+from seamless.util.transformation import tf_get_buffer
 from seamless.workflow.core.cache.transformation_cache import (
     transformation_cache,
     DummyTransformer,
-    tf_get_buffer,
     transformation_cache,
 )
 

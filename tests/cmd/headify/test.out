@@ -8,21 +8,21 @@ Run 4 (seamless, inferior interface)...
 
 Run 5 (seamless, inferior interface, 2x5 sec sleep)...
 
-real	0m14.213s
-user	0m3.539s
-sys	0m0.129s
+real	0m12.925s
+user	0m1.042s
+sys	0m0.098s
 
 Run 5a (seamless, inferior interface, 2x5 sec sleep, repeat)...
 
-real	0m3.185s
-user	0m3.338s
-sys	0m0.160s
+real	0m3.414s
+user	0m1.319s
+sys	0m0.164s
 
 Run 6 (seamless, inferior interface, 2x5 sec sleep, rename)...
 
-real	0m13.280s
-user	0m3.338s
-sys	0m0.186s
+real	0m13.109s
+user	0m1.166s
+sys	0m0.141s
 
 Run 999 (seamless, inferior interface, multi-command)...
 
@@ -33,23 +33,23 @@ FAILS because canonical interface is for single-command only
 
 Run 8 (seamless, canonical interface, 2x5 sec sleep)...
 
-real	0m16.559s
-user	0m4.369s
-sys	0m0.268s
+real	0m12.907s
+user	0m0.992s
+sys	0m0.106s
 
 Run 8a (seamless, canonical interface, 2x5 sec sleep, repeat)...
 
-real	0m3.943s
-user	0m3.889s
-sys	0m0.206s
+real	0m2.909s
+user	0m0.859s
+sys	0m0.100s
 
 Run 9 (seamless, inferior interface, 2x5 sec sleep, rename)...
 Time should be around 5+2 secs instead of 10+2
 The first command of run() is now canonical and federates upon rename
 
-real	0m8.125s
-user	0m3.393s
-sys	0m0.117s
+real	0m7.971s
+user	0m0.978s
+sys	0m0.122s
 
 headify workflow version: should federate and return immediately
 ValueError: Multiple canonical commands available.
@@ -61,7 +61,6 @@ Please choose one and provide it as the "command" argument.
 
 Waiting for: Seamless transformer: .tf.tf
 Waiting for: Seamless transformer: .tf.tf
-Waiting for: Seamless transformer: .tf.tf
 Status: OK
 None
-6.1 seconds elapsed
+5.3 seconds elapsed

@@ -1,8 +1,8 @@
 *** executor ***
 Traceback (most recent call last):
-  File "/seamless/seamless/workflow/core/transformation.py", line 633, in _execute
+  File "/seamless/seamless/workflow/core/transformation.py", line 649, in _execute
     result, logs = await self._execute_local(prelim_callback, progress_callback)
-  File "/seamless/seamless/workflow/core/transformation.py", line 847, in _execute_local
+  File "/seamless/seamless/workflow/core/transformation.py", line 863, in _execute_local
     full_module_names = build_all_modules(
   File "/seamless/seamless/workflow/core/build_module.py", line 499, in build_all_modules
     mod = build_module(

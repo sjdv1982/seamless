@@ -1,0 +1,200 @@
+#!/usr/bin/env -S python3 -u
+# type: ignore   # disable PyLance, as it cannot import seamless from here. Pylint still works correctly
+
+"""Seamless queue server. Reads commands from SEAMLESS_QUEUE_FILE (default: .seamless-queue)"""
+
+import json
+import os
+import sys
+import asyncio
+import functools
+import logging
+import threading
+import argparse
+
+import seamless
+from seamless.cmd.bash_transformation import run_transformation_async
+from seamless.cmd.get_results import (
+    get_results,
+    get_result_buffer_async,
+    maintain_futures,
+)
+
+__version__ = "0.14"
+
+parser = argparse.ArgumentParser(description=__doc__)
+parser.add_argument(
+    "-q", "--quiet", dest="quiet", help="Quiet mode", action="store_true"
+)
+args = parser.parse_args()
+
+if seamless.delegate():
+    sys.exit(1)
+
+
+def err(*args):
+    print("ERROR:", *args, file=sys.stderr)
+
+
+def msg(*args):
+    print(*args, file=sys.stderr)
+
+
+_job_count = 0
+
+
+async def process_job(command):
+    global _job_count
+    _job_count += 1
+    job_count = _job_count
+    original_command = command["original_command"]
+    try:
+        transformation_checksum = command["transformation_checksum"]
+        transformation_dict = command["transformation_dict"]
+        result_targets = command["result_targets"]
+        params = command["params"]
+        undo = params["undo"]
+        scratch = params["scratch"]
+        workdir = params["workdir"]
+        auto_confirm = params["auto_confirm"]
+        assert auto_confirm in ("yes", "no")
+        max_download_size = params["max_download_size"]
+        max_download_files = params["max_download_files"]
+        capture_stdout = params["capture_stdout"]
+        download = params["download"]
+    except KeyError:
+        msg(
+            f"""
+*** Job {_job_count}: {original_command} ***
+Malformed command
+"""
+        )
+        return
+
+    if not args.quiet:
+        msg(f"Job {job_count}, run command:")
+        msg(original_command)
+        msg()
+
+    delete_futures_event = threading.Event()
+
+    try:
+        header = f"*** Job {job_count}: {original_command} ***\n"
+        maintain_fut = functools.partial(
+            maintain_futures,
+            workdir,
+            transformation_checksum,
+            result_targets,
+            delete_futures_event=delete_futures_event,
+            msg_func=functools.partial(msg, header),
+        )
+        t = threading.Thread(target=maintain_fut)
+        t.start()
+
+        result_checksum = await run_transformation_async(
+            transformation_dict, undo=undo, fingertip=True, scratch=scratch
+        )
+        result_buffer = await get_result_buffer_async(
+            result_checksum,
+            do_fingertip=True,
+            do_scratch=scratch,
+            has_result_targets=True,
+            err_func=functools.partial(err, header),
+        )
+        result = get_results(
+            result_targets,
+            result_checksum,
+            result_buffer,
+            workdir=workdir,
+            do_scratch=scratch,
+            do_download=download,
+            do_capture_stdout=capture_stdout,
+            do_auto_confirm=auto_confirm,
+            max_download_size=max_download_size,
+            max_download_files=max_download_files,
+            msg_func=functools.partial(msg, header),
+        )
+        if not args.quiet:
+            msg(f"*** Job {job_count}: {original_command}, FINISHED ***")
+    finally:
+        delete_futures_event.set()
+
+
+finished_all_jobs = False
+
+
+async def main(queue_file):
+    global finished_all_jobs
+
+    eof = False
+    while not os.path.exists(queue_file):
+        await asyncio.sleep(0.5)
+
+    running_jobs: [asyncio.Future] = []
+    with open(queue_file, "rb") as q:
+        fsize = 0
+        while not eof:
+            q.seek(0, 2)
+            if q.tell() != fsize:
+                q.seek(fsize)
+                data = q.read()
+                if data.endswith(b"\x00"):
+                    commands = data.split(b"\x00")
+                    for command in commands:
+                        if not len(command):
+                            continue
+                        try:
+                            command = command.decode()
+                            command = json.loads(command)
+                            queue_command = command["queue_command"]
+                            if queue_command == "SUBMIT":
+                                _original_command = command["original_command"]
+                        except UnicodeDecodeError:
+                            err("Command is not valid text")
+                            continue
+                        except json.JSONDecodeError:
+                            err("Command is not valid JSON")
+                            continue
+                        except KeyError:
+                            err("Command is not a valid queue command")
+
+                        if queue_command == "EOF":
+                            eof = True
+                        elif queue_command == "SUBMIT":
+                            future = asyncio.ensure_future(process_job(command))
+                            running_jobs.append(future)
+
+                fsize = q.tell()
+
+            try:
+                running_jobs[:] = [job for job in running_jobs if not job.done()]
+                await asyncio.sleep(0.1)
+            except asyncio.CancelledError:
+                if not args.quiet:
+                    msg("CANCEL")
+                break
+    if eof:
+        await asyncio.gather(*running_jobs, return_exceptions=True)
+        finished_all_jobs = True
+
+
+loop = asyncio.get_event_loop()
+
+queue_file = os.environ.get("SEAMLESS_QUEUE_FILE")
+if queue_file is None:
+    queue_file = ".seamless-queue"
+    if not args.quiet:
+        msg(f"SEAMLESS_QUEUE_FILE not defined. Set queue file to '{queue_file}'")
+
+try:
+    loop.run_until_complete(main(queue_file))
+except KeyboardInterrupt:
+    pass
+
+if finished_all_jobs:
+    os.unlink(queue_file)
+
+# kludge to hide spurious "buffers undestroyed" warnings
+
+logger = logging.getLogger("seamless")
+logger.setLevel(logging.ERROR)

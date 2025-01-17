@@ -302,10 +302,12 @@ class _CommandVisitor(bashlex.ast.nodevisitor):
         return True
 
 
-def get_commands(commandstring: str) -> tuple[list[Command], int | None]:
+def get_commands(
+    commandstring: str,
+) -> tuple[list[Command], int | None, bashlex.parser.ast.node | None]:
     """Parse a bash command string into a list of Command instances.
     The length of the first bash pipeline is also returned.
-
+    If the command is a pipeline between parentheses, its redirect is returned as well.
     """
     try:
         bashtrees = bashlex.parse(commandstring)
@@ -316,10 +318,21 @@ def get_commands(commandstring: str) -> tuple[list[Command], int | None]:
         visitor.visit(bashtree)
     commands = sorted(visitor.commands, key=lambda command: command.start)
     first_pipeline = None
+    pipeline_redirect = None
     if len(bashtrees):
         first = bashtrees[0]
-        if first.kind == "list" and len(first.parts):
+        if first.kind == "compound" and len(first.list):
+            v = _RedirectionVisitor()
+            v.visit(first)
+            redirect = v.redirect
+            if redirect is None:
+                redirect = v.maybe_redirect
+            if redirect is not None:
+                pipeline_redirect = redirect.output
+            first = first.list[0]
+        elif first.kind == "list" and len(first.parts):
             first = first.parts[0]
+
         if first.kind == "command":
             first_pipeline = 1
         elif first.kind == "pipeline":
@@ -330,7 +343,7 @@ def get_commands(commandstring: str) -> tuple[list[Command], int | None]:
                     break
             else:
                 first_pipeline = len(commands)
-    return commands, first_pipeline
+    return commands, first_pipeline, pipeline_redirect
 
 
 class _RedirectionVisitor(bashlex.ast.nodevisitor):

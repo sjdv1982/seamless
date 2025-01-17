@@ -146,6 +146,8 @@ class Library:
             self._constructor = constructor
             ok = True
         elif attr == "params":
+            from silk import Silk
+
             params = value
             if isinstance(params, Silk):
                 params = params.unsilk
@@ -154,6 +156,8 @@ class Library:
             self._params = params
             ok = True
         elif attr in ("constructor_schema", "api_schema"):
+            from silk import Silk
+
             schema = value
             if isinstance(schema, Silk):
                 schema = schema.unsilk
@@ -199,6 +203,8 @@ class Library:
         elif attr == "constructor":
             return self._constructor
         elif attr == "params":
+            from silk.mixed import DefaultBackend, Monitor, MixedDict
+
             backend = DefaultBackend(
                 plain=True,
                 data_getter=self._params_getter,
@@ -253,5 +259,3 @@ class Library:
 
 from .include import IncludedLibrary
 from ..Context import Context
-from silk import Silk
-from silk.mixed import DefaultBackend, Monitor, MixedDict

@@ -3,7 +3,6 @@ import traceback
 from seamless import Checksum
 from . import Task
 import asyncio
-import numpy as np
 
 
 class SetCellValueTask(Task):
@@ -53,6 +52,8 @@ class SetCellValueTask(Task):
                 checksum = await CalculateChecksumTask(manager, buffer).run()
             checksum = Checksum(checksum)
             if checksum:
+                import numpy as np
+
                 if isinstance(value, np.ndarray):
                     buffer_cache.update_buffer_info(
                         checksum, "shape", value.shape, sync_remote=False

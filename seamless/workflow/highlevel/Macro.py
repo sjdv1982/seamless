@@ -15,9 +15,7 @@ from seamless.checksum.mime import language_to_mime
 from ..core.context import Context as CoreContext
 from . import parse_function_code
 from .SchemaWrapper import SchemaWrapper
-from silk import Silk
 from .compiled import CompiledObjectDict
-from silk.mixed.get_form import get_form
 
 default_pin = {
     "io": "parameter",
@@ -187,6 +185,8 @@ class Macro(Base):
                     code, _, _ = parse_function_code(value)
                 node["TEMP"]["code"] = code
             else:
+                from silk.mixed.get_form import get_form
+
                 get_form(unchecksum(value))
                 node["TEMP"]["param_auth"][attr] = value
             self._parent()._translate()

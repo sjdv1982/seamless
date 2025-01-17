@@ -19,11 +19,11 @@ from seamless.checksum.cached_compile import exec_code
 from seamless.checksum.serialize import serialize_sync
 from seamless.util import parse_checksum
 from seamless.util.source import ast_dump
+from seamless.util.transformation import tf_get_buffer, extract_dunder
 from seamless.direct import transformer, Transformation
 
 from ...core.cache.transformation_cache import (
     transformation_cache,
-    tf_get_buffer,
     incref_transformation,
     syntactic_is_semantic,
     DummyTransformer,
@@ -110,6 +110,20 @@ def fingertip(checksum, dunder=None):
     return result
 
 
+async def fingertip_async(checksum, dunder=None):
+
+    checksum = parse_checksum(checksum, as_bytes=True)
+    result = _get_buffer(checksum, remote=True)
+    if result is not None:
+        return result
+    set_dummy_manager()
+
+    result = await _dummy_manager.cachemanager.fingertip(checksum, dunder=dunder)
+    if result is None:
+        raise CacheMissError(checksum.hex())
+    return result
+
+
 def _register_transformation_dict(
     transformation_checksum, transformation_buffer, transformation_dict
 ):
@@ -155,17 +169,6 @@ def register_transformation_dict(transformation_dict, dry_run=False):
     else:
         increfed = False
     return increfed, transformation
-
-
-def extract_dunder(transformation_dict):
-    tf_dunder = {}
-    for k in ("__compilers__", "__languages__", "__meta__", "__env__"):
-        if k in transformation_dict:
-            tf_dunder[k] = transformation_dict[k]
-    if not len(tf_dunder):
-        return None
-
-    return tf_dunder
 
 
 def run_transformation_dict(

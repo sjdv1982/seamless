@@ -1,9 +1,11 @@
 # In general, run as: i=name_of_test; ./$i.sh > test-outputs/$i.out 2>&1
 # Needs delegation to have been set up, unless indicated otherwise
+
 testfolder.sh
+    No delegation beforehand
 testfolder2.sh  
-    modify "none" to "none-devel" during devel testing
-    
+    No delegation beforehand
+    modify "none" to "none-devel" during devel testing    
 undo.sh
     Does not work well with micro assistants
     After running, grep "UTC" in undo.out
@@ -13,7 +15,7 @@ scratch-fingertip.sh
 multi-core-transformations.sh
     The expected result depends on how delegation is set up:
     
-    micro-assistant delegation: job 1 fails
+    micro-/mini-assistant delegation: job 1 fails
     Output: 
     4 seconds have passed
     cat: tf: No such file or directory
@@ -22,7 +24,7 @@ multi-core-transformations.sh
     Job 1 1
     (3 spurious messages regarding kill usage)
 
-    micro-dask-assistant, Delegation to a local Dask cluster, --ncores 4:
+    micro-dask-assistant, Delegation to a local Dask cluster (seamless-recipes/dask/local.py), --ncores 4:
     4 seconds have passed
     cat: tf: No such file or directory
     Job 1
@@ -62,16 +64,23 @@ fingertip-deepcell.sh
     Run as: ./fingertip-deepcell.sh $ASSISTANT | tee test-outputs/fingertip-deepcell.out
 
 headify
-    See subdirectory
+    See subdirectory. Run as ./test.sh > test.out 2>&1
 
 nesting.sh
 
 manyjobs.sh
     /bin/seamless version of highlevel/imperative-manyjobs.py
-    Needs to be run with a Dask cluster, 1000x ~20 sec jobs. 
-    Submitting 1000 jobs will take 200s. Will calculate pi to 6 digits. 
+    Needs to be run with a Dask cluster, 1000x ~60 sec jobs. 
+    Submitting 1000 jobs will take ~250s. Will calculate pi to 6 digits. 
     Expected results: 3.141593805644 5.116277454745302e-05 3.141592653589793
     Instead of 1000, the number of jobs can also be given as a command-line option
+
+manyjobs-multi.sh
+    /bin/seamless-multi version of manyjobs.sh.
+    Submitting 1000 jobs will take ~30s
+    For grid5k (ssh tunnel to the front-end), it takes:
+         50s to submit to seamless-queue
+         4m30 minutes to verify that all jobs have been completed.
 
 cowsay-docker.sh
     Requires Docker image 'cowsay' to be available. Can be built in this directory using:
