@@ -23,7 +23,7 @@ Computed deepfolder for mydataset: deep buffer checksum 8000684ee74723b6757d754b
 Write deepfolder deep buffer to ./fairdir/deepfolders/mydataset.json
 Write deep content size for 8000684ee74723b6757d754beb77e22276f5775fb57578e730ba6aab16f11e41: 23
 Determine key order...
-Key order checksum: 01678a166d7b6ad2f3040791e98aac51051ee142fee1e57c7f453349e4049c1c
+Key order checksum: ff1f008b4fc653ba841d09c048e86355b58347192b6422186a963921911ca021
 {
   "checksum": "8000684ee74723b6757d754beb77e22276f5775fb57578e730ba6aab16f11e41",
   "type": "deepfolder",
@@ -32,7 +32,7 @@ Key order checksum: 01678a166d7b6ad2f3040791e98aac51051ee142fee1e57c7f453349e404
   "nkeys": 6,
   "index_size": 485,
   "content_size": 23,
-  "keyorder": "01678a166d7b6ad2f3040791e98aac51051ee142fee1e57c7f453349e4049c1c"
+  "keyorder": "ff1f008b4fc653ba841d09c048e86355b58347192b6422186a963921911ca021"
 }
 checksum=8000684ee74723b6757d754beb77e22276f5775fb57578e730ba6aab16f11e41
 {
@@ -43,7 +43,7 @@ checksum=8000684ee74723b6757d754beb77e22276f5775fb57578e730ba6aab16f11e41
   "nkeys": 6,
   "index_size": 485,
   "content_size": 23,
-  "keyorder": "01678a166d7b6ad2f3040791e98aac51051ee142fee1e57c7f453349e4049c1c"
+  "keyorder": "ff1f008b4fc653ba841d09c048e86355b58347192b6422186a963921911ca021"
 }
 Number of index keys (files): 6
 Size of the checksum index file:  485 bytes
