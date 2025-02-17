@@ -110,6 +110,7 @@ load-graph2.py
 load-graph-static.py
 build-structured-list.py
 vault.sh
+direct-read-hashserver-dir.sh
 bind-status.py:
   If testing under conda, make sure that there is no Seamless Docker image running, else the HTTP port will be blocked
   Can also be run in interactive mode, run with "ipython3 -i", make modifications and type "report" and monitor /tmp/graph.json and /tmp/status.json

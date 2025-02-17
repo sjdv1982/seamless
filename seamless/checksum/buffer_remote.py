@@ -29,35 +29,41 @@ def get_file_buffer(directory, checksum: Checksum, timeout=10) -> bytes | None:
     Its filename must be equal to its checksum."""
     checksum = Checksum(checksum)
 
-    filename = os.path.join(directory, checksum.hex())
-    if os.path.exists(filename):
+    filename1 = os.path.join(directory, checksum.hex())
+    filenames = [filename1]
+    subdirectory = os.path.join(directory, checksum.hex()[:2])
+    if os.path.exists(subdirectory):
+        filename2 = os.path.join(subdirectory, checksum.hex())
+        filenames = [filename1, filename2]
+    for filename in filenames:
+        if os.path.exists(filename):
+            with open(filename, "rb") as f:
+                buf = f.read()
+            buf_checksum = Buffer(buf).get_checksum().value
+            if buf_checksum == checksum:
+                return buf
+
+        global_lockfile = os.path.join(directory, ".LOCK")
+        lockfile = filename + ".LOCK"
+        start_time = time.time()
+        while 1:
+            for lockf in [global_lockfile, lockfile]:
+                if os.path.exists(lockf):
+                    break
+            else:
+                break
+            time.sleep(0.5)
+            if time.time() - start_time > timeout:
+                return
+        if not os.path.exists(filename):
+            continue
         with open(filename, "rb") as f:
             buf = f.read()
-        buf_checksum = Buffer(buf).get_checksum().value
-        if buf_checksum == checksum:
-            return buf
-
-    global_lockfile = os.path.join(directory, ".LOCK")
-    lockfile = filename + ".LOCK"
-    start_time = time.time()
-    while 1:
-        for lockf in [global_lockfile, lockfile]:
-            if os.path.exists(lockf):
-                break
-        else:
-            break
-        time.sleep(0.5)
-        if time.time() - start_time > timeout:
+        buf_checksum = Buffer(buf).get_checksum()
+        if buf_checksum != checksum:
+            # print("WARNING: '{}' has the wrong checksum".format(filename))
             return
-    if not os.path.exists(filename):
-        return
-    with open(filename, "rb") as f:
-        buf = f.read()
-    buf_checksum = Buffer(buf).get_checksum()
-    if buf_checksum != checksum:
-        # print("WARNING: '{}' has the wrong checksum".format(filename))
-        return
-    return buf
+        return buf
 
 
 def get_buffer(checksum: Checksum) -> bytes | None:
