@@ -1,10 +1,10 @@
-{% set version = "0.14" %}
+{% set version = "0.14.1" %}
 package:
     name: seamless-cli-bin
     version: {{ version }}
 
 build:
-  number: 2
+  number: 1
 
 requirements:
   build:
