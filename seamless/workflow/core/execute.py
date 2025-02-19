@@ -100,6 +100,8 @@ def fast_unpack(deep_structure, hash_pattern):
 def _fast_pack(value, buffer, celltype, database, scratch, result_queue):
     if celltype is None:
         buffer = value
+        if isinstance(buffer, str):
+            buffer = buffer.encode()
     if buffer is None:
         buffer = serialize_sync(value, celltype, use_cache=False)
         if buffer is None:

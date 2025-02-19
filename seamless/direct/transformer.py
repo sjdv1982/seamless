@@ -25,7 +25,7 @@ def transformer(
     direct_print=None,
     local=None,
     return_transformation=False,
-    in_process=False
+    in_process=False,
 ):
     """Wraps a function in a direct transformer
     Direct transformers can be called as normal functions, but
@@ -209,6 +209,8 @@ class DirectTransformer:
                 buf = fingertip(result_checksum)
             if buf is None:
                 raise CacheMissError(result_checksum.hex())
+            if result_celltype in ("deepcell", "folder"):
+                result_celltype = "plain"
             return deserialize_sync(buf, result_checksum, result_celltype, copy=True)
 
     @property
@@ -292,7 +294,12 @@ class CelltypesWrapper:
 
         if key not in self._celltypes:
             raise AttributeError(key)
-        pin_celltypes = celltypes + ["deepcell", "deepfolder", "folder", "module"]
+        if key == "result":
+            if value in ("deepfolder", "module"):
+                raise TypeError(f"result pin celltype cannot be '{value}'")
+            pin_celltypes = celltypes + ["deepcell", "folder"]
+        else:
+            pin_celltypes = celltypes + ["deepcell", "deepfolder", "folder", "module"]
         if value not in pin_celltypes:
             raise TypeError(value, pin_celltypes)
         self._celltypes[key] = value
