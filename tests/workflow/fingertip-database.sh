@@ -19,6 +19,17 @@ echo
 
 echo 'Must not exist:'
 ls dummy-bufferfolder/39dacbda510b82b6fec0680fb7beb110eef660f5daef6c129ef1abfde1d4d331
+echo
+
+rm -f dummy-bufferfolder/d861fc9d20c465ff20d76269a155be799dd70f9d27475b04082e41680cda2a00
+echo 'fingertip-database4.py'
+python fingertip-database4.py
+echo
+
+rm -f dummy-bufferfolder/d861fc9d20c465ff20d76269a155be799dd70f9d27475b04082e41680cda2a00
+echo 'fingertip-database5.py'
+python fingertip-database5.py
+echo
 
 seamless-delegate-stop 1>&2
 rm -rf dummy-directory dummy-bufferfolder dummy-database

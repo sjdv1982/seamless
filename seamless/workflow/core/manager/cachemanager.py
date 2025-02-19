@@ -381,7 +381,6 @@ class CacheManager:
         if remote:
             buffer = get_buffer(checksum, remote=True, deep=is_deep)
             if buffer is not None:
-                print("REMOT")
                 return buffer
 
         fingertipper = await self._build_fingertipper(
