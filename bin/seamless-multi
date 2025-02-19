@@ -17,6 +17,10 @@ import logging
 import time
 import pathlib
 
+try:
+    from tqdm import tqdm
+except ImportError:
+    tqdm = lambda arg: arg
 os.environ["__SEAMLESS_FRUGAL"] = "1"
 import seamless
 
@@ -649,7 +653,10 @@ def process_command(commandstring):
 
 
 processed_commands: list[ProcessedCommand] = []
-for commandstring0 in all_commands:
+all_commands2 = all_commands
+if args.verbosity == -1:
+    all_commands2 = tqdm(all_commands)
+for commandstring0 in all_commands2:
     pcommand = process_command(commandstring0)
     processed_commands.append(pcommand)
 
@@ -685,10 +692,15 @@ def file_write(handle, buf):
     handle.write(buf)
 
 
-def build_queue_commands(processed_commands):
+def build_queue_commands(processed_commands, progress):
     queue_commands = []
 
-    for processed_command in processed_commands:
+    if progress:
+        processed_commands2 = tqdm(processed_commands)
+    else:
+        processed_commands2 = processed_commands
+
+    for processed_command in processed_commands2:
 
         commandstring = processed_command.commandstring
         variables = processed_command.variables
@@ -762,7 +774,7 @@ def build_queue_commands(processed_commands):
     return queue_commands
 
 
-queue_commands = build_queue_commands(processed_commands)
+queue_commands = build_queue_commands(processed_commands, args.verbosity == -1)
 
 msg(1, "All queue commands built")
 
