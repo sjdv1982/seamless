@@ -709,6 +709,7 @@ msg(1, "bash command:\n", commandstring, "\n")
 command = commandstring.split()
 variables = None
 if len(commands) == 1:
+    found_canonical = False
     canonical = interface_data.get("canonical", [])
     for canon in canonical:
         vars = canon.get("variables", [])
@@ -732,6 +733,9 @@ if len(commands) == 1:
                     variables[varname] = (w2, vartypes[varname])
             msg(2, f"Variables:\n  {variables}")
             commandstring = canon["command"]
+            found_canonical = True
+    if len(canonical) and not found_canonical:
+        msg(1, "No canonical command match found")
 
 ################################################################
 
