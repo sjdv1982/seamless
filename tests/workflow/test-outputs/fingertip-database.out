@@ -1,0 +1,34 @@
+ Container delegate-hashserver-1  Creating
+ Container delegate-database-1  Creating
+ Container delegate-database-1  Created
+ Container delegate-hashserver-1  Created
+ Container delegate-hashserver-1  Starting
+ Container delegate-database-1  Starting
+ Container delegate-database-1  Started
+ Container delegate-hashserver-1  Started
+ Container delegate-database-1  Waiting
+ Container delegate-hashserver-1  Waiting
+ Container delegate-hashserver-1  Healthy
+ Container delegate-database-1  Healthy
+fingertip-database1.py
+Waiting for: Seamless transformer: .double.tf
+4.0
+39dacbda510b82b6fec0680fb7beb110eef660f5daef6c129ef1abfde1d4d331
+
+fingertip-database2.py
+4.0
+
+fingertip-database3.py
+<Silk: None >
+CacheMissError: 39dacbda510b82b6fec0680fb7beb110eef660f5daef6c129ef1abfde1d4d331 True
+CacheManager, expression_to_result_checksum: 1 undestroyed
+4.0
+<Silk: 12.0 >
+None
+
+Must not exist:
+ls: cannot access 'dummy-bufferfolder/39dacbda510b82b6fec0680fb7beb110eef660f5daef6c129ef1abfde1d4d331': No such file or directory
+ Container delegate-database-1  Stopping
+ Container delegate-hashserver-1  Stopping
+ Container delegate-database-1  Stopped
+ Container delegate-hashserver-1  Stopped

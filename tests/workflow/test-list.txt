@@ -105,6 +105,7 @@ pin-filesystem.sh:
   run as i=pin-filesystem; ./$i.sh > test-outputs/$i.out 2>&1
 reuse-compile.sh: run with Seamless database
 test-fingertip.sh: run with Seamless database
+fingertip-database.sh
 load-graph.py
 load-graph2.py
 load-graph-static.py
