@@ -238,15 +238,19 @@ def get_argtypes_and_results(
 
     order = []
     order[:] = [original_binary] + command[1:]
+    argtype_original_binary = True
     if "@order" in interface_py_data:
         order = interface_py_data["@order"]
+        if len(order) and original_binary != order[0]:
+            argtype_original_binary = False
     argtypes = {"@order": order}
     argtypes.update(interface_data.get("argtypes", {}))
     argtypes.update(interface_py_data.get("argtypes", {}))
-    argtypes[original_binary] = {
-        "type": "file",
-        "mapping": command[0],
-    }
+    if argtype_original_binary:
+        argtypes[original_binary] = {
+            "type": "file",
+            "mapping": command[0],
+        }
 
     def resolve_dot(f, fdir):
         if f.startswith("." + os.sep):
