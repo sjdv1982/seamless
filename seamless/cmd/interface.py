@@ -7,6 +7,7 @@ from pathlib import Path
 import subprocess
 from typing import Any
 import ruamel.yaml
+from .parsing import fill_checksum_arguments
 
 from seamless.cmd.message import message as msg
 
@@ -284,13 +285,17 @@ def get_argtypes_and_results(
                 if resolved_results != {f: None for f in results}:
                     msg(3, f"Resolved results:\n  {resolved_results}")
             initial_results.update(resolved_results)
+
+        fill_checksum_arguments(files, order)
         for flist, ftype in ((files, "file"), (directories, "directory")):
             for f in flist:
                 mapping = None
+                checksum = None
                 if isinstance(f, dict):
                     fname = f["name"]
                     mapping = f.get("mapping")
                     fixed_mapping = True
+                    checksum = f.get("checksum")
                 else:
                     fname = f
                     f2 = os.path.expanduser(f)
@@ -304,18 +309,25 @@ def get_argtypes_and_results(
                     order[pos] = fname
                 except ValueError:
                     pass
-                if mapping:
-                    try:
-                        pos = order.index(mapping)
-                        order[pos] = fname
-                    except ValueError:
-                        pass
-                    mapping = os.path.expanduser(mapping)
-                    argtypes[fname] = {
-                        "type": ftype,
-                        "mapping": mapping,
-                        "fixed_mapping": fixed_mapping,
-                    }
+                if mapping or checksum:
+                    if mapping:
+                        try:
+                            pos = order.index(mapping)
+                            order[pos] = fname
+                        except ValueError:
+                            pass
+                        mapping = os.path.expanduser(mapping)
+                        argtypes[fname] = {
+                            "type": ftype,
+                            "mapping": mapping,
+                            "fixed_mapping": fixed_mapping,
+                        }
+                    else:
+                        argtypes[fname] = {
+                            "type": ftype,
+                        }
+                    if checksum:
+                        argtypes[fname]["checksum"] = checksum
                 else:
                     argtypes[fname] = ftype
         for val in values:

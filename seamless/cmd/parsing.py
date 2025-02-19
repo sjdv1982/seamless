@@ -14,6 +14,37 @@ from .message import message as msg, message_and_exit as err
 from .file_load import read_checksum_file
 
 
+def fill_checksum_arguments(file_args: list, order: list[str]):
+    for n, file_arg in enumerate(file_args.copy()):
+        if isinstance(file_arg, str):
+            newf = {"name": file_arg, "mapping": file_arg}
+        else:
+            newf = file_arg
+
+        arg = newf["mapping"]
+        change = False
+        if arg.endswith(".CHECKSUM"):
+            arg0 = os.path.splitext(arg)[0]
+            arg_cs = arg
+            newf["mapping"] = arg0
+            change = True
+        else:
+            arg0 = arg
+            arg_cs = arg + ".CHECKSUM"
+
+        if os.path.exists(arg_cs):
+            checksum = read_checksum_file(arg_cs)
+            newf["checksum"] = checksum
+            change = True
+        if change:
+            file_args[n] = newf
+            try:
+                pos = order.index(file_arg)
+                order[pos] = arg0
+            except ValueError:
+                pass
+
+
 def guess_arguments_with_custom_error_messages(
     args: list[str],
     *,
