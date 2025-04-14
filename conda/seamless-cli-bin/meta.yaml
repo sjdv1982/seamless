@@ -11,5 +11,6 @@ requirements:
     - python>=3.10
   run:
     - seamless-framework=0.14
+    - tqdm
 about:
   summary: This is a re-implementation of seamless-cli, invoking the underlying tools directly.
