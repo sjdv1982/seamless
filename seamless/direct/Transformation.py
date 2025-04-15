@@ -7,7 +7,7 @@ import traceback
 from seamless import Checksum, CacheMissError
 from seamless.util.transformation import tf_get_buffer
 from seamless.checksum.get_buffer import get_buffer
-from seamless.checksum.deserialize import deserialize_sync
+from seamless.checksum.deserialize import deserialize_sync, deserialize
 
 
 class Transformation:
@@ -245,9 +245,23 @@ class Transformation:
             raise CacheMissError(result_checksum)
         return buf
 
+    async def get_buffer(self):
+        """Get the result buffer of the transformation, asynchronously.
+
+        This imports seamless.workflow"""
+        from seamless.workflow.core.direct.run import fingertip_async
+
+        result_checksum = self.checksum
+        if result_checksum.value is None:
+            return None
+        buf = await fingertip_async(result_checksum.hex())
+        if buf is None:
+            raise CacheMissError(result_checksum)
+        return buf
+
     @property
     def value(self):
-        """Get the result buffer of the transformation.
+        """Get the result of the transformation.
 
         This imports seamless.workflow"""
         if not self.checksum:
@@ -257,11 +271,22 @@ class Transformation:
             return None
         return deserialize_sync(buf, self.checksum.bytes(), self.celltype, copy=True)
 
+    async def get_value(self):
+        """Get the result of the transformation, asynchronously.
+
+        This imports seamless.workflow"""
+        if not self.checksum:
+            return None
+        buf = await self.get_buffer()
+        if buf is None:
+            return None
+        return await deserialize(buf, self.checksum.bytes(), self.celltype, copy=True)
+
     async def _run(self):
         from seamless.checksum.deserialize import deserialize
 
         await self.computation()
-        buf = self.buffer
+        buf = await self.get_buffer()
         return await deserialize(buf, self.checksum.bytes(), self.celltype, copy=True)
 
     def task(self) -> asyncio.Task:

@@ -98,7 +98,7 @@ async def evaluate_join_transformation_remote(structured_cell) -> Checksum:
     if not get_assistant():
         return
     jtf_checksum = build_join_transformation(structured_cell)
-    jtf_buffer = buffer_cache.get_buffer(jtf_checksum)
+    jtf_buffer = await buffer_cache.get_buffer_async(jtf_checksum)
     assert jtf_buffer is not None
     write_buffer(jtf_checksum, jtf_buffer)
     join_dict = json.loads(jtf_buffer)["structured_cell_join"]

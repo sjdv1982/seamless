@@ -162,7 +162,7 @@ async def syntactic_to_semantic(checksum: Checksum, celltype, subcelltype, coden
     if syntactic_is_semantic(celltype, subcelltype):
         return checksum
 
-    buffer = get_buffer(checksum, remote=True)
+    buffer = await get_buffer_async(checksum, remote=True)
     buffer = Buffer(buffer).value
     if buffer is None:
         raise CacheMissError(checksum.hex()) from None
@@ -255,7 +255,7 @@ async def run_evaluate_expression(expression_dict, fingertip_mode, *, scratch, m
         pass
     if result is not None and database.active:
         database.set_expression(expression, result)
-        result_buf = buffer_cache.get_buffer(result)
+        result_buf = await buffer_cache.get_buffer_async(result)
         if not scratch and result_buf is not None:
             write_buffer(result, result_buf)
     return result
@@ -378,7 +378,7 @@ class TransformationCache:
         if "META" in inputpin_checksums:
             checksum = inputpin_checksums["META"]
             await cachemanager.fingertip(checksum)
-            inp_metabuf = get_buffer(checksum, remote=True)
+            inp_metabuf = await get_buffer_async(checksum, remote=True)
             if inp_metabuf is None:
                 raise CacheMissError("META")
             inp_meta = json.loads(inp_metabuf)
@@ -1113,7 +1113,7 @@ class TransformationCache:
         tf_checksum = Checksum(tf_checksum)
         transformation = self.transformations.get(tf_checksum)
         if transformation is None:
-            transformation_buffer = get_buffer(tf_checksum, remote=True)
+            transformation_buffer = await get_buffer_async(tf_checksum, remote=True)
             if transformation_buffer is not None:
                 transformation = json.loads(transformation_buffer)
         return transformation
@@ -1236,7 +1236,7 @@ class TransformationCache:
             if not fingertip:
                 return result_checksum
             else:
-                result_buffer = get_buffer(result_checksum, remote=True)
+                result_buffer = await get_buffer_async(result_checksum, remote=True)
                 if result_buffer is not None:
                     buffer_cache.cache_buffer(result_checksum, result_buffer)
                     return result_checksum
@@ -1518,7 +1518,7 @@ transformation_cache = TransformationCache()
 from seamless.workflow.tempref import temprefmanager
 
 from seamless.checksum.buffer_cache import buffer_cache
-from seamless.checksum.get_buffer import get_buffer
+from seamless.checksum.get_buffer import get_buffer, get_buffer_async
 from seamless.checksum.deserialize import deserialize
 
 from seamless.checksum.database_client import database

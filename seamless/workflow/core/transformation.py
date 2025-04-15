@@ -188,6 +188,7 @@ def get_transformation_inputs_output(transformation):
 async def build_transformation_namespace(transformation, semantic_cache, codename):
     import seamless.config
     from seamless.workflow.core.direct.run import fingertip_async
+
     namespace = {
         "__name__": "transformer",
         "__package__": "transformer",
@@ -228,7 +229,7 @@ async def build_transformation_namespace(transformation, semantic_cache, codenam
         checksum = Checksum(checksum)
         if not checksum:
             continue
-        
+
         if seamless.config.fingertip_all:
             await fingertip_async(checksum)
 
@@ -262,7 +263,7 @@ async def build_transformation_namespace(transformation, semantic_cache, codenam
 
         if not from_filesystem:
             # fingertipping must have happened before, but database could be there
-            buffer = get_buffer(checksum, remote=True)
+            buffer = await get_buffer_async(checksum, remote=True)
             if buffer is None:
                 raise CacheMissError(checksum.hex())
             try:
@@ -828,7 +829,7 @@ class TransformationJob:
         env_checksum0 = transformation.get("__env__")
         if env_checksum0 is not None:
             env_checksum = Checksum(env_checksum0)
-            env = get_buffer(env_checksum, remote=True)
+            env = await get_buffer_async(env_checksum, remote=True)
             if env is None:
                 raise CacheMissError(env_checksum.hex())
             env = json.loads(env.decode())
@@ -1249,7 +1250,7 @@ from seamless.compiler import (
 )
 
 
-from seamless.checksum.get_buffer import get_buffer
+from seamless.checksum.get_buffer import get_buffer, get_buffer_async
 from seamless.checksum.deserialize import deserialize, deserialize_sync
 from seamless.checksum.value_conversion import validate_evaluation_subcelltype
 from seamless import CacheMissError, Checksum

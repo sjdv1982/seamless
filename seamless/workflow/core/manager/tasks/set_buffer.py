@@ -34,7 +34,7 @@ class SetCellBufferTask(Task):
                 checksum = await CalculateChecksumTask(manager, buffer).run()
                 checksum = Checksum(checksum)
             elif buffer is None and checksum:
-                buffer = get_buffer(checksum, remote=True)
+                buffer = await get_buffer_async(checksum, remote=True)
             if (not checksum) or buffer is None:
                 manager.cancel_cell(
                     cell, True, reason=StatusReasonEnum.UNDEFINED, origin_task=self
@@ -75,4 +75,4 @@ from seamless.checksum.cached_calculate_checksum import checksum_cache
 from seamless.checksum.value_conversion import has_validated_evaluation, validate_text
 from ...status import StatusReasonEnum
 from seamless.checksum.buffer_cache import buffer_cache
-from seamless.checksum.get_buffer import get_buffer
+from seamless.checksum.get_buffer import get_buffer_async

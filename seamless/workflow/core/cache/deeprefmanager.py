@@ -3,7 +3,7 @@ import traceback
 from weakref import WeakSet
 
 from seamless import Checksum, CacheMissError
-from seamless.checksum.get_buffer import get_buffer
+from seamless.checksum.get_buffer import get_buffer_async
 from seamless.checksum.buffer_cache import (
     buffer_cache,
     empty_dict_checksum,
@@ -98,7 +98,7 @@ class DeepRefManager:
             """
             # TODO: "get_buffer_remote" where the remote buffer request is done async
             """
-            deep_buffer = get_buffer(checksum, remote=True)
+            deep_buffer = await get_buffer_async(checksum, remote=True)
             if deep_buffer is None:
                 self.missing_deep_buffers.add(checksum)
                 self.buffers_to_incref.pop(key)

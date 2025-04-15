@@ -224,7 +224,7 @@ async def evaluate_expression_remote(expression, fingertip_mode) -> Checksum | N
     if not get_assistant():
         return
     etf_checksum = build_expression_transformation(expression)
-    etf_buffer = buffer_cache.get_buffer(etf_checksum)
+    etf_buffer = await buffer_cache.get_buffer_async(etf_checksum)
     assert etf_buffer is not None
     write_buffer(etf_checksum, etf_buffer)
     try:
@@ -233,7 +233,7 @@ async def evaluate_expression_remote(expression, fingertip_mode) -> Checksum | N
         )
         result = Checksum(result)
         if result and fingertip_mode:
-            result = buffer_cache.get_buffer(result)
+            result = await buffer_cache.get_buffer_async(result)
     except (CacheMissError, RuntimeError):
         result = None
     return result

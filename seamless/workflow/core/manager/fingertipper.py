@@ -5,7 +5,7 @@ import traceback
 from seamless import Buffer, Checksum
 from seamless.checksum.buffer_cache import buffer_cache
 from seamless.checksum.expression import access_hash_pattern
-from seamless.checksum.get_buffer import get_buffer
+from seamless.checksum.get_buffer import get_buffer, get_buffer_async
 
 
 class FingerTipper:
@@ -199,7 +199,7 @@ class FingerTipper:
 
     async def fingertip_syn2sem(self, syn_checksum, celltype, subcelltype):
         await syntactic_to_semantic(syn_checksum, celltype, subcelltype, "fingertip")
-        buf = get_buffer(self.checksum, remote=False)
+        buf = await get_buffer_async(self.checksum, remote=False)
         return self._register(buf)
 
     async def run(self):
@@ -239,7 +239,7 @@ class FingerTipper:
                 _, tasks = await asyncio.wait(
                     tasks, return_when=asyncio.FIRST_COMPLETED
                 )
-                buffer = get_buffer(self.checksum, remote=False)
+                buffer = await get_buffer_async(self.checksum, remote=False)
                 if buffer is not None:
                     return
         finally:

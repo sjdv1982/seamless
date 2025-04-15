@@ -300,7 +300,7 @@ class ShareManager:
                     from_buffer = True
                     cell = cell._structured_cell
                 elif checksum and cell._celltype in ("plain", "mixed"):
-                    buffer = get_buffer(checksum, remote=True)
+                    buffer = await get_buffer_async(checksum, remote=True)
                     if buffer is not None:
                         try:
                             checksum = await conversion(
@@ -393,5 +393,5 @@ sharemanager = ShareManager(0.2)
 
 from ..shareserver import shareserver
 from seamless import CacheMissError, Checksum
-from seamless.checksum.get_buffer import get_buffer
+from seamless.checksum.get_buffer import get_buffer, get_buffer_async
 from seamless.checksum.value_conversion import conversion

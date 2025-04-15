@@ -28,6 +28,7 @@ requirements:
     - requests=2.31
     - aiohttp
     - aiohttp-cors
+    - aiofiles
     - silk
 
 about:

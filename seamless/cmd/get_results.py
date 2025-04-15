@@ -157,7 +157,7 @@ async def get_result_buffer_async(
         if do_fingertip or do_scratch:
             result_buffer = await fingertip_async(result_checksum.bytes())
         else:
-            result_buffer = buffer_cache.get_buffer(result_checksum.bytes())
+            result_buffer = await buffer_cache.get_buffer_async(result_checksum.bytes())
         if result_buffer is None:
             raise CacheMissError(result_checksum)
         cannot_download = False

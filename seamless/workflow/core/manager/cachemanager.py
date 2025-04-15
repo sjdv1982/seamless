@@ -239,7 +239,7 @@ class CacheManager:
                     continue
                 transformation = tf_cache.transformations.get(tf_checksum)
                 if transformation is None:
-                    buffer = get_buffer(tf_checksum, remote=True)
+                    buffer = await get_buffer_async(tf_checksum, remote=True)
                     if buffer is None:
                         continue
                     transformation = await DeserializeBufferTask(
@@ -354,7 +354,7 @@ class CacheManager:
         if not checksum:
             return
 
-        buffer = get_buffer(checksum, remote=True)
+        buffer = await get_buffer_async(checksum, remote=True)
         if buffer is not None:
             return buffer
         if checksum in done:
@@ -379,7 +379,7 @@ class CacheManager:
             raise CacheMissError(checksum.hex())
 
         if remote:
-            buffer = get_buffer(checksum, remote=True, deep=is_deep)
+            buffer = await get_buffer_async(checksum, remote=True, deep=is_deep)
             if buffer is not None:
                 return buffer
 
@@ -391,7 +391,7 @@ class CacheManager:
         if not fingertipper.empty:
             exc_str = await fingertipper.run()
 
-            buffer = get_buffer(checksum, remote=remote)
+            buffer = await get_buffer_async(checksum, remote=remote)
             if buffer is not None:
                 return buffer
 
@@ -562,5 +562,5 @@ from ..cell import Cell
 from ..transformer import Transformer
 from ..structured_cell import Inchannel
 from seamless.checksum import Expression
-from seamless.checksum.get_buffer import get_buffer
+from seamless.checksum.get_buffer import get_buffer_async
 from ..cache.deeprefmanager import deeprefmanager

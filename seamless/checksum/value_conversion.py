@@ -1,5 +1,4 @@
-"""Machinery for conversions where the value of the input may be required
-"""
+"""Machinery for conversions where the value of the input may be required"""
 
 import warnings
 from typing import Coroutine
@@ -9,7 +8,7 @@ from seamless.checksum.cached_compile import analyze_code
 from seamless.checksum.buffer_info import verify_buffer_info
 from seamless.checksum.json import json_encode
 from seamless.checksum.buffer_cache import buffer_cache
-from seamless.checksum.get_buffer import get_buffer
+from seamless.checksum.get_buffer import get_buffer, get_buffer_async
 from seamless.checksum.serialize import serialize
 from seamless.checksum.conversion import conversion_values
 from seamless.checksum.convert import (
@@ -220,7 +219,7 @@ async def value_conversion(
         return target_checksum
 
     if source_celltype == "checksum":
-        buffer = get_buffer(checksum, remote=True, deep=False)
+        buffer = await get_buffer_async(checksum, remote=True, deep=False)
         if buffer is None:
             raise CacheMissError(checksum)
         checksum_text = Checksum(buffer)
@@ -236,7 +235,7 @@ async def value_conversion(
         #  # No, for now trust the "checksum" type
         return checksum
 
-    buffer = get_buffer(checksum, remote=True, deep=False)
+    buffer = await get_buffer_async(checksum, remote=True, deep=False)
     if buffer is None:
         raise CacheMissError(checksum)
     msg = buffer

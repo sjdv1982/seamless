@@ -674,7 +674,7 @@ async def apply_hash_pattern(checksum: Checksum, hash_pattern):
     if hash_pattern == "#":
         return checksum
     else:
-        buffer = get_buffer(checksum, remote=True)
+        buffer = await get_buffer_async(checksum, remote=True)
         if hash_pattern == "##":
             from silk.mixed import MAGIC_NUMPY, MAGIC_SEAMLESS_MIXED
 
@@ -729,4 +729,4 @@ from seamless.checksum.cached_calculate_checksum import (
 from seamless.checksum.serialize import serialize, serialize_sync
 from seamless.checksum.deserialize import deserialize, deserialize_sync
 from seamless.checksum.buffer_cache import buffer_cache
-from seamless.checksum.get_buffer import get_buffer
+from seamless.checksum.get_buffer import get_buffer, get_buffer_async

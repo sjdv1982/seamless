@@ -361,6 +361,63 @@ class BufferCache:
 
         return buffer
 
+    async def get_buffer_async(
+        self, checksum: Checksum, *, remote: bool = True, deep: bool = False
+    ):
+        """Retrieve a buffer from cache.
+        If remote=True:
+            - Try to download it from buffer read servers/folders
+            - Try to download it via the FAIR client or direct URLs.
+        If deep=True, the buffer is a deep buffer.
+          This does not affect the result, but it does affect how
+          FAIR servers are interrogated.
+
+        TODO: async FAIR server download
+        """
+        from seamless import fair
+
+        checksum = Checksum(checksum)
+        if not checksum:
+            return None
+        if checksum.hex() == empty_dict_checksum:
+            return b"{}\n"
+        elif checksum.hex() == empty_list_checksum:
+            return b"[]\n"
+        buffer = checksum_cache.get(checksum)
+        if buffer is not None:
+            if isinstance(buffer, Buffer):
+                buffer = buffer.value
+            assert isinstance(buffer, bytes), type(buffer)
+            return buffer
+        buffer = self.buffer_cache.get(checksum)
+        if buffer is not None:
+            if isinstance(buffer, Buffer):
+                buffer = buffer.value
+            assert isinstance(buffer, bytes), type(buffer)
+            return buffer
+        if remote:
+            try:
+                buffer = await buffer_remote.get_buffer_async(checksum)
+            except Exception:
+                import traceback
+
+                traceback.print_exc()
+            if buffer is not None:
+                if isinstance(buffer, Buffer):
+                    buffer = buffer.value
+                assert isinstance(buffer, bytes), type(buffer)
+            else:
+                # fair.get_buffer may download the buffer using the .access method
+                buffer = fair.get_buffer(checksum, deep=deep)
+                if buffer is not None:
+                    if isinstance(buffer, Buffer):
+                        buffer = buffer.value
+                    assert isinstance(buffer, bytes), type(buffer)
+                    buffer_cache.cache_buffer(checksum, buffer)
+                    return buffer
+
+        return buffer
+
     def _sync_buffer_info_from_remote(self, checksum):
         from seamless.checksum.database_client import database
 

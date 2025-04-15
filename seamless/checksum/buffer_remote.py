@@ -3,6 +3,7 @@
 - Buffer read folders
 """
 
+import asyncio
 import os
 import time
 import traceback
@@ -12,7 +13,12 @@ from requests.exceptions import (  # pylint: disable=redefined-builtin
     ReadTimeout,
 )
 from seamless import Buffer, Checksum
-from seamless.checksum import buffer_read_client, buffer_write_client
+from seamless.checksum import (
+    buffer_read_client,
+    buffer_write_client,
+    buffer_read_client_async,
+)
+import aiofiles
 
 _read_servers: list[str] | None = None
 _read_folders: list[str] | None = None
@@ -66,6 +72,50 @@ def get_file_buffer(directory, checksum: Checksum, timeout=10) -> bytes | None:
         return buf
 
 
+async def get_file_buffer_async(
+    directory, checksum: Checksum, timeout=10
+) -> bytes | None:
+    """Read a buffer from a buffer folder directory.
+    Its filename must be equal to its checksum."""
+    checksum = Checksum(checksum)
+
+    filename1 = os.path.join(directory, checksum.hex())
+    filenames = [filename1]
+    subdirectory = os.path.join(directory, checksum.hex()[:2])
+    if os.path.exists(subdirectory):
+        filename2 = os.path.join(subdirectory, checksum.hex())
+        filenames = [filename1, filename2]
+    for filename in filenames:
+        if await aiofiles.os.path.exists(filename):
+            async with aiofiles.open(filename, "rb") as f:
+                buf = await f.read()
+            buf_checksum = Buffer(buf).get_checksum().value
+            if buf_checksum == checksum:
+                return buf
+
+        global_lockfile = os.path.join(directory, ".LOCK")
+        lockfile = filename + ".LOCK"
+        start_time = time.time()
+        while 1:
+            for lockf in [global_lockfile, lockfile]:
+                if await aiofiles.os.path.exists(lockf):
+                    break
+            else:
+                break
+            await asyncio.sleep(0.5)
+            if time.time() - start_time > timeout:
+                return
+        if not await aiofiles.os.path.exists(filename):
+            continue
+        async with aiofiles.open(filename, "rb") as f:
+            buf = await f.read()
+        buf_checksum = Buffer(buf).get_checksum()
+        if buf_checksum != checksum:
+            # print("WARNING: '{}' has the wrong checksum".format(filename))
+            return
+        return buf
+
+
 def get_buffer(checksum: Checksum) -> bytes | None:
     """Retrieve the buffer from remote sources.
     First all buffer read folders are queried.
@@ -87,6 +137,32 @@ def get_buffer(checksum: Checksum) -> bytes | None:
 
     for server in _read_servers:
         result = buffer_read_client.get(session, server, checksum.hex())
+        if result is not None:
+            _known_buffers.add(checksum)
+            return result
+
+
+async def get_buffer_async(checksum: Checksum) -> bytes | None:
+    """Retrieve the buffer from remote sources.
+    First all buffer read folders are queried.
+    Then all buffer read servers are queried."""
+    checksum = Checksum(checksum)
+    if not checksum:
+        return None
+    if _read_servers is None and _read_folders is None:
+        return None
+    if _read_folders is not None:
+        for folder in _read_folders:
+            try:
+                buf = await get_file_buffer_async(folder, checksum)
+                if buf is not None:
+                    return buf
+            except Exception:
+                traceback.print_exc()
+                return
+
+    for server in _read_servers:
+        result = await buffer_read_client_async.get(server, checksum.hex())
         if result is not None:
             _known_buffers.add(checksum)
             return result
@@ -168,6 +244,23 @@ def remote_has_checksum(checksum: Checksum) -> bool:
     return False
 
 
+async def remote_has_checksum_async(checksum: Checksum) -> bool:
+    """Returns if a buffer is known remotely. This is queried asynchronously."""
+    checksum = Checksum(checksum)
+    if _read_folders is not None:
+        for folder in _read_folders:
+            filename = os.path.join(folder, checksum.hex())
+            if await aiofiles.os.path.exists(filename):
+                _known_buffers.add(checksum)
+                return True
+    if _read_servers is not None:
+        for server in _read_servers:
+            if await buffer_read_client_async.has(server, checksum):
+                _known_buffers.add(checksum)
+                return True
+    return False
+
+
 def can_read_buffer(checksum: Checksum) -> bool:
     """Returns if a buffer is known remotely.
     A local cache of buffers that are known to be known remotely
@@ -176,6 +269,16 @@ def can_read_buffer(checksum: Checksum) -> bool:
     if is_known(checksum):
         return True
     return remote_has_checksum(checksum)
+
+
+async def can_read_buffer_async(checksum: Checksum) -> bool:
+    """Returns if a buffer is known remotely.
+    A local cache of buffers that are known to be known remotely
+     is also queried."""
+    checksum = Checksum(checksum)
+    if is_known(checksum):
+        return True
+    return await remote_has_checksum_async(checksum)
 
 
 def can_write() -> bool:

@@ -10,7 +10,10 @@ from typing import Optional
 
 from seamless import CacheMissError, Checksum
 
-from seamless.checksum.get_buffer import get_buffer as _get_buffer
+from seamless.checksum.get_buffer import (
+    get_buffer as _get_buffer,
+    get_buffer_async as _get_buffer_async,
+)
 from seamless.checksum.buffer_cache import buffer_cache
 from seamless.checksum import buffer_remote
 from seamless.checksum.database_client import database
@@ -113,7 +116,7 @@ def fingertip(checksum, dunder=None):
 async def fingertip_async(checksum, dunder=None):
 
     checksum = parse_checksum(checksum, as_bytes=True)
-    result = _get_buffer(checksum, remote=True)
+    result = await _get_buffer_async(checksum, remote=True)
     if result is not None:
         return result
     set_dummy_manager()

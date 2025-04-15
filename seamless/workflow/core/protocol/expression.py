@@ -8,7 +8,7 @@ from seamless.checksum.cached_calculate_checksum import (
 from seamless.checksum.deserialize import deserialize, deserialize_sync
 from seamless.checksum.serialize import serialize, serialize_sync
 
-from seamless.checksum.get_buffer import get_buffer
+from seamless.checksum.get_buffer import get_buffer, get_buffer_async
 from seamless.checksum.buffer_cache import buffer_cache
 
 
@@ -148,7 +148,7 @@ async def get_subpath(
                 if perform_fingertip:
                     buffer = await manager.cachemanager.fingertip(checksum)
                 else:
-                    buffer = get_buffer(checksum, remote=True, deep=False)
+                    buffer = await get_buffer_async(checksum, remote=True, deep=False)
                 if buffer is None:
                     raise CacheMissError(checksum)
                 buffer_dict[checksum] = buffer
@@ -161,7 +161,7 @@ async def get_subpath(
         if perform_fingertip:
             buffer = await manager.cachemanager.fingertip(checksum)
         else:
-            buffer = get_buffer(checksum, remote=True, deep=False)
+            buffer = await get_buffer_async(checksum, remote=True, deep=False)
         value = await deserialize(buffer, checksum, "mixed", copy=True)
         value = _get_subpath(value, post_path)
         return ("value", value)
@@ -329,7 +329,7 @@ async def set_subpath(value, hash_pattern, path, subvalue):
         curr_sub_value = None
         assert len(post_path)
         if curr_sub_checksum:
-            curr_sub_buffer = get_buffer(curr_sub_checksum, remote=True)
+            curr_sub_buffer = await get_buffer_async(curr_sub_checksum, remote=True)
             if is_raw:
                 curr_sub_value = deserialize_raw(curr_sub_buffer)
             else:
