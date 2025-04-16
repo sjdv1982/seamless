@@ -627,7 +627,7 @@ async def evaluate_expression(
 
     result = None
     if not fingertip_mode:
-        result = database.get_expression(expression)
+        result = await database.get_expression_async(expression)
     from_task = False
     if _is_none(result):
         celltype = celltype_mapping.get(expression.celltype, expression.celltype)

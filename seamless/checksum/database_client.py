@@ -431,6 +431,27 @@ class Database:
             self._log("GET", request["type"], request["checksum"])
             return result
 
+    async def get_expression_async(self, expression: Expression) -> Checksum:
+        """Get the result of an expression"""
+        request = {
+            "type": "expression",
+            "checksum": Checksum(expression.checksum).value,
+            "celltype": expression.celltype,
+            "path": expression.path,
+            "target_celltype": expression.target_celltype,
+        }
+        if expression.hash_pattern is not None:
+            request["hash_pattern"] = expression.hash_pattern
+        if expression.target_hash_pattern is not None:
+            request["target_hash_pattern"] = expression.target_hash_pattern
+        content = await self.send_get_request_async(request)
+        if content is not None:
+            if isinstance(content, bytes):
+                content = content.decode()
+            result = Checksum(content)
+            self._log("GET", request["type"], request["checksum"])
+            return result
+
     def get_metadata(self, tf_checksum: Checksum) -> dict:
         """Get transformation metadata.
         tf_checksum: transformation checksum"""

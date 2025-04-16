@@ -31,6 +31,8 @@ ntrials = 1000
 if len(sys.argv) > 1:
     ntrials = int(sys.argv[1])
 ndots = 1000000000
+if len(sys.argv) > 2:
+    ndots = int(sys.argv[2])
 seeds = np.random.randint(0, 999999, ntrials)
 transformations = [calc_pi_remote(seed, ndots) for seed in seeds]
 for tfnr, tf in enumerate(transformations):
@@ -60,6 +62,7 @@ for t, tf in enumerate(transformations):
         has_exceptions = True
 
 if not has_exceptions:
-    results = [tf.value for tf in transformations]
+    fut = asyncio.gather(*[tf.get_value() for tf in transformations])
+    results = asyncio.get_event_loop().run_until_complete(fut)
     results = np.array(results)
     print(results.mean(), results.std(), np.pi)

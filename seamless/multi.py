@@ -5,6 +5,7 @@ import seamless
 
 from seamless import Checksum
 from seamless import Buffer
+import tqdm
 
 
 class TransformationPool:
@@ -133,10 +134,17 @@ class ContextPool:
     - nparallel: number of contexts to be run in parallel.
     """
 
-    def __init__(self, ctx: "seamless.workflow.highlevel.Context", nparallel: int):
+    def __init__(
+        self,
+        ctx: "seamless.workflow.highlevel.Context",
+        nparallel: int,
+        *,
+        show_progress=False,
+    ):
         self._contexts = []
         self.nparallel = nparallel
         self.graph = ctx.get_graph()
+        self.show_progress = show_progress
 
     def __enter__(self):
         from seamless.workflow import Context
@@ -151,13 +159,17 @@ class ContextPool:
         ctx.compute(report=10)
         self._contexts.append(ctx)
 
+        if self.show_progress:
+            range_ = tqdm.trange
+        else:
+            range_ = range
         for n in range(1, self.nparallel):
             ctx = Context()
             ctx._manager.CLEAR_NEW_TRANSFORMER_EXCEPTIONS = False
             ctx.set_graph(self.graph)
             self._contexts.append(ctx)
 
-        for n in range(self.nparallel):
+        for n in range_(self.nparallel):
             self._contexts[n].compute(report=None)
             self._contexts[n].compute(report=None)
 
