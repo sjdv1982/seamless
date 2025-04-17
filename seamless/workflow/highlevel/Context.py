@@ -575,7 +575,9 @@ class Context(Base, HelpMixin):
         """
         if self._untranslatable:
             raise Exception("Context is untranslatable")
-        await self._wait_for_auth_tasks_async("the graph is re-translated",silent=silent)
+        await self._wait_for_auth_tasks_async(
+            "the graph is re-translated", silent=silent
+        )
         return await self._do_translate_async(force=force)
 
     @property
