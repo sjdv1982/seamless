@@ -1,6 +1,6 @@
 """NextFlow-style channels
 These work like NextFlow value channels.
-Since Seamless is purely functional, 
+Since Seamless is purely functional,
 there is no such thing as NextFlow queue channels
 
 Work in progress!

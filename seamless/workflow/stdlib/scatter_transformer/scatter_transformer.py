@@ -1,4 +1,4 @@
-"""A "virtual transformer" that scatters one input (list or dict) 
+"""A "virtual transformer" that scatters one input (list or dict)
 and gathers the result. Much like a scattered_value CommandLineTool in CWL.
 - language: transformer language
 - code: transformer source code

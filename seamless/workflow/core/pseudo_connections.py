@@ -4,6 +4,7 @@ def set_pseudo_connections(ctx, path, pseudo_connections):
     if not pseudo_connections:
         return
     from ..highlevel.Context import Context
+
     assert isinstance(ctx, Context)
     connections = []
     for source, target in pseudo_connections:
@@ -21,10 +22,6 @@ def set_pseudo_connections(ctx, path, pseudo_connections):
             strip += 1
         target = path[:-strip] + (head,) + tuple(target[1:])
 
-        con = {
-            "source": source,
-            "target": target,
-            "type": "connection"
-        }
+        con = {"source": source, "target": target, "type": "connection"}
         connections.append(con)
     ctx._runtime_graph.connections[:] = ctx._runtime_graph.connections + connections

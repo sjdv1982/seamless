@@ -1,5 +1,5 @@
-from seamless.workflow.core import cell, path as core_path, \
- macro, context
+from seamless.workflow.core import cell, path as core_path, macro, context
+
 
 def translate_macro(node, root, namespace, inchannels, outchannels):
     from .translate import set_structured_cell_from_checksum
@@ -17,7 +17,7 @@ def translate_macro(node, root, namespace, inchannels, outchannels):
     pin_mpaths0 = {}
     for pinname in list(node["pins"].keys()):
         pin = node["pins"][pinname]
-        pin.pop("subcelltype", None) # just to make sure...
+        pin.pop("subcelltype", None)  # just to make sure...
         if pin["io"] == "parameter":
             pin_cell_name = pinname + "_PARAM"
             assert pin_cell_name not in node["pins"]
@@ -36,24 +36,27 @@ def translate_macro(node, root, namespace, inchannels, outchannels):
             pin_cell = cell(celltype, hash_pattern=pin_hash_pattern)
         elif celltype == "module":
             pin_cell = cell("plain")
-        elif (celltype == "checksum" and pin["io"] == "parameter"):
+        elif celltype == "checksum" and pin["io"] == "parameter":
             pin_cell = cell("plain")
         else:
             pin_cell = cell(celltype)
         cell_setattr(node, ctx, pin_cell_name, pin_cell)
         pin_cells[pinname] = pin_cell
         if pin["io"] != "parameter":
-            pin_mpaths0[pinname] = (pin["io"] in ("input", "edit"))
+            pin_mpaths0[pinname] = pin["io"] in ("input", "edit")
 
     mount = node.get("mount", {})
     param = None
     if len(interchannels):
         param, param_ctx = build_structured_cell(
-            ctx, param_name, param_inchannels, interchannels,
+            ctx,
+            param_name,
+            param_inchannels,
+            interchannels,
             return_context=True,
             fingertip_no_remote=False,
             fingertip_no_recompute=False,
-            hash_pattern={"*": "#"}
+            hash_pattern={"*": "#"},
         )
 
         setattr(ctx, param_name, param)
@@ -77,11 +80,7 @@ def translate_macro(node, root, namespace, inchannels, outchannels):
     if node.get("elision"):
         ctx.macro.allow_elision = True
 
-    elision = {
-        "macro": ctx.macro,
-        "input_cells": {},
-        "output_cells": {}
-    }
+    elision = {"macro": ctx.macro, "input_cells": {}, "output_cells": {}}
     for pinname in pin_mpaths0:
         is_input = pin_mpaths0[pinname]
         pin_mpath = getattr(core_path(ctx.macro.ctx), pinname)
@@ -137,9 +136,6 @@ def translate_macro(node, root, namespace, inchannels, outchannels):
         else:
             cmode = "target" if pin["io"] == "input" else "source"
             namespace[path, cmode] = pin_cells[pinname], node
-
-
-
 
 
 from .util import get_path, build_structured_cell, cell_setattr

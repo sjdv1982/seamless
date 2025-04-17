@@ -1,26 +1,31 @@
 def unilink(obj):
     return UniLink(obj)
 
+
 from . import SeamlessBase
 
 link_counter = 0
+
+
 class UniLink(SeamlessBase):
     _mount = None
+
     def __init__(self, obj):
         from .cell import Cell
+
         global link_counter
-        assert isinstance(obj, Cell), obj # only cells can be linked to!
+        assert isinstance(obj, Cell), obj  # only cells can be linked to!
         self._linked = obj
         link_counter += 1
         self._counter = link_counter
 
     def _set_context(self, ctx, name):
         from .unbound_context import UnboundContext
+
         super()._set_context(ctx, name)
         if isinstance(ctx, UnboundContext):
             manager = self._get_manager()
             manager._registered.add(self)
-
 
     def get_linked(self):
         linked = self._linked

@@ -2,44 +2,56 @@ import weakref
 
 from .injector import reactor_injector as injector
 
+
 class ReactorInput:
     def __init__(self, value):
         self._value = value
-        self.updated = (value is not None)
-        self.defined = (value is not None)
+        self.updated = value is not None
+        self.defined = value is not None
+
     def get(self):
         return self._value
+
     @property
     def value(self):
         return self.get()
+
 
 class ReactorOutput:
     def __init__(self, parent, name):
         self._parent = weakref.ref(parent)
         self._name = name
+
     def _set(self, value, preliminary):
         p = self._parent()
         if p is None:
             return
         p.set_pin(self._name, value, preliminary)
+
     def set(self, value):
         return self._set(value, False)
+
     def set_preliminary(self, value):
         return self._set(value, True)
 
+
 class ReactorEdit:
     _store = None
+
     def __init__(self, parent, name, value):
         self._parent = weakref.ref(parent)
         self._name = name
         self._value = value
-        self.updated = (value is not None)
-        self.defined = (value is not None)
+        self.updated = value is not None
+        self.defined = value is not None
+
     def get(self):
         return self._value
+
     @property
     def value(self):
         return self.get()
+
     def _set(self, value, preliminary):
         self._value = value
         self.defined = True
@@ -47,19 +59,21 @@ class ReactorEdit:
         if p is None:
             return
         p.set_pin(self._name, value, False)
+
     def set(self, value):
         return self._set(value, False)
+
 
 class PINS:
     def __getitem__(self, attr):
         return getattr(self, attr)
+
     def __setitem__(self, attr, value):
         return setattr(self, attr, value)
 
+
 class RuntimeReactor:
-    def __init__(self,
-        manager, reactor, inputpins, outputpins, editpins
-    ):
+    def __init__(self, manager, reactor, inputpins, outputpins, editpins):
         self.manager = weakref.ref(manager)
         self.reactor = weakref.ref(reactor)
         self.inputpins = inputpins
@@ -171,6 +185,7 @@ class RuntimeReactor:
 
     def set_pin(self, pinname, value, preliminary):
         from .worker import OutputPin, EditPin
+
         reactor = self.reactor()
         manager = self.manager()
         livegraph = manager.livegraph
@@ -200,13 +215,11 @@ class RuntimeReactor:
                 celltype = wa.celltype
                 subcelltype = wa.subcelltype
             ReactorResultTask(
-                manager, reactor,
-                pinname, value,
-                celltype, subcelltype
+                manager, reactor, pinname, value, celltype, subcelltype
             ).launch()
 
     def clear(self):
-        #print("CLEAR")
+        # print("CLEAR")
         self.namespace.clear()
         self.PINS = PINS()
         self.live = False
@@ -216,5 +229,6 @@ class RuntimeReactor:
             return
         self.run_code("code_stop")
         self.clear()
+
 
 from .manager.tasks.reactor_update import ReactorResultTask

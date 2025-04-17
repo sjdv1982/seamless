@@ -1,5 +1,4 @@
-"""Macro elision cache and routines
-"""
+"""Macro elision cache and routines"""
 
 import weakref
 import json

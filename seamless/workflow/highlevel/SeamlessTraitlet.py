@@ -248,7 +248,7 @@ class SeamlessTraitlet(traitlets.HasTraits):
 
     def observe(self, handler, names=traitlets.All, type="change"):
         """Setup a handler to be called when a trait changes.
-        
+
         See traitlets.HasTraits.observe"""
         super().observe(handler, names, type)
         names = traitlets.parse_notifier_name(names)

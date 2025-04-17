@@ -21,7 +21,7 @@ The signals are then applied to the elements in the "resolve" stage of the cance
   This always gives the correct result if at least one received signal is void.
   However, in case of a non-void signal, this is often over-eager, so the worker may have to be re-voided.
 
-- Structured cells are complicated. 
+- Structured cells are complicated.
   See the docstring of get_scell_state for the different states a structured cell may be in.
 
 """

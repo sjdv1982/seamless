@@ -93,7 +93,10 @@ def save_vault(dirname, annotated_checksums, buffer_dict):
     with VaultLock(dirname) as vl:
         for checksum, is_dependent in annotated_checksums:
             if checksum not in buffer_dict:
-                print(f"Skipping unknown buffer with checksum '{checksum}'", file=sys.stderr)
+                print(
+                    f"Skipping unknown buffer with checksum '{checksum}'",
+                    file=sys.stderr,
+                )
                 continue
             buffer = buffer_dict[checksum]
             size = "small" if len(buffer) <= SMALL_BIG_THRESHOLD else "big"

@@ -1,6 +1,7 @@
 from ast import FunctionDef, Return, iter_child_nodes
 from collections import OrderedDict
 
+
 def ordered_dictsort(data):
     for k, v in list(data.items()):
         if isinstance(v, OrderedDict):
@@ -11,6 +12,7 @@ def ordered_dictsort(data):
             data[k] = tuplesort(v)
         elif isinstance(v, list):
             listsort(v)
+
 
 def listsort(data):
     for vnr in range(len(data)):
@@ -23,6 +25,7 @@ def listsort(data):
             data[vnr] = tuplesort(v)
         elif isinstance(v, list):
             listsort(v)
+
 
 def tuplesort(data):
     ret = []
@@ -37,6 +40,7 @@ def tuplesort(data):
             listsort(v)
         ret.append(v)
     return ret
+
 
 def dictsort(data):
     ret = OrderedDict()
@@ -53,10 +57,11 @@ def dictsort(data):
         ret[k] = v
     return ret
 
+
 def overlap_path(p1, p2):
-    if p1[:len(p2)] == p2:
+    if p1[: len(p2)] == p2:
         return True
-    elif p2[:len(p1)] == p1:
+    elif p2[: len(p1)] == p1:
         return True
     else:
         return False

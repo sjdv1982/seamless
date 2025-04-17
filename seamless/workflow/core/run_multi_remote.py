@@ -1,5 +1,4 @@
-"""Run multiple remote servers, return the first value
-"""
+"""Run multiple remote servers, return the first value"""
 
 import asyncio
 import sys

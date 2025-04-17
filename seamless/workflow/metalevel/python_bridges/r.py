@@ -1,6 +1,6 @@
 """
 # Adapted by Sjoerd de Vries
-# from https://github.com/rpy2/rpy2/blob/master/rpy2/ipython/rmagic.py 
+# from https://github.com/rpy2/rpy2/blob/master/rpy2/ipython/rmagic.py
 
 # Original license:
 

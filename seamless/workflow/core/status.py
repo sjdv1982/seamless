@@ -2,56 +2,62 @@ class SeamlessInvalidValueError(ValueError):
     def __str__(self):
         s = type(self).__name__
         if len(self.args):
-            s += ":" +  " ".join([str(a) for a in self.args])
+            s += ":" + " ".join([str(a) for a in self.args])
         return s
+
 
 class SeamlessUndefinedError(ValueError):
     def __str__(self):
         s = type(self).__name__
         if len(self.args):
-            s += ":" +  " ".join([str(a) for a in self.args])
+            s += ":" + " ".join([str(a) for a in self.args])
         return s
+
 
 import json
 from enum import Enum
 
 from seamless import Checksum
 
+
 class MyEnum(Enum):
     def __lt__(self, other):
         if other is None:
             return False
         return self.value < other.value
+
     def __eq__(self, other):
         if other is None:
             return False
         return self.value == other.value
 
-StatusEnum = MyEnum("StatusEnum", (
-    "OK",
-    "PENDING",
-    "SUB",
-    "VOID",
-))
 
-StatusReasonEnum = MyEnum("StatusReasonEnum",(
-    "UNCONNECTED", # only for workers
-                   #  and cells connected from undefined macropaths
-    "UNDEFINED", # only for cells
-    "INVALID", # invalid value; worker or cell
-    "ERROR",   # error in execution; only for workers
-    "UPSTREAM", # worker or cell
-    "EXECUTING" # only for workers, only for pending
-))
+StatusEnum = MyEnum(
+    "StatusEnum",
+    (
+        "OK",
+        "PENDING",
+        "SUB",
+        "VOID",
+    ),
+)
+
+StatusReasonEnum = MyEnum(
+    "StatusReasonEnum",
+    (
+        "UNCONNECTED",  # only for workers
+        #  and cells connected from undefined macropaths
+        "UNDEFINED",  # only for cells
+        "INVALID",  # invalid value; worker or cell
+        "ERROR",  # error in execution; only for workers
+        "UPSTREAM",  # worker or cell
+        "EXECUTING",  # only for workers, only for pending
+    ),
+)
+
 
 class WorkerStatus:
-    def __init__(self,
-        status,
-        reason=None,
-        pins=None,
-        preliminary=False,
-        progress=0.0
-    ):
+    def __init__(self, status, reason=None, pins=None, preliminary=False, progress=0.0):
         self.status = status
         self.reason = reason
         self.pins = pins
@@ -71,12 +77,14 @@ class WorkerStatus:
     def __repr__(self):
         return repr(self.__dict__)
 
+
 def status_cell(cell):
     if Checksum(cell._checksum):
         return StatusEnum.OK, None, cell._prelim
     if not cell._void:
         return StatusEnum.PENDING, None, None
     return StatusEnum.VOID, cell._status_reason, None
+
 
 def status_accessor(accessor):
     if accessor is None:
@@ -92,8 +100,10 @@ def status_accessor(accessor):
         status_reason = StatusReasonEnum.INVALID
     return StatusEnum.VOID, status_reason, None
 
+
 def status_transformer(transformer):
     from ..metalevel.debugmount import debugmountmanager
+
     if debugmountmanager.is_mounted(transformer):
         if debugmountmanager.has_debug_result(transformer):
             return WorkerStatus(StatusEnum.OK)
@@ -146,10 +156,13 @@ def status_transformer(transformer):
                         continue
                     pins[pinname] = astatus
     return WorkerStatus(
-        status, reason, pins,
-        preliminary = transformer.preliminary,
-        progress = transformer._progress
+        status,
+        reason,
+        pins,
+        preliminary=transformer.preliminary,
+        progress=transformer._progress,
     )
+
 
 def status_reactor(reactor):
     manager = reactor._get_manager()
@@ -187,18 +200,15 @@ def status_reactor(reactor):
                 continue
             pins[pinname] = astatus
 
-    return WorkerStatus(
-        status, reason, pins
-    )
+    return WorkerStatus(status, reason, pins)
+
 
 def status_macro(macro):
     if macro._gen_context is not None:
         assert not macro._void
         gen_status = macro._gen_context._get_status()
         if format_context_status(gen_status) != "OK":
-            return WorkerStatus(
-                StatusEnum.SUB, None, gen_status
-            )
+            return WorkerStatus(StatusEnum.SUB, None, gen_status)
         return WorkerStatus(StatusEnum.OK)
     manager = macro._get_manager()
     livegraph = manager.livegraph
@@ -224,6 +234,7 @@ def status_macro(macro):
                 pins[pinname] = astatus
     return WorkerStatus(status, reason, pins)
 
+
 def format_status(stat):
     status, reason, prelim = stat
     if status == StatusEnum.OK:
@@ -239,10 +250,9 @@ def format_status(stat):
         else:
             return reason.name.lower()
 
+
 def format_worker_status(stat, as_child=False):
-    status, reason, pins = (
-        stat.status, stat.reason, stat.pins
-    )
+    status, reason, pins = (stat.status, stat.reason, stat.pins)
     if status == StatusEnum.OK:
         if stat.preliminary:
             return "preliminary"
@@ -280,10 +290,12 @@ def format_worker_status(stat, as_child=False):
             result = reason.name.lower()
         return result
 
+
 def format_context_status(stat):
     from .worker import Worker
     from .cell import Cell
     from .context import Context
+
     result = {}
     for childname, value in stat.items():
         if isinstance(value, (str, dict)):

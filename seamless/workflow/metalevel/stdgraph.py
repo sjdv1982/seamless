@@ -5,10 +5,10 @@ in particular:
     - compiled transformers
     - bash transformers without Docker
     - bash transformers with Docker
-(there other graphs in that directory, related to visualization, 
+(there other graphs in that directory, related to visualization,
 but these are simply copied once into a new project)
 
-This file contains facilities to load standard graphs, 
+This file contains facilities to load standard graphs,
 and to manipulate them (and hence influence translation) dynamically.
 """
 

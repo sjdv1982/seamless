@@ -1,7 +1,7 @@
 """
 Mounts transformers in full debug mode
 
-ctx and tf are low level contexts! 
+ctx and tf are low level contexts!
 ctx is the root
 """
 

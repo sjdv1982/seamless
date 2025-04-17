@@ -1,5 +1,4 @@
-"""Converts various ancient graph formats into modern format
-"""
+"""Converts various ancient graph formats into modern format"""
 
 from copy import deepcopy
 import json

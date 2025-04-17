@@ -504,7 +504,7 @@ class Context(Base, HelpMixin):
         """
 
         verify_sync_compute()
-        self.translate()
+        self.translate(silent=(report is None))
         return self._gen_context.compute(timeout, report)
 
     async def computation(self, timeout: Optional[float] = None, report: float = 2):
@@ -515,7 +515,7 @@ class Context(Base, HelpMixin):
 
         The graph is first (re-)translated, if necessary.
         """
-        await self.translation()
+        await self.translation(silent=(report is None))
         await self._gen_context.computation(timeout, report)
 
     @property
@@ -542,7 +542,7 @@ class Context(Base, HelpMixin):
             return
         self._needs_translation = True
 
-    def translate(self, force: bool = False):
+    def translate(self, force: bool = False, *, silent=False):
         """(Re-)translate the graph.
         The graph is translated to a low-level, computable form
         (seamless.workflow.core). After translation, return immediately,
@@ -561,10 +561,10 @@ class Context(Base, HelpMixin):
         if not force and not self._needs_translation:
             return
         verify_sync_translate()
-        self._wait_for_auth_tasks("the graph is re-translated")
+        self._wait_for_auth_tasks("the graph is re-translated", silent=silent)
         return self._do_translate(force=force)
 
-    async def translation(self, force: bool = False):
+    async def translation(self, force: bool = False, *, silent=False):
         """(Re-)translate the graph.
         The graph is translated to a low-level, computable form
         (seamless.workflow.core). After translation, return immediately,
@@ -575,7 +575,7 @@ class Context(Base, HelpMixin):
         """
         if self._untranslatable:
             raise Exception("Context is untranslatable")
-        await self._wait_for_auth_tasks_async("the graph is re-translated")
+        await self._wait_for_auth_tasks_async("the graph is re-translated",silent=silent)
         return await self._do_translate_async(force=force)
 
     @property
@@ -922,7 +922,7 @@ class Context(Base, HelpMixin):
             lib.include(self, full_path=full_path)
         self._translate()
 
-    def _wait_for_auth_tasks(self, what_happens_text):
+    def _wait_for_auth_tasks(self, what_happens_text, *, silent=False):
         """Wait up to 10 seconds for auth tasks to complete.
 
         Auth tasks are those that modify independent checksums of the workflow.
@@ -934,13 +934,17 @@ class Context(Base, HelpMixin):
         It is assumed (and printed out) that any auth tasks that have not
         completed after 10 seconds will be canceled.
         """
+
+        report = 2 if not silent else None
         if (
             self._gen_context is not None
             and not self._libroot
             and not asyncio.get_event_loop().is_running()
         ):
             taskmanager = self._gen_context._get_manager().taskmanager
-            taskmanager.compute(timeout=10, report=2, get_tasks_func=_get_auth_tasks)
+            taskmanager.compute(
+                timeout=10, report=report, get_tasks_func=_get_auth_tasks
+            )
             auth_lost_cells = set()
             for task in taskmanager.tasks:
                 if not isinstance(task, _auth_task_types):
@@ -960,12 +964,13 @@ These modifications have been CANCELED.""" % (
                 )
                 print(warn)
 
-    async def _wait_for_auth_tasks_async(self, what_happens_text):
+    async def _wait_for_auth_tasks_async(self, what_happens_text, *, silent=False):
         """Async version of _wait_for_auth_tasks."""
+        report = 2 if not silent else None
         if self._gen_context is not None and not self._libroot:
             taskmanager = self._gen_context._get_manager().taskmanager
             await taskmanager.computation(
-                timeout=10, report=2, get_tasks_func=_get_auth_tasks
+                timeout=10, report=report, get_tasks_func=_get_auth_tasks
             )
             auth_lost_cells = set()
             for task in taskmanager.tasks:

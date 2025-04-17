@@ -4,10 +4,10 @@ Use this status graph together with bind_status_graph,
  as `webctx = bind_status_graph(ctx, status_graph)`
 
 Input cells are filled by bind_status_graph.
-- webctx.graph with the static workflow graph of ctx 
+- webctx.graph with the static workflow graph of ctx
   (stored in a .seamless file)
-- webctx.graph_rt with the real-time workflow graph of ctx 
-  (Unwrapping LibInstances, and including core.HighLevelContext instances)  
+- webctx.graph_rt with the real-time workflow graph of ctx
+  (Unwrapping LibInstances, and including core.HighLevelContext instances)
 """
 
 from seamless.workflow import Context, Transformer, Cell
