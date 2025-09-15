@@ -19,6 +19,7 @@ from seamless.checksum import (
     buffer_read_client_async,
 )
 import aiofiles
+import aiofiles.os
 
 _read_servers: list[str] | None = None
 _read_folders: list[str] | None = None
