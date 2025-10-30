@@ -1,3 +1,5 @@
+HASHSERVER BUG: two requests create prefix subdir simultaneously
+
 Imminent: run high-level non-automatic tests. DONE
 Imminent: /bin/seamless --local feature, pilot test. DONE
 Imminent: seamless-jupyter not working because of jsonschema mismatch (conda AND Docker image).
@@ -14,18 +16,24 @@ Harmonize /seamless/bin/seamless with /seamless-tools/seamless-cli
 DONE
 
 TO DOCUMENT:
+
 1. /seamless-tools/scripts
 2. /seamless-tools/scripts/utils
 3. /seamless/bin
 4. /seamless-tools/seamless-cli
 
-1. 
+1.
+
 - Python scripts (and bash runners) that need to import Seamless
+
 2. Bash scripts and file-centered command line tools that need to run inside a Seamless environment
-3. 
-  - bash front to 1. and 2. (using SEAMLESS_SCRIPTS_DIR),   
-  - /bin/seamless, with _seamlessify and activate-seamless-mode.sh
-4. 
+3.
+
+- bash front to 1. and 2. (using SEAMLESS_SCRIPTS_DIR),
+- /bin/seamless, with _seamlessify and activate-seamless-mode.sh
+
+4.
+
 - Unix command line tools that fire up a Seamless Docker image
 - Python scripts that do not need to import Seamless
 - Seamless assistants and their Docker files
@@ -46,19 +54,18 @@ TO DOCUMENT:
   - outputfile.ENV (needs to be uploaded since its checksum is referenced in the dunder file)
 DONE
 
--  run-transformation: Add --from-job support: 
-    - If transformation.JOB.CHECKSUM present: load its checksum and run
-    - Else: uploads .JOB, .COMMAND and (if present) .ENV, calculate .JOB.CHECKSUM and run.
+- run-transformation: Add --from-job support:
+  - If transformation.JOB.CHECKSUM present: load its checksum and run
+  - Else: uploads .JOB, .COMMAND and (if present) .ENV, calculate .JOB.CHECKSUM and run.
   Uses transformation.DUNDER as dunderfile if present.
 DONE
 - /bin/seamless: add --docker, --conda-env  support, to build env/dunder, make a test. DONE
 - /bin/seamless: --upload, requires --dry. Uploads all input files, as well as .JOB, .COMMAND and .ENV.  If --write-job, outputfile.JOB, outputfile.COMMAND and outputfile.ENV are not written to disk; instead write outputfile.XXX.CHECKSUM files.
-Make a test involving --upload, seamless-buffer-length and seamless-download --directoty --index. 
+Make a test involving --upload, seamless-buffer-length and seamless-download --directoty --index.
 
 - Add seamless-download --directory option. DONE
 
-
-- Try to revert https://github.com/sjdv1982/seamless/commit/a95b55a68bc747ca8aa1661037497ef4981d695e
+- Try to revert <https://github.com/sjdv1982/seamless/commit/a95b55a68bc747ca8aa1661037497ef4981d695e>
 Instead, bytes pins in bash transformers are now .inp-bypassed ("deep" pins) or from .inp (auth) depending on inchannel presence.
 To test: re-run headify, re-run all tests/highlevel with "bytes" in the source
 DONE
@@ -68,23 +75,23 @@ To document: embedding matrix
 
 workflow style embeds workflow style: yes, with a special API (stdlib.map)
 workflow style embeds Python style: yes
-workflow style embeds cmd style: 
-        for pure bash: yes, but requires work (canonical interface for federation). 
+workflow style embeds cmd style:
+        for pure bash: yes, but requires work (canonical interface for federation).
         for nested invocation (scripts containing /bin/seamless commands): see "cmd style embeds cmd style".
 Python style embeds workflow style: yes, with a special API
 Python style embeds Python style: yes
 Python style embeds cmd style: no
 cmd style embeds workflow style: no
 cmd style embeds Python style: no
-cmd style embeds cmd style: yes (for local mini assistant, not remote; see also https://github.com/sjdv1982/seamless/issues/217)
+cmd style embeds cmd style: yes (for local mini assistant, not remote; see also <https://github.com/sjdv1982/seamless/issues/217>)
 
 =============================
 
-TODO before 0.12 release: 
+TODO before 0.12 release:
 
 - Add singularity support for bashdocker jobs. DONE
 
-- Fix https://github.com/sjdv1982/seamless/issues/246 (both issues). DONE
+- Fix <https://github.com/sjdv1982/seamless/issues/246> (both issues). DONE
 
 - Add local fairserver test. Rip the RPBS fairserver, create add_fairserver API. Adapt reproducible PDB viewer and deepcell-pdb / deepfolder-pdb. DONE
 
@@ -93,7 +100,6 @@ TODO before 0.12 release:
 - Make sure that bash jobs with a buffer read folder have get_filename working directory. Rip filezones. Use bufferdir_deploy_deepfolder, then test get_directory feature. Test with /bin/seamless as well! DONE.
 
 - Make sure that save_vault respects scratch (i.e. make it behave the same as buffer_remote.write). Also for save_zip. DONE
-
 
 - Clean up seamless-tools/database-* tools: DONE
 
@@ -107,17 +113,17 @@ TODO before 0.12 release:
 
 - Overhaul serve-graph by adding delegation. Test load-vault/add-zip as well. Run tests/examples requiring serve-graph. DONE
 
-- Re-review new-project. DONE 
-    
+- Re-review new-project. DONE
+
 ======================
 
 - Fix issue #249, re-run cmd/headify test. Issue seems to prevent federation (last line of headify/test.out is too slow) (DONE for now)
 
 - Clean up and re-run all tests.
-    * low-level (DONE)
-    * fairserver (DONE)
-    * cmd (DONE)
-    * high-level (DONE)
+  - low-level (DONE)
+  - fairserver (DONE)
+  - cmd (DONE)
+  - high-level (DONE)
 
 - Make sure to add the correct scripts and wrappers from /seamless/bin and /seamless-tools/utils into the Docker images (rpbs/seamless and seamless-devel). Currently, /seamless-tools/utils is not mounted at all, therefore seamless-upload fails. /seamless-tools/seamless-cli/seamless-upload-vault also doesn't seem to work. As tests, run /lowlevel/pin-filesystem.sh, /highlevel/pin-filesystem.sh, /highlevel/get-file-and-directory.sh, /cmd/highlevel/get-file-and-directory.sh
 DONE
@@ -143,14 +149,13 @@ Release
 - Distribute seamless-cli. Make sure activate-seamless-mode works well in distro for seamless-cli. DONE
 
 - Update the seamless-framework Conda environments. Here, *also* install seamless-cli so that tools and seamless Docker container can be fired up at will (DONE). *Mark all Conda environments with
-SEAMLESS_CONDA_ENVIRONMENT=1*, this is so that seamless-bash will work from within the Conda environment DONE. 
+SEAMLESS_CONDA_ENVIRONMENT=1*, this is so that seamless-bash will work from within the Conda environment DONE.
 
 - Finalize the seamless-framework Conda environments. Make sure that bin/seamless is included, and that seamless-mode is activated. This is done using two packages `seamless-cli-bin` and `seamless-cli-complement`, which are aimed at Conda-only installations. DONE
 
 - Commit seamless-delegate-remote fix, rebuild seamless-cli and seamless-cli-complement. DONE
 
 - Port dask-deployment build-environment-devel to build-environment. Take seamless-exact environment as a basis where to install Dask libraries into. DONE
-
 
 - Port run-db-hashserver-devel to non-devel environment for distribution. DONE
 
@@ -164,15 +169,14 @@ Documentation
 
 - Document: buffer read servers/folders fail silently, the buffer write server must succeed
 
-
 - Document: seamless-mode (works inside Docker image).
 
 - General documentation, describing the three styles. Old TODO entries have been added to the Seamless Documentation issue.
 
 - Document the various packages/installation methods.
-    * seamless-minimal has been ripped
-    * The Conda environment will have co-equal status with the Seamless Docker image
-    * Note that even the Conda environment still requires Docker to make delegation work. Mini and micro assistants require Seamless Docker image as well.
+  - seamless-minimal has been ripped
+  - The Conda environment will have co-equal status with the Seamless Docker image
+  - Note that even the Conda environment still requires Docker to make delegation work. Mini and micro assistants require Seamless Docker image as well.
     If you don't have Docker, either use no delegation (bad!), or set it up via HPC/Dask-oriented tools (run-db-hashserver.sh + dask-deployment tools). The latter option is advanced use case. Document delegation and why!
 
 - Write a small tutorial with two methods for port forwarding: ngrok and vscode, and show that it works for seamless-serve-graph.

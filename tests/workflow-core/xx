@@ -1,0 +1,39 @@
+Non-automatic tests
+=========================
+mount.py:
+     - remove /tmp/mount-test
+     - run with ipython3 -i
+     - then open all files in /tmp/mount-test and manipulate/monitor them
+mount-direct.py: see above
+mount-cson.py:
+     - remove /tmp/test.cson and /tmp/test.json
+     - run with ipython3 -i
+     - then open /tmp/test.cson and /tmp/test.json, manipulate resp. monitor them
+mount-plain.py: see above, minus the .cson
+
+mount.ipynb
+compile-debug.py
+     - Run with ipython3 -i . Note the Process ID.
+       Run gdb from a second shell into the container. 
+     To make this work, you will need to do one of the following:
+     - run the gdb shell as privileged root using "seamless-shell-existing"
+     OR
+     - disable kernel hardening in your host (/proc/sys/kernel/yama/ptrace_scope, set the value to 0)
+     In GDB:
+       attach to the process using the Process ID: "attach XXX".
+       Type "break addfunc", then "signal SIGUSR1" .
+       Type "step", "print(a)", and "cont" (2x)
+     print(a) will show 2.
+     Afterwards, you will see "ADD 8.141592979431152" in Seamless.
+transformation-raw-conda.py
+     First run this, and it should give an error
+     then install Tensorflow with "pip install tensorflow", and then it should work 
+     Make sure that "conda list -f tensorflow" works correctly.
+
+NOTES
+=====
+[1] This test is about Cython and can also run non-automatically.
+- Run with ipython3 -i
+- Open cell-ipython.html in the browser and cell-ipython*.ipy in a text editor
+- Interpolate cell-ipython.ipy between ORIGINAL and OPTIMIZED,
+  and observe the HTML and timings.
