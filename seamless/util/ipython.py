@@ -3,17 +3,17 @@
 import sys
 
 IPythonInputSplitter = None
-MyInProcessKernelManager = None
+MyInProcessKernelManager = None  # type: ignore
 
 
 def _imp():
     global IPythonInputSplitter, MyInProcessKernelManager
-    from IPython.core.inputsplitter import (  # pylint: disable=redefined-outer-name
+    from IPython.core.inputsplitter import (  # pylint: disable=redefined-outer-name,no-name-in-module # type: ignore
         IPythonInputSplitter,
     )
-    from ipykernel.inprocess.ipkernel import InProcessKernel
-    from ipykernel.inprocess.manager import InProcessKernelManager
-    from ipykernel.zmqshell import ZMQInteractiveShell
+    from ipykernel.inprocess.ipkernel import InProcessKernel  # type: ignore
+    from ipykernel.inprocess.manager import InProcessKernelManager  # type: ignore
+    from ipykernel.zmqshell import ZMQInteractiveShell  # type: ignore
 
     class MyInProcessKernel(InProcessKernel):
         """Replacement for IPython's InProcessKernel"""
@@ -35,8 +35,13 @@ def _imp():
         """Replacement for IPython's InProcessKernelManager"""
 
         def start_kernel(self, namespace):  # pylint: disable=arguments-differ
-            self.kernel = MyInProcessKernel(
-                parent=self, session=self.session, user_ns=namespace
+            """Start kernel"""
+            self.kernel = (  # pylint: disable=attribute-defined-outside-init
+                MyInProcessKernel(
+                    parent=self,
+                    session=self.session,
+                    user_ns=namespace,
+                )
             )
 
 
@@ -68,7 +73,7 @@ def ipython2python(code):
     """Convert IPython code (including magics)to normal Python code"""
     if IPythonInputSplitter is None:
         _imp()
-    isp = IPythonInputSplitter()  # pylint: disable=not-callable
+    isp = IPythonInputSplitter()  # type: ignore # pylint: disable=not-callable
     newcode = ""
     for line in code.splitlines():
         if isp.push_accepts_more():
