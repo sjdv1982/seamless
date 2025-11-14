@@ -1,5 +1,3 @@
-HASHSERVER BUG: two requests create prefix subdir simultaneously
-
 Imminent: run high-level non-automatic tests. DONE
 Imminent: /bin/seamless --local feature, pilot test. DONE
 Imminent: seamless-jupyter not working because of jsonschema mismatch (conda AND Docker image).
