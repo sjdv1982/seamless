@@ -1,0 +1,31 @@
+name: seamless1
+channels:
+  - conda-forge
+dependencies:
+  - aiofiles
+  - dask
+  - distributed
+  - pyyaml
+  - jsonschema
+  - ipython=9.6.*
+  - numpy
+  - pip
+  - pip:
+      - orjson
+      - pylint
+      - frozendict
+      - dask_jobqueue
+      - pydoc-markdown
+      - mkdocs
+      - mkdocs-material
+      - mkdocstrings[python]
+      - -e seamless-base
+      - -e remote-http-launcher
+      - -e seamless-config
+      - -e seamless-remote
+      - -e seamless-transformer
+      - -e seamless-jobserver
+      - -e seamless-dask
+# TODO: set up seamless-mode:
+#  - copy activate-seamless-mode.sh to $CONDA_PREFIX/etc/conda/activate.d
+#  - copy _seamlessify to $CONDA_PREFIX/bin

@@ -1,0 +1,31 @@
+# version of seamless1 with better defined Python versions
+#   which otherwise gives trouble with pure Dask
+name: seamless1-exact
+channels:
+  - conda-forge
+dependencies:
+  - python=3.12.*
+  - aiofiles
+  - dask=2025.12.*
+  - distributed=2025.12.*
+  - pyyaml
+  - jsonschema
+  - ipython=9.6.*
+  - numpy
+  - pip
+  - pip:
+      - orjson
+      - pylint
+      - frozendict
+      - dask_jobqueue
+      - pydoc-markdown
+      - mkdocs
+      - mkdocs-material
+      - mkdocstrings[python]
+      - -e seamless-base
+      - -e remote-http-launcher
+      - -e seamless-config
+      - -e seamless-remote
+      - -e seamless-transformer
+      - -e seamless-jobserver
+      - -e seamless-dask
