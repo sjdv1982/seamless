@@ -1,2 +1,0 @@
-import seamless
-seamless.init()
