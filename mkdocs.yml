@@ -1,0 +1,33 @@
+site_name: Seamless Documentation
+site_description: Documentation for the new Seamless and legacy Seamless references
+docs_dir: docs/agent
+site_dir: .pages-new
+exclude_docs: |
+  README.md
+
+theme:
+  name: readthedocs
+
+plugins:
+  - search
+
+nav:
+  - Home: index.md
+  - Agent Docs Overview: overview.md
+  - Contracts:
+      - Identity and Caching: contracts/identity-and-caching.md
+      - direct/delayed/Transformation: contracts/direct-delayed-and-transformation.md
+      - Modules and Closures: contracts/modules-and-closures.md
+      - Scratch/Witness/Audit: contracts/scratch-witness-audit.md
+      - seamless-run/Argtyping: contracts/seamless-run-and-argtyping.md
+      - Cache Storage and Limits: contracts/cache-storage-and-limits.md
+      - Content-addressed Files and Dirs: contracts/content-addressed-files-and-dirs.md
+      - Execution Backends: contracts/execution-backends.md
+  - API:
+      - seamless.transformer: api/python/seamless.transformer.md
+      - seamless_config.select: api/python/seamless_config.select.md
+      - seamless_config.tools: api/python/seamless_config.tools.md
+      - seamless_transformer.transformation_class: api/python/seamless_transformer.transformation_class.md
+      - seamless_transformer.transformer_class: api/python/seamless_transformer.transformer_class.md
+  - CLI:
+      - seamless-run: api/cli/seamless-run.md
