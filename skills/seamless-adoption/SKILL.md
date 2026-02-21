@@ -86,7 +86,17 @@ Use this framing:
 Always bring it back to this sentence:
 - “The invasiveness is usually **more mental than syntactic**—unless your code relies heavily on implicit state.”
 
-### Portability: what “fits” Seamless well
+### Driver transformations (fan-out, conditionals, reusable patterns)
+
+Nested transformations naturally support complex workflow patterns — no special machinery needed:
+
+- **Fan-out / data parallelism**: a "driver" transformation loops over inputs and spawns sub-transformations. Each has its own cache key → per-element caching and parallelism for free. The driver's output should use a **deep celltype** to avoid materializing large aggregated results.
+- **Conditionals**: Python `if`/`else` in a driver — unchosen branches are never instantiated, naturally lazy.
+- **Reusable patterns**: a Python function composing `delayed` calls is inherently a reusable template. Python's own abstraction mechanisms (functions, classes, modules) are all you need.
+
+The enabler: the transformation cache is keyed by content identity, not by name or position. Nesting gets you per-element caching automatically.
+
+### Portability: what "fits" Seamless well
 
 Use these as signals, not hard rules. Summarize as “pipeline-shaped”.
 
@@ -146,3 +156,4 @@ Explain deep checksums as a structured content identity (Merkle-tree-like):
 - `references/remote-donts.md`: what not to suggest for remote execution, with better alternatives.
 - `references/execution-backends.md`: what “remote” means operationally (jobserver vs daskserver), and how to discuss HPC without hand-waving.
 - `references/dask-integration.md`: how Seamless can use Dask for HPC-style execution (when available), and what to ask/verify.
+- `references/fair-and-identity.md`: why FAIR "persistent identifiers" are locators not identities, and how Seamless's content-addressing complements FAIR for reproducible computation.

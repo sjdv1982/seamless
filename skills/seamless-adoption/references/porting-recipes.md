@@ -41,6 +41,29 @@ Goal: define a pipeline as a composition of steps.
 - Upstream transformations can be passed into downstream steps; treat them as explicit dependencies.
 - Use `delayed(...).start()` when you want to schedule work, then `.run()` later.
 
+#### Driver transformations (fan-out / map / conditional patterns)
+
+The transformation cache is keyed by *content identity*, not by name or position.
+This means nested transformations give you per-element caching automatically — no special machinery needed.
+
+**Fan-out / map pattern**:
+
+- Write a "driver" transformation that loops over inputs and spawns one sub-transformation per element.
+- The driver itself is cheap — it just creates sub-transformations, not materializing large data.
+- Each sub-transformation has its own checksum identity → independent caching and parallelism.
+- When one input element changes, the driver re-runs, but unchanged sub-transformations hit cache.
+- The driver's output should use a **deep celltype** to avoid materializing all results into a single large buffer.
+
+**Conditional pattern**:
+
+- A driver transformation that uses Python `if`/`else` to choose which sub-transformation to create.
+- The unchosen branch is never instantiated — naturally lazy, no wasted computation.
+
+**Reusable patterns**:
+
+- A Python function that composes `delayed` calls *is* a reusable template.
+- Python's own abstraction mechanisms (functions, classes, modules) are all you need.
+
 ### Recipe D: Module inclusion (avoid “copy this module”)
 
 Goal: make helper code available in execution environments safely.
