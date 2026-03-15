@@ -16,6 +16,9 @@ if [ ! -d "${LEGACY_SRC_DIR}" ]; then
   exit 1
 fi
 
+bash "${ROOT_DIR}/tools/pages/sync_repo_docs.sh"
+python "${ROOT_DIR}/docs/agent/scripts/gen_agent_docs.py"
+
 mkdocs build -f "${ROOT_DIR}/mkdocs.yml" -d "${NEW_SITE_DIR}"
 
 mkdir -p "${OUTPUT_DIR}"

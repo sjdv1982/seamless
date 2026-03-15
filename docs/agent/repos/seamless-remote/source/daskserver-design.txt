@@ -1,0 +1,37 @@
+The module "daskserver_remote.py" in `seamless-remote` is loosely modeled on `jobserver_remote.py`.
+
+It exposes two functions, `daskserver_remote.activate()` and `daskserver_remote.deactivate()`. 
+Both of these functions are only called from `seamless_config.set_change`.
+There is no `daskserver_remote.run_transformation`.
+
+A. Activate
+
+The API and usage of `activate` are the same as for `jobserver_remote.py`, except that there are no extra launched clients or extern clients.
+Therefore, instead of the jobserver_remote situation of three 'globals _XXXX_clients' lists, there is only a single `_launched_handle` global. 
+This _launched_handle is an instance of DaskserverLaunchedHandle, a class that is also defined in `daskserver_remote`. It fullfils the role
+of JobserverLaunchedClient, in the sense that it has analogous `.config()` and `_do_init()` methods. However, this is completely sync, i.e. `__init__` calls `.config()` and `_do_init()`. Periodic healthchecks are not necessary, health is assumed.
+The mechanics of `config()` are analogous to that of `JobserverLaunchedClient.config` and of `seamless-config/tests/test-daskserver.py` (compare the latter with `seamless-config/tests/test4.py` for a jobserver analogy): the generated
+config is to be launched with remote-http-launcher, which invokes seamless-dask-wrapper and will return a launch dict
+containing ports, from which a scheduler address can be constructed. This is used to
+build a `distributed.Client`, which can be used to construct a SeamlessDaskClient.
+This SeamlessDaskClient is set as the .client attribute of DaskserverLaunchedHandle.
+
+In a nutshell, `activate()` does the same as `jobserver_remote.py`, but with the goal of constructing a single DaskserverLaunchedHandle instance (which sync calls
+config() and _do_init() upon construction). This instance is stored in _launched_handle. Finally, its .client attribute is a SeamlessDaskClient which is provided to set_seamless_dask_client().
+
+Note 1: SeamlessDaskClient.worker_plugin_workers must be set to the value of "cores" as extracted by configure_daskserver in tools.py.
+
+Note 2. Inside `config()`, `remote_clients = collect_remote_clients(cluster)` must be called (where `cluster` is the name of the cluster where the seamless-dask-wrapper is running), and this is included to construct a SeamlessDaskClient.
+
+Note 3. The launch dict also contains dashboard_port, of which a HTTP Dashboard
+URL can be synthesized. At the end of activate(), this URL is printed out for the user's convenience.
+
+B. Deactivate
+
+`deactivate()` is called at the beginning of every stage change. It sets the held DaskserverLaunchedHandle to None, 
+and then invokes set_seamless_dask_client(None).
+
+
+C. Misc
+
+Make sure that daskserver_remote does not import dask or seamless_dask at the top-level, only when activated.

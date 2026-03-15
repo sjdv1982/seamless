@@ -1,0 +1,103 @@
+The remote HTTP launcher reads a YAML configuration file. Loading that configuration file must result in a configuration dict. 
+
+The configuration dict MUST contain a field called "workdir", which has a string value. It is validated that this string value is a plausible UNIX directory name.
+The configuration dict MAY contain a field called "hostname", which has a string value. It is validated that this string value is a valid HTTP hostname or IP address. When "hostname" is omitted, the launcher starts the configured process on the local machine instead of over SSH.
+The configuration dict MAY contain a field called "ssh_hostname", which has a string value. If not specified while "hostname" is present, it is equal to "hostname". It is validated that this string value is a valid SSH hostname or IP address. When "hostname" is omitted, "ssh_hostname" must also be omitted.
+The configuration dict MAY contain a field called "file_parameters", which has a dict value.
+
+The configuration dict MUST contain two fields called "key" and "command", each with a string value. 
+For each, the value is interpreted as a Python f-string inside a particular namespace:
+- Each of the configuration fields where the field name is a valid Python variable name, is represented as a variable of that name.
+- The configuration dict as a whole, as a variable "config"
+- "key" is evaluated first; after that, the result value is added to the namespace as "key".
+- "command" is evaluated later, on the remote host, during scenario 3. The path to the remote JSON file is included in the namespace as "status_file"
+The f-string is evaluated in a safe manner.
+The evaluated "key" f-expression is from now on called "the key", and similar there is "the command".
+The key must be a plausible UNIX file name. The command must be a plausible bash command.
+
+
+The configuration dict MAY contain a field called "handshake", which must contain either a path string or a dict with two keys: 
+"path" containing a path string and "parameters" containing a dict. 
+
+The configuration dict MAY contain a field called "network_interface". If not, its value defaults to "localhost". 
+It is validated that this string value is a valid HTTP hostname.
+
+The configuration dict MAY contain a boolean field called "tunnel". When true, the launcher creates an SSH tunnel that forwards the remote service port to an automatically chosen local port. This requires both "hostname" and "ssh-hostname" (explicitly or implicitly) to be configured. When omitted, tunneling defaults to false.
+
+There is a global connection file directory, by default $HOME/.remote-http-launcher/client
+The launcher looks in this directory for a local JSON file named X.json, where X=the key. 
+
+There are two possibilities:
+
+A. This local JSON file exists. 
+In that case, it is opened, and a field "port" is extracted, which must be an integer.
+A handshake message is then sent. 
+This is a GET request to X, where X is hostname:port + the path string 
+(the path string is empty if no handshake configuration field was defined). 
+If handshake "parameters" were defined, they are added to the GET request.
+The handshake GET request must return a success HTTP code (2xx). 
+If it does, terminate the program.
+If it doesn't, delete the local JSON file, and then proceed under possibility B 
+(unless possibility B was already encountered, in which case an error must be reported).
+
+B. The local JSON file does not exist. 
+In that case:
+- If "hostname" is defined, create an SSH connection to "ssh_hostname" and manage the process remotely.
+- If "hostname" is not defined, launch and manage the process directly on the local machine.
+
+On the SSH host (or locally, when no SSH host is defined), there is a global connection file directory, by default $HOME/.remote-http-launcher/server
+The launcher looks in this directory for a remote JSON file named X.json, where X=the key. 
+
+
+There are four scenarios:
+
+Scenario 1. The remote JSON file exists, and contains a field "status" with value "running". 
+In that case, it is opened, and a field "port" is extracted, which must be an integer.
+It is also verified that the JSON file has plausible values for "command", "network_interface", "uid" and "pid" (process ID).
+It is verified that the port is in use. A handshake message is then sent. 
+This is a GET request to X, where X is the network interface + the path string 
+(the path string is empty if no handshake configuration field was defined). 
+If handshake "parameters" were defined, they are added to the GET request.
+The handshake GET request must return a success HTTP code (2xx).
+
+Scenario 2. The remote JSON file exists, and contains a field "status" with value "starting", and a pid.
+In that case, the remote JSON file is monitored until one of two events happen.
+    A. The file modification time is updated, and the field "status" has become "running". In that case, proceed as for scenario 1.
+    B. The file modification time has not changed for one minute, and no process with pid exists. In that case, proceed as for scenario 3 (unless scenario 3 was already encountered, in which case an error must be reported).
+
+Scenario 3. The remote JSON file does not exist. 
+In that case, the command will be launched either remotely over SSH or locally, depending on whether "hostname" was provided. If there is a field "conda", its value is taken as the command's conda environment. 
+It is verified that conda has been installed, and that the conda environment exists. The environment is then activated.
+Then, the command is launched in a subprocess.
+The subprocess is daemonic, and all stdout and stderr of the subprocess are merged and redirected to a temporary log file. 
+
+Finally, the remote JSON file is created in the global connection file directory.
+It will contain the following fields:
+- The workdir
+- The temporary log file
+- The command
+- "network_interface" (if it exists)
+- "uid": the current user ID  
+- "pid": the process ID of the subprocess
+- "status" with a value of "starting"
+- "parameters" (optional): containing the value of "file_parameters", if defined.
+The command is expected to:
+- Wait up to a minute until the JSON file exists
+- Acquire a free port
+- Set up a server listening to the free port.
+- Modify the remote JSON file: add a field "port" and set "status" to "running". 
+After starting the command, proceed as for scenario 2, with an additional event that can stop the monitoring: if the subprocess ends.
+
+
+Scenario 4. The remote JSON file exists, but one of the verification steps of scenario 1. failed. In that case, delete the file, and proceed as under scenario 3 (unless scenario 3 was already encountered, in which case an error must be reported).
+
+If scenario 1 has been completed successfully (i.e. the handshake works), create the local JSON file. There are two modes of creation. 
+In direct mode, the JSON file contains the following:
+- "hostname" (or the "network_interface" value returned from the remote JSON if "hostname" was not configured)
+- "ssh_hostname" (if different and applicable)
+- "port"
+In tunneling mode, allocate a free port "localport" on localhost, and create an SSH tunnel from ssh_hostname:port to localhost:localport.
+In that case, the JSON file contains the following:
+- "hostname" but with the value: "localhost"
+- "port" but with the value of the localport
+Finally, proceed as under possibility A.

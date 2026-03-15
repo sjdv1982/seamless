@@ -1,0 +1,17 @@
+A jobserver can only work with a remote buffer server to store the results. A database is also
+required if nested transformations are to be supported.
+
+The buffer+database configuration of seamless-jobserver is done by the Seamless client that launches it.
+The seamless-config package has a function that takes an argument "cluster" and inspects:
+
+- All extern clients in database_remote
+- All launched clients in database_remote with the specified cluster.
+
+For all clients, it extracts their URL and readonly flags.
+Then, it does the same inspection but for buffer_remote instead of database_remote.
+
+The results must be aggregated by the function in a format that `.define_extern_client` would understand, i.e. as a list of entries containing parameters for "readonly", "directory" (optional) and "url" (optional). One such list for database_remote, one list for buffer_remote.
+
+Finally, for each launched buffer client (not database client), the function extracts its workdir using configure_hashserver. It adds an entry to the list containing this workdir as "directory", and copy "readonly" from the client. If it is a readonly client, the existing entry is removed.
+
+The function returns a dict containing the two entry lists, under the keys "database" and "buffer".

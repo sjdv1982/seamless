@@ -1,0 +1,21 @@
+[build-system]
+requires = ["setuptools>=64"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "seamless-dask"
+version = "0.0.0"
+description = ""
+requires-python = ">=3.12"
+dependencies = [
+    "dask",
+    "distributed",
+]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["seamless_dask*"]
+exclude = ["plans*"]
+
+[project.scripts]
+seamless-dask-wrapper = "seamless_dask.wrapper:main"

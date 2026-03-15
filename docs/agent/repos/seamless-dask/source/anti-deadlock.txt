@@ -1,0 +1,78 @@
+The plan to prevent Dask deadlock is as follows:
+
+Dask workers are created with 1 process, N spawned Seamless workers and T * N worker threads.
+T is the capacity per-worker throttle semaphore (WorkerManager _limits attribute in worker.py).
+
+Local transformers (i.e. with local=True) are not allowed to submit to Dask. Since a main
+Seamless client with a Dask client doesn't have spawn, this means that top-level local
+transformations run in-process and won't cause deadlock unless massive numbers of them
+are launched concurrently (we can do nothing against that, and the problem will be obvious
+to the user). Nested local transformations are harmless if direct. If delayed, they will be 
+delegated to the parent, but become direct (sync) if the load is too high (more than T * N
+running transformations, i.e. all throttle slots occupied), so they won't cause deadlock either.
+
+Top-level non-local transformations will be submitted to Dask. If they don't submit nested
+transformations, they will simply run in parallel on the Dask workers, and eventually finish.
+
+The problem is then confined to non-local transformations that are nesting, i.e. they 
+launched their own non-local transformations. The risk is that both the nesting
+transformation and the nested transformation occupy (block) a Dask worker thread, and that 
+the nesting transformation is idle-blocking, i.e. not doing any work and having no return 
+guarantee: any nested transformation may itself be nesting and become idle-blocking, 
+and if all Dask worker threads or Seamless throttle slots are occupied by idle-blocking
+transformations, we have a deadlock. If we are out of throttle slots, the deadlock is on
+the current Dask worker; if we are out of Dask worker threads, the deadlock may become 
+cluster-wide. We want to avoid either kind.
+
+
+Proposed solution. 
+
+1. Define a Dask resource S and only base transformation tasks require one unit (slot) of S.
+Every Dask worker has N units of S, so up to N base tasks will run in parallel. Thin, fat,
+and fat-checksum tasks do not claim S.
+
+2. Any non-local transformation will try to call "compute_with_dask" (sync or async).
+The core of the solution is that compute_with_dask must be preceded by a blocking
+"permission asking routine". For top-level transformations, this routine runs directly.
+For nested transformations, there will be a request to the parent where the routine is run
+and the nesting transformation waits for it.
+The permission routine is bypassed when the transformation meta has driver=True, or when
+running in a process that is not a Seamless worker and has not spawned a local worker pool.
+Additionally, a driver execution context is used when a transformation runs: if the
+transformation dict contains __meta__.driver=True, a thread-local flag is set for the
+duration of that transformation's execution. Any nested transformations submitted from
+within the same thread will then bypass the permission routine, even if they are not
+marked driver=True themselves. This context is thread-safe (stored in threading.local())
+and is restored after each transformation finishes, so sequential tasks do not leak state.
+Note that the driver context does not automatically propagate to new threads spawned inside
+the transformation body.
+
+3. Whenever permission is given, increment S by one. As long as S is no larger than T * N,
+give permission instantly. This will make more and more of the Dask worker thread pool available.
+When compute_with_dask has finished, inform the parent so it can decrement S back again.
+
+If S is at least T * N, and the load (number of occupied throttling slots) is less than 50 %, the
+permission routine waits until the next 10 sec epoch. Then, it will give permission to up to 
+5 % * T * N (minimum: 1) of the permission requests at random and deny it to all others. 
+This causes a few Dask tasks per 10 seconds to be submitted.
+
+If S is at least T * N, and the load (number of occupied throttling slots) is between 50 % and 85 %, the
+permission routine waits until the next 10 sec epoch. 
+Then, it will give permission to 1 of the permission requests at random and deny it to all others. 
+This causes 1 Dask task per 10 seconds to be submitted.
+
+If S is at least T * N, and the load (number of occupied throttling slots) is above 85 %, the
+permission routine waits until the next 10 sec epoch. Then, it will deny all permission requests.
+
+4. In case of denied permission, the nesting transformation will have a 90 % chance to try
+again, and a 10 % chance to run by itself the nested transformation, sync and in-process. 
+
+5. The nesting transformation will always try again if the nested transformation 
+has an environment that is incompatible with local execution.
+For example, a GPU environment is incompatible with a worker that has no GPU.
+Environment analysis is necessary to show this. 
+
+It is hoped that this solution will eliminate the risk of deadlock, except in trivial cases:
+- Flooding (thousands of concurrent transformations within one process)
+- Very deep levels of nesting (10 or more)
+- Environment definitions that are incompatible with all Dask workers in the cluster.

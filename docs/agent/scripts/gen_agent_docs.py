@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import ast
 import json
+import os
 import pathlib
 import re
 import shutil
@@ -23,6 +24,9 @@ from typing import Iterable
 
 
 ROOT = pathlib.Path(__file__).resolve().parents[3]
+WORKSPACE_ROOT = pathlib.Path(
+    os.environ.get("WORKSPACE_DIR", str(ROOT.parent))
+).resolve()
 AGENT_DOCS = ROOT / "docs" / "agent"
 PUBLIC_API = AGENT_DOCS / "public-api.json"
 INDEX = AGENT_DOCS / "index.json"
@@ -222,14 +226,16 @@ def _generate_python_api(public_api: dict) -> dict[str, str]:
     for src in sources:
         module_name = src["module"]
         relpath = src["path"]
-        abspath = ROOT / relpath
-        if not abspath.exists():
+        candidate_paths = [
+            ROOT / relpath,
+            WORKSPACE_ROOT / relpath,
+        ]
+        abspath = next((p for p in candidate_paths if p.exists()), None)
+        if abspath is None:
             raise SystemExit(f"Missing source file for {module_name}: {relpath}")
         tree = ast.parse(_read_text(abspath), filename=str(abspath))
         module_doc, symbols = _collect_symbols(module_name, tree)
-        exports = None
-        if relpath.endswith("__init__.py") and not module_doc.strip() and not symbols:
-            exports = _extract_dunder_all(tree)
+        exports = _extract_dunder_all(tree) if relpath.endswith("__init__.py") else None
         page = _render_api_page(module_name, module_doc, symbols, exports=exports)
         page_path = API_DIR / "python" / f"{module_name}.md"
         _write_text(page_path, page)

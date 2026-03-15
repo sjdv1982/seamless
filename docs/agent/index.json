@@ -1,6 +1,150 @@
 {
-  "generated_at": 1770915383,
+  "generated_at": 1773608852,
   "symbols": {
+    "seamless.CacheMissError": {
+      "anchor": "seamless-cachemisserror",
+      "page": "api/python/seamless.md"
+    },
+    "seamless.buffer_class.Buffer": {
+      "anchor": "seamless-buffer-class-buffer",
+      "page": "api/python/seamless.buffer_class.md"
+    },
+    "seamless.buffer_class.Buffer.checksum": {
+      "anchor": "seamless-buffer-class-buffer-checksum",
+      "page": "api/python/seamless.buffer_class.md"
+    },
+    "seamless.buffer_class.Buffer.content": {
+      "anchor": "seamless-buffer-class-buffer-content",
+      "page": "api/python/seamless.buffer_class.md"
+    },
+    "seamless.buffer_class.Buffer.decode": {
+      "anchor": "seamless-buffer-class-buffer-decode",
+      "page": "api/python/seamless.buffer_class.md"
+    },
+    "seamless.buffer_class.Buffer.decref": {
+      "anchor": "seamless-buffer-class-buffer-decref",
+      "page": "api/python/seamless.buffer_class.md"
+    },
+    "seamless.buffer_class.Buffer.from_async": {
+      "anchor": "seamless-buffer-class-buffer-from-async",
+      "page": "api/python/seamless.buffer_class.md"
+    },
+    "seamless.buffer_class.Buffer.get_checksum": {
+      "anchor": "seamless-buffer-class-buffer-get-checksum",
+      "page": "api/python/seamless.buffer_class.md"
+    },
+    "seamless.buffer_class.Buffer.get_checksum_async": {
+      "anchor": "seamless-buffer-class-buffer-get-checksum-async",
+      "page": "api/python/seamless.buffer_class.md"
+    },
+    "seamless.buffer_class.Buffer.get_value": {
+      "anchor": "seamless-buffer-class-buffer-get-value",
+      "page": "api/python/seamless.buffer_class.md"
+    },
+    "seamless.buffer_class.Buffer.get_value_async": {
+      "anchor": "seamless-buffer-class-buffer-get-value-async",
+      "page": "api/python/seamless.buffer_class.md"
+    },
+    "seamless.buffer_class.Buffer.incref": {
+      "anchor": "seamless-buffer-class-buffer-incref",
+      "page": "api/python/seamless.buffer_class.md"
+    },
+    "seamless.buffer_class.Buffer.load": {
+      "anchor": "seamless-buffer-class-buffer-load",
+      "page": "api/python/seamless.buffer_class.md"
+    },
+    "seamless.buffer_class.Buffer.save": {
+      "anchor": "seamless-buffer-class-buffer-save",
+      "page": "api/python/seamless.buffer_class.md"
+    },
+    "seamless.buffer_class.Buffer.tempref": {
+      "anchor": "seamless-buffer-class-buffer-tempref",
+      "page": "api/python/seamless.buffer_class.md"
+    },
+    "seamless.buffer_class.Buffer.write": {
+      "anchor": "seamless-buffer-class-buffer-write",
+      "page": "api/python/seamless.buffer_class.md"
+    },
+    "seamless.checksum_class.Checksum": {
+      "anchor": "seamless-checksum-class-checksum",
+      "page": "api/python/seamless.checksum_class.md"
+    },
+    "seamless.checksum_class.Checksum.bytes": {
+      "anchor": "seamless-checksum-class-checksum-bytes",
+      "page": "api/python/seamless.checksum_class.md"
+    },
+    "seamless.checksum_class.Checksum.decref": {
+      "anchor": "seamless-checksum-class-checksum-decref",
+      "page": "api/python/seamless.checksum_class.md"
+    },
+    "seamless.checksum_class.Checksum.find": {
+      "anchor": "seamless-checksum-class-checksum-find",
+      "page": "api/python/seamless.checksum_class.md"
+    },
+    "seamless.checksum_class.Checksum.fingertip": {
+      "anchor": "seamless-checksum-class-checksum-fingertip",
+      "page": "api/python/seamless.checksum_class.md"
+    },
+    "seamless.checksum_class.Checksum.fingertip_sync": {
+      "anchor": "seamless-checksum-class-checksum-fingertip-sync",
+      "page": "api/python/seamless.checksum_class.md"
+    },
+    "seamless.checksum_class.Checksum.hex": {
+      "anchor": "seamless-checksum-class-checksum-hex",
+      "page": "api/python/seamless.checksum_class.md"
+    },
+    "seamless.checksum_class.Checksum.incref": {
+      "anchor": "seamless-checksum-class-checksum-incref",
+      "page": "api/python/seamless.checksum_class.md"
+    },
+    "seamless.checksum_class.Checksum.load": {
+      "anchor": "seamless-checksum-class-checksum-load",
+      "page": "api/python/seamless.checksum_class.md"
+    },
+    "seamless.checksum_class.Checksum.resolution": {
+      "anchor": "seamless-checksum-class-checksum-resolution",
+      "page": "api/python/seamless.checksum_class.md"
+    },
+    "seamless.checksum_class.Checksum.resolve": {
+      "anchor": "seamless-checksum-class-checksum-resolve",
+      "page": "api/python/seamless.checksum_class.md"
+    },
+    "seamless.checksum_class.Checksum.save": {
+      "anchor": "seamless-checksum-class-checksum-save",
+      "page": "api/python/seamless.checksum_class.md"
+    },
+    "seamless.checksum_class.Checksum.tempref": {
+      "anchor": "seamless-checksum-class-checksum-tempref",
+      "page": "api/python/seamless.checksum_class.md"
+    },
+    "seamless.checksum_class._run_coro_in_new_loop": {
+      "anchor": "seamless-checksum-class--run-coro-in-new-loop",
+      "page": "api/python/seamless.checksum_class.md"
+    },
+    "seamless.checksum_class._run_coro_in_worker_thread": {
+      "anchor": "seamless-checksum-class--run-coro-in-worker-thread",
+      "page": "api/python/seamless.checksum_class.md"
+    },
+    "seamless.checksum_class.validate_checksum": {
+      "anchor": "seamless-checksum-class-validate-checksum",
+      "page": "api/python/seamless.checksum_class.md"
+    },
+    "seamless.ensure_open": {
+      "anchor": "seamless-ensure-open",
+      "page": "api/python/seamless.md"
+    },
+    "seamless.is_worker": {
+      "anchor": "seamless-is-worker",
+      "page": "api/python/seamless.md"
+    },
+    "seamless.register_close_hook": {
+      "anchor": "seamless-register-close-hook",
+      "page": "api/python/seamless.md"
+    },
+    "seamless.set_is_worker": {
+      "anchor": "seamless-set-is-worker",
+      "page": "api/python/seamless.md"
+    },
     "seamless_config.select._validate": {
       "anchor": "seamless-config-select--validate",
       "page": "api/python/seamless_config.select.md"
@@ -343,6 +487,9 @@
       "seamless-run": "api/cli/seamless-run.md"
     },
     "api_python": {
+      "seamless": "api/python/seamless.md",
+      "seamless.buffer_class": "api/python/seamless.buffer_class.md",
+      "seamless.checksum_class": "api/python/seamless.checksum_class.md",
       "seamless.transformer": "api/python/seamless.transformer.md",
       "seamless_config.select": "api/python/seamless_config.select.md",
       "seamless_config.tools": "api/python/seamless_config.tools.md",

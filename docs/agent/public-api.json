@@ -3,8 +3,20 @@
   "python": {
     "sources": [
       {
+        "module": "seamless",
+        "path": "seamless-base/seamless/__init__.py"
+      },
+      {
         "module": "seamless.transformer",
         "path": "seamless-base/seamless/transformer/__init__.py"
+      },
+      {
+        "module": "seamless.buffer_class",
+        "path": "seamless-base/seamless/buffer_class.py"
+      },
+      {
+        "module": "seamless.checksum_class",
+        "path": "seamless-base/seamless/checksum_class.py"
       },
       {
         "module": "seamless_config.tools",

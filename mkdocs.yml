@@ -2,6 +2,7 @@ site_name: Seamless Documentation
 site_description: Documentation for the new Seamless and legacy Seamless references
 docs_dir: docs/agent
 site_dir: .pages-new
+use_directory_urls: false
 exclude_docs: |
   README.md
 
@@ -14,6 +15,7 @@ plugins:
 nav:
   - Home: index.md
   - Agent Docs Overview: overview.md
+  - Workspace Repos: repos/index.md
   - Contracts:
       - Identity and Caching: contracts/identity-and-caching.md
       - direct/delayed/Transformation: contracts/direct-delayed-and-transformation.md
@@ -24,7 +26,10 @@ nav:
       - Content-addressed Files and Dirs: contracts/content-addressed-files-and-dirs.md
       - Execution Backends: contracts/execution-backends.md
   - API:
+      - seamless: api/python/seamless.md
       - seamless.transformer: api/python/seamless.transformer.md
+      - seamless.buffer_class: api/python/seamless.buffer_class.md
+      - seamless.checksum_class: api/python/seamless.checksum_class.md
       - seamless_config.select: api/python/seamless_config.select.md
       - seamless_config.tools: api/python/seamless_config.tools.md
       - seamless_transformer.transformation_class: api/python/seamless_transformer.transformation_class.md

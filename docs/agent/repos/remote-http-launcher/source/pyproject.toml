@@ -1,0 +1,18 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "remote-http-launcher"
+version = "0.1.0"
+description = "Utility to launch Seamless remote HTTP services, manage state, and create optional SSH tunnels."
+requires-python = ">=3.8"
+dependencies = [
+    "PyYAML>=5.4",
+]
+
+[project.scripts]
+remote-http-launcher = "remote_http_launcher:main"
+
+[tool.setuptools]
+py-modules = ["remote_http_launcher"]

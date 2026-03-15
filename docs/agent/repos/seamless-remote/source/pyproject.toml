@@ -1,0 +1,10 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "seamless-remote"
+version = "0.0.0"
+
+[tool.setuptools]
+script-files = ["bin/seamless-resolve", "bin/seamless-fingertip"]
