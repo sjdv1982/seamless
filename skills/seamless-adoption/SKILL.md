@@ -83,6 +83,9 @@ Use this framing:
 - `seamless-run` (commands/files/pipes): often low syntactic invasiveness if the workflow is already file/CLI-based; main work is declaring/recognizing inputs/outputs and environment.
 - Python steps (`direct`/`delayed`): often light syntactically, but pushes more on the mental model (explicit dependencies, reduced hidden state/side effects) to get predictable reuse.
 
+There is also a zero-invasiveness option:
+- Pure Dask mode (`pure_dask: true`): uses Seamless only as a managed Dask cluster launcher on HPC. No Seamless computation model, no code changes. The caching/reproducibility layer is available but strictly opt-in. See `references/execution-backends.md` for details.
+
 Always bring it back to this sentence:
 - “The invasiveness is usually **more mental than syntactic**—unless your code relies heavily on implicit state.”
 
