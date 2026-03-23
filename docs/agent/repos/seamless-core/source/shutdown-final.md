@@ -1,6 +1,6 @@
 Here is the final version of the plan proposed in shutdown.md point 5, taking Codex's comments at the end of the document into account.
 
-There will be only one central shutdown routine, part of `seamless-base`, and called `seamless.close()`, analogous to `file.close()`. All current shutdown logic is moved into this routine.For now, the user is asked to call `seamless.close()` when the interpreter shuts down to get the guarantee of no-buffer-writes-lost and no-interpreter-hang-at-shutdown. The routine will also register itself with `atexit`. At the beginning it sets a flag so that it won't run twice. Also, it won't run from inside a spawned worker.
+There will be only one central shutdown routine, part of `seamless-core`, and called `seamless.close()`, analogous to `file.close()`. All current shutdown logic is moved into this routine.For now, the user is asked to call `seamless.close()` when the interpreter shuts down to get the guarantee of no-buffer-writes-lost and no-interpreter-hang-at-shutdown. The routine will also register itself with `atexit`. At the beginning it sets a flag so that it won't run twice. Also, it won't run from inside a spawned worker.
 
 At the beginning, after the run-twice flag check, it will check if it was called from `atexit`.
 If so, a warning is printed that it should have been called earlier.

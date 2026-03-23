@@ -19,7 +19,7 @@ dependencies:
       - mkdocs
       - mkdocs-material
       - mkdocstrings[python]
-      - -e seamless-base
+      - -e seamless-core
       - -e remote-http-launcher
       - -e seamless-config
       - -e seamless-remote

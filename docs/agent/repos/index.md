@@ -4,7 +4,7 @@ This section is generated from sibling repositories in this workspace.
 
 - Workspace root: `/home/sjoerd/seamless1`
 
-- [`seamless-base`](seamless-base/index.md) (7 files)
+- [`seamless-core`](seamless-core/index.md) (7 files)
 - [`seamless-config`](seamless-config/index.md) (2 files)
 - [`seamless-remote`](seamless-remote/index.md) (3 files)
 - [`seamless-transformer`](seamless-transformer/index.md) (2 files)

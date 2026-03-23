@@ -1,2 +1,5 @@
 _site/
 .pages-new/
+*.egg-info/
+build/
+dist/

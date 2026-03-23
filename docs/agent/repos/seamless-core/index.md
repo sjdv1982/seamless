@@ -1,6 +1,6 @@
-# seamless-base
+# seamless-core
 
-Snapshot source: `/home/sjoerd/seamless1/seamless-base`
+Snapshot source: `/home/sjoerd/seamless1/seamless-core`
 
 Copied files:
 
@@ -11,4 +11,3 @@ Copied files:
 - [`shutdown-final.md`](source/shutdown-final.md)
 - [`shutdown.md`](source/shutdown.md)
 - [`plans/test-suite.txt`](source/plans/test-suite.txt)
-

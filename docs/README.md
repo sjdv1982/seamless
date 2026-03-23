@@ -37,7 +37,7 @@ bash tools/pages/build-site.sh /tmp/seamless-site
 
 `tools/pages/sync_repo_docs.sh` assumes a multi-repo workspace where this repo lives alongside related repos:
 
-- `seamless-base`
+- `seamless-core`
 - `seamless-config`
 - `seamless-remote`
 - `seamless-transformer`
@@ -52,7 +52,7 @@ Default assumption:
 - Workspace root is the parent directory of this repo, i.e. `$(cd .. && pwd)`.
 - Example expected layout:
   - `/home/sjoerd/seamless1/seamless` (this repo)
-  - `/home/sjoerd/seamless1/seamless-base`
+  - `/home/sjoerd/seamless1/seamless-core`
   - `/home/sjoerd/seamless1/seamless-config`
   - etc.
 

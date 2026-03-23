@@ -6,7 +6,7 @@ WORKSPACE_DIR="${WORKSPACE_DIR:-$(cd "${ROOT_DIR}/.." && pwd)}"
 DEST_BASE="${ROOT_DIR}/docs/agent/repos"
 
 REPOS=(
-  "seamless-base"
+  "seamless-core"
   "seamless-config"
   "seamless-remote"
   "seamless-transformer"

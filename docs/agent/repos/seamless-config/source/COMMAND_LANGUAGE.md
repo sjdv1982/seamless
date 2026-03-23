@@ -6,7 +6,7 @@ work directory and its parents:
 | File | Recommended policy | Purpose |
 | --- | --- | --- |
 | `seamless.yaml` | Commit to version control | Project-wide, deterministic defaults |
-| `.seamless.yaml` | Add to `.gitignore` | Local, developer-specific overrides (e.g. cluster
+| `seamless.profile.yaml` | Add to `.gitignore` | Local, developer-specific overrides (e.g. cluster
 hostnames or experimental settings) |
 
 Both files use the same command language described below. `load_config_files()`
@@ -73,7 +73,7 @@ they are skipped.
 - project: my-shared-project
 - inherit_from_parent
 
-# .seamless.yaml (ignored in Git)
+# seamless.profile.yaml (ignored in Git)
 - clusters:
     local:
       tunnel: false
@@ -86,5 +86,5 @@ they are skipped.
   - cluster: mycluster
 ```
 
-The `.seamless.yaml` snippet defines the local and mycluster clusters, selects the `local` entry as the active cluster, and only switches to the
+The `seamless.profile.yaml` snippet defines the local and mycluster clusters, selects the `local` entry as the active cluster, and only switches to the
 `mycluster` cluster when the current stage equals `prod`.

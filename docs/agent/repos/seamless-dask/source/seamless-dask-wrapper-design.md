@@ -245,6 +245,6 @@ They are read from `clusters.yaml` (or a yaml file in `clusters/`).
 
 (*) = other than SLURM, which has a job_cpu override for the reserved number of cores.
 
-(**): Note that there is `seamless.yaml` under version control, and `.seamless.yaml`
+(**): Note that there is `seamless.yaml` under version control, and `seamless.profile.yaml`
 which is not under version control, containing system-specific configuration.
-The default usage is simply to define "queue" in `.seamless.yaml`, selecting a pre-defined queue.
+The default usage is simply to define "queue" in `seamless.profile.yaml`, selecting a pre-defined queue.

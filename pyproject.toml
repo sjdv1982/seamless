@@ -1,15 +1,18 @@
 [build-system]
-requires = ["setuptools>=61.0"]
+requires = ["setuptools>=69", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "seamless-suite"
 version = "0.0.0"
 description = "Seamless umbrella distribution (all components by default)"
-requires-python = ">=3.12"
+readme = "README.md"
+requires-python = ">=3.10"
+license = "MIT"
+license-files = ["LICENSE.txt"]
 authors = [{name = "Sjoerd de Vries"}]
 dependencies = [
-    "seamless-base",
+    "seamless-core",
     "seamless-config",
     "seamless-remote",
     "seamless-transformer",
@@ -18,3 +21,22 @@ dependencies = [
     "seamless-database",
     "remote-http-launcher",
 ]
+keywords = ["seamless", "suite", "workflow", "reproducibility"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Science/Research",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Operating System :: OS Independent",
+    "Topic :: Scientific/Engineering",
+    "Topic :: Software Development :: Libraries",
+]
+
+[project.urls]
+Homepage = "https://github.com/sjdv1982/seamless"
+Repository = "https://github.com/sjdv1982/seamless"
+Issues = "https://github.com/sjdv1982/seamless/issues"
+
+[tool.setuptools]
+packages = []
