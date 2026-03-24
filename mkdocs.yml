@@ -1,5 +1,5 @@
-site_name: Seamless Documentation
-site_description: Documentation for the new Seamless and legacy Seamless references
+site_name: Seamless — Agent Documentation
+site_description: Agent-consumable contracts and API reference for the Seamless suite
 docs_dir: docs/agent
 site_dir: .pages-new
 use_directory_urls: false

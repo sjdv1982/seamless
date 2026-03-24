@@ -4,6 +4,7 @@ Snapshot source: `/home/sjoerd/seamless1/seamless-dask`
 
 Copied files:
 
+- [`RELEASE.md`](source/RELEASE.md)
 - [`anti-deadlock.txt`](source/anti-deadlock.txt)
 - [`lifecycle-discussion-followup.md`](source/lifecycle-discussion-followup.md)
 - [`lifecycle.txt`](source/lifecycle.txt)

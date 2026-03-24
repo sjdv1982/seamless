@@ -10,6 +10,12 @@ I am looking into automatizing the test suite a bit further. Challenges:
 
 ---
 
+
+SJOERD: 15 March 
+=================
+
+I reverted the below because it broke things. To look into later.
+
 Notes (2026-02-10)
 ==================
 
