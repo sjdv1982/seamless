@@ -93,15 +93,15 @@
     <ul class="current">
     <li class="toctree-l3"><a class="reference internal" href="#exports">Exports</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="#seamlesscachemisserror">seamless.CacheMissError</a>
+    <li class="toctree-l3"><a class="reference internal" href="#cachemisserror">CacheMissError</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="#seamlessensure_open">seamless.ensure_open</a>
+    <li class="toctree-l3"><a class="reference internal" href="#ensure_open">ensure_open</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="#seamlessis_worker">seamless.is_worker</a>
+    <li class="toctree-l3"><a class="reference internal" href="#is_worker">is_worker</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="#seamlessregister_close_hook">seamless.register_close_hook</a>
+    <li class="toctree-l3"><a class="reference internal" href="#register_close_hook">register_close_hook</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="#seamlessset_is_worker">seamless.set_is_worker</a>
+    <li class="toctree-l3"><a class="reference internal" href="#set_is_worker">set_is_worker</a>
     </li>
     </ul>
                 </li>
@@ -167,31 +167,31 @@
 <li><code>register_close_hook</code></li>
 </ul>
 <p>For details, see the generated API pages for the underlying implementation modules.</p>
-<h2 id="seamlesscachemisserror"><code>seamless.CacheMissError</code></h2>
+<h2 id="cachemisserror"><code>CacheMissError</code></h2>
 <ul>
 <li>kind: <code>class</code></li>
 <li>signature: <code>CacheMissError</code></li>
 </ul>
 <p>Exception for when a checksum cannot be mapped to a buffer</p>
-<h2 id="seamlessensure_open"><code>seamless.ensure_open</code></h2>
+<h2 id="ensure_open"><code>ensure_open</code></h2>
 <ul>
 <li>kind: <code>function</code></li>
 <li>signature: <code>ensure_open(op, *, mark_required)</code></li>
 </ul>
 <p>Raise RuntimeError if Seamless was closed; optionally mark that close is required.</p>
-<h2 id="seamlessis_worker"><code>seamless.is_worker</code></h2>
+<h2 id="is_worker"><code>is_worker</code></h2>
 <ul>
 <li>kind: <code>function</code></li>
 <li>signature: <code>is_worker()</code></li>
 </ul>
 <p>Return True when running inside a Seamless worker process.</p>
-<h2 id="seamlessregister_close_hook"><code>seamless.register_close_hook</code></h2>
+<h2 id="register_close_hook"><code>register_close_hook</code></h2>
 <ul>
 <li>kind: <code>function</code></li>
 <li>signature: <code>register_close_hook(hook)</code></li>
 </ul>
 <p>Register a callable to be run when seamless.close() executes.</p>
-<h2 id="seamlessset_is_worker"><code>seamless.set_is_worker</code></h2>
+<h2 id="set_is_worker"><code>set_is_worker</code></h2>
 <ul>
 <li>kind: <code>function</code></li>
 <li>signature: <code>set_is_worker(value)</code></li>
