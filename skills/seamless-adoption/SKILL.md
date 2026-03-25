@@ -186,11 +186,10 @@ Explain deep checksums as a structured content identity (Merkle-tree-like):
 - `references/deep-checksums.md`: “precisely define” explanation + analogies.
 - `references/env-null-hypothesis.md`: environment-as-nuisance null hypothesis + falsification via recomputation + scratch/witness guidance.
 - `references/seamless-primitives.md`: Seamless mental model + practical API patterns for porting/refactoring (imports/modules, closures, scratch, wiring).
-- `references/docs-contract.md`: how to rely on Seamless docs/docstrings (no source) + what primitives/contracts to confirm before porting.
-- `references/qa-from-prompt-4.md`: common questions and answers about Seamless adoption (invasiveness, comparison framing, when Seamless is/isn't a good fit).
+- `references/docs-contract.md`: checklist of API contracts to confirm before porting (identity, caching, execution model, inputs, modules, remote safety). Also lists `docs/agent/contracts/` pages available in a full repo checkout.
+- `references/adoption-qa-patterns.md`: common questions and answer patterns about Seamless adoption (invasiveness, comparison framing, when Seamless is/isn't a good fit).
 - `references/portability-checklist.md`: concrete fit heuristics for Python and bash, with a verdict rubric.
 - `references/porting-recipes.md`: safe porting patterns (direct/delayed, nesting, module inclusion).
 - `references/remote-donts.md`: what not to suggest for remote execution, with better alternatives.
-- `references/execution-backends.md`: what “remote” means operationally (jobserver vs daskserver), and how to discuss HPC without hand-waving.
-- `references/dask-integration.md`: how Seamless can use Dask for HPC-style execution (when available), and what to ask/verify.
+- `references/execution-backends.md`: what “remote” means operationally (jobserver vs daskserver), Dask integration details, and how to discuss HPC without hand-waving.
 - `references/fair-and-identity.md`: why FAIR "persistent identifiers" are locators not identities, and how Seamless's content-addressing complements FAIR for reproducible computation.

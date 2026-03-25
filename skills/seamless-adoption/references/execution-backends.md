@@ -73,3 +73,20 @@ Ask these before giving advice (don’t guess):
 - For “Seamless is too heavy operationally” concerns: mention **jobserver** first as the low-ops path.
 - For “Seamless lacks HPC” concerns: mention **daskserver** and that scheduler support can flow through Dask jobqueue on SLURM/OAR.
 - For many short tasks: highlight the “bundled worker” model as scheduler-friendly (avoids overwhelming the scheduler with one submission per tiny task).
+
+### When to bring up Dask integration
+
+- The user mentions: HPC, cluster, scheduler, distributed compute, SLURM, Kubernetes, “Dask”, “Ray”, “joblib”, “Prefect”.
+- The workload is many independent steps (map-style), or a DAG of medium/large steps.
+- Before advising, check: is `seamless-dask` installed/enabled? Do they already have a Dask cluster, or do they want Seamless to launch one? What are the constraints (containers, conda, network)?
+
+### Dask phrasing (use these)
+
+- “Seamless can keep its checksum/caching/provenance model, while delegating execution to Dask when configured.”
+- “This is a different story from 'Seamless vs Dask': Seamless can *use* Dask as an execution backend.”
+- “On schedulers, this typically means *bundled long-lived workers* that execute many Seamless tasks, rather than one scheduler submission per tiny step.”
+
+### Porting implications when Dask is available
+
+- Prefer `delayed` pipelines so the execution backend can schedule a task graph.
+- Still apply the same determinism/identity rules: make implicit inputs explicit, bind project code by content, don't scratch witness outputs needed for audits.
