@@ -30,7 +30,7 @@ BANNER_SNIPPET = """<!-- seamless-legacy-banner -->
 </style>
 <div id="seamless-legacy-banner">
   Legacy Seamless documentation (0.x). This branch is deprecated.
-  Use the new docs at <a href="/">Seamless Documentation</a>.
+  Use the new docs at <a href="/seamless/">Seamless Documentation</a>.
 </div>
 """
 
