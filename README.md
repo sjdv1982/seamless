@@ -29,8 +29,35 @@ This installs all standard Seamless components. For a minimal install, the core 
 | `seamless-transformer` | `from seamless.transformer import direct, delayed` | `direct`, `delayed`, `seamless-run`, `seamless-upload`, `seamless-download` |
 | `seamless-config` | `import seamless.config` | `seamless.config.init()`, `seamless-init` |
 
+## Quick Examples
+
+### Python: `direct`
+
+```python
+from seamless.transformer import direct
+
+@direct
+def add(a, b):
+    return a + b
+
+add(2, 3)   # runs the function, returns 5
+add(2, 3)   # cache hit — returns 5 instantly
+```
+
+### Command line: `seamless-run`
+
+```bash
+seamless-run paste data/a.txt data/b.txt          # runs, caches result
+seamless-run paste data/a.txt data/b.txt          # cache hit — instant
+seamless-run paste data/a.txt data/c.txt          # new inputs — runs again
+```
+
 ## Documentation
 
 Full documentation — including getting-started guides, cluster setup, remote execution, and reference API — is at:
 
 **<https://sjdv1982.github.io/seamless/>**
+
+## Agent Skill
+
+Seamless includes an agent skill (`seamless-adoption`) for AI coding assistants. It guides assessment of codebase fit and planning/executing ports — covering both the Python face (`direct`/`delayed`) and the Unix face (`seamless-run`). See [skills/seamless-adoption/SKILL.md](skills/seamless-adoption/SKILL.md).

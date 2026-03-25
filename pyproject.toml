@@ -21,7 +21,7 @@ dependencies = [
     "seamless-database",
     "remote-http-launcher",
 ]
-keywords = ["seamless", "suite", "workflow", "reproducibility"]
+keywords = ["seamless", "suite", "workflow", "reproducibility", "caching", "pipeline", "HPC", "deterministic", "content-addressed"]
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Science/Research",
