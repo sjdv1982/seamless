@@ -72,6 +72,10 @@ seamless-download out-0.1.csv out-0.2.csv out-0.5.csv
 
 The `--no-download` (`-nd`) flag runs the transformation and records the result checksum without fetching the result bytes. Use it when you only need the checksum (for sharing, replay, or downstream inputs) and not the bytes themselves.
 
+Note that after uploading, you can remove large-dataset.h5 from your local machine. You can do `seamless-run analyze large-dataset.h5` or `seamless-run analyze large-dataset.h5.CHECKSUM`, Seamless will treat them the same.
+
+Therefore, an alternate "upload" strategy is for the case where the large dataset is already on the remote machine: login to the remote machine, install Seamless, configure the hashserver storage dir, and do something like `cd /tmp; ln -s /data/large-dataset.h5; seamless-upload --hardlink large-dataset.h5`. This will create `large-dataset.h5.CHECKSUM`, which you can copy to your local machine. On the remote machine, '--hardlink' prevents duplication of the dataset.
+
 ---
 
 ## Checksum vs buffer: what travels where

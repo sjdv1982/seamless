@@ -2,7 +2,7 @@
 
 ## Driver transformations
 
-Because `delayed` functions return a `Transformation` handle, you can build *driver* transformations — functions that construct and dispatch sub-transformations as part of their own logic. Drivers are the primary way to express fan-out, conditionals, and reusable pipeline patterns.
+Because `delayed` functions return a `Transformation` handle, you can build *driver* transformations — functions that construct and dispatch sub-transformations as part of their own logic. Drivers are the primary way to express fan-out and conditionals.
 
 ### Fan-out
 
@@ -46,20 +46,6 @@ def pipeline(data, use_fast_path):
 
 Because the driver itself is a cached transformation, changing `use_fast_path` from `True` to `False` (with the same `data`) produces a new driver transformation checksum and re-executes the driver. The slow path runs; the fast path never runs. On the next call with `use_fast_path=True`, the driver is a cache hit and the fast-path result is returned immediately.
 
-### Reusable patterns
-
-Any Python function that composes `delayed` calls is inherently a reusable template. Python's regular abstraction mechanisms — functions, classes, modules — all work as expected:
-
-```python
-def normalise_pipeline(raw_data, ref_data, params):
-    """Returns a delayed transformation for the full normalisation pipeline."""
-    bg = subtract_background(raw_data, ref_data)
-    scaled = apply_scale(bg, params["scale"])
-    return smooth(scaled, params["sigma"])  # returns a Transformation handle
-```
-
-Call `normalise_pipeline(...)` to get a handle, then `.run()` or `.start()` to execute.
-
 ---
 
 ## Module inclusion
@@ -95,17 +81,15 @@ def compute(data):
     from my_package import process
     return process(data)
 
-compute.modules["my_package"] = "./my_package"
+compute.modules["my_package"] = my_package
 ```
 
-The module directory is checksummed and included in the transformation identity. If the source files change, the transformation checksum changes.
+The my_package source files are checksummed and included in the transformation identity. If the source files change, the transformation checksum changes.
 
-**Important**: the import must happen inside the function body. An import at the module level captures the current Python object from your local environment — it is not included in the transformation and is not available on the worker.
+### Local vs remote execution
 
-**Dynamic imports**: if your module uses dynamic imports (e.g., `importlib.import_module("utils")` inside a called function), make sure the dynamically imported modules are also included in `.modules`. Seamless cannot automatically discover dynamic import dependencies.
+Seamless always executes transformation code in a sandboxed namespace — outer-scope names are never available regardless of whether the worker is local or remote. `.globals` and `.modules` are therefore always required for any helper or value defined outside the function body.
 
-### Why this matters for remote execution
+With local execution (`execution: process` or `execution: spawn`), the worker happens to be on the same machine, so file paths you reference inside the transformation will resolve. But doing so creates an implicit dependency that Seamless cannot track: the file is not part of the transformation identity, so changes to it won't trigger re-execution and results may be silently stale. Always declare file dependencies explicitly rather than reading local paths inside a transformation.
 
-When transformations run locally (`execution: process` or `execution: spawn`), `.globals` and `.modules` are optional — the worker inherits your Python environment. When transformations run remotely (`execution: remote`), the worker is a clean process on a different machine that has no access to your local files. `.globals` and `.modules` ensure that every piece of code the transformation needs is bound by content and travels with the job.
-
-Never rely on "the package is installed on the server" for code you actively develop. Installed packages drift and break identity. Use `.modules` to bind your development code by content; use conda or Docker environments (`.environment`) for third-party library dependencies.
+For remote workers, third-party library dependencies must be declared explicitly via conda or Docker environments (`.environment`); the remote machine has no access to your local Python installation or filesystem.

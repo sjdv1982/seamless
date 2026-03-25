@@ -31,11 +31,12 @@ def add(a, b):
     return a + b
 
 tf = add(2, 3)          # returns a Transformation handle, does not execute
+tf.start()              # start execution in the background
 checksum = tf.compute() # execute and return the result's checksum (its identity)
 value = tf.run()        # execute (or use cache) and return the materialized value
 ```
 
-The handle also supports `.start()` for scheduling concurrent execution and `.task()` for async/await integration.
+The handle also supports `.task()` for async/await integration.
 
 When the same `delayed` function is called with the same arguments, the resulting transformation has the same checksum — the same identity. This is the foundation of Seamless's caching: identity is determined by content, not by when or where the computation runs.
 
@@ -120,6 +121,10 @@ def sample(n, seed):
 
 ### Basic usage
 
+```
+export SEAMLESS_LOCAL=1  # until we set up persistent caching
+```
+
 ```bash
 seamless-run paste data/a.txt data/b.txt
 ```
@@ -138,60 +143,28 @@ seamless-run mycommand --input config.json
 
 # Capture an output file produced by the command
 seamless-run mycommand --capture output.csv
-
 # Capture with renaming (server-side name : local name)
 seamless-run mycommand --capture result.dat:local-result.dat
 
 # Capture stdout to a file
-seamless-run mycommand --capture :stdout.txt
+seamless-run mycommand --capture :log.txt
 
 # Inject a variable input (becomes part of the transformation identity)
 seamless-run mycommand --var seed=42
 ```
 
-### Caching in action
-
-The transformation identity is the checksum of the command, its code, and all input checksums. When persistent storage is configured, Seamless looks up this identity in the database before executing. If a cached result is found, it is returned from the hashserver without re-executing the command. Changed inputs produce a different identity and trigger re-execution.
-
-```bash
-seamless-run paste data/a.txt data/b.txt     # executes, caches result
-seamless-run paste data/a.txt data/b.txt     # cache hit, instant
-
-# edit data/a.txt
-seamless-run paste data/a.txt data/b.txt     # different input checksum, re-executes
-```
+For how caching works in detail, see [Caching, identity, and sharing](caching.md).
 
 ### Environment and execution control
 
 `seamless-run` accepts flags that control where and how the transformation runs:
 
 ```bash
-# Force local execution (don't delegate to remote workers)
-seamless-run --local mycommand input.txt
-
 # Specify a conda environment for the command
 seamless-run --conda myenv mycommand input.txt
 
-# Specify a Docker image
-seamless-run --docker myimage:latest mycommand input.txt
-
 # Select project and stage (controls storage namespace)
 seamless-run --project myproject --stage prod mycommand input.txt
-```
-
-### Inspecting without executing
-
-The `--dry` flag parses arguments and prepares the transformation without running it, useful for verifying that argtyping inferred the right types:
-
-```bash
-# Parse only, show what would happen
-seamless-run --dry paste data/a.txt data/b.txt
-
-# Parse, write out the job directory for inspection
-seamless-run --dry --write-job ./my-job paste data/a.txt data/b.txt
-
-# Parse and upload inputs, but don't execute
-seamless-run --dry --upload paste data/a.txt data/b.txt
 ```
 
 ---
@@ -204,6 +177,7 @@ If your command reads files that are not declared as arguments (and therefore no
 
 ```bash
 # config.json is read by mycommand but not in the argument list
+
 seamless-run mycommand data.txt --input config.json
 ```
 
@@ -243,16 +217,22 @@ seamless-run 'echo START; paste data/a.txt data/b.txt' -i data/a.txt -i data/b.t
 
 ## Setting up persistent caching
 
-Without a cluster, each `seamless-run` invocation is a fresh process with no memory of previous runs. To demonstrate persistent caching, this is the minimum setup needed:
+Without a cluster, each `seamless-run` invocation is a fresh process with no memory of previous runs.
+
+```bash
+seamless-run sleep 2   # takes 2 seconds
+seamless-run sleep 2   # takes 2 seconds
+```
+
+To demonstrate persistent caching, this is the minimum setup needed:
 
 **`~/.seamless/clusters.yaml`** — define a cluster named `local`:
 
 ```yaml
 local:
-  tunnel: false
   type: local
   frontends:
-      hashserver:
+    - hashserver:
         bufferdir: /home/user/seamless-projects
       database:
         database_dir: /home/user/seamless-projects
@@ -262,13 +242,14 @@ local:
 
 ```yaml
 - cluster: local
-- project: myproject  # 
+- project: myproject
 - execution: process
 ```
 
-Then initialise:
+Then initialise, and remove the SEAMLESS_LOCAL flag:
 
 ```bash
+unset SEAMLESS_LOCAL
 seamless-init
 ```
 

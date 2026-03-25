@@ -4,15 +4,13 @@ A "cluster" in Seamless terminology is a named configuration that specifies wher
 
 ## Defining the cluster
 
-Cluster definitions live in `~/.seamless/clusters.yaml`. A minimal local cluster looks like this:
+Cluster definitions live in `~/.seamless/clusters.yaml`. A simple local cluster looks like this:
 
 ```yaml
 local:
-  tunnel: false
   type: local
   frontends:
-    - hostname: localhost
-      hashserver:
+    - hashserver:
         bufferdir: /path/to/seamless-buffers
         conda: hashserver
         network_interface: 127.0.0.1

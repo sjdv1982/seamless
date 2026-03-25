@@ -8,6 +8,13 @@ Seamless wraps both Python and command-line code. In Python, `direct` runs a fun
 
 Sharing works at two levels. The lightweight path is to exchange checksums: if two researchers have computed the same transformation, they already have the same result — no data transfer needed. The concrete path is to share the `seamless.db` file, a portable SQLite database that maps transformation checksums to result checksums. Copy it to a colleague, a cluster, or a publication archive, and every cached result travels with it. Combined, these two paths let a lab build up a shared computation cache that grows over time and never recomputes what anyone has already computed.
 
+## What about interactivity?
+
+This is Seamless 1.x, running on a new code architecture. Seamless 0.x offered an interactive, notebook-first workflow experience with reactive cells, Jupyter widget integration, filesystem mounting, and collaborative web interfaces. These
+features are being ported to the new architecture. If your work is primarily
+interactive/exploratory, you can use the [legacy version](https://sjdv1982.github.io/seamless/legacy/)
+today, or watch this space for updates.
+
 ## Installation
 
 ```bash

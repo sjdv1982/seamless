@@ -91,13 +91,18 @@ Each `seamless-run --qsubmit` invocation submits the job to the running queue se
 
 ### When to use `seamless-queue`
 
-Use `seamless-queue` when:
+For a small, fixed number of parallel commands, plain shell backgrounding is sufficient and simpler:
 
-- You have a loop of `seamless-run` calls in a shell script and want them to run in parallel.
-- Each step is independent (no data dependencies between the parallel jobs).
-- You want to control the degree of parallelism with `--workers`.
+```bash
+seamless-run paste data/a.txt data/b.txt &
+seamless-run paste data/c.txt data/d.txt &
+seamless-run paste data/e.txt data/f.txt &
+wait   # block until all three finish
+```
 
-If jobs depend on each other's outputs, submit them in the right order and use `seamless-queue-finish` between dependency boundaries.
+Use `seamless-queue` when you want to control the degree of parallelism with `--workers`.
+
+If jobs depend on each other's outputs, you do not need to order submissions or insert `seamless-queue-finish` between stages. Seamless writes a `.FUTURE` sidecar alongside an output file while it is being computed. When a subsequent `seamless-run` invocation encounters `result.txt.FUTURE` as a file argument, it waits (polling every 0.5 s) for the `.FUTURE` to disappear before the job is dispatched to the queue. This means all jobs can be submitted quickly; inter-job dependencies resolve themselves at runtime.
 
 ### Limiting concurrency
 

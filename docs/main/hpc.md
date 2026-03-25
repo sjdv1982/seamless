@@ -68,16 +68,7 @@ The `TEMPLATE` key lets a queue inherit all parameters from another queue, then 
 
 ### Selecting a queue
 
-From Python, select a queue before initializing:
-
-```python
-import seamless.config
-
-seamless.config.set_stage("hpc")
-# seamless.yaml or profile.yaml can also set: - queue: highmem
-```
-
-Or in the YAML:
+In `seamless.profile.yaml`:
 
 ```yaml
 - stage hpc:

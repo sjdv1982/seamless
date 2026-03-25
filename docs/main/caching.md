@@ -10,7 +10,16 @@ Every Seamless transformation has a **transformation checksum** — a SHA-256 ha
 
 Two transformations with the same transformation checksum are *identical computations*: the same code, the same inputs, the same semantics. The database records the mapping `transformation checksum → result checksum`. On the next call with the same code and inputs, Seamless computes the same transformation checksum, looks it up in the database, finds the cached result checksum, and returns the result from the hashserver — without re-executing any code.
 
-Changing anything in the above list (code, inputs, metadata) produces a different transformation checksum and triggers re-execution.
+Changing anything in the above list (code, inputs, metadata) produces a different transformation checksum and triggers re-execution:
+
+```bash
+seamless-run paste data/a.txt data/b.txt     # executes, result cached
+seamless-run paste data/a.txt data/b.txt     # cache hit, instant
+
+# edit data/a.txt
+#   =>
+seamless-run paste data/a.txt data/b.txt     # different input checksum, re-executes
+```
 
 ## Persistent vs in-memory caching
 
@@ -29,7 +38,8 @@ The `persistent` YAML command controls this explicitly:
 
 The two core types in `seamless-core` are:
 
-**`Checksum`** — the identity of a piece of data. A thin wrapper around a SHA-256 hex string:
+- **`Checksum`** — the identity of a piece of data. A thin wrapper around a SHA-256 hex string
+- **`Buffer`** — raw bytes paired with an optional checksum.
 
 ```python
 from seamless import Checksum
@@ -40,8 +50,6 @@ value = cs.resolve()               # retrieve the buffer from cache/hashserver
 ```
 
 `Checksum.resolve()` retrieves the corresponding buffer. If the buffer is not in the local cache or hashserver, it returns `None` (or raises `CacheMissError`). The advanced variant `Checksum.fingertip()` also triggers recomputation if the buffer is missing but a transformation that produced this checksum is known.
-
-**`Buffer`** — raw bytes paired with an optional checksum:
 
 ```python
 from seamless import Buffer
@@ -73,7 +81,7 @@ Subsequent `seamless-run` invocations read the checksum from the sidecar without
 
 ```bash
 seamless-run python analyze.py data/large-input.h5
-# data/large-input.h5 need not exist — the sidecar supplies its checksum
+# data/large-input.h5 need not exist locally — the sidecar supplies its checksum
 ```
 
 `seamless-download` uses sidecars written by `seamless-run` to fetch result bytes from the hashserver:
