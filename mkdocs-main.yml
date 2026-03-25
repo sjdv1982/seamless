@@ -1,0 +1,49 @@
+site_name: Seamless
+site_description: >-
+  Seamless — define your computation once, cache it, scale it, share it.
+  Documentation for Seamless: wrapping Python and bash pipelines as
+  content-addressed, cacheable, remotely-executable transformations.
+docs_dir: docs/main
+site_dir: .pages-main
+use_directory_urls: false
+
+theme:
+  name: readthedocs
+
+plugins:
+  - search
+
+nav:
+  - Home: index.md
+  - Getting Started:
+      - Wrapping Python and bash: getting-started.md
+      - Setting up a local cluster: cluster.md
+  - How-To Guides:
+      - Caching, identity, and sharing: caching.md
+      - Composition: composition.md
+      - Local parallelism: parallelism.md
+      - Remote execution: remote.md
+      - HPC specifics: hpc.md
+      - Remote job launching: remote-launch.md
+      - Sharing in depth: sharing.md
+  - Reference API:
+      - Overview: api/index.md
+      - seamless-core: api/seamless-core.md
+      - seamless-transformer: api/seamless-transformer.md
+      - seamless-config: api/seamless-config.md
+      - seamless-remote: api/seamless-remote.md
+      - seamless-dask: api/seamless-dask.md
+      - seamless-jobserver: api/seamless-jobserver.md
+      - seamless-database: api/seamless-database.md
+      - remote-http-launcher: api/remote-http-launcher.md
+      - Python docstrings:
+          - seamless: api/reference/seamless.md
+          - Checksum: api/reference/seamless.checksum_class.md
+          - Buffer: api/reference/seamless.buffer_class.md
+          - seamless.transformer: api/reference/seamless.transformer.md
+          - Transformation: api/reference/seamless_transformer.transformation_class.md
+          - Transformer properties: api/reference/seamless_transformer.transformer_class.md
+          - seamless.config.select: api/reference/seamless_config.select.md
+          - seamless.config.tools: api/reference/seamless_config.tools.md
+      - CLI docstrings:
+          - seamless-run: api/reference/seamless-run.md

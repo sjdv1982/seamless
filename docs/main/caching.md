@@ -105,6 +105,8 @@ Sharing therefore has two modes:
 
 Combining both: copy `seamless.db` between machines, and use `seamless-resolve` to fetch the buffer bytes for any checksum that appears in the database.
 
+For sharing the underlying buffers — input data, result data, or both — see [Sharing in depth](sharing.md).
+
 ## Cell types
 
 Every input pin in a Seamless transformation has a *cell type* that governs how the Python value is serialized into bytes (and therefore what checksum it gets). The default type is `mixed`, which handles Python scalars, dicts, lists, and numpy arrays.

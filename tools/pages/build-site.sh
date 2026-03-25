@@ -24,6 +24,13 @@ bash "${ROOT_DIR}/tools/pages/sync_main_api_docs.sh"
 # Generate agent API reference from docstrings
 python "${ROOT_DIR}/docs/agent/scripts/gen_agent_docs.py"
 
+# Copy docstring-generated pages into the main docs API reference
+REF_DIR="${ROOT_DIR}/docs/main/api/reference"
+rm -rf "${REF_DIR}"
+mkdir -p "${REF_DIR}"
+cp "${ROOT_DIR}/docs/agent/api/python/"*.md "${REF_DIR}/"
+cp "${ROOT_DIR}/docs/agent/api/cli/"*.md "${REF_DIR}/"
+
 # Build main (human-facing) documentation — this becomes the root of the site
 mkdocs build -f "${ROOT_DIR}/mkdocs-main.yml" -d "${MAIN_SITE_DIR}"
 
@@ -51,3 +58,13 @@ echo "Built site in ${OUTPUT_DIR}"
 echo "  /           — main documentation"
 echo "  /agent/     — agent/contract documentation"
 echo "  /legacy/    — legacy Seamless (0.x) documentation"
+
+# Deploy to gh-pages branch (only when building to the default _site/ location)
+if [ "${OUTPUT_DIR}" = "${ROOT_DIR}/_site" ]; then
+  if command -v ghp-import >/dev/null 2>&1; then
+    ghp-import -n -p -f "${OUTPUT_DIR}"
+    echo "Deployed to gh-pages branch"
+  else
+    echo "ghp-import not found; skipping deploy (install with: pip install ghp-import)"
+  fi
+fi

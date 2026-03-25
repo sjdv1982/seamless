@@ -1,5 +1,10 @@
 _site/
 .pages-new/
+.pages-main/
+docs/main/api/reference/
+docs/agent/api/
+docs/agent/index.json
+docs/agent/repos/
 *.egg-info/
 build/
 dist/

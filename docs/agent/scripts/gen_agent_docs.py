@@ -187,7 +187,10 @@ def _render_api_page(
         )
 
     for sym in symbols:
+        # Display heading strips the module prefix: "seamless.buffer_class.Buffer.write" -> "Buffer.write"
         heading = sym.qualname
+        if heading.startswith(module_name + "."):
+            heading = heading[len(module_name) + 1 :]
         lines.append("")
         lines.append(f"## `{heading}`")
         lines.append("")
@@ -265,14 +268,19 @@ def _generate_cli_docs(public_api: dict) -> dict[str, str]:
     return out
 
 
-def _build_index(public_api: dict, api_pages: dict[str, str], cli_pages: dict[str, str]) -> None:
-    index: dict = {"version": 1, "generated_at": int(time.time()), "topics": {}, "symbols": {}}
+def _build_index(
+    public_api: dict, api_pages: dict[str, str], cli_pages: dict[str, str]
+) -> None:
+    index: dict = {
+        "version": 1,
+        "generated_at": int(time.time()),
+        "topics": {},
+        "symbols": {},
+    }
 
     # Topics: contracts
     contracts = _iter_contract_pages()
-    index["topics"]["contracts"] = [
-        str(p.relative_to(AGENT_DOCS)) for p in contracts
-    ]
+    index["topics"]["contracts"] = [str(p.relative_to(AGENT_DOCS)) for p in contracts]
 
     # Topics: API pages
     index["topics"]["api_python"] = api_pages
