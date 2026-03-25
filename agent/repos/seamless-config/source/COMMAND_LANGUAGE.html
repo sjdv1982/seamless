@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <link rel="shortcut icon" href="../../../img/favicon.ico" />
+    <title>Seamless Command Language - Seamless — Agent Documentation</title>
+    <link rel="stylesheet" href="../../../css/theme.css" />
+    <link rel="stylesheet" href="../../../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "Seamless Command Language";
+        var mkdocs_page_input_path = "repos/seamless-config/source/COMMAND_LANGUAGE.md";
+        var mkdocs_page_url = null;
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../../../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href="../../../index.html" class="icon icon-home"> Seamless — Agent Documentation
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../../index.html">Home</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../../overview.html">Agent Docs Overview</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../index.html">Workspace Repos</a>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Contracts</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/identity-and-caching.html">Identity and Caching</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/direct-delayed-and-transformation.html">direct/delayed/Transformation</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/modules-and-closures.html">Modules and Closures</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/scratch-witness-audit.html">Scratch/Witness/Audit</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/seamless-run-and-argtyping.html">seamless-run/Argtyping</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/cache-storage-and-limits.html">Cache Storage and Limits</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/content-addressed-files-and-dirs.html">Content-addressed Files and Dirs</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/execution-backends.html">Execution Backends</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">API</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../api/python/seamless.html">seamless</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../api/python/seamless.transformer.html">seamless.transformer</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../api/python/seamless.buffer_class.html">seamless.buffer_class</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../api/python/seamless.checksum_class.html">seamless.checksum_class</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../api/python/seamless_config.select.html">seamless_config.select</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../api/python/seamless_config.tools.html">seamless_config.tools</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../api/python/seamless_transformer.transformation_class.html">seamless_transformer.transformation_class</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../api/python/seamless_transformer.transformer_class.html">seamless_transformer.transformer_class</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">CLI</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../api/cli/seamless-run.html">seamless-run</a>
+                  </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">Seamless — Agent Documentation</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../../../index.html" class="icon icon-home" aria-label="Docs"></a></li>
+      <li class="breadcrumb-item active">Seamless Command Language</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h1 id="seamless-command-language">Seamless Command Language</h1>
+<p><code>seamless_config</code> discovers configuration through two optional files in the
+work directory and its parents:</p>
+<table>
+<thead>
+<tr>
+<th>File</th>
+<th>Recommended policy</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>seamless.yaml</code></td>
+<td>Commit to version control</td>
+<td>Project-wide, deterministic defaults</td>
+</tr>
+<tr>
+<td><code>seamless.profile.yaml</code></td>
+<td>Add to <code>.gitignore</code></td>
+<td>Local, developer-specific overrides (e.g. cluster</td>
+</tr>
+<tr>
+<td>hostnames or experimental settings)</td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p>Both files use the same command language described below. <code>load_config_files()</code>
+reads the file pair in the current workdir. If either file contains
+<code>inherit_from_parent</code>, the loader also inspects the parent directory and
+prepends its commands so they run before the child’s entries. This repeats
+until a directory without <code>inherit_from_parent</code> is reached (or the filesystem
+root), which means parent defaults are always applied before the local
+overrides.</p>
+<h2 id="syntax">Syntax</h2>
+<p>Each document must be a YAML list. Every list item is either a bare command
+name (<code>inherit_from_parent</code>) or a single-key mapping (<code>cluster: newton</code>). If the
+file parses as valid YAML but not a list, the loader raises an error and shows
+an example (<code>- project: myproject</code>).</p>
+<h3 id="available-commands">Available commands</h3>
+<table>
+<thead>
+<tr>
+<th>Command</th>
+<th>Arguments</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>cluster</code></td>
+<td>string</td>
+<td>Calls <code>seamless_config.select_cluster(value)</code></td>
+</tr>
+<tr>
+<td><code>execution</code></td>
+<td>string (<code>process</code>/<code>spawn</code>/<code>remote</code>)</td>
+<td>Calls <code>seamless_config.select_execution(value)</code></td>
+</tr>
+<tr>
+<td><code>queue</code></td>
+<td>string</td>
+<td>Calls <code>seamless_config.select_queue(value)</code></td>
+</tr>
+<tr>
+<td><code>remote</code></td>
+<td>null or string (<code>daskserver</code>/<code>jobserver</code>)</td>
+<td>Calls <code>seamless_config.select_remote(value)</code></td>
+</tr>
+<tr>
+<td><code>persistent</code></td>
+<td>boolean</td>
+<td>Calls <code>seamless_config.select_persistent(value)</code></td>
+</tr>
+<tr>
+<td><code>project</code></td>
+<td>string</td>
+<td>Calls <code>seamless_config.select_project(value)</code></td>
+</tr>
+<tr>
+<td><code>subproject</code></td>
+<td>string</td>
+<td>Calls <code>seamless_config.select_subproject(value)</code></td>
+</tr>
+<tr>
+<td><code>inherit_from_parent</code></td>
+<td>–</td>
+<td>Also read commands from the parent directory and prepend them</td>
+</tr>
+<tr>
+<td><code>clusters</code></td>
+<td>mapping</td>
+<td>Updates the local <code>_clusters</code> dict and runs before other commands</td>
+</tr>
+<tr>
+<td><code>stage &lt;name&gt;</code></td>
+<td>list of commands</td>
+<td>Executes the nested list only when the current stage equals <code>&lt;name&gt;</code></td>
+</tr>
+</tbody>
+</table>
+<p>The <code>queue</code> command requires the current cluster to expose queues in its definition and fails with a <code>ValueError</code> when the named queue is missing. The <code>remote</code> command accepts only <code>null</code>, <code>daskserver</code> or <code>jobserver</code>. The <code>persistent</code> command forces persistent storage on or off; when omitted it defaults to <code>true</code> if a cluster is selected and <code>false</code> otherwise.</p>
+<p>Internally, commands are split into two passes: those with priority (currently
+only <code>clusters</code>) and the rest. Between the passes the loader calls
+<code>seamless_config.cluster.define_clusters(_clusters)</code> so the later commands use
+the freshest cluster data.</p>
+<p>If no <code>execution</code> command is encountered, <code>init()</code> defaults to <code>remote</code> when a
+cluster is selected and otherwise falls back to <code>process</code>. Clusters only need to
+be defined when <code>execution</code> is set to <code>remote</code>; for other modes, an undefined
+cluster triggers a warning that also notes that persistence is unavailable,
+while <code>execution: remote</code> without a cluster raises an error.</p>
+<h3 id="stage-blocks">Stage blocks</h3>
+<p>Stage-specific configuration uses YAML keys that begin with <code>stage</code> and a
+literal stage name. For example:</p>
+<pre><code class="language-yaml">- stage build:
+  - execution: remote
+</code></pre>
+<p>When <code>seamless_config.select_stage("build")</code> has been called, the commands
+inside the block are executed as if they appeared in the outer list; otherwise
+they are skipped.</p>
+<h3 id="example">Example</h3>
+<pre><code class="language-yaml"># seamless.yaml (checked in)
+- project: my-shared-project
+- inherit_from_parent
+
+# seamless.profile.yaml (ignored in Git)
+- clusters:
+    local:
+      tunnel: false
+      frontends: [...]
+    mycluster:
+      tunnel: true
+      frontends: [...]
+- cluster: local
+- stage prod:
+  - cluster: mycluster
+</code></pre>
+<p>The <code>seamless.profile.yaml</code> snippet defines the local and mycluster clusters, selects the <code>local</code> entry as the active cluster, and only switches to the
+<code>mycluster</code> cluster when the current stage equals <code>prod</code>.</p>
+              
+            </div>
+          </div><footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+    
+    
+  </span>
+</div>
+    <script src="../../../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "../../..";</script>
+    <script src="../../../js/theme_extra.js"></script>
+    <script src="../../../js/theme.js"></script>
+      <script src="../../../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>

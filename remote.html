@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <link rel="shortcut icon" href="img/favicon.ico" />
+    <title>Remote execution - Seamless</title>
+    <link rel="stylesheet" href="css/theme.css" />
+    <link rel="stylesheet" href="css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "Remote execution";
+        var mkdocs_page_input_path = "remote.md";
+        var mkdocs_page_url = null;
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href="index.html" class="icon icon-home"> Seamless
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="./search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="index.html">Home</a>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Getting Started</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="getting-started.html">Wrapping Python and bash</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="cluster.html">Setting up a local cluster</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">How-To Guides</span></p>
+              <ul class="current">
+                  <li class="toctree-l1"><a class="reference internal" href="caching.html">Caching, identity, and sharing</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="composition.html">Composition</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="parallelism.html">Local parallelism</a>
+                  </li>
+                  <li class="toctree-l1 current"><a class="reference internal current" href="#">Remote execution</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#what-delegation-means">What delegation means</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#jobserver">jobserver</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#daskserver">daskserver</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#multi-stage-workflows-with-set_stage">Multi-stage workflows with set_stage()</a>
+    </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="hpc.html">HPC specifics</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="remote-launch.html">Remote job launching</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="sharing.html">Sharing in depth</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Reference API</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="api/index.html">Overview</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="api/seamless-core.html">seamless-core</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="api/seamless-transformer.html">seamless-transformer</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="api/seamless-config.html">seamless-config</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="api/seamless-remote.html">seamless-remote</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="api/seamless-dask.html">seamless-dask</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="api/seamless-jobserver.html">seamless-jobserver</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="api/seamless-database.html">seamless-database</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="api/remote-http-launcher.html">remote-http-launcher</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Python docstrings</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="api/reference/seamless.html">seamless</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="api/reference/seamless.checksum_class.html">Checksum</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="api/reference/seamless.buffer_class.html">Buffer</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="api/reference/seamless.transformer.html">seamless.transformer</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="api/reference/seamless_transformer.transformation_class.html">Transformation</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="api/reference/seamless_transformer.transformer_class.html">Transformer properties</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="api/reference/seamless_config.select.html">seamless.config.select</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="api/reference/seamless_config.tools.html">seamless.config.tools</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >CLI docstrings</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="api/reference/seamless-run.html">seamless-run</a>
+                </li>
+    </ul>
+                  </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">Seamless</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="index.html" class="icon icon-home" aria-label="Docs"></a></li>
+          <li class="breadcrumb-item">How-To Guides</li>
+      <li class="breadcrumb-item active">Remote execution</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h1 id="remote-execution">Remote execution</h1>
+<h2 id="what-delegation-means">What delegation means</h2>
+<p>Setting <code>execution: remote</code> tells Seamless to delegate transformation execution to a remote backend — either a <strong>jobserver</strong> or a <strong>daskserver</strong> — instead of running in the local Python process. The step code (your Python functions, bash commands) does not change. Only the backend configuration changes.</p>
+<p>From the user's perspective, <code>tf.run()</code> and <code>seamless-run</code> work the same way regardless of whether execution is local or remote.</p>
+<p>The <code>--local</code> flag on <code>seamless-run</code> (or <code>.local = True</code> on a transformer) overrides the configured remote backend and forces local execution for that specific transformation:</p>
+<pre><code class="language-bash">seamless-run --local mycommand input.txt   # run locally even if execution: remote
+</code></pre>
+<pre><code class="language-python">@delayed
+def compute(x): ...
+
+compute.local = True    # always run in-process, skip jobserver/daskserver
+</code></pre>
+<hr />
+<h2 id="jobserver">jobserver</h2>
+<p>The <strong>jobserver</strong> is a lightweight HTTP service that accepts transformation jobs and dispatches them to a local worker pool. It is the simpler of the two remote backends: single-node, low-overhead, and straightforward to set up. It is best suited for development and testing of remote execution, or for simple single-machine deployments where you want worker-process isolation without Dask infrastructure.</p>
+<p>To add a jobserver to a cluster definition in <code>~/.seamless/clusters.yaml</code>:</p>
+<pre><code class="language-yaml">local:
+  ...
+  frontends:
+    - hostname: localhost
+      hashserver:
+        ...
+      database:
+        ...
+      jobserver:
+        network_interface: 127.0.0.1
+        port_start: 55300
+        port_end: 55399
+</code></pre>
+<p>With a jobserver configured, set <code>execution: remote</code> (or rely on the default) in <code>seamless.yaml</code>:</p>
+<pre><code class="language-yaml">- project: my-project
+- execution: remote
+</code></pre>
+<p><code>seamless.config.init()</code> will start the jobserver automatically if it is not already running.</p>
+<hr />
+<h2 id="daskserver">daskserver</h2>
+<p>The <strong>daskserver</strong> is the general-purpose remote backend. It uses Dask as its execution and scheduling substrate, making it suitable for multi-node HPC clusters, adaptive scaling, and high-throughput workloads. It also works locally — using <code>dask.distributed.LocalCluster</code> — which makes it the preferred backend for anything beyond single-machine parallelism with <code>spawn</code>.</p>
+<p>Where jobserver is "one machine with a worker pool", daskserver is "a managed Dask cluster that can scale dynamically". The Seamless worker plugin runs inside each Dask worker and maintains its own local worker process pool, so multiple levels of parallelism are available.</p>
+<p>To add a daskserver to a cluster definition:</p>
+<pre><code class="language-yaml">local:
+  ...
+  frontends:
+    - hostname: localhost
+      hashserver:
+        ...
+      database:
+        ...
+      daskserver:
+        network_interface: 0.0.0.0
+        port_start: 60300
+        port_end: 60399
+</code></pre>
+<p>And in your project config:</p>
+<pre><code class="language-yaml">- cluster: mycluster
+- execution: remote
+- remote: daskserver
+</code></pre>
+<p>When both a jobserver and a daskserver are present on the same cluster, you must explicitly select one with <code>remote: jobserver</code> or <code>remote: daskserver</code>.</p>
+<hr />
+<h2 id="multi-stage-workflows-with-set_stage">Multi-stage workflows with <code>set_stage()</code></h2>
+<p>Many workflows need to switch storage or execution context during a run — for example, running pre-processing locally on a laptop and GPU inference remotely on a cluster. Seamless supports this with named stages.</p>
+<p>In <code>seamless.yaml</code>:</p>
+<pre><code class="language-yaml">- project: my-project
+- execution: process
+
+- stage gpu:
+    - cluster: gpu-cluster
+    - execution: remote
+    - remote: daskserver
+</code></pre>
+<p>In Python:</p>
+<pre><code class="language-python">import seamless.config
+
+seamless.config.init()         # default stage: local, execution: process
+
+# ... pre-processing transformations run locally ...
+
+seamless.config.set_stage(&quot;gpu&quot;)   # switch to gpu-cluster daskserver
+
+# ... GPU transformations run remotely on the cluster ...
+
+seamless.config.set_stage(None)    # return to default stage
+</code></pre>
+<p><code>set_stage()</code> reconfigures the active backends (hashserver, database, jobserver/daskserver) without restarting services that are already running. Stage blocks in the YAML are activated only when the current stage name matches.</p>
+<p>From the CLI, <code>seamless-run --stage gpu mycommand input.txt</code> selects the <code>gpu</code> stage for a single invocation.</p>
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="parallelism.html" class="btn btn-neutral float-left" title="Local parallelism"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="hpc.html" class="btn btn-neutral float-right" title="HPC specifics">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+    
+      <span><a href="parallelism.html" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="hpc.html" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script src="js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = ".";</script>
+    <script src="js/theme_extra.js"></script>
+    <script src="js/theme.js"></script>
+      <script src="search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>

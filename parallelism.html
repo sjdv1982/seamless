@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <link rel="shortcut icon" href="img/favicon.ico" />
+    <title>Local parallelism - Seamless</title>
+    <link rel="stylesheet" href="css/theme.css" />
+    <link rel="stylesheet" href="css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "Local parallelism";
+        var mkdocs_page_input_path = "parallelism.md";
+        var mkdocs_page_url = null;
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href="index.html" class="icon icon-home"> Seamless
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="./search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="index.html">Home</a>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Getting Started</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="getting-started.html">Wrapping Python and bash</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="cluster.html">Setting up a local cluster</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">How-To Guides</span></p>
+              <ul class="current">
+                  <li class="toctree-l1"><a class="reference internal" href="caching.html">Caching, identity, and sharing</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="composition.html">Composition</a>
+                  </li>
+                  <li class="toctree-l1 current"><a class="reference internal current" href="#">Local parallelism</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#execution-spawn-local-worker-pool">execution: spawn — local worker pool</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#spawnn-in-python">spawn(N) in Python</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#concurrent-scheduling-with-start">Concurrent scheduling with .start()</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#seamless-queue-parallelizing-cli-workflows">seamless-queue — parallelizing CLI workflows</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#when-to-use-seamless-queue">When to use seamless-queue</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#limiting-concurrency">Limiting concurrency</a>
+    </li>
+        </ul>
+    </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="remote.html">Remote execution</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="hpc.html">HPC specifics</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="remote-launch.html">Remote job launching</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="sharing.html">Sharing in depth</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Reference API</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="api/index.html">Overview</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="api/seamless-core.html">seamless-core</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="api/seamless-transformer.html">seamless-transformer</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="api/seamless-config.html">seamless-config</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="api/seamless-remote.html">seamless-remote</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="api/seamless-dask.html">seamless-dask</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="api/seamless-jobserver.html">seamless-jobserver</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="api/seamless-database.html">seamless-database</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="api/remote-http-launcher.html">remote-http-launcher</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Python docstrings</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="api/reference/seamless.html">seamless</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="api/reference/seamless.checksum_class.html">Checksum</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="api/reference/seamless.buffer_class.html">Buffer</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="api/reference/seamless.transformer.html">seamless.transformer</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="api/reference/seamless_transformer.transformation_class.html">Transformation</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="api/reference/seamless_transformer.transformer_class.html">Transformer properties</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="api/reference/seamless_config.select.html">seamless.config.select</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="api/reference/seamless_config.tools.html">seamless.config.tools</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >CLI docstrings</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="api/reference/seamless-run.html">seamless-run</a>
+                </li>
+    </ul>
+                  </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">Seamless</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="index.html" class="icon icon-home" aria-label="Docs"></a></li>
+          <li class="breadcrumb-item">How-To Guides</li>
+      <li class="breadcrumb-item active">Local parallelism</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h1 id="local-parallelism">Local parallelism</h1>
+<p>Seamless provides two independent mechanisms for local parallelism: worker processes for Python transformations, and a queue server for bash CLI workflows.</p>
+<h2 id="execution-spawn-local-worker-pool"><code>execution: spawn</code> — local worker pool</h2>
+<p>Setting <code>execution: spawn</code> in your configuration tells Seamless to run transformations in a pool of separate worker processes rather than in the current Python process. The number of workers defaults to the number of logical CPU cores.</p>
+<p>In <code>seamless.yaml</code> or <code>seamless.profile.yaml</code>:</p>
+<pre><code class="language-yaml">- execution: spawn
+</code></pre>
+<p>Worker processes are started lazily on the first transformation and reused across calls. They communicate via shared memory and a multiprocessing IPC channel, which avoids serialization overhead for large numpy arrays.</p>
+<h3 id="spawnn-in-python"><code>spawn(N)</code> in Python</h3>
+<p>You can also activate the worker pool programmatically, specifying the number of workers explicitly:</p>
+<pre><code class="language-python">from seamless.transformer import spawn
+
+spawn(4)   # start 4 worker processes
+
+@delayed
+def compute(x):
+    import time
+    time.sleep(1)
+    return x * 2
+
+handles = [compute(i) for i in range(20)]
+for h in handles:
+    h.start()                    # schedule all 20 jobs
+
+results = [h.run() for h in handles]  # collect results (blocks until each is done)
+</code></pre>
+<p><code>spawn()</code> with no argument uses the CPU count. Call <code>spawn()</code> once at the start of your script; all subsequent <code>delayed</code> calls will use the worker pool.</p>
+<p><code>has_spawned()</code> returns <code>True</code> if a worker pool is active:</p>
+<pre><code class="language-python">from seamless.transformer import has_spawned
+
+if not has_spawned():
+    spawn()
+</code></pre>
+<h3 id="concurrent-scheduling-with-start">Concurrent scheduling with <code>.start()</code></h3>
+<p><code>.start()</code> schedules a transformation for execution on an available worker without blocking. Use it to fan out work before collecting results:</p>
+<pre><code class="language-python">@delayed
+def process(item):
+    ...
+
+handles = [process(item) for item in items]
+for h in handles:
+    h.start()                    # fire and forget
+
+results = [h.run() for h in handles]  # .run() blocks until done (cache hit if already finished)
+</code></pre>
+<p><code>.run()</code> on an already-started transformation returns immediately if the result is ready, or blocks until it is. <code>.task()</code> is the async/await equivalent of <code>.run()</code>, useful in async code.</p>
+<hr />
+<h2 id="seamless-queue-parallelizing-cli-workflows"><code>seamless-queue</code> — parallelizing CLI workflows</h2>
+<p>For bash workflows using <code>seamless-run</code>, the equivalent of <code>spawn</code> is <code>seamless-queue</code> combined with the <code>--qsubmit</code> flag.</p>
+<p><code>seamless-queue</code> starts a queue server that accepts transformation jobs and executes them concurrently:</p>
+<pre><code class="language-bash"># Start a queue server with 8 concurrent workers in the background
+seamless-queue --workers 8 &amp;
+
+# Submit jobs to the queue instead of running them inline
+seamless-run --qsubmit paste data/a.txt data/b.txt
+seamless-run --qsubmit paste data/c.txt data/d.txt
+seamless-run --qsubmit paste data/e.txt data/f.txt
+# ... all three run concurrently on the queue server
+
+# Wait for all jobs to complete and shut down the queue
+seamless-queue-finish
+</code></pre>
+<p>Each <code>seamless-run --qsubmit</code> invocation submits the job to the running queue server and exits immediately. <code>seamless-queue-finish</code> signals the server to drain remaining jobs, wait for them to complete, and then shut down.</p>
+<h3 id="when-to-use-seamless-queue">When to use <code>seamless-queue</code></h3>
+<p>For a small, fixed number of parallel commands, plain shell backgrounding is sufficient and simpler:</p>
+<pre><code class="language-bash">seamless-run paste data/a.txt data/b.txt &amp;
+seamless-run paste data/c.txt data/d.txt &amp;
+seamless-run paste data/e.txt data/f.txt &amp;
+wait   # block until all three finish
+</code></pre>
+<p>Use <code>seamless-queue</code> when you want to control the degree of parallelism with <code>--workers</code>.</p>
+<p>If jobs depend on each other's outputs, you do not need to order submissions or insert <code>seamless-queue-finish</code> between stages. Seamless writes a <code>.FUTURE</code> sidecar alongside an output file while it is being computed. When a subsequent <code>seamless-run</code> invocation encounters <code>result.txt.FUTURE</code> as a file argument, it waits (polling every 0.5 s) for the <code>.FUTURE</code> to disappear before the job is dispatched to the queue. This means all jobs can be submitted quickly; inter-job dependencies resolve themselves at runtime.</p>
+<h3 id="limiting-concurrency">Limiting concurrency</h3>
+<p>The <code>--workers N</code> flag controls how many jobs run concurrently. If not specified, it defaults to the number of logical CPU cores. For CPU-bound work, matching the core count avoids oversubscription. For I/O-bound or mixed work, a higher value may improve throughput.</p>
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="composition.html" class="btn btn-neutral float-left" title="Composition"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="remote.html" class="btn btn-neutral float-right" title="Remote execution">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+    
+      <span><a href="composition.html" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="remote.html" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script src="js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = ".";</script>
+    <script src="js/theme_extra.js"></script>
+    <script src="js/theme.js"></script>
+      <script src="search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>

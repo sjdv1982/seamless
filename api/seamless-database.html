@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <link rel="shortcut icon" href="../img/favicon.ico" />
+    <title>seamless-database - Seamless</title>
+    <link rel="stylesheet" href="../css/theme.css" />
+    <link rel="stylesheet" href="../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "seamless-database";
+        var mkdocs_page_input_path = "api/seamless-database.md";
+        var mkdocs_page_url = null;
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href="../index.html" class="icon icon-home"> Seamless
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../index.html">Home</a>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Getting Started</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../getting-started.html">Wrapping Python and bash</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../cluster.html">Setting up a local cluster</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">How-To Guides</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../caching.html">Caching, identity, and sharing</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../composition.html">Composition</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../parallelism.html">Local parallelism</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../remote.html">Remote execution</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../hpc.html">HPC specifics</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../remote-launch.html">Remote job launching</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../sharing.html">Sharing in depth</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Reference API</span></p>
+              <ul class="current">
+                  <li class="toctree-l1"><a class="reference internal" href="index.html">Overview</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="seamless-core.html">seamless-core</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="seamless-transformer.html">seamless-transformer</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="seamless-config.html">seamless-config</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="seamless-remote.html">seamless-remote</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="seamless-dask.html">seamless-dask</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="seamless-jobserver.html">seamless-jobserver</a>
+                  </li>
+                  <li class="toctree-l1 current"><a class="reference internal current" href="#">seamless-database</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#how-it-works">How it works</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#role-in-the-seamless-ecosystem">Role in the Seamless ecosystem</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#installation">Installation</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#usage">Usage</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#status-file-protocol">Status-file protocol</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#cli-options">CLI options</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#cli-scripts">CLI scripts</a>
+    </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="remote-http-launcher.html">remote-http-launcher</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Python docstrings</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="reference/seamless.html">seamless</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="reference/seamless.checksum_class.html">Checksum</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="reference/seamless.buffer_class.html">Buffer</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="reference/seamless.transformer.html">seamless.transformer</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="reference/seamless_transformer.transformation_class.html">Transformation</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="reference/seamless_transformer.transformer_class.html">Transformer properties</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="reference/seamless_config.select.html">seamless.config.select</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="reference/seamless_config.tools.html">seamless.config.tools</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >CLI docstrings</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="reference/seamless-run.html">seamless-run</a>
+                </li>
+    </ul>
+                  </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Seamless</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../index.html" class="icon icon-home" aria-label="Docs"></a></li>
+          <li class="breadcrumb-item">Reference API</li>
+      <li class="breadcrumb-item active">seamless-database</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h1 id="seamless-database">seamless-database</h1>
+<p><code>seamless-database</code> is the checksum-based metadata and caching service for the <a href="https://github.com/sjdv1982/seamless">Seamless</a> framework. It acts as the distributed computation cache that allows Seamless workflows to avoid recomputing identical transformations, both within a single session and across the entire cluster.</p>
+<h2 id="how-it-works">How it works</h2>
+<p>Seamless uses content-addressed storage: every piece of data (buffers, code, parameters) is identified by its checksum. When a transformation (computation) is submitted, its inputs are hashed into a transformation checksum. Before executing the computation, Seamless components (such as <code>seamless-dask</code>) query the database: <em>"has this transformation been computed before?"</em> If a cached result is found, the result checksum is returned immediately, skipping the computation entirely.</p>
+<p>The database stores the following kinds of records:</p>
+<table>
+<thead>
+<tr>
+<th>Table</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Transformation</strong></td>
+<td>Maps a transformation checksum to its result checksum</td>
+</tr>
+<tr>
+<td><strong>RevTransformation</strong></td>
+<td>Reverse lookup: finds which transformations produced a given result</td>
+</tr>
+<tr>
+<td><strong>BufferInfo</strong></td>
+<td>Stores buffer metadata (length, dtype, encoding, etc.) for a checksum</td>
+</tr>
+<tr>
+<td><strong>SyntacticToSemantic</strong></td>
+<td>Maps between syntactic and semantic checksums per celltype</td>
+</tr>
+<tr>
+<td><strong>Expression</strong></td>
+<td>Caches expression evaluation results (input checksum + path + celltype → result checksum)</td>
+</tr>
+<tr>
+<td><strong>MetaData</strong></td>
+<td>Stores execution metadata for transformations (executor, environment, timing)</td>
+</tr>
+<tr>
+<td><strong>IrreproducibleTransformation</strong></td>
+<td>Records transformations whose results are not reproducible</td>
+</tr>
+</tbody>
+</table>
+<p>All data is persisted in a single SQLite file (typically <code>seamless.db</code>).</p>
+<h2 id="role-in-the-seamless-ecosystem">Role in the Seamless ecosystem</h2>
+<p>Other Seamless components interact with the database over HTTP:</p>
+<ul>
+<li><strong>seamless-dask</strong> checks the database cache before scheduling a transformation on the Dask cluster, and writes results back after computation.</li>
+<li><strong>seamless-remote</strong> provides the <code>DatabaseClient</code> / <code>DatabaseLaunchedClient</code> classes that other components use to communicate with the database server.</li>
+<li><strong>seamless-config</strong> defines the launch template for the database server (port range, host, timeout, read/write mode).</li>
+</ul>
+<p>The server exposes a JSON-over-HTTP protocol: clients send <code>{"type": "&lt;record_type&gt;", "checksum": "&lt;hex&gt;", ...}</code> via GET (read) or PUT (write) requests.</p>
+<h2 id="installation">Installation</h2>
+<pre><code class="language-bash">pip install seamless-database
+</code></pre>
+<h2 id="usage">Usage</h2>
+<pre><code class="language-bash"># Start a writable database server on a random port
+seamless-database seamless.db --port-range 5520 5530 --writable
+
+# Start a read-only server on a fixed port
+seamless-database seamless.db --port 5522
+</code></pre>
+<h3 id="status-file-protocol">Status-file protocol</h3>
+<p><code>seamless-database</code> does not require a status file. If <code>--status-file</code> is omitted, it runs independently.</p>
+<p>If <code>--status-file</code> is provided, the file is used for two things:</p>
+<ol>
+<li>Report the chosen port, especially when <code>--port-range</code> is used.</li>
+<li>Report whether startup succeeded (<code>"running"</code>) or failed (<code>"failed"</code>).</li>
+</ol>
+<p>The status-file protocol is simple:</p>
+<ol>
+<li>Wait for the status file to exist and parse it as JSON.</li>
+<li>Reuse the existing JSON object as the base payload. An empty JSON object <code>{}</code> is sufficient.</li>
+<li>Choose or validate its listening port.</li>
+<li>Once the HTTP server is up, rewrite the same file with <code>"status": "running"</code> and the selected <code>"port"</code>.</li>
+<li>If startup fails before the server is running, rewrite the file with <code>"status": "failed"</code> instead.</li>
+</ol>
+<p>If <code>remote-http-launcher</code> is used, it may pre-populate the JSON with fields such as the PID, workdir, or <code>"status": "starting"</code>. <code>seamless-database</code> preserves such fields when it writes back the final status.</p>
+<h3 id="cli-options">CLI options</h3>
+<table>
+<thead>
+<tr>
+<th>Option</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>database_file</code></td>
+<td>Path to the SQLite file (created if it doesn't exist and <code>--writable</code> is set)</td>
+</tr>
+<tr>
+<td><code>--port PORT</code></td>
+<td>Fixed network port</td>
+</tr>
+<tr>
+<td><code>--port-range START END</code></td>
+<td>Pick a random free port from an inclusive range</td>
+</tr>
+<tr>
+<td><code>--host HOST</code></td>
+<td>Bind address (default: <code>0.0.0.0</code>)</td>
+</tr>
+<tr>
+<td><code>--writable</code></td>
+<td>Allow PUT requests; opens the database in read/write mode</td>
+</tr>
+<tr>
+<td><code>--status-file FILE</code></td>
+<td>JSON file used to report server status (for process managers)</td>
+</tr>
+<tr>
+<td><code>--timeout SECONDS</code></td>
+<td>Stop the server after this many seconds of inactivity</td>
+</tr>
+</tbody>
+</table>
+<h2 id="cli-scripts">CLI scripts</h2>
+<p>Installing <code>seamless-database</code> also provides:</p>
+<ul>
+<li><code>seamless-database</code></li>
+</ul>
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="seamless-jobserver.html" class="btn btn-neutral float-left" title="seamless-jobserver"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="remote-http-launcher.html" class="btn btn-neutral float-right" title="remote-http-launcher">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+    
+      <span><a href="seamless-jobserver.html" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="remote-http-launcher.html" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script src="../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "..";</script>
+    <script src="../js/theme_extra.js"></script>
+    <script src="../js/theme.js"></script>
+      <script src="../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>

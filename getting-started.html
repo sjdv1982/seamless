@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <link rel="shortcut icon" href="img/favicon.ico" />
+    <title>Wrapping Python and bash - Seamless</title>
+    <link rel="stylesheet" href="css/theme.css" />
+    <link rel="stylesheet" href="css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "Wrapping Python and bash";
+        var mkdocs_page_input_path = "getting-started.md";
+        var mkdocs_page_url = null;
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href="index.html" class="icon icon-home"> Seamless
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="./search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="index.html">Home</a>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Getting Started</span></p>
+              <ul class="current">
+                  <li class="toctree-l1 current"><a class="reference internal current" href="#">Wrapping Python and bash</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#wrapping-python-with-direct-and-delayed">Wrapping Python with direct and delayed</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#in-process-caching">In-process caching</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#python-pitfalls">Python pitfalls</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#import-closure">Import closure</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#function-closure">Function closure</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#implicit-random-seed">Implicit random seed</a>
+    </li>
+        </ul>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#wrapping-bash-with-seamless-run">Wrapping bash with seamless-run</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#basic-usage">Basic usage</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#declaring-inputs-and-outputs">Declaring inputs and outputs</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#environment-and-execution-control">Environment and execution control</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#bash-pitfalls">Bash pitfalls</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#missing-file-dependencies">Missing file dependencies</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#non-deterministic-output-ordering">Non-deterministic output ordering</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#multi-command-pipelines">Multi-command pipelines</a>
+    </li>
+        </ul>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#setting-up-persistent-caching">Setting up persistent caching</a>
+    </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="cluster.html">Setting up a local cluster</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">How-To Guides</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="caching.html">Caching, identity, and sharing</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="composition.html">Composition</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="parallelism.html">Local parallelism</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="remote.html">Remote execution</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="hpc.html">HPC specifics</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="remote-launch.html">Remote job launching</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="sharing.html">Sharing in depth</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Reference API</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="api/index.html">Overview</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="api/seamless-core.html">seamless-core</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="api/seamless-transformer.html">seamless-transformer</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="api/seamless-config.html">seamless-config</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="api/seamless-remote.html">seamless-remote</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="api/seamless-dask.html">seamless-dask</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="api/seamless-jobserver.html">seamless-jobserver</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="api/seamless-database.html">seamless-database</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="api/remote-http-launcher.html">remote-http-launcher</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Python docstrings</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="api/reference/seamless.html">seamless</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="api/reference/seamless.checksum_class.html">Checksum</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="api/reference/seamless.buffer_class.html">Buffer</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="api/reference/seamless.transformer.html">seamless.transformer</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="api/reference/seamless_transformer.transformation_class.html">Transformation</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="api/reference/seamless_transformer.transformer_class.html">Transformer properties</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="api/reference/seamless_config.select.html">seamless.config.select</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="api/reference/seamless_config.tools.html">seamless.config.tools</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >CLI docstrings</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="api/reference/seamless-run.html">seamless-run</a>
+                </li>
+    </ul>
+                  </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">Seamless</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="index.html" class="icon icon-home" aria-label="Docs"></a></li>
+          <li class="breadcrumb-item">Getting Started</li>
+      <li class="breadcrumb-item active">Wrapping Python and bash</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h1 id="wrapping-python-and-bash">Wrapping Python and bash</h1>
+<h2 id="wrapping-python-with-direct-and-delayed">Wrapping Python with <code>direct</code> and <code>delayed</code></h2>
+<pre><code class="language-python">from seamless.transformer import direct, delayed
+</code></pre>
+<p><code>direct</code> wraps a Python function so that calling it behaves normally — arguments in, value out — but behind the scenes, Seamless checksums the function's code and inputs, executes the function, checksums the result, and caches the mapping. If you call the same function with the same inputs again, the cached result is returned without re-execution.</p>
+<pre><code class="language-python">from seamless.transformer import direct
+
+@direct
+def add(a, b):
+    import time
+    time.sleep(2)  # just to make execution slow
+    return a + b
+
+result = add(2, 3)     # runs the function, returns 5
+result = add(2, 3)     # cache hit, returns 5 immediately
+</code></pre>
+<p><code>delayed</code> wraps a function the same way, but calling it returns a <code>Transformation</code> handle instead of executing immediately. This lets you control when and how execution happens:</p>
+<pre><code class="language-python">from seamless.transformer import delayed
+
+@delayed
+def add(a, b):
+    return a + b
+
+tf = add(2, 3)          # returns a Transformation handle, does not execute
+tf.start()              # start execution in the background
+checksum = tf.compute() # execute and return the result's checksum (its identity)
+value = tf.run()        # execute (or use cache) and return the materialized value
+</code></pre>
+<p>The handle also supports <code>.task()</code> for async/await integration.</p>
+<p>When the same <code>delayed</code> function is called with the same arguments, the resulting transformation has the same checksum — the same identity. This is the foundation of Seamless's caching: identity is determined by content, not by when or where the computation runs.</p>
+<h3 id="in-process-caching">In-process caching</h3>
+<p>The examples above work without any infrastructure. With no configuration, Seamless runs transformations in the current Python process and caches results in memory for the duration of the session. Calling the same <code>direct</code> function twice with the same arguments will hit the cache on the second call — useful for exploration and verifying that your functions behave as expected.</p>
+<p>This in-process cache is lost when the process exits. For persistent caching across sessions, see <a href="#setting-up-persistent-caching">Setting up persistent caching</a> below.</p>
+<hr />
+<h3 id="python-pitfalls">Python pitfalls</h3>
+<p>Seamless executes transformation code in a sandboxed namespace. Only the explicitly declared inputs and code are available inside the transformation — outer-scope names are not. This is by design: it is how Seamless detects missing dependencies (the function errors) rather than silently caching incorrect results.</p>
+<h4 id="import-closure">Import closure</h4>
+<p>Imports that happen <em>outside</em> the function body are not part of the transformation and are not available in the sandbox. Referencing an outer-scope import will raise a <code>NameError</code> at execution time:</p>
+<pre><code class="language-python">import numpy as np  # outer import — not visible in the sandbox
+
+@direct
+def process(data):
+    return np.mean(data)  # NameError: np is not defined
+</code></pre>
+<p>Always import inside the function body:</p>
+<pre><code class="language-python">@direct
+def process(data):
+    import numpy as np  # inside the function = available in the sandbox
+    return np.mean(data)
+</code></pre>
+<h4 id="function-closure">Function closure</h4>
+<p>A helper function defined outside the wrapped function is not available in the sandbox. Calling it will raise a <code>NameError</code>:</p>
+<pre><code class="language-python">def normalize(x):
+    return x / x.max()
+
+@direct
+def process(data):
+    return normalize(data)  # NameError: normalize is not defined
+</code></pre>
+<p>Inject helper functions via <code>.globals</code> so they are bound into the transformation and available in the sandbox:</p>
+<pre><code class="language-python">def normalize(x):
+    return x / x.max()
+
+@direct
+def process(data):
+    return normalize(data)  # OK: normalize is injected as a declared global
+
+process.globals.normalize = normalize
+</code></pre>
+<p>For larger collections of helpers — a whole module or package — use <code>.modules</code> instead. See <a href="composition.html">Composition</a> for the full <code>.globals</code> and <code>.modules</code> documentation.</p>
+<h4 id="implicit-random-seed">Implicit random seed</h4>
+<p>Non-deterministic functions are a silent correctness issue: two executions with the same declared inputs produce different results, so the cached result depends on when the computation first ran. A colleague or a remote worker re-running the same transformation will get a different result — which Seamless will flag as a reproducibility failure. Declare the seed as an explicit input instead:</p>
+<pre><code class="language-python">@direct
+def sample(n, seed):
+    import random
+    random.seed(seed)
+    return [random.random() for _ in range(n)]
+</code></pre>
+<hr />
+<h2 id="wrapping-bash-with-seamless-run">Wrapping bash with <code>seamless-run</code></h2>
+<p><code>seamless-run</code> is the command-line face of Seamless. It wraps a bash command as a transformation, with file arguments automatically detected as inputs, and stdout plus any declared output files captured as results.</p>
+<h3 id="basic-usage">Basic usage</h3>
+<pre><code>export SEAMLESS_LOCAL=1  # until we set up persistent caching
+</code></pre>
+<pre><code class="language-bash">seamless-run paste data/a.txt data/b.txt
+</code></pre>
+<p>Seamless infers which arguments are files (arguments with a file extension that exist on disk), checksums them, runs the command, and caches the result. The next time you run the same command with the same inputs, the cached result is returned instantly without re-executing.</p>
+<p><code>.CHECKSUM</code> sidecar files and remote staging are covered in <a href="caching.html#the-checksum-sidecar-convention">Caching, identity, and sharing</a>.</p>
+<h3 id="declaring-inputs-and-outputs">Declaring inputs and outputs</h3>
+<p>Beyond the automatic inference from command arguments, you can explicitly declare additional inputs and outputs:</p>
+<pre><code class="language-bash"># Additional input file not in the command arguments
+seamless-run mycommand --input config.json
+
+# Capture an output file produced by the command
+seamless-run mycommand --capture output.csv
+# Capture with renaming (server-side name : local name)
+seamless-run mycommand --capture result.dat:local-result.dat
+
+# Capture stdout to a file
+seamless-run mycommand --capture :log.txt
+
+# Inject a variable input (becomes part of the transformation identity)
+seamless-run mycommand --var seed=42
+</code></pre>
+<p>For how caching works in detail, see <a href="caching.html">Caching, identity, and sharing</a>.</p>
+<h3 id="environment-and-execution-control">Environment and execution control</h3>
+<p><code>seamless-run</code> accepts flags that control where and how the transformation runs:</p>
+<pre><code class="language-bash"># Specify a conda environment for the command
+seamless-run --conda myenv mycommand input.txt
+
+# Select project and stage (controls storage namespace)
+seamless-run --project myproject --stage prod mycommand input.txt
+</code></pre>
+<hr />
+<h3 id="bash-pitfalls">Bash pitfalls</h3>
+<h4 id="missing-file-dependencies">Missing file dependencies</h4>
+<p>If your command reads files that are not declared as arguments (and therefore not automatically detected), Seamless won't track those files as inputs. A change to such a file won't trigger re-execution. Use <code>--input</code> to declare additional inputs explicitly:</p>
+<pre><code class="language-bash"># config.json is read by mycommand but not in the argument list
+
+seamless-run mycommand data.txt --input config.json
+</code></pre>
+<h4 id="non-deterministic-output-ordering">Non-deterministic output ordering</h4>
+<p>Many Unix tools return output in non-deterministic order (e.g., <code>grep</code> over multiple files, <code>find</code>, directory listings). This means two runs that produce the same logical result can have different checksums, causing unnecessary re-execution and broken caching. Pipe through <code>sort</code> where order doesn't matter:</p>
+<pre><code class="language-bash">seamless-run bash -c &quot;ls *.txt | sort &gt; file_list.txt&quot; --capture file_list.txt
+</code></pre>
+<p>More generally, any command whose output is sensitive to ordering, timing, or process IDs should be made deterministic before wrapping with Seamless.</p>
+<h4 id="multi-command-pipelines">Multi-command pipelines</h4>
+<p><code>seamless-run</code> only analyses the <em>first</em> command in a compound expression for input files. So while this works:</p>
+<pre><code class="language-bash">seamless-run paste data/a.txt data/b.txt
+</code></pre>
+<p>this does not automatically detect <code>data/a.txt</code> and <code>data/b.txt</code> as inputs:</p>
+<pre><code class="language-bash">seamless-run 'echo START; paste data/a.txt data/b.txt'  # input files not detected
+</code></pre>
+<p>Fix it with <code>--primary N</code> to nominate which command to analyse (1-based), or with <code>-i</code>/<code>--input</code> to declare the input files explicitly:</p>
+<pre><code class="language-bash">seamless-run --primary 2 'echo START; paste data/a.txt data/b.txt'
+# or
+seamless-run 'echo START; paste data/a.txt data/b.txt' -i data/a.txt -i data/b.txt
+</code></pre>
+<hr />
+<h2 id="setting-up-persistent-caching">Setting up persistent caching</h2>
+<p>Without a cluster, each <code>seamless-run</code> invocation is a fresh process with no memory of previous runs.</p>
+<pre><code class="language-bash">seamless-run sleep 2   # takes 2 seconds
+seamless-run sleep 2   # takes 2 seconds
+</code></pre>
+<p>To demonstrate persistent caching, this is the minimum setup needed:</p>
+<p><strong><code>~/.seamless/clusters.yaml</code></strong> — define a cluster named <code>local</code>:</p>
+<pre><code class="language-yaml">local:
+  type: local
+  frontends:
+    - hashserver:
+        bufferdir: /home/user/seamless-projects
+      database:
+        database_dir: /home/user/seamless-projects
+</code></pre>
+<p><strong><code>seamless.profile.yaml</code></strong> in your project directory:</p>
+<pre><code class="language-yaml">- cluster: local
+- project: myproject
+- execution: process
+</code></pre>
+<p>Then initialise, and remove the SEAMLESS_LOCAL flag:</p>
+<pre><code class="language-bash">unset SEAMLESS_LOCAL
+seamless-init
+</code></pre>
+<p>Now persistent caching is active. The same command from before:</p>
+<pre><code class="language-bash">seamless-run sleep 2   # runs, takes 2 seconds, result cached
+seamless-run sleep 2   # cache hit, returns instantly
+</code></pre>
+<p>The same applies to Python: calling <code>seamless.config.init()</code> at the start of your script activates the cluster, and results survive across sessions. See <a href="cluster.html">Setting up a local cluster</a> for a full explanation of what changes with a cluster.</p>
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="index.html" class="btn btn-neutral float-left" title="Home"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="cluster.html" class="btn btn-neutral float-right" title="Setting up a local cluster">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+    
+      <span><a href="index.html" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="cluster.html" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script src="js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = ".";</script>
+    <script src="js/theme_extra.js"></script>
+    <script src="js/theme.js"></script>
+      <script src="search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>

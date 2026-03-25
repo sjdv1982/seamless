@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <link rel="shortcut icon" href="../img/favicon.ico" />
+    <title>seamless-remote - Seamless</title>
+    <link rel="stylesheet" href="../css/theme.css" />
+    <link rel="stylesheet" href="../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "seamless-remote";
+        var mkdocs_page_input_path = "api/seamless-remote.md";
+        var mkdocs_page_url = null;
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href="../index.html" class="icon icon-home"> Seamless
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../index.html">Home</a>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Getting Started</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../getting-started.html">Wrapping Python and bash</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../cluster.html">Setting up a local cluster</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">How-To Guides</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../caching.html">Caching, identity, and sharing</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../composition.html">Composition</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../parallelism.html">Local parallelism</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../remote.html">Remote execution</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../hpc.html">HPC specifics</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../remote-launch.html">Remote job launching</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../sharing.html">Sharing in depth</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Reference API</span></p>
+              <ul class="current">
+                  <li class="toctree-l1"><a class="reference internal" href="index.html">Overview</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="seamless-core.html">seamless-core</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="seamless-transformer.html">seamless-transformer</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="seamless-config.html">seamless-config</a>
+                  </li>
+                  <li class="toctree-l1 current"><a class="reference internal current" href="#">seamless-remote</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#core-concepts">Core concepts</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#client-hierarchy">Client hierarchy</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#activation-modules">Activation modules</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#client-types-launched-vs-extern">Client types: launched vs extern</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#relation-to-the-seamless-ecosystem">Relation to the Seamless ecosystem</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#delegation-levels">Delegation levels</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#cli-scripts">CLI scripts</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#environment-variables">Environment variables</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#installation">Installation</a>
+    </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="seamless-dask.html">seamless-dask</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="seamless-jobserver.html">seamless-jobserver</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="seamless-database.html">seamless-database</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="remote-http-launcher.html">remote-http-launcher</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Python docstrings</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="reference/seamless.html">seamless</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="reference/seamless.checksum_class.html">Checksum</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="reference/seamless.buffer_class.html">Buffer</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="reference/seamless.transformer.html">seamless.transformer</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="reference/seamless_transformer.transformation_class.html">Transformation</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="reference/seamless_transformer.transformer_class.html">Transformer properties</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="reference/seamless_config.select.html">seamless.config.select</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="reference/seamless_config.tools.html">seamless.config.tools</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >CLI docstrings</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="reference/seamless-run.html">seamless-run</a>
+                </li>
+    </ul>
+                  </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Seamless</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../index.html" class="icon icon-home" aria-label="Docs"></a></li>
+          <li class="breadcrumb-item">Reference API</li>
+      <li class="breadcrumb-item active">seamless-remote</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h1 id="seamless-remote">seamless-remote</h1>
+<p><code>seamless-remote</code> is the client connectivity layer of the <a href="https://github.com/sjdv1982/seamless">Seamless</a> ecosystem. It provides async HTTP clients for every remote service that a Seamless workflow can talk to — buffer storage, transformation cache, jobserver, and Dask scheduler — together with launch-aware wrappers that start those services on demand via <code>remote-http-launcher</code>. When <code>seamless-config</code> calls <code>init()</code> or <code>set_stage()</code>, it is <code>seamless-remote</code> that opens the actual connections and keeps them alive.</p>
+<p><strong>This is an internal infrastructure package.</strong> User workflow code never imports <code>seamless-remote</code> directly — it is activated behind the scenes by <code>seamless-config</code> and consumed by <code>seamless-core</code>, <code>seamless-transformer</code>, and <code>seamless-dask</code>. The only user-facing entry points are the two CLI scripts described below.</p>
+<h2 id="core-concepts">Core concepts</h2>
+<h3 id="client-hierarchy">Client hierarchy</h3>
+<p>Every remote service is accessed through a pair of classes:</p>
+<table>
+<thead>
+<tr>
+<th>Base client</th>
+<th>Launched wrapper</th>
+<th>Service</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>BufferClient</code></td>
+<td><code>BufferLaunchedClient</code></td>
+<td>Content-addressed buffer store (<code>hashserver</code>)</td>
+</tr>
+<tr>
+<td><code>DatabaseClient</code></td>
+<td><code>DatabaseLaunchedClient</code></td>
+<td>Transformation result cache (<code>seamless-database</code>)</td>
+</tr>
+<tr>
+<td><code>JobserverClient</code></td>
+<td><code>JobserverLaunchedClient</code></td>
+<td>HTTP job dispatcher (<code>seamless-jobserver</code>)</td>
+</tr>
+<tr>
+<td>—</td>
+<td><code>DaskserverLaunchedHandle</code></td>
+<td>Dask scheduler (<code>seamless-dask-wrapper</code>)</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Base clients</strong> (<code>BufferClient</code>, <code>DatabaseClient</code>, <code>JobserverClient</code>) perform async HTTP against a known host and port. They inherit from a shared <code>Client</code> base that manages per-thread <code>aiohttp</code> sessions, a retry decorator for transient failures, and a background keepalive thread that healthchecks open connections.</p>
+<p><strong>Launched wrappers</strong> extend the base clients with auto-launch: they call <code>seamless_config.tools.configure_*()</code> to build a launch dict, pass it to <code>remote_http_launcher.run()</code>, and cache the resulting server address. If the server is already running, the cache returns the existing connection. <code>DaskserverLaunchedHandle</code> follows the same pattern but is fully synchronous — it constructs a <code>distributed.Client</code> and wraps it in a <code>SeamlessDaskClient</code>.</p>
+<h3 id="activation-modules">Activation modules</h3>
+<p>Each service type has an <em>activation module</em> that manages the active set of clients and exposes the async functions consumed by the rest of the Seamless stack:</p>
+<table>
+<thead>
+<tr>
+<th>Module</th>
+<th>Key functions</th>
+<th>Used by</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>buffer_remote</code></td>
+<td><code>get_buffer()</code>, <code>write_buffer()</code>, <code>get_buffer_lengths()</code>, <code>promise()</code></td>
+<td><code>seamless-core</code> (<code>Checksum.resolve</code>, <code>Buffer.write</code>)</td>
+</tr>
+<tr>
+<td><code>database_remote</code></td>
+<td><code>get_transformation_result()</code>, <code>set_transformation_result()</code>, <code>get_rev_transformations()</code></td>
+<td><code>seamless-transformer</code> (cache lookup/store)</td>
+</tr>
+<tr>
+<td><code>jobserver_remote</code></td>
+<td><code>run_transformation()</code></td>
+<td><code>seamless-transformer</code> (remote job dispatch)</td>
+</tr>
+<tr>
+<td><code>daskserver_remote</code></td>
+<td><code>activate()</code>, <code>deactivate()</code></td>
+<td><code>seamless-config</code> (stage changes)</td>
+</tr>
+</tbody>
+</table>
+<p>Each module maintains separate lists of read and write clients (or a single launched handle for the daskserver). <code>activate()</code> is called by <code>seamless-config</code> during stage transitions; it instantiates the appropriate clients from the cluster definition and makes them available to downstream consumers.</p>
+<h3 id="client-types-launched-vs-extern">Client types: launched vs extern</h3>
+<p>Clients can be registered in two ways:</p>
+<ul>
+<li><strong>Launched</strong> — <code>seamless-remote</code> starts the service itself (via <code>remote-http-launcher</code>). Configuration comes from the cluster definition in <code>seamless.yaml</code> / <code>seamless.profile.yaml</code>.</li>
+<li><strong>Extern</strong> — the service is already running and a URL (or local directory, for buffer folders) is provided directly. Useful for shared infrastructure or debugging.</li>
+</ul>
+<p>Both are registered through <code>define_launched_client()</code> and <code>define_extern_client()</code> on the activation module and are selected during <code>activate()</code>.</p>
+<hr />
+<h2 id="relation-to-the-seamless-ecosystem">Relation to the Seamless ecosystem</h2>
+<pre><code class="language-text">    Seamless runtime                   (Buffer/Checksum, direct/delayed, stages)
+        │
+        │  resolve/write buffers, check/store cached results,
+        │  activate backends and delegate jobs to jobserver or daskserver
+        ▼
+    seamless-remote                    ◄── this package
+        │
+        │  async HTTP (aiohttp)
+        ▼
+    ┌──────────────┐  ┌──────────────────┐  ┌─────────────────┐  ┌────────────────────────┐
+    │  hashserver   │  │ seamless-database │  │ seamless-jobserver│  │ seamless-dask-wrapper   │
+    │  (buffers)    │  │  (result cache)   │  │  (job dispatch)  │  │  (Dask scheduler)       │
+    └──────────────┘  └──────────────────┘  └─────────────────┘  └────────────────────────┘
+                                                                          │
+                                                          Dask workers run seamless-transformer,
+                                                          which calls seamless-remote again
+                                                          for nested transformations
+</code></pre>
+<p>The Seamless runtime above this layer consists mainly of <code>seamless-core</code>, <code>seamless-transformer</code>, and <code>seamless-config</code>. <code>seamless-core</code> uses <code>seamless-remote</code> for buffer resolution and writes, <code>seamless-transformer</code> uses it for buffer access, cache lookup/store, and job delegation, and <code>seamless-config</code> activates the appropriate backends during stage changes. <code>seamless-remote</code> in turn talks to four remote services: <code>hashserver</code> for buffers, <code>seamless-database</code> for transformation results, <code>seamless-jobserver</code> for lightweight job dispatch, and <code>seamless-dask-wrapper</code> (part of <code>seamless-dask</code>) for Dask-based execution. Inside Dask workers, the same path repeats — <code>seamless-transformer</code> runs again and calls <code>seamless-remote</code> for buffer/cache operations on nested transformations.</p>
+<p><code>seamless-config</code> is the only package that calls <code>activate()</code> / <code>deactivate()</code> directly. All other packages interact with <code>seamless-remote</code> through the module-level async functions (<code>get_buffer</code>, <code>run_transformation</code>, etc.).</p>
+<hr />
+<h2 id="delegation-levels">Delegation levels</h2>
+<p><code>seamless-remote</code> enables the tiered delegation model defined by <code>seamless-config</code> stages:</p>
+<table>
+<thead>
+<tr>
+<th>Level</th>
+<th>What <code>seamless-remote</code> provides</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0 — in-process</td>
+<td>Nothing; all buffers are held in the client.</td>
+</tr>
+<tr>
+<td>1 — persistent storage</td>
+<td><code>buffer_remote</code> writes/reads buffers via the cluster's hashserver.</td>
+</tr>
+<tr>
+<td>2 — cached execution</td>
+<td>Additionally, <code>database_remote</code> checks and records transformation results.</td>
+</tr>
+<tr>
+<td>3 — remote execution</td>
+<td>Additionally, <code>jobserver_remote</code> or <code>daskserver_remote</code> delegates computation.</td>
+</tr>
+</tbody>
+</table>
+<p>Moving between levels is a configuration change (<code>seamless.yaml</code> / <code>seamless.profile.yaml</code>), not a code change.</p>
+<hr />
+<h2 id="cli-scripts">CLI scripts</h2>
+<p>Installing <code>seamless-remote</code> provides two utilities for working with content-addressed data from the command line:</p>
+<table>
+<thead>
+<tr>
+<th>Command</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>seamless-resolve</code></td>
+<td>Resolve a buffer from its SHA-256 checksum and write it to stdout or a file.</td>
+</tr>
+<tr>
+<td><code>seamless-fingertip</code></td>
+<td>Like <code>seamless-resolve</code>, but uses fingertip resolution (with fallback to recomputation).</td>
+</tr>
+</tbody>
+</table>
+<p>Both accept a <code>--project</code> and <code>--stage</code> flag to select the storage context, and read remote client configuration from environment variables or config files.</p>
+<pre><code class="language-bash"># Resolve a checksum to a file
+seamless-resolve abc123...def --output result.bin
+
+# Resolve with project/stage context
+seamless-resolve abc123...def --project myproject --stage prod --output result.bin
+
+# Fingertip (resolve with recomputation fallback)
+seamless-fingertip abc123...def --output result.bin
+</code></pre>
+<hr />
+<h2 id="environment-variables">Environment variables</h2>
+<table>
+<thead>
+<tr>
+<th>Variable</th>
+<th>Default</th>
+<th>Effect</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>SEAMLESS_REMOTE_CONNECT_TIMEOUT</code></td>
+<td><code>10</code></td>
+<td>HTTP connect timeout (seconds)</td>
+</tr>
+<tr>
+<td><code>SEAMLESS_REMOTE_READ_TIMEOUT</code></td>
+<td><code>1200</code></td>
+<td>HTTP read timeout (seconds) — set high to accommodate hashserver integrity checks on large buffers</td>
+</tr>
+<tr>
+<td><code>SEAMLESS_REMOTE_TOTAL_TIMEOUT</code></td>
+<td>none</td>
+<td>Total request timeout (seconds)</td>
+</tr>
+<tr>
+<td><code>SEAMLESS_REMOTE_HEALTHCHECK_TIMEOUT</code></td>
+<td><code>10</code></td>
+<td>Keepalive healthcheck timeout (seconds)</td>
+</tr>
+<tr>
+<td><code>SEAMLESS_DATABASE_MAX_INFLIGHT</code></td>
+<td><code>30</code></td>
+<td>Maximum concurrent in-flight database requests (semaphore)</td>
+</tr>
+<tr>
+<td><code>SEAMLESS_ALLOW_REMOTE_CLIENTS_IN_WORKER</code></td>
+<td><code>false</code></td>
+<td>Allow remote clients in child worker processes</td>
+</tr>
+<tr>
+<td><code>SEAMLESS_DEBUG_REMOTE_DB</code></td>
+<td>—</td>
+<td>Enable debug logging for <code>database_remote</code></td>
+</tr>
+<tr>
+<td><code>SEAMLESS_CLIENT_DEBUG</code></td>
+<td>—</td>
+<td>Enable debug logging for client session lifecycle</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="installation">Installation</h2>
+<pre><code class="language-bash">pip install seamless-remote
+</code></pre>
+<p>Requires Python &gt;= 3.12. Dependencies: <code>seamless-core</code>, <code>seamless-config</code>, <code>aiohttp</code>, <code>aiofiles</code>, <code>frozendict</code>.</p>
+<p>Optional (activated at runtime when needed): <code>remote-http-launcher</code> (for launched clients), <code>seamless-dask</code> and <code>distributed</code> (for daskserver integration).</p>
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="seamless-config.html" class="btn btn-neutral float-left" title="seamless-config"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="seamless-dask.html" class="btn btn-neutral float-right" title="seamless-dask">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+    
+      <span><a href="seamless-config.html" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="seamless-dask.html" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script src="../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "..";</script>
+    <script src="../js/theme_extra.js"></script>
+    <script src="../js/theme.js"></script>
+      <script src="../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>

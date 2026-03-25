@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <link rel="shortcut icon" href="../../../img/favicon.ico" />
+    <title>Worker spawning specification - Seamless — Agent Documentation</title>
+    <link rel="stylesheet" href="../../../css/theme.css" />
+    <link rel="stylesheet" href="../../../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "Worker spawning specification";
+        var mkdocs_page_input_path = "repos/seamless-transformer/source/spawnworkers.md";
+        var mkdocs_page_url = null;
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../../../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href="../../../index.html" class="icon icon-home"> Seamless — Agent Documentation
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../../index.html">Home</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../../overview.html">Agent Docs Overview</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../index.html">Workspace Repos</a>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Contracts</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/identity-and-caching.html">Identity and Caching</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/direct-delayed-and-transformation.html">direct/delayed/Transformation</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/modules-and-closures.html">Modules and Closures</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/scratch-witness-audit.html">Scratch/Witness/Audit</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/seamless-run-and-argtyping.html">seamless-run/Argtyping</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/cache-storage-and-limits.html">Cache Storage and Limits</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/content-addressed-files-and-dirs.html">Content-addressed Files and Dirs</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/execution-backends.html">Execution Backends</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">API</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../api/python/seamless.html">seamless</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../api/python/seamless.transformer.html">seamless.transformer</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../api/python/seamless.buffer_class.html">seamless.buffer_class</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../api/python/seamless.checksum_class.html">seamless.checksum_class</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../api/python/seamless_config.select.html">seamless_config.select</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../api/python/seamless_config.tools.html">seamless_config.tools</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../api/python/seamless_transformer.transformation_class.html">seamless_transformer.transformation_class</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../api/python/seamless_transformer.transformer_class.html">seamless_transformer.transformer_class</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">CLI</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../api/cli/seamless-run.html">seamless-run</a>
+                  </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">Seamless — Agent Documentation</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../../../index.html" class="icon icon-home" aria-label="Docs"></a></li>
+      <li class="breadcrumb-item active">Worker spawning specification</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h1 id="worker-spawning-specification">Worker spawning specification</h1>
+<p>The submodule <code>seamless_transformer.worker</code> has a function <code>spawn()</code>.
+It takes an optional argument N which is the numbers of workers to spawn, by default this is the number of processes on the machine.
+The spawning machinery and the communication between worker and parent is handled by the <code>seamless_transformer.process</code> submodule.</p>
+<p>When called, spawn() fires up N workers. Each worker sets <code>set_is_worker(True)</code> and then listens forever (until shutdown request) for requests from the parent. Whenever a worker dies (segfaults), a new worker is spun up by the parent.</p>
+<p>Parent requests are always Checksum objects, accompanied by two parameters: <code>scratch</code> (a bool) and <code>tf_dunder</code> (a dict). Whenever a checksum is received, the worker launches a thread that does the following:</p>
+<ul>
+<li>The checksum is resolved into a dict <code>.resolve(celltype="plain")</code></li>
+<li><code>/seamless1/seamless-transformer/seamless_transformer/run.py::run_transformation_dict</code> is called.
+After the thread has ended,<code>.tempref()</code> is called on the result checksum. The result checksum is returned, or an exception traceback serialized as string. In the latter case, the parent process re-raises the exception in the caller frame that made the request.</li>
+</ul>
+<p>In the parent process, a <code>has_spawned()</code> flag is set in <code>seamless_transformer.worker</code>. Future calls to <code>spawn()</code> check against this flag and raise a RuntimeError.
+In <code>seamless_transformer/transformation_cache.py::run</code>, the local cache and database cache are
+checked as usual (the database cache only if <code>is_worker</code> is False).
+If they miss, the following code paths are considered:</p>
+<ul>
+<li>
+<p>If <code>has_spawned()</code> is True:
+    Assert that <code>is_worker</code> is False. Then, forward the call parameters (minus <code>require_value</code>) to the worker manager, awaiting the result.
+    The manager will select one of the workers that has the least number of running requests, and send the request to that worker, and return the request checksum.</p>
+</li>
+<li>
+<p>If <code>is_worker</code> is True:
+    Assert that <code>has_spawned()</code> is False. Then forward the call parameters (minus <code>require_value</code>) as a request to the parent process, awaiting the result.
+    The parent process forwards this request to the worker manager, who will handle it as described above.
+    The resulting transformation checksum or exception string is returned to the worker that made the request to the parent. Right before, in case of a transformation checksum, the parent does a <code>.tempref()</code> on the checksum.
+    In case of an exception string, the worker re-raises the exception in the caller frame that made the request.</p>
+</li>
+<li>
+<p>If neither are true:
+    Follow the default code path that calls <code>/seamless1/seamless-transformer/seamless_transformer/run.py::run_transformation_dict</code></p>
+</li>
+</ul>
+<h2 id="changes-on-the-worker">Changes on the worker</h2>
+<ol>
+<li>In a worker, it is no longer possible to do Checksum.incref, .tempref, .decref the normal way. These methods become a no-op.</li>
+<li>In a worker, it is also no longer possible to do Buffer.incref, .tempref, .decref the normal way. If these methods are
+called, Buffer.get_checksum() gets invoked, and then the method becomes a request (request type "incref", "decref", or "tempref") to the parent, with the checksum and the buffer length as arguments.
+Upon receiving such a request, The parent does Checksum.incref / .decref / .tempref on the received checksum.
+In case of .decref, the parent simply returns afterwards.
+In case of .incref, .tempref:<ul>
+<li>The parent returns 0 if the buffer is already in local buffer cache</li>
+<li>Otherwise, it allocates and returns a shared memory pointer. The worker must copy the buffer into
+  this shared memory location, and then make an "upload" request (with the pointer as an argument) to the parent.</li>
+</ul>
+</li>
+</ol>
+<p>Whenever the parent receives an "upload" request, it tracks down which checksum and buffer length correspond to the pointer. It constructs then a Buffer object from the shared memory
+location.</p>
+<p>Finally, in a worker, it is no longer possible to do Checksum.resolve() the normal way. If this
+method is called, it sends a "download" request to the parent, with the checksum as argument.
+The parent process resolves the buffer, allocates a shared memory pointer, and copies the buffer
+into it. It returns then the pointer (including the buffer length). Upon receiving this response, the worker then creates a Buffer from the shared memory pointer. From this Buffer, a Checksum.resolve() return value is constructed as usual (either the Buffer itself or <code>Buffer.get_value(celltype)</code>).
+Finally, a "downloaded" request is made to the parent, containing the shared pointer. Upon receiving a "downloaded" request, the parent frees the shared memory pointer.</p>
+              
+            </div>
+          </div><footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+    
+    
+  </span>
+</div>
+    <script src="../../../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "../../..";</script>
+    <script src="../../../js/theme_extra.js"></script>
+    <script src="../../../js/theme.js"></script>
+      <script src="../../../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>

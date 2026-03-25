@@ -1,0 +1,47 @@
+{
+  "version": 1,
+  "python": {
+    "sources": [
+      {
+        "module": "seamless",
+        "path": "seamless-core/seamless/__init__.py"
+      },
+      {
+        "module": "seamless.transformer",
+        "path": "seamless-core/seamless/transformer/__init__.py"
+      },
+      {
+        "module": "seamless.buffer_class",
+        "path": "seamless-core/seamless/buffer_class.py"
+      },
+      {
+        "module": "seamless.checksum_class",
+        "path": "seamless-core/seamless/checksum_class.py"
+      },
+      {
+        "module": "seamless_config.tools",
+        "path": "seamless-config/seamless_config/tools.py"
+      },
+      {
+        "module": "seamless_config.select",
+        "path": "seamless-config/seamless_config/select.py"
+      },
+      {
+        "module": "seamless_transformer.transformer_class",
+        "path": "seamless-transformer/seamless_transformer/transformer_class.py"
+      },
+      {
+        "module": "seamless_transformer.transformation_class",
+        "path": "seamless-transformer/seamless_transformer/transformation_class.py"
+      }
+    ]
+  },
+  "cli": {
+    "commands": [
+      {
+        "name": "seamless-run",
+        "contract_page": "contracts/seamless-run-and-argtyping.md"
+      }
+    ]
+  }
+}

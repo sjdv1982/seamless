@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <link rel="shortcut icon" href="../img/favicon.ico" />
+    <title>direct/delayed/Transformation - Seamless — Agent Documentation</title>
+    <link rel="stylesheet" href="../css/theme.css" />
+    <link rel="stylesheet" href="../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "direct/delayed/Transformation";
+        var mkdocs_page_input_path = "contracts/direct-delayed-and-transformation.md";
+        var mkdocs_page_url = null;
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href="../index.html" class="icon icon-home"> Seamless — Agent Documentation
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../index.html">Home</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../overview.html">Agent Docs Overview</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../repos/index.html">Workspace Repos</a>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Contracts</span></p>
+              <ul class="current">
+                  <li class="toctree-l1"><a class="reference internal" href="identity-and-caching.html">Identity and Caching</a>
+                  </li>
+                  <li class="toctree-l1 current"><a class="reference internal current" href="#">direct/delayed/Transformation</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#one-page-of-how-it-behaves-practical">One page of “how it behaves” (practical)</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#direct">direct</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#delayed">delayed</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#transformation-handle">Transformation handle</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#optional-dask-backend">Optional Dask backend</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#composition">Composition</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#minimal-examples">Minimal examples</a>
+    </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="modules-and-closures.html">Modules and Closures</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="scratch-witness-audit.html">Scratch/Witness/Audit</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="seamless-run-and-argtyping.html">seamless-run/Argtyping</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="cache-storage-and-limits.html">Cache Storage and Limits</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="content-addressed-files-and-dirs.html">Content-addressed Files and Dirs</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="execution-backends.html">Execution Backends</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">API</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/python/seamless.html">seamless</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/python/seamless.transformer.html">seamless.transformer</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/python/seamless.buffer_class.html">seamless.buffer_class</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/python/seamless.checksum_class.html">seamless.checksum_class</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/python/seamless_config.select.html">seamless_config.select</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/python/seamless_config.tools.html">seamless_config.tools</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/python/seamless_transformer.transformation_class.html">seamless_transformer.transformation_class</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/python/seamless_transformer.transformer_class.html">seamless_transformer.transformer_class</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">CLI</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/cli/seamless-run.html">seamless-run</a>
+                  </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Seamless — Agent Documentation</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../index.html" class="icon icon-home" aria-label="Docs"></a></li>
+          <li class="breadcrumb-item">Contracts</li>
+      <li class="breadcrumb-item active">direct/delayed/Transformation</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h1 id="direct-delayed-transformation-contract"><code>direct</code> / <code>delayed</code> / <code>Transformation</code> (Contract)</h1>
+<p>This page defines the minimum semantics an agent may rely on when porting code.</p>
+<h2 id="one-page-of-how-it-behaves-practical">One page of “how it behaves” (practical)</h2>
+<p>This is the smallest reliable example shape:</p>
+<pre><code class="language-python">from seamless.transformer import direct, delayed
+
+@direct
+def f(a, b):
+    return 10 * a + 2 * b
+
+@delayed
+def g(a, b):
+    return 10 * a + 2 * b
+
+v = f(30, 12)          # returns a value now
+tf = g(30, 12)         # returns a Transformation handle
+cs = tf.compute()      # computes and returns a checksum identifier
+v2 = tf.run()          # resolves checksum into the value
+</code></pre>
+<p>If you call the same transformer again with the same explicit inputs, Seamless may reuse cached results (when available) rather than recomputing.</p>
+<h2 id="direct"><code>direct</code></h2>
+<ul>
+<li>Treat <code>direct(f)</code> as “call returns the value now”.</li>
+<li><code>direct</code> is for ergonomic call-sites and small steps where immediate evaluation is desirable.</li>
+<li>If called from an environment that forbids blocking (common in notebooks/event loops), prefer the async APIs of <code>Transformation</code> instead.</li>
+</ul>
+<h2 id="delayed"><code>delayed</code></h2>
+<ul>
+<li>Treat <code>delayed(f)</code> as “call returns a <code>Transformation</code> handle”.</li>
+<li><code>delayed</code> is the default for pipelines: you can build a graph of handles and decide when/how to run them.</li>
+</ul>
+<h2 id="transformation-handle"><code>Transformation</code> handle</h2>
+<p>Assume these meanings (confirm with docs/docstrings for exact behavior):
+- <code>.compute()</code>: execute and return an identifier (checksum) for the result.
+- <code>.run()</code>: execute and return the resolved/materialized value.
+- <code>.start()</code>: schedule computation (useful when starting many tasks before collecting results).
+- <code>.task()</code> / <code>await</code>: async execution; preferred in Jupyter/async contexts.</p>
+<h2 id="optional-dask-backend">Optional Dask backend</h2>
+<p>If Seamless’s Dask integration is available/configured:
+- a <code>Transformation</code> may delegate execution/scheduling to Dask (distributed task graph execution)
+- this improves HPC/distributed throughput without changing the “step identity” mental model</p>
+<p>An agent should check docs for how Dask is configured/enabled and what requirements exist for worker environments.</p>
+<h2 id="composition">Composition</h2>
+<ul>
+<li>Passing one <code>Transformation</code> as an input to another wires an explicit dependency.</li>
+<li>Avoid implicit dependencies via globals/closures unless explicitly injected and content-bound.</li>
+</ul>
+<h2 id="minimal-examples">Minimal examples</h2>
+<p>Prefer examples that don’t touch time/RNG/threads so caching and referential transparency are obvious.</p>
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="identity-and-caching.html" class="btn btn-neutral float-left" title="Identity and Caching"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="modules-and-closures.html" class="btn btn-neutral float-right" title="Modules and Closures">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+    
+      <span><a href="identity-and-caching.html" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="modules-and-closures.html" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script src="../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "..";</script>
+    <script src="../js/theme_extra.js"></script>
+    <script src="../js/theme.js"></script>
+      <script src="../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>

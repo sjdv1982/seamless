@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <link rel="shortcut icon" href="img/favicon.ico" />
+    <title>HPC specifics - Seamless</title>
+    <link rel="stylesheet" href="css/theme.css" />
+    <link rel="stylesheet" href="css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "HPC specifics";
+        var mkdocs_page_input_path = "hpc.md";
+        var mkdocs_page_url = null;
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href="index.html" class="icon icon-home"> Seamless
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="./search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="index.html">Home</a>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Getting Started</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="getting-started.html">Wrapping Python and bash</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="cluster.html">Setting up a local cluster</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">How-To Guides</span></p>
+              <ul class="current">
+                  <li class="toctree-l1"><a class="reference internal" href="caching.html">Caching, identity, and sharing</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="composition.html">Composition</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="parallelism.html">Local parallelism</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="remote.html">Remote execution</a>
+                  </li>
+                  <li class="toctree-l1 current"><a class="reference internal current" href="#">HPC specifics</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#queue-definitions">Queue definitions</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#key-queue-parameters">Key queue parameters</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#selecting-a-queue">Selecting a queue</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#adaptive-scaling">Adaptive scaling</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#oar-clusters">OAR clusters</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#pure-dask-mode">Pure Dask mode</a>
+    </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="remote-launch.html">Remote job launching</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="sharing.html">Sharing in depth</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Reference API</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="api/index.html">Overview</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="api/seamless-core.html">seamless-core</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="api/seamless-transformer.html">seamless-transformer</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="api/seamless-config.html">seamless-config</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="api/seamless-remote.html">seamless-remote</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="api/seamless-dask.html">seamless-dask</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="api/seamless-jobserver.html">seamless-jobserver</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="api/seamless-database.html">seamless-database</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="api/remote-http-launcher.html">remote-http-launcher</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Python docstrings</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="api/reference/seamless.html">seamless</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="api/reference/seamless.checksum_class.html">Checksum</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="api/reference/seamless.buffer_class.html">Buffer</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="api/reference/seamless.transformer.html">seamless.transformer</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="api/reference/seamless_transformer.transformation_class.html">Transformation</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="api/reference/seamless_transformer.transformer_class.html">Transformer properties</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="api/reference/seamless_config.select.html">seamless.config.select</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="api/reference/seamless_config.tools.html">seamless.config.tools</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >CLI docstrings</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="api/reference/seamless-run.html">seamless-run</a>
+                </li>
+    </ul>
+                  </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">Seamless</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="index.html" class="icon icon-home" aria-label="Docs"></a></li>
+          <li class="breadcrumb-item">How-To Guides</li>
+      <li class="breadcrumb-item active">HPC specifics</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h1 id="hpc-specifics">HPC specifics</h1>
+<p>This guide covers Seamless deployment on HPC clusters with SLURM or OAR schedulers. It assumes you have read <a href="remote.html">Remote execution</a> and have a working daskserver cluster definition.</p>
+<h2 id="queue-definitions">Queue definitions</h2>
+<p>HPC queue definitions live inside the cluster entry in <code>~/.seamless/clusters.yaml</code>, under the <code>queues</code> key. Each queue entry maps to a <code>dask_jobqueue</code> cluster constructor call (SLURMCluster, OARCluster, etc.), plus Seamless-specific lifecycle parameters.</p>
+<p>A minimal SLURM cluster with two queues:</p>
+<pre><code class="language-yaml">hpc:
+  tunnel: true
+  type: slurm
+  frontends:
+    - hostname: login.hpc.example
+      hashserver:
+        bufferdir: /scratch/seamless/buffers
+        conda: hashserver
+        network_interface: 0.0.0.0
+        port_start: 60100
+        port_end: 60199
+      database:
+        database_dir: /scratch/seamless/db
+        conda: seamless-database
+        network_interface: 0.0.0.0
+        port_start: 60200
+        port_end: 60299
+      daskserver:
+        network_interface: 0.0.0.0
+        port_start: 60300
+        port_end: 60399
+
+  default_queue: standard
+  queues:
+    standard:
+      conda: seamless-dask
+      walltime: &quot;02:00:00&quot;
+      cores: 16
+      memory: 64000MB
+      tmpdir: /scratch/tmp
+      maximum_jobs: 20
+      unknown_task_duration: 1m
+      target_duration: 10m
+      lifetime_stagger: 4m
+
+    highmem:
+      TEMPLATE: standard      # inherit all fields from 'standard', then override
+      cores: 4
+      memory: 256000MB
+      maximum_jobs: 4
+</code></pre>
+<p>The <code>TEMPLATE</code> key lets a queue inherit all parameters from another queue, then override specific fields. This avoids repeating common settings.</p>
+<h3 id="key-queue-parameters">Key queue parameters</h3>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>walltime</code></td>
+<td>Maximum wall-clock time for each Dask worker job</td>
+</tr>
+<tr>
+<td><code>cores</code></td>
+<td>CPU cores per worker job (controls Seamless worker pool size per Dask worker)</td>
+</tr>
+<tr>
+<td><code>memory</code></td>
+<td>Memory per worker job</td>
+</tr>
+<tr>
+<td><code>tmpdir</code></td>
+<td>Local scratch directory on compute nodes</td>
+</tr>
+<tr>
+<td><code>maximum_jobs</code></td>
+<td>Maximum number of concurrent Dask worker jobs (adaptive scaling upper bound)</td>
+</tr>
+<tr>
+<td><code>unknown_task_duration</code></td>
+<td>Dask scheduler's estimate for tasks with no timing history</td>
+</tr>
+<tr>
+<td><code>target_duration</code></td>
+<td>Dask scheduler's target task duration for adaptive scaling decisions</td>
+</tr>
+<tr>
+<td><code>lifetime_stagger</code></td>
+<td>Stagger worker restarts to avoid all workers expiring simultaneously</td>
+</tr>
+</tbody>
+</table>
+<h3 id="selecting-a-queue">Selecting a queue</h3>
+<p>In <code>seamless.profile.yaml</code>:</p>
+<pre><code class="language-yaml">- stage hpc:
+    - cluster: hpc
+    - execution: remote
+    - remote: daskserver
+    - queue: highmem
+</code></pre>
+<p>From the CLI: <code>seamless-run --stage hpc --queue highmem mycommand input.txt</code>.</p>
+<hr />
+<h2 id="adaptive-scaling">Adaptive scaling</h2>
+<p>Seamless uses Dask's adaptive scaling to grow and shrink the worker pool based on workload. When many transformations are submitted concurrently, Dask scales up (adding worker jobs to the SLURM/OAR queue) until <code>maximum_jobs</code> is reached. When the cluster is idle, it scales down (workers exit and are not resubmitted).</p>
+<p>The parameters <code>target_duration</code>, <code>unknown_task_duration</code>, and <code>lifetime_stagger</code> tune the adaptive strategy:</p>
+<ul>
+<li><strong><code>target_duration</code></strong> (default: <code>10m</code>): the scheduler aims for each worker to run for about this long before being considered for scale-down. Shorter values make the cluster more responsive to idle periods but increase scheduler overhead.</li>
+<li><strong><code>unknown_task_duration</code></strong> (default: <code>1m</code>): how long the scheduler assumes an unknown-duration task will take when making scaling decisions. Set this to a reasonable estimate of your typical transformation runtime.</li>
+<li><strong><code>lifetime_stagger</code></strong> (default: <code>4m</code>): workers are given a rolling lifetime of <code>walltime − lifetime_stagger − grace_period</code>. Staggering prevents all workers from expiring at the same time and causing a temporary gap in capacity.</li>
+</ul>
+<p>When <code>maximum_jobs</code> is set to <code>1</code>, worker lifetime rotation is disabled — there is no point in rolling restarts with a single worker.</p>
+<hr />
+<h2 id="oar-clusters">OAR clusters</h2>
+<p>For OAR (as used on some French HPC centres), use <code>type: oar</code> in the cluster definition. The queue parameters are the same; Seamless passes them to <code>dask_jobqueue.OARCluster</code>.</p>
+<pre><code class="language-yaml">hpc:
+  tunnel: true
+  type: oar
+  frontends:
+    - hostname: login.oar.example
+      # ... same as SLURM ...
+  queues:
+    default:
+      conda: seamless-dask
+      walltime: &quot;01:00:00&quot;
+      cores: 8
+      memory: 32000MB
+      tmpdir: /tmp
+      maximum_jobs: 10
+      target_duration: 5m
+</code></pre>
+<hr />
+<h2 id="pure-dask-mode">Pure Dask mode</h2>
+<p><code>seamless-dask-wrapper</code> supports a <code>pure_dask</code> mode that uses Seamless infrastructure — service lifecycle management, SSH tunnelling, status files, adaptive scaling, port management — without adopting the Seamless computation model. Workers are plain Dask workers; no <code>SeamlessWorkerPlugin</code> is loaded, and no <code>seamless-transformer</code> or <code>seamless-core</code> packages are needed on the workers.</p>
+<p>This is the zero-adoption entry point for teams that already use Dask and want to take advantage of Seamless's managed cluster launcher on HPC:</p>
+<pre><code class="language-yaml"># ~/.seamless/clusters.yaml
+
+dask-only:
+  tunnel: true
+  type: slurm
+  frontends:
+    - hostname: login.hpc.example
+      daskserver:
+        pure_dask: true
+        network_interface: 0.0.0.0
+        port_start: 60300
+        port_end: 60399
+  queues:
+    default:
+      conda: my-dask-env    # any conda env with dask installed
+      walltime: &quot;02:00:00&quot;
+      cores: 24
+      memory: 96000MB
+      maximum_jobs: 10
+</code></pre>
+<p>With <code>pure_dask: true</code>, the <code>distributed.Client</code> is available directly after <code>seamless.config.init()</code>. You submit Dask futures as normal, bypassing the Seamless transformation layer entirely. Caching, identity, and the <code>direct</code>/<code>delayed</code> API are not available in this mode.</p>
+<p>If you later want to adopt Seamless caching for specific steps, you can do so incrementally: remove <code>pure_dask: true</code> from the daskserver definition, add <code>seamless-dask</code> to the worker conda environment, and wrap those steps with <code>direct</code> or <code>delayed</code>.</p>
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="remote.html" class="btn btn-neutral float-left" title="Remote execution"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="remote-launch.html" class="btn btn-neutral float-right" title="Remote job launching">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+    
+      <span><a href="remote.html" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="remote-launch.html" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script src="js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = ".";</script>
+    <script src="js/theme_extra.js"></script>
+    <script src="js/theme.js"></script>
+      <script src="search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>

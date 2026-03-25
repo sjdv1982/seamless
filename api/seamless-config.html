@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <link rel="shortcut icon" href="../img/favicon.ico" />
+    <title>seamless-config - Seamless</title>
+    <link rel="stylesheet" href="../css/theme.css" />
+    <link rel="stylesheet" href="../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "seamless-config";
+        var mkdocs_page_input_path = "api/seamless-config.md";
+        var mkdocs_page_url = null;
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href="../index.html" class="icon icon-home"> Seamless
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../index.html">Home</a>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Getting Started</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../getting-started.html">Wrapping Python and bash</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../cluster.html">Setting up a local cluster</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">How-To Guides</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../caching.html">Caching, identity, and sharing</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../composition.html">Composition</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../parallelism.html">Local parallelism</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../remote.html">Remote execution</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../hpc.html">HPC specifics</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../remote-launch.html">Remote job launching</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../sharing.html">Sharing in depth</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Reference API</span></p>
+              <ul class="current">
+                  <li class="toctree-l1"><a class="reference internal" href="index.html">Overview</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="seamless-core.html">seamless-core</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="seamless-transformer.html">seamless-transformer</a>
+                  </li>
+                  <li class="toctree-l1 current"><a class="reference internal current" href="#">seamless-config</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#installation">Installation</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#quick-start">Quick start</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#configuration-files">Configuration files</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#command-language">Command language</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#stage-blocks">Stage blocks</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#cluster-definitions">Cluster definitions</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#frontend-services">Frontend services</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#queue-templates">Queue templates</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#execution-modes">Execution modes</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#persistence">Persistence</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#stages-and-substages">Stages and substages</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#python-api">Python API</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#forwarding-remote-clients-to-worker-processes">Forwarding remote clients to worker processes</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#seamless-init-cli">seamless-init CLI</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#tool-launch-configuration">Tool launch configuration</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#relation-to-the-seamless-ecosystem">Relation to the Seamless ecosystem</a>
+    </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="seamless-remote.html">seamless-remote</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="seamless-dask.html">seamless-dask</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="seamless-jobserver.html">seamless-jobserver</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="seamless-database.html">seamless-database</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="remote-http-launcher.html">remote-http-launcher</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Python docstrings</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="reference/seamless.html">seamless</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="reference/seamless.checksum_class.html">Checksum</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="reference/seamless.buffer_class.html">Buffer</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="reference/seamless.transformer.html">seamless.transformer</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="reference/seamless_transformer.transformation_class.html">Transformation</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="reference/seamless_transformer.transformer_class.html">Transformer properties</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="reference/seamless_config.select.html">seamless.config.select</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="reference/seamless_config.tools.html">seamless.config.tools</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >CLI docstrings</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="reference/seamless-run.html">seamless-run</a>
+                </li>
+    </ul>
+                  </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Seamless</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../index.html" class="icon icon-home" aria-label="Docs"></a></li>
+          <li class="breadcrumb-item">Reference API</li>
+      <li class="breadcrumb-item active">seamless-config</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h1 id="seamless-config">seamless-config</h1>
+<p><code>seamless-config</code> is the configuration and infrastructure-selection layer for
+<a href="https://github.com/sjdv1982/seamless">Seamless</a> projects.</p>
+<p>Seamless models work as pipelines of cacheable steps. <code>seamless-config</code> answers
+the question <em>"where does this pipeline run, and against which storage?"</em> —
+locally in-process, in local worker processes, or on a remote cluster — without
+touching the step code. It reads plain YAML files, resolves cluster topology,
+and wires the right remote backends (buffer store, database, jobserver, dask
+scheduler) into the Seamless runtime before the first transformation runs.</p>
+<h2 id="installation">Installation</h2>
+<pre><code class="language-bash">pip install seamless-config
+</code></pre>
+<h2 id="quick-start">Quick start</h2>
+<pre><code class="language-python">import seamless.config
+
+seamless.config.init()          # reads seamless.yaml / seamless.profile.yaml
+                                # from the caller's directory upward
+# … build and run your workflow …
+</code></pre>
+<p>From the command line, <code>seamless-init</code> performs the same initialisation and
+verifies that the configured remote services are reachable:</p>
+<pre><code class="language-bash">seamless-init                   # default stage
+seamless-init --stage prod      # named stage
+seamless-init --stage prod:gpu  # named stage + substage
+</code></pre>
+<hr />
+<h2 id="configuration-files">Configuration files</h2>
+<p><code>seamless-config</code> discovers two optional YAML files in the work directory (and
+optionally its parents):</p>
+<table>
+<thead>
+<tr>
+<th>File</th>
+<th>Commit to VCS?</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>seamless.yaml</code></td>
+<td>Yes</td>
+<td>Project-wide, deterministic defaults (project name, stage name, <code>inherit_from_parent</code>)</td>
+</tr>
+<tr>
+<td><code>seamless.profile.yaml</code></td>
+<td>No (add to <code>.gitignore</code>)</td>
+<td>Developer-specific overrides — cluster hostnames, experimental settings, local credentials</td>
+</tr>
+</tbody>
+</table>
+<p>Both files use the same command language. When a file contains
+<code>inherit_from_parent</code>, the loader also reads the parent directory and prepends
+its commands, repeating until a directory without that flag is reached (or the
+filesystem root). Parent defaults always run before child overrides.</p>
+<h3 id="command-language">Command language</h3>
+<p>Each file must be a YAML list. Every item is either a bare string command or a
+single-key mapping:</p>
+<pre><code class="language-yaml"># seamless.yaml
+- project: my-project
+- inherit_from_parent
+</code></pre>
+<table>
+<thead>
+<tr>
+<th>Command</th>
+<th>Argument</th>
+<th>Effect</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>project</code></td>
+<td>string</td>
+<td>Sets the project name (used as the storage path component)</td>
+</tr>
+<tr>
+<td><code>subproject</code></td>
+<td>string</td>
+<td>Sets an optional sub-path inside the project</td>
+</tr>
+<tr>
+<td><code>cluster</code></td>
+<td>string</td>
+<td>Selects the active cluster by name</td>
+</tr>
+<tr>
+<td><code>execution</code></td>
+<td><code>process</code> / <code>spawn</code> / <code>remote</code></td>
+<td>Sets the execution mode</td>
+</tr>
+<tr>
+<td><code>queue</code></td>
+<td>string</td>
+<td>Selects a named queue on the current cluster</td>
+</tr>
+<tr>
+<td><code>remote</code></td>
+<td><code>null</code> / <code>daskserver</code> / <code>jobserver</code></td>
+<td>Pins the remote backend when a cluster exposes both</td>
+</tr>
+<tr>
+<td><code>persistent</code></td>
+<td>boolean</td>
+<td>Forces persistent storage on or off; defaults to <code>true</code> when a cluster is set</td>
+</tr>
+<tr>
+<td><code>clusters</code></td>
+<td>mapping</td>
+<td>Defines cluster objects inline (runs before other commands)</td>
+</tr>
+<tr>
+<td><code>inherit_from_parent</code></td>
+<td>—</td>
+<td>Also reads commands from the parent directory, prepended</td>
+</tr>
+<tr>
+<td><code>stage &lt;name&gt;</code></td>
+<td>list of commands</td>
+<td>Runs the nested commands only when the current stage matches <code>&lt;name&gt;</code></td>
+</tr>
+</tbody>
+</table>
+<p>If no <code>execution</code> command is encountered, the loader defaults to <code>remote</code> when
+a cluster is selected and <code>process</code> otherwise.</p>
+<p>See <a href="https://github.com/sjdv1982/seamless/blob/main/seamless-config/COMMAND_LANGUAGE.md">COMMAND_LANGUAGE.md</a> for the full specification.</p>
+<h3 id="stage-blocks">Stage blocks</h3>
+<p>Use a <code>stage &lt;name&gt;:</code> key to activate commands only in a specific stage:</p>
+<pre><code class="language-yaml"># seamless.profile.yaml
+- clusters:
+    local:
+      tunnel: false
+      type: local
+      frontends:
+        - hostname: localhost
+          hashserver:
+            bufferdir: /data/buffers
+            conda: hashserver
+            network_interface: 127.0.0.1
+            port_start: 55100
+            port_end: 55199
+          database:
+            database_dir: /data/db
+            conda: seamless-database
+            network_interface: 127.0.0.1
+            port_start: 55200
+            port_end: 55299
+          jobserver:
+            conda: seamless-jobserver
+            network_interface: 127.0.0.1
+            port_start: 55300
+            port_end: 55399
+
+- cluster: local
+
+- stage prod:
+    - cluster: hpc-cluster
+    - execution: remote
+    - remote: daskserver
+</code></pre>
+<hr />
+<h2 id="cluster-definitions">Cluster definitions</h2>
+<p>Clusters are defined in <code>~/.seamless/clusters.yaml</code> and/or individual files
+under <code>~/.seamless/clusters/*.yaml</code>. They can also be inlined in
+<code>seamless.profile.yaml</code> via the <code>clusters</code> command (useful for portable
+projects).</p>
+<p>A cluster definition describes the <em>topology</em> of its frontend nodes and the
+services each one can host:</p>
+<pre><code class="language-yaml"># ~/.seamless/clusters.yaml
+
+mycluster:
+  tunnel: true                # connect via SSH tunnel
+  type: slurm                 # local | slurm | oar
+  workers: 4                  # for 'spawn' / 'jobserver' mode
+  frontends:
+    - hostname: login.mycluster.example
+      ssh_hostname: login.mycluster.example   # optional SSH override
+      hashserver:
+        bufferdir: /scratch/seamless/buffers
+        conda: hashserver
+        network_interface: 0.0.0.0
+        port_start: 60100
+        port_end: 60199
+      database:
+        database_dir: /scratch/seamless/db
+        conda: seamless-database
+        network_interface: 0.0.0.0
+        port_start: 60200
+        port_end: 60299
+      daskserver:
+        network_interface: 0.0.0.0
+        port_start: 60300
+        port_end: 60399
+
+  default_queue: default
+  queues:
+    default:
+      conda: seamless-dask
+      walltime: &quot;01:00:00&quot;
+      cores: 16
+      memory: 32000MB
+      tmpdir: /tmp
+      maximum_jobs: 20
+      unknown_task_duration: 1m
+      target_duration: 10m
+      lifetime_stagger: 4m
+
+    highmem:
+      TEMPLATE: default         # inherit all fields from 'default', then override
+      cores: 4
+      memory: 128000MB
+</code></pre>
+<h3 id="frontend-services">Frontend services</h3>
+<p>Each frontend entry can expose any subset of:</p>
+<table>
+<thead>
+<tr>
+<th>Service</th>
+<th>Role</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>hashserver</code></td>
+<td>Stores and serves content-addressed buffers (the raw bytes of cell values)</td>
+</tr>
+<tr>
+<td><code>database</code></td>
+<td>Stores transformation results (maps input checksum → result checksum, backed by SQLite)</td>
+</tr>
+<tr>
+<td><code>jobserver</code></td>
+<td>HTTP job dispatch — accepts serialised transformations and returns results</td>
+</tr>
+<tr>
+<td><code>daskserver</code></td>
+<td>Dask-backed HPC scheduler — submits jobs to SLURM/OAR via <code>dask-jobqueue</code></td>
+</tr>
+</tbody>
+</table>
+<p>When both <code>jobserver</code> and <code>daskserver</code> are present on the same cluster,
+<code>remote: jobserver</code> or <code>remote: daskserver</code> must be specified explicitly in
+<code>seamless.profile.yaml</code>.</p>
+<h3 id="queue-templates">Queue templates</h3>
+<p>A queue entry with a <code>TEMPLATE</code> key inherits all fields from the named queue
+(which must be defined earlier in the same cluster), then overrides only the
+explicitly provided fields:</p>
+<pre><code class="language-yaml">queues:
+  base:
+    conda: seamless-dask
+    walltime: &quot;02:00:00&quot;
+    cores: 8
+    memory: 16000MB
+    maximum_jobs: 10
+    tmpdir: /tmp
+    unknown_task_duration: 1m
+    target_duration: 10m
+
+  gpu:
+    TEMPLATE: base
+    memory: 32000MB
+    job_extra_directives: [&quot;--gres=gpu:1&quot;]
+    dask_resources: {GPU: 1}
+</code></pre>
+<hr />
+<h2 id="execution-modes">Execution modes</h2>
+<table>
+<thead>
+<tr>
+<th>Mode</th>
+<th><code>execution:</code> value</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>In-process</td>
+<td><code>process</code></td>
+<td>Transformations run in the client Python process. Default when no cluster is defined.</td>
+</tr>
+<tr>
+<td>Local workers</td>
+<td><code>spawn</code></td>
+<td>Transformations are dispatched to a local worker pool (uses <code>workers</code> from the cluster definition).</td>
+</tr>
+<tr>
+<td>Remote (jobserver)</td>
+<td><code>remote</code> + <code>remote: jobserver</code></td>
+<td>Lightweight HTTP jobserver with a fixed worker pool. Typically used as a test setup or for simple local-cluster scenarios.</td>
+</tr>
+<tr>
+<td>Remote (daskserver)</td>
+<td><code>remote</code> + <code>remote: daskserver</code></td>
+<td>Delegates to a Dask cluster with persistent storage. Any Dask <code>Cluster</code> subclass is supported; current cluster definitions cover SLURM and OAR via <code>dask-jobqueue</code>.</td>
+</tr>
+<tr>
+<td>Pure Dask</td>
+<td><code>remote</code> + <code>remote: daskserver</code> + <code>persistent: false</code></td>
+<td>Dask execution without Seamless persistence (no hashserver/database). For batch jobs that don't need incremental caching.</td>
+</tr>
+</tbody>
+</table>
+<p>The three <code>remote</code> backends (<code>jobserver</code>, <code>daskserver</code>, pure Dask) are mutually
+exclusive — a cluster frontend must expose exactly one, or you must pin the
+choice with <code>remote: jobserver</code> or <code>remote: daskserver</code> in
+<code>seamless.profile.yaml</code>.</p>
+<p><code>remote_http_launcher</code> handles two scheduler-placement topologies automatically:
+when <code>hostname</code> is set it SSHes into the frontend and runs the Dask wrapper as a
+daemon there (scheduler lives on the HPC frontend node); when <code>hostname</code> is absent
+it runs the wrapper as a local daemon (Cluster object lives on the client, scheduler
+lives wherever the provider puts it — suitable for cloud backends). The configuration
+schema currently covers HPC schedulers (SLURM, OAR); cloud provider support would
+require extending the cluster definition vocabulary, not the launcher or wrapper.</p>
+<h3 id="persistence">Persistence</h3>
+<p>When a cluster is selected and <code>persistent: true</code> (the default), <code>seamless-config</code>
+activates:</p>
+<ul>
+<li><code>seamless_remote.buffer_remote</code> — writes/reads buffers via the cluster's <code>hashserver</code></li>
+<li><code>seamless_remote.database_remote</code> — checks and records transformation results via the cluster's <code>database</code></li>
+</ul>
+<p>In <code>execution: remote</code> mode it also activates the chosen job delegation backend
+(<code>jobserver_remote</code> or <code>daskserver_remote</code>).</p>
+<hr />
+<h2 id="stages-and-substages">Stages and substages</h2>
+<p>A <em>stage</em> is an independent execution and storage context. Each stage gets its
+own subdirectory under the project path:</p>
+<pre><code class="language-text">&lt;bufferdir&gt;/&lt;project&gt;[/&lt;subproject&gt;][/STAGE-&lt;stage&gt;]
+&lt;database_dir&gt;/&lt;project&gt;[/&lt;subproject&gt;][/STAGE-&lt;stage&gt;]
+</code></pre>
+<p>Stages are useful when the same project has multiple phases — e.g. <code>build</code>,
+<code>test</code>, <code>prod</code> — that must not share cached results.</p>
+<p>A <em>substage</em> further subdivides the job-dispatch scope (one jobserver/daskserver
+per substage) without splitting storage. Substages are useful when different
+substages within the same stage need different hardware (CPU vs GPU queues).</p>
+<hr />
+<h2 id="python-api">Python API</h2>
+<pre><code class="language-python">import seamless.config
+
+# Simple initialization (no named stage)
+seamless.config.init()
+
+# Named stage (re-evaluates config with 'stage prod:' blocks active)
+seamless.config.set_stage(&quot;prod&quot;)
+
+# Named stage + substage
+seamless.config.set_stage(&quot;prod&quot;, &quot;gpu&quot;)
+
+# Change substage without changing stage
+seamless.config.set_substage(&quot;cpu&quot;)
+
+# Override the directory used for config file lookup
+seamless.config.set_workdir(&quot;/path/to/project&quot;)
+</code></pre>
+<p><code>init()</code> is a no-op if already initialised. <code>set_stage()</code> deactivates any
+previously active remote clients before re-configuring.</p>
+<h3 id="forwarding-remote-clients-to-worker-processes">Forwarding remote clients to worker processes</h3>
+<p>When a job runs inside the cluster, it may need to connect back to the same
+remote services. <code>collect_remote_clients</code> / <code>set_remote_clients</code> serialise and
+restore the active client configuration.</p>
+<p><em>Note: this API is already used by the daskserver. There is no need to do this from user code.</em></p>
+<pre><code class="language-python"># On the client, before submitting a job:
+clients = seamless_config.collect_remote_clients(&quot;mycluster&quot;)
+# Pass 'clients' to the worker via job parameters or environment variable
+
+# Inside the worker (or set SEAMLESS_REMOTE_CLIENTS=&lt;json&gt; in the environment):
+seamless_config.set_remote_clients(clients, in_remote=True)
+</code></pre>
+<p><code>set_remote_clients</code> must be called before <code>init()</code>. Worker bootstrap code can
+also call <code>set_remote_clients_from_env()</code> to pick up the JSON from the
+<code>SEAMLESS_REMOTE_CLIENTS</code> environment variable automatically.</p>
+<hr />
+<h2 id="seamless-init-cli"><code>seamless-init</code> CLI</h2>
+<p><code>seamless-init</code> is a convenience script that calls <code>seamless_config.init()</code> (or
+<code>set_stage</code>), then calls <code>ensure_initialized()</code> on each active remote backend
+to verify that the servers are reachable before the workflow starts.</p>
+<pre><code class="language-text">usage: seamless-init [--stage STAGE[:SUBSTAGE]]
+</code></pre>
+<p>It exits immediately (success) when the <code>SEAMLESS_REMOTE_CLIENTS</code> environment
+variable is present, so that worker processes that bootstrap themselves with
+<code>set_remote_clients</code> are not affected.</p>
+<hr />
+<h2 id="tool-launch-configuration">Tool launch configuration</h2>
+<p><code>seamless-config</code> ships an internal <code>tools.yaml</code> that describes how to
+construct the launch parameters for each server type (<code>hashserver</code>, <code>database</code>,
+<code>jobserver</code>, <code>daskserver</code>, <code>pure_daskserver</code>). These are consumed by
+<code>remote-http-launcher</code>, which starts the servers on the cluster frontend (via
+SSH tunnel if needed) and returns a live port.</p>
+<p>The <code>configure_hashserver</code>, <code>configure_database</code>, <code>configure_jobserver</code>,
+<code>configure_daskserver</code>, and <code>configure_pure_daskserver</code> functions in
+<code>seamless_config.tools</code> assemble the final launch dict from the cluster
+definition and the current project/stage context. These functions are called
+internally by <code>seamless-config</code> and by launcher scripts in other packages;
+direct use is only needed when writing custom launch tooling.</p>
+<hr />
+<h2 id="relation-to-the-seamless-ecosystem">Relation to the Seamless ecosystem</h2>
+<pre><code class="language-text">seamless-core          ← the computation engine (cells, transformers, caching)
+    ↑
+seamless-config        ← this package: reads YAML, wires backends, provides CLI
+    ↑                 ↗ seamless-remote    (buffer + database + job clients)
+    └── activates   ─── seamless-dask      (Dask scheduler integration)
+                     ↘ seamless-jobserver  (HTTP jobserver)
+                      ↘ seamless-database  (SQLite result store)
+                       ↘ hashserver        (content-addressed buffer server)
+                        ↘ remote-http-launcher (SSH + process launcher)
+</code></pre>
+<p><code>seamless-config</code> is the only package in this stack that a Seamless workflow
+script typically imports directly (besides <code>seamless</code> itself). All other
+packages are implementation details activated by <code>init()</code> / <code>set_stage()</code>.</p>
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="seamless-transformer.html" class="btn btn-neutral float-left" title="seamless-transformer"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="seamless-remote.html" class="btn btn-neutral float-right" title="seamless-remote">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+    
+      <span><a href="seamless-transformer.html" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="seamless-remote.html" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script src="../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "..";</script>
+    <script src="../js/theme_extra.js"></script>
+    <script src="../js/theme.js"></script>
+      <script src="../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>

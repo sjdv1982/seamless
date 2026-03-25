@@ -1,0 +1,90 @@
+I am looking into automatizing the test suite a bit further. Challenges:
+
+- Some of the tests are still "manual" (i.e. non-pytest), this should be fixable.
+
+- Some of the Dask and cmd tests are really long. This should be obvious from a first-principle analysis of the likely running times. Can you identify them, and create a shorter version of them?
+
+- In general, the way Seamless works with caches, it is problematic to run multiple tests in the same process. I would like to find out for which tests this is a problem.
+
+- On a related note, some of the tests are stateful in terms of caching, and rely on the cache to be in a certain state. Sometimes these tests consist of multiple processes executed after another, assuming that nothing else touch the relevant state. This is especially a problem if different tests modify the same area of state, i.e. have the same inputs, outputs and/or code. Together, this is a potential issue in running tests in parallel. Can you identify which tests and combination of tests are likely to give problems; after that, verify your hypotheses by running those tests, as long they are short (1 min or less).
+
+---
+
+
+SJOERD: 15 March 
+=================
+
+I reverted the below because it broke things. To look into later.
+
+Notes (2026-02-10)
+==================
+
+Automated/pytest coverage added for previously “manual” areas
+-------------------------------------------------------------
+
+- `seamless-config/tests/test_tools_hashserver.py`
+  - Adds schema-level pytest coverage for `seamless_config.tools.configure_hashserver`.
+  - Avoids machine-specific expectations (hostname, paths) by generating a minimal `clusters.yaml` under a temp `$HOME`.
+
+- `seamless-transformer/tests/test_cmd_smoke.py`
+  - Adds smoke-level CLI/cmd transformer tests for the scripts in `seamless-transformer/tests/cmd`.
+  - These are **opt-in** via `SEAMLESS_RUN_CMD_TESTS=1`, since they can depend on local Docker/cluster setup.
+
+Identified long-running tests (first principles)
+------------------------------------------------
+
+These were long by default due to either (a) large Monte Carlo workloads, (b) many spawned jobs, or (c) deliberate sleeps:
+
+- Dask/PI performance tests (very long defaults):
+  - `seamless-transformer/tests/dask/test_calc_pi.py` (default `ntrials=1000`, `ndots=300000000`)
+  - `seamless-transformer/tests/dask/test_calc_pi-nested.py` (same defaults)
+  - `seamless-transformer/tests/dask/test_calc_pi-pure-dask.py` (default `ntrials=300`, `ndots=100000000`)
+
+- Dask async test (very long due to lock + sleeps):
+  - `seamless-transformer/tests/dask/test_transformation_async.py` (default `N=200`, `DELAY=0.2`, plus `global_lock`)
+
+- Nested-transform “stress” tests (many jobs + sleeps):
+  - `seamless-transformer/tests/test_nested_transformations_multi_spawn.py` (default `job_count=100`, `sleep=0.5`)
+  - `seamless-transformer/tests/dask/test_nested_transformations_multi.py` (previously `sleep=0.5` with `global_lock`)
+  - `seamless-dask/tests/test_nested_transformations_multi.py` (default `job_count=50`, `sleep=0.5`)
+
+- Cmd scripts with extreme defaults (not pytest by default):
+  - `seamless-transformer/tests/cmd/manyjobs.sh` (default `ntrials=1000`, `ndots=1e9`)
+  - `seamless-transformer/tests/cmd/calc-pi-nested.sh` (default `ntrials=10`, `ndots=1e8`)
+
+Shortened “smoke” variants
+--------------------------
+
+- Converted the PI tests into **fast smoke** tests with assertions, and kept the previous “perf” behavior as opt-in:
+  - Opt-in perf gate: `SEAMLESS_RUN_SLOW_TESTS=1`
+  - Smoke defaults:
+    - `SEAMLESS_TEST_PI_TRIALS` default lowered to 5
+    - `SEAMLESS_TEST_PI_DOTS` default lowered to 20000
+
+- Reduced/parameterized nested-transform stress tests:
+  - `SEAMLESS_TEST_JOB_COUNT` and `SEAMLESS_TEST_LEAF_SLEEP` control load.
+
+Cache/state coupling + parallelization hazards (likely)
+-------------------------------------------------------
+
+Patterns that tend to make tests order-dependent / non-parallel-safe:
+
+- **Module-level `seamless.config.init()`**: irreversible init/config in import-time code makes order matter.
+- **Fixed stage names + shared workdir**: `set_stage("..."); init()` without a per-test workdir can share storage across tests.
+- **Persistent cross-test temp files**: anything in `/tmp` with a fixed filename; this was removed in at least one place.
+- **Stress tests with repeated labels**: identical labels may hit cache-only code paths unless forced unique.
+- **Cmd tests that run in a shared directory**: `.SEAMLESS*` files, queue files, job output patterns collide across parallel workers.
+
+Suggested automation strategy
+-----------------------------
+
+- Default suite: run smoke tests only.
+- Perf/stress suite: run explicitly with `SEAMLESS_RUN_SLOW_TESTS=1`.
+- Cmd/CLI integration suite: run explicitly with `SEAMLESS_RUN_CMD_TESTS=1` (and ensure Docker/cluster prerequisites).
+- For parallel test execution: group or fork tests that touch global Seamless state (config init, stage switching, spawning).
+
+Quick commands (all in `seamless1` env)
+---------------------------------------
+
+- `conda run -n seamless1 pytest -q seamless-config/tests/test_tools_hashserver.py`
+- `SEAMLESS_RUN_SLOW_TESTS=1 conda run -n seamless1 pytest -q seamless-transformer/tests/dask/test_calc_pi.py::test_calc_pi_perf`

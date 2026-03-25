@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <link rel="shortcut icon" href="img/favicon.ico" />
+    <title>Caching, identity, and sharing - Seamless</title>
+    <link rel="stylesheet" href="css/theme.css" />
+    <link rel="stylesheet" href="css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "Caching, identity, and sharing";
+        var mkdocs_page_input_path = "caching.md";
+        var mkdocs_page_url = null;
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href="index.html" class="icon icon-home"> Seamless
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="./search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="index.html">Home</a>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Getting Started</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="getting-started.html">Wrapping Python and bash</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="cluster.html">Setting up a local cluster</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">How-To Guides</span></p>
+              <ul class="current">
+                  <li class="toctree-l1 current"><a class="reference internal current" href="#">Caching, identity, and sharing</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#what-constitutes-a-cache-key">What constitutes a cache key</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#persistent-vs-in-memory-caching">Persistent vs in-memory caching</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#checksum-and-buffer-as-user-facing-objects">Checksum and Buffer as user-facing objects</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#the-checksum-sidecar-convention">The .CHECKSUM sidecar convention</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#why-sharing-follows-from-content-addressing">Why sharing follows from content-addressing</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#cell-types">Cell types</a>
+    </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="composition.html">Composition</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="parallelism.html">Local parallelism</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="remote.html">Remote execution</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="hpc.html">HPC specifics</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="remote-launch.html">Remote job launching</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="sharing.html">Sharing in depth</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Reference API</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="api/index.html">Overview</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="api/seamless-core.html">seamless-core</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="api/seamless-transformer.html">seamless-transformer</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="api/seamless-config.html">seamless-config</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="api/seamless-remote.html">seamless-remote</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="api/seamless-dask.html">seamless-dask</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="api/seamless-jobserver.html">seamless-jobserver</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="api/seamless-database.html">seamless-database</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="api/remote-http-launcher.html">remote-http-launcher</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Python docstrings</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="api/reference/seamless.html">seamless</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="api/reference/seamless.checksum_class.html">Checksum</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="api/reference/seamless.buffer_class.html">Buffer</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="api/reference/seamless.transformer.html">seamless.transformer</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="api/reference/seamless_transformer.transformation_class.html">Transformation</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="api/reference/seamless_transformer.transformer_class.html">Transformer properties</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="api/reference/seamless_config.select.html">seamless.config.select</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="api/reference/seamless_config.tools.html">seamless.config.tools</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >CLI docstrings</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="api/reference/seamless-run.html">seamless-run</a>
+                </li>
+    </ul>
+                  </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">Seamless</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="index.html" class="icon icon-home" aria-label="Docs"></a></li>
+          <li class="breadcrumb-item">How-To Guides</li>
+      <li class="breadcrumb-item active">Caching, identity, and sharing</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h1 id="caching-identity-and-sharing">Caching, identity, and sharing</h1>
+<h2 id="what-constitutes-a-cache-key">What constitutes a cache key</h2>
+<p>Every Seamless transformation has a <strong>transformation checksum</strong> — a SHA-256 hash of everything that defines the computation:</p>
+<ul>
+<li>The code (function body for Python, command string for bash), identified by its checksum.</li>
+<li>All declared input pins: their names, values (identified by checksum), and cell types.</li>
+<li>Metadata that changes execution semantics: the language (<code>python</code> or <code>bash</code>), module definitions, the scratch flag, and similar.</li>
+</ul>
+<p>Two transformations with the same transformation checksum are <em>identical computations</em>: the same code, the same inputs, the same semantics. The database records the mapping <code>transformation checksum → result checksum</code>. On the next call with the same code and inputs, Seamless computes the same transformation checksum, looks it up in the database, finds the cached result checksum, and returns the result from the hashserver — without re-executing any code.</p>
+<p>Changing anything in the above list (code, inputs, metadata) produces a different transformation checksum and triggers re-execution:</p>
+<pre><code class="language-bash">seamless-run paste data/a.txt data/b.txt     # executes, result cached
+seamless-run paste data/a.txt data/b.txt     # cache hit, instant
+
+# edit data/a.txt
+#   =&gt;
+seamless-run paste data/a.txt data/b.txt     # different input checksum, re-executes
+</code></pre>
+<h2 id="persistent-vs-in-memory-caching">Persistent vs in-memory caching</h2>
+<p>Without a cluster, Seamless caches results in memory for the duration of the Python session. This is useful for exploration and development: calling <code>direct</code>-wrapped functions twice with the same arguments skips the second execution. But the cache is lost when the process exits.</p>
+<p>With a cluster (hashserver + database), results are cached persistently: the transformation-to-result mapping is stored in <code>seamless.db</code> and the result bytes are stored in the hashserver's buffer directory. Subsequent Python sessions, separate <code>seamless-run</code> invocations, and other users with access to the same cluster all benefit from the same cache.</p>
+<p>The <code>persistent</code> YAML command controls this explicitly:</p>
+<pre><code class="language-yaml">- persistent: true    # force persistent storage (default when cluster is set)
+- persistent: false   # force in-memory only, even if a cluster is configured
+</code></pre>
+<h2 id="checksum-and-buffer-as-user-facing-objects"><code>Checksum</code> and <code>Buffer</code> as user-facing objects</h2>
+<p>The two core types in <code>seamless-core</code> are:</p>
+<ul>
+<li><strong><code>Checksum</code></strong> — the identity of a piece of data. A thin wrapper around a SHA-256 hex string</li>
+<li><strong><code>Buffer</code></strong> — raw bytes paired with an optional checksum.</li>
+</ul>
+<pre><code class="language-python">from seamless import Checksum
+
+cs = Checksum(&quot;a3f2...&quot;)           # construct from hex string
+cs = Buffer(b&quot;hello&quot;, &quot;text&quot;).get_checksum()  # compute from bytes
+value = cs.resolve()               # retrieve the buffer from cache/hashserver
+</code></pre>
+<p><code>Checksum.resolve()</code> retrieves the corresponding buffer. If the buffer is not in the local cache or hashserver, it returns <code>None</code> (or raises <code>CacheMissError</code>). The advanced variant <code>Checksum.fingertip()</code> also triggers recomputation if the buffer is missing but a transformation that produced this checksum is known.</p>
+<pre><code class="language-python">from seamless import Buffer
+
+buf = Buffer(b&quot;hello world&quot;, &quot;text&quot;)
+cs = buf.get_checksum()            # compute SHA-256 identity
+value = buf.get_value(&quot;text&quot;)      # deserialize to Python string
+buf.write()                        # push bytes to the configured hashserver
+</code></pre>
+<p>In normal usage, you don't construct <code>Checksum</code> and <code>Buffer</code> directly — <code>direct</code> and <code>delayed</code> handle this internally. They become relevant when you need to inspect transformation results, work with content-addressed data directly, or implement sharing workflows.</p>
+<h2 id="the-checksum-sidecar-convention">The <code>.CHECKSUM</code> sidecar convention</h2>
+<p>On the filesystem, Seamless uses <code>.CHECKSUM</code> sidecar files: a file <code>data/input.txt</code> is accompanied by <code>data/input.txt.CHECKSUM</code>, which contains the 64-character hex SHA-256 of <code>input.txt</code>.</p>
+<p>When <code>seamless-run</code> encounters a file argument <code>data/input.txt</code>, it first looks for <code>data/input.txt.CHECKSUM</code>. If the sidecar exists, Seamless reads the checksum from it — <strong>and the original file does not need to be present locally</strong>. This is the basis of remote workflows: upload inputs once, keep only the checksums, and run without the original files.</p>
+<p><code>seamless-upload</code> pushes the file bytes to the hashserver and writes the sidecar:</p>
+<pre><code class="language-bash">seamless-upload data/large-input.h5
+# uploads bytes to the hashserver
+# writes data/large-input.h5.CHECKSUM
+# data/large-input.h5 can now be deleted or archived locally
+</code></pre>
+<p>Subsequent <code>seamless-run</code> invocations read the checksum from the sidecar without touching the original file:</p>
+<pre><code class="language-bash">seamless-run python analyze.py data/large-input.h5
+# data/large-input.h5 need not exist locally — the sidecar supplies its checksum
+</code></pre>
+<p><code>seamless-download</code> uses sidecars written by <code>seamless-run</code> to fetch result bytes from the hashserver:</p>
+<pre><code class="language-bash">seamless-download data/result.txt
+# reads data/result.txt.CHECKSUM, fetches bytes from hashserver
+</code></pre>
+<p>The <code>seamless-checksum</code> CLI tool computes and prints the checksum of a file without writing it. <code>seamless-checksum-file</code> computes and writes the sidecar. <code>seamless-checksum-index</code> builds a directory-level checksum index.</p>
+<h2 id="why-sharing-follows-from-content-addressing">Why sharing follows from content-addressing</h2>
+<p>Because every piece of data is identified by its checksum, and the transformation cache maps transformation identity to result identity, the following property holds: <strong>if two parties have computed the same transformation, they have the same result</strong> — regardless of when or where they ran it.</p>
+<p>Sharing therefore has two modes:</p>
+<ol>
+<li>
+<p><strong>Checksum exchange</strong>: tell a colleague the result checksum. If they have already computed the same transformation (or have the hashserver buffer), they already have the result. No data transfer required.</p>
+</li>
+<li>
+<p><strong>Database sharing</strong>: copy <code>seamless.db</code> to a colleague or a shared location. The database file contains all the (transformation checksum → result checksum) mappings your session has recorded. The recipient can immediately look up any of those results. If they also have access to the same hashserver (or a copy of it), they can retrieve the actual result bytes.</p>
+</li>
+</ol>
+<p>Combining both: copy <code>seamless.db</code> between machines, and use <code>seamless-resolve</code> to fetch the buffer bytes for any checksum that appears in the database.</p>
+<p>For sharing the underlying buffers — input data, result data, or both — see <a href="sharing.html">Sharing in depth</a>.</p>
+<h2 id="cell-types">Cell types</h2>
+<p>Every input pin in a Seamless transformation has a <em>cell type</em> that governs how the Python value is serialized into bytes (and therefore what checksum it gets). The default type is <code>mixed</code>, which handles Python scalars, dicts, lists, and numpy arrays.</p>
+<p>For performance-sensitive cases, override the cell type explicitly:</p>
+<pre><code class="language-python">@delayed
+def process(matrix):
+    import numpy as np
+    return np.linalg.norm(matrix)
+
+process.celltypes.matrix = &quot;binary&quot;  # numpy array → .npy format
+</code></pre>
+<p>Common overrides:</p>
+<table>
+<thead>
+<tr>
+<th>Value type</th>
+<th>Cell type to use</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>NumPy array</td>
+<td><code>binary</code></td>
+</tr>
+<tr>
+<td>Raw bytes</td>
+<td><code>bytes</code></td>
+</tr>
+<tr>
+<td>Python source code</td>
+<td><code>python</code> or <code>text</code></td>
+</tr>
+<tr>
+<td>Checksum identifier</td>
+<td><code>checksum</code></td>
+</tr>
+<tr>
+<td>Everything else</td>
+<td><code>mixed</code> (default)</td>
+</tr>
+</tbody>
+</table>
+<p>The full conversion matrix and all 13 cell types are documented in the <a href="api/seamless-core.html">seamless-core reference</a>.</p>
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="cluster.html" class="btn btn-neutral float-left" title="Setting up a local cluster"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="composition.html" class="btn btn-neutral float-right" title="Composition">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+    
+      <span><a href="cluster.html" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="composition.html" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script src="js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = ".";</script>
+    <script src="js/theme_extra.js"></script>
+    <script src="js/theme.js"></script>
+      <script src="search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>

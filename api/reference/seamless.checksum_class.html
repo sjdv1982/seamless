@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <link rel="shortcut icon" href="../../img/favicon.ico" />
+    <title>Checksum - Seamless</title>
+    <link rel="stylesheet" href="../../css/theme.css" />
+    <link rel="stylesheet" href="../../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "Checksum";
+        var mkdocs_page_input_path = "api/reference/seamless.checksum_class.md";
+        var mkdocs_page_url = null;
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href="../../index.html" class="icon icon-home"> Seamless
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../index.html">Home</a>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Getting Started</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../getting-started.html">Wrapping Python and bash</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../cluster.html">Setting up a local cluster</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">How-To Guides</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../caching.html">Caching, identity, and sharing</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../composition.html">Composition</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../parallelism.html">Local parallelism</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../remote.html">Remote execution</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../hpc.html">HPC specifics</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../remote-launch.html">Remote job launching</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../sharing.html">Sharing in depth</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Reference API</span></p>
+              <ul class="current">
+                  <li class="toctree-l1"><a class="reference internal" href="../index.html">Overview</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../seamless-core.html">seamless-core</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../seamless-transformer.html">seamless-transformer</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../seamless-config.html">seamless-config</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../seamless-remote.html">seamless-remote</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../seamless-dask.html">seamless-dask</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../seamless-jobserver.html">seamless-jobserver</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../seamless-database.html">seamless-database</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../remote-http-launcher.html">remote-http-launcher</a>
+                  </li>
+                  <li class="toctree-l1 current"><a class="reference internal current" >Python docstrings</a>
+    <ul class="current">
+                <li class="toctree-l2"><a class="reference internal" href="seamless.html">seamless</a>
+                </li>
+                <li class="toctree-l2 current"><a class="reference internal current" href="#">Checksum</a>
+    <ul class="current">
+    <li class="toctree-l3"><a class="reference internal" href="#seamlesschecksum_classchecksum">seamless.checksum_class.Checksum</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#seamlesschecksum_classchecksumbytes">seamless.checksum_class.Checksum.bytes</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#seamlesschecksum_classchecksumdecref">seamless.checksum_class.Checksum.decref</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#seamlesschecksum_classchecksumfind">seamless.checksum_class.Checksum.find</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#seamlesschecksum_classchecksumfingertip">seamless.checksum_class.Checksum.fingertip</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#seamlesschecksum_classchecksumfingertip_sync">seamless.checksum_class.Checksum.fingertip_sync</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#seamlesschecksum_classchecksumhex">seamless.checksum_class.Checksum.hex</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#seamlesschecksum_classchecksumincref">seamless.checksum_class.Checksum.incref</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#seamlesschecksum_classchecksumload">seamless.checksum_class.Checksum.load</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#seamlesschecksum_classchecksumresolution">seamless.checksum_class.Checksum.resolution</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#seamlesschecksum_classchecksumresolve">seamless.checksum_class.Checksum.resolve</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#seamlesschecksum_classchecksumsave">seamless.checksum_class.Checksum.save</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#seamlesschecksum_classchecksumtempref">seamless.checksum_class.Checksum.tempref</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#seamlesschecksum_class_run_coro_in_new_loop">seamless.checksum_class._run_coro_in_new_loop</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#seamlesschecksum_class_run_coro_in_worker_thread">seamless.checksum_class._run_coro_in_worker_thread</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#seamlesschecksum_classvalidate_checksum">seamless.checksum_class.validate_checksum</a>
+    </li>
+    </ul>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="seamless.buffer_class.html">Buffer</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="seamless.transformer.html">seamless.transformer</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="seamless_transformer.transformation_class.html">Transformation</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="seamless_transformer.transformer_class.html">Transformer properties</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="seamless_config.select.html">seamless.config.select</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="seamless_config.tools.html">seamless.config.tools</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >CLI docstrings</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="seamless-run.html">seamless-run</a>
+                </li>
+    </ul>
+                  </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">Seamless</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../../index.html" class="icon icon-home" aria-label="Docs"></a></li>
+          <li class="breadcrumb-item">Reference API</li>
+          <li class="breadcrumb-item">Python docstrings</li>
+      <li class="breadcrumb-item active">Checksum</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h1 id="seamlesschecksum_class">seamless.checksum_class</h1>
+<p>Class for Seamless checksums. Seamless checksums are calculated as SHA-256 hashes of buffers.</p>
+<h2 id="seamlesschecksum_classchecksum"><code>seamless.checksum_class.Checksum</code></h2>
+<ul>
+<li>kind: <code>class</code></li>
+<li>signature: <code>Checksum</code></li>
+</ul>
+<p>Class for Seamless checksums.
+Seamless checksums are calculated as SHA-256 hashes of buffers.</p>
+<h2 id="seamlesschecksum_classchecksumbytes"><code>seamless.checksum_class.Checksum.bytes</code></h2>
+<ul>
+<li>kind: <code>method</code></li>
+<li>signature: <code>bytes(self)</code></li>
+</ul>
+<p>Returns the checksum as a 32-byte bytes object</p>
+<h2 id="seamlesschecksum_classchecksumdecref"><code>seamless.checksum_class.Checksum.decref</code></h2>
+<ul>
+<li>kind: <code>method</code></li>
+<li>signature: <code>decref(self)</code></li>
+</ul>
+<p>Decrement normal refcount in the buffer cache. If no refs remain (and no tempref), may be uncached.</p>
+<h2 id="seamlesschecksum_classchecksumfind"><code>seamless.checksum_class.Checksum.find</code></h2>
+<ul>
+<li>kind: <code>method</code></li>
+<li>signature: <code>find(self, verbose)</code></li>
+</ul>
+<p>Returns a list of URL infos to download the underlying buffer.
+An URL info can be an URL string, or a dict with additional information.</p>
+<h2 id="seamlesschecksum_classchecksumfingertip"><code>seamless.checksum_class.Checksum.fingertip</code></h2>
+<ul>
+<li>kind: <code>method</code></li>
+<li>signature: <code>fingertip(self, celltype)</code></li>
+</ul>
+<p>Return a resolvable buffer/value, recomputing locally if needed.</p>
+<h2 id="seamlesschecksum_classchecksumfingertip_sync"><code>seamless.checksum_class.Checksum.fingertip_sync</code></h2>
+<ul>
+<li>kind: <code>method</code></li>
+<li>signature: <code>fingertip_sync(self, celltype)</code></li>
+</ul>
+<p>Synchronously resolve or recompute the checksum buffer/value.</p>
+<h2 id="seamlesschecksum_classchecksumhex"><code>seamless.checksum_class.Checksum.hex</code></h2>
+<ul>
+<li>kind: <code>method</code></li>
+<li>signature: <code>hex(self)</code></li>
+</ul>
+<p>Returns the checksum as a 64-byte hexadecimal string</p>
+<h2 id="seamlesschecksum_classchecksumincref"><code>seamless.checksum_class.Checksum.incref</code></h2>
+<ul>
+<li>kind: <code>method</code></li>
+<li>signature: <code>incref(self, *, scratch)</code></li>
+</ul>
+<p>Increment normal refcount in the buffer cache.</p>
+<p>If scratch is True, keep the ref scratch-only (no remote registration).</p>
+<h2 id="seamlesschecksum_classchecksumload"><code>seamless.checksum_class.Checksum.load</code></h2>
+<ul>
+<li>kind: <code>method</code></li>
+<li>signature: <code>load(cls, filename)</code></li>
+</ul>
+<p>Loads the checksum from a .CHECKSUM file.</p>
+<p>If the filename doesn't have a .CHECKSUM extension, it is added</p>
+<h2 id="seamlesschecksum_classchecksumresolution"><code>seamless.checksum_class.Checksum.resolution</code></h2>
+<ul>
+<li>kind: <code>method</code></li>
+<li>signature: <code>resolution(self, celltype)</code></li>
+</ul>
+<p>Returns the data buffer that corresponds to the checksum.
+If celltype is provided, a value is returned instead.</p>
+<h2 id="seamlesschecksum_classchecksumresolve"><code>seamless.checksum_class.Checksum.resolve</code></h2>
+<ul>
+<li>kind: <code>method</code></li>
+<li>signature: <code>resolve(self, celltype)</code></li>
+</ul>
+<p>Returns the data buffer that corresponds to the checksum.
+If celltype is provided, a value is returned instead.</p>
+<p>The buffer is retrieved from buffer cache</p>
+<h2 id="seamlesschecksum_classchecksumsave"><code>seamless.checksum_class.Checksum.save</code></h2>
+<ul>
+<li>kind: <code>method</code></li>
+<li>signature: <code>save(self, filename)</code></li>
+</ul>
+<p>Saves the checksum to a .CHECKSUM file.</p>
+<p>If the filename doesn't have a .CHECKSUM extension, it is added</p>
+<h2 id="seamlesschecksum_classchecksumtempref"><code>seamless.checksum_class.Checksum.tempref</code></h2>
+<ul>
+<li>kind: <code>method</code></li>
+<li>signature: <code>tempref(self, interest, fade_factor, fade_interval, scratch)</code></li>
+</ul>
+<p>Add or refresh a single tempref. Only one tempref allowed per checksum.</p>
+<p>If scratch is True, keep the tempref scratch-only (no remote registration).</p>
+<h2 id="seamlesschecksum_class_run_coro_in_new_loop"><code>seamless.checksum_class._run_coro_in_new_loop</code></h2>
+<ul>
+<li>kind: <code>function</code></li>
+<li>signature: <code>_run_coro_in_new_loop(coro)</code></li>
+</ul>
+<p><em>No docstring.</em></p>
+<h2 id="seamlesschecksum_class_run_coro_in_worker_thread"><code>seamless.checksum_class._run_coro_in_worker_thread</code></h2>
+<ul>
+<li>kind: <code>function</code></li>
+<li>signature: <code>_run_coro_in_worker_thread(coro)</code></li>
+</ul>
+<p><em>No docstring.</em></p>
+<h2 id="seamlesschecksum_classvalidate_checksum"><code>seamless.checksum_class.validate_checksum</code></h2>
+<ul>
+<li>kind: <code>function</code></li>
+<li>signature: <code>validate_checksum(v)</code></li>
+</ul>
+<p>Validate a checksum, list or dict recursively</p>
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="seamless.html" class="btn btn-neutral float-left" title="seamless"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="seamless.buffer_class.html" class="btn btn-neutral float-right" title="Buffer">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+    
+      <span><a href="seamless.html" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="seamless.buffer_class.html" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script src="../../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "../..";</script>
+    <script src="../../js/theme_extra.js"></script>
+    <script src="../../js/theme.js"></script>
+      <script src="../../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>

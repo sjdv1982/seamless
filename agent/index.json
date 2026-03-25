@@ -1,0 +1,511 @@
+{
+  "generated_at": 1774402981,
+  "symbols": {
+    "seamless.CacheMissError": {
+      "anchor": "seamless-cachemisserror",
+      "page": "api/python/seamless.md"
+    },
+    "seamless.buffer_class.Buffer": {
+      "anchor": "seamless-buffer-class-buffer",
+      "page": "api/python/seamless.buffer_class.md"
+    },
+    "seamless.buffer_class.Buffer.checksum": {
+      "anchor": "seamless-buffer-class-buffer-checksum",
+      "page": "api/python/seamless.buffer_class.md"
+    },
+    "seamless.buffer_class.Buffer.content": {
+      "anchor": "seamless-buffer-class-buffer-content",
+      "page": "api/python/seamless.buffer_class.md"
+    },
+    "seamless.buffer_class.Buffer.decode": {
+      "anchor": "seamless-buffer-class-buffer-decode",
+      "page": "api/python/seamless.buffer_class.md"
+    },
+    "seamless.buffer_class.Buffer.decref": {
+      "anchor": "seamless-buffer-class-buffer-decref",
+      "page": "api/python/seamless.buffer_class.md"
+    },
+    "seamless.buffer_class.Buffer.from_async": {
+      "anchor": "seamless-buffer-class-buffer-from-async",
+      "page": "api/python/seamless.buffer_class.md"
+    },
+    "seamless.buffer_class.Buffer.get_checksum": {
+      "anchor": "seamless-buffer-class-buffer-get-checksum",
+      "page": "api/python/seamless.buffer_class.md"
+    },
+    "seamless.buffer_class.Buffer.get_checksum_async": {
+      "anchor": "seamless-buffer-class-buffer-get-checksum-async",
+      "page": "api/python/seamless.buffer_class.md"
+    },
+    "seamless.buffer_class.Buffer.get_value": {
+      "anchor": "seamless-buffer-class-buffer-get-value",
+      "page": "api/python/seamless.buffer_class.md"
+    },
+    "seamless.buffer_class.Buffer.get_value_async": {
+      "anchor": "seamless-buffer-class-buffer-get-value-async",
+      "page": "api/python/seamless.buffer_class.md"
+    },
+    "seamless.buffer_class.Buffer.incref": {
+      "anchor": "seamless-buffer-class-buffer-incref",
+      "page": "api/python/seamless.buffer_class.md"
+    },
+    "seamless.buffer_class.Buffer.load": {
+      "anchor": "seamless-buffer-class-buffer-load",
+      "page": "api/python/seamless.buffer_class.md"
+    },
+    "seamless.buffer_class.Buffer.save": {
+      "anchor": "seamless-buffer-class-buffer-save",
+      "page": "api/python/seamless.buffer_class.md"
+    },
+    "seamless.buffer_class.Buffer.tempref": {
+      "anchor": "seamless-buffer-class-buffer-tempref",
+      "page": "api/python/seamless.buffer_class.md"
+    },
+    "seamless.buffer_class.Buffer.write": {
+      "anchor": "seamless-buffer-class-buffer-write",
+      "page": "api/python/seamless.buffer_class.md"
+    },
+    "seamless.checksum_class.Checksum": {
+      "anchor": "seamless-checksum-class-checksum",
+      "page": "api/python/seamless.checksum_class.md"
+    },
+    "seamless.checksum_class.Checksum.bytes": {
+      "anchor": "seamless-checksum-class-checksum-bytes",
+      "page": "api/python/seamless.checksum_class.md"
+    },
+    "seamless.checksum_class.Checksum.decref": {
+      "anchor": "seamless-checksum-class-checksum-decref",
+      "page": "api/python/seamless.checksum_class.md"
+    },
+    "seamless.checksum_class.Checksum.find": {
+      "anchor": "seamless-checksum-class-checksum-find",
+      "page": "api/python/seamless.checksum_class.md"
+    },
+    "seamless.checksum_class.Checksum.fingertip": {
+      "anchor": "seamless-checksum-class-checksum-fingertip",
+      "page": "api/python/seamless.checksum_class.md"
+    },
+    "seamless.checksum_class.Checksum.fingertip_sync": {
+      "anchor": "seamless-checksum-class-checksum-fingertip-sync",
+      "page": "api/python/seamless.checksum_class.md"
+    },
+    "seamless.checksum_class.Checksum.hex": {
+      "anchor": "seamless-checksum-class-checksum-hex",
+      "page": "api/python/seamless.checksum_class.md"
+    },
+    "seamless.checksum_class.Checksum.incref": {
+      "anchor": "seamless-checksum-class-checksum-incref",
+      "page": "api/python/seamless.checksum_class.md"
+    },
+    "seamless.checksum_class.Checksum.load": {
+      "anchor": "seamless-checksum-class-checksum-load",
+      "page": "api/python/seamless.checksum_class.md"
+    },
+    "seamless.checksum_class.Checksum.resolution": {
+      "anchor": "seamless-checksum-class-checksum-resolution",
+      "page": "api/python/seamless.checksum_class.md"
+    },
+    "seamless.checksum_class.Checksum.resolve": {
+      "anchor": "seamless-checksum-class-checksum-resolve",
+      "page": "api/python/seamless.checksum_class.md"
+    },
+    "seamless.checksum_class.Checksum.save": {
+      "anchor": "seamless-checksum-class-checksum-save",
+      "page": "api/python/seamless.checksum_class.md"
+    },
+    "seamless.checksum_class.Checksum.tempref": {
+      "anchor": "seamless-checksum-class-checksum-tempref",
+      "page": "api/python/seamless.checksum_class.md"
+    },
+    "seamless.checksum_class._run_coro_in_new_loop": {
+      "anchor": "seamless-checksum-class--run-coro-in-new-loop",
+      "page": "api/python/seamless.checksum_class.md"
+    },
+    "seamless.checksum_class._run_coro_in_worker_thread": {
+      "anchor": "seamless-checksum-class--run-coro-in-worker-thread",
+      "page": "api/python/seamless.checksum_class.md"
+    },
+    "seamless.checksum_class.validate_checksum": {
+      "anchor": "seamless-checksum-class-validate-checksum",
+      "page": "api/python/seamless.checksum_class.md"
+    },
+    "seamless.ensure_open": {
+      "anchor": "seamless-ensure-open",
+      "page": "api/python/seamless.md"
+    },
+    "seamless.is_worker": {
+      "anchor": "seamless-is-worker",
+      "page": "api/python/seamless.md"
+    },
+    "seamless.register_close_hook": {
+      "anchor": "seamless-register-close-hook",
+      "page": "api/python/seamless.md"
+    },
+    "seamless.set_is_worker": {
+      "anchor": "seamless-set-is-worker",
+      "page": "api/python/seamless.md"
+    },
+    "seamless_config.select._validate": {
+      "anchor": "seamless-config-select--validate",
+      "page": "api/python/seamless_config.select.md"
+    },
+    "seamless_config.select.check_remote_redundancy": {
+      "anchor": "seamless-config-select-check-remote-redundancy",
+      "page": "api/python/seamless_config.select.md"
+    },
+    "seamless_config.select.execution_command_seen": {
+      "anchor": "seamless-config-select-execution-command-seen",
+      "page": "api/python/seamless_config.select.md"
+    },
+    "seamless_config.select.execution_was_set_explicitly": {
+      "anchor": "seamless-config-select-execution-was-set-explicitly",
+      "page": "api/python/seamless_config.select.md"
+    },
+    "seamless_config.select.get_current": {
+      "anchor": "seamless-config-select-get-current",
+      "page": "api/python/seamless_config.select.md"
+    },
+    "seamless_config.select.get_execution": {
+      "anchor": "seamless-config-select-get-execution",
+      "page": "api/python/seamless_config.select.md"
+    },
+    "seamless_config.select.get_persistent": {
+      "anchor": "seamless-config-select-get-persistent",
+      "page": "api/python/seamless_config.select.md"
+    },
+    "seamless_config.select.get_queue": {
+      "anchor": "seamless-config-select-get-queue",
+      "page": "api/python/seamless_config.select.md"
+    },
+    "seamless_config.select.get_remote": {
+      "anchor": "seamless-config-select-get-remote",
+      "page": "api/python/seamless_config.select.md"
+    },
+    "seamless_config.select.get_selected_cluster": {
+      "anchor": "seamless-config-select-get-selected-cluster",
+      "page": "api/python/seamless_config.select.md"
+    },
+    "seamless_config.select.get_stage": {
+      "anchor": "seamless-config-select-get-stage",
+      "page": "api/python/seamless_config.select.md"
+    },
+    "seamless_config.select.persistent_was_set_explicitly": {
+      "anchor": "seamless-config-select-persistent-was-set-explicitly",
+      "page": "api/python/seamless_config.select.md"
+    },
+    "seamless_config.select.reset_execution_before_load": {
+      "anchor": "seamless-config-select-reset-execution-before-load",
+      "page": "api/python/seamless_config.select.md"
+    },
+    "seamless_config.select.reset_persistent_before_load": {
+      "anchor": "seamless-config-select-reset-persistent-before-load",
+      "page": "api/python/seamless_config.select.md"
+    },
+    "seamless_config.select.reset_queue_before_load": {
+      "anchor": "seamless-config-select-reset-queue-before-load",
+      "page": "api/python/seamless_config.select.md"
+    },
+    "seamless_config.select.reset_remote_before_load": {
+      "anchor": "seamless-config-select-reset-remote-before-load",
+      "page": "api/python/seamless_config.select.md"
+    },
+    "seamless_config.select.select_cluster": {
+      "anchor": "seamless-config-select-select-cluster",
+      "page": "api/python/seamless_config.select.md"
+    },
+    "seamless_config.select.select_execution": {
+      "anchor": "seamless-config-select-select-execution",
+      "page": "api/python/seamless_config.select.md"
+    },
+    "seamless_config.select.select_persistent": {
+      "anchor": "seamless-config-select-select-persistent",
+      "page": "api/python/seamless_config.select.md"
+    },
+    "seamless_config.select.select_project": {
+      "anchor": "seamless-config-select-select-project",
+      "page": "api/python/seamless_config.select.md"
+    },
+    "seamless_config.select.select_queue": {
+      "anchor": "seamless-config-select-select-queue",
+      "page": "api/python/seamless_config.select.md"
+    },
+    "seamless_config.select.select_remote": {
+      "anchor": "seamless-config-select-select-remote",
+      "page": "api/python/seamless_config.select.md"
+    },
+    "seamless_config.select.select_stage": {
+      "anchor": "seamless-config-select-select-stage",
+      "page": "api/python/seamless_config.select.md"
+    },
+    "seamless_config.select.select_subproject": {
+      "anchor": "seamless-config-select-select-subproject",
+      "page": "api/python/seamless_config.select.md"
+    },
+    "seamless_config.select.select_substage": {
+      "anchor": "seamless-config-select-select-substage",
+      "page": "api/python/seamless_config.select.md"
+    },
+    "seamless_config.tools._build_injected": {
+      "anchor": "seamless-config-tools--build-injected",
+      "page": "api/python/seamless_config.tools.md"
+    },
+    "seamless_config.tools._configure_tool": {
+      "anchor": "seamless-config-tools--configure-tool",
+      "page": "api/python/seamless_config.tools.md"
+    },
+    "seamless_config.tools._prepare_tool": {
+      "anchor": "seamless-config-tools--prepare-tool",
+      "page": "api/python/seamless_config.tools.md"
+    },
+    "seamless_config.tools.configure_daskserver": {
+      "anchor": "seamless-config-tools-configure-daskserver",
+      "page": "api/python/seamless_config.tools.md"
+    },
+    "seamless_config.tools.configure_database": {
+      "anchor": "seamless-config-tools-configure-database",
+      "page": "api/python/seamless_config.tools.md"
+    },
+    "seamless_config.tools.configure_hashserver": {
+      "anchor": "seamless-config-tools-configure-hashserver",
+      "page": "api/python/seamless_config.tools.md"
+    },
+    "seamless_config.tools.configure_jobserver": {
+      "anchor": "seamless-config-tools-configure-jobserver",
+      "page": "api/python/seamless_config.tools.md"
+    },
+    "seamless_config.tools.configure_pure_daskserver": {
+      "anchor": "seamless-config-tools-configure-pure-daskserver",
+      "page": "api/python/seamless_config.tools.md"
+    },
+    "seamless_config.tools.define_tools": {
+      "anchor": "seamless-config-tools-define-tools",
+      "page": "api/python/seamless_config.tools.md"
+    },
+    "seamless_transformer.transformation_class.Transformation": {
+      "anchor": "seamless-transformer-transformation-class-transformation",
+      "page": "api/python/seamless_transformer.transformation_class.md"
+    },
+    "seamless_transformer.transformation_class.Transformation.allow_input_fingertip": {
+      "anchor": "seamless-transformer-transformation-class-transformation-allow-input-fingertip",
+      "page": "api/python/seamless_transformer.transformation_class.md"
+    },
+    "seamless_transformer.transformation_class.Transformation.buffer": {
+      "anchor": "seamless-transformer-transformation-class-transformation-buffer",
+      "page": "api/python/seamless_transformer.transformation_class.md"
+    },
+    "seamless_transformer.transformation_class.Transformation.celltype": {
+      "anchor": "seamless-transformer-transformation-class-transformation-celltype",
+      "page": "api/python/seamless_transformer.transformation_class.md"
+    },
+    "seamless_transformer.transformation_class.Transformation.clear_exception": {
+      "anchor": "seamless-transformer-transformation-class-transformation-clear-exception",
+      "page": "api/python/seamless_transformer.transformation_class.md"
+    },
+    "seamless_transformer.transformation_class.Transformation.computation": {
+      "anchor": "seamless-transformer-transformation-class-transformation-computation",
+      "page": "api/python/seamless_transformer.transformation_class.md"
+    },
+    "seamless_transformer.transformation_class.Transformation.compute": {
+      "anchor": "seamless-transformer-transformation-class-transformation-compute",
+      "page": "api/python/seamless_transformer.transformation_class.md"
+    },
+    "seamless_transformer.transformation_class.Transformation.construct": {
+      "anchor": "seamless-transformer-transformation-class-transformation-construct",
+      "page": "api/python/seamless_transformer.transformation_class.md"
+    },
+    "seamless_transformer.transformation_class.Transformation.construction": {
+      "anchor": "seamless-transformer-transformation-class-transformation-construction",
+      "page": "api/python/seamless_transformer.transformation_class.md"
+    },
+    "seamless_transformer.transformation_class.Transformation.exception": {
+      "anchor": "seamless-transformer-transformation-class-transformation-exception",
+      "page": "api/python/seamless_transformer.transformation_class.md"
+    },
+    "seamless_transformer.transformation_class.Transformation.logs": {
+      "anchor": "seamless-transformer-transformation-class-transformation-logs",
+      "page": "api/python/seamless_transformer.transformation_class.md"
+    },
+    "seamless_transformer.transformation_class.Transformation.meta": {
+      "anchor": "seamless-transformer-transformation-class-transformation-meta",
+      "page": "api/python/seamless_transformer.transformation_class.md"
+    },
+    "seamless_transformer.transformation_class.Transformation.result_checksum": {
+      "anchor": "seamless-transformer-transformation-class-transformation-result-checksum",
+      "page": "api/python/seamless_transformer.transformation_class.md"
+    },
+    "seamless_transformer.transformation_class.Transformation.run": {
+      "anchor": "seamless-transformer-transformation-class-transformation-run",
+      "page": "api/python/seamless_transformer.transformation_class.md"
+    },
+    "seamless_transformer.transformation_class.Transformation.scratch": {
+      "anchor": "seamless-transformer-transformation-class-transformation-scratch",
+      "page": "api/python/seamless_transformer.transformation_class.md"
+    },
+    "seamless_transformer.transformation_class.Transformation.start": {
+      "anchor": "seamless-transformer-transformation-class-transformation-start",
+      "page": "api/python/seamless_transformer.transformation_class.md"
+    },
+    "seamless_transformer.transformation_class.Transformation.status": {
+      "anchor": "seamless-transformer-transformation-class-transformation-status",
+      "page": "api/python/seamless_transformer.transformation_class.md"
+    },
+    "seamless_transformer.transformation_class.Transformation.task": {
+      "anchor": "seamless-transformer-transformation-class-transformation-task",
+      "page": "api/python/seamless_transformer.transformation_class.md"
+    },
+    "seamless_transformer.transformation_class.Transformation.transformation_checksum": {
+      "anchor": "seamless-transformer-transformation-class-transformation-transformation-checksum",
+      "page": "api/python/seamless_transformer.transformation_class.md"
+    },
+    "seamless_transformer.transformation_class.Transformation.value": {
+      "anchor": "seamless-transformer-transformation-class-transformation-value",
+      "page": "api/python/seamless_transformer.transformation_class.md"
+    },
+    "seamless_transformer.transformation_class.TransformationError": {
+      "anchor": "seamless-transformer-transformation-class-transformationerror",
+      "page": "api/python/seamless_transformer.transformation_class.md"
+    },
+    "seamless_transformer.transformation_class._compute_executor_max_workers": {
+      "anchor": "seamless-transformer-transformation-class--compute-executor-max-workers",
+      "page": "api/python/seamless_transformer.transformation_class.md"
+    },
+    "seamless_transformer.transformation_class._dask_available": {
+      "anchor": "seamless-transformer-transformation-class--dask-available",
+      "page": "api/python/seamless_transformer.transformation_class.md"
+    },
+    "seamless_transformer.transformation_class._ensure_loop_running": {
+      "anchor": "seamless-transformer-transformation-class--ensure-loop-running",
+      "page": "api/python/seamless_transformer.transformation_class.md"
+    },
+    "seamless_transformer.transformation_class._format_exception": {
+      "anchor": "seamless-transformer-transformation-class--format-exception",
+      "page": "api/python/seamless_transformer.transformation_class.md"
+    },
+    "seamless_transformer.transformation_class.compute_transformation_sync": {
+      "anchor": "seamless-transformer-transformation-class-compute-transformation-sync",
+      "page": "api/python/seamless_transformer.transformation_class.md"
+    },
+    "seamless_transformer.transformation_class.loop_is_nested": {
+      "anchor": "seamless-transformer-transformation-class-loop-is-nested",
+      "page": "api/python/seamless_transformer.transformation_class.md"
+    },
+    "seamless_transformer.transformation_class.running_in_jupyter": {
+      "anchor": "seamless-transformer-transformation-class-running-in-jupyter",
+      "page": "api/python/seamless_transformer.transformation_class.md"
+    },
+    "seamless_transformer.transformation_class.transformation_from_dict": {
+      "anchor": "seamless-transformer-transformation-class-transformation-from-dict",
+      "page": "api/python/seamless_transformer.transformation_class.md"
+    },
+    "seamless_transformer.transformation_class.transformation_from_pretransformation": {
+      "anchor": "seamless-transformer-transformation-class-transformation-from-pretransformation",
+      "page": "api/python/seamless_transformer.transformation_class.md"
+    },
+    "seamless_transformer.transformer_class.ArgsWrapper": {
+      "anchor": "seamless-transformer-transformer-class-argswrapper",
+      "page": "api/python/seamless_transformer.transformer_class.md"
+    },
+    "seamless_transformer.transformer_class.CelltypesWrapper": {
+      "anchor": "seamless-transformer-transformer-class-celltypeswrapper",
+      "page": "api/python/seamless_transformer.transformer_class.md"
+    },
+    "seamless_transformer.transformer_class.DirectTransformer": {
+      "anchor": "seamless-transformer-transformer-class-directtransformer",
+      "page": "api/python/seamless_transformer.transformer_class.md"
+    },
+    "seamless_transformer.transformer_class.GlobalsWrapper": {
+      "anchor": "seamless-transformer-transformer-class-globalswrapper",
+      "page": "api/python/seamless_transformer.transformer_class.md"
+    },
+    "seamless_transformer.transformer_class.ModulesWrapper": {
+      "anchor": "seamless-transformer-transformer-class-moduleswrapper",
+      "page": "api/python/seamless_transformer.transformer_class.md"
+    },
+    "seamless_transformer.transformer_class.Transformer": {
+      "anchor": "seamless-transformer-transformer-class-transformer",
+      "page": "api/python/seamless_transformer.transformer_class.md"
+    },
+    "seamless_transformer.transformer_class.Transformer.allow_input_fingertip": {
+      "anchor": "seamless-transformer-transformer-class-transformer-allow-input-fingertip",
+      "page": "api/python/seamless_transformer.transformer_class.md"
+    },
+    "seamless_transformer.transformer_class.Transformer.args": {
+      "anchor": "seamless-transformer-transformer-class-transformer-args",
+      "page": "api/python/seamless_transformer.transformer_class.md"
+    },
+    "seamless_transformer.transformer_class.Transformer.celltypes": {
+      "anchor": "seamless-transformer-transformer-class-transformer-celltypes",
+      "page": "api/python/seamless_transformer.transformer_class.md"
+    },
+    "seamless_transformer.transformer_class.Transformer.code": {
+      "anchor": "seamless-transformer-transformer-class-transformer-code",
+      "page": "api/python/seamless_transformer.transformer_class.md"
+    },
+    "seamless_transformer.transformer_class.Transformer.direct_print": {
+      "anchor": "seamless-transformer-transformer-class-transformer-direct-print",
+      "page": "api/python/seamless_transformer.transformer_class.md"
+    },
+    "seamless_transformer.transformer_class.Transformer.driver": {
+      "anchor": "seamless-transformer-transformer-class-transformer-driver",
+      "page": "api/python/seamless_transformer.transformer_class.md"
+    },
+    "seamless_transformer.transformer_class.Transformer.globals": {
+      "anchor": "seamless-transformer-transformer-class-transformer-globals",
+      "page": "api/python/seamless_transformer.transformer_class.md"
+    },
+    "seamless_transformer.transformer_class.Transformer.language": {
+      "anchor": "seamless-transformer-transformer-class-transformer-language",
+      "page": "api/python/seamless_transformer.transformer_class.md"
+    },
+    "seamless_transformer.transformer_class.Transformer.local": {
+      "anchor": "seamless-transformer-transformer-class-transformer-local",
+      "page": "api/python/seamless_transformer.transformer_class.md"
+    },
+    "seamless_transformer.transformer_class.Transformer.meta": {
+      "anchor": "seamless-transformer-transformer-class-transformer-meta",
+      "page": "api/python/seamless_transformer.transformer_class.md"
+    },
+    "seamless_transformer.transformer_class.Transformer.modules": {
+      "anchor": "seamless-transformer-transformer-class-transformer-modules",
+      "page": "api/python/seamless_transformer.transformer_class.md"
+    },
+    "seamless_transformer.transformer_class.Transformer.scratch": {
+      "anchor": "seamless-transformer-transformer-class-transformer-scratch",
+      "page": "api/python/seamless_transformer.transformer_class.md"
+    },
+    "seamless_transformer.transformer_class.delayed": {
+      "anchor": "seamless-transformer-transformer-class-delayed",
+      "page": "api/python/seamless_transformer.transformer_class.md"
+    },
+    "seamless_transformer.transformer_class.direct": {
+      "anchor": "seamless-transformer-transformer-class-direct",
+      "page": "api/python/seamless_transformer.transformer_class.md"
+    }
+  },
+  "topics": {
+    "api_cli": {
+      "seamless-run": "api/cli/seamless-run.md"
+    },
+    "api_python": {
+      "seamless": "api/python/seamless.md",
+      "seamless.buffer_class": "api/python/seamless.buffer_class.md",
+      "seamless.checksum_class": "api/python/seamless.checksum_class.md",
+      "seamless.transformer": "api/python/seamless.transformer.md",
+      "seamless_config.select": "api/python/seamless_config.select.md",
+      "seamless_config.tools": "api/python/seamless_config.tools.md",
+      "seamless_transformer.transformation_class": "api/python/seamless_transformer.transformation_class.md",
+      "seamless_transformer.transformer_class": "api/python/seamless_transformer.transformer_class.md"
+    },
+    "contracts": [
+      "contracts/cache-storage-and-limits.md",
+      "contracts/content-addressed-files-and-dirs.md",
+      "contracts/direct-delayed-and-transformation.md",
+      "contracts/execution-backends.md",
+      "contracts/identity-and-caching.md",
+      "contracts/modules-and-closures.md",
+      "contracts/scratch-witness-audit.md",
+      "contracts/seamless-run-and-argtyping.md"
+    ]
+  },
+  "version": 1
+}

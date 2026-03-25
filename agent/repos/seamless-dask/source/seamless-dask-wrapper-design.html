@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <link rel="shortcut icon" href="../../../img/favicon.ico" />
+    <title>seamless-dask-wrapper - Seamless — Agent Documentation</title>
+    <link rel="stylesheet" href="../../../css/theme.css" />
+    <link rel="stylesheet" href="../../../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "seamless-dask-wrapper";
+        var mkdocs_page_input_path = "repos/seamless-dask/source/seamless-dask-wrapper-design.md";
+        var mkdocs_page_url = null;
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../../../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href="../../../index.html" class="icon icon-home"> Seamless — Agent Documentation
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../../index.html">Home</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../../overview.html">Agent Docs Overview</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../index.html">Workspace Repos</a>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Contracts</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/identity-and-caching.html">Identity and Caching</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/direct-delayed-and-transformation.html">direct/delayed/Transformation</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/modules-and-closures.html">Modules and Closures</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/scratch-witness-audit.html">Scratch/Witness/Audit</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/seamless-run-and-argtyping.html">seamless-run/Argtyping</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/cache-storage-and-limits.html">Cache Storage and Limits</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/content-addressed-files-and-dirs.html">Content-addressed Files and Dirs</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/execution-backends.html">Execution Backends</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">API</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../api/python/seamless.html">seamless</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../api/python/seamless.transformer.html">seamless.transformer</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../api/python/seamless.buffer_class.html">seamless.buffer_class</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../api/python/seamless.checksum_class.html">seamless.checksum_class</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../api/python/seamless_config.select.html">seamless_config.select</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../api/python/seamless_config.tools.html">seamless_config.tools</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../api/python/seamless_transformer.transformation_class.html">seamless_transformer.transformation_class</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../api/python/seamless_transformer.transformer_class.html">seamless_transformer.transformer_class</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">CLI</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../api/cli/seamless-run.html">seamless-run</a>
+                  </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">Seamless — Agent Documentation</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../../../index.html" class="icon icon-home" aria-label="Docs"></a></li>
+      <li class="breadcrumb-item active">seamless-dask-wrapper</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h1 id="seamless-dask-wrapper">seamless-dask-wrapper</h1>
+<p>The wrapper is designed to hold a Dask cluster (dask.distributed.Cluster) instance.</p>
+<p>Although it can wrap LocalCluster, it is primarily designed to wrap dask-jobqueue Cluster classes.</p>
+<p>In a nutshell, it reads parameters and sets them as Dask config.</p>
+<p>Then it reads a "cluster string", evaluating it into a Dask cluster object.</p>
+<p>It waits until a status file is available and writes certain port/host/pid information in there.</p>
+<p>Finally, this cluster object is kept alive as long as it has running jobs and for a while longer.</p>
+<h2 id="concepts-and-definitions">Concepts and definitions</h2>
+<h3 id="propagation-into-dask-jobqueue">Propagation into dask-jobqueue</h3>
+<p>First, there is the concept of "propagating PARAMETER into dask-jobqueue". This is done as
+follows:</p>
+<pre><code>dask.config.set({
+    &quot;jobqueue&quot;: {
+        &quot;XXX&quot;: {
+            PARAMETER: VALUE,
+        }
+    }
+})
+</code></pre>
+<p>which is repeated for XXX=slurm, XXX=oar, and every other value understood by dask-jobqueue</p>
+<h3 id="propagation-as-env-var">Propagation as env var</h3>
+<p>In addition, there is the concept of "propagating as env var". The purpose is to have an env var available to each Dask worker process. The mechanism of that is as follows:</p>
+<p>The env var VAR is encoded by the wrapper as a text string "export VAR=VALUE",
+with the proper bash quoting.</p>
+<p>A list of text strings represents all propagated env vars.</p>
+<p>Eventually, the list of text strings is propagated into dask-jobqueue's "job-script-prologue" parameter.</p>
+<h3 id="propagation-of-dask-config">Propagation of Dask config</h3>
+<p>Finally, there is the concept of "setting + propagating Dask config".</p>
+<p>The wrapper will set certain parameters as Dask config in the normal way,
+e.g. <code>dask.config.set({"distributed.worker.daemon": False})</code> .</p>
+<p>In addition, those parameters that correspond to Dask config for scheduler, worker and nanny are propagated as env vars. For example,
+"distributed.worker.daemon=False" becomes "export DASK_DISTRIBUTED__WORKER__DAEMON=False".</p>
+<p>It is important to observe order here.</p>
+<ul>
+<li>In HPC environments, the wrapper runs on the same file system as the scheduler and Dask workers.
+Therefore, system-wide Dask config (/etc/dask, ~/.config/dask) is in principle accessible from the wrapper.</li>
+<li>Only specific parameters are propagated into env vars. The parameters to propagate are <em>not</em>
+read from Dask config. In fact, when the env var text strings are synthesized, Dask has not been imported yet. Therefore, system-wide Dask config cannot pollute the env vars.</li>
+<li>After env var propagation, the wrapper imports Dask, loads the system-wide config, and then sets (overules) Dask config in the normal way. The cluster string sees this config. Therefore, the
+config set by the wrapper takes precedence.</li>
+<li>A launched Dask worker imports Dask, loading the system-wide config, AND it has the propagated env vars. The way Dask works, the env vars take precedence.</li>
+<li>In summary, system-wide Dask config is taken into account, but config set by the wrapper always takes precedence.</li>
+</ul>
+<h2 id="command-line-arguments">Command line arguments</h2>
+<p>The wrapper has one required positional argument, "cluster"</p>
+<p>This is a string of the format "MODULE::SYMBOL"</p>
+<p>This cluster string will eventually be executed under Python as "from MODULE import SYMBOL"</p>
+<p>For the rest, the wrapper takes more or less the same arguments as jobserver:</p>
+<ul>
+<li>port-range</li>
+<li>host</li>
+<li>status-file</li>
+<li>timeout</li>
+</ul>
+<h2 id="mechanics">Mechanics</h2>
+<h3 id="1-wait-for-status-file">1. Wait for status file</h3>
+<p>The wrapper waits until the status file exists, and reads "parameters" from it, the same way jobserver does.</p>
+<h3 id="2-propagation">2. Propagation</h3>
+<p>Note that in this step, only data-that-will-be-propagated is generated.</p>
+<p>Import of Dask and of the cluster string will happen later!</p>
+<h4 id="a">A</h4>
+<p>The following constant parameters are propagated into dask-jobqueue:  </p>
+<ul>
+<li>processes: 1</li>
+<li>python: "python"</li>
+</ul>
+<p>The following constant parameters are propagated into Dask:</p>
+<ul>
+<li>distributed.worker.daemon: False</li>
+</ul>
+<h4 id="b">B</h4>
+<p>The following parameters are read from the status file "parameters" dict,
+and propagated into jobqueue. If marked as "optional", propagation only takes place if defined.</p>
+<p>Otherwise, if no default is specified, they are mandatory.</p>
+<ul>
+<li>walltime</li>
+<li>cores</li>
+<li>memory</li>
+<li>tmpdir. Propagated into both "local-directory" and "temp-directory". Default: /tmp</li>
+<li>partition, propagated into "queue". Optional</li>
+<li>job_extra_directives: Optional, but must be a list if defined. Example: ["-p grappe"]</li>
+<li>project. Optional (e.g. "capsid")</li>
+<li>memory_per_core_property_name. Optional.</li>
+<li>job_script_prologue: Optional, but must be a list if defined.</li>
+</ul>
+<p>For SLURMCluster instances,  "export PYTHON_CPU_COUNT=SLURM_JOB_CPUS_PER_NODE" is
+added to "job_script_prologue", so that multiprocessing doesn't try to use all cores.</p>
+<p>Note that worker_extra_args is not supported, since it is superfluous with "propagate as env var".</p>
+<p>The wrapper uses worker_extra_args internally to overrule jobqueue's invocation of the "dask worker" command.</p>
+<h4 id="c">C</h4>
+<p>The following parameters are read from the status file "parameters" dict,
+and propagated into Dask. If marked as "optional", propagation only takes place if defined.</p>
+<p>Otherwise, if no default is specified, they are mandatory.</p>
+<ul>
+<li>
+<p>unknown-task-duration =&gt; distributed.scheduler.unknown-task-duration. Default: 1m</p>
+</li>
+<li>
+<p>target-duration =&gt; distributed.scheduler.target-duration. Default: 10m</p>
+</li>
+<li>
+<p>internal-port-range =&gt; distributed.worker.port and distributed.nanny.port. Default: port-range command-line parameter</p>
+</li>
+<li>
+<p>lifetime-stagger =&gt; distributed.worker.lifetime.stagger. Default: 4m</p>
+</li>
+<li>
+<p>lifetime =&gt; distributed.worker.lifetime.duration. Default: walltime minus lifetime-stagger minus 1m</p>
+</li>
+</ul>
+<p>In case of default: Note that "walltime" is in hh:mm:ss format. All three values (walltime, lifetime-stagger and 1m) are understood by <code>dask.utils.parse_timedelta</code>. The subtraction result <code>td</code> can be converted to string using f"{int(td.total_seconds())}s"</p>
+<ul>
+<li>dask-resources =&gt; distributed.worker.resources. Optional.</li>
+</ul>
+<h4 id="d-worker-threads">D. Worker threads</h4>
+<p>Next, the number of threads-per-worker is set up by the wrapper.</p>
+<p>"transformation_throttle" is read from the status file "parameters" dict,
+as an int with a default of 3.</p>
+<p>This controls how many Seamless transformations are allowed per spawned Seamless worker.
+It is propagated as env var SEAMLESS_WORKER_TRANSFORMATION_THROTTLE</p>
+<p>Then the wrapper computes the number of threads per worker as <code>T = cores * transformation_throttle</code>.</p>
+<p>In particular, this overrides the formula of one-thread-per-reserved-core imposed by all dask-jobqueue Cluster subclasses (*) .</p>
+<p>The override is done by propagating <code>[f"--nthreads {T}"]</code> into jobqueue's "worker_extra_args" config parameter.</p>
+<h4 id="e-extra_dask_config">E. extra_dask_config</h4>
+<p>If present, "extra_dask_config" is read from the status file "parameters" dict.</p>
+<p>This must be a dict where the keys are Dask config keys and the values are strings.</p>
+<p>These are propagated into Dask config, including as env vars if the keys start with the right prefix.</p>
+<h4 id="f-scheduler-ports">F. Scheduler ports</h4>
+<p>Finally, within "port-range", two random free ports are selected.</p>
+<p>These ports are propagated to jobqueue's "scheduler-options" dict as "port" and "dashboard_address".
+"host" is also propagated to jobqueue's "scheduler-options" dict.</p>
+<h3 id="3-configuration">3. Configuration</h3>
+<p>Dask (including <code>distributed</code>) is imported, and all propagations are merged into the existing config.</p>
+<h3 id="4-cluster-string-evaluation">4. Cluster string evaluation</h3>
+<p>The cluster string is now executed under Python as "from MODULE import SYMBOL"</p>
+<p>The result can be:</p>
+<ul>
+<li>
+<p>A Dask cluster instance. We can use this directly.</p>
+</li>
+<li>
+<p>A class. In that case, it must be a subclass of Dask cluster.
+    An instance will be created by calling the class without arguments.</p>
+</li>
+<li>
+<p>A function, i.e. an instance of FunctionType.
+    The function will be called without arguments, which must give a Dask cluster instance</p>
+</li>
+</ul>
+<p>After this step, we have now a Dask cluster instance.
+If it is an instance of OARCluster, it is now verified that the <code>memory_per_core_property_name</code> is present in the status file parameter dict.</p>
+<h3 id="5-launching-the-cluster">5. Launching the cluster</h3>
+<p>The parameters "interactive" (bool, default False) and "maximum_jobs" are now read from the status file "parameters" dict.</p>
+<p>The cluster is then launched as  `cluster.adapt(minimum_jobs=int(interactive), maximum_jobs=maximum_jobs)</p>
+<h3 id="6-writing-the-status-file">6. Writing the status file</h3>
+<p>If any of step 2. - 6. has failed, the wrapper writes "failed" in the status file and exits by (re-)raising an exception, or by writing to stderr and by exiting with status code 1.</p>
+<p>If it has succeeded, the wrapper writes the Dask scheduler port under "port" and the dashboard port under
+"dashboard_port.</p>
+<h3 id="7-keeping-the-cluster-alive">7. Keeping the cluster alive</h3>
+<p>A "last activity time" is kept, initially None. Every second, it is checked:</p>
+<ul>
+<li>
+<p>That the scheduler has running jobs OR connected clients.</p>
+<p>If this is true, "last activity time" is set to None.</p>
+<p>Else, if "last activity time" is None, it is set to the current time</p>
+</li>
+<li>
+<p>That the "last activity time" is either None or no more than X seconds in the past,</p>
+<p>where X is the "timeout" parameter.</p>
+<p>Else, the wrapper exists normally.</p>
+</li>
+</ul>
+<h2 id="runtime-configuration-by-seamless">Runtime configuration by Seamless</h2>
+<p>Seamless will submit Dask tasks that require 1 "S resource" each.</p>
+<p>Every worker needs database and hashserver config, and its S resources set, but Seamless will do this.</p>
+<h2 id="seamless-yaml-level">Seamless .YAML level</h2>
+<p>The <code>seamless-dask-wrapper</code> command, including parameters, is ultimately synthesized by <code>seamless.config</code>.</p>
+<p>They are read from <code>clusters.yaml</code> (or a yaml file in <code>clusters/</code>).</p>
+<p><code>cluster.yaml</code> parameters can be overridden in <code>seamless.yaml</code> at the substage level (**).</p>
+<h2 id="footnotes">Footnotes</h2>
+<p>(*) = other than SLURM, which has a job_cpu override for the reserved number of cores.</p>
+<p>(**): Note that there is <code>seamless.yaml</code> under version control, and <code>seamless.profile.yaml</code>
+which is not under version control, containing system-specific configuration.
+The default usage is simply to define "queue" in <code>seamless.profile.yaml</code>, selecting a pre-defined queue.</p>
+              
+            </div>
+          </div><footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+    
+    
+  </span>
+</div>
+    <script src="../../../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "../../..";</script>
+    <script src="../../../js/theme_extra.js"></script>
+    <script src="../../../js/theme.js"></script>
+      <script src="../../../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>

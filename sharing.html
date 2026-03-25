@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <link rel="shortcut icon" href="img/favicon.ico" />
+    <title>Sharing in depth - Seamless</title>
+    <link rel="stylesheet" href="css/theme.css" />
+    <link rel="stylesheet" href="css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "Sharing in depth";
+        var mkdocs_page_input_path = "sharing.md";
+        var mkdocs_page_url = null;
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href="index.html" class="icon icon-home"> Seamless
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="./search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="index.html">Home</a>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Getting Started</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="getting-started.html">Wrapping Python and bash</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="cluster.html">Setting up a local cluster</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">How-To Guides</span></p>
+              <ul class="current">
+                  <li class="toctree-l1"><a class="reference internal" href="caching.html">Caching, identity, and sharing</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="composition.html">Composition</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="parallelism.html">Local parallelism</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="remote.html">Remote execution</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="hpc.html">HPC specifics</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="remote-launch.html">Remote job launching</a>
+                  </li>
+                  <li class="toctree-l1 current"><a class="reference internal current" href="#">Sharing in depth</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#seamlessdb-portability">seamless.db portability</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#scratch-trade-storage-for-recomputation">Scratch: trade storage for recomputation</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#fingertipping-resolve-or-recompute">Fingertipping: resolve-or-recompute</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#from-python">From Python</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#from-the-cli">From the CLI</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#on-seamless-run">On seamless-run</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#replay-by-checksum-seamless-run-transformation">Replay by checksum: seamless-run-transformation</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#the-full-sharing-picture">The full sharing picture</a>
+    </li>
+    </ul>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Reference API</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="api/index.html">Overview</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="api/seamless-core.html">seamless-core</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="api/seamless-transformer.html">seamless-transformer</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="api/seamless-config.html">seamless-config</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="api/seamless-remote.html">seamless-remote</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="api/seamless-dask.html">seamless-dask</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="api/seamless-jobserver.html">seamless-jobserver</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="api/seamless-database.html">seamless-database</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="api/remote-http-launcher.html">remote-http-launcher</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Python docstrings</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="api/reference/seamless.html">seamless</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="api/reference/seamless.checksum_class.html">Checksum</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="api/reference/seamless.buffer_class.html">Buffer</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="api/reference/seamless.transformer.html">seamless.transformer</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="api/reference/seamless_transformer.transformation_class.html">Transformation</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="api/reference/seamless_transformer.transformer_class.html">Transformer properties</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="api/reference/seamless_config.select.html">seamless.config.select</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="api/reference/seamless_config.tools.html">seamless.config.tools</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >CLI docstrings</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="api/reference/seamless-run.html">seamless-run</a>
+                </li>
+    </ul>
+                  </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">Seamless</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="index.html" class="icon icon-home" aria-label="Docs"></a></li>
+          <li class="breadcrumb-item">How-To Guides</li>
+      <li class="breadcrumb-item active">Sharing in depth</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h1 id="sharing-in-depth">Sharing in depth</h1>
+<h2 id="seamlessdb-portability"><code>seamless.db</code> portability</h2>
+<p>The database file <code>seamless.db</code> is a plain SQLite file. It contains all the transformation-to-result checksum mappings recorded in your sessions. It does not contain the result bytes — only the identities.</p>
+<p>To share your computation history with a colleague:</p>
+<ol>
+<li>Copy <code>seamless.db</code> to them (email, shared storage, publication archive — any method works).</li>
+<li>They add it as a read-only database source in their cluster configuration.</li>
+<li>Any transformation they run that matches a checksum in your <code>seamless.db</code> will be a cache hit — they get the result without re-executing, provided they can also resolve the result checksum (i.e., they have access to the hashserver, or you've shared the buffers too).</li>
+</ol>
+<p>For a fully self-contained sharing package: copy both <code>seamless.db</code> and a snapshot of the hashserver buffer directory. The buffer directory is already content-addressed: any file with checksum <code>abc123...</code> is at <code>buffers/ab/c1/23...</code> (or equivalent). You can rsync just the relevant buffer files if you know which checksums you need. Depending on the use case, you may rsync a transformation's input buffers, the result buffer, or both.</p>
+<p><code>seamless.db</code> is also useful as a <strong>reproducibility record</strong>: it proves that your results were produced by transformations with known checksums. Attach it to a paper or dataset (with the necessary buffer files) and anyone with Seamless can verify or replay your computations.</p>
+<p>Because Seamless uses plain SHA-256 for all checksums, its buffers are compatible with any content-addressed storage system that speaks SHA-256. Common choices for distributing buffers externally:</p>
+<ul>
+<li><strong>Git LFS</strong>: uses SHA-256 object identifiers. Push Seamless buffer files as LFS objects and version them alongside your code.</li>
+<li><strong>Zenodo / data repositories</strong>: upload buffer files (or a tar of the buffer directory) to a data archive. Publish the checksum alongside the DOI so recipients can verify integrity after download.</li>
+<li><strong>Direct rsync / object storage</strong>: rsync exactly the files you need using a manifest of checksums, or push them to an S3 bucket with checksum-derived keys.</li>
+</ul>
+<p>For input buffers, <code>seamless-upload</code> is the most convenient path: it pushes bytes to the hashserver and writes <code>.CHECKSUM</code> sidecars (see <a href="caching.html#the-checksum-sidecar-convention">Caching, identity, and sharing</a>).</p>
+<hr />
+<h2 id="scratch-trade-storage-for-recomputation">Scratch: trade storage for recomputation</h2>
+<p>Some transformations produce large intermediate results that you don't need to keep permanently — as long as you can recompute them on demand. The <code>scratch</code> flag embeds this policy into the transformation: results are recorded in the database (checksum mapping is durable) but the result bytes are not stored in the hashserver.</p>
+<p>This is the producer side of the scratch/fingertipping duality: mark the transformation as scratch so the large buffer is never stored. On the consumer side, fingertipping re-executes the transformation to recover the bytes when needed (see <a href="#fingertipping-resolve-or-recompute">Fingertipping</a> below).</p>
+<p><strong>In Python:</strong></p>
+<pre><code class="language-python">@delayed
+def compute_intermediate(data):
+    ...
+
+compute_intermediate.scratch = True
+</code></pre>
+<p><strong>In bash:</strong></p>
+<pre><code class="language-bash">seamless-run --scratch expensive-step input.txt --capture intermediate.bin
+</code></pre>
+<p>A scratch transformation's result checksum is known and addressable — you can pass it to downstream transformations as a <code>checksum</code>-typed input — but you cannot materialize it (fetch its bytes) directly. If a downstream step needs the bytes, Seamless will fingertip them: look up which transformation produced that checksum and re-execute it.</p>
+<p><strong>When to use scratch</strong>: large binary intermediates that are cheap to recompute relative to their storage cost. The result checksum is real, durable, and participates in downstream caching — only the bytes are transient.</p>
+<p><strong>When not to use scratch</strong>: any result you want to inspect directly, or that is expensive to recompute but cheap to store.</p>
+<hr />
+<h2 id="fingertipping-resolve-or-recompute">Fingertipping: resolve-or-recompute</h2>
+<p><strong>Fingertipping</strong> is the consumer side of the scratch/fingertipping duality. When a checksum's buffer is not in the hashserver — because the transformation was marked <code>scratch</code>, or because the buffer was never shared — fingertipping looks up which transformation produced that checksum (via the database's reverse lookup) and re-executes it to recover the bytes.</p>
+<p>This is particularly useful when <strong>recomputation is cheaper than sharing the result buffer</strong> — for example, when the result is large and the computation is fast, or when storing and distributing large outputs is impractical. The workflow is:
+.</p>
+<ol>
+<li>Run the computation with <code>scratch</code> enabled, so the large result buffer is never stored.</li>
+<li>Share the input buffers and <code>seamless.db</code>, and the result checksum.</li>
+<li>The recipient does not need the result buffer. When they request the result, Seamless looks up the transformation, fetches the inputs, and recomputes — producing the same result checksum, confirming reproducibility.</li>
+</ol>
+<h3 id="from-python">From Python</h3>
+<pre><code class="language-python">from seamless import Checksum
+
+cs = Checksum(&quot;a3f2...&quot;)
+buf = cs.fingertip()         # resolve or recompute; returns Buffer or raises
+value = buf.get_value(&quot;text&quot;)
+</code></pre>
+<p><code>fingertip()</code> is synchronous. <code>fingertip_sync()</code> is an alias. Both block until the result is materialized (which may involve re-executing a computation).</p>
+<h3 id="from-the-cli">From the CLI</h3>
+<pre><code class="language-bash"># Fetch the buffer by checksum, triggering recomputation if needed
+seamless-fingertip a3f2...  &gt; result.txt
+</code></pre>
+<p><code>seamless-fingertip</code> is similar to <code>seamless-resolve</code> but with the recomputation fallback.</p>
+<h3 id="on-seamless-run">On <code>seamless-run</code></h3>
+<p>The <code>--fingertip</code> flag on <code>seamless-run</code> enables fingertipping for the transformation's inputs: if an input checksum is known but its buffer is missing from the hashserver, Seamless will fingertip it before running the transformation.</p>
+<pre><code class="language-bash">seamless-run --fingertip mycommand input.txt
+</code></pre>
+<p>Without <code>--fingertip</code>, a missing input buffer raises a <code>CacheMissError</code>.</p>
+<hr />
+<h2 id="replay-by-checksum-seamless-run-transformation">Replay by checksum: <code>seamless-run-transformation</code></h2>
+<p><code>seamless-run-transformation</code> is the universal transformation executor. It accepts a <strong>transformation checksum</strong> (not input arguments) and executes the corresponding transformation, returning the result checksum.</p>
+<pre><code class="language-bash"># Run a transformation by its checksum
+seamless-run-transformation b7e4...
+# prints: result checksum e9a1...
+</code></pre>
+<p>This is the "give someone a checksum and they re-run it" sharing path. If you publish a transformation checksum alongside your <code>seamless.db</code>, anyone with Seamless — and with the exact same inputs that you used — can re-execute your exact computation and verify that they get the same result checksum.</p>
+<p>The transformation dict (inputs, code, language) is identified by the checksum. As long as the transformation dict's buffer is available (in the hashserver or resolvable via fingertipping), <code>seamless-run-transformation</code> can execute it.</p>
+<p>This is also useful for debugging: if a transformation in your database produced an unexpected result, re-execute it by checksum to confirm the result is reproducible, and compare with the stored result.</p>
+<hr />
+<h2 id="the-full-sharing-picture">The full sharing picture</h2>
+<table>
+<thead>
+<tr>
+<th>Scenario</th>
+<th>Tool</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>"We've both computed this; you have the result"</td>
+<td>Exchange checksums; no data transfer</td>
+</tr>
+<tr>
+<td>"Share my computation history"</td>
+<td>Copy <code>seamless.db</code></td>
+</tr>
+<tr>
+<td>"Share my computation history + results"</td>
+<td>Copy <code>seamless.db</code> + hashserver buffer dir</td>
+</tr>
+<tr>
+<td>"Fetch a result buffer by checksum"</td>
+<td><code>seamless-resolve</code></td>
+</tr>
+<tr>
+<td>"Fetch a result buffer, recomputing if missing"</td>
+<td><code>seamless-fingertip</code> / <code>Checksum.fingertip()</code></td>
+</tr>
+<tr>
+<td>"Re-execute a specific computation by identity"</td>
+<td><code>seamless-run-transformation</code></td>
+</tr>
+<tr>
+<td>"Store identity but not bytes (large intermediate)"</td>
+<td><code>.scratch = True</code> / <code>seamless-run --scratch</code></td>
+</tr>
+</tbody>
+</table>
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="remote-launch.html" class="btn btn-neutral float-left" title="Remote job launching"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="api/index.html" class="btn btn-neutral float-right" title="Overview">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+    
+      <span><a href="remote-launch.html" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="api/index.html" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script src="js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = ".";</script>
+    <script src="js/theme_extra.js"></script>
+    <script src="js/theme.js"></script>
+      <script src="search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>

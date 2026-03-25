@@ -1,0 +1,46 @@
+[build-system]
+requires = ["setuptools>=69", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "seamless-dask"
+version = "0.1.0"
+description = "Dask integration layer for Seamless distributed transformations"
+readme = "README.md"
+requires-python = ">=3.10"
+license = "MIT"
+authors = [{name = "Sjoerd de Vries"}]
+dependencies = [
+    "dask",
+    "distributed",
+    "dask_jobqueue",
+    "bokeh>=3.1.0",
+    "seamless-core",
+    "seamless-config",
+    "seamless-remote",
+    "seamless-transformer",
+]
+keywords = ["seamless", "dask", "distributed", "transformations"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Science/Research",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Operating System :: OS Independent",
+    "Topic :: Scientific/Engineering",
+    "Topic :: Software Development :: Libraries",
+]
+
+[project.urls]
+Homepage = "https://github.com/sjdv1982/seamless"
+Repository = "https://github.com/sjdv1982/seamless"
+Issues = "https://github.com/sjdv1982/seamless/issues"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["seamless_dask*"]
+exclude = ["plans*", "tests*"]
+
+[project.scripts]
+seamless-dask-wrapper = "seamless_dask.wrapper:main"

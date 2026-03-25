@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Installation &mdash; Seamless 0.10 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=acd5942f" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="_static/jquery.js?v=5be48651"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="_static/documentation_options.js?v=c71f9630"></script>
+        <script src="_static/doctools.js?v=695de88e"></script>
+        <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Getting started with Seamless" href="getting-started.html" />
+    <link rel="prev" title="Seamless: a cell-based interactive workflow framework" href="whatis.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            Seamless
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Introduction</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="whatis.html">Seamless: a cell-based interactive workflow framework</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Installation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#quick-installation-for-the-impatient">Quick installation (for the impatient)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#docker-based-installation">Docker-based installation</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#how-to-do-this">How to do this</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#installing-a-specific-seamless-version">Installing a specific Seamless version</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#after-installation">After installation</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#conda-only-installation">Conda-only installation</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#id1">How to do this</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="getting-started.html">Getting started with Seamless</a></li>
+<li class="toctree-l1"><a class="reference internal" href="beginner.html">Beginner’s guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="explained.html">Seamless explained</a></li>
+<li class="toctree-l1"><a class="reference internal" href="new-project.html">Seamless projects</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Seamless features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="context.html">Contexts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="cell.html">Cells</a></li>
+<li class="toctree-l1"><a class="reference internal" href="transformer.html">Transformers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="mounting.html">Mounting to the file system</a></li>
+<li class="toctree-l1"><a class="reference internal" href="shareserver.html">The Seamless shareserver</a></li>
+<li class="toctree-l1"><a class="reference internal" href="help.html">The help system</a></li>
+<li class="toctree-l1"><a class="reference internal" href="visualization.html">Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="validation.html">Validation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="libraries.html">Libraries and libinstances</a></li>
+<li class="toctree-l1"><a class="reference internal" href="modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="debugging.html">Debugging</a></li>
+<li class="toctree-l1"><a class="reference internal" href="environments.html">Environments</a></li>
+<li class="toctree-l1"><a class="reference internal" href="data_storage.html">Data storage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="job_management.html">Job management</a></li>
+<li class="toctree-l1"><a class="reference internal" href="deployment.html">Deployment</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Advanced features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="deepcell.html">Deep cells</a></li>
+<li class="toctree-l1"><a class="reference internal" href="low_level.html">Macros and the low level</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">stdlib documentation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="stdlib/merge.html">stdlib.merge</a></li>
+<li class="toctree-l1"><a class="reference internal" href="stdlib/select.html">stdlib.select</a></li>
+<li class="toctree-l1"><a class="reference internal" href="stdlib/switch.html">stdlib.switch</a></li>
+<li class="toctree-l1"><a class="reference internal" href="stdlib/instantiate.html">stdlib.instantiate</a></li>
+<li class="toctree-l1"><a class="reference internal" href="stdlib/map_dict.html">stdlib.map.map_dict</a></li>
+<li class="toctree-l1"><a class="reference internal" href="stdlib/map_dict_chunk.html">stdlib.map.map_dict_chunk</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="reference.html">Reference</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">Seamless</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Installation</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/installation.md.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="installation">
+<h1>Installation<a class="headerlink" href="#installation" title="Link to this heading"></a></h1>
+<section id="quick-installation-for-the-impatient">
+<h2>Quick installation (for the impatient)<a class="headerlink" href="#quick-installation-for-the-impatient" title="Link to this heading"></a></h2>
+<p>First, install <a class="reference external" href="https://docs.docker.com/get-docker/">Docker</a>
+and <a class="reference external" href="https://docs.conda.io/en/latest/miniconda.html">miniconda</a>.</p>
+<p>Then:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>docker<span class="w"> </span>pull<span class="w"> </span>rpbs/seamless
+conda<span class="w"> </span>install<span class="w"> </span>-c<span class="w"> </span>rpbs<span class="w"> </span>-c<span class="w"> </span>conda-forge<span class="w"> </span>seamless-cli
+</pre></div>
+</div>
+</section>
+<section id="docker-based-installation">
+<h2>Docker-based installation<a class="headerlink" href="#docker-based-installation" title="Link to this heading"></a></h2>
+<p>The easiest method is to run Seamless inside Docker containers (the quick installation above). The <code class="docutils literal notranslate"><span class="pre">seamless-cli</span></code> package contains command-line tools such as <code class="docutils literal notranslate"><span class="pre">seamless-jupyter</span></code>, <code class="docutils literal notranslate"><span class="pre">seamless-bash</span></code> and <code class="docutils literal notranslate"><span class="pre">seamless-ipython</span></code> you can launch new Docker containers where you can use Seamless with Jupyter, IPython, etc.</p>
+<p>This method will work under any platform where you can install Docker, conda and bash. It has been tested under macOS and Linux. It should also work under Windows if bash is installed (e.g. using MSYS2) but this has not been tested.</p>
+<section id="how-to-do-this">
+<h3>How to do this<a class="headerlink" href="#how-to-do-this" title="Link to this heading"></a></h3>
+<p>See “Quick installation” above. Alternatively, you can create a new environment “seamless”, and do <code class="docutils literal notranslate"><span class="pre">conda</span> <span class="pre">activate</span> <span class="pre">seamless</span></code> whenever you are using Seamless. This is done as follows:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>docker<span class="w"> </span>pull<span class="w"> </span>rpbs/seamless
+conda<span class="w"> </span>create<span class="w"> </span>-n<span class="w"> </span>seamless<span class="w"> </span>-c<span class="w"> </span>rpbs<span class="w"> </span>-c<span class="w"> </span>conda-forge<span class="w"> </span>seamless-cli
+</pre></div>
+</div>
+<section id="installing-a-specific-seamless-version">
+<h4>Installing a specific Seamless version<a class="headerlink" href="#installing-a-specific-seamless-version" title="Link to this heading"></a></h4>
+<p>By default, the Seamless CLI creates <code class="docutils literal notranslate"><span class="pre">rpbs/seamless</span></code> Docker containers.
+To specifically install e.g. Seamless 0.12, you can do:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>docker<span class="w"> </span>pull<span class="w"> </span>rpbs/seamless:0.12
+docker<span class="w"> </span>tag<span class="w"> </span>rpbs/seamless:0.12<span class="w"> </span>rpbs/seamless
+</pre></div>
+</div>
+<p>Alternatively, you can set the <code class="docutils literal notranslate"><span class="pre">SEAMLESS_DOCKER_IMAGE</span></code> variable:
+<code class="docutils literal notranslate"><span class="pre">export</span> <span class="pre">SEAMLESS_DOCKER_IMAGE=rpbs/seamless:0.12</span></code></p>
+<p>Likewise, you can install a specific version of <code class="docutils literal notranslate"><span class="pre">seamless-cli</span></code>, e.g.
+<code class="docutils literal notranslate"><span class="pre">conda</span> <span class="pre">create</span> <span class="pre">-n</span> <span class="pre">seamless</span> <span class="pre">-c</span> <span class="pre">rpbs</span> <span class="pre">-c</span> <span class="pre">conda-forge</span> <span class="pre">seamless-cli=0.12</span></code></p>
+</section>
+</section>
+<section id="after-installation">
+<h3>After installation<a class="headerlink" href="#after-installation" title="Link to this heading"></a></h3>
+<p>The command <code class="docutils literal notranslate"><span class="pre">seamless-ipython</span></code> launches an IPython terminal inside a Seamless Docker container. <code class="docutils literal notranslate"><span class="pre">seamless-jupyter</span></code> does the same for Jupyter Notebook. Inside the notebook file tree, browse <code class="docutils literal notranslate"><span class="pre">seamless-examples</span></code>, or <code class="docutils literal notranslate"><span class="pre">cwd</span></code> for the current directory.</p>
+</section>
+</section>
+<section id="conda-only-installation">
+<h2>Conda-only installation<a class="headerlink" href="#conda-only-installation" title="Link to this heading"></a></h2>
+<p>Alternatively, you can create a conda environment to install Seamless directly, without using Docker. Instead of <code class="docutils literal notranslate"><span class="pre">seamless-jupyter</span></code> or <code class="docutils literal notranslate"><span class="pre">seamless-ipython</span></code>, you activate the conda environment and launch Jupyter or IPython yourself. In addition, many <code class="docutils literal notranslate"><span class="pre">seamless-cli</span></code> commands (e.g. <code class="docutils literal notranslate"><span class="pre">seamless-serve-graph</span></code>) are installed as alternative versions that do not launch a Docker container, but run directly inside the conda environment. However, the <code class="docutils literal notranslate"><span class="pre">rpbs/seamless</span></code> Docker image is still needed by some other <code class="docutils literal notranslate"><span class="pre">seamless-cli</span></code> commands, notably <code class="docutils literal notranslate"><span class="pre">seamless-delegate</span></code>.</p>
+<p>This method has been tested under macOS and Linux. As it relies on <code class="docutils literal notranslate"><span class="pre">os.fork()</span></code>, it will not work under Windows.</p>
+<section id="id1">
+<h3>How to do this<a class="headerlink" href="#id1" title="Link to this heading"></a></h3>
+<p>First, install <a class="reference external" href="https://docs.conda.io/en/latest/miniconda.html">miniconda</a>.</p>
+<p>You will have the choice between several conda environment definitions, on a spectrum between minimalist and maximum compatibility with the Seamless Docker image.</p>
+<p>The command is:</p>
+<p><code class="docutils literal notranslate"><span class="pre">conda</span> <span class="pre">env</span> <span class="pre">create</span> <span class="pre">--file</span> <span class="pre">https://raw.githubusercontent.com/sjdv1982/seamless/stable/conda/&lt;environment&gt;-environment.yml</span></code></p>
+<p>where <code class="docutils literal notranslate"><span class="pre">&lt;environment&gt;</span></code> can have the following values:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">seamless-exact</span></code>. This is the most compatible installation. This specifies the versions of Python and all packages to be exactly the same as in the Docker image. (For Seamless 0.12, this is Python 3.10). Note that Seamless is tested only with these package versions. The environment is 1.9 GB in size.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">seamless-framework</span></code>. This works like <code class="docutils literal notranslate"><span class="pre">seamless-exact</span></code>, but does not specify package versions unless necessary. As of mid 2024, this will install Python 3.12. Note that Seamless is <em>not</em> extensively tested with these Python/package versions: if you encounter a bug, switching to <code class="docutils literal notranslate"><span class="pre">seamless-exact</span></code> may solve it (a bug report is still welcome).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">seamless-mini</span></code>. Same as above, but will omit some packages. Not all Seamless tests and examples will work. Jupyter is no longer installed, and neither are packages such as scikit-learn, scipy, matplotlib or pandas. If you need those packages, you must install them yourself. The environment is ~500 MB in size.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">seamless-micro</span></code>. Same as above, but this will install only the absolute minimum to run (most of) Seamless. As of mid 2024, the environment contains 109 packages and is ~400 MB in size.</p></li>
+</ul>
+<p>NOTE: When running compiled transformers, Seamless assumes that gcc (for C), g++ (for C++) and/or gfortran are available. These are not installed by default. If you wish to run transformers written in these languages, you must install these compilers yourself, either using conda or from system packages.</p>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="whatis.html" class="btn btn-neutral float-left" title="Seamless: a cell-based interactive workflow framework" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="getting-started.html" class="btn btn-neutral float-right" title="Getting started with Seamless" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2016-2023, INSERM, CNRS and code contributors.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+<!-- seamless-legacy-banner -->
+<style>
+  body { padding-top: 56px; }
+  #seamless-legacy-banner {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 9999;
+    background: #8b0000;
+    color: #ffffff;
+    padding: 12px 16px;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    font-size: 15px;
+    line-height: 1.35;
+    text-align: center;
+  }
+  #seamless-legacy-banner a {
+    color: #ffffff;
+    text-decoration: underline;
+    font-weight: 600;
+  }
+</style>
+<div id="seamless-legacy-banner">
+  Legacy Seamless documentation (0.x). This branch is deprecated.
+  Use the new docs at <a href="/">Seamless Documentation</a>.
+</div>
+
+</body>
+</html>

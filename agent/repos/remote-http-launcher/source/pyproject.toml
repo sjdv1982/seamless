@@ -1,0 +1,35 @@
+[build-system]
+requires = ["setuptools>=69", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "remote-http-launcher"
+version = "0.1.1"
+description = "Launch, supervise, and reconnect to long-running HTTP services locally or over SSH, with optional tunneling."
+readme = "README.md"
+requires-python = ">=3.10"
+license = "MIT"
+authors = [{name = "Sjoerd de Vries"}]
+dependencies = [
+    "PyYAML>=5.4",
+]
+keywords = ["ssh", "tunnel", "http", "service", "launcher", "process-manager", "remote", "devops"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Science/Research",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Operating System :: OS Independent",
+    "Topic :: Scientific/Engineering",
+    "Topic :: Software Development :: Libraries",
+]
+
+[project.urls]
+Repository = "https://github.com/sjdv1982/remote-http-launcher"
+
+[project.scripts]
+remote-http-launcher = "remote_http_launcher:main"
+
+[tool.setuptools]
+py-modules = ["remote_http_launcher"]

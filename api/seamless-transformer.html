@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <link rel="shortcut icon" href="../img/favicon.ico" />
+    <title>seamless-transformer - Seamless</title>
+    <link rel="stylesheet" href="../css/theme.css" />
+    <link rel="stylesheet" href="../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "seamless-transformer";
+        var mkdocs_page_input_path = "api/seamless-transformer.md";
+        var mkdocs_page_url = null;
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href="../index.html" class="icon icon-home"> Seamless
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../index.html">Home</a>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Getting Started</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../getting-started.html">Wrapping Python and bash</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../cluster.html">Setting up a local cluster</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">How-To Guides</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../caching.html">Caching, identity, and sharing</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../composition.html">Composition</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../parallelism.html">Local parallelism</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../remote.html">Remote execution</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../hpc.html">HPC specifics</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../remote-launch.html">Remote job launching</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../sharing.html">Sharing in depth</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Reference API</span></p>
+              <ul class="current">
+                  <li class="toctree-l1"><a class="reference internal" href="index.html">Overview</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="seamless-core.html">seamless-core</a>
+                  </li>
+                  <li class="toctree-l1 current"><a class="reference internal current" href="#">seamless-transformer</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#core-concepts">Core concepts</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#worker-pool">Worker pool</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#integration-with-the-seamless-ecosystem">Integration with the Seamless ecosystem</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#cli-scripts">CLI scripts</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#installation">Installation</a>
+    </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="seamless-config.html">seamless-config</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="seamless-remote.html">seamless-remote</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="seamless-dask.html">seamless-dask</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="seamless-jobserver.html">seamless-jobserver</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="seamless-database.html">seamless-database</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="remote-http-launcher.html">remote-http-launcher</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Python docstrings</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="reference/seamless.html">seamless</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="reference/seamless.checksum_class.html">Checksum</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="reference/seamless.buffer_class.html">Buffer</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="reference/seamless.transformer.html">seamless.transformer</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="reference/seamless_transformer.transformation_class.html">Transformation</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="reference/seamless_transformer.transformer_class.html">Transformer properties</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="reference/seamless_config.select.html">seamless.config.select</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="reference/seamless_config.tools.html">seamless.config.tools</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >CLI docstrings</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="reference/seamless-run.html">seamless-run</a>
+                </li>
+    </ul>
+                  </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Seamless</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../index.html" class="icon icon-home" aria-label="Docs"></a></li>
+          <li class="breadcrumb-item">Reference API</li>
+      <li class="breadcrumb-item active">seamless-transformer</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h1 id="seamless-transformer">seamless-transformer</h1>
+<p><code>seamless-transformer</code> is the computation engine of the <a href="https://github.com/sjdv1982/seamless">Seamless</a> framework. It takes a <em>transformation</em> — a pure-functional computation defined as a checksum-addressed dict of inputs, code, and language — and executes it, returning a result checksum. It supports Python and bash transformations, multi-process worker pools with shared-memory IPC, and integration with the Seamless caching and remote infrastructure.</p>
+<h2 id="core-concepts">Core concepts</h2>
+<p>A <strong>transformation</strong> in Seamless is a deterministic computation: given the same inputs and code (identified by their checksums), it always produces the same output. <code>seamless-transformer</code> is responsible for:</p>
+<ol>
+<li><strong>Building</strong> the transformation dict from the inputs and code, then computing its checksum (which serves as the transformation's identity for caching).</li>
+<li><strong>Building</strong> the execution namespace: resolving input buffers, compiling modules, injecting dependencies.</li>
+<li><strong>Executing</strong> the code — either Python (via <code>exec</code>) or bash (via subprocess with file-mapped pins).</li>
+<li><strong>Returning</strong> the result as a checksum, which can be cached and reused.</li>
+</ol>
+<h2 id="worker-pool">Worker pool</h2>
+<p>For production use, <code>seamless-transformer</code> can spawn a pool of worker processes (<code>seamless_transformer.worker.spawn()</code>). Workers run in separate processes using the <code>spawn</code> multiprocessing context, and communicate with the parent via a custom IPC channel built on <code>multiprocessing.Connection</code> and shared memory.</p>
+<ul>
+<li>The parent distributes transformation requests to the least-loaded worker.</li>
+<li>Workers can delegate sub-transformations back to the parent (which redistributes them).</li>
+<li>Buffer data is exchanged through shared memory to avoid serialization overhead.</li>
+<li>Workers automatically restart on crash (segfault, etc.).</li>
+</ul>
+<h2 id="integration-with-the-seamless-ecosystem">Integration with the Seamless ecosystem</h2>
+<ul>
+<li><strong>seamless-core</strong>: provides the <code>Checksum</code>, <code>Buffer</code>, and buffer-cache primitives that <code>seamless-transformer</code> builds on.</li>
+<li><strong>seamless-dask</strong>: optionally offloads transformations to a Dask cluster (<code>TransformationDaskMixin</code>).</li>
+<li><strong>seamless-remote</strong>: used by the transformation cache to (a) look up cached results in the database before running, (b) access the buffer server for buffer data, and (c) submit transformations to the jobserver for remote execution (an alternative to local execution, not a cache lookup).</li>
+<li><strong>seamless-config</strong>: supplies project/stage selection for storage routing.</li>
+<li><strong>seamless-jobserver</strong>: depends on <code>seamless-transformer</code> to execute transformations received from the job queue.</li>
+</ul>
+<h2 id="cli-scripts">CLI scripts</h2>
+<p>Installing <code>seamless-transformer</code> provides:</p>
+<table>
+<thead>
+<tr>
+<th>Command</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>seamless-run</code></td>
+<td>The CLI face of Seamless: wrap a bash command or pipeline as a transformation, using file/directory argument names as pin names</td>
+</tr>
+<tr>
+<td><code>seamless-upload</code></td>
+<td>Upload input files/directories to the buffer server and write <code>.CHECKSUM</code> sidecar files, staging inputs for <code>seamless-run</code></td>
+</tr>
+<tr>
+<td><code>seamless-download</code></td>
+<td>Fetch result files/directories from the buffer server using <code>.CHECKSUM</code> sidecar files produced by <code>seamless-run</code></td>
+</tr>
+<tr>
+<td><code>seamless-run-transformation</code></td>
+<td>Universal transformation executor: run any Seamless transformation (Python, bash, or other) by checksum and print the result checksum</td>
+</tr>
+<tr>
+<td><code>seamless-queue</code></td>
+<td>Run a queue server that executes <code>seamless-run --qsubmit</code> jobs concurrently — the CLI face's parallelization mechanism beyond <code>&amp;</code></td>
+</tr>
+<tr>
+<td><code>seamless-queue-finish</code></td>
+<td>Signal the queue server to drain remaining jobs and shut down</td>
+</tr>
+</tbody>
+</table>
+<h2 id="installation">Installation</h2>
+<pre><code class="language-bash">pip install seamless-transformer
+</code></pre>
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="seamless-core.html" class="btn btn-neutral float-left" title="seamless-core"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="seamless-config.html" class="btn btn-neutral float-right" title="seamless-config">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+    
+      <span><a href="seamless-core.html" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="seamless-config.html" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script src="../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "..";</script>
+    <script src="../js/theme_extra.js"></script>
+    <script src="../js/theme.js"></script>
+      <script src="../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>

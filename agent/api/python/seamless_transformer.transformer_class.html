@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <link rel="shortcut icon" href="../../img/favicon.ico" />
+    <title>seamless_transformer.transformer_class - Seamless — Agent Documentation</title>
+    <link rel="stylesheet" href="../../css/theme.css" />
+    <link rel="stylesheet" href="../../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "seamless_transformer.transformer_class";
+        var mkdocs_page_input_path = "api/python/seamless_transformer.transformer_class.md";
+        var mkdocs_page_url = null;
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href="../../index.html" class="icon icon-home"> Seamless — Agent Documentation
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../index.html">Home</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../overview.html">Agent Docs Overview</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../repos/index.html">Workspace Repos</a>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Contracts</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../contracts/identity-and-caching.html">Identity and Caching</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../contracts/direct-delayed-and-transformation.html">direct/delayed/Transformation</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../contracts/modules-and-closures.html">Modules and Closures</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../contracts/scratch-witness-audit.html">Scratch/Witness/Audit</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../contracts/seamless-run-and-argtyping.html">seamless-run/Argtyping</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../contracts/cache-storage-and-limits.html">Cache Storage and Limits</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../contracts/content-addressed-files-and-dirs.html">Content-addressed Files and Dirs</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../contracts/execution-backends.html">Execution Backends</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">API</span></p>
+              <ul class="current">
+                  <li class="toctree-l1"><a class="reference internal" href="seamless.html">seamless</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="seamless.transformer.html">seamless.transformer</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="seamless.buffer_class.html">seamless.buffer_class</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="seamless.checksum_class.html">seamless.checksum_class</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="seamless_config.select.html">seamless_config.select</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="seamless_config.tools.html">seamless_config.tools</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="seamless_transformer.transformation_class.html">seamless_transformer.transformation_class</a>
+                  </li>
+                  <li class="toctree-l1 current"><a class="reference internal current" href="#">seamless_transformer.transformer_class</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#seamless_transformertransformer_classargswrapper">seamless_transformer.transformer_class.ArgsWrapper</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#seamless_transformertransformer_classcelltypeswrapper">seamless_transformer.transformer_class.CelltypesWrapper</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#seamless_transformertransformer_classdirecttransformer">seamless_transformer.transformer_class.DirectTransformer</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#seamless_transformertransformer_classglobalswrapper">seamless_transformer.transformer_class.GlobalsWrapper</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#seamless_transformertransformer_classmoduleswrapper">seamless_transformer.transformer_class.ModulesWrapper</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#seamless_transformertransformer_classtransformer">seamless_transformer.transformer_class.Transformer</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#seamless_transformertransformer_classtransformerallow_input_fingertip">seamless_transformer.transformer_class.Transformer.allow_input_fingertip</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#seamless_transformertransformer_classtransformerargs">seamless_transformer.transformer_class.Transformer.args</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#seamless_transformertransformer_classtransformercelltypes">seamless_transformer.transformer_class.Transformer.celltypes</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#seamless_transformertransformer_classtransformercode">seamless_transformer.transformer_class.Transformer.code</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#seamless_transformertransformer_classtransformerdirect_print">seamless_transformer.transformer_class.Transformer.direct_print</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#seamless_transformertransformer_classtransformerdriver">seamless_transformer.transformer_class.Transformer.driver</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#seamless_transformertransformer_classtransformerglobals">seamless_transformer.transformer_class.Transformer.globals</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#seamless_transformertransformer_classtransformerlanguage">seamless_transformer.transformer_class.Transformer.language</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#seamless_transformertransformer_classtransformerlocal">seamless_transformer.transformer_class.Transformer.local</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#seamless_transformertransformer_classtransformermeta">seamless_transformer.transformer_class.Transformer.meta</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#seamless_transformertransformer_classtransformermodules">seamless_transformer.transformer_class.Transformer.modules</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#seamless_transformertransformer_classtransformerscratch">seamless_transformer.transformer_class.Transformer.scratch</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#seamless_transformertransformer_classdelayed">seamless_transformer.transformer_class.delayed</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#seamless_transformertransformer_classdirect">seamless_transformer.transformer_class.direct</a>
+    </li>
+    </ul>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">CLI</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../cli/seamless-run.html">seamless-run</a>
+                  </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">Seamless — Agent Documentation</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../../index.html" class="icon icon-home" aria-label="Docs"></a></li>
+          <li class="breadcrumb-item">API</li>
+      <li class="breadcrumb-item active">seamless_transformer.transformer_class</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h1 id="seamless_transformertransformer_class">seamless_transformer.transformer_class</h1>
+<p>Wrap a function in a Seamless transformer.</p>
+<h2 id="seamless_transformertransformer_classargswrapper"><code>seamless_transformer.transformer_class.ArgsWrapper</code></h2>
+<ul>
+<li>kind: <code>class</code></li>
+<li>signature: <code>ArgsWrapper</code></li>
+</ul>
+<p>Wrapper around an imperative transformer's celltypes.</p>
+<h2 id="seamless_transformertransformer_classcelltypeswrapper"><code>seamless_transformer.transformer_class.CelltypesWrapper</code></h2>
+<ul>
+<li>kind: <code>class</code></li>
+<li>signature: <code>CelltypesWrapper</code></li>
+</ul>
+<p>Wrapper around an imperative transformer's celltypes.</p>
+<h2 id="seamless_transformertransformer_classdirecttransformer"><code>seamless_transformer.transformer_class.DirectTransformer</code></h2>
+<ul>
+<li>kind: <code>class</code></li>
+<li>signature: <code>DirectTransformer</code></li>
+</ul>
+<p>Transformer that can be called and gives an immediate result</p>
+<h2 id="seamless_transformertransformer_classglobalswrapper"><code>seamless_transformer.transformer_class.GlobalsWrapper</code></h2>
+<ul>
+<li>kind: <code>class</code></li>
+<li>signature: <code>GlobalsWrapper</code></li>
+</ul>
+<p>Wrapper around an imperative transformer's global namespace.</p>
+<h2 id="seamless_transformertransformer_classmoduleswrapper"><code>seamless_transformer.transformer_class.ModulesWrapper</code></h2>
+<ul>
+<li>kind: <code>class</code></li>
+<li>signature: <code>ModulesWrapper</code></li>
+</ul>
+<p>Wrapper around an imperative transformer's imported modules.</p>
+<h2 id="seamless_transformertransformer_classtransformer"><code>seamless_transformer.transformer_class.Transformer</code></h2>
+<ul>
+<li>kind: <code>class</code></li>
+<li>signature: <code>Transformer</code></li>
+</ul>
+<p>Transformer.
+Transformers can be called as normal functions, but
+the source code of the function and the arguments are converted
+into a Seamless Transformation that is returned.</p>
+<h2 id="seamless_transformertransformer_classtransformerallow_input_fingertip"><code>seamless_transformer.transformer_class.Transformer.allow_input_fingertip</code></h2>
+<ul>
+<li>kind: <code>method</code></li>
+<li>signature: <code>allow_input_fingertip(self, value)</code></li>
+</ul>
+<p><em>No docstring.</em></p>
+<h2 id="seamless_transformertransformer_classtransformerargs"><code>seamless_transformer.transformer_class.Transformer.args</code></h2>
+<ul>
+<li>kind: <code>method</code></li>
+<li>signature: <code>args(self)</code></li>
+</ul>
+<p>The arguments</p>
+<h2 id="seamless_transformertransformer_classtransformercelltypes"><code>seamless_transformer.transformer_class.Transformer.celltypes</code></h2>
+<ul>
+<li>kind: <code>method</code></li>
+<li>signature: <code>celltypes(self)</code></li>
+</ul>
+<p>The celltypes</p>
+<h2 id="seamless_transformertransformer_classtransformercode"><code>seamless_transformer.transformer_class.Transformer.code</code></h2>
+<ul>
+<li>kind: <code>method</code></li>
+<li>signature: <code>code(self, code)</code></li>
+</ul>
+<p><em>No docstring.</em></p>
+<h2 id="seamless_transformertransformer_classtransformerdirect_print"><code>seamless_transformer.transformer_class.Transformer.direct_print</code></h2>
+<ul>
+<li>kind: <code>method</code></li>
+<li>signature: <code>direct_print(self, value)</code></li>
+</ul>
+<p><em>No docstring.</em></p>
+<h2 id="seamless_transformertransformer_classtransformerdriver"><code>seamless_transformer.transformer_class.Transformer.driver</code></h2>
+<ul>
+<li>kind: <code>method</code></li>
+<li>signature: <code>driver(self, value)</code></li>
+</ul>
+<p><em>No docstring.</em></p>
+<h2 id="seamless_transformertransformer_classtransformerglobals"><code>seamless_transformer.transformer_class.Transformer.globals</code></h2>
+<ul>
+<li>kind: <code>method</code></li>
+<li>signature: <code>globals(self)</code></li>
+</ul>
+<p>Global symbols injected via modules.main.</p>
+<h2 id="seamless_transformertransformer_classtransformerlanguage"><code>seamless_transformer.transformer_class.Transformer.language</code></h2>
+<ul>
+<li>kind: <code>method</code></li>
+<li>signature: <code>language(self, lang)</code></li>
+</ul>
+<p><em>No docstring.</em></p>
+<h2 id="seamless_transformertransformer_classtransformerlocal"><code>seamless_transformer.transformer_class.Transformer.local</code></h2>
+<ul>
+<li>kind: <code>method</code></li>
+<li>signature: <code>local(self, value)</code></li>
+</ul>
+<p><em>No docstring.</em></p>
+<h2 id="seamless_transformertransformer_classtransformermeta"><code>seamless_transformer.transformer_class.Transformer.meta</code></h2>
+<ul>
+<li>kind: <code>method</code></li>
+<li>signature: <code>meta(self, meta)</code></li>
+</ul>
+<p><em>No docstring.</em></p>
+<h2 id="seamless_transformertransformer_classtransformermodules"><code>seamless_transformer.transformer_class.Transformer.modules</code></h2>
+<ul>
+<li>kind: <code>method</code></li>
+<li>signature: <code>modules(self)</code></li>
+</ul>
+<p>The imported modules</p>
+<h2 id="seamless_transformertransformer_classtransformerscratch"><code>seamless_transformer.transformer_class.Transformer.scratch</code></h2>
+<ul>
+<li>kind: <code>method</code></li>
+<li>signature: <code>scratch(self, value)</code></li>
+</ul>
+<p><em>No docstring.</em></p>
+<h2 id="seamless_transformertransformer_classdelayed"><code>seamless_transformer.transformer_class.delayed</code></h2>
+<ul>
+<li>kind: <code>function</code></li>
+<li>signature: <code>delayed(func, language)</code></li>
+</ul>
+<p>Return a Transformation object that can be executed later.</p>
+<h2 id="seamless_transformertransformer_classdirect"><code>seamless_transformer.transformer_class.direct</code></h2>
+<ul>
+<li>kind: <code>function</code></li>
+<li>signature: <code>direct(func, language)</code></li>
+</ul>
+<p>Execute immediately, returning the result value.</p>
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="seamless_transformer.transformation_class.html" class="btn btn-neutral float-left" title="seamless_transformer.transformation_class"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../cli/seamless-run.html" class="btn btn-neutral float-right" title="seamless-run">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+    
+      <span><a href="seamless_transformer.transformation_class.html" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="../cli/seamless-run.html" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script src="../../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "../..";</script>
+    <script src="../../js/theme_extra.js"></script>
+    <script src="../../js/theme.js"></script>
+      <script src="../../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>

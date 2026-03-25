@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cells &mdash; Seamless 0.10 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=acd5942f" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="_static/jquery.js?v=5be48651"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="_static/documentation_options.js?v=c71f9630"></script>
+        <script src="_static/doctools.js?v=695de88e"></script>
+        <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Transformers" href="transformer.html" />
+    <link rel="prev" title="Contexts" href="context.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            Seamless
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Introduction</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="whatis.html">Seamless: a cell-based interactive workflow framework</a></li>
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="getting-started.html">Getting started with Seamless</a></li>
+<li class="toctree-l1"><a class="reference internal" href="beginner.html">Beginner’s guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="explained.html">Seamless explained</a></li>
+<li class="toctree-l1"><a class="reference internal" href="new-project.html">Seamless projects</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Seamless features</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="context.html">Contexts</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Cells</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#alternative-subcell-syntax">Alternative subcell syntax</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#cell-types-and-conversion">Cell types and conversion</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="transformer.html">Transformers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="mounting.html">Mounting to the file system</a></li>
+<li class="toctree-l1"><a class="reference internal" href="shareserver.html">The Seamless shareserver</a></li>
+<li class="toctree-l1"><a class="reference internal" href="help.html">The help system</a></li>
+<li class="toctree-l1"><a class="reference internal" href="visualization.html">Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="validation.html">Validation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="libraries.html">Libraries and libinstances</a></li>
+<li class="toctree-l1"><a class="reference internal" href="modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="debugging.html">Debugging</a></li>
+<li class="toctree-l1"><a class="reference internal" href="environments.html">Environments</a></li>
+<li class="toctree-l1"><a class="reference internal" href="data_storage.html">Data storage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="job_management.html">Job management</a></li>
+<li class="toctree-l1"><a class="reference internal" href="deployment.html">Deployment</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Advanced features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="deepcell.html">Deep cells</a></li>
+<li class="toctree-l1"><a class="reference internal" href="low_level.html">Macros and the low level</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">stdlib documentation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="stdlib/merge.html">stdlib.merge</a></li>
+<li class="toctree-l1"><a class="reference internal" href="stdlib/select.html">stdlib.select</a></li>
+<li class="toctree-l1"><a class="reference internal" href="stdlib/switch.html">stdlib.switch</a></li>
+<li class="toctree-l1"><a class="reference internal" href="stdlib/instantiate.html">stdlib.instantiate</a></li>
+<li class="toctree-l1"><a class="reference internal" href="stdlib/map_dict.html">stdlib.map.map_dict</a></li>
+<li class="toctree-l1"><a class="reference internal" href="stdlib/map_dict_chunk.html">stdlib.map.map_dict_chunk</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="reference.html">Reference</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">Seamless</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Cells</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/cell.md.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="cells">
+<h1>Cells<a class="headerlink" href="#cells" title="Link to this heading"></a></h1>
+<p>A cell (seamless.highlevel.Cell) contains a piece of data in the dependency graph that is contained by a Seamless Context.
+Thus, cells are always part of a Context (called <code class="docutils literal notranslate"><span class="pre">ctx</span></code> by convention).</p>
+<p>Within this context graph, cell values are constant.</p>
+<p>When you modify a cell, you essentially create a new context graph where all dependencies on this cell are set to <code class="docutils literal notranslate"><span class="pre">None</span></code>, until they have been recomputed.</p>
+<p>Assigning a cell to another cell creates a connection from the second cell to the first cell.</p>
+<p>Changing cell values is asynchronous:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">ctx</span><span class="o">.</span><span class="n">a</span> <span class="o">=</span> <span class="n">Cell</span><span class="p">()</span>
+<span class="k">await</span> <span class="n">ctx</span><span class="o">.</span><span class="n">translation</span><span class="p">()</span>
+<span class="n">ctx</span><span class="o">.</span><span class="n">a</span> <span class="o">=</span> <span class="mi">123</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">ctx</span><span class="o">.</span><span class="n">a</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">None</span></code></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">await</span> <span class="n">ctx</span><span class="o">.</span><span class="n">computation</span><span class="p">()</span> <span class="c1"># or wait a few milliseconds in IPython or Jupyter</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">ctx</span><span class="o">.</span><span class="n">a</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">&lt;Silk</span> <span class="pre">123&gt;</span></code></p>
+<p>Cells are by default <em>structured cells</em>, which:</p>
+<ul class="simple">
+<li><p>Contain values that are <strong>mixed</strong>: they can contain plain (JSON-serializable) values, Numpy arrays, or a mix of the two.</p></li>
+<li><p>Have a schema (a superset of JSON schema)</p></li>
+<li><p>Support subcells:</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">ctx</span><span class="o">.</span><span class="n">a</span> <span class="o">=</span> <span class="n">Cell</span><span class="p">()</span>
+<span class="n">ctx</span><span class="o">.</span><span class="n">b</span> <span class="o">=</span> <span class="n">Cell</span><span class="p">()</span>
+<span class="k">await</span> <span class="n">ctx</span><span class="o">.</span><span class="n">translation</span><span class="p">()</span>
+<span class="n">ctx</span><span class="o">.</span><span class="n">b</span><span class="o">.</span><span class="n">sub1</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;x&quot;</span><span class="p">:</span> <span class="mi">12</span><span class="p">}</span>
+<span class="n">ctx</span><span class="o">.</span><span class="n">b</span><span class="o">.</span><span class="n">sub2</span> <span class="o">=</span> <span class="n">ctx</span><span class="o">.</span><span class="n">a</span>
+<span class="n">ctx</span><span class="o">.</span><span class="n">a</span> <span class="o">=</span> <span class="mi">99</span>
+<span class="k">await</span> <span class="n">ctx</span><span class="o">.</span><span class="n">computation</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">ctx</span><span class="o">.</span><span class="n">b</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
+<span class="n">ctx</span><span class="o">.</span><span class="n">c</span> <span class="o">=</span> <span class="n">ctx</span><span class="o">.</span><span class="n">b</span><span class="o">.</span><span class="n">sub1</span><span class="o">.</span><span class="n">x</span>
+<span class="k">await</span> <span class="n">ctx</span><span class="o">.</span><span class="n">computation</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">ctx</span><span class="o">.</span><span class="n">c</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>&lt;Silk: {&#39;sub1&#39;: {&#39;x&#39;: 12}, &#39;sub2&#39;: 99} &gt;
+&lt;Silk: 12 &gt;
+</pre></div>
+</div>
+<p>Using the <code class="docutils literal notranslate"><span class="pre">celltype</span></code> property, a cell can be changed to a simple (i.e. non-structured) cell (see the documentation of the Cell class for more details).</p>
+<p>Cells are <em>dependent</em> if (part of) the cell’s value is computed from a dependency, i.e from a transformer or from another cell.
+Cells are <em>independent</em> if they have their own value, with no dependencies.</p>
+<p>Simple cells are either fully dependent or fully independent.</p>
+<p>Structured cells may have an independent part (accessible and modifiable via <code class="docutils literal notranslate"><span class="pre">Cell.handle</span></code>) together with zero or more dependent parts. Whenever one part changed, all parts get joined into a value, which is then validated (see the “Validation” documentation chapter for more details). If validation fails, the cell’s value is set to None, but the value before validation is still available as <code class="docutils literal notranslate"><span class="pre">Cell.buffered</span></code>. In fact, at the low level, structured cells are implemented using three mixed cells for storage, “auth” for (the checksum of) the independent part, “buffer” for the value before validation, and “data” for the validated value.</p>
+<p>Simple cells can be <em>mounted</em> to a file using <code class="docutils literal notranslate"><span class="pre">Cell.mount</span></code>. By default, mounts are both read (the cell changes its value when the file changes its value) and write (vice versa) . Only independent cells can have a read mount. <em>Structured cells cannot be mounted.</em></p>
+<p>Cells can be <em>shared</em> over HTTP (via the Seamless REST API), using <code class="docutils literal notranslate"><span class="pre">Cell.share</span></code>. By default, shares are read-only (only HTTP GET requests are supported). Independent cells can also be shared as read/write (their value can be changed using HTTP PUT requests). If a cell is to be accessed as a URL from the browser, you are recommended to set <code class="docutils literal notranslate"><span class="pre">Cell.mimetype</span></code>.</p>
+<p>Newly created/connected/mounted/shared cells require a re-translation of the context to take effect. This is also the case for a change in celltype.</p>
+<section id="alternative-subcell-syntax">
+<h2>Alternative subcell syntax<a class="headerlink" href="#alternative-subcell-syntax" title="Link to this heading"></a></h2>
+<p>You can use <code class="docutils literal notranslate"><span class="pre">ctx.c[&quot;sub&quot;]</span></code> to assign or refer to subcell <code class="docutils literal notranslate"><span class="pre">ctx.c.sub</span></code>. This way, you can also access subcells that are not valid Python variables, such as <code class="docutils literal notranslate"><span class="pre">ctx.c[&quot;file.txt&quot;]</span></code>.
+You can also access individual elements from a list:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">ctx</span><span class="o">.</span><span class="n">c</span> <span class="o">=</span> <span class="p">[</span><span class="mi">10</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="mi">30</span><span class="p">]</span>
+<span class="n">ctx</span><span class="o">.</span><span class="n">sub</span> <span class="o">=</span> <span class="n">ctx</span><span class="o">.</span><span class="n">c</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+<span class="k">await</span> <span class="n">ctx</span><span class="o">.</span><span class="n">computation</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">ctx</span><span class="o">.</span><span class="n">sub</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
+<span class="n">ctx</span><span class="o">.</span><span class="n">c</span> <span class="o">=</span> <span class="p">[</span><span class="mi">101</span><span class="p">,</span> <span class="mi">201</span><span class="p">,</span> <span class="mi">301</span><span class="p">]</span>
+<span class="k">await</span> <span class="n">ctx</span><span class="o">.</span><span class="n">computation</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">ctx</span><span class="o">.</span><span class="n">sub</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="mi">20</span>
+<span class="mi">201</span>
+</pre></div>
+</div>
+</section>
+<section id="cell-types-and-conversion">
+<h2>Cell types and conversion<a class="headerlink" href="#cell-types-and-conversion" title="Link to this heading"></a></h2>
+<p><em><strong>IMPORTANT: This documentation section is a stub.</strong></em></p>
+<!--
+Cell types:
+
+- Text cells
+- Plain cells: str, float, int, bool
+- Binary cells: numpy
+- Mixed cells
+- Conversion
+- Code cells, cson, yaml
+- Subcelltypes
+- Semantic checksums: code, cson, yaml
+- Checksum cells
+--></section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="context.html" class="btn btn-neutral float-left" title="Contexts" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="transformer.html" class="btn btn-neutral float-right" title="Transformers" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2016-2023, INSERM, CNRS and code contributors.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+<!-- seamless-legacy-banner -->
+<style>
+  body { padding-top: 56px; }
+  #seamless-legacy-banner {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 9999;
+    background: #8b0000;
+    color: #ffffff;
+    padding: 12px 16px;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    font-size: 15px;
+    line-height: 1.35;
+    text-align: center;
+  }
+  #seamless-legacy-banner a {
+    color: #ffffff;
+    text-decoration: underline;
+    font-weight: 600;
+  }
+</style>
+<div id="seamless-legacy-banner">
+  Legacy Seamless documentation (0.x). This branch is deprecated.
+  Use the new docs at <a href="/">Seamless Documentation</a>.
+</div>
+
+</body>
+</html>

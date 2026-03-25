@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <link rel="shortcut icon" href="../img/favicon.ico" />
+    <title>seamless-dask - Seamless</title>
+    <link rel="stylesheet" href="../css/theme.css" />
+    <link rel="stylesheet" href="../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "seamless-dask";
+        var mkdocs_page_input_path = "api/seamless-dask.md";
+        var mkdocs_page_url = null;
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href="../index.html" class="icon icon-home"> Seamless
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../index.html">Home</a>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Getting Started</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../getting-started.html">Wrapping Python and bash</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../cluster.html">Setting up a local cluster</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">How-To Guides</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../caching.html">Caching, identity, and sharing</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../composition.html">Composition</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../parallelism.html">Local parallelism</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../remote.html">Remote execution</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../hpc.html">HPC specifics</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../remote-launch.html">Remote job launching</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../sharing.html">Sharing in depth</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Reference API</span></p>
+              <ul class="current">
+                  <li class="toctree-l1"><a class="reference internal" href="index.html">Overview</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="seamless-core.html">seamless-core</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="seamless-transformer.html">seamless-transformer</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="seamless-config.html">seamless-config</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="seamless-remote.html">seamless-remote</a>
+                  </li>
+                  <li class="toctree-l1 current"><a class="reference internal current" href="#">seamless-dask</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#core-components">Core components</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#seamlessdaskclient">SeamlessDaskClient</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#transformationdaskmixin">TransformationDaskMixin</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#worker-plugin">Worker plugin</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#permission-manager">Permission manager</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#dummy-scheduler">Dummy scheduler</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#relation-to-the-seamless-ecosystem">Relation to the Seamless ecosystem</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#cli-seamless-dask-wrapper">CLI: seamless-dask-wrapper</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#status-file">Status file</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#key-parameters-from-status-file">Key parameters (from status file)</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#parameter-details">Parameter details</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#job-parameters">Job parameters</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#scheduler-parameters">Scheduler parameters</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#worker-parameters">Worker parameters</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#cluster-parameters">Cluster parameters</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#slurm-examples">SLURM examples</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#pure-dask-pure_dask-true">Pure Dask (pure_dask: true)</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#seamless-dask-default">Seamless Dask (default)</a>
+    </li>
+        </ul>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#installation">Installation</a>
+    </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="seamless-jobserver.html">seamless-jobserver</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="seamless-database.html">seamless-database</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="remote-http-launcher.html">remote-http-launcher</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Python docstrings</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="reference/seamless.html">seamless</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="reference/seamless.checksum_class.html">Checksum</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="reference/seamless.buffer_class.html">Buffer</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="reference/seamless.transformer.html">seamless.transformer</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="reference/seamless_transformer.transformation_class.html">Transformation</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="reference/seamless_transformer.transformer_class.html">Transformer properties</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="reference/seamless_config.select.html">seamless.config.select</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="reference/seamless_config.tools.html">seamless.config.tools</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >CLI docstrings</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="reference/seamless-run.html">seamless-run</a>
+                </li>
+    </ul>
+                  </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Seamless</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../index.html" class="icon icon-home" aria-label="Docs"></a></li>
+          <li class="breadcrumb-item">Reference API</li>
+      <li class="breadcrumb-item active">seamless-dask</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h1 id="seamless-dask">seamless-dask</h1>
+<p><code>seamless-dask</code> is the Dask integration layer for the <a href="https://github.com/sjdv1982/seamless">Seamless</a> ecosystem. It submits Seamless transformations to a Dask cluster, manages worker pools inside Dask workers, and provides a supervised cluster launcher for HPC environments. It is the distributed-execution alternative to the simpler single-machine <code>seamless-jobserver</code>.</p>
+<p><strong>This is an internal infrastructure package.</strong> User workflow code never imports <code>seamless-dask</code> directly — the user-facing API (<code>direct</code>, <code>delayed</code>) lives in <code>seamless-transformer</code>. When a Dask backend is configured, <code>seamless-config</code> and <code>seamless-remote</code> wire everything up behind the scenes.</p>
+<h2 id="core-components">Core components</h2>
+<h3 id="seamlessdaskclient">SeamlessDaskClient</h3>
+<p>Wraps a <code>distributed.Client</code> with Seamless-specific logic: buffer caching, transformation submission, fat/thin checksum management, and cache pruning. Registered globally via <code>set_seamless_dask_client()</code> so that <code>seamless-transformer</code> can discover it.</p>
+<h3 id="transformationdaskmixin">TransformationDaskMixin</h3>
+<p>A mixin class that extends <code>seamless-transformer</code>'s <code>Transformation</code> with Dask execution. When a <code>SeamlessDaskClient</code> is registered and a transformation's <code>compute()</code> is called:</p>
+<ol>
+<li>Fast-path: check the Seamless database cache (via <code>seamless-remote</code>) before submitting anything.</li>
+<li>Request a permission token from the throttle manager.</li>
+<li>Submit the transformation to the Dask cluster.</li>
+<li>Store the result back in the cache.</li>
+</ol>
+<p>If the cluster is at capacity, permission requests may be denied; when remote execution is optional, the caller retries and may eventually fall back to local execution.</p>
+<h3 id="worker-plugin">Worker plugin</h3>
+<p><code>SeamlessWorkerPlugin</code> (a Dask <code>WorkerPlugin</code>) runs inside each Dask worker. On setup it:</p>
+<ul>
+<li>Spawns a pool of Seamless worker processes (via <code>seamless-transformer</code>)</li>
+<li>Configures remote clients (via <code>seamless-config</code>) so workers can reach the hashserver and database</li>
+<li>Registers permission-counter resources with the Dask scheduler</li>
+</ul>
+<h3 id="permission-manager">Permission manager</h3>
+<p>An anti-deadlock throttle that prevents the Dask cluster from over-committing. Tracks a capacity counter based on <code>TRANSFORMATION_THROTTLE × workers</code>. When at capacity, batches new requests per 10-second epoch and grants based on system load. This prevents nested transformations from starving the cluster.</p>
+<h3 id="dummy-scheduler">Dummy scheduler</h3>
+<p>An in-process Dask scheduler for development and testing. Creates a <code>Scheduler</code> + N <code>Worker</code> instances in a background thread, useful for local runs without a full cluster.</p>
+<hr />
+<h2 id="relation-to-the-seamless-ecosystem">Relation to the Seamless ecosystem</h2>
+<pre><code class="language-text">    seamless-transformer                (user-facing API: direct, delayed)
+        │
+        │  delegate job
+        ▼
+    seamless-remote
+        │  daskserver_remote
+        ▼
+    seamless-dask-wrapper              ◄── CLI from this package
+        │
+        │  Dask scheduler
+        ▼
+    Dask workers
+        │  SeamlessWorkerPlugin
+        │  spawns seamless-transformer workers
+        │
+        ▼  nested transformations call seamless-remote again
+</code></pre>
+<p>The <code>seamless-dask-wrapper</code> CLI is the entry point that <code>seamless-remote</code>'s <code>daskserver_remote</code> talks to. Inside each Dask worker, the full Seamless stack runs again — <code>seamless-transformer</code> dispatches work to its own worker processes, and calls <code>seamless-remote</code> for buffer resolution and cache operations. This recursion is what makes nested transformations work.</p>
+<hr />
+<h2 id="cli-seamless-dask-wrapper">CLI: seamless-dask-wrapper</h2>
+<p>The only CLI script. It launches and supervises a Dask cluster:</p>
+<ol>
+<li>Waits for a JSON status file written by the caller (typically <code>seamless-config</code> via <code>remote-http-launcher</code>).</li>
+<li>Reads cluster parameters from the status file.</li>
+<li>Evaluates a "cluster string" (<code>MODULE::SYMBOL</code>) to instantiate the cluster — supports <code>dask.distributed.LocalCluster</code> and <code>dask_jobqueue</code> backends (SLURMCluster, OARCluster, PBSCluster, etc.).</li>
+<li>Launches the cluster with adaptive scaling.</li>
+<li>Writes the scheduler and dashboard ports back to the status file.</li>
+<li>Monitors activity and shuts down after an inactivity timeout.</li>
+</ol>
+<h3 id="status-file">Status file</h3>
+<p><code>seamless-dask-wrapper</code> receives all its configuration through a JSON <strong>status file</strong>, following the protocol defined by <code>remote-http-launcher</code>. The launcher creates the file with <code>"status": "starting"</code> and a <code>"parameters"</code> dict containing cluster configuration. The wrapper polls for this file on startup, reads the parameters, picks free ports for the scheduler and dashboard, launches the cluster, and then writes back to the same file with <code>"status": "running"</code> and the selected ports. If startup fails, it writes <code>"status": "failed"</code> instead. On clean shutdown it deletes the file.</p>
+<p>This is a general-purpose handshake: the launcher doesn't need to know anything about Dask — it just writes parameters and waits for <code>"status"</code> to change. The wrapper doesn't need to know who launched it — it just reads the file. The <code>"parameters"</code> dict inside the status file carries the cluster configuration described below.</p>
+<h3 id="key-parameters-from-status-file">Key parameters (from status file)</h3>
+<table>
+<thead>
+<tr>
+<th>Category</th>
+<th>Parameters</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Job</td>
+<td><code>walltime</code>, <code>cores</code>, <code>memory</code>, <code>tmpdir</code>, <code>partition</code>, <code>project</code>, <code>job_extra_directives</code></td>
+</tr>
+<tr>
+<td>Scheduler</td>
+<td><code>unknown-task-duration</code>, <code>target-duration</code>, <code>internal-port-range</code>, <code>lifetime</code></td>
+</tr>
+<tr>
+<td>Worker</td>
+<td><code>transformation_throttle</code> (default 3), <code>dask-resources</code></td>
+</tr>
+<tr>
+<td>Cluster</td>
+<td><code>interactive</code>, <code>maximum_jobs</code>, <code>extra_dask_config</code>, <code>timeout</code></td>
+</tr>
+</tbody>
+</table>
+<p>Worker threads are auto-set to <code>cores × transformation_throttle</code> to match Seamless worker pool sizing.</p>
+<h3 id="parameter-details">Parameter details</h3>
+<h4 id="job-parameters">Job parameters</h4>
+<p>These parameters configure the HPC job that each Dask worker runs in. Most map to <code>dask_jobqueue</code> cluster constructor options.</p>
+<ul>
+<li><strong><code>walltime</code></strong> — Passed directly to <code>dask_jobqueue</code> as <code>walltime</code>.</li>
+<li><strong><code>cores</code></strong> — Multiplied by <code>transformation_throttle</code> to produce <code>job_cores</code>, which is passed to <code>dask_jobqueue</code> as <code>cores</code>. The original value controls how many Seamless worker processes are spawned per Dask worker.</li>
+<li><strong><code>memory</code></strong> — Passed directly to <code>dask_jobqueue</code> as <code>memory</code>.</li>
+<li><strong><code>tmpdir</code></strong> — Seamless-specific name. Mapped to two Dask config keys: <code>local-directory</code> and <code>temp-directory</code>. Defaults to <code>/tmp</code>.</li>
+<li><strong><code>partition</code></strong> — Renamed to <code>queue</code> when passed to <code>dask_jobqueue</code> (matching its terminology for SLURM partitions / OAR queues).</li>
+<li><strong><code>project</code></strong> — Passed directly to <code>dask_jobqueue</code> as <code>project</code> (the scheduler accounting/billing project).</li>
+<li><strong><code>job_extra_directives</code></strong> — Passed to <code>dask_jobqueue</code> as <code>job-extra-directives</code> (hyphenated). Wrapped with <code>ensure_list()</code> so a single string is accepted.</li>
+</ul>
+<h4 id="scheduler-parameters">Scheduler parameters</h4>
+<p>These tune the Dask scheduler and worker lifecycle.</p>
+<ul>
+<li><strong><code>unknown-task-duration</code></strong> — Passed directly to Dask config as <code>distributed.scheduler.unknown-task-duration</code>. Default: <code>"1m"</code>.</li>
+<li><strong><code>target-duration</code></strong> — Passed directly to Dask config as <code>distributed.scheduler.target-duration</code>. Also used to compute adaptive scaling intervals. Default: <code>"10m"</code>.</li>
+<li><strong><code>internal-port-range</code></strong> — Seamless-specific. Normalized into a port range string and passed as <code>--worker-port</code> and <code>--nanny-port</code> worker args, plus Dask config keys <code>distributed.worker.port</code> and <code>distributed.nanny.port</code>.</li>
+<li><strong><code>lifetime</code></strong> — Passed to Dask config as <code>distributed.worker.lifetime.duration</code>, but the value is computed: <code>walltime − lifetime-stagger − grace_period</code>. Set to <code>None</code> when <code>maximum_jobs == 1</code> (a single worker has no need for rolling restarts).</li>
+</ul>
+<h4 id="worker-parameters">Worker parameters</h4>
+<p>These control Seamless-specific behavior inside each Dask worker.</p>
+<ul>
+<li><strong><code>transformation_throttle</code></strong> — How many concurrent Seamless transformations each worker process handles. Exported as the environment variable <code>SEAMLESS_WORKER_TRANSFORMATION_THROTTLE</code> into worker job scripts. Also determines worker thread count (<code>cores × transformation_throttle</code>). Default: <code>3</code>.</li>
+<li><strong><code>dask-resources</code></strong> — Custom Dask resource annotations for workers, passed to <code>distributed.worker.resources</code>. In exclusive mode, automatically includes <code>{"S": 1.0}</code> for resource-aware scheduling. The <code>"S"</code> resource value is also used as a scaling factor for adaptive target duration.</li>
+</ul>
+<h4 id="cluster-parameters">Cluster parameters</h4>
+<p>These govern the cluster lifecycle managed by <code>seamless-dask-wrapper</code>.</p>
+<ul>
+<li><strong><code>interactive</code></strong> — When <code>true</code>, the cluster keeps at least one worker alive even when idle (minimum jobs = 1 instead of 0). Also prevents premature shutdown while tasks are still processing.</li>
+<li><strong><code>maximum_jobs</code></strong> — Maximum number of Dask workers for adaptive scaling. Renamed to <code>maximum</code> when passed to Dask's adaptive scaling class. When set to <code>1</code>, worker lifetime rotation is disabled. Default: <code>1</code>.</li>
+<li><strong><code>extra_dask_config</code></strong> — Escape hatch: a dict of arbitrary Dask config keys and values, merged directly into the Dask configuration. Useful for tuning settings not exposed as dedicated parameters.</li>
+<li><strong><code>timeout</code></strong> — Inactivity timeout (in seconds) after which <code>seamless-dask-wrapper</code> shuts down the cluster. Not a Dask concept — this is managed by the wrapper's own monitoring loop.</li>
+</ul>
+<h3 id="slurm-examples">SLURM examples</h3>
+<p>These examples show minimal status file parameters and the SLURM job script that <code>dask_jobqueue.SLURMCluster</code> generates from them. Both request 24 cores, 54 GB memory, and 1 hour of walltime on the <code>all</code> partition.</p>
+<h4 id="pure-dask-pure_dask-true">Pure Dask (<code>pure_dask: true</code>)</h4>
+<p>This mode uses Seamless infrastructure without using Seamless itself. You get <code>seamless-dask-wrapper</code> (controlled by <code>seamless-config</code>) as a managed Dask cluster launcher — with status-file handshake, adaptive scaling, port management, and inactivity timeout — but the workers are plain Dask workers. No <code>SeamlessWorkerPlugin</code>, no transformation throttle, no <code>seamless-core</code> or <code>seamless-transformer</code> involvement. Your code talks to the <code>distributed.Client</code> directly.</p>
+<p>This is useful when you already have Dask workloads and want to take advantage of Seamless's cluster lifecycle management on HPC without adopting the Seamless computation model.</p>
+<p>The wrapper passes <code>cores</code> through unchanged and defaults to 2 worker threads. No Seamless-specific environment variables are injected.</p>
+<p><strong>Status file parameters:</strong></p>
+<pre><code class="language-json">{
+    &quot;parameters&quot;: {
+        &quot;pure_dask&quot;: true,
+        &quot;cores&quot;: 24,
+        &quot;memory&quot;: &quot;54000MB&quot;,
+        &quot;walltime&quot;: &quot;01:00:00&quot;,
+        &quot;partition&quot;: &quot;all&quot;,
+        &quot;maximum_jobs&quot;: 4
+    }
+}
+</code></pre>
+<p><strong>Generated SLURM job script:</strong></p>
+<pre><code class="language-bash">#!/usr/bin/env bash
+
+#SBATCH --job-name=dask-worker
+#SBATCH --ntasks=1
+#SBATCH --cpus-per-task=24
+#SBATCH --mem=54000M
+#SBATCH --time=01:00:00
+#SBATCH --partition=all
+
+export DASK_DISTRIBUTED__WORKER__DAEMON=False
+export DASK_DISTRIBUTED__SCHEDULER__UNKNOWN_TASK_DURATION=1m
+export DASK_DISTRIBUTED__SCHEDULER__TARGET_DURATION=10m
+export PYTHON_CPU_COUNT=$SLURM_JOB_CPUS_PER_NODE
+
+dask worker \
+    --nthreads 2 \
+    --name worker-$SLURM_JOB_ID \
+    tcp://&lt;scheduler_ip&gt;:&lt;scheduler_port&gt;
+</code></pre>
+<p>24 SLURM cores, 2 Dask worker threads. Standard Dask behaviour — most cores sit idle unless your tasks release the GIL or you set <code>worker_threads</code> explicitly.</p>
+<h4 id="seamless-dask-default">Seamless Dask (default)</h4>
+<p>Without <code>pure_dask</code>, the wrapper multiplies <code>cores × transformation_throttle</code> (default 3) to determine both the SLURM core request and the worker thread count. This matches the Seamless worker pool: each of the 24 worker processes handles up to 3 concurrent transformations, so 72 threads are needed.</p>
+<p><strong>Status file parameters:</strong></p>
+<pre><code class="language-json">{
+    &quot;parameters&quot;: {
+        &quot;cores&quot;: 24,
+        &quot;memory&quot;: &quot;54000MB&quot;,
+        &quot;walltime&quot;: &quot;01:00:00&quot;,
+        &quot;partition&quot;: &quot;all&quot;,
+        &quot;maximum_jobs&quot;: 10,
+        &quot;interactive&quot;: true,
+        &quot;tmpdir&quot;: &quot;/tmp&quot;
+    }
+}
+</code></pre>
+<p><strong>Generated SLURM job script:</strong></p>
+<pre><code class="language-bash">#!/usr/bin/env bash
+
+#SBATCH --job-name=dask-worker
+#SBATCH --ntasks=1
+#SBATCH --cpus-per-task=72
+#SBATCH --mem=54000M
+#SBATCH --time=01:00:00
+#SBATCH --partition=all
+
+export SEAMLESS_DASK_QUEUE_EXCLUSIVE=0
+export SEAMLESS_WORKER_TRANSFORMATION_THROTTLE=3
+export DASK_DISTRIBUTED__WORKER__DAEMON=False
+export DASK_DISTRIBUTED__SCHEDULER__UNKNOWN_TASK_DURATION=1m
+export DASK_DISTRIBUTED__SCHEDULER__TARGET_DURATION=10m
+export DASK_DISTRIBUTED__WORKER__LIFETIME__DURATION=55m
+export DASK_DISTRIBUTED__WORKER__LIFETIME__STAGGER=4m
+export PYTHON_CPU_COUNT=$SLURM_JOB_CPUS_PER_NODE
+
+dask worker \
+    --nthreads 72 \
+    --local-directory /tmp \
+    --name worker-$SLURM_JOB_ID \
+    tcp://&lt;scheduler_ip&gt;:&lt;scheduler_port&gt;
+</code></pre>
+<p>72 SLURM cores (<code>24 × 3</code>), 72 worker threads, lifetime rotation enabled (55 minutes = 60 min walltime − 4 min stagger − 1 min grace). The <code>SeamlessWorkerPlugin</code> running inside this worker will spawn 24 Seamless worker processes, each handling up to 3 transformations concurrently.</p>
+<hr />
+<h2 id="installation">Installation</h2>
+<pre><code class="language-bash">pip install seamless-dask
+</code></pre>
+<p>Requires Python &gt;= 3.10. Dependencies: <code>dask</code>, <code>distributed</code>, <code>dask_jobqueue</code>, <code>bokeh&gt;=3.1.0</code>, <code>seamless-core</code>, <code>seamless-config</code>, <code>seamless-remote</code>, <code>seamless-transformer</code>.</p>
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="seamless-remote.html" class="btn btn-neutral float-left" title="seamless-remote"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="seamless-jobserver.html" class="btn btn-neutral float-right" title="seamless-jobserver">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+    
+      <span><a href="seamless-remote.html" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="seamless-jobserver.html" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script src="../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "..";</script>
+    <script src="../js/theme_extra.js"></script>
+    <script src="../js/theme.js"></script>
+      <script src="../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>

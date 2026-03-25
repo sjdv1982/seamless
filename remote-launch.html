@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <link rel="shortcut icon" href="img/favicon.ico" />
+    <title>Remote job launching - Seamless</title>
+    <link rel="stylesheet" href="css/theme.css" />
+    <link rel="stylesheet" href="css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "Remote job launching";
+        var mkdocs_page_input_path = "remote-launch.md";
+        var mkdocs_page_url = null;
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href="index.html" class="icon icon-home"> Seamless
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="./search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="index.html">Home</a>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Getting Started</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="getting-started.html">Wrapping Python and bash</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="cluster.html">Setting up a local cluster</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">How-To Guides</span></p>
+              <ul class="current">
+                  <li class="toctree-l1"><a class="reference internal" href="caching.html">Caching, identity, and sharing</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="composition.html">Composition</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="parallelism.html">Local parallelism</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="remote.html">Remote execution</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="hpc.html">HPC specifics</a>
+                  </li>
+                  <li class="toctree-l1 current"><a class="reference internal current" href="#">Remote job launching</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#the-mental-model-unlearn-remote-filenames">The mental model: unlearn remote filenames</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#the-three-step-cli-workflow">The three-step CLI workflow</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#step-1-upload-inputs">Step 1: upload inputs</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#step-2-run-the-transformation">Step 2: run the transformation</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#step-3-download-results">Step 3: download results</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#staged-execution-separate-upload-run-and-download">Staged execution: separate upload, run, and download</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#checksum-vs-buffer-what-travels-where">Checksum vs buffer: what travels where</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#deep-checksums-for-directories">Deep checksums for directories</a>
+    </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="sharing.html">Sharing in depth</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Reference API</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="api/index.html">Overview</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="api/seamless-core.html">seamless-core</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="api/seamless-transformer.html">seamless-transformer</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="api/seamless-config.html">seamless-config</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="api/seamless-remote.html">seamless-remote</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="api/seamless-dask.html">seamless-dask</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="api/seamless-jobserver.html">seamless-jobserver</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="api/seamless-database.html">seamless-database</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="api/remote-http-launcher.html">remote-http-launcher</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Python docstrings</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="api/reference/seamless.html">seamless</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="api/reference/seamless.checksum_class.html">Checksum</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="api/reference/seamless.buffer_class.html">Buffer</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="api/reference/seamless.transformer.html">seamless.transformer</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="api/reference/seamless_transformer.transformation_class.html">Transformation</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="api/reference/seamless_transformer.transformer_class.html">Transformer properties</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="api/reference/seamless_config.select.html">seamless.config.select</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="api/reference/seamless_config.tools.html">seamless.config.tools</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >CLI docstrings</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="api/reference/seamless-run.html">seamless-run</a>
+                </li>
+    </ul>
+                  </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">Seamless</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="index.html" class="icon icon-home" aria-label="Docs"></a></li>
+          <li class="breadcrumb-item">How-To Guides</li>
+      <li class="breadcrumb-item active">Remote job launching</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h1 id="remote-job-launching">Remote job launching</h1>
+<p>This guide shows how to run <code>seamless-run</code> jobs against a remote cluster from your local machine. It covers the full CLI workflow, explains the mental model for working without local file access on the remote, and explains the distinction between checksums and buffers in a distributed setting.</p>
+<h2 id="the-mental-model-unlearn-remote-filenames">The mental model: unlearn remote filenames</h2>
+<p>When running locally, it feels natural to think in terms of file paths: "input.txt goes in, result.csv comes out". In a remote workflow, the remote worker has no access to your local files — and you have no access to its local files. Everything is exchanged via the hashserver, using checksums as identifiers.</p>
+<p>The key shift: <strong>think in checksums, not filenames</strong>.</p>
+<ul>
+<li>Before running: your input file <code>input.txt</code> gets an identity (its checksum). The bytes are uploaded to the hashserver.</li>
+<li>During running: the worker fetches the input bytes from the hashserver by checksum, runs the command, and pushes the result bytes back to the hashserver.</li>
+<li>After running: you fetch the result bytes from the hashserver by checksum and write them to a local file.</li>
+</ul>
+<p>The filename is a local convenience. The checksum is the global identity. The hashserver bridges the two.</p>
+<hr />
+<h2 id="the-three-step-cli-workflow">The three-step CLI workflow</h2>
+<h3 id="step-1-upload-inputs">Step 1: upload inputs</h3>
+<pre><code class="language-bash">seamless-upload data/input.txt data/params.json
+</code></pre>
+<p>This uploads the file bytes to the hashserver and writes sidecar files:</p>
+<ul>
+<li><code>data/input.txt.CHECKSUM</code></li>
+<li><code>data/params.json.CHECKSUM</code></li>
+</ul>
+<p>Uploading is idempotent: re-uploading the same file is a no-op (the hashserver already has the bytes).</p>
+<h3 id="step-2-run-the-transformation">Step 2: run the transformation</h3>
+<pre><code class="language-bash">seamless-run mycommand data/input.txt data/params.json --capture result.csv
+</code></pre>
+<p>Because <code>.CHECKSUM</code> sidecars exist, <code>seamless-run</code> reads the input checksums from them rather than re-uploading. It constructs the transformation, looks it up in the database, and either returns the cached result or submits the job to the configured backend (jobserver or daskserver).</p>
+<p>If the result is cached, this step completes in milliseconds. If the result is new, the job runs on the remote worker.</p>
+<p>When the transformation completes, <code>seamless-run</code> writes <code>result.csv.CHECKSUM</code> locally.</p>
+<h3 id="step-3-download-results">Step 3: download results</h3>
+<pre><code class="language-bash">seamless-download result.csv
+</code></pre>
+<p>This reads <code>result.csv.CHECKSUM</code> and fetches the corresponding bytes from the hashserver, writing them to <code>result.csv</code>.</p>
+<hr />
+<h2 id="staged-execution-separate-upload-run-and-download">Staged execution: separate upload, run, and download</h2>
+<p>For batch workflows — many runs over the same input with varying parameters — upload once, run many times, download at the end:</p>
+<pre><code class="language-bash"># Upload the shared input once
+seamless-upload data/large-dataset.h5
+
+# Run many variants (these can be parallelized with seamless-queue --qsubmit)
+seamless-run analyse data/large-dataset.h5 --var threshold=0.1 --capture out-0.1.csv
+seamless-run analyse data/large-dataset.h5 --var threshold=0.2 --capture out-0.2.csv
+seamless-run analyse data/large-dataset.h5 --var threshold=0.5 --capture out-0.5.csv
+
+# Download all results
+seamless-download out-0.1.csv out-0.2.csv out-0.5.csv
+</code></pre>
+<p>The <code>--no-download</code> (<code>-nd</code>) flag runs the transformation and records the result checksum without fetching the result bytes. Use it when you only need the checksum (for sharing, replay, or downstream inputs) and not the bytes themselves.</p>
+<p>Note that after uploading, you can remove large-dataset.h5 from your local machine. You can do <code>seamless-run analyze large-dataset.h5</code> or <code>seamless-run analyze large-dataset.h5.CHECKSUM</code>, Seamless will treat them the same.</p>
+<p>Therefore, an alternate "upload" strategy is for the case where the large dataset is already on the remote machine: login to the remote machine, install Seamless, configure the hashserver storage dir, and do something like <code>cd /tmp; ln -s /data/large-dataset.h5; seamless-upload --hardlink large-dataset.h5</code>. This will create <code>large-dataset.h5.CHECKSUM</code>, which you can copy to your local machine. On the remote machine, '--hardlink' prevents duplication of the dataset.</p>
+<hr />
+<h2 id="checksum-vs-buffer-what-travels-where">Checksum vs buffer: what travels where</h2>
+<table>
+<thead>
+<tr>
+<th>Concept</th>
+<th>What it is</th>
+<th>Where it lives</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Checksum</td>
+<td>64-character hex SHA-256</td>
+<td><code>.CHECKSUM</code> sidecar file, database, Python <code>Checksum</code> object</td>
+</tr>
+<tr>
+<td>Buffer</td>
+<td>Raw bytes of a value</td>
+<td>Hashserver buffer directory</td>
+</tr>
+</tbody>
+</table>
+<p>Checksums are tiny and can be shared freely — by email, in a config file, in a paper's supplementary material. Buffers are the actual data and can be large.</p>
+<p>A result that has been computed is always in the database (the transformation→result checksum mapping). The result bytes may or may not be in the hashserver, depending on whether the transformation used <code>--scratch</code> (see <a href="sharing.html">Sharing in depth</a>).</p>
+<p><code>seamless-resolve</code> fetches a buffer by checksum:</p>
+<pre><code class="language-bash">seamless-resolve a3f2...  &gt; result.csv
+</code></pre>
+<p><code>seamless-fingertip</code> does the same but will also trigger recomputation if the buffer is not in the hashserver:</p>
+<pre><code class="language-bash">seamless-fingertip a3f2...  &gt; result.csv
+</code></pre>
+<hr />
+<h2 id="deep-checksums-for-directories">Deep checksums for directories</h2>
+<p>Directories are not treated as single files. Seamless computes a <strong>deep checksum</strong> (a Merkle-like structure): a structured mapping from relative file paths to file checksums, which itself gets a checksum. This means:</p>
+<ul>
+<li>Changing one file in a large input directory only changes those files' checksums and the directory's deep checksum — not every file's content is re-uploaded.</li>
+<li>Two directory inputs with the same deep checksum are identical, even if they arrived from different machines.</li>
+</ul>
+<p>Upload a directory the same way as a file:</p>
+<pre><code class="language-bash">seamless-upload data/my-dataset/
+# creates data/my-dataset/.CHECKSUM  (the deep checksum of the directory)
+</code></pre>
+<p><code>seamless-checksum-index</code> builds the per-file index under the directory, which <code>seamless-upload</code> uses to avoid re-uploading files that are already in the hashserver.</p>
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="hpc.html" class="btn btn-neutral float-left" title="HPC specifics"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="sharing.html" class="btn btn-neutral float-right" title="Sharing in depth">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+    
+      <span><a href="hpc.html" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="sharing.html" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script src="js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = ".";</script>
+    <script src="js/theme_extra.js"></script>
+    <script src="js/theme.js"></script>
+      <script src="search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>

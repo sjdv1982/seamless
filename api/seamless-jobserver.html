@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <link rel="shortcut icon" href="../img/favicon.ico" />
+    <title>seamless-jobserver - Seamless</title>
+    <link rel="stylesheet" href="../css/theme.css" />
+    <link rel="stylesheet" href="../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "seamless-jobserver";
+        var mkdocs_page_input_path = "api/seamless-jobserver.md";
+        var mkdocs_page_url = null;
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href="../index.html" class="icon icon-home"> Seamless
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../index.html">Home</a>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Getting Started</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../getting-started.html">Wrapping Python and bash</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../cluster.html">Setting up a local cluster</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">How-To Guides</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../caching.html">Caching, identity, and sharing</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../composition.html">Composition</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../parallelism.html">Local parallelism</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../remote.html">Remote execution</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../hpc.html">HPC specifics</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../remote-launch.html">Remote job launching</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../sharing.html">Sharing in depth</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Reference API</span></p>
+              <ul class="current">
+                  <li class="toctree-l1"><a class="reference internal" href="index.html">Overview</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="seamless-core.html">seamless-core</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="seamless-transformer.html">seamless-transformer</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="seamless-config.html">seamless-config</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="seamless-remote.html">seamless-remote</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="seamless-dask.html">seamless-dask</a>
+                  </li>
+                  <li class="toctree-l1 current"><a class="reference internal current" href="#">seamless-jobserver</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#how-it-works">How it works</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#http-endpoints">HTTP endpoints</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#lifecycle">Lifecycle</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#relation-to-the-seamless-ecosystem">Relation to the Seamless ecosystem</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#cli">CLI</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#installation">Installation</a>
+    </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="seamless-database.html">seamless-database</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="remote-http-launcher.html">remote-http-launcher</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Python docstrings</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="reference/seamless.html">seamless</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="reference/seamless.checksum_class.html">Checksum</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="reference/seamless.buffer_class.html">Buffer</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="reference/seamless.transformer.html">seamless.transformer</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="reference/seamless_transformer.transformation_class.html">Transformation</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="reference/seamless_transformer.transformer_class.html">Transformer properties</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="reference/seamless_config.select.html">seamless.config.select</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="reference/seamless_config.tools.html">seamless.config.tools</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >CLI docstrings</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="reference/seamless-run.html">seamless-run</a>
+                </li>
+    </ul>
+                  </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Seamless</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../index.html" class="icon icon-home" aria-label="Docs"></a></li>
+          <li class="breadcrumb-item">Reference API</li>
+      <li class="breadcrumb-item active">seamless-jobserver</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h1 id="seamless-jobserver">seamless-jobserver</h1>
+<p><code>seamless-jobserver</code> is a lightweight async HTTP service in the <a href="https://github.com/sjdv1982/seamless">Seamless</a> ecosystem. It receives transformation jobs over HTTP, dispatches them to spawned Seamless worker processes, and returns the results. It is one of the four backend services that <code>seamless-remote</code> connects to.</p>
+<p><strong>This is a standalone service, not a library.</strong> User workflow code never imports <code>seamless-jobserver</code> — it runs as an independent process, normally launched by <code>seamless-config</code> via <code>remote-http-launcher</code>. The only user-facing entry point is the <code>seamless-jobserver</code> CLI command.</p>
+<h2 id="how-it-works">How it works</h2>
+<p>The jobserver is a single-module (<code>jobserver.py</code>) aiohttp server. On startup it spawns a pool of Seamless worker processes (via <code>seamless-transformer</code>). Incoming transformation requests arrive over HTTP, are dispatched to the worker pool, and results are returned to the caller — which is always <code>seamless-remote</code>'s <code>jobserver_remote</code> module, never user code directly.</p>
+<h3 id="http-endpoints">HTTP endpoints</h3>
+<table>
+<thead>
+<tr>
+<th>Endpoint</th>
+<th>Method</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>/</code></td>
+<td>GET</td>
+<td>Welcome / version check</td>
+</tr>
+<tr>
+<td><code>/healthcheck</code></td>
+<td>GET</td>
+<td>Liveness probe</td>
+</tr>
+<tr>
+<td><code>/run-transformation</code></td>
+<td>GET</td>
+<td>Execute a transformation and return the result checksum</td>
+</tr>
+</tbody>
+</table>
+<h3 id="lifecycle">Lifecycle</h3>
+<ol>
+<li><code>seamless-config</code> writes a status file and launches <code>seamless-jobserver</code> (via <code>remote-http-launcher</code> or directly).</li>
+<li>The jobserver picks a port (fixed or random from a range), spawns worker processes, and starts listening.</li>
+<li>It writes its port and status back to the status file so <code>seamless-remote</code> can discover it.</li>
+<li>If no requests arrive within the inactivity timeout, the jobserver shuts down automatically.</li>
+</ol>
+<hr />
+<h2 id="relation-to-the-seamless-ecosystem">Relation to the Seamless ecosystem</h2>
+<pre><code class="language-text">    seamless-transformer                (user-facing API: direct, delayed)
+        │
+        │  delegate job
+        ▼
+    seamless-remote
+        │  jobserver_remote
+        │  async HTTP
+        ▼
+    seamless-jobserver                 ◄── this package
+        │
+        │  dispatches to worker pool
+        ▼
+    seamless-transformer worker        (spawned child processes)
+</code></pre>
+<p>The jobserver sits between <code>seamless-remote</code> (which sends it work) and <code>seamless-transformer</code> (whose worker processes do the actual computation). It is a simpler, single-machine alternative to the Dask-based execution path provided by <code>seamless-dask</code>.</p>
+<hr />
+<h2 id="cli">CLI</h2>
+<pre><code class="language-bash">seamless-jobserver [options]
+</code></pre>
+<table>
+<thead>
+<tr>
+<th>Flag</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>--port PORT</code></td>
+<td>—</td>
+<td>Listen on a specific port (mutually exclusive with <code>--port-range</code>)</td>
+</tr>
+<tr>
+<td><code>--port-range START END</code></td>
+<td>—</td>
+<td>Pick a random free port from a range</td>
+</tr>
+<tr>
+<td><code>--host HOST</code></td>
+<td><code>0.0.0.0</code></td>
+<td>Listening address</td>
+</tr>
+<tr>
+<td><code>--status-file PATH</code></td>
+<td>—</td>
+<td>JSON file for reporting port and status</td>
+</tr>
+<tr>
+<td><code>--timeout SECONDS</code></td>
+<td>—</td>
+<td>Auto-shutdown after this many seconds of inactivity</td>
+</tr>
+<tr>
+<td><code>--workers N</code></td>
+<td><code>1</code></td>
+<td>Number of worker processes to spawn</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="installation">Installation</h2>
+<pre><code class="language-bash">pip install seamless-jobserver
+</code></pre>
+<p>Requires Python &gt;= 3.10. Dependencies: <code>aiohttp</code>, <code>seamless-core</code>, <code>seamless-transformer</code>. Also imports <code>seamless-remote</code> and <code>seamless-config</code> at runtime for client cleanup and remote-client configuration respectively.</p>
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="seamless-dask.html" class="btn btn-neutral float-left" title="seamless-dask"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="seamless-database.html" class="btn btn-neutral float-right" title="seamless-database">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+    
+      <span><a href="seamless-dask.html" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="seamless-database.html" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script src="../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "..";</script>
+    <script src="../js/theme_extra.js"></script>
+    <script src="../js/theme.js"></script>
+      <script src="../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>

@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <link rel="shortcut icon" href="img/favicon.ico" />
+    <title>Composition - Seamless</title>
+    <link rel="stylesheet" href="css/theme.css" />
+    <link rel="stylesheet" href="css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "Composition";
+        var mkdocs_page_input_path = "composition.md";
+        var mkdocs_page_url = null;
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href="index.html" class="icon icon-home"> Seamless
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="./search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="index.html">Home</a>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Getting Started</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="getting-started.html">Wrapping Python and bash</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="cluster.html">Setting up a local cluster</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">How-To Guides</span></p>
+              <ul class="current">
+                  <li class="toctree-l1"><a class="reference internal" href="caching.html">Caching, identity, and sharing</a>
+                  </li>
+                  <li class="toctree-l1 current"><a class="reference internal current" href="#">Composition</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#driver-transformations">Driver transformations</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#fan-out">Fan-out</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#conditionals">Conditionals</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#module-inclusion">Module inclusion</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#globals-inject-helper-functions-and-values">.globals — inject helper functions and values</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#modules-include-python-packages">.modules — include Python packages</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#local-vs-remote-execution">Local vs remote execution</a>
+    </li>
+        </ul>
+    </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="parallelism.html">Local parallelism</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="remote.html">Remote execution</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="hpc.html">HPC specifics</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="remote-launch.html">Remote job launching</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="sharing.html">Sharing in depth</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Reference API</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="api/index.html">Overview</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="api/seamless-core.html">seamless-core</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="api/seamless-transformer.html">seamless-transformer</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="api/seamless-config.html">seamless-config</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="api/seamless-remote.html">seamless-remote</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="api/seamless-dask.html">seamless-dask</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="api/seamless-jobserver.html">seamless-jobserver</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="api/seamless-database.html">seamless-database</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="api/remote-http-launcher.html">remote-http-launcher</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Python docstrings</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="api/reference/seamless.html">seamless</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="api/reference/seamless.checksum_class.html">Checksum</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="api/reference/seamless.buffer_class.html">Buffer</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="api/reference/seamless.transformer.html">seamless.transformer</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="api/reference/seamless_transformer.transformation_class.html">Transformation</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="api/reference/seamless_transformer.transformer_class.html">Transformer properties</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="api/reference/seamless_config.select.html">seamless.config.select</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="api/reference/seamless_config.tools.html">seamless.config.tools</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >CLI docstrings</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="api/reference/seamless-run.html">seamless-run</a>
+                </li>
+    </ul>
+                  </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">Seamless</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="index.html" class="icon icon-home" aria-label="Docs"></a></li>
+          <li class="breadcrumb-item">How-To Guides</li>
+      <li class="breadcrumb-item active">Composition</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h1 id="composition">Composition</h1>
+<h2 id="driver-transformations">Driver transformations</h2>
+<p>Because <code>delayed</code> functions return a <code>Transformation</code> handle, you can build <em>driver</em> transformations — functions that construct and dispatch sub-transformations as part of their own logic. Drivers are the primary way to express fan-out and conditionals.</p>
+<h3 id="fan-out">Fan-out</h3>
+<p>A driver that loops over a collection and spawns one sub-transformation per element:</p>
+<pre><code class="language-python">from seamless.transformer import delayed
+
+@delayed
+def process_one(item, config):
+    return item * config[&quot;scale&quot;]
+
+@delayed
+def process_all(items, config):
+    results = []
+    for item in items:
+        tf = process_one(item, config)
+        tf.start()              # schedule for concurrent execution
+        results.append(tf)
+    return [tf.run() for tf in results]  # collect results
+</code></pre>
+<p>Each <code>process_one</code> transformation has its own cache key (<code>item</code> + <code>config</code> + code). If <code>items</code> changes partially, only the affected sub-transformations re-execute — the rest are cache hits. The fan-out scales automatically with the number of elements.</p>
+<p>The driver's result (the list returned by <code>process_all</code>) is itself cached. If neither <code>items</code> nor <code>config</code> changes, the entire pipeline — driver plus all sub-transformations — is a cache hit.</p>
+<p><strong>Return type note</strong>: when a driver returns a large collection of checksums rather than materialized values, consider using the <code>checksum</code> cell type for the return value to avoid materializing large aggregates. See <code>.celltypes</code> in the <a href="api/seamless-transformer.html">seamless-transformer reference</a>.</p>
+<h3 id="conditionals">Conditionals</h3>
+<p>Conditionals are plain Python <code>if</code>/<code>else</code> in a driver. Unchosen branches are never instantiated and never execute:</p>
+<pre><code class="language-python">@delayed
+def pipeline(data, use_fast_path):
+    if use_fast_path:
+        return fast_process(data).run()
+    else:
+        return slow_process(data).run()
+</code></pre>
+<p>Because the driver itself is a cached transformation, changing <code>use_fast_path</code> from <code>True</code> to <code>False</code> (with the same <code>data</code>) produces a new driver transformation checksum and re-executes the driver. The slow path runs; the fast path never runs. On the next call with <code>use_fast_path=True</code>, the driver is a cache hit and the fast-path result is returned immediately.</p>
+<hr />
+<h2 id="module-inclusion">Module inclusion</h2>
+<p>When a transformation runs on a remote worker, it has no access to your local filesystem or Python environment. Code that is defined in modules you've written — helper functions, data classes, utilities — must be explicitly bound into the transformation.</p>
+<h3 id="globals-inject-helper-functions-and-values"><code>.globals</code> — inject helper functions and values</h3>
+<p><code>.globals</code> is a dict of values that are injected into the transformation's execution namespace. Use it for helper functions defined in your script, or small configuration objects:</p>
+<pre><code class="language-python">def my_helper(x):
+    return x * 2
+
+@delayed
+def compute(data):
+    return my_helper(data)  # my_helper is referenced but not defined
+
+compute.globals[&quot;my_helper&quot;] = my_helper
+</code></pre>
+<p>Globals are serialized by their source code (for functions) or value (for other objects). If <code>my_helper</code> changes, the transformation checksum changes and re-execution is triggered.</p>
+<h3 id="modules-include-python-packages"><code>.modules</code> — include Python packages</h3>
+<p><code>.modules</code> is for including entire Python packages or multi-file modules. Each entry specifies a module name and a directory path; Seamless packages the directory's source files into the transformation so they are available on the worker:</p>
+<pre><code class="language-python">import my_package  # a local package in ./my_package/
+
+@delayed
+def compute(data):
+    from my_package import process
+    return process(data)
+
+compute.modules[&quot;my_package&quot;] = my_package
+</code></pre>
+<p>The my_package source files are checksummed and included in the transformation identity. If the source files change, the transformation checksum changes.</p>
+<h3 id="local-vs-remote-execution">Local vs remote execution</h3>
+<p>Seamless always executes transformation code in a sandboxed namespace — outer-scope names are never available regardless of whether the worker is local or remote. <code>.globals</code> and <code>.modules</code> are therefore always required for any helper or value defined outside the function body.</p>
+<p>With local execution (<code>execution: process</code> or <code>execution: spawn</code>), the worker happens to be on the same machine, so file paths you reference inside the transformation will resolve. But doing so creates an implicit dependency that Seamless cannot track: the file is not part of the transformation identity, so changes to it won't trigger re-execution and results may be silently stale. Always declare file dependencies explicitly rather than reading local paths inside a transformation.</p>
+<p>For remote workers, third-party library dependencies must be declared explicitly via conda or Docker environments (<code>.environment</code>); the remote machine has no access to your local Python installation or filesystem.</p>
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="caching.html" class="btn btn-neutral float-left" title="Caching, identity, and sharing"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="parallelism.html" class="btn btn-neutral float-right" title="Local parallelism">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+    
+      <span><a href="caching.html" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="parallelism.html" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script src="js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = ".";</script>
+    <script src="js/theme_extra.js"></script>
+    <script src="js/theme.js"></script>
+      <script src="search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>

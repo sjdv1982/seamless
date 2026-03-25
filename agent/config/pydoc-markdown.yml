@@ -1,0 +1,20 @@
+# Scaffold configuration for pydoc-markdown.
+# Adjust modules as the public API stabilizes.
+loaders:
+  - type: python
+    search_path:
+      - .
+
+processors:
+  - type: filter
+    skip_empty_modules: true
+  - type: smart
+
+renderers:
+  - type: markdown
+    output_directory: docs/agent/api
+    # Keep pages small and agent-friendly
+    render_toc: true
+    signature_with_def: true
+    code_headers: true
+

@@ -1,0 +1,70 @@
+.Remote configuration is meant to bring remote resources available to the client. 
+
+At the higher level, a client is always associated with:
+- A cluster. The global environment where the data is stored, where computation results can be stored, and where computation may take place
+- A project (including subproject). Defines the exact location within the cluster file space for storage.
+
+There is the variable called "local_cluster" . This is the cluster where the client lives in. Data (buffers) and results (SQL files)
+can be *read* directly from the local cluster, without the need for remotely-launched HTTP servers (hashserver). 
+*Writing* buffers and results must still go through localhost HTTP servers.
+
+A stage consists of the following:
+- It has a cluster and a (sub)project name
+- It has a potential list of input dependencies. These are either list of stages (of the same project), or full-blown dependency definitions: cluster+project+stage
+- It has a level of delegation ("remoteness")
+    0: all buffers are held inside the client, except external dependencies 
+    1: buffers are written to the hashserver. No buffers are held inside the client. computation is local
+    2: in addition, computation results are written to the database server (which is checked for caching)
+    3: In addition, computation is delegated: 
+        - A micro jobserver
+        or:
+        - A mini jobserver
+        or:
+        - A Dask scheduler. Machinery to interact with the Dask scheduler (that used to be inside the Dask assistant) is now inside the client.
+- It may have requirements:
+    A conda environment for the submitted jobs, as well as resource requirements (CPU, GPU, memory, time., etc.).
+
+seamless.yaml is for Git-tracked config (e.g. project name, stage name), whereas .seamless will contain system-specific config (e.g. cluster name)
+
+Need machinery to dynamically create conda envs on the jobserver frontend.
+The sqlite file is assumed to be opened only by one database server; rip WAL mode.
+
+Finally, there is substage.
+    A substage can redefine the requirements (CPU, GPU, memory, time., etc.).
+    
+There is one default stage "main". Its config depends:
+    - If no project has been defined, the default stage has delegation 0
+    - If a project has been defined, the default stage has delegation level 2.
+    - If a project has been defined, but not a cluster, the cluster is the "local_cluster"
+Clusters must not be defined in code, but in .seamless.
+
+Cluster, (sub)project and (sub)stage can be changed at will. Jobs/requests targeting different (sub)stages can be interleaved.
+There is one hashserver / database server per stage, and one jobserver / dask scheduler per substage. 
+All of them will support 10 minutes timeout, so none of them have to be killed explicitly.
+For a Dask scheduler, the timeout implementation should be such that the thing gets shut down that it must be 10 min after the last job has ended.
+
+*Clouds*
+To be implemented later. Clouds and clusters have some things in common, but there are two key differences.
+
+In both cases, there is a Dask Cluster object, e.g. `dask_jobqueue.SLURMCluster` for a cluster with type=slurm, 
+or `dask_cloudprovider.gcp.GCPCluster` for a cloud with type=gcp. 
+In both cases, this Cluster object creates a Dask scheduler, which can be contacted directly.
+However, the (Python process creating the) Cluster object must be kept alive, else the scheduler dies.
+
+On an HPC cluster, the Cluster Python process lives on the frontend, and so does the scheduler.
+In a cloud, there is no such thing as a frontend. The scheduler lives in the cloud (with a public IP address), but the Cluster object lives locally.
+In other words, you can't shut down your computer and assume that your cloud jobs keep running, which is probably a good thing.
+
+The other key difference is that the cloud storage file system is directly exposed. AWS and DigitalOcean use S3, Google Cloud uses GCS, Azure uses Azure.
+All of these file systems are directly accessible to Dask in the form of syntax such as `read_text("s3://...")`. Under the hood there is low-level libraries
+such as s3fs. All of these scan your home directory for S3 etc. credentials. There is no need for a read-only hashserver: the obvious way is to use the 
+underlying fs library directly to mount bufferdirs. For *writing* buffers, a local hashserver that writes to S3 is probably too slow, and locking will not work,
+best to do direct write and hope that the integrity won't be compromised.
+
+That being said, the differences aren't big. The main differences is that there only a few flavors of HPC Cluster classes, and not too many ways to start them up.
+Therefore, the Cluster object creation can be config'ed in the seamless.yaml / .seamless files and can be done by the Seamless client, as a daemonic subprocess. 
+In contrast are a bazillion ways to start up a cloud Cluster object, too many to yaml it all. Therefore, there is a need for as dask-cluster-controller library.
+It takes as input a triplet cluster/cloud - (sub)project - (sub)stage and the name of a cluster-creating script. The script is run inline (exec) and the namespace
+is inspected for a Cluster object. The controller fires up a local port that forward requests to the scheduler port. If the local port didn't receive anything for 10 minutes,
+interrogate the scheduler for running jobs, and if there are none, terminate. At the same time, a connection file is created with a name derived from the triplet,
+and containing the local port and the controller pid. 

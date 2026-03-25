@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <link rel="shortcut icon" href="../../img/favicon.ico" />
+    <title>seamless_config.select - Seamless — Agent Documentation</title>
+    <link rel="stylesheet" href="../../css/theme.css" />
+    <link rel="stylesheet" href="../../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "seamless_config.select";
+        var mkdocs_page_input_path = "api/python/seamless_config.select.md";
+        var mkdocs_page_url = null;
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href="../../index.html" class="icon icon-home"> Seamless — Agent Documentation
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../index.html">Home</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../overview.html">Agent Docs Overview</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../repos/index.html">Workspace Repos</a>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Contracts</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../contracts/identity-and-caching.html">Identity and Caching</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../contracts/direct-delayed-and-transformation.html">direct/delayed/Transformation</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../contracts/modules-and-closures.html">Modules and Closures</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../contracts/scratch-witness-audit.html">Scratch/Witness/Audit</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../contracts/seamless-run-and-argtyping.html">seamless-run/Argtyping</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../contracts/cache-storage-and-limits.html">Cache Storage and Limits</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../contracts/content-addressed-files-and-dirs.html">Content-addressed Files and Dirs</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../contracts/execution-backends.html">Execution Backends</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">API</span></p>
+              <ul class="current">
+                  <li class="toctree-l1"><a class="reference internal" href="seamless.html">seamless</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="seamless.transformer.html">seamless.transformer</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="seamless.buffer_class.html">seamless.buffer_class</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="seamless.checksum_class.html">seamless.checksum_class</a>
+                  </li>
+                  <li class="toctree-l1 current"><a class="reference internal current" href="#">seamless_config.select</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#seamless_configselect_validate">seamless_config.select._validate</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#seamless_configselectcheck_remote_redundancy">seamless_config.select.check_remote_redundancy</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#seamless_configselectexecution_command_seen">seamless_config.select.execution_command_seen</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#seamless_configselectexecution_was_set_explicitly">seamless_config.select.execution_was_set_explicitly</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#seamless_configselectget_current">seamless_config.select.get_current</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#seamless_configselectget_execution">seamless_config.select.get_execution</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#seamless_configselectget_persistent">seamless_config.select.get_persistent</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#seamless_configselectget_queue">seamless_config.select.get_queue</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#seamless_configselectget_remote">seamless_config.select.get_remote</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#seamless_configselectget_selected_cluster">seamless_config.select.get_selected_cluster</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#seamless_configselectget_stage">seamless_config.select.get_stage</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#seamless_configselectpersistent_was_set_explicitly">seamless_config.select.persistent_was_set_explicitly</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#seamless_configselectreset_execution_before_load">seamless_config.select.reset_execution_before_load</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#seamless_configselectreset_persistent_before_load">seamless_config.select.reset_persistent_before_load</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#seamless_configselectreset_queue_before_load">seamless_config.select.reset_queue_before_load</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#seamless_configselectreset_remote_before_load">seamless_config.select.reset_remote_before_load</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#seamless_configselectselect_cluster">seamless_config.select.select_cluster</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#seamless_configselectselect_execution">seamless_config.select.select_execution</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#seamless_configselectselect_persistent">seamless_config.select.select_persistent</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#seamless_configselectselect_project">seamless_config.select.select_project</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#seamless_configselectselect_queue">seamless_config.select.select_queue</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#seamless_configselectselect_remote">seamless_config.select.select_remote</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#seamless_configselectselect_stage">seamless_config.select.select_stage</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#seamless_configselectselect_subproject">seamless_config.select.select_subproject</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#seamless_configselectselect_substage">seamless_config.select.select_substage</a>
+    </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="seamless_config.tools.html">seamless_config.tools</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="seamless_transformer.transformation_class.html">seamless_transformer.transformation_class</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="seamless_transformer.transformer_class.html">seamless_transformer.transformer_class</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">CLI</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../cli/seamless-run.html">seamless-run</a>
+                  </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">Seamless — Agent Documentation</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../../index.html" class="icon icon-home" aria-label="Docs"></a></li>
+          <li class="breadcrumb-item">API</li>
+      <li class="breadcrumb-item active">seamless_config.select</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h1 id="seamless_configselect">seamless_config.select</h1>
+<h2 id="seamless_configselect_validate"><code>seamless_config.select._validate</code></h2>
+<ul>
+<li>kind: <code>function</code></li>
+<li>signature: <code>_validate(s, name)</code></li>
+</ul>
+<p><em>No docstring.</em></p>
+<h2 id="seamless_configselectcheck_remote_redundancy"><code>seamless_config.select.check_remote_redundancy</code></h2>
+<ul>
+<li>kind: <code>function</code></li>
+<li>signature: <code>check_remote_redundancy(cluster)</code></li>
+</ul>
+<p>Ensure that when remote is unset, a cluster does not expose both jobserver and daskserver on the same frontend.</p>
+<h2 id="seamless_configselectexecution_command_seen"><code>seamless_config.select.execution_command_seen</code></h2>
+<ul>
+<li>kind: <code>function</code></li>
+<li>signature: <code>execution_command_seen()</code></li>
+</ul>
+<p><em>No docstring.</em></p>
+<h2 id="seamless_configselectexecution_was_set_explicitly"><code>seamless_config.select.execution_was_set_explicitly</code></h2>
+<ul>
+<li>kind: <code>function</code></li>
+<li>signature: <code>execution_was_set_explicitly()</code></li>
+</ul>
+<p><em>No docstring.</em></p>
+<h2 id="seamless_configselectget_current"><code>seamless_config.select.get_current</code></h2>
+<ul>
+<li>kind: <code>function</code></li>
+<li>signature: <code>get_current(cluster, project, subproject, stage, substage)</code></li>
+</ul>
+<p><em>No docstring.</em></p>
+<h2 id="seamless_configselectget_execution"><code>seamless_config.select.get_execution</code></h2>
+<ul>
+<li>kind: <code>function</code></li>
+<li>signature: <code>get_execution()</code></li>
+</ul>
+<p><em>No docstring.</em></p>
+<h2 id="seamless_configselectget_persistent"><code>seamless_config.select.get_persistent</code></h2>
+<ul>
+<li>kind: <code>function</code></li>
+<li>signature: <code>get_persistent(cluster)</code></li>
+</ul>
+<p><em>No docstring.</em></p>
+<h2 id="seamless_configselectget_queue"><code>seamless_config.select.get_queue</code></h2>
+<ul>
+<li>kind: <code>function</code></li>
+<li>signature: <code>get_queue(cluster)</code></li>
+</ul>
+<p><em>No docstring.</em></p>
+<h2 id="seamless_configselectget_remote"><code>seamless_config.select.get_remote</code></h2>
+<ul>
+<li>kind: <code>function</code></li>
+<li>signature: <code>get_remote()</code></li>
+</ul>
+<p><em>No docstring.</em></p>
+<h2 id="seamless_configselectget_selected_cluster"><code>seamless_config.select.get_selected_cluster</code></h2>
+<ul>
+<li>kind: <code>function</code></li>
+<li>signature: <code>get_selected_cluster()</code></li>
+</ul>
+<p><em>No docstring.</em></p>
+<h2 id="seamless_configselectget_stage"><code>seamless_config.select.get_stage</code></h2>
+<ul>
+<li>kind: <code>function</code></li>
+<li>signature: <code>get_stage()</code></li>
+</ul>
+<p><em>No docstring.</em></p>
+<h2 id="seamless_configselectpersistent_was_set_explicitly"><code>seamless_config.select.persistent_was_set_explicitly</code></h2>
+<ul>
+<li>kind: <code>function</code></li>
+<li>signature: <code>persistent_was_set_explicitly()</code></li>
+</ul>
+<p><em>No docstring.</em></p>
+<h2 id="seamless_configselectreset_execution_before_load"><code>seamless_config.select.reset_execution_before_load</code></h2>
+<ul>
+<li>kind: <code>function</code></li>
+<li>signature: <code>reset_execution_before_load()</code></li>
+</ul>
+<p><em>No docstring.</em></p>
+<h2 id="seamless_configselectreset_persistent_before_load"><code>seamless_config.select.reset_persistent_before_load</code></h2>
+<ul>
+<li>kind: <code>function</code></li>
+<li>signature: <code>reset_persistent_before_load()</code></li>
+</ul>
+<p><em>No docstring.</em></p>
+<h2 id="seamless_configselectreset_queue_before_load"><code>seamless_config.select.reset_queue_before_load</code></h2>
+<ul>
+<li>kind: <code>function</code></li>
+<li>signature: <code>reset_queue_before_load()</code></li>
+</ul>
+<p><em>No docstring.</em></p>
+<h2 id="seamless_configselectreset_remote_before_load"><code>seamless_config.select.reset_remote_before_load</code></h2>
+<ul>
+<li>kind: <code>function</code></li>
+<li>signature: <code>reset_remote_before_load()</code></li>
+</ul>
+<p><em>No docstring.</em></p>
+<h2 id="seamless_configselectselect_cluster"><code>seamless_config.select.select_cluster</code></h2>
+<ul>
+<li>kind: <code>function</code></li>
+<li>signature: <code>select_cluster(cluster)</code></li>
+</ul>
+<p><em>No docstring.</em></p>
+<h2 id="seamless_configselectselect_execution"><code>seamless_config.select.select_execution</code></h2>
+<ul>
+<li>kind: <code>function</code></li>
+<li>signature: <code>select_execution(execution, *, source)</code></li>
+</ul>
+<p><em>No docstring.</em></p>
+<h2 id="seamless_configselectselect_persistent"><code>seamless_config.select.select_persistent</code></h2>
+<ul>
+<li>kind: <code>function</code></li>
+<li>signature: <code>select_persistent(persistent, *, source)</code></li>
+</ul>
+<p><em>No docstring.</em></p>
+<h2 id="seamless_configselectselect_project"><code>seamless_config.select.select_project</code></h2>
+<ul>
+<li>kind: <code>function</code></li>
+<li>signature: <code>select_project(project)</code></li>
+</ul>
+<p><em>No docstring.</em></p>
+<h2 id="seamless_configselectselect_queue"><code>seamless_config.select.select_queue</code></h2>
+<ul>
+<li>kind: <code>function</code></li>
+<li>signature: <code>select_queue(queue, *, source)</code></li>
+</ul>
+<p><em>No docstring.</em></p>
+<h2 id="seamless_configselectselect_remote"><code>seamless_config.select.select_remote</code></h2>
+<ul>
+<li>kind: <code>function</code></li>
+<li>signature: <code>select_remote(remote, *, source)</code></li>
+</ul>
+<p><em>No docstring.</em></p>
+<h2 id="seamless_configselectselect_stage"><code>seamless_config.select.select_stage</code></h2>
+<ul>
+<li>kind: <code>function</code></li>
+<li>signature: <code>select_stage(stage)</code></li>
+</ul>
+<p><em>No docstring.</em></p>
+<h2 id="seamless_configselectselect_subproject"><code>seamless_config.select.select_subproject</code></h2>
+<ul>
+<li>kind: <code>function</code></li>
+<li>signature: <code>select_subproject(subproject)</code></li>
+</ul>
+<p><em>No docstring.</em></p>
+<h2 id="seamless_configselectselect_substage"><code>seamless_config.select.select_substage</code></h2>
+<ul>
+<li>kind: <code>function</code></li>
+<li>signature: <code>select_substage(substage)</code></li>
+</ul>
+<p><em>No docstring.</em></p>
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="seamless.checksum_class.html" class="btn btn-neutral float-left" title="seamless.checksum_class"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="seamless_config.tools.html" class="btn btn-neutral float-right" title="seamless_config.tools">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+    
+      <span><a href="seamless.checksum_class.html" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="seamless_config.tools.html" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script src="../../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "../..";</script>
+    <script src="../../js/theme_extra.js"></script>
+    <script src="../../js/theme.js"></script>
+      <script src="../../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>
