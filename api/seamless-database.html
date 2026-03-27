@@ -218,6 +218,7 @@ seamless-database seamless.db --port-range 5520 5530 --writable
 # Start a read-only server on a fixed port
 seamless-database seamless.db --port 5522
 </code></pre>
+<p>If <code>--port</code> and <code>--port-range</code> are both omitted, <code>seamless-database</code> picks a random free port in the dynamic/private range (<code>49152-65535</code>).</p>
 <h3 id="status-file-protocol">Status-file protocol</h3>
 <p><code>seamless-database</code> does not require a status file. If <code>--status-file</code> is omitted, it runs independently.</p>
 <p>If <code>--status-file</code> is provided, the file is used for two things:</p>

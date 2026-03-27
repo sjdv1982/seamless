@@ -83,8 +83,6 @@
     </li>
         </ul>
     </li>
-    <li class="toctree-l2"><a class="reference internal" href="#setting-up-persistent-caching">Setting up persistent caching</a>
-    </li>
     </ul>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="cluster.html">Setting up a local cluster</a>
@@ -260,12 +258,13 @@ def sample(n, seed):
 <h2 id="wrapping-bash-with-seamless-run">Wrapping bash with <code>seamless-run</code></h2>
 <p><code>seamless-run</code> is the command-line face of Seamless. It wraps a bash command as a transformation, with file arguments automatically detected as inputs, and stdout plus any declared output files captured as results.</p>
 <h3 id="basic-usage">Basic usage</h3>
-<pre><code>export SEAMLESS_LOCAL=1  # until we set up persistent caching
-</code></pre>
-<pre><code class="language-bash">seamless-run paste data/a.txt data/b.txt
+<pre><code class="language-bash">export SEAMLESS_CACHE=~/.seamless/cache     # global persistent caching
+
+seamless-run 'seq 1 10 | tac &amp;&amp; sleep 5'    # runs, caches result
+seamless-run 'seq 1 10 | tac &amp;&amp; sleep 5'    # cache hit — instant
 </code></pre>
 <p>Seamless infers which arguments are files (arguments with a file extension that exist on disk), checksums them, runs the command, and caches the result. The next time you run the same command with the same inputs, the cached result is returned instantly without re-executing.</p>
-<p><code>.CHECKSUM</code> sidecar files and remote staging are covered in <a href="caching.html#the-checksum-sidecar-convention">Caching, identity, and sharing</a>.</p>
+<p>Wrapping bash requires a persistent cache. For Python, it is optional: without it, the cache lasts as long as the Python session. <code>SEAMLESS_CACHE</code> is a quick way to set up a global persistent cache. For finer control, <a href="cluster.html">Setting up a local cluster</a>. For more, details, see <a href="caching.html">Caching, identity, and sharing</a>.</p>
 <h3 id="declaring-inputs-and-outputs">Declaring inputs and outputs</h3>
 <p>Beyond the automatic inference from command arguments, you can explicitly declare additional inputs and outputs:</p>
 <pre><code class="language-bash"># Additional input file not in the command arguments
@@ -316,36 +315,6 @@ seamless-run mycommand data.txt --input config.json
 # or
 seamless-run 'echo START; paste data/a.txt data/b.txt' -i data/a.txt -i data/b.txt
 </code></pre>
-<hr />
-<h2 id="setting-up-persistent-caching">Setting up persistent caching</h2>
-<p>Without a cluster, each <code>seamless-run</code> invocation is a fresh process with no memory of previous runs.</p>
-<pre><code class="language-bash">seamless-run sleep 2   # takes 2 seconds
-seamless-run sleep 2   # takes 2 seconds
-</code></pre>
-<p>To demonstrate persistent caching, this is the minimum setup needed:</p>
-<p><strong><code>~/.seamless/clusters.yaml</code></strong> — define a cluster named <code>local</code>:</p>
-<pre><code class="language-yaml">local:
-  type: local
-  frontends:
-    - hashserver:
-        bufferdir: /home/user/seamless-projects
-      database:
-        database_dir: /home/user/seamless-projects
-</code></pre>
-<p><strong><code>seamless.profile.yaml</code></strong> in your project directory:</p>
-<pre><code class="language-yaml">- cluster: local
-- project: myproject
-- execution: process
-</code></pre>
-<p>Then initialise, and remove the SEAMLESS_LOCAL flag:</p>
-<pre><code class="language-bash">unset SEAMLESS_LOCAL
-seamless-init
-</code></pre>
-<p>Now persistent caching is active. The same command from before:</p>
-<pre><code class="language-bash">seamless-run sleep 2   # runs, takes 2 seconds, result cached
-seamless-run sleep 2   # cache hit, returns instantly
-</code></pre>
-<p>The same applies to Python: calling <code>seamless.config.init()</code> at the start of your script activates the cluster, and results survive across sessions. See <a href="cluster.html">Setting up a local cluster</a> for a full explanation of what changes with a cluster.</p>
               
             </div>
           </div><footer>

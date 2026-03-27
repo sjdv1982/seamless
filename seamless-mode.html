@@ -5,15 +5,15 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
       <link rel="shortcut icon" href="img/favicon.ico" />
-    <title>Remote execution - Seamless</title>
+    <title>Seamless mode - Seamless</title>
     <link rel="stylesheet" href="css/theme.css" />
     <link rel="stylesheet" href="css/theme_extra.css" />
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
     
       <script>
         // Current page data
-        var mkdocs_page_name = "Remote execution";
-        var mkdocs_page_input_path = "remote.md";
+        var mkdocs_page_name = "Seamless mode";
+        var mkdocs_page_input_path = "seamless-mode.md";
         var mkdocs_page_url = null;
       </script>
     
@@ -51,24 +51,14 @@
                   </li>
               </ul>
               <p class="caption"><span class="caption-text">How-To Guides</span></p>
-              <ul class="current">
+              <ul>
                   <li class="toctree-l1"><a class="reference internal" href="caching.html">Caching, identity, and sharing</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="composition.html">Composition</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="parallelism.html">Local parallelism</a>
                   </li>
-                  <li class="toctree-l1 current"><a class="reference internal current" href="#">Remote execution</a>
-    <ul class="current">
-    <li class="toctree-l2"><a class="reference internal" href="#what-delegation-means">What delegation means</a>
-    </li>
-    <li class="toctree-l2"><a class="reference internal" href="#jobserver">jobserver</a>
-    </li>
-    <li class="toctree-l2"><a class="reference internal" href="#daskserver">daskserver</a>
-    </li>
-    <li class="toctree-l2"><a class="reference internal" href="#multi-stage-workflows-with-set_stage">Multi-stage workflows with set_stage()</a>
-    </li>
-    </ul>
+                  <li class="toctree-l1"><a class="reference internal" href="remote.html">Remote execution</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="hpc.html">HPC specifics</a>
                   </li>
@@ -138,8 +128,7 @@
         <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
   <ul class="wy-breadcrumbs">
     <li><a href="index.html" class="icon icon-home" aria-label="Docs"></a></li>
-          <li class="breadcrumb-item">How-To Guides</li>
-      <li class="breadcrumb-item active">Remote execution</li>
+      <li class="breadcrumb-item active">Seamless mode</li>
     <li class="wy-breadcrumbs-aside">
     </li>
   </ul>
@@ -148,98 +137,88 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
             <div class="section" itemprop="articleBody">
               
-                <h1 id="remote-execution">Remote execution</h1>
-<h2 id="what-delegation-means">What delegation means</h2>
-<p>Setting <code>execution: remote</code> tells Seamless to delegate transformation execution to a remote backend — either a <strong>jobserver</strong> or a <strong>daskserver</strong> — instead of running in the local Python process. The step code (your Python functions, bash commands) does not change. Only the backend configuration changes.</p>
-<p>From the user's perspective, <code>tf.run()</code> and <code>seamless-run</code> work the same way regardless of whether execution is local or remote.</p>
-<p>The <code>--local</code> flag on <code>seamless-run</code> (or <code>.local = True</code> on a transformer) forces in-process execution instead of delegating to a remote server:</p>
-<pre><code class="language-bash">seamless-run --local mycommand input.txt   # run in-process even if execution: remote
+                <h1 id="seamless-mode">Seamless mode</h1>
+<h2 id="automatically-wrap-the-bash-commands-you-type">Automatically wrap the bash commands you type</h2>
+<p><img alt="seamless-mode demo" src="seamless-mode.gif" /></p>
+<p>Seamless mode is an interactive shell feature that automatically wraps commands you type with <code>seamless-run</code>, giving you caching and reproducibility without changing how you work.</p>
+<p>When seamless mode is on, pressing Enter no longer executes the command directly. Instead:</p>
+<ol>
+<li>The command is transformed into a <code>seamless-run -c '...'</code> call — the entire command line, including any pipes, is quoted and passed as a shell string — and the modified command is shown in the shell.</li>
+<li>You press Enter a second time to actually run it.</li>
+</ol>
+<p>This two-step confirmation lets you see exactly what will be executed before committing. The <code>-c</code> form is what makes pipelines work: something like</p>
+<pre><code class="language-bash">seq 10 | tac | awk -v l='Countdown:' '{print l, $1} &amp;&amp; sleep 5'
 </code></pre>
-<pre><code class="language-python">@delayed
-def compute(x): ...
-
-compute.local = True    # always run in-process, skip jobserver/daskserver
+<p>becomes a single cached transformation, without you having to hand-craft the quoting.</p>
+<p>Commands that make no sense to wrap (like <code>cd</code>, <code>ls</code>, <code>rm</code>, editors, and package managers) are passed through unchanged and execute on the first Enter as normal.</p>
+<h2 id="setup">Setup</h2>
+<p><code>seamless-mode-bind.sh</code> is installed alongside <code>seamless-transformer</code>. Source it in your shell to make the seamless-mode commands and hotkey available:</p>
+<pre><code class="language-bash">source $(which seamless-mode-bind.sh)
 </code></pre>
-<hr />
-<h2 id="jobserver">jobserver</h2>
-<p>The <strong>jobserver</strong> is a lightweight HTTP service that accepts transformation jobs and dispatches them to a local worker pool. It is the simpler of the two remote backends: single-node, low-overhead, and straightforward to set up. It is best suited for development and testing of remote execution, or for simple single-machine deployments where you want worker-process isolation without Dask infrastructure.</p>
-<p>To add a jobserver to a cluster definition in <code>~/.seamless/clusters.yaml</code>:</p>
-<pre><code class="language-yaml">local:
-  ...
-  frontends:
-    - hostname: localhost
-      hashserver:
-        ...
-      database:
-        ...
-      jobserver:
-        network_interface: 127.0.0.1
-        port_start: 55300
-        port_end: 55399
+<p>For permanent setup (so it is available every time you open a shell), see the <a href="../../seamless-transformer/README.md#setting-up-seamless-mode">seamless-transformer README</a> for instructions specific to your environment manager (conda, venv, virtualenv, virtualenvwrapper).</p>
+<h2 id="usage">Usage</h2>
+<p>After sourcing <code>seamless-mode-bind.sh</code>, the following commands are available:</p>
+<table>
+<thead>
+<tr>
+<th>Command</th>
+<th>Effect</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>seamless-mode-bind</code></td>
+<td>Registers all commands and the hotkey (called automatically on source)</td>
+</tr>
+<tr>
+<td><code>seamless-mode-on</code></td>
+<td>Turn seamless mode on</td>
+</tr>
+<tr>
+<td><code>seamless-mode-off</code></td>
+<td>Turn seamless mode off</td>
+</tr>
+<tr>
+<td><code>seamless-mode-toggle</code></td>
+<td>Toggle seamless mode on/off</td>
+</tr>
+</tbody>
+</table>
+<p>The toggle is also bound to a hotkey: <strong>Ctrl-U, then U</strong>.</p>
+<pre><code class="language-bash">$ seamless-mode-on
+seamless mode ON
+seamless mode options:
+[seamless-mode] user@host:~$ seq 10 | tac | awk -v l='Countdown:' '{print l, $1}' &amp;&amp; sleep 5   # press Enter...
+[seamless-mode] user@host:~$ seamless-run -c 'seq 10 | tac | awk -v l='\''Countdown:'\'' '\''{print l, $1}'\'' &amp;&amp; sleep 5'   # ...shown, press Enter again to run
 </code></pre>
-<p>With a jobserver configured, set <code>execution: remote</code> (or rely on the default) in <code>seamless.yaml</code>:</p>
-<pre><code class="language-yaml">- project: my-project
-- execution: remote
+<p>Pass options to <code>seamless-run</code> via <code>seamless-mode-on</code>:</p>
+<pre><code class="language-bash">seamless-mode-on --stage mycluster
 </code></pre>
-<p><code>seamless.config.init()</code> will start the jobserver automatically if it is not already running.</p>
-<hr />
-<h2 id="daskserver">daskserver</h2>
-<p>The <strong>daskserver</strong> is the general-purpose remote backend. It uses Dask as its execution and scheduling substrate, making it suitable for multi-node HPC clusters, adaptive scaling, and high-throughput workloads. It also works locally — using <code>dask.distributed.LocalCluster</code> — which makes it the preferred backend for anything beyond single-machine parallelism with <code>spawn</code>.</p>
-<p>Where jobserver is "one machine with a worker pool", daskserver is "a managed Dask cluster that can scale dynamically". The Seamless worker plugin runs inside each Dask worker and maintains its own local worker process pool, so multiple levels of parallelism are available.</p>
-<p>To add a daskserver to a cluster definition:</p>
-<pre><code class="language-yaml">local:
-  ...
-  frontends:
-    - hostname: localhost
-      hashserver:
-        ...
-      database:
-        ...
-      daskserver:
-        network_interface: 0.0.0.0
-        port_start: 60300
-        port_end: 60399
+<p>These options are forwarded to every <code>seamless-run</code> invocation while the mode is active.</p>
+<h2 id="what-gets-wrapped">What gets wrapped</h2>
+<p><code>seamless-run</code> is invoked only when the command is a plain executable call with file or directory arguments. Commands that are skipped include:</p>
+<ul>
+<li>Shell builtins and navigation: <code>cd</code>, <code>exit</code>, <code>source</code>, ...</li>
+<li>File operations: <code>ls</code>, <code>rm</code>, <code>mv</code>, <code>cp</code>, <code>mkdir</code>, ...</li>
+<li>Package managers: <code>pip</code>, <code>conda</code>, <code>mamba</code>, <code>apt</code>, ...</li>
+<li>Editors and interactive tools: <code>vim</code>, <code>nano</code>, <code>less</code>, <code>man</code>, ...</li>
+<li>The <code>seamless-*</code> commands themselves</li>
+</ul>
+<p>Pipelines are handled: each stage is evaluated independently, and only stages that qualify are wrapped.</p>
+<h2 id="variable-scope">Variable scope</h2>
+<p><code>seamless-run</code> runs in a subprocess and only sees <strong>environment variables</strong> — not local shell variables. This means:</p>
+<pre><code class="language-bash">input=data.txt          # local variable — NOT visible to seamless-run
+export input=data.txt   # environment variable — visible
 </code></pre>
-<p>And in your project config:</p>
-<pre><code class="language-yaml">- cluster: mycluster
-- execution: remote
-- remote: daskserver
+<p>With seamless mode on, <code>set -a</code> is active, so new variable assignments are automatically exported:</p>
+<pre><code class="language-bash">seamless-mode-on
+input=data.txt          # now exported automatically
+mycommand $input        # seamless-run can see $input
 </code></pre>
-<p>When both a jobserver and a daskserver are present on the same cluster, you must explicitly select one with <code>remote: jobserver</code> or <code>remote: daskserver</code>.</p>
-<hr />
-<h2 id="multi-stage-workflows-with-set_stage">Multi-stage workflows with <code>set_stage()</code></h2>
-<p>Many workflows need to switch storage or execution context during a run — for example, running pre-processing locally on a laptop and GPU inference remotely on a cluster. Seamless supports this with named stages.</p>
-<p>In <code>seamless.yaml</code>:</p>
-<pre><code class="language-yaml">- project: my-project
-- execution: process
-
-- stage gpu:
-    - cluster: gpu-cluster
-    - execution: remote
-    - remote: daskserver
-</code></pre>
-<p>In Python:</p>
-<pre><code class="language-python">import seamless.config
-
-seamless.config.init()         # default stage: local, execution: process
-
-# ... pre-processing transformations run locally ...
-
-seamless.config.set_stage(&quot;gpu&quot;)   # switch to gpu-cluster daskserver
-
-# ... GPU transformations run remotely on the cluster ...
-
-seamless.config.set_stage(None)    # return to default stage
-</code></pre>
-<p><code>set_stage()</code> reconfigures the active backends (hashserver, database, jobserver/daskserver) without restarting services that are already running. Stage blocks in the YAML are activated only when the current stage name matches.</p>
-<p>From the CLI, <code>seamless-run --stage gpu mycommand input.txt</code> selects the <code>gpu</code> stage for a single invocation.</p>
+<p>Variables that were local before <code>seamless-mode-on</code> was called are not retroactively exported.</p>
               
             </div>
           </div><footer>
-    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
-        <a href="parallelism.html" class="btn btn-neutral float-left" title="Local parallelism"><span class="icon icon-circle-arrow-left"></span> Previous</a>
-        <a href="hpc.html" class="btn btn-neutral float-right" title="HPC specifics">Next <span class="icon icon-circle-arrow-right"></span></a>
-    </div>
 
   <hr/>
 
@@ -261,10 +240,6 @@ seamless.config.set_stage(None)    # return to default stage
   <span class="rst-current-version" data-toggle="rst-current-version">
     
     
-      <span><a href="parallelism.html" style="color: #fcfcfc">&laquo; Previous</a></span>
-    
-    
-      <span><a href="hpc.html" style="color: #fcfcfc">Next &raquo;</a></span>
     
   </span>
 </div>

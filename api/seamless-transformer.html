@@ -84,6 +84,10 @@
     <li class="toctree-l2"><a class="reference internal" href="#cli-scripts">CLI scripts</a>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#installation">Installation</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#setting-up-seamless-mode">Setting up seamless-mode</a>
+    </li>
+        </ul>
     </li>
     </ul>
                   </li>
@@ -210,10 +214,28 @@
 <td><code>seamless-queue-finish</code></td>
 <td>Signal the queue server to drain remaining jobs and shut down</td>
 </tr>
+<tr>
+<td><code>seamless-mode-bind.sh</code></td>
+<td>Shell script: source it to bind seamless-mode commands and hotkeys into the current shell session</td>
+</tr>
 </tbody>
 </table>
 <h2 id="installation">Installation</h2>
 <pre><code class="language-bash">pip install seamless-transformer
+</code></pre>
+<h3 id="setting-up-seamless-mode">Setting up seamless-mode</h3>
+<p>After installing, <code>seamless-mode-bind.sh</code> is available on your <code>PATH</code>. Source it in your shell session to activate the <code>seamless-mode-on</code>, <code>seamless-mode-off</code>, <code>seamless-mode-toggle</code> commands and the <code>Ctrl-U U</code> hotkey.</p>
+<p><strong>Manual (any environment) — add to <code>~/.bashrc</code> or <code>~/.zshrc</code>:</strong></p>
+<pre><code class="language-bash">source $(which seamless-mode-bind.sh)
+</code></pre>
+<p><strong>Conda — auto-activate with the environment:</strong></p>
+<pre><code class="language-bash">cp $(which seamless-mode-bind.sh) $CONDA_PREFIX/etc/conda/activate.d/
+</code></pre>
+<p><strong>venv / virtualenv — append to the environment's activate script:</strong></p>
+<pre><code class="language-bash">echo &quot;source $(which seamless-mode-bind.sh)&quot; &gt;&gt; $VIRTUAL_ENV/bin/activate
+</code></pre>
+<p><strong>virtualenvwrapper — add to the environment's postactivate hook:</strong></p>
+<pre><code class="language-bash">echo &quot;source $(which seamless-mode-bind.sh)&quot; &gt;&gt; $VIRTUAL_ENV/bin/postactivate
 </code></pre>
               
             </div>

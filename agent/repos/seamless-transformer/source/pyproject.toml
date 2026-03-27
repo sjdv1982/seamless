@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "seamless-transformer"
-version = "0.1.2"
+version = "0.1.5"
 description = "Computation engine for Seamless: execute checksum-addressed transformations in Python or bash"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -42,7 +42,7 @@ seamless-queue = "seamless_transformer.api.queue:main"
 seamless-queue-finish = "seamless_transformer.api.queue:finish"
 
 [tool.setuptools]
-script-files = ["bin/_seamlessify", "bin/activate-seamless-mode.sh"]
+script-files = ["bin/_seamlessify", "bin/seamless-mode-bind.sh"]
 
 [tool.setuptools.packages.find]
 where = ["."]

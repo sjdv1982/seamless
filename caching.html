@@ -162,20 +162,21 @@
 </ul>
 <p>Two transformations with the same transformation checksum are <em>identical computations</em>: the same code, the same inputs, the same semantics. The database records the mapping <code>transformation checksum → result checksum</code>. On the next call with the same code and inputs, Seamless computes the same transformation checksum, looks it up in the database, finds the cached result checksum, and returns the result from the hashserver — without re-executing any code.</p>
 <p>Changing anything in the above list (code, inputs, metadata) produces a different transformation checksum and triggers re-execution:</p>
-<pre><code class="language-bash">seamless-run paste data/a.txt data/b.txt     # executes, result cached
-seamless-run paste data/a.txt data/b.txt     # cache hit, instant
+<pre><code class="language-bash">seamless-run 'paste data/a.txt data/b.txt &amp;&amp; sleep 5'    # executes, result cached
+seamless-run 'paste data/a.txt data/b.txt &amp;&amp; sleep 5'    # cache hit, instant
 
 # edit data/a.txt
 #   =&gt;
-seamless-run paste data/a.txt data/b.txt     # different input checksum, re-executes
+seamless-run 'paste data/a.txt data/b.txt &amp;&amp; sleep 5'    # different input checksum, re-executes
 </code></pre>
 <h2 id="persistent-vs-in-memory-caching">Persistent vs in-memory caching</h2>
-<p>Without a cluster, Seamless caches results in memory for the duration of the Python session. This is useful for exploration and development: calling <code>direct</code>-wrapped functions twice with the same arguments skips the second execution. But the cache is lost when the process exits.</p>
-<p>With a cluster (hashserver + database), results are cached persistently: the transformation-to-result mapping is stored in <code>seamless.db</code> and the result bytes are stored in the hashserver's buffer directory. Subsequent Python sessions, separate <code>seamless-run</code> invocations, and other users with access to the same cluster all benefit from the same cache.</p>
-<p>The <code>persistent</code> YAML command controls this explicitly:</p>
-<pre><code class="language-yaml">- persistent: true    # force persistent storage (default when cluster is set)
-- persistent: false   # force in-memory only, even if a cluster is configured
+<p>By default, Seamless caches results in memory for the duration of the Python session. This is useful for exploration and development: calling <code>direct</code>-wrapped functions twice with the same arguments skips the second execution. But the cache is lost when the process exits.</p>
+<p>With persistent caching, the transformation-to-result mapping is stored in <code>seamless.db</code> and the result bytes are stored in a buffer directory. Subsequent Python sessions, separate <code>seamless-run</code> invocations, and other users with access to the same local machine can all use the same persistent caching.</p>
+<p>The simplest way to enable persistent caching is <code>SEAMLESS_CACHE</code>:</p>
+<pre><code class="language-bash">export SEAMLESS_CACHE=~/.seamless/cache
 </code></pre>
+<p>The cache directory stores both the buffers and the <code>seamless.db</code> database.</p>
+<p>For more control, see <a href="cluster.html">Setting up a local cluster</a>. A cluster YAML file configures the caching services (<code>hashserver</code> for buffers and <code>database</code> for <code>seamless.db</code>) as well as backends for remote execution (e.g. Dask). Instead of a single, global cache, it allows per-project and per-stage caching and execution.</p>
 <h2 id="checksum-and-buffer-as-user-facing-objects"><code>Checksum</code> and <code>Buffer</code> as user-facing objects</h2>
 <p>The two core types in <code>seamless-core</code> are:</p>
 <ul>
@@ -196,7 +197,7 @@ cs = buf.get_checksum()            # compute SHA-256 identity
 value = buf.get_value(&quot;text&quot;)      # deserialize to Python string
 buf.write()                        # push bytes to the configured hashserver
 </code></pre>
-<p>In normal usage, you don't construct <code>Checksum</code> and <code>Buffer</code> directly — <code>direct</code> and <code>delayed</code> handle this internally. They become relevant when you need to inspect transformation results, work with content-addressed data directly, or implement sharing workflows.</p>
+<p>In normal usage, you don't construct <code>Checksum</code> and <code>Buffer</code> directly — <code>direct</code> and <code>delayed</code> handle this internally. They become relevant when you need to inspect transformation results, work with remote data, or implement sharing workflows.</p>
 <h2 id="the-checksum-sidecar-convention">The <code>.CHECKSUM</code> sidecar convention</h2>
 <p>On the filesystem, Seamless uses <code>.CHECKSUM</code> sidecar files: a file <code>data/input.txt</code> is accompanied by <code>data/input.txt.CHECKSUM</code>, which contains the 64-character hex SHA-256 of <code>input.txt</code>.</p>
 <p>When <code>seamless-run</code> encounters a file argument <code>data/input.txt</code>, it first looks for <code>data/input.txt.CHECKSUM</code>. If the sidecar exists, Seamless reads the checksum from it — <strong>and the original file does not need to be present locally</strong>. This is the basis of remote workflows: upload inputs once, keep only the checksums, and run without the original files.</p>

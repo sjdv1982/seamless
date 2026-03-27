@@ -46,6 +46,20 @@
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#installation">Installation</a>
     </li>
+    <li class="toctree-l2"><a class="reference internal" href="#quick-examples">Quick Examples</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#python-direct">Python: direct</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#command-line-seamless-run">Command line: seamless-run</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#seamless-mode">Seamless mode</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#automatically-wrap-the-bash-commands-you-type">Automatically wrap the bash commands you type</a>
+    </li>
+        </ul>
+    </li>
     <li class="toctree-l2"><a class="reference internal" href="#in-this-documentation">In this documentation</a>
     </li>
     </ul>
@@ -186,11 +200,33 @@ today, or watch this space for updates.</p>
 </tbody>
 </table>
 <hr />
+<h2 id="quick-examples">Quick Examples</h2>
+<h3 id="python-direct">Python: <code>direct</code></h3>
+<pre><code class="language-python">from seamless.transformer import direct
+
+@direct
+def add(a, b):
+    return a + b
+
+add(2, 3)   # runs the function, returns 5
+add(2, 3)   # cache hit — returns 5 instantly
+</code></pre>
+<h3 id="command-line-seamless-run">Command line: <code>seamless-run</code></h3>
+<pre><code class="language-bash">export SEAMLESS_CACHE=~/.seamless/cache     # global persistent caching
+
+seamless-run 'seq 1 10 | tac &amp;&amp; sleep 5'    # runs, caches result
+seamless-run 'seq 1 10 | tac &amp;&amp; sleep 5'    # cache hit — instant
+</code></pre>
+<h2 id="seamless-mode">Seamless mode</h2>
+<h3 id="automatically-wrap-the-bash-commands-you-type">Automatically wrap the bash commands you type</h3>
+<p><img alt="seamless-mode demo" src="seamless-mode.gif" /></p>
+<hr />
 <h2 id="in-this-documentation">In this documentation</h2>
 <p><strong>Getting started</strong></p>
 <ul>
 <li><a href="getting-started.html">Wrapping Python and bash</a> — <code>direct</code>/<code>delayed</code> hello-world + <code>seamless-run</code> basics + pitfalls</li>
 <li><a href="cluster.html">Setting up a local cluster</a> — persistent caching, service configuration, <code>seamless-init</code></li>
+<li><a href="seamless-mode.html">Seamless mode</a> — interactive shell mode that wraps commands with <code>seamless-run</code> automatically</li>
 </ul>
 <p><strong>How-to guides</strong></p>
 <ul>
@@ -262,5 +298,5 @@ today, or watch this space for updates.</p>
 
 <!--
 MkDocs version : 1.6.1
-Build Date UTC : 2026-03-25 02:37:01.691545+00:00
+Build Date UTC : 2026-03-27 21:36:42.951291+00:00
 -->

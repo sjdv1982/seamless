@@ -1,5 +1,5 @@
 {
-  "generated_at": 1774406221,
+  "generated_at": 1774647402,
   "symbols": {
     "ArgsWrapper": {
       "anchor": "argswrapper",
@@ -387,6 +387,10 @@
     },
     "get_selected_cluster": {
       "anchor": "get-selected-cluster",
+      "page": "api/python/seamless_config.select.md"
+    },
+    "get_selected_project": {
+      "anchor": "get-selected-project",
       "page": "api/python/seamless_config.select.md"
     },
     "get_stage": {
