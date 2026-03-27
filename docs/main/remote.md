@@ -59,6 +59,8 @@ The **daskserver** is the general-purpose remote backend. It uses Dask as its ex
 
 Where jobserver is "one machine with a worker pool", daskserver is "a managed Dask cluster that can scale dynamically". The Seamless worker plugin runs inside each Dask worker and maintains its own local worker process pool, so multiple levels of parallelism are available.
 
+Note: although Dask is a Python framework, bash `seamless-run` commands are equally handled by the daskserver.
+
 To add a daskserver to a cluster definition:
 
 ```yaml

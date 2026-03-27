@@ -2,7 +2,7 @@
 
 ## What constitutes a cache key
 
-Every Seamless transformation has a **transformation checksum** — a SHA-256 hash of everything that defines the computation:
+Under the hood, each call to a function decorated with `direct` or `delayed`, and each bash command wrapped in `seamless-run`, becomes a **Seamless transformation**. Every Seamless transformation has a **transformation checksum** — a SHA-256 hash of everything that defines the computation:
 
 - The code (function body for Python, command string for bash), identified by its checksum.
 - All declared input pins: their names, values (identified by checksum), and cell types.
@@ -27,13 +27,26 @@ By default, Seamless caches results in memory for the duration of the Python ses
 
 With persistent caching, the transformation-to-result mapping is stored in `seamless.db` and the result bytes are stored in a buffer directory. Subsequent Python sessions, separate `seamless-run` invocations, and other users with access to the same local machine can all use the same persistent caching.
 
-The simplest way to enable persistent caching is `SEAMLESS_CACHE`:
+The simplest way to set up persistent caching is `SEAMLESS_CACHE`:
 
 ```bash
 export SEAMLESS_CACHE=~/.seamless/cache
 ```
 
-The cache directory stores both the buffers and the `seamless.db` database.
+For `seamless-run`, this is sufficient to enable persistent caching (which is mandatory). You can run `seamless-init` to pre-launch the caching services, but this is optional.
+
+***In Python, some more work is required***. After persistent caching has been set up (e.g. with SEAMLESS_CACHE), you must enable it:
+
+```python
+import seamless.config
+seamless.config.init()
+```
+
+With this, transformation (function call) results will persist between Python sessions.
+
+## Fine-grained control
+
+With SEAMLESS_CACHE, the cache directory stores both the buffers and the `seamless.db` database.
 
 For more control, see [Setting up a local cluster](cluster.md). A cluster YAML file configures the caching services (`hashserver` for buffers and `database` for `seamless.db`) as well as backends for remote execution (e.g. Dask). Instead of a single, global cache, it allows per-project and per-stage caching and execution.
 

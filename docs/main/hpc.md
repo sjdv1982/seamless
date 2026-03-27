@@ -2,6 +2,10 @@
 
 This guide covers Seamless deployment on HPC clusters with SLURM or OAR schedulers. It assumes you have read [Remote execution](remote.md) and have a working daskserver cluster definition.
 
+## The big picture
+
+Seamless does not make a great difference between a HPC cluster config and a local cluster config. In both cases, Seamless cluster services (hashserver, database, Dask scheduler) are launched, and are available to the local machine over the network (potentially via SSH tunnel). Dask will accept both Python transformations and `seamless-run` commands, no matter where it runs. If it runs on an HPC frontend, then `seamless-run` commands will run directly on a compute node, with input files uploaded automatically.
+
 ## Queue definitions
 
 HPC queue definitions live inside the cluster entry in `~/.seamless/clusters.yaml`, under the `queues` key. Each queue entry maps to a `dask_jobqueue` cluster constructor call (SLURMCluster, OARCluster, etc.), plus Seamless-specific lifecycle parameters.
@@ -53,10 +57,11 @@ hpc:
 
 The `TEMPLATE` key lets a queue inherit all parameters from another queue, then override specific fields. This avoids repeating common settings.
 
-### Key queue parameters
+### Key parameters
 
 | Parameter | Meaning |
 |---|---|
+| `hostname` | SSH hostname. Must be reachable without password |
 | `walltime` | Maximum wall-clock time for each Dask worker job |
 | `cores` | CPU cores per worker job (controls Seamless worker pool size per Dask worker) |
 | `memory` | Memory per worker job |

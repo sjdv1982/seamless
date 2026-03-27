@@ -38,13 +38,13 @@ value = tf.run()        # execute (or use cache) and return the materialized val
 
 The handle also supports `.task()` for async/await integration.
 
-When the same `delayed` function is called with the same arguments, the resulting transformation has the same checksum — the same identity. This is the foundation of Seamless's caching: identity is determined by content, not by when or where the computation runs.
+When the same `direct`/`delayed` function is called with the same arguments, the resulting transformation has the same checksum — the same identity. This is the foundation of Seamless's caching: identity is determined by content, not by when or where the computation runs.
 
 ### In-process caching
 
-The examples above work without any infrastructure. With no configuration, Seamless runs transformations in the current Python process and caches results in memory for the duration of the session. Calling the same `direct` function twice with the same arguments will hit the cache on the second call — useful for exploration and verifying that your functions behave as expected.
+The examples above work without any infrastructure. With no configuration, Seamless runs transformations in the current Python process and caches results in memory for the duration of the session. Calling the same `direct`/`delayed` function twice with the same arguments will hit the cache on the second call — useful for exploration and verifying that your functions behave as expected.
 
-This in-process cache is lost when the process exits. For persistent caching across sessions, see [Setting up persistent caching](#setting-up-persistent-caching) below.
+This in-process cache is lost when the process exits. For persistent caching across sessions, see [Caching, identity, and sharing](caching.md).
 
 ---
 
@@ -130,7 +130,7 @@ seamless-run 'seq 1 10 | tac && sleep 5'    # cache hit — instant
 
 Seamless infers which arguments are files (arguments with a file extension that exist on disk), checksums them, runs the command, and caches the result. The next time you run the same command with the same inputs, the cached result is returned instantly without re-executing.
 
-Wrapping bash requires a persistent cache. For Python, it is optional: without it, the cache lasts as long as the Python session. `SEAMLESS_CACHE` is a quick way to set up a global persistent cache. For finer control, [Setting up a local cluster](cluster.md). For more, details, see [Caching, identity, and sharing](caching.md).
+Wrapping bash requires a persistent cache. For Python, it is optional: without it, the cache lasts as long as the Python session. `SEAMLESS_CACHE` is a quick way to set up a global persistent cache. For finer control, [Setting up a local cluster](cluster.md). For more details, see [Caching, identity, and sharing](caching.md).
 
 ### Declaring inputs and outputs
 
@@ -172,7 +172,7 @@ seamless-run --project myproject --stage prod mycommand input.txt
 
 #### Missing file dependencies
 
-If your command reads files that are not declared as arguments (and therefore not automatically detected), Seamless won't track those files as inputs. A change to such a file won't trigger re-execution. Use `--input` to declare additional inputs explicitly:
+If your command reads files that are not declared as arguments (and therefore not automatically detected), Seamless won't track those files as inputs. A change to such a file won't trigger re-execution, and usually the entire command will fail. Use `--input` to declare additional inputs explicitly:
 
 ```bash
 # config.json is read by mycommand but not in the argument list
