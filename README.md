@@ -53,6 +53,12 @@ seamless-run 'seq 1 10 | tac && sleep 5'    # runs, caches result
 seamless-run 'seq 1 10 | tac && sleep 5'    # cache hit — instant
 ```
 
+## Seamless mode
+
+### Automatically wrap the bash commands you type
+
+![seamless-mode demo](seamless-mode.gif)
+
 ## Documentation
 
 Full documentation — including getting-started guides, cluster setup, remote execution, and reference API — is at:

@@ -37,6 +37,7 @@ This installs all standard Seamless components. For a minimal install, the core 
 
 - [Wrapping Python and bash](getting-started.md) — `direct`/`delayed` hello-world + `seamless-run` basics + pitfalls
 - [Setting up a local cluster](cluster.md) — persistent caching, service configuration, `seamless-init`
+- [Seamless mode](seamless-mode.md) — interactive shell mode that wraps commands with `seamless-run` automatically
 
 **How-to guides**
 

@@ -26,6 +26,5 @@ dependencies:
       - -e seamless-transformer
       - -e seamless-jobserver
       - -e seamless-dask
-# TODO: set up seamless-mode:
-#  - copy activate-seamless-mode.sh to $CONDA_PREFIX/etc/conda/activate.d
-#  - copy _seamlessify to $CONDA_PREFIX/bin
+# TODO: set up seamless-mode-bind (conda):
+#  - cp $(which seamless-mode-bind.sh) $CONDA_PREFIX/etc/conda/activate.d/
