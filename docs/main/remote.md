@@ -6,10 +6,10 @@ Setting `execution: remote` tells Seamless to delegate transformation execution 
 
 From the user's perspective, `tf.run()` and `seamless-run` work the same way regardless of whether execution is local or remote.
 
-The `--local` flag on `seamless-run` (or `.local = True` on a transformer) overrides the configured remote backend and forces local execution for that specific transformation:
+The `--local` flag on `seamless-run` (or `.local = True` on a transformer) forces in-process execution instead of delegating to a remote server:
 
 ```bash
-seamless-run --local mycommand input.txt   # run locally even if execution: remote
+seamless-run --local mycommand input.txt   # run in-process even if execution: remote
 ```
 
 ```python

@@ -121,17 +121,16 @@ def sample(n, seed):
 
 ### Basic usage
 
-```
-export SEAMLESS_LOCAL=1  # until we set up persistent caching
-```
-
 ```bash
-seamless-run paste data/a.txt data/b.txt
+export SEAMLESS_CACHE=~/.seamless/cache     # global persistent caching
+
+seamless-run 'seq 1 10 | tac && sleep 5'    # runs, caches result
+seamless-run 'seq 1 10 | tac && sleep 5'    # cache hit — instant
 ```
 
 Seamless infers which arguments are files (arguments with a file extension that exist on disk), checksums them, runs the command, and caches the result. The next time you run the same command with the same inputs, the cached result is returned instantly without re-executing.
 
-`.CHECKSUM` sidecar files and remote staging are covered in [Caching, identity, and sharing](caching.md#the-checksum-sidecar-convention).
+Wrapping bash requires a persistent cache. For Python, it is optional: without it, the cache lasts as long as the Python session. `SEAMLESS_CACHE` is a quick way to set up a global persistent cache. For finer control, [Setting up a local cluster](cluster.md). For more, details, see [Caching, identity, and sharing](caching.md).
 
 ### Declaring inputs and outputs
 
@@ -212,52 +211,3 @@ seamless-run --primary 2 'echo START; paste data/a.txt data/b.txt'
 # or
 seamless-run 'echo START; paste data/a.txt data/b.txt' -i data/a.txt -i data/b.txt
 ```
-
----
-
-## Setting up persistent caching
-
-Without a cluster, each `seamless-run` invocation is a fresh process with no memory of previous runs.
-
-```bash
-seamless-run sleep 2   # takes 2 seconds
-seamless-run sleep 2   # takes 2 seconds
-```
-
-To demonstrate persistent caching, this is the minimum setup needed:
-
-**`~/.seamless/clusters.yaml`** — define a cluster named `local`:
-
-```yaml
-local:
-  type: local
-  frontends:
-    - hashserver:
-        bufferdir: /home/user/seamless-projects
-      database:
-        database_dir: /home/user/seamless-projects
-```
-
-**`seamless.profile.yaml`** in your project directory:
-
-```yaml
-- cluster: local
-- project: myproject
-- execution: process
-```
-
-Then initialise, and remove the SEAMLESS_LOCAL flag:
-
-```bash
-unset SEAMLESS_LOCAL
-seamless-init
-```
-
-Now persistent caching is active. The same command from before:
-
-```bash
-seamless-run sleep 2   # runs, takes 2 seconds, result cached
-seamless-run sleep 2   # cache hit, returns instantly
-```
-
-The same applies to Python: calling `seamless.config.init()` at the start of your script activates the cluster, and results survive across sessions. See [Setting up a local cluster](cluster.md) for a full explanation of what changes with a cluster.

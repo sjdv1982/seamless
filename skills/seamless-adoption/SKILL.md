@@ -25,7 +25,9 @@ from seamless.transformer import direct
 
 @direct
 def add(a, b):
-    return a + b
+   import time
+   time.sleep(5)
+   return a + b
 
 add(2, 3)   # runs the function, returns 5
 add(2, 3)   # cache hit — returns 5 instantly
@@ -34,9 +36,10 @@ add(2, 3)   # cache hit — returns 5 instantly
 ### Command line: `seamless-run` (wrap any command as a cached transformation)
 
 ```bash
-seamless-run paste data/a.txt data/b.txt          # runs, caches result
-seamless-run paste data/a.txt data/b.txt          # cache hit — instant
-seamless-run paste data/a.txt data/c.txt          # new inputs — runs again
+export SEAMLESS_CACHE=~/.seamless/cache     # global persistent caching
+
+seamless-run 'seq 1 10 | tac && sleep 5'    # runs, caches result
+seamless-run 'seq 1 10 | tac && sleep 5'    # cache hit — instant
 ```
 
 ## Non-negotiable: Ask Who Will Build and Maintain the Workflow

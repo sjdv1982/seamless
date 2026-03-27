@@ -13,26 +13,29 @@ Two transformations with the same transformation checksum are *identical computa
 Changing anything in the above list (code, inputs, metadata) produces a different transformation checksum and triggers re-execution:
 
 ```bash
-seamless-run paste data/a.txt data/b.txt     # executes, result cached
-seamless-run paste data/a.txt data/b.txt     # cache hit, instant
+seamless-run 'paste data/a.txt data/b.txt && sleep 5'    # executes, result cached
+seamless-run 'paste data/a.txt data/b.txt && sleep 5'    # cache hit, instant
 
 # edit data/a.txt
 #   =>
-seamless-run paste data/a.txt data/b.txt     # different input checksum, re-executes
+seamless-run 'paste data/a.txt data/b.txt && sleep 5'    # different input checksum, re-executes
 ```
 
 ## Persistent vs in-memory caching
 
-Without a cluster, Seamless caches results in memory for the duration of the Python session. This is useful for exploration and development: calling `direct`-wrapped functions twice with the same arguments skips the second execution. But the cache is lost when the process exits.
+By default, Seamless caches results in memory for the duration of the Python session. This is useful for exploration and development: calling `direct`-wrapped functions twice with the same arguments skips the second execution. But the cache is lost when the process exits.
 
-With a cluster (hashserver + database), results are cached persistently: the transformation-to-result mapping is stored in `seamless.db` and the result bytes are stored in the hashserver's buffer directory. Subsequent Python sessions, separate `seamless-run` invocations, and other users with access to the same cluster all benefit from the same cache.
+With persistent caching, the transformation-to-result mapping is stored in `seamless.db` and the result bytes are stored in a buffer directory. Subsequent Python sessions, separate `seamless-run` invocations, and other users with access to the same local machine can all use the same persistent caching.
 
-The `persistent` YAML command controls this explicitly:
+The simplest way to enable persistent caching is `SEAMLESS_CACHE`:
 
-```yaml
-- persistent: true    # force persistent storage (default when cluster is set)
-- persistent: false   # force in-memory only, even if a cluster is configured
+```bash
+export SEAMLESS_CACHE=~/.seamless/cache
 ```
+
+The cache directory stores both the buffers and the `seamless.db` database.
+
+For more control, see [Setting up a local cluster](cluster.md). A cluster YAML file configures the caching services (`hashserver` for buffers and `database` for `seamless.db`) as well as backends for remote execution (e.g. Dask). Instead of a single, global cache, it allows per-project and per-stage caching and execution.
 
 ## `Checksum` and `Buffer` as user-facing objects
 
@@ -60,7 +63,7 @@ value = buf.get_value("text")      # deserialize to Python string
 buf.write()                        # push bytes to the configured hashserver
 ```
 
-In normal usage, you don't construct `Checksum` and `Buffer` directly — `direct` and `delayed` handle this internally. They become relevant when you need to inspect transformation results, work with content-addressed data directly, or implement sharing workflows.
+In normal usage, you don't construct `Checksum` and `Buffer` directly — `direct` and `delayed` handle this internally. They become relevant when you need to inspect transformation results, work with remote data, or implement sharing workflows.
 
 ## The `.CHECKSUM` sidecar convention
 

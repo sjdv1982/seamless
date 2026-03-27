@@ -46,6 +46,8 @@ seamless-database seamless.db --port-range 5520 5530 --writable
 seamless-database seamless.db --port 5522
 ```
 
+If `--port` and `--port-range` are both omitted, `seamless-database` picks a random free port in the dynamic/private range (`49152-65535`).
+
 ### Status-file protocol
 
 `seamless-database` does not require a status file. If `--status-file` is omitted, it runs independently.

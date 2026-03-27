@@ -47,9 +47,10 @@ add(2, 3)   # cache hit — returns 5 instantly
 ### Command line: `seamless-run`
 
 ```bash
-seamless-run paste data/a.txt data/b.txt          # runs, caches result
-seamless-run paste data/a.txt data/b.txt          # cache hit — instant
-seamless-run paste data/a.txt data/c.txt          # new inputs — runs again
+export SEAMLESS_CACHE=~/.seamless/cache     # global persistent caching
+
+seamless-run 'seq 1 10 | tac && sleep 5'    # runs, caches result
+seamless-run 'seq 1 10 | tac && sleep 5'    # cache hit — instant
 ```
 
 ## Documentation
