@@ -31,6 +31,38 @@ This installs all standard Seamless components. For a minimal install, the core 
 
 ---
 
+## Quick Examples
+
+### Python: `direct`
+
+```python
+from seamless.transformer import direct
+
+@direct
+def add(a, b):
+    return a + b
+
+add(2, 3)   # runs the function, returns 5
+add(2, 3)   # cache hit — returns 5 instantly
+```
+
+### Command line: `seamless-run`
+
+```bash
+export SEAMLESS_CACHE=~/.seamless/cache     # global persistent caching
+
+seamless-run 'seq 1 10 | tac && sleep 5'    # runs, caches result
+seamless-run 'seq 1 10 | tac && sleep 5'    # cache hit — instant
+```
+
+## Seamless mode
+
+### Automatically wrap the bash commands you type
+
+![seamless-mode demo](./seamless-mode.gif)
+
+---
+
 ## In this documentation
 
 **Getting started**
