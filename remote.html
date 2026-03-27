@@ -186,6 +186,7 @@ compute.local = True    # always run in-process, skip jobserver/daskserver
 <h2 id="daskserver">daskserver</h2>
 <p>The <strong>daskserver</strong> is the general-purpose remote backend. It uses Dask as its execution and scheduling substrate, making it suitable for multi-node HPC clusters, adaptive scaling, and high-throughput workloads. It also works locally — using <code>dask.distributed.LocalCluster</code> — which makes it the preferred backend for anything beyond single-machine parallelism with <code>spawn</code>.</p>
 <p>Where jobserver is "one machine with a worker pool", daskserver is "a managed Dask cluster that can scale dynamically". The Seamless worker plugin runs inside each Dask worker and maintains its own local worker process pool, so multiple levels of parallelism are available.</p>
+<p>Note: although Dask is a Python framework, bash <code>seamless-run</code> commands are equally handled by the daskserver.</p>
 <p>To add a daskserver to a cluster definition:</p>
 <pre><code class="language-yaml">local:
   ...
