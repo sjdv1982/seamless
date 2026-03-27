@@ -57,7 +57,7 @@ seamless-run 'seq 1 10 | tac && sleep 5'    # cache hit — instant
 
 ### Automatically wrap the bash commands you type
 
-![seamless-mode demo](seamless-mode.gif)
+![seamless-mode demo](docs/main/seamless-mode.gif)
 
 ## Documentation
 
