@@ -40,9 +40,38 @@ Installing `seamless-transformer` provides:
 | `seamless-run-transformation` | Universal transformation executor: run any Seamless transformation (Python, bash, or other) by checksum and print the result checksum |
 | `seamless-queue` | Run a queue server that executes `seamless-run --qsubmit` jobs concurrently — the CLI face's parallelization mechanism beyond `&` |
 | `seamless-queue-finish` | Signal the queue server to drain remaining jobs and shut down |
+| `seamless-mode-bind.sh` | Shell script: source it to bind seamless-mode commands and hotkeys into the current shell session |
 
 ## Installation
 
 ```bash
 pip install seamless-transformer
+```
+
+### Setting up seamless-mode
+
+After installing, `seamless-mode-bind.sh` is available on your `PATH`. Source it in your shell session to activate the `seamless-mode-on`, `seamless-mode-off`, `seamless-mode-toggle` commands and the `Ctrl-U U` hotkey.
+
+**Manual (any environment) — add to `~/.bashrc` or `~/.zshrc`:**
+
+```bash
+source $(which seamless-mode-bind.sh)
+```
+
+**Conda — auto-activate with the environment:**
+
+```bash
+cp $(which seamless-mode-bind.sh) $CONDA_PREFIX/etc/conda/activate.d/
+```
+
+**venv / virtualenv — append to the environment's activate script:**
+
+```bash
+echo "source $(which seamless-mode-bind.sh)" >> $VIRTUAL_ENV/bin/activate
+```
+
+**virtualenvwrapper — add to the environment's postactivate hook:**
+
+```bash
+echo "source $(which seamless-mode-bind.sh)" >> $VIRTUAL_ENV/bin/postactivate
 ```

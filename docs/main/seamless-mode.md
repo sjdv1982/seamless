@@ -29,7 +29,7 @@ Commands that make no sense to wrap (like `cd`, `ls`, `rm`, editors, and package
 source $(which seamless-mode-bind.sh)
 ```
 
-For permanent setup (so it is available every time you open a shell), see the [seamless-transformer README](../../seamless-transformer/README.md#setting-up-seamless-mode) for instructions specific to your environment manager (conda, venv, virtualenv, virtualenvwrapper).
+For permanent setup (so it is available every time you open a shell), see the [seamless-transformer README](api/seamless-transformer.md#setting-up-seamless-mode) for instructions specific to your environment manager (conda, venv, virtualenv, virtualenvwrapper).
 
 ## Usage
 
