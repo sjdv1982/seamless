@@ -58,6 +58,8 @@
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#persistent-vs-in-memory-caching">Persistent vs in-memory caching</a>
     </li>
+    <li class="toctree-l2"><a class="reference internal" href="#fine-grained-control">Fine-grained control</a>
+    </li>
     <li class="toctree-l2"><a class="reference internal" href="#checksum-and-buffer-as-user-facing-objects">Checksum and Buffer as user-facing objects</a>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#the-checksum-sidecar-convention">The .CHECKSUM sidecar convention</a>
@@ -154,7 +156,7 @@
               
                 <h1 id="caching-identity-and-sharing">Caching, identity, and sharing</h1>
 <h2 id="what-constitutes-a-cache-key">What constitutes a cache key</h2>
-<p>Every Seamless transformation has a <strong>transformation checksum</strong> — a SHA-256 hash of everything that defines the computation:</p>
+<p>Under the hood, each call to a function decorated with <code>direct</code> or <code>delayed</code>, and each bash command wrapped in <code>seamless-run</code>, becomes a <strong>Seamless transformation</strong>. Every Seamless transformation has a <strong>transformation checksum</strong> — a SHA-256 hash of everything that defines the computation:</p>
 <ul>
 <li>The code (function body for Python, command string for bash), identified by its checksum.</li>
 <li>All declared input pins: their names, values (identified by checksum), and cell types.</li>
@@ -172,10 +174,17 @@ seamless-run 'paste data/a.txt data/b.txt &amp;&amp; sleep 5'    # different inp
 <h2 id="persistent-vs-in-memory-caching">Persistent vs in-memory caching</h2>
 <p>By default, Seamless caches results in memory for the duration of the Python session. This is useful for exploration and development: calling <code>direct</code>-wrapped functions twice with the same arguments skips the second execution. But the cache is lost when the process exits.</p>
 <p>With persistent caching, the transformation-to-result mapping is stored in <code>seamless.db</code> and the result bytes are stored in a buffer directory. Subsequent Python sessions, separate <code>seamless-run</code> invocations, and other users with access to the same local machine can all use the same persistent caching.</p>
-<p>The simplest way to enable persistent caching is <code>SEAMLESS_CACHE</code>:</p>
+<p>The simplest way to set up persistent caching is <code>SEAMLESS_CACHE</code>:</p>
 <pre><code class="language-bash">export SEAMLESS_CACHE=~/.seamless/cache
 </code></pre>
-<p>The cache directory stores both the buffers and the <code>seamless.db</code> database.</p>
+<p>For <code>seamless-run</code>, this is sufficient to enable persistent caching (which is mandatory). You can run <code>seamless-init</code> to pre-launch the caching services, but this is optional.</p>
+<p><strong><em>In Python, some more work is required</em></strong>. After persistent caching has been set up (e.g. with SEAMLESS_CACHE), you must enable it:</p>
+<pre><code class="language-python">import seamless.config
+seamless.config.init()
+</code></pre>
+<p>With this, transformation (function call) results will persist between Python sessions.</p>
+<h2 id="fine-grained-control">Fine-grained control</h2>
+<p>With SEAMLESS_CACHE, the cache directory stores both the buffers and the <code>seamless.db</code> database.</p>
 <p>For more control, see <a href="cluster.html">Setting up a local cluster</a>. A cluster YAML file configures the caching services (<code>hashserver</code> for buffers and <code>database</code> for <code>seamless.db</code>) as well as backends for remote execution (e.g. Dask). Instead of a single, global cache, it allows per-project and per-stage caching and execution.</p>
 <h2 id="checksum-and-buffer-as-user-facing-objects"><code>Checksum</code> and <code>Buffer</code> as user-facing objects</h2>
 <p>The two core types in <code>seamless-core</code> are:</p>

@@ -205,10 +205,10 @@ checksum = tf.compute() # execute and return the result's checksum (its identity
 value = tf.run()        # execute (or use cache) and return the materialized value
 </code></pre>
 <p>The handle also supports <code>.task()</code> for async/await integration.</p>
-<p>When the same <code>delayed</code> function is called with the same arguments, the resulting transformation has the same checksum — the same identity. This is the foundation of Seamless's caching: identity is determined by content, not by when or where the computation runs.</p>
+<p>When the same <code>direct</code>/<code>delayed</code> function is called with the same arguments, the resulting transformation has the same checksum — the same identity. This is the foundation of Seamless's caching: identity is determined by content, not by when or where the computation runs.</p>
 <h3 id="in-process-caching">In-process caching</h3>
-<p>The examples above work without any infrastructure. With no configuration, Seamless runs transformations in the current Python process and caches results in memory for the duration of the session. Calling the same <code>direct</code> function twice with the same arguments will hit the cache on the second call — useful for exploration and verifying that your functions behave as expected.</p>
-<p>This in-process cache is lost when the process exits. For persistent caching across sessions, see <a href="#setting-up-persistent-caching">Setting up persistent caching</a> below.</p>
+<p>The examples above work without any infrastructure. With no configuration, Seamless runs transformations in the current Python process and caches results in memory for the duration of the session. Calling the same <code>direct</code>/<code>delayed</code> function twice with the same arguments will hit the cache on the second call — useful for exploration and verifying that your functions behave as expected.</p>
+<p>This in-process cache is lost when the process exits. For persistent caching across sessions, see <a href="caching.html">Caching, identity, and sharing</a>.</p>
 <hr />
 <h3 id="python-pitfalls">Python pitfalls</h3>
 <p>Seamless executes transformation code in a sandboxed namespace. Only the explicitly declared inputs and code are available inside the transformation — outer-scope names are not. This is by design: it is how Seamless detects missing dependencies (the function errors) rather than silently caching incorrect results.</p>
@@ -264,7 +264,7 @@ seamless-run 'seq 1 10 | tac &amp;&amp; sleep 5'    # runs, caches result
 seamless-run 'seq 1 10 | tac &amp;&amp; sleep 5'    # cache hit — instant
 </code></pre>
 <p>Seamless infers which arguments are files (arguments with a file extension that exist on disk), checksums them, runs the command, and caches the result. The next time you run the same command with the same inputs, the cached result is returned instantly without re-executing.</p>
-<p>Wrapping bash requires a persistent cache. For Python, it is optional: without it, the cache lasts as long as the Python session. <code>SEAMLESS_CACHE</code> is a quick way to set up a global persistent cache. For finer control, <a href="cluster.html">Setting up a local cluster</a>. For more, details, see <a href="caching.html">Caching, identity, and sharing</a>.</p>
+<p>Wrapping bash requires a persistent cache. For Python, it is optional: without it, the cache lasts as long as the Python session. <code>SEAMLESS_CACHE</code> is a quick way to set up a global persistent cache. For finer control, <a href="cluster.html">Setting up a local cluster</a>. For more details, see <a href="caching.html">Caching, identity, and sharing</a>.</p>
 <h3 id="declaring-inputs-and-outputs">Declaring inputs and outputs</h3>
 <p>Beyond the automatic inference from command arguments, you can explicitly declare additional inputs and outputs:</p>
 <pre><code class="language-bash"># Additional input file not in the command arguments
@@ -293,7 +293,7 @@ seamless-run --project myproject --stage prod mycommand input.txt
 <hr />
 <h3 id="bash-pitfalls">Bash pitfalls</h3>
 <h4 id="missing-file-dependencies">Missing file dependencies</h4>
-<p>If your command reads files that are not declared as arguments (and therefore not automatically detected), Seamless won't track those files as inputs. A change to such a file won't trigger re-execution. Use <code>--input</code> to declare additional inputs explicitly:</p>
+<p>If your command reads files that are not declared as arguments (and therefore not automatically detected), Seamless won't track those files as inputs. A change to such a file won't trigger re-execution, and usually the entire command will fail. Use <code>--input</code> to declare additional inputs explicitly:</p>
 <pre><code class="language-bash"># config.json is read by mycommand but not in the argument list
 
 seamless-run mycommand data.txt --input config.json
