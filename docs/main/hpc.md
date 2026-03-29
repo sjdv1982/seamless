@@ -6,6 +6,54 @@ This guide covers Seamless deployment on HPC clusters with SLURM or OAR schedule
 
 Seamless does not make a great difference between a HPC cluster config and a local cluster config. In both cases, Seamless cluster services (hashserver, database, Dask scheduler) are launched, and are available to the local machine over the network (potentially via SSH tunnel). Dask will accept both Python transformations and `seamless-run` commands, no matter where it runs. If it runs on an HPC frontend, then `seamless-run` commands will run directly on a compute node, with input files uploaded automatically.
 
+## Manual HPC execution
+
+Sometimes full remote execution is the wrong abstraction.
+
+If you need to inspect the deployed job, load site-specific modules manually, or
+wrap the actual run in your own `sbatch`, `srun`, or debugging procedure, use:
+
+```bash
+seamless-run --dry --write-remote-job /scratch/myjob \
+  head -n 100 input.txt
+```
+
+This tells Seamless to do deployment, not execution:
+- Seamless computes the transformation identity.
+- Seamless materializes the remote job directory and writes `transform.sh` plus
+  the required input files.
+- Seamless then stops.
+
+At that point, the job directory itself is the artifact you care about. You can
+inspect it, verify that the right files are present, and then execute it
+manually:
+
+```bash
+cd /scratch/myjob
+module load ...
+bash transform.sh
+```
+
+This is useful on HPC systems when:
+- your site requires a custom `module load` sequence
+- you want to submit through a hand-written SLURM wrapper
+- you want to debug interactively before queue submission
+- you want a concrete verification step between deployment and execution
+
+### Trade-off: you lose Seamless result caching
+
+This mode intentionally gives up one of Seamless's normal guarantees.
+
+Because Seamless does not execute the transformation itself, it also does not
+record a result checksum in the database. That means:
+- Seamless will not treat the run as completed
+- re-running the same command may materialize the job directory again
+- any caching of the final result is now your responsibility unless you later
+  reintroduce execution through Seamless
+
+The payoff is control. Seamless handles reproducible deployment of the job
+payload; you handle execution policy.
+
 ## Queue definitions
 
 HPC queue definitions live inside the cluster entry in `~/.seamless/clusters.yaml`, under the `queues` key. Each queue entry maps to a `dask_jobqueue` cluster constructor call (SLURMCluster, OARCluster, etc.), plus Seamless-specific lifecycle parameters.

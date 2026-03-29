@@ -27,6 +27,22 @@ An agent should:
 - prefer explicit specification when guessing is ambiguous
 - avoid relying on CWD surprises; set/record workdir
 
+## Meta variables (`--metavar`)
+
+`--metavar NAME=VALUE` injects a variable into the bash command environment
+without contributing to the transformation identity (cache key).
+
+- Accessible inside the bash script as `$NAME` — same ergonomics as `--var`.
+- Does **not** change the transformation checksum when its value changes.
+- Two invocations differing only in `--metavar` values share a cache entry.
+
+Use `--metavar` for execution hints that should not invalidate the cache:
+thread counts, verbosity flags, temp dirs, debug toggles, and similar operational
+parameters.
+
+Use `--var` for any value that is part of the computation logic and should
+invalidate the cache when it changes.
+
 ## Canonicalization
 
 For pipelines where parallelism only affects ordering:
@@ -45,3 +61,36 @@ Agent guidance:
 
 The same “content-bound” rule applies:
 - don’t assume remotes have local files; treat inputs as artifacts and materialize where executed
+
+## Manual Remote Deployment Mode
+
+`seamless-run --dry --write-remote-job DIR ...` is a deployment-only mode for
+remote execution, typically on HPC systems.
+
+Contract:
+- This is the one important case where `--dry` still triggers remote work.
+- Seamless prepares the transformation, materializes the bash job directory at
+  `DIR`, and then stops before execution.
+- The success artifact is the concrete job directory on disk, not a result
+  checksum.
+- CLI success output is `Transformation submitted to remote server`.
+- No result checksum is written to the Seamless database.
+- Because no execution result is stored, this mode gives up normal Seamless
+  result caching for that run.
+- The generated `transform.sh` is meant to be inspectable and runnable by the
+  user under site-specific control.
+- Re-running the same command should be expected to materialize the job
+  directory again, because Seamless has not registered a completed execution.
+
+Agent guidance:
+- Recommend this mode when the user wants Seamless to handle deployment, but
+  wants to keep manual control over execution.
+- Typical reasons are custom `module load` sequences, manual `sbatch`/`srun`
+  wrapping, scheduler-specific launch policy, or step-by-step debugging on the
+  cluster side.
+- Present this as “remove one layer of abstraction”: Seamless defines and
+  deploys the job payload, the user verifies the disk materialization, and then
+  executes manually.
+
+For the human-oriented HPC explanation, see
+[`docs/main/hpc.md`](../../main/hpc.md).
