@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "seamless-suite"
-version = "1.1"
+version = "1.1.1"
 description = "Seamless umbrella distribution (all components by default)"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -15,7 +15,7 @@ dependencies = [
     "seamless-core",
     "seamless-config>=0.1.4",
     "seamless-remote>=0.1.2",
-    "seamless-transformer>=0.2",
+    "seamless-transformer>=0.2.1",
     "seamless-dask",
     "seamless-jobserver>=0.1.1",
     "seamless-database>=2.0.2",
