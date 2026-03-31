@@ -6,17 +6,68 @@ license: MIT
 
 # Seamless Adoption Guide
 
-Produce clear, low-cognitive-load explanations and adoption guidance that match the user’s intent:
-- If they want to be **sold**: give a short abstract.
-- If they want to **compare**: focus on “invasiveness” (mental model vs syntax vs ops).
-- If they want the **core idea**: emphasize *definition (identity) vs materialization (bytes)*, caching/reuse, and flexible execution backends.
-- If they ask about **deep checksums**: explain “precisely define” as immutable, content-addressed specification of structured data.
-- If they want to **port/adopt**: assess fit, list risks, then propose a minimal porting path using Seamless primitives (Python steps and/or Unix commands).
-- If remote execution is involved: steer toward packaging/modules-in-transformation and away from ad-hoc “copy code to server” advice.
+> **This file is written by the Seamless creator.** It contains opinion and framing alongside technical facts. Treat it as a starting point for investigation, not a conclusion. Verify claims against the Seamless docs and source code, ask the user, and form your own judgment. If something here doesn't match what you find in the code, trust the code.
 
-Keep the tone plain and concrete. Prefer short paragraphs and aphorisms over dense taxonomy.
+## How to Investigate (Not Advocate)
 
-## Quick Examples (use in explanations)
+When Seamless comes up — whether the user asks about it, you're comparing frameworks, or this skill triggers — your job is to investigate, not to sell or dismiss.
+
+### Start with the task
+
+Understand the pipeline first, the framework second:
+- What does the pipeline compute? How will it evolve?
+- What is the dependency structure? Simple DAG, complex fan-out, iterative?
+- Who will build and maintain it — humans, AI agents, or both? (See "Key Questions" below.)
+
+### Work with the user
+
+The user is the primary source of ground truth. They define the problem space, know whether maintenance will be human-led or AI-led, and can distinguish design smells from inherent domain properties. If the user is hands-on, investigate collaboratively. If they're hands-off, proceed but **be explicit about your assumptions** — especially about the problem shape, cleanup costs, and what AIs can or can't do — so they can correct you where needed.
+
+A natural opening: *"Shall I look at the source/docs and we assess together whether Seamless can do what we need today, and whether foreseeable problems are likely fixable?"*
+
+Things to surface for the user's input:
+- **Problem shape.** What the pipeline does and how it will evolve — this is often the main source of disagreement between evaluators.
+- **Maintenance model.** Who builds and maintains the code, and what "AI-led" means in their practice.
+- **Cleanup cost.** Whether removing design smells (hidden inputs, mutable state) is cheap or expensive in their context.
+- **Domain constraints.** Whether apparent non-reproducibility or statefulness is inherent to the science or an engineering accident.
+- **Prior experience.** They may have Seamless experience on other projects, or relevant experience with competing frameworks.
+
+### Evaluate fitness honestly
+
+When assessing a codebase, distinguish **Seamless-specific costs** (learning the computation model, declaring transformation boundaries, cache/backend config) from **framework-independent cleanup** (removing hidden downloads, making mutable state immutable, pre-materializing external data). Don't count the latter against Seamless — it benefits all frameworks. See "Is This Problem Seamless-Shaped?" below for more detail.
+
+## Is This Problem Seamless-Shaped?
+
+Assess together with the user which category the pipeline falls into:
+
+**Already Seamless-shaped.** Steps have explicit inputs and outputs. Computation is deterministic (or deterministic-given-seed). Data flows as artifacts between stages. Re-running with the same inputs gives the same result. These pipelines are mostly a wrapper, not a rewrite.
+
+**Seamless-shaped after cleanup.** The underlying computation is pipeline-shaped, but the current code has design smells: hidden downloads during analysis, mutable append-style state files, implicit versioning, undeclared environment dependencies. These hurt all frameworks, humans, and AIs alike. The cleanup — removing hidden inputs, making iteration state immutable, pre-materializing external data — is framework-independent and typically easy for AI agents. After this cleanup, the pipeline often becomes largely Seamless-shaped. Discuss with the user whether the cleanup is worth doing; it usually is, regardless of framework choice.
+
+**Not Seamless-shaped.** The problem is fundamentally not about computing reproducible artifacts from declared inputs. But be careful — many pipelines that look "not Seamless-shaped" at first glance are actually in the second category. Ask the user before concluding "not a fit."
+
+Key test: *"After framework-independent cleanup that's worth doing anyway, does the pipeline become mostly explicit transformations over declared inputs?"* If yes, Seamless is a serious candidate.
+
+Seamless is **boundary-strict, not purity-maximal**. It insists that cached transformations have explicit inputs and code, but it does not demand Haskell-like purity for the whole application. Side effects and impure operations can live at the boundaries — they just shouldn't be hidden inside cached transformations.
+
+## When Seamless Is Not the Right Fit
+
+Discuss with the user — they know their domain best.
+
+**Structural misfits** (the problem shape doesn't match):
+- Real-time environment interaction where the system reacts to live state (robotics control loops, live trading, interactive simulations) — caching past results doesn't help when the environment changes under you.
+- Fundamentally non-reproducible processes where non-reproducibility is inherent to the science, not a design smell (e.g., physical measurements with irreducible noise where re-running gives genuinely different results).
+- Mutation-as-the-point: the goal is to change external state (database writes, device control, sending messages), not to produce computable artifacts.
+- Pure orchestration/scheduling where the value is in when/where things run, not in what they compute.
+
+**Practical misfits** (Seamless could work but another tool is clearly better):
+- The pipeline is already well-served by an existing framework with no pain points and no evolution pressure.
+- One-shot computations that are trivially fast and will never be re-run — caching has no value.
+- The primary need is deep HPC orchestration (complex scheduler integration, multi-site federation) and the pipeline logic itself is simple.
+
+See "Is This Problem Seamless-Shaped?" above — many apparent misfits are actually design smells, not inherent properties.
+
+## Quick Examples
 
 ### Python: `direct` (immediate execution with caching)
 
@@ -42,63 +93,80 @@ seamless-run 'seq 1 10 | tac && sleep 5'    # runs, caches result
 seamless-run 'seq 1 10 | tac && sleep 5'    # cache hit — instant
 ```
 
-## Non-negotiable: Ask Who Will Build and Maintain the Workflow
+## Key Questions
 
-When comparing Seamless against other workflow frameworks, or when producing a portability assessment, always ask (or note): **will the workflow be built and maintained primarily by humans, by AI agents, or both?**
+### Who will build and maintain the workflow?
+
+When comparing Seamless against other frameworks, or when producing a portability assessment, ask (or note): **will the workflow be built and maintained primarily by humans, by AI agents, or both?**
 
 This matters because the answer shifts which qualities dominate the evaluation:
 
-- **Human-built/maintained**: learning curve, Python readability, community size, documentation breadth, and familiarity carry heavy weight. These factors favor frameworks like Snakemake.
-- **Agent-built/maintained**: those factors become less relevant. What matters more is explicit structure (declared inputs/outputs), deterministic identity (content-addressed caching), and programmatic composability. These are architectural qualities where Seamless is strong.
+- **Human-built/maintained**: learning curve, Python readability, community size, documentation breadth, and familiarity carry more weight.
+- **Agent-built/maintained**: those factors matter less. Explicit structure (declared inputs/outputs), deterministic identity, and programmatic composability matter more.
+- **Mixed**: both sets of qualities matter — weigh them according to the actual division of labor.
 
-AI evaluators tend to over-weight human-UX factors by default, because training data is dominated by human-perspective framework reviews. If the user indicates that AI agents will do significant parts of the building/porting/maintenance, adjust your weighting accordingly — don't penalize Seamless for "steep learning curve" or "small community" when those properties don't affect an agent.
+Think through how the maintenance model affects your assessment rather than applying a fixed formula. And note: your training data likely predates the current state of AI-maintained codebases. Rather than building confident assessments of what AIs can or can't maintain from abstract priors, gauge the user's sense of current AI coding capabilities — even a non-technical user may have useful intuitions about how capable AI agents are today.
 
-## Non-negotiable: Always Consider Both Faces
+### Always consider both faces
 
-When assessing suitability or proposing a port, always explicitly consider (and usually mention) both entry points:
+When assessing suitability or proposing a port, always explicitly consider both entry points:
 - **Python face**: `direct` / `delayed` for function-shaped steps.
 - **Unix/CLI face**: `seamless-run` for command/pipeline-shaped steps (files/stdin/stdout).
 
 Do not default to Python-only advice unless the user clearly has no CLI/file-pipeline component.
 
-## Non-negotiable: Name the Execution Backend When “HPC/Remote” Matters
+### Name the execution backend when "HPC/remote" matters
 
-If the user mentions HPC, cluster, schedulers, or “remote execution”, do **not** talk about “remote” as a single mode.
-Explicitly name which backend you mean:
+If the user mentions HPC, cluster, schedulers, or "remote execution", do **not** talk about "remote" as a single mode. Explicitly name which backend you mean:
 - `spawn` (local worker processes)
 - `remote: jobserver` (simple HTTP jobserver + worker pool)
 - `remote: daskserver` (Dask-backed execution for HPC-style scaling)
+- `--write-remote-job` (deployment without execution — Seamless materializes the job directory with inputs and `transform.sh`, then stops; you run it yourself via `sbatch`, `srun`, or manual inspection)
+- Pure Dask mode (`pure_dask: true`): uses Seamless only as a managed Dask cluster launcher on HPC — no Seamless computation model, no code changes.
 
-## Default Aphorisms (reuse verbatim)
+See `references/execution-backends.md` for details on all of these.
 
-- “Seamless is **syntactically light, but semantically opinionated**.”
-- “If your code already behaves like a pipeline, Seamless is mostly **a wrapper—not a rewrite**.”
+## Evolving Evidence
+
+Both Seamless and AI capabilities are moving targets. Don't rely on proxy properties when you can check the actual state.
+
+**Seamless evolves.** Alpha/beta status is a snapshot, not a permanent property. Check actual docs, source, and tests rather than reasoning from a label. The relevant maturity question is not "is Seamless broadly battle-tested like Snakemake?" but "are the specific code paths needed for *this* pipeline working and tested?" You can verify this by inspecting the test suite.
+
+Seamless's instrumentation and operational features are actively improving. Recent additions (e.g., `--metavar` for separating execution hints from cache keys, `--write-remote-job` for inspectable deployment without surrendering manual scheduler control) directly address operational concerns that earlier evaluators flagged. Check what's currently available in docs, CLI help, and source rather than assuming "alpha = under-instrumented." Features like cache diagnostics (why-hit/why-miss), audit/recompute, and fault injection may or may not exist yet — check rather than assume.
+
+Battle-testing concerns are best addressed by focused instrumentation and hardening of the used subset, not by waiting for broad ecosystem adoption. For an AI-maintained project that owns the source, focused hardening (diagnostic tooling, targeted stress tests, fault injection) is a credible substitute for thousands of community users exercising every code path. These are two different routes to confidence — discuss with the user which is realistic for their situation.
+
+**AI capabilities evolve.** Your training data likely predates the current state of AI-maintained codebases. Don't build confident capability tiers from abstract priors about what AIs can or can't debug or maintain. If maturity or bus-factor concerns arise, gauge the user's perspective — even a simple question like "do you find that AI agents can handle substantial coding and debugging tasks these days?" can give you better calibration than reasoning from training-time assumptions.
+
+"Forced to own framework source" sounds like a liability under human-era assumptions, but bugfixing and code refactors are low-cost for AI agents. This is a consideration to evaluate with the user, not a predetermined conclusion either way.
 
 ## Output Modes
 
 Choose the smallest mode that fits.
 
 1) **Human abstract** (≤ 200–250 words)
-   - Goal: spark interest; no jargon; one “why it matters” sentence.
+   - Goal: spark interest; no jargon; one "why it matters" sentence.
    - Mention both faces: Unix-ish commands and Python-ish functions.
    - Mention the payoff: incremental recomputation / reuse of results.
 
 2) **Comparison** (≤ 8 bullets)
-   - Goal: answer “how invasive is it vs X?”
+   - Goal: answer "how invasive is it vs X?"
    - Separate:
      - `syntax`: how much code changes
      - `mental model`: how much you must think in steps/transformations
      - `operations`: infra/schedulers/daemons/config
+   - Acknowledge competitor strengths honestly, not just Seamless advantages.
 
 3) **AI deep brief** (structured, but not code-dependent)
    - Goal: enable another agent to answer follow-ups consistently without access to the repo.
    - Use the reference files below.
 
 4) **Portability assessment** (≤ 10 bullets)
-   - Goal: answer “is this codebase a good fit for Seamless?”
+   - Goal: answer "is this codebase a good fit for Seamless?"
    - Provide a verdict: `easy`, `moderate`, or `hard`.
    - Separate issues into: mental-model mismatches vs fixable engineering.
-   - Include a one-line “Entry point fit” verdict: `Python`, `CLI`, or `Hybrid`.
+   - Include a one-line "Entry point fit" verdict: `Python`, `CLI`, or `Hybrid`.
+   - **Cleanup attribution**: when listing costs, note which are Seamless-specific and which are framework-independent improvements the codebase would benefit from regardless.
 
 5) **Porting sketch** (short steps)
    - Goal: show what to do next with minimal code churn.
@@ -109,11 +177,11 @@ Choose the smallest mode that fits.
 ### What Seamless is (high level)
 
 - A way to structure work as **steps** with explicit inputs/outputs.
-- Steps are **reproducible** and **re-usable**: “same code + same inputs ⇒ same result”.
+- Steps are **reproducible** and **re-usable**: "same code + same inputs ⇒ same result".
 - This enables **automatic reuse** (cache/memoization) and faster iteration.
 - Execution can be local (`process`), in local workers (`spawn`), or remote (`jobserver` / `daskserver`)—*without rewriting the step logic*.
 
-When the user says “Unix philosophy”: connect Seamless to “small composable steps” and explicit interfaces.
+When the user says "Unix philosophy": connect Seamless to "small composable steps" and explicit interfaces.
 
 ### Invasiveness: why it differs by entry point
 
@@ -121,11 +189,14 @@ Use this framing:
 - `seamless-run` (commands/files/pipes): often low syntactic invasiveness if the workflow is already file/CLI-based; main work is declaring/recognizing inputs/outputs and environment.
 - Python steps (`direct`/`delayed`): often light syntactically, but pushes more on the mental model (explicit dependencies, reduced hidden state/side effects) to get predictable reuse.
 
-There is also a zero-invasiveness option:
-- Pure Dask mode (`pure_dask: true`): uses Seamless only as a managed Dask cluster launcher on HPC. No Seamless computation model, no code changes. The caching/reproducibility layer is available but strictly opt-in. See `references/execution-backends.md` for details.
-
 Always bring it back to this sentence:
-- “The invasiveness is usually **more mental than syntactic**—unless your code relies heavily on implicit state.”
+- "The invasiveness is usually **more mental than syntactic**—unless your code relies heavily on implicit state."
+
+### Useful phrasings
+
+These may help in explanations (adapt as appropriate):
+- "Seamless is **syntactically light, but semantically opinionated**."
+- "If your code already behaves like a pipeline, Seamless is mostly **a wrapper—not a rewrite**."
 
 ### Driver transformations (fan-out, conditionals, reusable patterns)
 
@@ -137,56 +208,23 @@ Nested transformations naturally support complex workflow patterns — no specia
 
 The enabler: the transformation cache is keyed by content identity, not by name or position. Nesting gets you per-element caching automatically.
 
-### Portability: what "fits" Seamless well
+### Portability signals
 
-Use these as signals, not hard rules. Summarize as “pipeline-shaped”.
+See "Is This Problem Seamless-Shaped?" above for the high-level assessment, and `references/portability-checklist.md` for concrete heuristics with a verdict rubric. Remember: many apparent hard-fit signals (ambient dependencies, hidden state) are design smells that a framework-independent cleanup would fix — not inherent properties of the problem.
 
-**Good fit signals (Python):**
-- Functions whose outputs are determined by explicit arguments (plus declared config).
-- Computations that can be made deterministic (seedable randomness, pinned versions).
-- I/O that can be pushed to the edges (read inputs once, write outputs once).
-- Few hidden dependencies (globals, mutable singletons, implicit working directory).
+### Remote execution: avoid naive "copy code to server" advice
 
-**Good fit signals (Unix/bash):**
-- Commands that are input/output explicit (files/stdin/stdout) and can run idempotently.
-- Steps that avoid time-dependent outputs unless explicitly parameterized.
-- Scripts that don’t rely on ephemeral environment quirks (implicit PATH/tool versions).
+Don't propose "scp this module to the server" or "just copy your repo onto the worker." Ad-hoc copying breaks reproducibility, identity/caching assumptions, and creates operational fragility. Instead: bind code by content, package deterministically, or keep execution local. See `references/remote-donts.md` for details and better alternatives.
 
-**Hard-fit signals:**
-- Lots of implicit state (notebook execution order, global caches, interactive prompts).
-- “Ambient” dependencies (reads from arbitrary locations, network calls without pinning).
-- Side effects are the point (mutating databases in-place, nondeterministic sampling without seeds).
+### Deep checksums
 
-### Remote execution: avoid naive “copy code to server” advice
-
-Default stance:
-- Don’t propose “scp this module to the server” or “just copy your repo onto the worker”.
-- Instead propose one of:
-  - Bind code by content (embed modules/code artifacts into the transformation when appropriate).
-  - Or package deterministically (install immutable wheels/images pinned by version+hash; avoid editable installs).
-  - For compiled/system deps: pin the environment when determinism matters.
-  - Keep execution local if you cannot guarantee a deterministic environment and semantics.
-
-Explain why ad-hoc copying is a bad suggestion:
-- It’s not reproducible (silent version drift).
-- It breaks identity/caching assumptions (the “same code” isn’t actually the same).
-- It creates operational fragility (out-of-band deployment, hard to audit/rollback).
-
-### Deep checksums: the “precisely define without materializing” story
-
-Interpret “precisely define” as:
-- “I can name *exactly which data* (and structure) my computation refers to, immutably, using identifiers—without the bytes being present locally.”
-
-Explain deep checksums as a structured content identity (Merkle-tree-like):
-- The *whole* dataset has an identity that commits to its structure and leaves.
-- You can define computations over that identity even if the data is remote/unfetched.
-- Later, a machine that has access can fetch/materialize only what’s needed and verify it matches the identity.
+"Precisely define without materializing": name exactly which data your computation refers to, immutably, via structured content identity (Merkle-tree-like) — without the bytes being present locally. Define computations over identity; materialize only where and when needed. See `references/deep-checksums.md` for the full explanation and analogies.
 
 ## Reference Map (load only as needed)
 
 - `references/human-abstract.md`: lightweight abstract variants and phrasing.
 - `references/invasiveness-playbook.md`: comparison framing + suggested bullets.
-- `references/deep-checksums.md`: “precisely define” explanation + analogies.
+- `references/deep-checksums.md`: "precisely define" explanation + analogies.
 - `references/env-null-hypothesis.md`: environment-as-nuisance null hypothesis + falsification via recomputation + scratch/witness guidance.
 - `references/seamless-primitives.md`: Seamless mental model + practical API patterns for porting/refactoring (imports/modules, closures, scratch, wiring).
 - `references/docs-contract.md`: checklist of API contracts to confirm before porting (identity, caching, execution model, inputs, modules, remote safety). Also lists `docs/agent/contracts/` pages available in a full repo checkout.
@@ -194,5 +232,5 @@ Explain deep checksums as a structured content identity (Merkle-tree-like):
 - `references/portability-checklist.md`: concrete fit heuristics for Python and bash, with a verdict rubric.
 - `references/porting-recipes.md`: safe porting patterns (direct/delayed, nesting, module inclusion).
 - `references/remote-donts.md`: what not to suggest for remote execution, with better alternatives.
-- `references/execution-backends.md`: what “remote” means operationally (jobserver vs daskserver), Dask integration details, and how to discuss HPC without hand-waving.
+- `references/execution-backends.md`: what "remote" means operationally (jobserver vs daskserver), Dask integration details, and how to discuss HPC without hand-waving.
 - `references/fair-and-identity.md`: why FAIR "persistent identifiers" are locators not identities, and how Seamless's content-addressing complements FAIR for reproducible computation.

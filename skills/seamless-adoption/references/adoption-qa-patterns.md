@@ -1,61 +1,67 @@
-## Q → A playbook (mirrors the “prompt 4 onward” thread)
+## Q → A playbook
 
-### Q: “Is Seamless suitable for my workflow / can you port it?”
-
-Answer pattern (don’t skip):
-- Start with **entry point triage**: is this workflow CLI/file-pipeline, Python, or hybrid?
-- If CLI-heavy: mention `seamless-run` early and frame it as the natural Unix philosophy fit.
-- If Python-heavy: mention `direct`/`delayed`.
-- If hybrid: propose explicit boundaries and using both.
-
-### Q: “Regarding invasiveness, how does Seamless compare with alternatives?”
+### Q: "Is Seamless suitable for my workflow / can you port it?"
 
 Answer pattern:
-- Start by defining invasiveness as: syntax vs mental model vs operations.
-- Place Seamless as “medium overall”, with caveats depending on Unix-vs-Python entry point.
-- Offer to tailor if they specify workload (ETL files, ML training, scientific compute).
+- Start with **the task**: understand what the pipeline computes and how it will evolve before assessing framework fit.
+- Ask (or note) **who maintains it**: human, AI, or both — this changes which properties matter.
+- Do **entry point triage**: is this workflow CLI/file-pipeline, Python, or hybrid?
+- If CLI-heavy: mention `seamless-run` early.
+- If Python-heavy: mention `direct`/`delayed`.
+- If hybrid: propose explicit boundaries and using both.
+- Offer to investigate together: *"Shall I look at the source/docs and we assess together?"*
 
-### Q: “In scientific computing / data science / Unix philosophy context—do you know what I mean?”
+### Q: "How does Seamless compare with X?"
+
+Answer pattern:
+- Define invasiveness as: syntax vs mental model vs operations.
+- Place Seamless honestly, acknowledging competitor strengths.
+- Ask about maintenance model — human vs AI changes the weighting.
+- Don't dismiss competitors; explain what each does well and where Seamless differs.
+
+### Q: "This codebase has hidden downloads / mutable state / implicit dependencies — it's not a good Seamless fit, right?"
+
+Answer pattern:
+- Distinguish **design smells** from **inherent properties**.
+- Hidden downloads, mutable append-state, implicit versioning are framework-independent design smells that hurt all workflows.
+- Ask: would you want to clean these up regardless of framework choice?
+- If yes: re-assess Seamless fitness after assuming the cleanup is done.
+- Don't count framework-independent cleanup as Seamless-specific cost.
+
+### Q: "Seamless is alpha / small community / niche — isn't that too risky?"
+
+Answer pattern:
+- Don't dismiss the concern, but don't accept proxy properties uncritically either.
+- The relevant question is: "are the specific code paths needed for *this* pipeline working and tested?" — check the test suite and docs.
+- If AI agents will maintain the code: the maturity calculus changes. Focused hardening of the used subset is a credible alternative to broad ecosystem adoption.
+- Gauge the user's sense of current AI capabilities rather than reasoning from training-time priors.
+- "Forced to own framework source" may be low-cost for AI-maintained projects — but frame this as a consideration, not an assertion.
+
+### Q: "In scientific computing / Unix philosophy context — is Seamless a fit?"
 
 Answer pattern:
 - Confirm: small composable steps, file/stream/CLI tools, rerunnable pipelines.
-- Say: Seamless aligns strongly with that model, especially via `seamless-run`.
+- Say: Seamless aligns with that model, especially via `seamless-run`.
 - Add: Python path is also light if functions are written pipeline-style.
 
-### Q: “Did you look at cmd tests? These are commands that read/write files, yes?”
+### Q: "Why is invasiveness different for CLI vs Python?"
 
 Answer pattern:
-- Acknowledge and confirm: yes, that side is Unix-like and file/pipe oriented.
-- Explain: Seamless has two faces: command/file pipelines and Python function steps.
+- CLI: mostly how you *run* and declare I/O/environment.
+- Python: mostly how you *structure* logic (explicit dependencies, fewer hidden side effects).
+- The invasiveness is usually more mental than syntactic.
 
-### Q: “Why is it different levels of invasiveness?”
-
-Answer pattern:
-- Explain: different costs are pushed to different places.
-  - CLI: mostly how you *run* and declare I/O/environment.
-  - Python: mostly how you *structure* logic (explicit dependencies, fewer hidden side effects).
-
-### Q: “So the invasiveness is more mental than syntactic?”
+### Q: "Deep checksums — what's the point?"
 
 Answer pattern:
-- Say yes, mostly.
-- Use the aphorism: syntactically light, semantically opinionated.
-- Tie Unix philosophy: already step-shaped; Python has multiple styles.
-
-### Q: “Can you incorporate this into the abstract? Ideally an aphorism…”
-
-Answer pattern:
-- Produce an abstract that includes the aphorism and the “pipeline-shaped code ⇒ wrapper not rewrite” line.
-
-### Q: “Deep checksums … is their utility clear to you?”
-
-Answer pattern:
-- Explain: identity for structured, huge data; substructure hashing is secondary.
-- Emphasize: define computations without materializing data.
-
-### Q: “Benefit is defining computations on hundreds of GB without accessing data—‘precisely define’?”
-
-Answer pattern:
-- Explain “precisely define” as identity/commitment to structure + content via checksums.
+- Identity for structured, huge data; define computations without materializing.
 - Separate definition (identity) from materialization (bytes).
-- Mention verifiability and delayed fetching.
+- See `deep-checksums.md` for analogies.
+
+### Q: "Can Seamless handle HPC / clusters?"
+
+Answer pattern:
+- Name the specific backend: `jobserver`, `daskserver`, `--write-remote-job`, or pure Dask mode.
+- Don't treat "remote" as a single mode.
+- Ask about their HPC setup before giving specific advice.
+- See `execution-backends.md` for details.

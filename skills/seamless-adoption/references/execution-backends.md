@@ -28,7 +28,13 @@ If the user asks about HPC/cluster capability, or you are comparing Seamless to 
    - This is the HPC path: many-task throughput, scaling, and scheduler integration.
    - For SLURM/OAR environments, the cluster is typically created via `dask-jobqueue` (`SLURMCluster` / `OARCluster`) and scaled by requesting workers (bundled long-lived workers, not “one batch job per Seamless step”).
 
-5) **Pure Dask mode (`pure_dask: true`)**
+5) **Manual deployment (`--write-remote-job DIR`)**
+   - Seamless computes the transformation identity, materializes a job directory with inputs and `transform.sh`, then stops.
+   - You inspect, customize (e.g. `module load`), and run it yourself via `sbatch`, `srun`, or manual execution.
+   - Trade-off: you lose automatic result caching (Seamless didn't execute, so it can't record the result). The payoff is full control over execution policy.
+   - Useful on HPC when site-specific module loading, custom SLURM wrappers, or pre-execution verification are needed.
+
+6) **Pure Dask mode (`pure_dask: true`)**
    - Uses `seamless-dask-wrapper` (controlled by `seamless-config`) purely as a managed Dask cluster launcher: status-file handshake, adaptive scaling, port management, inactivity timeout, HPC scheduler integration.
    - No `SeamlessWorkerPlugin`, no transformation throttle, no `seamless-core` or `seamless-transformer` involvement. Workers are plain Dask workers; your code talks to `distributed.Client` directly.
    - This is the zero-adoption entry point: you get Seamless's cluster lifecycle tooling on HPC without buying into the Seamless computation model (content-addressed caching, transformations, reproducibility).

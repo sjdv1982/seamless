@@ -17,6 +17,7 @@ This file is meant to help an agent *port/refactor* code to use Seamless effecti
   - `.start()` to schedule many tasks and then collect results.
 
 Porting rule of thumb:
+
 - Start with `delayed` for pipelines; optionally layer `direct` for convenience at the edges.
 
 #### Minimal code that actually runs (shape-level example)
@@ -43,7 +44,7 @@ Practical note for agents: Seamless can make the second call faster when the ide
 
 ### Dependency wiring (nesting/composition)
 
-- Treat upstream results as explicit dependencies by passing them into downstream steps.
+- Treat upstream results as explicit dependencies by passing them into downstream steps. Note that the mechanism is different for Python or for CLI tools (which may be written in Python).
 - Avoid “hidden” dependencies through globals, working directory, environment variables, or ad-hoc files.
 - Prefer **content-addressed I/O**: it’s fine for a step to “read arbitrarily” *if* what it reads is identified by an explicit checksum input (materialization), not by an ambient path/URL (“whatever is there”).
 
@@ -52,6 +53,7 @@ Practical note for agents: Seamless can make the second call faster when the ide
 Closures are a portability trap: captured values are *implicit inputs*.
 
 Porting patterns:
+
 - Make captured values explicit arguments (including config) so they become part of the step identity.
 - If a value is a small constant/config blob, inject it explicitly (e.g. via a globals mechanism) rather than relying on outer scope.
 - Avoid using time, randomness, PIDs, hostnames, and other ambient sources unless explicitly parameterized and recorded.
@@ -61,10 +63,12 @@ Porting patterns:
 Goal: ensure the executed code is **bound by content**, not “whatever is on disk remotely”.
 
 Good options:
+
 - **Embed helper modules** into the transformation/module mechanism when you want “code is data” determinism.
 - **Or install immutable artifacts** (wheel/image) pinned by version+hash (avoid editable installs and copying a working tree).
 
 Practical cautions for embedding:
+
 - Embedding often captures *what is currently imported/loaded*; dynamic imports and package data may not be included automatically.
 - If you embed a package, ensure the required submodules are imported so the embedded module definition is complete.
 - Keep an eye on payload size and update cadence (large embedded code artifacts can be operationally heavy even if deterministic).
@@ -78,6 +82,7 @@ Practical cautions for embedding:
 ### Dask execution (HPC/distributed)
 
 If Seamless’s Dask integration is available/configured:
+
 - treat Dask as an execution backend, not as a competing “workflow vs compute” framework.
 - prefer `delayed` pipelines so many tasks can be scheduled efficiently.
 - ask/confirm cluster constraints (networking, environments, packaging) instead of assuming “it will just work”.
@@ -93,6 +98,7 @@ If Seamless’s Dask integration is available/configured:
 Seamless can also wrap Unix-y steps.
 
 Porting patterns:
+
 - Make inputs/outputs explicit (files vs literal values).
 - Canonicalize outputs when parallelism only changes ordering (e.g. sort records) so meaning becomes stable bytes.
 - Control locale-dependent behavior for classic tools (e.g. sort order): set/record `LC_ALL` and similar knobs.
