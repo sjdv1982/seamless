@@ -44,10 +44,10 @@ Source: `remote-http-launcher/remote_http_launcher.py`
 
 ### Execution models
 
-- **Local clusters** (`type: local`): uses `LocalExecutor` — runs commands via local subprocess
-- **Remote clusters**: uses `SSHExecutor` — runs commands via `ssh <host> bash -lc '<command>'`
+- **Launch config without `hostname`**: uses `LocalExecutor` — runs commands via local subprocess
+- **Launch config with `hostname`**: uses `SSHExecutor` — runs commands via `ssh <host> bash -lc '<command>'`
 
-The executor is chosen based on whether `hostname` is present in the tool config (removed for local clusters by `_configure_tool`).
+The executor is chosen based on whether `hostname` is present in the tool config. `type: local` controls the Dask cluster class (`distributed.LocalCluster`), not whether launch happens locally; a local cluster may still live on a remote frontend.
 
 ### Process management
 

@@ -1,6 +1,6 @@
 # Local parallelism
 
-Seamless provides two independent mechanisms for local parallelism: worker processes for Python transformations, and a queue server for bash CLI workflows.
+Seamless provides three related mechanisms for parallel work: for Python transformations, there are worker processes and bounded batch draining of large transformation lists; for bash CLI workflows, there is a queue server .
 
 ## `execution: spawn` — local worker pool
 
@@ -64,6 +64,66 @@ results = [h.run() for h in handles]  # .run() blocks until done (cache hit if a
 ```
 
 `.run()` on an already-started transformation returns immediately if the result is ready, or blocks until it is. `.task()` is the async/await equivalent of `.run()`, useful in async code.
+
+### `parallel()` / `parallel_async()` for large batches
+
+For large batches of delayed transformations, prefer `parallel()` or `parallel_async()` over manually calling `.start()` on every transformation first. These helpers keep at most `nparallel` transformations active at once.
+
+Set the global limit in `seamless.profile.yaml`:
+
+```yaml
+- nparallel: 4
+```
+
+or in Python:
+
+```python
+import seamless.config
+
+seamless.config.set_nparallel(4)
+```
+
+Synchronous usage:
+
+```python
+from seamless.transformer import delayed, parallel
+
+@delayed
+def process(item):
+    ...
+
+tfs = [process(item) for item in items]
+for tf in parallel(tfs):
+    print(tf.value)
+```
+
+Async usage:
+
+```python
+from seamless.transformer import delayed, parallel_async
+
+@delayed
+def process(item):
+    ...
+
+async def main():
+    async for tf in parallel_async([process(item) for item in items]):
+        print(tf.value)
+```
+
+The iterator is streaming but ordered: transformation `N` is yielded as soon as transformations `0..N` have all completed.
+
+To attach progress reporting and error tracking, wrap the list in `TransformationList`:
+
+```python
+from seamless.transformer import TransformationList, parallel
+
+tflist = TransformationList([process(item) for item in items], show_progress=True)
+for tf in parallel(tflist):
+    pass
+```
+
+`parallel()` is synchronous and must not be called from within a running event loop; use `parallel_async()` there.
 
 ---
 

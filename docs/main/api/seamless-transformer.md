@@ -2,6 +2,42 @@
 
 `seamless-transformer` is the computation engine of the [Seamless](https://github.com/sjdv1982/seamless) framework. It takes a *transformation* — a pure-functional computation defined as a checksum-addressed dict of inputs, code, and language — and executes it, returning a result checksum. It supports Python and bash transformations, multi-process worker pools with shared-memory IPC, and integration with the Seamless caching and remote infrastructure.
 
+## Bounded parallel execution
+
+For large batches of delayed transformations, use `parallel()` or `parallel_async()` instead of manually calling `.start()` and `.run()` on large numbers of objects.
+
+The concurrency limit is configured globally via `nparallel` in `seamless.profile.yaml`, or with `seamless.config.set_nparallel()`:
+
+```yaml
+- nparallel: 4
+```
+
+```python
+from seamless.transformer import delayed, parallel
+import seamless.config
+
+seamless.config.set_nparallel(4)
+
+@delayed
+def add(a, b):
+    return a + b
+
+for tf in parallel([add(i, i) for i in range(20)]):
+    print(tf.value)
+```
+
+`parallel()` is a synchronous streaming iterator. It yields completed transformations in input order, as soon as each contiguous prefix is available. `parallel_async()` provides the same behavior as an async iterator.
+
+For progress reporting and error tracking, use `TransformationList`:
+
+```python
+from seamless.transformer import TransformationList, parallel
+
+tflist = TransformationList([add(i, i) for i in range(20)], show_progress=True)
+for tf in parallel(tflist):
+    pass
+```
+
 ## Core concepts
 
 A **transformation** in Seamless is a deterministic computation: given the same inputs and code (identified by their checksums), it always produces the same output. `seamless-transformer` is responsible for:

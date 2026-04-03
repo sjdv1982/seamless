@@ -20,8 +20,12 @@ seamless-run --dry --write-remote-job /scratch/myjob \
 
 This tells Seamless to do deployment, not execution:
 - Seamless computes the transformation identity.
-- Seamless materializes the remote job directory and writes `transform.sh` plus
-  the required input files.
+- `--write-remote-job` implies `--upload`, so the required input buffers are
+  staged on the remote hashserver automatically.
+- Seamless materializes the job directory on the machine running
+  `seamless-run` and writes `transform.sh` plus the required input files.
+- If you need that payload on the cluster frontend, use a mounted/shared path
+  or copy/sync the directory there afterwards.
 - Seamless then stops.
 
 At that point, the job directory itself is the artifact you care about. You can
@@ -109,7 +113,7 @@ The `TEMPLATE` key lets a queue inherit all parameters from another queue, then 
 
 | Parameter | Meaning |
 |---|---|
-| `hostname` | SSH hostname. Must be reachable without password |
+| `hostname` | Frontend hostname. If set, services are launched there over SSH and must be reachable without password |
 | `walltime` | Maximum wall-clock time for each Dask worker job |
 | `cores` | CPU cores per worker job (controls Seamless worker pool size per Dask worker) |
 | `memory` | Memory per worker job |

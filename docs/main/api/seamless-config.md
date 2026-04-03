@@ -235,12 +235,14 @@ choice with `remote: jobserver` or `remote: daskserver` in
 `seamless.profile.yaml`.
 
 `remote_http_launcher` handles two scheduler-placement topologies automatically:
-when `hostname` is set it SSHes into the frontend and runs the Dask wrapper as a
-daemon there (scheduler lives on the HPC frontend node); when `hostname` is absent
-it runs the wrapper as a local daemon (Cluster object lives on the client, scheduler
-lives wherever the provider puts it — suitable for cloud backends). The configuration
-schema currently covers HPC schedulers (SLURM, OAR); cloud provider support would
-require extending the cluster definition vocabulary, not the launcher or wrapper.
+when `hostname` is set it SSHes into the configured frontend and runs the Dask
+wrapper as a daemon there; when `hostname` is absent it runs the wrapper as a
+local daemon on the client. This is independent of cluster type: a cluster with
+`type: local` still uses `distributed.LocalCluster`, but that `LocalCluster` may
+live either on the client or on a remote frontend reached over SSH. The
+configuration schema currently covers `local`, `slurm`, and `oar`; cloud provider
+support would require extending the cluster definition vocabulary, not the
+launcher or wrapper.
 
 ### Persistence
 

@@ -69,8 +69,14 @@ remote execution, typically on HPC systems.
 
 Contract:
 - This is the one important case where `--dry` still triggers remote work.
+- `--write-remote-job` implies `--upload`: Seamless must stage the input
+  buffers on the remote hashserver so the materialized job directory can
+  contain the required files.
 - Seamless prepares the transformation, materializes the bash job directory at
   `DIR`, and then stops before execution.
+- `DIR` is created on the machine running `seamless-run`, not on the remote
+  cluster frontend. If you want the payload on the cluster, use a locally
+  mounted/shared path or copy/sync the materialized directory there.
 - The success artifact is the concrete job directory on disk, not a result
   checksum.
 - CLI success output is `Transformation submitted to remote server`.

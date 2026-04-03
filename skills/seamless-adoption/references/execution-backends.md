@@ -29,7 +29,7 @@ If the user asks about HPC/cluster capability, or you are comparing Seamless to 
    - For SLURM/OAR environments, the cluster is typically created via `dask-jobqueue` (`SLURMCluster` / `OARCluster`) and scaled by requesting workers (bundled long-lived workers, not “one batch job per Seamless step”).
 
 5) **Manual deployment (`--write-remote-job DIR`)**
-   - Seamless computes the transformation identity, materializes a job directory with inputs and `transform.sh`, then stops.
+   - Seamless computes the transformation identity, implies `--upload`, materializes a job directory with inputs and `transform.sh` on the machine running `seamless-run`, then stops.
    - You inspect, customize (e.g. `module load`), and run it yourself via `sbatch`, `srun`, or manual execution.
    - Trade-off: you lose automatic result caching (Seamless didn't execute, so it can't record the result). The payoff is full control over execution policy.
    - Useful on HPC when site-specific module loading, custom SLURM wrappers, or pre-execution verification are needed.

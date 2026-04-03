@@ -26,8 +26,8 @@ This installs all standard Seamless components. For a minimal install, the core 
 | Package | Import | Provides |
 | --- | --- | --- |
 | `seamless-core` | `import seamless` | `Checksum`, `Buffer`, cell types, buffer cache |
-| `seamless-transformer` | `from seamless.transformer import direct, delayed` | `direct`, `delayed`, `seamless-run`, `seamless-upload`, `seamless-download` |
-| `seamless-config` | `import seamless.config` | `seamless.config.init()`, `seamless-init` |
+| `seamless-transformer` | `from seamless.transformer import direct, delayed, parallel` | `direct`, `delayed`, `parallel`, `parallel_async`, `TransformationList`, `seamless-run`, `seamless-upload`, `seamless-download` |
+| `seamless-config` | `import seamless.config` | `seamless.config.init()`, `seamless.config.set_nparallel()`, `seamless-init` |
 
 ---
 
@@ -75,7 +75,7 @@ seamless-run 'seq 1 10 | tac && sleep 5'    # cache hit — instant
 
 - [Caching, identity, and sharing](caching.md) — what constitutes a cache key, `Checksum` and `Buffer`, `.CHECKSUM` sidecars, the `persistent` command
 - [Composition](composition.md) — driver transformations, fan-out, `.modules` and `.globals`
-- [Local parallelism](parallelism.md) — `execution: spawn`, `spawn(N)` in Python, `seamless-queue`
+- [Local parallelism](parallelism.md) — `execution: spawn`, `spawn(N)`, `parallel()`, `TransformationList`, `seamless-queue`
 - [Remote execution](remote.md) — jobserver vs daskserver, `set_stage()`, `--local`
 - [HPC specifics](hpc.md) — SLURM/OAR queue definitions, adaptive scaling, pure Dask mode
 - [Remote job launching](remote-launch.md) — CLI workflow for remote clusters, checksum vs buffer distinction, deep checksums
@@ -85,7 +85,7 @@ seamless-run 'seq 1 10 | tac && sleep 5'    # cache hit — instant
 
 - [Overview](api/index.md) — full API symbol classification
 - [seamless-core](api/seamless-core.md) — `Checksum`, `Buffer`, cell types
-- [seamless-transformer](api/seamless-transformer.md) — `direct`, `delayed`, `Transformation`, `spawn`
+- [seamless-transformer](api/seamless-transformer.md) — `direct`, `delayed`, `parallel`, `Transformation`, `spawn`
 - [seamless-config](api/seamless-config.md) — `init()`, `set_stage()`, YAML command language, cluster definitions
 - [seamless-remote](api/seamless-remote.md) — remote clients, `seamless-resolve`, `seamless-fingertip`
 - [seamless-dask](api/seamless-dask.md) — Dask integration, `seamless-dask-wrapper`

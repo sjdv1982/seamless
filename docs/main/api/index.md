@@ -31,6 +31,8 @@ The table below classifies every user-facing Python symbol by how central it is 
 |---|---|
 | `direct` | **Core** |
 | `delayed` | **Core** |
+| `parallel()` / `parallel_async()` | **Core** |
+| `TransformationList` | **Advanced** |
 | `Transformation.run()` | **Core** |
 | `Transformation.compute()` | **Core** |
 | `Transformation.start()` | **Core** |
@@ -62,6 +64,7 @@ The table below classifies every user-facing Python symbol by how central it is 
 | Symbol | Classification |
 |---|---|
 | `init()` | **Core** |
+| `set_nparallel()` / `get_nparallel()` | **Advanced** |
 | `set_stage()` | **Advanced** |
 | `set_substage()` | Specialized/utility |
 | `set_workdir()` | Specialized/utility |
@@ -107,7 +110,7 @@ The table below classifies every user-facing Python symbol by how central it is 
 ## Per-package reference
 
 - [seamless-core](seamless-core.md) — `Checksum`, `Buffer`, cell types, buffer cache
-- [seamless-transformer](seamless-transformer.md) — `direct`, `delayed`, `Transformation`, `spawn`, `seamless-run`
+- [seamless-transformer](seamless-transformer.md) — `direct`, `delayed`, `parallel`, `Transformation`, `spawn`, `seamless-run`
 - [seamless-config](seamless-config.md) — `init()`, `set_stage()`, YAML command language, cluster definitions
 - [seamless-remote](seamless-remote.md) — remote clients, `seamless-resolve`, `seamless-fingertip`
 - [seamless-dask](seamless-dask.md) — Dask integration, `seamless-dask-wrapper`

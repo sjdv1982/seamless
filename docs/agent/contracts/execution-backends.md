@@ -27,6 +27,14 @@ This page defines the minimum operational model an agent may rely on when discus
    - Intended for HPC/distributed throughput; can integrate with schedulers (commonly via `dask-jobqueue` on SLURM/OAR).
    - Operationally: typically long-lived/bundled workers execute many tasks (not one scheduler submission per Seamless step).
 
+## Testing surface
+
+Agents should not assume HPC or scheduler-backed testing lives only in `seamless-dask`.
+
+- HPC/Dask-oriented tests also exist in `seamless-transformer/tests/dask`.
+- The `seamless-transformer/tests/cmd` suite is backend-agnostic: it tests the `seamless-run` CLI contract rather than a specific backend.
+- Those `tests/cmd` cases can be, and have been, exercised against a SLURM-backed `remote: daskserver` cluster.
+
 ## Minimal configuration shape (command language)
 
 Agents should expect configuration to be expressed as a YAML list of commands (project defaults + local overrides). A minimal shape for selecting a backend:

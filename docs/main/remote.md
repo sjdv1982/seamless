@@ -55,7 +55,7 @@ With a jobserver configured, set `execution: remote` (or rely on the default) in
 
 ## daskserver
 
-The **daskserver** is the general-purpose remote backend. It uses Dask as its execution and scheduling substrate, making it suitable for multi-node HPC clusters, adaptive scaling, and high-throughput workloads. It also works locally — using `dask.distributed.LocalCluster` — which makes it the preferred backend for anything beyond single-machine parallelism with `spawn`.
+The **daskserver** is the general-purpose remote backend. It uses Dask as its execution and scheduling substrate, making it suitable for multi-node HPC clusters, adaptive scaling, and high-throughput workloads. It also works with `dask.distributed.LocalCluster`, which makes it the preferred backend for anything beyond single-machine parallelism with `spawn`. A `LocalCluster` can be launched either on the client itself or on a remote frontend reached over SSH, depending on whether the cluster frontend has a `hostname`.
 
 Where jobserver is "one machine with a worker pool", daskserver is "a managed Dask cluster that can scale dynamically". The Seamless worker plugin runs inside each Dask worker and maintains its own local worker process pool, so multiple levels of parallelism are available.
 

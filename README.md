@@ -26,8 +26,8 @@ This installs all standard Seamless components. For a minimal install, the core 
 | Package | Import | Provides |
 | --- | --- | --- |
 | `seamless-core` | `import seamless` | `Checksum`, `Buffer`, cell types, buffer cache |
-| `seamless-transformer` | `from seamless.transformer import direct, delayed` | `direct`, `delayed`, `seamless-run`, `seamless-upload`, `seamless-download` |
-| `seamless-config` | `import seamless.config` | `seamless.config.init()`, `seamless-init` |
+| `seamless-transformer` | `from seamless.transformer import direct, delayed, parallel` | `direct`, `delayed`, `parallel`, `parallel_async`, `TransformationList`, `seamless-run`, `seamless-upload`, `seamless-download` |
+| `seamless-config` | `import seamless.config` | `seamless.config.init()`, `seamless.config.set_nparallel()`, `seamless-init` |
 
 ## Quick Examples
 
@@ -52,6 +52,25 @@ export SEAMLESS_CACHE=~/.seamless/cache     # global persistent caching
 seamless-run 'seq 1 10 | tac && sleep 5'    # runs, caches result
 seamless-run 'seq 1 10 | tac && sleep 5'    # cache hit — instant
 ```
+
+### Python: bounded parallel batches
+
+```python
+import seamless.config
+from seamless.transformer import delayed, parallel, TransformationList
+
+seamless.config.set_nparallel(4)
+
+@delayed
+def add(a, b):
+    return a + b
+
+tflist = TransformationList([add(i, i) for i in range(20)], show_progress=True)
+for tf in parallel(tflist):
+    print(tf.value)
+```
+
+`parallel()` yields transformations in input order, but streams them as soon as each contiguous prefix has completed.
 
 ## Seamless mode
 
