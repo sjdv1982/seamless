@@ -53,25 +53,6 @@ seamless-run 'seq 1 10 | tac && sleep 5'    # runs, caches result
 seamless-run 'seq 1 10 | tac && sleep 5'    # cache hit — instant
 ```
 
-### Python: bounded parallel batches
-
-```python
-import seamless.config
-from seamless.transformer import delayed, parallel, TransformationList
-
-seamless.config.set_nparallel(4)
-
-@delayed
-def add(a, b):
-    return a + b
-
-tflist = TransformationList([add(i, i) for i in range(20)], show_progress=True)
-for tf in parallel(tflist):
-    print(tf.value)
-```
-
-`parallel()` yields transformations in input order, but streams them as soon as each contiguous prefix has completed.
-
 ## Seamless mode
 
 ### Automatically wrap the bash commands you type
