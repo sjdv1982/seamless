@@ -1,5 +1,5 @@
 {
-  "generated_at": 1774693674,
+  "generated_at": 1775223533,
   "symbols": {
     "ArgsWrapper": {
       "anchor": "argswrapper",
@@ -373,6 +373,10 @@
       "anchor": "get-execution",
       "page": "api/python/seamless_config.select.md"
     },
+    "get_nparallel": {
+      "anchor": "get-nparallel",
+      "page": "api/python/seamless_config.select.md"
+    },
     "get_persistent": {
       "anchor": "get-persistent",
       "page": "api/python/seamless_config.select.md"
@@ -439,6 +443,10 @@
     },
     "select_execution": {
       "anchor": "select-execution",
+      "page": "api/python/seamless_config.select.md"
+    },
+    "select_nparallel": {
+      "anchor": "select-nparallel",
       "page": "api/python/seamless_config.select.md"
     },
     "select_persistent": {

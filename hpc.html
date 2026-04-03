@@ -64,6 +64,12 @@
     <ul class="current">
     <li class="toctree-l2"><a class="reference internal" href="#the-big-picture">The big picture</a>
     </li>
+    <li class="toctree-l2"><a class="reference internal" href="#manual-hpc-execution">Manual HPC execution</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#trade-off-you-lose-seamless-result-caching">Trade-off: you lose Seamless result caching</a>
+    </li>
+        </ul>
+    </li>
     <li class="toctree-l2"><a class="reference internal" href="#queue-definitions">Queue definitions</a>
         <ul>
     <li class="toctree-l3"><a class="reference internal" href="#key-parameters">Key parameters</a>
@@ -160,6 +166,44 @@
 <p>This guide covers Seamless deployment on HPC clusters with SLURM or OAR schedulers. It assumes you have read <a href="remote.html">Remote execution</a> and have a working daskserver cluster definition.</p>
 <h2 id="the-big-picture">The big picture</h2>
 <p>Seamless does not make a great difference between a HPC cluster config and a local cluster config. In both cases, Seamless cluster services (hashserver, database, Dask scheduler) are launched, and are available to the local machine over the network (potentially via SSH tunnel). Dask will accept both Python transformations and <code>seamless-run</code> commands, no matter where it runs. If it runs on an HPC frontend, then <code>seamless-run</code> commands will run directly on a compute node, with input files uploaded automatically.</p>
+<h2 id="manual-hpc-execution">Manual HPC execution</h2>
+<p>Sometimes full remote execution is the wrong abstraction.</p>
+<p>If you need to inspect the deployed job, load site-specific modules manually, or
+wrap the actual run in your own <code>sbatch</code>, <code>srun</code>, or debugging procedure, use:</p>
+<pre><code class="language-bash">seamless-run --dry --write-remote-job /scratch/myjob \
+  head -n 100 input.txt
+</code></pre>
+<p>This tells Seamless to do deployment, not execution:
+- Seamless computes the transformation identity.
+- <code>--write-remote-job</code> implies <code>--upload</code>, so the required input buffers are
+  staged on the remote hashserver automatically.
+- Seamless materializes the job directory on the machine running
+  <code>seamless-run</code> and writes <code>transform.sh</code> plus the required input files.
+- If you need that payload on the cluster frontend, use a mounted/shared path
+  or copy/sync the directory there afterwards.
+- Seamless then stops.</p>
+<p>At that point, the job directory itself is the artifact you care about. You can
+inspect it, verify that the right files are present, and then execute it
+manually:</p>
+<pre><code class="language-bash">cd /scratch/myjob
+module load ...
+bash transform.sh
+</code></pre>
+<p>This is useful on HPC systems when:
+- your site requires a custom <code>module load</code> sequence
+- you want to submit through a hand-written SLURM wrapper
+- you want to debug interactively before queue submission
+- you want a concrete verification step between deployment and execution</p>
+<h3 id="trade-off-you-lose-seamless-result-caching">Trade-off: you lose Seamless result caching</h3>
+<p>This mode intentionally gives up one of Seamless's normal guarantees.</p>
+<p>Because Seamless does not execute the transformation itself, it also does not
+record a result checksum in the database. That means:
+- Seamless will not treat the run as completed
+- re-running the same command may materialize the job directory again
+- any caching of the final result is now your responsibility unless you later
+  reintroduce execution through Seamless</p>
+<p>The payoff is control. Seamless handles reproducible deployment of the job
+payload; you handle execution policy.</p>
 <h2 id="queue-definitions">Queue definitions</h2>
 <p>HPC queue definitions live inside the cluster entry in <code>~/.seamless/clusters.yaml</code>, under the <code>queues</code> key. Each queue entry maps to a <code>dask_jobqueue</code> cluster constructor call (SLURMCluster, OARCluster, etc.), plus Seamless-specific lifecycle parameters.</p>
 <p>A minimal SLURM cluster with two queues:</p>
@@ -216,7 +260,7 @@
 <tbody>
 <tr>
 <td><code>hostname</code></td>
-<td>SSH hostname. Must be reachable without password</td>
+<td>Frontend hostname. If set, services are launched there over SSH and must be reachable without password</td>
 </tr>
 <tr>
 <td><code>walltime</code></td>

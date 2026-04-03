@@ -1,15 +1,38 @@
 [build-system]
-requires = ["setuptools>=61.0"]
+requires = ["setuptools>=61.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "seamless-jobserver"
-version = "0.0.0"
-description = "Dummy Seamless jobserver implementation"
+version = "0.1.1"
+description = "Simple Seamless jobserver implementation"
+readme = "README.md"
 requires-python = ">=3.9"
+license = "MIT"
+license-files = ["LICENSE.txt"]
+authors = [{name = "Sjoerd de Vries"}]
 dependencies = [
     "aiohttp",
 ]
+keywords = ["seamless", "reproducibility", "checksum", "workflow", "scientific-computing"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Science/Research",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Operating System :: OS Independent",
+    "Topic :: Scientific/Engineering",
+    "Topic :: Software Development :: Libraries",
+]
+
+[project.urls]
+Homepage = "https://github.com/sjdv1982/seamless"
+Repository = "https://github.com/sjdv1982/seamless-core"
+Issues = "https://github.com/sjdv1982/seamless/issues"
+
+[project.optional-dependencies]
+dev = []
 
 [project.scripts]
 seamless-jobserver = "jobserver:main"

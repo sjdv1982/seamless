@@ -189,13 +189,13 @@ today, or watch this space for updates.</p>
 </tr>
 <tr>
 <td><code>seamless-transformer</code></td>
-<td><code>from seamless.transformer import direct, delayed</code></td>
-<td><code>direct</code>, <code>delayed</code>, <code>seamless-run</code>, <code>seamless-upload</code>, <code>seamless-download</code></td>
+<td><code>from seamless.transformer import direct, delayed, parallel</code></td>
+<td><code>direct</code>, <code>delayed</code>, <code>parallel</code>, <code>parallel_async</code>, <code>TransformationList</code>, <code>seamless-run</code>, <code>seamless-upload</code>, <code>seamless-download</code></td>
 </tr>
 <tr>
 <td><code>seamless-config</code></td>
 <td><code>import seamless.config</code></td>
-<td><code>seamless.config.init()</code>, <code>seamless-init</code></td>
+<td><code>seamless.config.init()</code>, <code>seamless.config.set_nparallel()</code>, <code>seamless-init</code></td>
 </tr>
 </tbody>
 </table>
@@ -232,7 +232,7 @@ seamless-run 'seq 1 10 | tac &amp;&amp; sleep 5'    # cache hit — instant
 <ul>
 <li><a href="caching.html">Caching, identity, and sharing</a> — what constitutes a cache key, <code>Checksum</code> and <code>Buffer</code>, <code>.CHECKSUM</code> sidecars, the <code>persistent</code> command</li>
 <li><a href="composition.html">Composition</a> — driver transformations, fan-out, <code>.modules</code> and <code>.globals</code></li>
-<li><a href="parallelism.html">Local parallelism</a> — <code>execution: spawn</code>, <code>spawn(N)</code> in Python, <code>seamless-queue</code></li>
+<li><a href="parallelism.html">Local parallelism</a> — <code>execution: spawn</code>, <code>spawn(N)</code>, <code>parallel()</code>, <code>TransformationList</code>, <code>seamless-queue</code></li>
 <li><a href="remote.html">Remote execution</a> — jobserver vs daskserver, <code>set_stage()</code>, <code>--local</code></li>
 <li><a href="hpc.html">HPC specifics</a> — SLURM/OAR queue definitions, adaptive scaling, pure Dask mode</li>
 <li><a href="remote-launch.html">Remote job launching</a> — CLI workflow for remote clusters, checksum vs buffer distinction, deep checksums</li>
@@ -242,7 +242,7 @@ seamless-run 'seq 1 10 | tac &amp;&amp; sleep 5'    # cache hit — instant
 <ul>
 <li><a href="api/index.html">Overview</a> — full API symbol classification</li>
 <li><a href="api/seamless-core.html">seamless-core</a> — <code>Checksum</code>, <code>Buffer</code>, cell types</li>
-<li><a href="api/seamless-transformer.html">seamless-transformer</a> — <code>direct</code>, <code>delayed</code>, <code>Transformation</code>, <code>spawn</code></li>
+<li><a href="api/seamless-transformer.html">seamless-transformer</a> — <code>direct</code>, <code>delayed</code>, <code>parallel</code>, <code>Transformation</code>, <code>spawn</code></li>
 <li><a href="api/seamless-config.html">seamless-config</a> — <code>init()</code>, <code>set_stage()</code>, YAML command language, cluster definitions</li>
 <li><a href="api/seamless-remote.html">seamless-remote</a> — remote clients, <code>seamless-resolve</code>, <code>seamless-fingertip</code></li>
 <li><a href="api/seamless-dask.html">seamless-dask</a> — Dask integration, <code>seamless-dask-wrapper</code></li>
@@ -298,5 +298,5 @@ seamless-run 'seq 1 10 | tac &amp;&amp; sleep 5'    # cache hit — instant
 
 <!--
 MkDocs version : 1.6.1
-Build Date UTC : 2026-03-28 10:27:54.859786+00:00
+Build Date UTC : 2026-04-03 13:38:54.906668+00:00
 -->

@@ -73,6 +73,8 @@
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#backend-semantics-agent-assumptions">Backend semantics (agent assumptions)</a>
     </li>
+    <li class="toctree-l2"><a class="reference internal" href="#testing-surface">Testing surface</a>
+    </li>
     <li class="toctree-l2"><a class="reference internal" href="#minimal-configuration-shape-command-language">Minimal configuration shape (command language)</a>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#porting-implication-important">Porting implication (important)</a>
@@ -150,6 +152,13 @@
    - Uses Dask as the execution/scheduling substrate.
    - Intended for HPC/distributed throughput; can integrate with schedulers (commonly via <code>dask-jobqueue</code> on SLURM/OAR).
    - Operationally: typically long-lived/bundled workers execute many tasks (not one scheduler submission per Seamless step).</p>
+<h2 id="testing-surface">Testing surface</h2>
+<p>Agents should not assume HPC or scheduler-backed testing lives only in <code>seamless-dask</code>.</p>
+<ul>
+<li>HPC/Dask-oriented tests also exist in <code>seamless-transformer/tests/dask</code>.</li>
+<li>The <code>seamless-transformer/tests/cmd</code> suite is backend-agnostic: it tests the <code>seamless-run</code> CLI contract rather than a specific backend.</li>
+<li>Those <code>tests/cmd</code> cases can be, and have been, exercised against a SLURM-backed <code>remote: daskserver</code> cluster.</li>
+</ul>
 <h2 id="minimal-configuration-shape-command-language">Minimal configuration shape (command language)</h2>
 <p>Agents should expect configuration to be expressed as a YAML list of commands (project defaults + local overrides). A minimal shape for selecting a backend:</p>
 <pre><code class="language-yaml">- cluster: mycluster

@@ -486,12 +486,14 @@ exclusive — a cluster frontend must expose exactly one, or you must pin the
 choice with <code>remote: jobserver</code> or <code>remote: daskserver</code> in
 <code>seamless.profile.yaml</code>.</p>
 <p><code>remote_http_launcher</code> handles two scheduler-placement topologies automatically:
-when <code>hostname</code> is set it SSHes into the frontend and runs the Dask wrapper as a
-daemon there (scheduler lives on the HPC frontend node); when <code>hostname</code> is absent
-it runs the wrapper as a local daemon (Cluster object lives on the client, scheduler
-lives wherever the provider puts it — suitable for cloud backends). The configuration
-schema currently covers HPC schedulers (SLURM, OAR); cloud provider support would
-require extending the cluster definition vocabulary, not the launcher or wrapper.</p>
+when <code>hostname</code> is set it SSHes into the configured frontend and runs the Dask
+wrapper as a daemon there; when <code>hostname</code> is absent it runs the wrapper as a
+local daemon on the client. This is independent of cluster type: a cluster with
+<code>type: local</code> still uses <code>distributed.LocalCluster</code>, but that <code>LocalCluster</code> may
+live either on the client or on a remote frontend reached over SSH. The
+configuration schema currently covers <code>local</code>, <code>slurm</code>, and <code>oar</code>; cloud provider
+support would require extending the cluster definition vocabulary, not the
+launcher or wrapper.</p>
 <h3 id="persistence">Persistence</h3>
 <p>When a cluster is selected and <code>persistent: true</code> (the default), <code>seamless-config</code>
 activates:</p>

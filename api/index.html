@@ -253,6 +253,14 @@
 <td><strong>Core</strong></td>
 </tr>
 <tr>
+<td><code>parallel()</code> / <code>parallel_async()</code></td>
+<td><strong>Core</strong></td>
+</tr>
+<tr>
+<td><code>TransformationList</code></td>
+<td><strong>Advanced</strong></td>
+</tr>
+<tr>
 <td><code>Transformation.run()</code></td>
 <td><strong>Core</strong></td>
 </tr>
@@ -357,6 +365,10 @@
 <tr>
 <td><code>init()</code></td>
 <td><strong>Core</strong></td>
+</tr>
+<tr>
+<td><code>set_nparallel()</code> / <code>get_nparallel()</code></td>
+<td><strong>Advanced</strong></td>
 </tr>
 <tr>
 <td><code>set_stage()</code></td>
@@ -479,7 +491,7 @@
 <h2 id="per-package-reference">Per-package reference</h2>
 <ul>
 <li><a href="seamless-core.html">seamless-core</a> — <code>Checksum</code>, <code>Buffer</code>, cell types, buffer cache</li>
-<li><a href="seamless-transformer.html">seamless-transformer</a> — <code>direct</code>, <code>delayed</code>, <code>Transformation</code>, <code>spawn</code>, <code>seamless-run</code></li>
+<li><a href="seamless-transformer.html">seamless-transformer</a> — <code>direct</code>, <code>delayed</code>, <code>parallel</code>, <code>Transformation</code>, <code>spawn</code>, <code>seamless-run</code></li>
 <li><a href="seamless-config.html">seamless-config</a> — <code>init()</code>, <code>set_stage()</code>, YAML command language, cluster definitions</li>
 <li><a href="seamless-remote.html">seamless-remote</a> — remote clients, <code>seamless-resolve</code>, <code>seamless-fingertip</code></li>
 <li><a href="seamless-dask.html">seamless-dask</a> — Dask integration, <code>seamless-dask-wrapper</code></li>

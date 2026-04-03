@@ -69,11 +69,15 @@
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#argtyping-files-vs-values">Argtyping (files vs values)</a>
     </li>
+    <li class="toctree-l2"><a class="reference internal" href="#meta-variables-metavar">Meta variables (--metavar)</a>
+    </li>
     <li class="toctree-l2"><a class="reference internal" href="#canonicalization">Canonicalization</a>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#concurrency-and-1000-subprocesses">Concurrency and “1000 subprocesses”</a>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#remote-execution-guidance">Remote execution guidance</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#manual-remote-deployment-mode">Manual Remote Deployment Mode</a>
     </li>
     </ul>
                   </li>
@@ -153,6 +157,19 @@
 <p>An agent should:
 - prefer explicit specification when guessing is ambiguous
 - avoid relying on CWD surprises; set/record workdir</p>
+<h2 id="meta-variables-metavar">Meta variables (<code>--metavar</code>)</h2>
+<p><code>--metavar NAME=VALUE</code> injects a variable into the bash command environment
+without contributing to the transformation identity (cache key).</p>
+<ul>
+<li>Accessible inside the bash script as <code>$NAME</code> — same ergonomics as <code>--var</code>.</li>
+<li>Does <strong>not</strong> change the transformation checksum when its value changes.</li>
+<li>Two invocations differing only in <code>--metavar</code> values share a cache entry.</li>
+</ul>
+<p>Use <code>--metavar</code> for execution hints that should not invalidate the cache:
+thread counts, verbosity flags, temp dirs, debug toggles, and similar operational
+parameters.</p>
+<p>Use <code>--var</code> for any value that is part of the computation logic and should
+invalidate the cache when it changes.</p>
 <h2 id="canonicalization">Canonicalization</h2>
 <p>For pipelines where parallelism only affects ordering:
 - canonicalize outputs (e.g. sort records) so “same meaning” becomes “same bytes”.
@@ -165,6 +182,40 @@
 <h2 id="remote-execution-guidance">Remote execution guidance</h2>
 <p>The same “content-bound” rule applies:
 - don’t assume remotes have local files; treat inputs as artifacts and materialize where executed</p>
+<h2 id="manual-remote-deployment-mode">Manual Remote Deployment Mode</h2>
+<p><code>seamless-run --dry --write-remote-job DIR ...</code> is a deployment-only mode for
+remote execution, typically on HPC systems.</p>
+<p>Contract:
+- This is the one important case where <code>--dry</code> still triggers remote work.
+- <code>--write-remote-job</code> implies <code>--upload</code>: Seamless must stage the input
+  buffers on the remote hashserver so the materialized job directory can
+  contain the required files.
+- Seamless prepares the transformation, materializes the bash job directory at
+  <code>DIR</code>, and then stops before execution.
+- <code>DIR</code> is created on the machine running <code>seamless-run</code>, not on the remote
+  cluster frontend. If you want the payload on the cluster, use a locally
+  mounted/shared path or copy/sync the materialized directory there.
+- The success artifact is the concrete job directory on disk, not a result
+  checksum.
+- CLI success output is <code>Transformation submitted to remote server</code>.
+- No result checksum is written to the Seamless database.
+- Because no execution result is stored, this mode gives up normal Seamless
+  result caching for that run.
+- The generated <code>transform.sh</code> is meant to be inspectable and runnable by the
+  user under site-specific control.
+- Re-running the same command should be expected to materialize the job
+  directory again, because Seamless has not registered a completed execution.</p>
+<p>Agent guidance:
+- Recommend this mode when the user wants Seamless to handle deployment, but
+  wants to keep manual control over execution.
+- Typical reasons are custom <code>module load</code> sequences, manual <code>sbatch</code>/<code>srun</code>
+  wrapping, scheduler-specific launch policy, or step-by-step debugging on the
+  cluster side.
+- Present this as “remove one layer of abstraction”: Seamless defines and
+  deploys the job payload, the user verifies the disk materialization, and then
+  executes manually.</p>
+<p>For the human-oriented HPC explanation, see
+<a href="../../main/hpc.md"><code>docs/main/hpc.md</code></a>.</p>
               
             </div>
           </div><footer>

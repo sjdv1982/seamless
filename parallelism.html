@@ -64,6 +64,8 @@
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#concurrent-scheduling-with-start">Concurrent scheduling with .start()</a>
     </li>
+    <li class="toctree-l3"><a class="reference internal" href="#parallel-parallel_async-for-large-batches">parallel() / parallel_async() for large batches</a>
+    </li>
         </ul>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#seamless-queue-parallelizing-cli-workflows">seamless-queue — parallelizing CLI workflows</a>
@@ -157,7 +159,7 @@
             <div class="section" itemprop="articleBody">
               
                 <h1 id="local-parallelism">Local parallelism</h1>
-<p>Seamless provides two independent mechanisms for local parallelism: worker processes for Python transformations, and a queue server for bash CLI workflows.</p>
+<p>Seamless provides three related mechanisms for parallel work: for Python transformations, there are worker processes and bounded batch draining of large transformation lists; for bash CLI workflows, there is a queue server .</p>
 <h2 id="execution-spawn-local-worker-pool"><code>execution: spawn</code> — local worker pool</h2>
 <p>Setting <code>execution: spawn</code> in your configuration tells Seamless to run transformations in a pool of separate worker processes rather than in the current Python process. The number of workers defaults to the number of logical CPU cores.</p>
 <p>In <code>seamless.yaml</code> or <code>seamless.profile.yaml</code>:</p>
@@ -202,6 +204,47 @@ for h in handles:
 results = [h.run() for h in handles]  # .run() blocks until done (cache hit if already finished)
 </code></pre>
 <p><code>.run()</code> on an already-started transformation returns immediately if the result is ready, or blocks until it is. <code>.task()</code> is the async/await equivalent of <code>.run()</code>, useful in async code.</p>
+<h3 id="parallel-parallel_async-for-large-batches"><code>parallel()</code> / <code>parallel_async()</code> for large batches</h3>
+<p>For large batches of delayed transformations, prefer <code>parallel()</code> or <code>parallel_async()</code> over manually calling <code>.start()</code> on every transformation first. These helpers keep at most <code>nparallel</code> transformations active at once.</p>
+<p>Set the global limit in <code>seamless.profile.yaml</code>:</p>
+<pre><code class="language-yaml">- nparallel: 4
+</code></pre>
+<p>or in Python:</p>
+<pre><code class="language-python">import seamless.config
+
+seamless.config.set_nparallel(4)
+</code></pre>
+<p>Synchronous usage:</p>
+<pre><code class="language-python">from seamless.transformer import delayed, parallel
+
+@delayed
+def process(item):
+    ...
+
+tfs = [process(item) for item in items]
+for tf in parallel(tfs):
+    print(tf.value)
+</code></pre>
+<p>Async usage:</p>
+<pre><code class="language-python">from seamless.transformer import delayed, parallel_async
+
+@delayed
+def process(item):
+    ...
+
+async def main():
+    async for tf in parallel_async([process(item) for item in items]):
+        print(tf.value)
+</code></pre>
+<p>The iterator is streaming but ordered: transformation <code>N</code> is yielded as soon as transformations <code>0..N</code> have all completed.</p>
+<p>To attach progress reporting and error tracking, wrap the list in <code>TransformationList</code>:</p>
+<pre><code class="language-python">from seamless.transformer import TransformationList, parallel
+
+tflist = TransformationList([process(item) for item in items], show_progress=True)
+for tf in parallel(tflist):
+    pass
+</code></pre>
+<p><code>parallel()</code> is synchronous and must not be called from within a running event loop; use <code>parallel_async()</code> there.</p>
 <hr />
 <h2 id="seamless-queue-parallelizing-cli-workflows"><code>seamless-queue</code> — parallelizing CLI workflows</h2>
 <p>For bash workflows using <code>seamless-run</code>, the equivalent of <code>spawn</code> is <code>seamless-queue</code> combined with the <code>--qsubmit</code> flag.</p>
