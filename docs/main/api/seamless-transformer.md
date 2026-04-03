@@ -4,9 +4,9 @@
 
 ## Bounded parallel execution
 
-For large batches of delayed transformations, use `parallel()` or `parallel_async()` instead of manually calling `.start()` and `.run()` on large numbers of objects.
+For large batches of delayed transformations, use `parallel()` or `parallel_async()` instead of manually calling `.start()` and `.run()` on thousands of objects.
 
-The concurrency limit is configured globally via `nparallel` in `seamless.profile.yaml`, or with `seamless.config.set_nparallel()`:
+The concurrency limit is configured globally via `nparallel` in `seamless.profile.yaml` (or with `seamless.config.set_nparallel()` / `seamless_config.set_nparallel()`):
 
 ```yaml
 - nparallel: 4
@@ -22,13 +22,28 @@ seamless.config.set_nparallel(4)
 def add(a, b):
     return a + b
 
-for tf in parallel([add(i, i) for i in range(20)]):
+tfs = [add(i, i) for i in range(20)]
+for tf in parallel(tfs):
     print(tf.value)
 ```
 
-`parallel()` is a synchronous streaming iterator. It yields completed transformations in input order, as soon as each contiguous prefix is available. `parallel_async()` provides the same behavior as an async iterator.
+`parallel()` is a synchronous iterator. It yields completed transformations in input order, but streams them as soon as the prefix is ready: transformation `N` is yielded as soon as `0..N` have all finished.
 
-For progress reporting and error tracking, use `TransformationList`:
+In async code, use `parallel_async()`:
+
+```python
+from seamless.transformer import delayed, parallel_async
+
+@delayed
+def add(a, b):
+    return a + b
+
+async def main():
+    async for tf in parallel_async([add(i, i) for i in range(20)]):
+        print(tf.value)
+```
+
+For progress reporting and error tracking, wrap the list in `TransformationList`:
 
 ```python
 from seamless.transformer import TransformationList, parallel
@@ -36,7 +51,11 @@ from seamless.transformer import TransformationList, parallel
 tflist = TransformationList([add(i, i) for i in range(20)], show_progress=True)
 for tf in parallel(tflist):
     pass
+
+print(tflist._finished, tflist._errors)
 ```
+
+`parallel()` cannot be called from inside a running event loop; use `parallel_async()` there.
 
 ## Core concepts
 

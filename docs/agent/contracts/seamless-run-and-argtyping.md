@@ -99,4 +99,4 @@ Agent guidance:
   executes manually.
 
 For the human-oriented HPC explanation, see
-[`docs/main/hpc.md`](../../main/hpc.md).
+[`HPC specifics`](https://sjdv1982.github.io/seamless/hpc.html).
