@@ -210,6 +210,30 @@ buf.write()                        # push bytes to the configured hashserver
 <h2 id="the-checksum-sidecar-convention">The <code>.CHECKSUM</code> sidecar convention</h2>
 <p>On the filesystem, Seamless uses <code>.CHECKSUM</code> sidecar files: a file <code>data/input.txt</code> is accompanied by <code>data/input.txt.CHECKSUM</code>, which contains the 64-character hex SHA-256 of <code>input.txt</code>.</p>
 <p>When <code>seamless-run</code> encounters a file argument <code>data/input.txt</code>, it first looks for <code>data/input.txt.CHECKSUM</code>. If the sidecar exists, Seamless reads the checksum from it — <strong>and the original file does not need to be present locally</strong>. This is the basis of remote workflows: upload inputs once, keep only the checksums, and run without the original files.</p>
+<p>The two path forms behave fundamentally differently:</p>
+<ul>
+<li>
+<p><strong>Implicit lookup (the normal workflow):</strong> pass the base path <code>data/genome.fa</code>. Seamless detects <code>data/genome.fa.CHECKSUM</code>, reads the 64-character SHA-256 from it, and uses that as the input's identity. The wrapped command still receives <code>genome.fa</code> as its argument. On a remote worker, the actual bytes of <code>genome.fa</code> are fetched from the hashserver and materialised in the working directory. The base file does not need to be present locally.</p>
+</li>
+<li>
+<p><strong>Explicit sidecar (rarely intended):</strong> pass the sidecar path itself — <code>data/genome.fa.CHECKSUM</code>. No dereferencing occurs. The wrapped command receives <code>genome.fa.CHECKSUM</code> as its argument. On a remote worker, only the 64-character hex string is materialised, in a file named <code>genome.fa.CHECKSUM</code>. The actual genome bytes are never fetched.</p>
+</li>
+</ul>
+<p>Concrete example — after uploading, only <code>data/genome.fa.CHECKSUM</code> remains locally:</p>
+<pre><code class="language-bash"># Implicit lookup — the correct way
+seamless-run blast data/genome.fa
+# Reads the checksum from data/genome.fa.CHECKSUM
+# The blast command receives genome.fa as its argument
+# Remote worker: fetches the full genome bytes from the hashserver,
+#               materialises them as genome.fa in the working directory
+
+# Explicit sidecar — usually wrong
+seamless-run blast data/genome.fa.CHECKSUM
+# No dereferencing: blast receives genome.fa.CHECKSUM as its argument
+# Remote worker: only the 64-char hex string file is materialised
+# blast will likely fail — it receives a tiny text file, not the genome
+</code></pre>
+<p>Implicit sidecar lookup is never triggered by a path that already ends in <code>.CHECKSUM</code> or <code>.INDEX</code>; it only applies when you name the base path.</p>
 <p><code>seamless-upload</code> pushes the file bytes to the hashserver and writes the sidecar:</p>
 <pre><code class="language-bash">seamless-upload data/large-input.h5
 # uploads bytes to the hashserver

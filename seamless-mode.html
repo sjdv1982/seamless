@@ -191,6 +191,9 @@ seamless mode options:
 [seamless-mode] user@host:~$ seq 10 | tac | awk -v l='Countdown:' '{print l, $1}' &amp;&amp; sleep 5   # press Enter...
 [seamless-mode] user@host:~$ seamless-run -c 'seq 10 | tac | awk -v l='\''Countdown:'\'' '\''{print l, $1}'\'' &amp;&amp; sleep 5'   # ...shown, press Enter again to run
 </code></pre>
+<p>The first Enter only rewrites the command and shows the generated <code>seamless-run ...</code> line. You can still edit that line before pressing Enter again to execute it.</p>
+<p>As a convenience, seamless mode strips trailing <code>.CHECKSUM</code> and <code>.INDEX</code> suffixes from command tokens before showing the generated <code>seamless-run</code> line. This handles a common interactive situation: when a large input file has been uploaded and removed locally, only the sidecar remains (e.g. <code>genome.fa.CHECKSUM</code>), so tab completion naturally offers the sidecar name rather than the base file. Seamless mode converts this back to <code>genome.fa</code> so that <code>seamless-run</code> performs the correct implicit sidecar lookup — reads the checksum from <code>genome.fa.CHECKSUM</code> and passes <code>genome.fa</code> (not the sidecar) to the wrapped command, with the full file materialised on the remote worker from the hashserver.</p>
+<p>If you genuinely want the wrapped command to receive the sidecar filename itself — a rare need — edit the generated <code>seamless-run -c '...'</code> line before the second Enter. See <a href="caching.html#the-checksum-sidecar-convention">The <code>.CHECKSUM</code> sidecar convention</a> for when explicit sidecar paths matter.</p>
 <p>Pass options to <code>seamless-run</code> via <code>seamless-mode-on</code>:</p>
 <pre><code class="language-bash">seamless-mode-on --stage mycluster
 </code></pre>
