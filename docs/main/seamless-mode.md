@@ -52,6 +52,12 @@ seamless mode options:
 [seamless-mode] user@host:~$ seamless-run -c 'seq 10 | tac | awk -v l='\''Countdown:'\'' '\''{print l, $1}'\'' && sleep 5'   # ...shown, press Enter again to run
 ```
 
+The first Enter only rewrites the command and shows the generated `seamless-run ...` line. You can still edit that line before pressing Enter again to execute it.
+
+As a convenience, seamless mode strips trailing `.CHECKSUM` and `.INDEX` suffixes from command tokens before showing the generated `seamless-run` line. This handles a common interactive situation: when a large input file has been uploaded and removed locally, only the sidecar remains (e.g. `genome.fa.CHECKSUM`), so tab completion naturally offers the sidecar name rather than the base file. Seamless mode converts this back to `genome.fa` so that `seamless-run` performs the correct implicit sidecar lookup — reads the checksum from `genome.fa.CHECKSUM` and passes `genome.fa` (not the sidecar) to the wrapped command, with the full file materialised on the remote worker from the hashserver.
+
+If you genuinely want the wrapped command to receive the sidecar filename itself — a rare need — edit the generated `seamless-run -c '...'` line before the second Enter. See [The `.CHECKSUM` sidecar convention](caching.md#the-checksum-sidecar-convention) for when explicit sidecar paths matter.
+
 Pass options to `seamless-run` via `seamless-mode-on`:
 
 ```bash

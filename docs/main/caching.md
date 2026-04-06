@@ -84,6 +84,31 @@ On the filesystem, Seamless uses `.CHECKSUM` sidecar files: a file `data/input.t
 
 When `seamless-run` encounters a file argument `data/input.txt`, it first looks for `data/input.txt.CHECKSUM`. If the sidecar exists, Seamless reads the checksum from it — **and the original file does not need to be present locally**. This is the basis of remote workflows: upload inputs once, keep only the checksums, and run without the original files.
 
+The two path forms behave fundamentally differently:
+
+- **Implicit lookup (the normal workflow):** pass the base path `data/genome.fa`. Seamless detects `data/genome.fa.CHECKSUM`, reads the 64-character SHA-256 from it, and uses that as the input's identity. The wrapped command still receives `genome.fa` as its argument. On a remote worker, the actual bytes of `genome.fa` are fetched from the hashserver and materialised in the working directory. The base file does not need to be present locally.
+
+- **Explicit sidecar (rarely intended):** pass the sidecar path itself — `data/genome.fa.CHECKSUM`. No dereferencing occurs. The wrapped command receives `genome.fa.CHECKSUM` as its argument. On a remote worker, only the 64-character hex string is materialised, in a file named `genome.fa.CHECKSUM`. The actual genome bytes are never fetched.
+
+Concrete example — after uploading, only `data/genome.fa.CHECKSUM` remains locally:
+
+```bash
+# Implicit lookup — the correct way
+seamless-run blast data/genome.fa
+# Reads the checksum from data/genome.fa.CHECKSUM
+# The blast command receives genome.fa as its argument
+# Remote worker: fetches the full genome bytes from the hashserver,
+#               materialises them as genome.fa in the working directory
+
+# Explicit sidecar — usually wrong
+seamless-run blast data/genome.fa.CHECKSUM
+# No dereferencing: blast receives genome.fa.CHECKSUM as its argument
+# Remote worker: only the 64-char hex string file is materialised
+# blast will likely fail — it receives a tiny text file, not the genome
+```
+
+Implicit sidecar lookup is never triggered by a path that already ends in `.CHECKSUM` or `.INDEX`; it only applies when you name the base path.
+
 `seamless-upload` pushes the file bytes to the hashserver and writes the sidecar:
 
 ```bash

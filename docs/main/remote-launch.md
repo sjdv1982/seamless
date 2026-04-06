@@ -72,7 +72,9 @@ seamless-download out-0.1.csv out-0.2.csv out-0.5.csv
 
 The `--no-download` (`-nd`) flag runs the transformation and records the result checksum without fetching the result bytes. Use it when you only need the checksum (for sharing, replay, or downstream inputs) and not the bytes themselves.
 
-Note that after uploading, you can remove large-dataset.h5 from your local machine. You can do `seamless-run analyze large-dataset.h5` or `seamless-run analyze large-dataset.h5.CHECKSUM`, Seamless will treat them the same.
+Note that after uploading, you can remove `large-dataset.h5` from your local machine. Always invoke `seamless-run analyze large-dataset.h5` — Seamless finds `large-dataset.h5.CHECKSUM` automatically, reads the checksum from it, and the `analyze` command receives `large-dataset.h5` as its argument. On the remote worker, the actual dataset bytes are fetched from the hashserver and materialised as `large-dataset.h5` in the working directory.
+
+Do **not** invoke `seamless-run analyze large-dataset.h5.CHECKSUM`: the sidecar path is then treated as a literal input, `analyze` receives `large-dataset.h5.CHECKSUM` as its argument, and the remote worker only materialises the 64-character checksum string — not the dataset. See [The `.CHECKSUM` sidecar convention](caching.md#the-checksum-sidecar-convention) for a full explanation.
 
 Therefore, an alternate "upload" strategy is for the case where the large dataset is already on the remote machine: login to the remote machine, install Seamless, configure the hashserver storage dir, and do something like `cd /tmp; ln -s /data/large-dataset.h5; seamless-upload --hardlink large-dataset.h5`. This will create `large-dataset.h5.CHECKSUM`, which you can copy to your local machine. On the remote machine, '--hardlink' prevents duplication of the dataset.
 
