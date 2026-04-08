@@ -133,6 +133,6 @@ seamless-fingertip abc123...def --output result.bin
 pip install seamless-remote
 ```
 
-Requires Python >= 3.12. Dependencies: `seamless-core`, `seamless-config`, `aiohttp`, `aiofiles`, `frozendict`.
+Requires Python >= 3.10. Dependencies: `seamless-core`, `seamless-config`, `aiohttp`, `aiofiles`, `frozendict`.
 
 Optional (activated at runtime when needed): `remote-http-launcher` (for launched clients), `seamless-dask` and `distributed` (for daskserver integration).
