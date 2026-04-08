@@ -179,6 +179,8 @@ def process_all(items, config):
         tf.start()              # schedule for concurrent execution
         results.append(tf)
     return [tf.run() for tf in results]  # collect results
+
+process_all.globals.process_one = process_one  # ESSENTIAL: To embed the sub-transformation's source code
 </code></pre>
 <p>Each <code>process_one</code> transformation has its own cache key (<code>item</code> + <code>config</code> + code). If <code>items</code> changes partially, only the affected sub-transformations re-execute — the rest are cache hits. The fan-out scales automatically with the number of elements.</p>
 <p>The driver's result (the list returned by <code>process_all</code>) is itself cached. If neither <code>items</code> nor <code>config</code> changes, the entire pipeline — driver plus all sub-transformations — is a cache hit.</p>
