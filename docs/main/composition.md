@@ -23,6 +23,8 @@ def process_all(items, config):
         tf.start()              # schedule for concurrent execution
         results.append(tf)
     return [tf.run() for tf in results]  # collect results
+
+process_all.globals.process_one = process_one  # ESSENTIAL: To embed the sub-transformation's source code
 ```
 
 Each `process_one` transformation has its own cache key (`item` + `config` + code). If `items` changes partially, only the affected sub-transformations re-execute — the rest are cache hits. The fan-out scales automatically with the number of elements.
