@@ -75,11 +75,11 @@
                   </li>
                   <li class="toctree-l1 current"><a class="reference internal current" href="#">seamless-transformer</a>
     <ul class="current">
-    <li class="toctree-l2"><a class="reference internal" href="#bounded-parallel-execution">Bounded parallel execution</a>
-    </li>
     <li class="toctree-l2"><a class="reference internal" href="#core-concepts">Core concepts</a>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#worker-pool">Worker pool</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#bounded-parallel-execution">Bounded parallel execution</a>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#integration-with-the-seamless-ecosystem">Integration with the Seamless ecosystem</a>
     </li>
@@ -158,46 +158,6 @@
               
                 <h1 id="seamless-transformer">seamless-transformer</h1>
 <p><code>seamless-transformer</code> is the computation engine of the <a href="https://github.com/sjdv1982/seamless">Seamless</a> framework. It takes a <em>transformation</em> — a pure-functional computation defined as a checksum-addressed dict of inputs, code, and language — and executes it, returning a result checksum. It supports Python and bash transformations, multi-process worker pools with shared-memory IPC, and integration with the Seamless caching and remote infrastructure.</p>
-<h2 id="bounded-parallel-execution">Bounded parallel execution</h2>
-<p>For large batches of delayed transformations, use <code>parallel()</code> or <code>parallel_async()</code> instead of manually calling <code>.start()</code> and <code>.run()</code> on thousands of objects.</p>
-<p>The concurrency limit is configured globally via <code>nparallel</code> in <code>seamless.profile.yaml</code> (or with <code>seamless.config.set_nparallel()</code> / <code>seamless_config.set_nparallel()</code>):</p>
-<pre><code class="language-yaml">- nparallel: 4
-</code></pre>
-<pre><code class="language-python">from seamless.transformer import delayed, parallel
-import seamless.config
-
-seamless.config.set_nparallel(4)
-
-@delayed
-def add(a, b):
-    return a + b
-
-tfs = [add(i, i) for i in range(20)]
-for tf in parallel(tfs):
-    print(tf.value)
-</code></pre>
-<p><code>parallel()</code> is a synchronous iterator. It yields completed transformations in input order, but streams them as soon as the prefix is ready: transformation <code>N</code> is yielded as soon as <code>0..N</code> have all finished.</p>
-<p>In async code, use <code>parallel_async()</code>:</p>
-<pre><code class="language-python">from seamless.transformer import delayed, parallel_async
-
-@delayed
-def add(a, b):
-    return a + b
-
-async def main():
-    async for tf in parallel_async([add(i, i) for i in range(20)]):
-        print(tf.value)
-</code></pre>
-<p>For progress reporting and error tracking, wrap the list in <code>TransformationList</code>:</p>
-<pre><code class="language-python">from seamless.transformer import TransformationList, parallel
-
-tflist = TransformationList([add(i, i) for i in range(20)], show_progress=True)
-for tf in parallel(tflist):
-    pass
-
-print(tflist._finished, tflist._errors)
-</code></pre>
-<p><code>parallel()</code> cannot be called from inside a running event loop; use <code>parallel_async()</code> there.</p>
 <h2 id="core-concepts">Core concepts</h2>
 <p>A <strong>transformation</strong> in Seamless is a deterministic computation: given the same inputs and code (identified by their checksums), it always produces the same output. <code>seamless-transformer</code> is responsible for:</p>
 <ol>
@@ -214,6 +174,8 @@ print(tflist._finished, tflist._errors)
 <li>Buffer data is exchanged through shared memory to avoid serialization overhead.</li>
 <li>Workers automatically restart on crash (segfault, etc.).</li>
 </ul>
+<h2 id="bounded-parallel-execution">Bounded parallel execution</h2>
+<p>In Python, for large batches of delayed transformations, use <code>parallel()</code> or <code>parallel_async()</code> instead of manually calling <code>.start()</code> and <code>.run()</code> on thousands of objects.</p>
 <h2 id="integration-with-the-seamless-ecosystem">Integration with the Seamless ecosystem</h2>
 <ul>
 <li><strong>seamless-core</strong>: provides the <code>Checksum</code>, <code>Buffer</code>, and buffer-cache primitives that <code>seamless-transformer</code> builds on.</li>
