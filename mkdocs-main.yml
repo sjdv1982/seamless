@@ -18,6 +18,7 @@ nav:
   - Getting Started:
       - Wrapping Python and bash: getting-started.md
       - Setting up a local cluster: cluster.md
+      - Seamless mode: seamless-mode.md
   - How-To Guides:
       - Caching, identity, and sharing: caching.md
       - Composition: composition.md
