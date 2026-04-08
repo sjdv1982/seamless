@@ -29,6 +29,10 @@ This installs all standard Seamless components. For a minimal install, the core 
 | `seamless-transformer` | `from seamless.transformer import direct, delayed, parallel` | `direct`, `delayed`, `parallel`, `parallel_async`, `TransformationList`, `seamless-run`, `seamless-upload`, `seamless-download` |
 | `seamless-config` | `import seamless.config` | `seamless.config.init()`, `seamless.config.set_nparallel()`, `seamless-init` |
 
+## Source code
+
+All source code is on GitHub: [seamless-core](https://github.com/sjdv1982/seamless-core), [seamless-transformer](https://github.com/sjdv1982/seamless-transformer), [seamless-config](https://github.com/sjdv1982/seamless-config), [seamless-remote](https://github.com/sjdv1982/seamless-remote), [seamless-jobserver](https://github.com/sjdv1982/seamless-jobserver), [seamless-dask](https://github.com/sjdv1982/seamless-dask)
+
 ## Quick Examples
 
 ### Python: `direct`

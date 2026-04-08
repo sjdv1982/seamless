@@ -6,58 +6,6 @@ This guide covers Seamless deployment on HPC clusters with SLURM or OAR schedule
 
 Seamless does not make a great difference between a HPC cluster config and a local cluster config. In both cases, Seamless cluster services (hashserver, database, Dask scheduler) are launched, and are available to the local machine over the network (potentially via SSH tunnel). Dask will accept both Python transformations and `seamless-run` commands, no matter where it runs. If it runs on an HPC frontend, then `seamless-run` commands will run directly on a compute node, with input files uploaded automatically.
 
-## Manual HPC execution
-
-Sometimes full remote execution is the wrong abstraction.
-
-If you need to inspect the deployed job, load site-specific modules manually, or
-wrap the actual run in your own `sbatch`, `srun`, or debugging procedure, use:
-
-```bash
-seamless-run --dry --write-remote-job /scratch/myjob \
-  head -n 100 input.txt
-```
-
-This tells Seamless to do deployment, not execution:
-- Seamless computes the transformation identity.
-- `--write-remote-job` implies `--upload`, so the required input buffers are
-  staged on the remote hashserver automatically.
-- Seamless materializes the job directory on the machine running
-  `seamless-run` and writes `transform.sh` plus the required input files.
-- If you need that payload on the cluster frontend, use a mounted/shared path
-  or copy/sync the directory there afterwards.
-- Seamless then stops.
-
-At that point, the job directory itself is the artifact you care about. You can
-inspect it, verify that the right files are present, and then execute it
-manually:
-
-```bash
-cd /scratch/myjob
-module load ...
-bash transform.sh
-```
-
-This is useful on HPC systems when:
-- your site requires a custom `module load` sequence
-- you want to submit through a hand-written SLURM wrapper
-- you want to debug interactively before queue submission
-- you want a concrete verification step between deployment and execution
-
-### Trade-off: you lose Seamless result caching
-
-This mode intentionally gives up one of Seamless's normal guarantees.
-
-Because Seamless does not execute the transformation itself, it also does not
-record a result checksum in the database. That means:
-- Seamless will not treat the run as completed
-- re-running the same command may materialize the job directory again
-- any caching of the final result is now your responsibility unless you later
-  reintroduce execution through Seamless
-
-The payoff is control. Seamless handles reproducible deployment of the job
-payload; you handle execution policy.
-
 ## Queue definitions
 
 HPC queue definitions live inside the cluster entry in `~/.seamless/clusters.yaml`, under the `queues` key. Each queue entry maps to a `dask_jobqueue` cluster constructor call (SLURMCluster, OARCluster, etc.), plus Seamless-specific lifecycle parameters.
@@ -208,3 +156,58 @@ dask-only:
 With `pure_dask: true`, the `distributed.Client` is available directly after `seamless.config.init()`. You submit Dask futures as normal, bypassing the Seamless transformation layer entirely. Caching, identity, and the `direct`/`delayed` API are not available in this mode.
 
 If you later want to adopt Seamless caching for specific steps, you can do so incrementally: remove `pure_dask: true` from the daskserver definition, add `seamless-dask` to the worker conda environment, and wrap those steps with `direct` or `delayed`.
+
+## Manual HPC execution
+
+Sometimes full remote execution is the wrong abstraction.
+
+If you need to inspect the deployed job, load site-specific modules manually, or
+wrap the actual run in your own `sbatch`, `srun`, or debugging procedure, use:
+
+```bash
+seamless-run --dry --write-remote-job /scratch/myjob \
+  head -n 100 input.txt
+```
+
+This tells Seamless to do deployment, not execution:
+
+- Seamless computes the transformation identity.
+- `--write-remote-job` implies `--upload`, so the required input buffers are
+  staged on the remote hashserver automatically.
+- Seamless materializes the job directory on the machine running
+  `seamless-run` and writes `transform.sh` plus the required input files.
+- If you need that payload on the cluster frontend, use a mounted/shared path
+  or copy/sync the directory there afterwards.
+- Seamless then stops.
+
+At that point, the job directory itself is the artifact you care about. You can
+inspect it, verify that the right files are present, and then execute it
+manually:
+
+```bash
+cd /scratch/myjob
+module load ...
+bash transform.sh
+```
+
+This is useful on HPC systems when:
+
+- your site requires a custom `module load` sequence
+- you want to submit through a hand-written SLURM wrapper
+- you want to debug interactively before queue submission
+- you want a concrete verification step between deployment and execution
+
+### Trade-off: you lose Seamless result caching
+
+This mode intentionally gives up one of Seamless's normal guarantees.
+
+Because Seamless does not execute the transformation itself, it also does not
+record a result checksum in the database. That means:
+
+- Seamless will not treat the run as completed
+- re-running the same command may materialize the job directory again
+- any caching of the final result is now your responsibility unless you later
+  reintroduce execution through Seamless
+
+The payoff is control. Seamless handles reproducible deployment of the job
+payload; you handle execution policy.
