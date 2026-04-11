@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "remote-http-launcher"
-version = "0.1.1"
+version = "0.2.0"
 description = "Launch, supervise, and reconnect to long-running HTTP services locally or over SSH, with optional tunneling."
 readme = "README.md"
 requires-python = ">=3.10"
