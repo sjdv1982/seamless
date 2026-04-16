@@ -19,7 +19,14 @@ This page defines what an agent may assume about how Seamless treats **files** a
 - Some tooling will checksum inputs by reading them from disk; if a file is very large, the checksum pass is real I/O work.
 - Depending on implementation, checksum calculation may read whole files into memory; for very large files, agents should consider streaming-friendly paths or avoid re-checksumming by reusing known checksums where possible.
 
+## Compression
+
+Files may be stored in compressed form (`.zst` or `.gz`). Compression is a materialization detail — the canonical checksum is always computed over the **decompressed** bytes. A compressed and an uncompressed form of the same content share the same checksum and are interchangeable from the identity model's point of view.
+
+For a full treatment, see `contracts/compression.md`.
+
 ## Porting guidance (agent)
 
 - Prefer “pass a checksum identifier as an explicit input” over “read an ambient path”.
 - If a transformation must do its own I/O, make the I/O target an explicit content identity (checksum/deep checksum), not an implicit location.
+- When filenames may carry compression suffixes (`.npy.zst`, `.csv.gz`), use `strip_compression_suffix` before `os.path.splitext` or sidecar derivation.
