@@ -21,6 +21,7 @@ dependencies = [
     "seamless-database>=2.0.2",
     "hashserver>=1.0.3",
     "remote-http-launcher>=0.2.0",
+    "seamless-signature",
 ]
 keywords = ["seamless", "suite", "workflow", "reproducibility", "caching", "pipeline", "HPC", "deterministic", "content-addressed"]
 classifiers = [

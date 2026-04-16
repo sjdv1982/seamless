@@ -33,6 +33,18 @@
       {
         "module": "seamless_transformer.transformation_class",
         "path": "seamless-transformer/seamless_transformer/transformation_class.py"
+      },
+      {
+        "module": "seamless_transformer.environment",
+        "path": "seamless-transformer/seamless_transformer/environment.py"
+      },
+      {
+        "module": "seamless_transformer.compiled_transformer",
+        "path": "seamless-transformer/seamless_transformer/compiled_transformer.py"
+      },
+      {
+        "module": "seamless_transformer.languages",
+        "path": "seamless-transformer/seamless_transformer/languages/__init__.py"
       }
     ]
   },

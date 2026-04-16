@@ -29,6 +29,22 @@ Practical rules:
 - A result checksum can be reused without re-executing code only when it is resolvable/materializable (or recomputable, if scratch).
 - Content-addressed reads are not semantic side effects: resolving a pre-declared checksum is materialization, not “reading whatever is on disk”.
 
+## Plain keys vs dunder keys in a transformation dict
+
+Internally, a transformation is represented as a dict. Its keys fall into two categories:
+
+**Plain keys** (e.g. `code`, `arg1`, `objects`) — these are **determinant**: their content is included in the transformation checksum (the cache key). Changing any plain-key value produces a different transformation identity and bypasses the cache.
+
+**Dunder keys** (double-underscore names, e.g. `__language__`, `__env__`, `__meta__`, `__compiled__`) — these are **execution-only**: they are excluded from the transformation checksum and do not affect caching, but they are still forwarded to workers so that execution can use them.
+
+Practical consequence: two transformations that differ only in dunder values are considered cache-equivalent. For example:
+
+- Compiler flags live in `__compilation__` (a dunder) → switching from `-O3` to `-g` does not invalidate the cache.
+- The conda environment name lives in `__env__` (a dunder) → activating a different environment reuses a cached result if the code and inputs are unchanged.
+- Source code lives in the plain key `code` → any source change is a cache miss.
+
+This split is load-bearing: dunders capture the "how to run" envelope, while plain keys capture the "what to run" identity. An agent should not move determinant data into dunders to avoid cache misses — doing so would corrupt the identity model.
+
 ## Forcing recomputation / auditing
 
 An agent should assume there is (or should be) a way to:
