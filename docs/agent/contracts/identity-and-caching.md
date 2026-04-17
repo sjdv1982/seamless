@@ -28,6 +28,7 @@ Practical rules:
 - The cache may store “transformation checksum → result checksum” mappings.
 - A result checksum can be reused without re-executing code only when it is resolvable/materializable (or recomputable, if scratch).
 - Content-addressed reads are not semantic side effects: resolving a pre-declared checksum is materialization, not “reading whatever is on disk”.
+- Compression (`.zst`, `.gz`) is a materialization detail — it does not affect identity or caching. A compressed and uncompressed form of the same buffer have the same checksum and are cache-equivalent. See `contracts/compression.md`.
 
 ## Plain keys vs dunder keys in a transformation dict
 

@@ -220,6 +220,16 @@ Don't propose "scp this module to the server" or "just copy your repo onto the w
 
 "Precisely define without materializing": name exactly which data your computation refers to, immutably, via structured content identity (Merkle-tree-like) — without the bytes being present locally. Define computations over identity; materialize only where and when needed. See `references/deep-checksums.md` for the full explanation and analogies.
 
+## Compiled transformers
+
+Seamless can wrap compiled source code (C, C++, Fortran, Rust, or any language registered via `define_compiled_language()`) as transformations. The user provides a YAML schema describing the function signature; `seamless-signature` generates the C header; CFFI builds the extension at runtime.
+
+The same caching model applies: the compiled `transform()` function must be a pure function of its declared inputs (return-value-wise). Persistent state that affects the return value is forbidden — this rules out wrapping `load_model()` or database-session code.
+
+The language set is open. Users can contribute new languages by adding a ~15-line file to `seamless_transformer/languages/native/` and opening a PR.
+
+See `contracts/compiled-transformers.md` for the full behavioral contract.
+
 ## Reference Map (load only as needed)
 
 - `references/human-abstract.md`: lightweight abstract variants and phrasing.

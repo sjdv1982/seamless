@@ -25,6 +25,9 @@ nav:
       - Cache Storage and Limits: contracts/cache-storage-and-limits.md
       - Content-addressed Files and Dirs: contracts/content-addressed-files-and-dirs.md
       - Execution Backends: contracts/execution-backends.md
+      - Compression: contracts/compression.md
+      - Compiled Transformers: contracts/compiled-transformers.md
+      - seamless-signature Schema: contracts/seamless-signature-schema.md
   - API:
       - seamless: api/python/seamless.md
       - seamless.transformer: api/python/seamless.transformer.md

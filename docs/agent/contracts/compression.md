@@ -2,6 +2,21 @@
 
 Seamless natively supports `.zst` (Zstandard) and `.gz` (gzip) compression for file buffers. Compression is a **materialization detail** — it never participates in identity or caching.
 
+Scientific workflows can produce massive amounts of data, and the hashserver buffer directory often lives on a shared HPC network filesystem where storage pressure is real. Native compression support provides transparent, optional relief: compressed and uncompressed forms coexist under the same checksum identity, so teams can compress buffers at their own pace without coordination.
+
+This also means that common scientific datasets distributed in compressed form (PDB as `.pdb.gz`, array data as `.npy.zst`) can be ingested directly without decompressing to disk — and with `--hardlink`, without any storage overhead at all.
+
+The design is transparent enough that even running `zstd --rm` on the entire buffer directory after the fact will "just work" — the hashserver and all clients (seamless-upload, seamless-download, worker materialization) check for `.zst` and `.gz` variants on every lookup. The only caveat: without `.BUFFERLENGTH` sidecar files, the `/buffer-length` endpoint must decompress each buffer to determine its uncompressed size (correct but expensive). Pre-generating sidecars before compressing avoids this:
+
+```bash
+for f in /path/to/buffers/*/*; do
+  if [[ -f "$f" && "$f" != *.zst && "$f" != *.gz && "$f" != *.BUFFERLENGTH && "$f" != *.LOCK ]]; then
+    stat -c%s "$f" > "${f}.BUFFERLENGTH"
+    zstd --rm "$f"
+  fi
+done
+```
+
 ## Core invariant
 
 **The canonical checksum is always computed over the *decompressed* bytes.**
@@ -11,7 +26,7 @@ Seamless natively supports `.zst` (Zstandard) and `.gz` (gzip) compression for f
 ## What compression affects and what it does not
 
 | Aspect | Affected by compression? |
-|---|---|
+| --- | --- |
 | Canonical checksum | No — always decompressed bytes |
 | Transformation cache key | No |
 | `.INDEX` leaf names for deep/directory pins | No — always canonical names |
@@ -32,7 +47,7 @@ The constant `COMPRESSION_PREFERENCE = (".zst", ".gz")` governs preference order
 
 Compressed and uncompressed forms of the same buffer coexist naturally under the same prefix directory:
 
-```
+```text
 ./ab/abcd          # uncompressed
 ./ab/abcd.zst      # Zstandard-compressed form
 ./ab/abcd.gz       # gzip-compressed form
@@ -111,7 +126,7 @@ Decompression failures during materialization raise an error — there is no sil
 
 Send `Content-Encoding: zstd` or `Content-Encoding: gzip` with the compressed body. The URL checksum is always the canonical (decompressed) checksum:
 
-```
+```http
 PUT /{canonical_checksum}
 Content-Encoding: zstd
 <compressed body>
@@ -125,13 +140,13 @@ If the checksum of the decompressed content does not match the URL, the server r
 
 The URL remains `/{canonical_checksum}`. The response `Content-Encoding` header tells the client which stored form was served:
 
-```
+```http
 GET /{canonical_checksum}
 → Content-Encoding: zstd   (if only compressed form is stored)
 → (no Content-Encoding)    (if uncompressed form is served)
 ```
 
-The server serves whichever stored form exists, preferring uncompressed if both are present. There is no client-driven content negotiation (`Accept-Encoding`) — the server serves what it has. If you need a specific form, request it from an upload that provided that form.
+The server serves whichever stored form exists, there is only limited client-driven content negotiation (`Accept-Encoding`) — the server will only serve what it has. If you need a specific form, request it from an upload that provided that form.
 
 The client must decompress the body if `Content-Encoding` is set.
 

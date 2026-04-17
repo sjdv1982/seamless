@@ -27,6 +27,8 @@ Contract pages (hand-maintained, normative):
 - `contracts/content-addressed-files-and-dirs.md`
 - `contracts/cache-storage-and-limits.md`
 - `contracts/compression.md`
+- `contracts/compiled-transformers.md`
+- `contracts/seamless-signature-schema.md`
 
 Repo docs (source snapshots and implementation notes):
 

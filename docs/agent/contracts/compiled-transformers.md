@@ -4,9 +4,9 @@ This page defines the behavior an agent may rely on when working with compiled-l
 
 ## What compiled transformers are
 
-`CompiledTransformer` and `DirectCompiledTransformer` extend the same delayed/direct model as Python transformers, but execute C, C++, Fortran, or Rust source code instead of a Python function.
+`CompiledTransformer` and `DirectCompiledTransformer` extend the same delayed/direct model as Python transformers, but execute **compiled source code** instead of a Python function. The compiled source must define a `transform()` function whose signature matches the C header generated from the schema (see `tf.header`). The schema is written in the seamless-signature YAML format.
 
-The compiled source must define a `transform()` function whose signature matches the C header generated from the schema (see `tf.header`). The schema is written in the seamless-signature YAML format.
+Built-in languages: `c`, `cpp`, `fortran`, `rust`. **The set is open.** Additional languages can be registered at runtime with `define_compiled_language()` (see "Custom language registration" below). Any language that compiles to a C-ABI-compatible `transform()` symbol is supported.
 
 Compiled transformers require the `compiled` optional-dependency group:
 
@@ -14,6 +14,42 @@ Compiled transformers require the `compiled` optional-dependency group:
 pip install seamless-transformer[compiled]
 # or: pip install cffi numpy seamless-signature
 ```
+
+## Delayed vs direct
+
+`CompiledTransformer(language)` — calling returns a `Transformation` handle (delayed, same as `delayed` for Python).
+
+`DirectCompiledTransformer(language)` — calling executes the build pipeline immediately and returns the value (same as `direct` for Python).
+
+Both classes support all the same attributes (`schema`, `code`, `header`, `metavars`, `objects`, `compilation`, `environment`).
+
+## Referential transparency constraint
+
+A compiled transformer is a **pure function of its declared inputs** as far as the return value is concerned. This is the same constraint as for Python transformers, but without a sandbox to enforce it — the `.so` runs natively.
+
+**Forbidden:** any persistent state that could change the return value across calls:
+
+- `static` accumulators in C
+- `SAVE` variables in Fortran
+- mutable `static` in Rust
+- cached models, open database sessions
+
+Code like `load_model()` or `open_database_session()` **cannot be wrapped** as a compiled transformer — these create persistent state that subsequent calls depend on, violating the identity model.
+
+**Tolerated:** side effects that do *not* affect the return value — logging, diagnostic output, writing dashboards. The runtime does not police these.
+
+**The runtime will not detect violations.** The consequence is **silently incorrect caching**: the same inputs return a stale cached result instead of re-executing with the invisibly changed persistent state.
+
+## Architecture
+
+Compiled transformers share a `TransformerCore` base with Python transformers. The distinction is in the mixin:
+
+- `TransformerCore` — shared state and `__call__` dispatch flow
+- `PythonMixin` — Python source, Python callable signature, sandbox execution
+- `CompiledMixin` — schema, compiled source, CFFI build pipeline
+
+`CompiledTransformer` = `TransformerCore` + `CompiledMixin` (delayed).
+`DirectCompiledTransformer` = `TransformerCore` + `CompiledMixin` (direct).
 
 ## C as the ABI lingua franca
 
@@ -30,13 +66,15 @@ This means each language must opt in to the C ABI explicitly:
 - **Fortran**: add `bind(C, name="transform")` to the function declaration and use `iso_c_binding` types
 - **Rust**: declare the function as `#[no_mangle] pub unsafe extern "C" fn transform(...)`
 
-`seamless-signature` currently only generates C headers — there is no built-in support for generating Fortran interface blocks, Rust `extern "C"` stubs, or similar language-native declarations. However, since the schema fully specifies parameter names, dtypes, and shapes, an **AI agent can derive the correct function signature in any language directly from the schema**. The C header itself is also a reliable intermediate to translate from.
+`seamless-signature` currently only generates C headers. For non-C languages, derive the function declaration from the schema or from the generated C header — in practice, a human may pase the schema YAML or `tf.header` and ask you for the equivalent declaration in their language.
 
-For the schema YAML format, dtype-to-language type mappings, and worked examples of deriving Fortran and Rust signatures, see `contracts/seamless-signature-schema.md`.
+For the full schema YAML format, dtype-to-language type mappings, and worked examples of deriving Fortran and Rust signatures, load `contracts/seamless-signature-schema.md`.
 
 ## The schema
 
-The schema is a YAML string in the seamless-signature format. It describes input and output parameters by name, dtype, and shape:
+The schema is a YAML string in the seamless-signature format. `seamless-signature` is a separate package that parses the schema and generates the C header — it is the single source of truth from which the C header, the Python callable signature, and all type marshalling are derived. The schema YAML is the user-authored artifact; the C header (`tf.header`) is a derived artifact that is never hand-edited.
+
+It describes input and output parameters by name, dtype, and shape:
 
 ```yaml
 inputs:
@@ -56,7 +94,7 @@ Assigning the schema to `tf.schema`:
 - generates the C header (`tf.header`) that the compiled code must match
 - rebuilds `tf.metavars` when output-only wildcards are present
 
-See `contracts/seamless-signature-schema.md` for the full schema reference including dtypes, shapes, wildcards, and struct types.
+For the full schema reference including dtypes, shapes, wildcards, and struct types, load `contracts/seamless-signature-schema.md`.
 
 ## Calling convention
 
@@ -92,8 +130,7 @@ Implication: two runs with the same code and inputs but different optimization f
 - NumPy scalars are accepted if they have the correct dtype and native byte order.
 - NumPy arrays must be native-endian, C-contiguous, and aligned.
 - Non-native-endian inputs are rejected with an explicit `TypeError` (not silently reinterpreted).
-- **Struct parameters** (scalar or array) must be supplied as NumPy structured
-  arrays or scalars with a compatible dtype. See the struct type rules below.
+- **Struct parameters** (scalar or array) must be supplied as NumPy structured arrays or scalars with a compatible dtype.
 
 ## Struct type rules
 
@@ -136,7 +173,7 @@ tf.objects.append(obj)
 
 ## Custom language registration
 
-Languages beyond the built-ins can be registered with `define_compiled_language()`:
+Languages beyond the built-ins can be registered with `define_compiled_language()`. The built-in languages are defined by single files in `seamless_transformer/languages/native/` — each is a ~15-line file calling `define_compiled_language()` with compiler name, flags, and mode. To add permanent support for a new language, create such a file and submit a pull request.
 
 ```python
 from seamless_transformer.languages import define_compiled_language
@@ -157,8 +194,6 @@ define_compiled_language(
 )
 ```
 
-Built-in languages: `c`, `cpp`, `fortran`, `rust`.
-
 ## Environment
 
 `tf.environment` is an `Environment` object that controls the execution environment of the transformation worker:
@@ -170,10 +205,9 @@ Built-in languages: `c`, `cpp`, `fortran`, `rust`.
 
 These settings propagate to the worker as part of the transformation's `__env__` dunder, which is excluded from the cache key (execution-only, not determinant).
 
-## Delayed vs direct
+---
 
-`CompiledTransformer(language)` — calling returns a `Transformation` handle (delayed, same as `delayed` for Python).
+## Reference Map (load only as needed)
 
-`DirectCompiledTransformer(language)` — calling executes the build pipeline immediately and returns the value (same as `direct` for Python).
-
-Both classes support all the same attributes (`schema`, `code`, `header`, `metavars`, `objects`, `compilation`, `environment`).
+- `contracts/seamless-signature-schema.md` — full schema YAML format, dtype tables, wildcard rules, shape constraints, and language-native derivation examples
+- `contracts/identity-and-caching.md` — plain-key vs dunder-key split, caching model, referential transparency
