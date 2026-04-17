@@ -91,6 +91,8 @@ Checksums are tiny and can be shared freely — by email, in a config file, in a
 
 A result that has been computed is always in the database (the transformation→result checksum mapping). The result bytes may or may not be in the hashserver, depending on whether the transformation used `--scratch` (see [Sharing in depth](sharing.md)).
 
+For ordinary inputs, a remote worker materializes bytes by fetching the buffer from the hashserver. Scratch inputs with fingertipping are different: if the input checksum is known but the buffer is absent, Seamless recomputes the producer transformation where the consuming job needs the bytes. This makes scratch useful for bulky generated intermediates that should not be uploaded or stored as durable buffers; the checksum travels, and the bytes are regenerated co-located with the consumer.
+
 `seamless-resolve` fetches a buffer by checksum:
 
 ```bash

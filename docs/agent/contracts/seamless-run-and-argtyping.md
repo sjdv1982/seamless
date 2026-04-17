@@ -61,6 +61,7 @@ Agent guidance:
 
 The same “content-bound” rule applies:
 - don’t assume remotes have local files; treat inputs as artifacts and materialize where executed
+- if an input checksum refers to a scratch result and input fingertipping is enabled, materialization means recomputing the producer at the consumer execution site, not fetching a durable buffer from the hashserver
 
 ## Manual Remote Deployment Mode
 

@@ -7,7 +7,11 @@ Anything “tolerance-based” requires a separate user-defined witness/comparis
 
 Scratch is an optimization knob:
 - Scratch allows bulky intermediates to be dropped (not materializable later).
+- Scratch plus input fingertipping is also a placement mechanism: if a downstream transformation needs a missing scratch input, the producer transformation is rerun where the consumer needs the bytes.
+- Use scratch for bulky generated intermediates that are not meaning-bearing and whose main purpose is to feed another transformation.
 - Scratch must not remove the ability to evaluate the meaning-bearing outcome of the computation.
+
+Agent porting implication: do not replace a compact, reliable producer implementation just to avoid a large edge. If the producer is deterministic and cheap enough to rerun, prefer a scratch producer plus fingertipping consumer so the large value is materialized co-located with the consumer.
 
 ## Witness outputs (do not scratch)
 
