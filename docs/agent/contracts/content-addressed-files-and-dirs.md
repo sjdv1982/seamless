@@ -6,7 +6,7 @@ This page defines what an agent may assume about how Seamless treats **files** a
 
 - A file can be represented by a **checksum** of its bytes.
 - When the checksum is known, the file content is treated as an immutable artifact identified by that checksum.
-- “Reading by checksum” is not treated as a semantic side effect in the Seamless model; it is a cache/materialization operation.
+- “Reading by checksum” is not treated as a semantic side effect in the Seamless model; it is a cache/materialization operation. Therefore, *materialization configuration* (paths or URLs where to find artifacts) can be made available to atransformation without breaking referential transparency, as long as the checksum of each artifact is passed as explicit argument.
 
 ## Directories (deep identity)
 
