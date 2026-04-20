@@ -1,6 +1,6 @@
 ---
 name: seamless-porting
-description: Use when creating, porting, or debugging Seamless pipelines from Python, bash, or existing workflow systems; selecting the active concern in a staged non-linear Seamless port; designing referentially transparent DAGs; wrapping steps with direct/delayed transformers or seamless-run; validating Seamless contract compliance; or deliberately enabling caching, remote execution, parallelization, incremental computation, and dataflow optimization.
+description: Use when creating, porting, or debugging Seamless pipelines from Python, bash, or existing workflow systems; selecting the active concern in a staged non-linear Seamless port; designing referentially transparent DAGs; wrapping steps with direct/delayed transformers or seamless-run; validating Seamless contract compliance; activating capabilities such as persistent caching and local-cluster remote execution; or optimizing parallelism, incremental computation, and dataflow.
 ---
 
 # Seamless Porting
@@ -34,7 +34,7 @@ Default stage order:
 3. Minimal wrapping.
 4. Seamless contract.
 5. Scaling and realism.
-6. Feature activation.
+6. Capability activation.
 7. Optimization.
 
 Move to another concern when the exit check passes, when the user explicitly changes focus, or when a failure proves that a different concern is active.
@@ -55,6 +55,9 @@ If optimization fails because result semantics are unclear, return to DAG design
 - Do not pass Python class instances across Seamless boundaries. Convert to supported structured values or buffers.
 - For large data, do not materialize values by default. Decide explicitly between value, checksum, and handle wiring.
 - When remote or HPC execution matters, name the backend explicitly: `process`, `spawn`, `remote: jobserver`, or `remote: daskserver`.
+- For substantive ports, implement persistent caching and local-cluster remote execution by default after the small wrapped pipeline passes contract checks, unless explicitly out of scope or blocked by missing local cluster configuration.
+- If scratch plus fingertip is used, enable input fingertipping on each consumer transformation that may receive missing scratch inputs. In Python, set the downstream transformer/core's `allow_input_fingertip = True` before constructing the transformation; for CLI execution of a transformation checksum, use `--fingertip`. Scratch on the producer is not enough.
+- In the final response, list the Seamless capabilities implemented and briefly list relevant capabilities left for follow-up, including blocked or intentionally omitted ones.
 
 ## Contract References
 
@@ -67,6 +70,8 @@ Load the relevant contract before changing the associated semantics:
 - Compiled transformers: `seamless/docs/agent/contracts/compiled-transformers.md`
 - Execution backend selection: `seamless/docs/agent/contracts/execution-backends.md`
 - Scratch, fingertip, witnesses, and audit: `seamless/docs/agent/contracts/scratch-witness-audit.md`
+- Cache storage and scratch limits: `seamless/docs/agent/contracts/cache-storage-and-limits.md`
+- Input fingertip API details: `seamless/docs/agent/api/python/seamless_transformer.transformation_class.md`
 
 ## 1. DAG Design
 
@@ -156,19 +161,29 @@ Each move toward realism can change the correct Seamless design. Re-evaluate the
 
 Exit check: the next larger or more realistic case passes, or the failure is traced back to a specific earlier concern.
 
-## 6. Feature Activation
+## 6. Capability Activation
 
 Entry triggers:
 
-- User asks for persistent caching, remote execution, parallelization, incremental computing, or operational behavior.
+- User asks for persistent caching, local-cluster remote execution, HPC execution, parallelization, incremental computing, or operational behavior.
 - A small wrapped pipeline passes and the next goal requires a Seamless capability.
 - Operational behavior, not step semantics, is now the active issue.
 
 Simple direct Seamless wrappers in Python are almost a no-op. As more Seamless capabilities are activated, more semantic and operational complexity comes into play.
 
-Add only the capability needed for the user's goal, one concern at a time. Persistent caching is usually the first capability to consider; it is already active by default for the CLI face. Other common capability concerns are remote execution, parallelization, and incremental computing, including data-incremental and code-incremental computation.
+Default capabilities for substantive ports:
 
-For remote or HPC work, explicitly identify the backend: `process`, `spawn`, `remote: jobserver`, or `remote: daskserver`.
+1. Persistent caching. It is already active by default for the CLI face; for Python-facing ports, make sure the pipeline uses persistent Seamless caching rather than only ephemeral local values.
+2. Local-cluster remote execution. Use `remote: jobserver` or `remote: daskserver` on a local or nearby configured Seamless service when available. This is common enough to implement by default after the small wrapped pipeline passes.
+
+Keep local-cluster remote execution distinct from HPC execution:
+
+- `process`: local in-process execution, no remote service.
+- `spawn`: local worker processes, useful parallelism but not remote execution.
+- Local-cluster remote: `remote: jobserver` or `remote: daskserver` against a local/nearby configured service, usually a default capability.
+- HPC remote: scheduler/site-managed `remote: daskserver` or manual remote job deployment with queue, module, container, credential, filesystem, and policy constraints. Do not silently configure this unless requested or already clearly configured; list it as follow-up when relevant.
+
+Other common capability concerns are parallelization and incremental computing, including data-incremental and code-incremental computation. Add these when they serve the user's goal or a clear performance/scaling need.
 
 When debugging operational complexity, use Seamless diagnostics/instrumentation, and use the `seamless-remote-debugging` skill when the failure is remote/backend-related.
 
@@ -188,13 +203,13 @@ Ask these questions first:
 - Are edges values, checksums, handles, files, or deep checksums?
 - Which outputs are meaning-bearing and must remain materializable?
 - Which bulky intermediates can be scratch?
-- Would scratch plus fingertip improve data colocalization?
+- Would scratch plus fingertip improve data colocalization, and which consumer transformations need input fingertipping enabled?
 - Is transformation granularity appropriate for both caching and execution placement?
 - Which execution backend is active?
 
 Then consider these choices explicitly:
 
-1. Carefully consider scratch plus fingertip. Not only can they reduce cache pressure, they can also enforce data colocalization.
+1. Carefully consider scratch plus fingertip. Not only can they reduce cache pressure, they can also enforce data colocalization. Enable input fingertipping per consumer transformation; do not assume a global switch.
 2. Wiring can use values, checksums, or handles. Concrete materialization is simple and inspectable, but it can hurt performance. Materialize large datasets only when necessary.
 3. Parallel execution can use delayed transformers, spawn, `multi.parallel`, or `seamless-queue`.
 4. Granularity matters because a transformation is both a caching unit and an execution or parallelization unit. Granularity can be nested: transformations can be defined inside another transformation, including heterogeneous nesting such as `seamless-run` wrapping a Python script that launches Python transformations. Nested granularity can create multi-level caching and improve colocalization of compute, data, and caching services.
@@ -202,6 +217,14 @@ Then consider these choices explicitly:
 For remote execution dataflow optimization, prioritize wiring type, scratch plus fingertip, and granularity. For parallelization optimization, prioritize execution mechanisms and granularity.
 
 Exit check: the optimization is justified by observed or expected dataflow, cache, or parallel execution behavior, and contract compliance still holds.
+
+## Capability Report
+
+End every porting or debugging task with a concise capability report:
+
+- Implemented capabilities: name what is actually active, for example minimal wrapping, persistent caching, local-cluster remote execution, parallel execution, scratch/fingertip, incremental computation, or HPC execution.
+- Relevant follow-ups: name capabilities not implemented but plausibly useful next, with a short reason or blocker.
+- If a default capability was not implemented, state why.
 
 ## Example Transitions
 
