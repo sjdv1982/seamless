@@ -15,6 +15,7 @@ This page defines what an agent may assume about Seamless caching/storage at a h
 - If a result is marked scratch, Seamless may keep only the **result checksum** and not retain the bytes needed to materialize the value later.
 - Scratch is appropriate for bulky intermediates that are cheap to recompute.
 - Scratch is not only a storage policy. With input fingertipping, a missing scratch input is recomputed at the consumer's execution location, so scratch can keep large producer-consumer edges local to the consuming work.
+- Input fingertipping must be enabled per consumer transformation. Use `allow_input_fingertip = True` on the downstream Python transformer/core before constructing the transformation, or `--fingertip` when executing a transformation checksum from the CLI.
 - Do not scratch meaning-bearing “witness” artifacts that you may need for audit/falsification or cross-environment comparison.
 
 ## Buffer cache (local memory pressure)

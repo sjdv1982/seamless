@@ -11,6 +11,12 @@ Scratch is an optimization knob:
 - Use scratch for bulky generated intermediates that are not meaning-bearing and whose main purpose is to feed another transformation.
 - Scratch must not remove the ability to evaluate the meaning-bearing outcome of the computation.
 
+Input fingertipping is opt-in on each consumer transformation. Marking an upstream
+producer as scratch does not automatically allow downstream consumers to
+fingertip missing inputs. In Python, set the downstream transformer/core's
+`allow_input_fingertip = True` before constructing the consuming transformation;
+for CLI execution of a transformation checksum, use `--fingertip`.
+
 Agent porting implication: do not replace a compact, reliable producer implementation just to avoid a large edge. If the producer is deterministic and cheap enough to rerun, prefer a scratch producer plus fingertipping consumer so the large value is materialized co-located with the consumer.
 
 ## Witness outputs (do not scratch)
