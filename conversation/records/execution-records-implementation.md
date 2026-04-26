@@ -776,7 +776,7 @@ Allowed roots / exceptions:
   - `libpthread.so*`
   - `librt.so*`
   - `libutil.so*`
-- host accelerator-driver libraries when relevant:
+.- host accelerator-driver libraries when relevant:
   - `libcuda.so*`
   - `libnvidia-ml.so*`
 
@@ -796,7 +796,7 @@ Defined v1 violation codes:
   - `LD_PRELOAD` points to a non-allowlisted library outside the active conda prefix
 
 This is intentionally narrow.
-It does not yet define full contracts for Python import roots, bash tool resolution, MPI injection, or non-conda execution.
+It does not define full contracts for Python import roots, bash tool resolution, MPI injection, or non-conda execution. If this is suspected to play a role, the audit process should build a container to run the transformation in.
 
 Scope split:
 
