@@ -1,0 +1,95 @@
+commit cb363fcb21773e3e79fd66fbd859f80f3b919a3a
+Author: Sjoerd de Vries <sjdv1982@gmail.com>
+Date:   Mon Apr 27 10:21:27 2026 +0200
+
+    Attach compiled contexts to Dask records
+
+diff --git a/seamless_dask/client.py b/seamless_dask/client.py
+index 709a3af..ddd1804 100644
+--- a/seamless_dask/client.py
++++ b/seamless_dask/client.py
+@@ -445,6 +445,7 @@ async def _promise_and_write_result_async(
+         if get_record():
+             try:
+                 from seamless_transformer.transformation_cache import (
++                    build_compilation_context_checksum,
+                     build_execution_record,
+                     load_bucket_contract_violations,
+                 )
+@@ -465,6 +466,10 @@ async def _promise_and_write_result_async(
+                     bucket_contract_violations = (
+                         await load_bucket_contract_violations(probe_context)
+                     )
++                    compilation_context = await build_compilation_context_checksum(
++                        dict(transformation_dict or {}),
++                        dict(tf_dunder or {}),
++                    )
+                     record = build_execution_record(
+                         dict(transformation_dict or {}),
+                         tf_checksum=tf_checksum,
+@@ -478,6 +483,7 @@ async def _promise_and_write_result_async(
+                         cpu_system_seconds=cpu_system_seconds or 0.0,
+                         probe_context=probe_context,
+                         bucket_contract_violations=bucket_contract_violations,
++                        compilation_context=compilation_context,
+                     )
+                     record["execution_envelope"]["scratch"] = bool(scratch)
+                     await database_remote.set_execution_record(
+diff --git a/tests/test_execution_records.py b/tests/test_execution_records.py
+index 6bd2f33..2109a2f 100644
+--- a/tests/test_execution_records.py
++++ b/tests/test_execution_records.py
+@@ -244,3 +244,53 @@ def test_probe_jobs_skip_execution_record_write(monkeypatch):
+         (tf_checksum.hex(), result_checksum.hex())
+     ]
+     assert fake_database_remote.execution_records == []
++
++
++def test_compiled_dask_record_writes_compilation_context(monkeypatch):
++    fake_database_remote = _FakeDatabaseRemote()
++    fake_buffer_remote = _FakeBufferRemote()
++    tf_checksum = _make_checksum({"kind": "dask-compiled-record-test"})
++    result_checksum = _make_checksum(17, "mixed")
++    compilation_context = "f" * 64
++
++    monkeypatch.setattr(select, "get_record", lambda: True)
++    monkeypatch.setattr(seamless_remote, "database_remote", fake_database_remote)
++    monkeypatch.setattr(seamless_remote, "buffer_remote", fake_buffer_remote)
++    monkeypatch.setattr(dask_client, "_ENSURE_RESULT_UPLOAD", False)
++    monkeypatch.setattr(
++        probe_index,
++        "ensure_record_bucket_preconditions",
++        lambda *args, **kwargs: asyncio.sleep(
++            0,
++            result={
++                "required_bucket_labels": {},
++                "required_bucket_checksums": {},
++                "live_tokens": {},
++                "bucket_tokens": {},
++            },
++        ),
++    )
++    monkeypatch.setattr(
++        transformation_cache,
++        "build_compilation_context_checksum",
++        lambda *args, **kwargs: asyncio.sleep(0, result=compilation_context),
++    )
++
++    asyncio.run(
++        dask_client._promise_and_write_result_async(
++            tf_checksum,
++            result_checksum,
++            write_buffer=False,
++            transformation_dict={
++                "__language__": "c",
++                "__compiled__": True,
++                "__output__": ("result", "mixed", None),
++            },
++            tf_dunder={},
++            scratch=False,
++            execution="remote",
++        )
++    )
++
++    record = fake_database_remote.execution_records[0][2]
++    assert record["compilation_context"] == compilation_context

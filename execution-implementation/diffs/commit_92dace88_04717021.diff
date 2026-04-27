@@ -1,0 +1,127 @@
+commit 92dace88308fb552e811a0b410d5be2778c3b240
+Author: Sjoerd de Vries <sjdv1982@gmail.com>
+Date:   Mon Apr 27 09:14:52 2026 +0200
+
+    Carry bucket contract violations into Dask records
+
+diff --git a/seamless_dask/client.py b/seamless_dask/client.py
+index 872acfc..709a3af 100644
+--- a/seamless_dask/client.py
++++ b/seamless_dask/client.py
+@@ -446,6 +446,7 @@ async def _promise_and_write_result_async(
+             try:
+                 from seamless_transformer.transformation_cache import (
+                     build_execution_record,
++                    load_bucket_contract_violations,
+                 )
+                 from seamless_transformer.probe_index import (
+                     ensure_record_bucket_preconditions,
+@@ -461,6 +462,9 @@ async def _promise_and_write_result_async(
+                         dict(tf_dunder or {}),
+                         execution=execution,
+                     )
++                    bucket_contract_violations = (
++                        await load_bucket_contract_violations(probe_context)
++                    )
+                     record = build_execution_record(
+                         dict(transformation_dict or {}),
+                         tf_checksum=tf_checksum,
+@@ -473,6 +477,7 @@ async def _promise_and_write_result_async(
+                         cpu_user_seconds=cpu_user_seconds or 0.0,
+                         cpu_system_seconds=cpu_system_seconds or 0.0,
+                         probe_context=probe_context,
++                        bucket_contract_violations=bucket_contract_violations,
+                     )
+                     record["execution_envelope"]["scratch"] = bool(scratch)
+                     await database_remote.set_execution_record(
+diff --git a/tests/test_execution_records.py b/tests/test_execution_records.py
+index f6e87a9..6bd2f33 100644
+--- a/tests/test_execution_records.py
++++ b/tests/test_execution_records.py
+@@ -73,21 +73,51 @@ def test_promise_and_write_result_writes_execution_record(monkeypatch):
+     fake_buffer_remote = _FakeBufferRemote()
+     tf_checksum = _make_checksum({"kind": "dask-record-test"})
+     result_checksum = _make_checksum(7, "mixed")
++    node_checksum = _make_checksum(
++        {
++            "bucket_kind": "node",
++            "contract_violations": ["node.contract"],
++        }
++    )
++    environment_checksum = _make_checksum(
++        {
++            "bucket_kind": "environment",
++            "contract_violations": ["environment.contract"],
++        }
++    )
++    node_env_checksum = _make_checksum(
++        {
++            "bucket_kind": "node_env",
++            "contract_violations": ["node_env.contract"],
++        }
++    )
++    queue_checksum = _make_checksum(
++        {
++            "bucket_kind": "queue",
++            "contract_violations": ["queue.contract"],
++        }
++    )
++    queue_node_checksum = _make_checksum(
++        {
++            "bucket_kind": "queue_node",
++            "contract_violations": ["queue_node.contract"],
++        }
++    )
+     probe_context = {
+         "required_bucket_labels": {
+             "node": "worker-1",
+             "environment": "conda:/envs/seamless1",
+-            "node_env": "a" * 64 + ":" + "b" * 64,
+-            "queue": "demo/gpu/daskserver",
+-            "queue_node": "d" * 64 + ":worker-1",
+-        },
+-        "required_bucket_checksums": {
+-            "node": "a" * 64,
+-            "environment": "b" * 64,
+-            "node_env": "c" * 64,
+-            "queue": "d" * 64,
+-            "queue_node": "e" * 64,
+-        },
++                "node_env": node_checksum.hex() + ":" + environment_checksum.hex(),
++                "queue": "demo/gpu/daskserver",
++                "queue_node": queue_checksum.hex() + ":worker-1",
++            },
++            "required_bucket_checksums": {
++                "node": node_checksum.hex(),
++                "environment": environment_checksum.hex(),
++                "node_env": node_env_checksum.hex(),
++                "queue": queue_checksum.hex(),
++                "queue_node": queue_node_checksum.hex(),
++            },
+         "live_tokens": {
+             "node": {"hostname": "worker-1", "boot_id": "boot-1"},
+             "environment": {"sys_prefix": "/envs/seamless1"},
+@@ -159,11 +189,18 @@ def test_promise_and_write_result_writes_execution_record(monkeypatch):
+     assert record["result_checksum"] == result_checksum.hex()
+     assert record["execution_mode"] == "remote"
+     assert record["remote_target"] == "daskserver"
+-    assert record["node"] == "a" * 64
+-    assert record["environment"] == "b" * 64
+-    assert record["node_env"] == "c" * 64
+-    assert record["queue"] == "d" * 64
+-    assert record["queue_node"] == "e" * 64
++    assert record["node"] == node_checksum.hex()
++    assert record["environment"] == environment_checksum.hex()
++    assert record["node_env"] == node_env_checksum.hex()
++    assert record["queue"] == queue_checksum.hex()
++    assert record["queue_node"] == queue_node_checksum.hex()
++    assert record["bucket_contract_violations"] == [
++        "environment.contract",
++        "node.contract",
++        "node_env.contract",
++        "queue.contract",
++        "queue_node.contract",
++    ]
+     assert record["freshness"] == probe_context
+     assert record["execution_envelope"]["scratch"] is False
+ 

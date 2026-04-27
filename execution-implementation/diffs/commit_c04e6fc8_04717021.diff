@@ -1,0 +1,77 @@
+commit c04e6fc804c1b216ccb670a83a2ecccbe26ee1d5
+Author: Sjoerd de Vries <sjdv1982@gmail.com>
+Date:   Sun Apr 26 17:13:50 2026 +0200
+
+    Add seamless-run node targeting
+
+diff --git a/seamless_transformer/cmd/api/main.py b/seamless_transformer/cmd/api/main.py
+index 4f4f077..bd9210b 100755
+--- a/seamless_transformer/cmd/api/main.py
++++ b/seamless_transformer/cmd/api/main.py
+@@ -60,8 +60,9 @@ except Exception:  # pragma: no cover - optional dependency
+     get_seamless_cache = lambda: None
+ 
+ try:
+-    from seamless_config.select import select_project, select_subproject
++    from seamless_config.select import select_node, select_project, select_subproject
+ except Exception:  # pragma: no cover - optional dependency
++    select_node = None
+     select_project = None
+     select_subproject = None
+ 
+@@ -352,6 +353,14 @@ def _main(argv: list[str] | None = None) -> int:
+         help="Specify an existing conda environment where the transformation could run in.",
+     )
+ 
++    parser.add_argument(
++        "--node",
++        help=(
++            "Execution-only node placement hint. "
++            "Supported for remote daskserver backends that can honor scheduler node targeting."
++        ),
++    )
++
+     """
+     ### TODO
+     parser.add_argument(
+@@ -465,6 +474,10 @@ def _main(argv: list[str] | None = None) -> int:
+         select_project(project)
+         if subproject:
+             select_subproject(subproject)
++    if args.node:
++        if select_node is None:
++            err("seamless_config is unavailable; cannot set --node")
++        select_node(args.node)
+ 
+     if args.stage:
+         stage, substage = _parse_scoped_value(args.stage, "stage")
+@@ -883,9 +896,11 @@ def _main(argv: list[str] | None = None) -> int:
+     from seamless_config import change_stage, set_workdir
+     from seamless_config.config_files import load_config_files
+     from seamless_config.select import (
+-        select_execution,
++        check_remote_redundancy,
++        get_remote,
+         get_selected_cluster,
+         get_execution,
++        select_execution,
+     )
+ 
+     include_dask = True
+@@ -910,6 +925,16 @@ def _main(argv: list[str] | None = None) -> int:
+                 if args.upload or remote_job_write:
+                     if get_selected_cluster() is None:
+                         err("--upload or --write-remote-job require a cluster")
++            if args.node:
++                cluster = get_selected_cluster()
++                execution = get_execution()
++                if execution != "remote" or cluster is None:
++                    err("--node is only supported for remote daskserver execution")
++                remote_target = get_remote()
++                if remote_target is None:
++                    remote_target = check_remote_redundancy(cluster)
++                if remote_target != "daskserver":
++                    err("--node is only supported for remote daskserver execution")
+ 
+             change_stage()
+         # /CONFIG

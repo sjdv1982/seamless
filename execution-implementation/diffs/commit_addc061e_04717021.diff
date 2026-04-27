@@ -1,0 +1,307 @@
+commit addc061e4a93e40a37106f3d3aed30ee0c33a61d
+Author: Sjoerd de Vries <sjdv1982@gmail.com>
+Date:   Mon Apr 27 10:21:27 2026 +0200
+
+    Store compiled execution contexts in records
+
+diff --git a/seamless_transformer/transformation_cache.py b/seamless_transformer/transformation_cache.py
+index 229afd4..1fde29d 100644
+--- a/seamless_transformer/transformation_cache.py
++++ b/seamless_transformer/transformation_cache.py
+@@ -9,14 +9,20 @@ from importlib import metadata as importlib_metadata
+ import itertools
+ import os
+ import os as _os
++import shutil
+ import socket
++import subprocess
+ import time
+ 
+-from seamless import CacheMissError, Checksum, is_worker
++from seamless import Buffer, CacheMissError, Checksum, is_worker
+ 
+ from .remote_job import RemoteJobWritten, parse_remote_job_written
+ from .probe_index import ensure_record_bucket_preconditions, is_record_probe
+-from .run import run_transformation_dict
++from .run import (
++    _module_definition_from_payload,
++    _resolve_dunder_value,
++    run_transformation_dict,
++)
+ from . import worker
+ from seamless_config.select import (
+     check_remote_redundancy,
+@@ -86,6 +92,121 @@ def _resolve_remote_target(execution: str) -> str | None:
+         return None
+ 
+ 
++def _stable_digest(value: Any) -> str:
++    import hashlib
++    import json
++
++    try:
++        payload = json.dumps(value, sort_keys=True, default=repr).encode()
++    except TypeError:
++        payload = repr(value).encode()
++    return hashlib.sha256(payload).hexdigest()
++
++
++def _compiler_version(binary: str) -> str | None:
++    try:
++        completed = subprocess.run(
++            [binary, "--version"],
++            check=False,
++            capture_output=True,
++            text=True,
++            timeout=5,
++        )
++    except Exception:
++        return None
++    output = (completed.stdout or completed.stderr or "").strip().splitlines()
++    if not output:
++        return None
++    return output[0].strip() or None
++
++
++async def build_compilation_context_checksum(
++    transformation_dict: Dict[str, Any],
++    tf_dunder: Dict[str, Any] | None,
++) -> str | None:
++    if not (
++        transformation_dict.get("__compiled__")
++        or (isinstance(tf_dunder, dict) and tf_dunder.get("__compiled__"))
++    ):
++        return None
++    if buffer_remote is None or not buffer_remote.has_write_server():
++        raise RuntimeError(
++            "Compiled execution records require an active hashserver write server"
++        )
++
++    from seamless_transformer.compiler.compile import complete
++
++    schema_checksum = transformation_dict.get("__schema__")
++    if schema_checksum is None and isinstance(tf_dunder, dict):
++        schema_checksum = tf_dunder.get("__schema__")
++    header_checksum = transformation_dict.get("__header__")
++    if header_checksum is None and isinstance(tf_dunder, dict):
++        header_checksum = tf_dunder.get("__header__")
++    compilation_checksum = transformation_dict.get("__compilation__")
++    if compilation_checksum is None and isinstance(tf_dunder, dict):
++        compilation_checksum = tf_dunder.get("__compilation__")
++
++    code_checksum = transformation_dict.get("code", (None, None, None))[2]
++    objects_checksum = transformation_dict.get("objects", (None, None, None))[2]
++    language = transformation_dict.get("__language__")
++
++    code = await Checksum(code_checksum).resolution("text")
++    header = _resolve_dunder_value(transformation_dict, tf_dunder, "__header__", "text")
++    compilation = _resolve_dunder_value(
++        transformation_dict, tf_dunder, "__compilation__", "plain"
++    )
++    objects = {}
++    if objects_checksum is not None:
++        objects = await Checksum(objects_checksum).resolution("plain")
++        if not isinstance(objects, dict):
++            objects = {}
++
++    module_definition = _module_definition_from_payload(
++        language, code, header, objects, compilation
++    )
++    completed = complete(module_definition)
++    compiled_module_digest = _stable_digest(completed)
++
++    objects_payload: dict[str, Any] = {}
++    for name, obj in sorted(completed["objects"].items()):
++        compiler_binary = obj["compiler_binary"]
++        compiler_path = shutil.which(compiler_binary) or compiler_binary
++        objects_payload[name] = {
++            "language": obj["language"],
++            "compiler_binary": compiler_binary,
++            "compiler_path": compiler_path,
++            "compiler_version": _compiler_version(compiler_path),
++            "compile_mode": obj.get("compile_mode"),
++            "extension": obj.get("extension"),
++            "options": list(obj.get("options") or []),
++        }
++
++    payload = {
++        "schema_version": 1,
++        "language": language,
++        "target": completed.get("target", "profile"),
++        "schema_checksum": str(schema_checksum) if schema_checksum is not None else None,
++        "header_checksum": str(header_checksum) if header_checksum is not None else None,
++        "code_checksum": str(code_checksum) if code_checksum is not None else None,
++        "objects_checksum": (
++            str(objects_checksum) if objects_checksum is not None else None
++        ),
++        "compilation_checksum": (
++            str(compilation_checksum) if compilation_checksum is not None else None
++        ),
++        "object_names": sorted(completed["objects"].keys()),
++        "link_options": list(completed.get("link_options", [])),
++        "objects": objects_payload,
++        "compiled_module_digest": compiled_module_digest,
++        "compiled_module_validation_digest": None,
++    }
++    buffer = Buffer(payload, "plain")
++    written = await buffer.write()
++    if not written:
++        raise RuntimeError("Failed to write compilation context to the hashserver")
++    return buffer.get_checksum().hex()
++
++
+ def build_execution_record(
+     transformation_dict: Dict[str, Any],
+     *,
+@@ -101,6 +222,7 @@ def build_execution_record(
+     probe_context: dict[str, Any] | None = None,
+     bucket_contract_violations: list[str] | None = None,
+     job_contract_violations: list[str] | None = None,
++    compilation_context: str | None = None,
+ ) -> dict[str, Any]:
+     meta = transformation_dict.get("__meta__", {}) or {}
+     if not isinstance(meta, dict):
+@@ -173,7 +295,7 @@ def build_execution_record(
+         "queue": required_bucket_checksums.get("queue"),
+         "queue_node": required_bucket_checksums.get("queue_node"),
+         "execution_envelope": execution_envelope,
+-        "compilation_context": None,
++        "compilation_context": compilation_context,
+         "freshness": freshness,
+         "bucket_contract_violations": bucket_contract_violations,
+         "job_contract_violations": job_contract_violations,
+@@ -359,6 +481,7 @@ class TransformationCache:
+         wall_start = time.perf_counter()
+         cpu_start = os.times()
+         probe_context = None
++        compilation_context = None
+         if execution == "remote" and not force_local:
+             # NOTE: this branch is only hit if no seamless Dask client has been defined
+             if jobserver_remote is None:
+@@ -394,6 +517,7 @@ class TransformationCache:
+             )
+             if isinstance(result_checksum, dict):
+                 probe_context = result_checksum.get("probe_context")
++                compilation_context = result_checksum.get("compilation_context")
+                 result_checksum = result_checksum.get("result_checksum")
+             if isinstance(result_checksum, str):
+                 remote_job_dir = parse_remote_job_written(result_checksum)
+@@ -486,6 +610,10 @@ class TransformationCache:
+                 bucket_contract_violations = await load_bucket_contract_violations(
+                     probe_context
+                 )
++                if compilation_context is None:
++                    compilation_context = await build_compilation_context_checksum(
++                        transformation_dict, tf_dunder
++                    )
+                 record = build_execution_record(
+                     transformation_dict,
+                     tf_checksum=tf_checksum,
+@@ -499,6 +627,7 @@ class TransformationCache:
+                     cpu_system_seconds=cpu_system_seconds,
+                     probe_context=probe_context,
+                     bucket_contract_violations=bucket_contract_violations,
++                    compilation_context=compilation_context,
+                 )
+                 record["execution_envelope"]["scratch"] = bool(scratch)
+                 await database_remote.set_execution_record(
+diff --git a/tests/test_execution_records.py b/tests/test_execution_records.py
+index b309191..ad0537a 100644
+--- a/tests/test_execution_records.py
++++ b/tests/test_execution_records.py
+@@ -280,6 +280,74 @@ def test_record_probe_skips_execution_record_write(monkeypatch):
+     assert fake_database_remote.execution_records == []
+ 
+ 
++def test_compiled_record_writes_compilation_context(monkeypatch):
++    cache = TransformationCache()
++    fake_database_remote = _FakeDatabaseRemote()
++    result_checksum = _make_checksum(13, "mixed")
++    tf_checksum = _make_checksum({"kind": "compiled-record-test"})
++    compilation_context = "f" * 64
++
++    def _fake_run_transformation_dict(
++        transformation_dict,
++        tf_checksum_arg,
++        tf_dunder,
++        scratch,
++        require_value,
++    ):
++        del transformation_dict, tf_checksum_arg, tf_dunder, scratch, require_value
++        return result_checksum
++
++    monkeypatch.setattr(transformation_cache, "database_remote", fake_database_remote)
++    monkeypatch.setattr(transformation_cache, "buffer_remote", None)
++    monkeypatch.setattr(transformation_cache, "_buffer_writer", None)
++    monkeypatch.setattr(transformation_cache, "jobserver_remote", None)
++    monkeypatch.setattr(
++        transformation_cache.asyncio, "get_running_loop", lambda: _ImmediateLoop()
++    )
++    monkeypatch.setattr(transformation_cache, "get_execution", lambda: "process")
++    monkeypatch.setattr(transformation_cache, "get_record", lambda: True)
++    monkeypatch.setattr(
++        transformation_cache,
++        "ensure_record_bucket_preconditions",
++        lambda *args, **kwargs: asyncio.sleep(
++            0,
++            result={
++                "required_bucket_labels": {},
++                "required_bucket_checksums": {},
++                "live_tokens": {},
++                "bucket_tokens": {},
++            },
++        ),
++    )
++    monkeypatch.setattr(
++        transformation_cache,
++        "build_compilation_context_checksum",
++        lambda *args, **kwargs: asyncio.sleep(0, result=compilation_context),
++    )
++    monkeypatch.setattr(
++        transformation_cache, "run_transformation_dict", _fake_run_transformation_dict
++    )
++
++    result = asyncio.run(
++        cache.run(
++            {
++                "__language__": "c",
++                "__compiled__": True,
++                "__output__": ("result", "mixed", None),
++            },
++            tf_checksum=tf_checksum,
++            tf_dunder={},
++            scratch=False,
++            require_value=False,
++            force_local=True,
++        )
++    )
++
++    assert result == result_checksum
++    record = fake_database_remote.execution_records[0][2]
++    assert record["compilation_context"] == compilation_context
++
++
+ def test_remote_jobserver_record_uses_returned_probe_context(monkeypatch):
+     cache = TransformationCache()
+     fake_database_remote = _FakeDatabaseRemote()
+@@ -313,6 +381,7 @@ def test_remote_jobserver_record_uses_returned_probe_context(monkeypatch):
+             },
+         },
+     }
++    compilation_context = "d" * 64
+ 
+     class _FakeJobserverRemote:
+         async def run_transformation(self, *args, **kwargs):
+@@ -320,6 +389,7 @@ def test_remote_jobserver_record_uses_returned_probe_context(monkeypatch):
+             return {
+                 "result_checksum": result_checksum,
+                 "probe_context": probe_context,
++                "compilation_context": compilation_context,
+             }
+ 
+     async def _unexpected_probe_context(*args, **kwargs):
+@@ -367,3 +437,4 @@ def test_remote_jobserver_record_uses_returned_probe_context(monkeypatch):
+     assert record["environment"] == "b" * 64
+     assert record["node_env"] == "c" * 64
+     assert record["freshness"] == probe_context
++    assert record["compilation_context"] == compilation_context

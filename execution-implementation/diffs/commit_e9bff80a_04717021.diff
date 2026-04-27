@@ -1,0 +1,149 @@
+commit e9bff80a1fe570000ef099ac3f93afa2805340d7
+Author: Sjoerd de Vries <sjdv1982@gmail.com>
+Date:   Sun Apr 26 21:15:50 2026 +0200
+
+    Use jobserver probe context in records
+
+diff --git a/seamless_transformer/transformation_cache.py b/seamless_transformer/transformation_cache.py
+index f472a74..8f84309 100644
+--- a/seamless_transformer/transformation_cache.py
++++ b/seamless_transformer/transformation_cache.py
+@@ -323,6 +323,7 @@ class TransformationCache:
+         started_at = _utcnow_iso()
+         wall_start = time.perf_counter()
+         cpu_start = os.times()
++        probe_context = None
+         if execution == "remote" and not force_local:
+             # NOTE: this branch is only hit if no seamless Dask client has been defined
+             if jobserver_remote is None:
+@@ -356,6 +357,9 @@ class TransformationCache:
+                 tf_dunder=tf_dunder,
+                 scratch=scratch,
+             )
++            if isinstance(result_checksum, dict):
++                probe_context = result_checksum.get("probe_context")
++                result_checksum = result_checksum.get("result_checksum")
+             if isinstance(result_checksum, str):
+                 remote_job_dir = parse_remote_job_written(result_checksum)
+                 if remote_job_dir is not None:
+@@ -436,8 +440,9 @@ class TransformationCache:
+                 tf_checksum, result_checksum
+             )
+             if record_mode:
+-                probe_context = None
+-                if execution != "remote" or remote_target != "jobserver":
++                if probe_context is None and (
++                    execution != "remote" or remote_target != "jobserver"
++                ):
+                     probe_context = await ensure_record_bucket_preconditions(
+                         transformation_dict,
+                         tf_dunder,
+diff --git a/tests/test_execution_records.py b/tests/test_execution_records.py
+index a4b9a57..c8e23a4 100644
+--- a/tests/test_execution_records.py
++++ b/tests/test_execution_records.py
+@@ -32,6 +32,11 @@ class _FakeDatabaseRemote:
+         return self.write_server
+ 
+ 
++class _FakeBufferRemote:
++    def has_write_server(self):
++        return True
++
++
+ class _ImmediateLoop:
+     async def run_in_executor(self, executor, func, *args):
+         del executor
+@@ -186,3 +191,92 @@ def test_record_mode_requires_database_write_server(monkeypatch):
+                 force_local=True,
+             )
+         )
++
++
++def test_remote_jobserver_record_uses_returned_probe_context(monkeypatch):
++    cache = TransformationCache()
++    fake_database_remote = _FakeDatabaseRemote()
++    result_checksum = _make_checksum(5, "mixed")
++    tf_checksum = _make_checksum({"kind": "execution-record-test-remote"})
++    probe_context = {
++        "required_bucket_labels": {
++            "node": "worker-remote",
++            "environment": "conda:/envs/remote",
++            "node_env": "a" * 64 + ":" + "b" * 64,
++        },
++        "required_bucket_checksums": {
++            "node": "a" * 64,
++            "environment": "b" * 64,
++            "node_env": "c" * 64,
++        },
++        "live_tokens": {
++            "node": {"hostname": "worker-remote", "boot_id": "boot-remote"},
++            "environment": {"sys_prefix": "/envs/remote"},
++            "node_env": {
++                "node": {"hostname": "worker-remote", "boot_id": "boot-remote"},
++                "environment": {"sys_prefix": "/envs/remote"},
++            },
++        },
++        "bucket_tokens": {
++            "node": {"hostname": "worker-remote", "boot_id": "boot-remote"},
++            "environment": {"sys_prefix": "/envs/remote"},
++            "node_env": {
++                "node": {"hostname": "worker-remote", "boot_id": "boot-remote"},
++                "environment": {"sys_prefix": "/envs/remote"},
++            },
++        },
++    }
++
++    class _FakeJobserverRemote:
++        async def run_transformation(self, *args, **kwargs):
++            del args, kwargs
++            return {
++                "result_checksum": result_checksum,
++                "probe_context": probe_context,
++            }
++
++    async def _unexpected_probe_context(*args, **kwargs):
++        del args, kwargs
++        raise AssertionError("fallback probe lookup should not be used")
++
++    monkeypatch.setattr(transformation_cache, "database_remote", fake_database_remote)
++    monkeypatch.setattr(transformation_cache, "buffer_remote", _FakeBufferRemote())
++    monkeypatch.setattr(transformation_cache, "_buffer_writer", None)
++    monkeypatch.setattr(
++        transformation_cache, "jobserver_remote", _FakeJobserverRemote()
++    )
++    monkeypatch.setattr(transformation_cache, "get_execution", lambda: "remote")
++    monkeypatch.setattr(transformation_cache, "get_record", lambda: True)
++    monkeypatch.setattr(transformation_cache, "get_remote", lambda: "jobserver")
++    monkeypatch.setattr(transformation_cache, "get_selected_cluster", lambda: "demo")
++    monkeypatch.setattr(transformation_cache, "get_queue", lambda cluster=None: "gpu")
++    monkeypatch.setattr(transformation_cache, "get_node", lambda: None)
++    monkeypatch.setattr(
++        transformation_cache,
++        "ensure_record_bucket_preconditions",
++        _unexpected_probe_context,
++    )
++
++    result = asyncio.run(
++        cache.run(
++            {
++                "__language__": "python",
++                "__output__": ("result", "mixed", None),
++            },
++            tf_checksum=tf_checksum,
++            tf_dunder={},
++            scratch=False,
++            require_value=False,
++            force_local=False,
++        )
++    )
++
++    assert result == result_checksum
++    assert len(fake_database_remote.execution_records) == 1
++    record = fake_database_remote.execution_records[0][2]
++    assert record["execution_mode"] == "remote"
++    assert record["remote_target"] == "jobserver"
++    assert record["node"] == "a" * 64
++    assert record["environment"] == "b" * 64
++    assert record["node_env"] == "c" * 64
++    assert record["freshness"] == probe_context

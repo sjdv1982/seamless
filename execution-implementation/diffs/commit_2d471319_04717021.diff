@@ -1,0 +1,375 @@
+commit 2d47131926d27d151f960daf84236bf10edf6136
+Author: Sjoerd de Vries <sjdv1982@gmail.com>
+Date:   Mon Apr 27 10:32:47 2026 +0200
+
+    Prepare compiled linkage validation helpers
+
+diff --git a/seamless_transformer/compiler/__init__.py b/seamless_transformer/compiler/__init__.py
+index ecc1b09..2b1d7d7 100644
+--- a/seamless_transformer/compiler/__init__.py
++++ b/seamless_transformer/compiler/__init__.py
+@@ -17,6 +17,7 @@ from .cffi_wrapper import build_extension_cffi
+ 
+ _BINARY_CACHE: dict[str, dict[str, bytes]] = {}
+ _MODULE_CACHE: dict[str, ModuleType] = {}
++_MODULE_INFO_CACHE: dict[str, dict[str, Any]] = {}
+ _SO_CACHE_DIR = tempfile.mkdtemp(prefix="seamless-compiled-modules-")
+ 
+ 
+@@ -47,10 +48,21 @@ def build_compiled_module(
+ ) -> ModuleType:
+     """Build and import a compiled Python extension module."""
+ 
++    return get_compiled_module_info(module_definition, module_name=module_name)["module"]
++
++
++def get_compiled_module_info(
++    module_definition: dict,
++    *,
++    module_name: str | None = None,
++) -> dict[str, Any]:
++    """Build or retrieve a compiled module together with stable metadata."""
++
+     completed = complete(module_definition)
+     digest = _stable_digest(completed)
+-    if digest in _MODULE_CACHE:
+-        return _MODULE_CACHE[digest]
++    cached_info = _MODULE_INFO_CACHE.get(digest)
++    if cached_info is not None:
++        return cached_info
+ 
+     if digest not in _BINARY_CACHE:
+         _BINARY_CACHE[digest] = compile(completed)
+@@ -67,7 +79,20 @@ def build_compiled_module(
+     )
+     module = _import_extension_module(module_name, so_bytes)
+     _MODULE_CACHE[digest] = module
+-    return module
+-
+-
+-__all__ = ["build_compiled_module", "complete", "compile"]
++    info = {
++        "digest": digest,
++        "completed": deepcopy(completed),
++        "module": module,
++        "path": getattr(module, "__file__", None),
++        "module_name": module_name,
++    }
++    _MODULE_INFO_CACHE[digest] = info
++    return info
++
++
++__all__ = [
++    "build_compiled_module",
++    "get_compiled_module_info",
++    "complete",
++    "compile",
++]
+diff --git a/seamless_transformer/transformation_cache.py b/seamless_transformer/transformation_cache.py
+index 29356d7..f74d5d7 100644
+--- a/seamless_transformer/transformation_cache.py
++++ b/seamless_transformer/transformation_cache.py
+@@ -10,6 +10,8 @@ import itertools
+ import os
+ import os as _os
+ import platform
++import re
++import shlex
+ import shutil
+ import socket
+ import subprocess
+@@ -69,6 +71,7 @@ except Exception:  # pragma: no cover - fallback for editable/source-only instal
+ _PROCESS_STARTED_AT = datetime.now(timezone.utc)
+ _EXECUTION_RECORD_COUNTER = itertools.count(1)
+ _VALIDATION_SNAPSHOT_COUNTS: dict[tuple, int] = {}
++_COMPILED_VALIDATION_CACHE: dict[str, dict[str, Any]] = {}
+ 
+ 
+ def _debug(msg: str) -> None:
+@@ -221,6 +224,286 @@ async def build_compilation_context_checksum(
+     return buffer.get_checksum().hex()
+ 
+ 
++def _allowlisted_library_name(name: str) -> bool:
++    allowed_prefixes = (
++        "ld-linux",
++        "libc.so",
++        "libm.so",
++        "libdl.so",
++        "libpthread.so",
++        "librt.so",
++        "libutil.so",
++        "libcuda.so",
++        "libnvidia-ml.so",
++    )
++    return any(name.startswith(prefix) for prefix in allowed_prefixes)
++
++
++def _system_library_roots() -> tuple[str, ...]:
++    roots = {
++        "/lib",
++        "/lib64",
++        "/usr/lib",
++        "/usr/lib64",
++        "/lib/x86_64-linux-gnu",
++        "/usr/lib/x86_64-linux-gnu",
++    }
++    return tuple(sorted(roots))
++
++
++def _normalize_path(path: str, *, module_dir: str | None = None) -> str:
++    path = path.strip()
++    if not path:
++        return path
++    if module_dir is not None:
++        path = path.replace("$ORIGIN", module_dir).replace("${ORIGIN}", module_dir)
++    path = os.path.expandvars(path)
++    path = os.path.expanduser(path)
++    return os.path.realpath(path)
++
++
++def _path_allowed_for_contract(
++    path: str, *, conda_prefix: str | None, allow_system_roots: bool
++) -> bool:
++    if not path:
++        return True
++    if conda_prefix and path.startswith(conda_prefix + os.sep):
++        return True
++    if allow_system_roots:
++        for root in _system_library_roots():
++            if path == root or path.startswith(root + os.sep):
++                return True
++    return False
++
++
++def _split_path_like(value: str) -> list[str]:
++    return [item for item in value.split(":") if item]
++
++
++def _split_preload(value: str) -> list[str]:
++    items: list[str] = []
++    for token in shlex.split(value):
++        items.extend(part for part in token.split(":") if part)
++    return items
++
++
++def _parse_readelf_dynamic(text: str, *, module_dir: str) -> dict[str, Any]:
++    rpath_entries: list[str] = []
++    runpath_entries: list[str] = []
++    needed: list[str] = []
++    pattern = re.compile(r"\((?P<tag>[A-Z_]+)\).*?\[(?P<value>.*)\]")
++    for line in text.splitlines():
++        match = pattern.search(line)
++        if match is None:
++            continue
++        tag = match.group("tag")
++        value = match.group("value")
++        if tag == "RPATH":
++            rpath_entries.extend(
++                _normalize_path(item, module_dir=module_dir)
++                for item in _split_path_like(value)
++            )
++        elif tag == "RUNPATH":
++            runpath_entries.extend(
++                _normalize_path(item, module_dir=module_dir)
++                for item in _split_path_like(value)
++            )
++        elif tag == "NEEDED":
++            needed.append(value)
++    return {"rpath": rpath_entries, "runpath": runpath_entries, "needed": needed}
++
++
++def _resolve_needed_libraries(
++    needed: list[str],
++    *,
++    module_dir: str,
++    conda_prefix: str | None,
++    runpath_entries: list[str],
++) -> dict[str, str | None]:
++    search_dirs: list[str] = []
++    for entry in runpath_entries:
++        if entry and entry not in search_dirs:
++            search_dirs.append(entry)
++    for env_name in ("LD_LIBRARY_PATH",):
++        env_value = os.environ.get(env_name)
++        if not env_value:
++            continue
++        for item in _split_path_like(env_value):
++            resolved = _normalize_path(item, module_dir=module_dir)
++            if resolved and resolved not in search_dirs:
++                search_dirs.append(resolved)
++    if conda_prefix:
++        conda_lib = os.path.join(conda_prefix, "lib")
++        search_dirs.append(conda_lib)
++    search_dirs.extend(_system_library_roots())
++
++    resolved: dict[str, str | None] = {}
++    for libname in needed:
++        path = None
++        for directory in search_dirs:
++            candidate = os.path.join(directory, libname)
++            if os.path.exists(candidate):
++                path = os.path.realpath(candidate)
++                break
++        resolved[libname] = path
++    return resolved
++
++
++async def collect_job_validation(
++    transformation_dict: Dict[str, Any],
++    tf_dunder: Dict[str, Any] | None,
++    *,
++    compilation_context: str | None,
++) -> dict[str, Any]:
++    compiled = bool(
++        transformation_dict.get("__compiled__")
++        or (isinstance(tf_dunder, dict) and tf_dunder.get("__compiled__"))
++    )
++    diagnostics: dict[str, Any] = {"compiled": compiled}
++    job_contract_violations: set[str] = set()
++    if not compiled:
++        return {
++            "job_contract_violations": [],
++            "diagnostics": diagnostics,
++        }
++
++    conda_prefix = os.environ.get("CONDA_PREFIX")
++    diagnostics["conda_prefix"] = conda_prefix
++    if not conda_prefix:
++        diagnostics["native_linkage_skipped"] = "no_active_conda_prefix"
++        return {
++            "job_contract_violations": [],
++            "diagnostics": diagnostics,
++        }
++    conda_prefix = os.path.realpath(conda_prefix)
++
++    from seamless_transformer.compiler import get_compiled_module_info
++
++    code = await Checksum(transformation_dict.get("code")[2]).resolution("text")
++    header = _resolve_dunder_value(transformation_dict, tf_dunder, "__header__", "text")
++    compilation = _resolve_dunder_value(
++        transformation_dict, tf_dunder, "__compilation__", "plain"
++    )
++    objects = {}
++    objects_value = transformation_dict.get("objects")
++    if objects_value is not None and objects_value[2] is not None:
++        objects = await Checksum(objects_value[2]).resolution("plain")
++        if not isinstance(objects, dict):
++            objects = {}
++    module_definition = _module_definition_from_payload(
++        transformation_dict.get("__language__"),
++        code,
++        header,
++        objects,
++        compilation,
++    )
++    module_info = get_compiled_module_info(module_definition)
++    digest = module_info["digest"]
++    diagnostics["compiled_module_digest"] = digest
++    diagnostics["compilation_context"] = compilation_context
++
++    cached = _COMPILED_VALIDATION_CACHE.get(digest)
++    if cached is None:
++        module_path = module_info.get("path")
++        if not module_path:
++            cached = {
++                "readelf_available": False,
++                "readelf_error": "compiled module path unavailable",
++                "job_contract_violations": [],
++                "dynamic": {},
++            }
++        else:
++            try:
++                completed = subprocess.run(
++                    ["readelf", "-d", module_path],
++                    check=True,
++                    capture_output=True,
++                    text=True,
++                    timeout=5,
++                )
++                dynamic = _parse_readelf_dynamic(
++                    completed.stdout, module_dir=os.path.dirname(module_path)
++                )
++                resolved_needed = _resolve_needed_libraries(
++                    dynamic["needed"],
++                    module_dir=os.path.dirname(module_path),
++                    conda_prefix=conda_prefix,
++                    runpath_entries=dynamic["runpath"] + dynamic["rpath"],
++                )
++                cached_violations: set[str] = set()
++                for entry in dynamic["rpath"]:
++                    if not _path_allowed_for_contract(
++                        entry, conda_prefix=conda_prefix, allow_system_roots=True
++                    ):
++                        cached_violations.add("rpath_outside_conda_prefix")
++                        break
++                for entry in dynamic["runpath"]:
++                    if not _path_allowed_for_contract(
++                        entry, conda_prefix=conda_prefix, allow_system_roots=True
++                    ):
++                        cached_violations.add("runpath_outside_conda_prefix")
++                        break
++                for libname, resolved_path in resolved_needed.items():
++                    if resolved_path is None or _allowlisted_library_name(libname):
++                        continue
++                    if not _path_allowed_for_contract(
++                        resolved_path,
++                        conda_prefix=conda_prefix,
++                        allow_system_roots=False,
++                    ):
++                        cached_violations.add("native_link_outside_conda_prefix")
++                        break
++                cached = {
++                    "readelf_available": True,
++                    "module_path": module_path,
++                    "dynamic": dynamic,
++                    "resolved_needed": resolved_needed,
++                    "job_contract_violations": sorted(cached_violations),
++                }
++            except Exception as exc:
++                cached = {
++                    "readelf_available": False,
++                    "readelf_error": str(exc),
++                    "job_contract_violations": [],
++                    "dynamic": {},
++                }
++        _COMPILED_VALIDATION_CACHE[digest] = cached
++
++    job_contract_violations.update(cached.get("job_contract_violations", []))
++    diagnostics["readelf"] = cached
++
++    ld_library_path = os.environ.get("LD_LIBRARY_PATH")
++    if ld_library_path:
++        diagnostics["ld_library_path_entries"] = [
++            _normalize_path(item) for item in _split_path_like(ld_library_path)
++        ]
++        for entry in diagnostics["ld_library_path_entries"]:
++            if not _path_allowed_for_contract(
++                entry, conda_prefix=conda_prefix, allow_system_roots=True
++            ):
++                job_contract_violations.add("ld_library_path_outside_conda_prefix")
++                break
++    ld_preload = os.environ.get("LD_PRELOAD")
++    if ld_preload:
++        diagnostics["ld_preload_entries"] = [
++            _normalize_path(item) for item in _split_preload(ld_preload)
++        ]
++        for entry in diagnostics["ld_preload_entries"]:
++            libname = os.path.basename(entry)
++            if _allowlisted_library_name(libname):
++                continue
++            if not _path_allowed_for_contract(
++                entry, conda_prefix=conda_prefix, allow_system_roots=False
++            ):
++                job_contract_violations.add("ld_preload_outside_conda_prefix")
++                break
++
++    return {
++        "job_contract_violations": sorted(job_contract_violations),
++        "diagnostics": diagnostics,
++    }
++
++
+ def _validation_snapshot_key(
+     execution: str,
+     probe_context: dict[str, Any] | None,

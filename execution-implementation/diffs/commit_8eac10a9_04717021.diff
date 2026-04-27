@@ -1,0 +1,194 @@
+commit 8eac10a9148ebe2c1bb2e1bfd369463388749ed0
+Author: Sjoerd de Vries <sjdv1982@gmail.com>
+Date:   Mon Apr 27 18:18:58 2026 +0200
+
+    Record worker freshness diagnostics
+
+diff --git a/seamless_transformer/transformation_cache.py b/seamless_transformer/transformation_cache.py
+index 77b6682..38e3dc1 100644
+--- a/seamless_transformer/transformation_cache.py
++++ b/seamless_transformer/transformation_cache.py
+@@ -94,6 +94,17 @@ def _memory_peak_bytes() -> int | None:
+     return peak
+ 
+ 
++def _process_create_time_epoch() -> float | None:
++    try:
++        import psutil
++    except Exception:
++        return None
++    try:
++        return float(psutil.Process().create_time())
++    except Exception:
++        return None
++
++
+ class _GpuMemorySampler:
+     def __init__(self, *, pid: int, interval_seconds: float = 0.1):
+         self._pid = int(pid)
+@@ -744,6 +755,7 @@ async def build_validation_snapshot_checksum(
+     bucket_contract_violations: list[str] | None,
+     job_contract_violations: list[str] | None,
+     job_validation_diagnostics: dict[str, Any] | None = None,
++    runtime_metadata: dict[str, Any] | None = None,
+ ) -> str | None:
+     limit = _validation_snapshot_limit()
+     if limit <= 0:
+@@ -755,6 +767,8 @@ async def build_validation_snapshot_checksum(
+     count = _VALIDATION_SNAPSHOT_COUNTS.get(key, 0)
+     if count >= limit:
+         return None
++    runtime_metadata = dict(runtime_metadata or {})
++    worker_execution_index = runtime_metadata.get("worker_execution_index")
+ 
+     payload = {
+         "schema_version": 1,
+@@ -775,6 +789,19 @@ async def build_validation_snapshot_checksum(
+         "job_validation_diagnostics": job_validation_diagnostics or {},
+         "hostname": socket.gethostname(),
+         "pid": _os.getpid(),
++        "process_started_at": runtime_metadata.get(
++            "process_started_at",
++            _PROCESS_STARTED_AT.replace(microsecond=0)
++            .isoformat()
++            .replace("+00:00", "Z"),
++        ),
++        "process_create_time_epoch": runtime_metadata.get(
++            "process_create_time_epoch", _process_create_time_epoch()
++        ),
++        "worker_execution_index": worker_execution_index,
++        "worker_fresh_process": worker_execution_index == 1
++        if worker_execution_index is not None
++        else None,
+         "cwd": os.getcwd(),
+         "tempdir": tempfile.gettempdir(),
+         "platform": {
+@@ -923,6 +950,7 @@ def build_execution_record(
+             .isoformat()
+             .replace("+00:00", "Z"),
+         ),
++        "process_create_time_epoch": runtime_metadata.get("process_create_time_epoch"),
+         "worker_execution_index": runtime_metadata.get(
+             "worker_execution_index",
+             next(_EXECUTION_RECORD_COUNTER),
+@@ -1307,23 +1335,13 @@ class TransformationCache:
+                     )
+                     job_validation = _normalize_job_validation_payload(job_validation)
+                 job_contract_violations = job_validation["job_contract_violations"]
+-                input_total_bytes, output_total_bytes = await compute_record_io_bytes(
+-                    transformation_dict, result_checksum
+-                )
+-                validation_snapshot = await build_validation_snapshot_checksum(
+-                    transformation_dict,
+-                    tf_dunder,
+-                    execution=execution,
+-                    probe_context=probe_context,
+-                    compilation_context=compilation_context,
+-                    bucket_contract_violations=bucket_contract_violations,
+-                    job_contract_violations=job_contract_violations,
+-                    job_validation_diagnostics=job_validation["diagnostics"],
+-                )
+                 record_runtime_metadata = dict(runtime_metadata or {})
+                 record_runtime_metadata.setdefault(
+                     "memory_peak_bytes", _memory_peak_bytes()
+                 )
++                record_runtime_metadata.setdefault(
++                    "process_create_time_epoch", _process_create_time_epoch()
++                )
+                 if gpu_memory_peak_bytes is not None:
+                     record_runtime_metadata.setdefault(
+                         "gpu_memory_peak_bytes", gpu_memory_peak_bytes
+@@ -1334,6 +1352,20 @@ class TransformationCache:
+                             transformation_dict, tf_dunder
+                         )
+                     )
++                input_total_bytes, output_total_bytes = await compute_record_io_bytes(
++                    transformation_dict, result_checksum
++                )
++                validation_snapshot = await build_validation_snapshot_checksum(
++                    transformation_dict,
++                    tf_dunder,
++                    execution=execution,
++                    probe_context=probe_context,
++                    compilation_context=compilation_context,
++                    bucket_contract_violations=bucket_contract_violations,
++                    job_contract_violations=job_contract_violations,
++                    job_validation_diagnostics=job_validation["diagnostics"],
++                    runtime_metadata=record_runtime_metadata,
++                )
+                 record = build_execution_record(
+                     transformation_dict,
+                     tf_checksum=tf_checksum,
+diff --git a/tests/test_execution_records.py b/tests/test_execution_records.py
+index ae3149c..fd7849a 100644
+--- a/tests/test_execution_records.py
++++ b/tests/test_execution_records.py
+@@ -137,6 +137,9 @@ def test_record_mode_writes_execution_record(monkeypatch):
+     monkeypatch.setattr(transformation_cache, "get_queue", lambda cluster=None: None)
+     monkeypatch.setattr(transformation_cache, "get_node", lambda: None)
+     monkeypatch.setattr(transformation_cache, "_memory_peak_bytes", lambda: 654321)
++    monkeypatch.setattr(
++        transformation_cache, "_process_create_time_epoch", lambda: 1234.5
++    )
+     monkeypatch.setattr(
+         transformation_cache, "start_gpu_memory_sampler", lambda pid=None: object()
+     )
+@@ -204,6 +207,7 @@ def test_record_mode_writes_execution_record(monkeypatch):
+     assert record["validation_snapshot"] == validation_snapshot
+     assert record["memory_peak_bytes"] == 654321
+     assert record["gpu_memory_peak_bytes"] == 222333444
++    assert record["process_create_time_epoch"] == 1234.5
+     assert record["input_total_bytes"] == 0
+     assert isinstance(record["output_total_bytes"], int)
+     assert record["output_total_bytes"] > 0
+@@ -314,6 +318,7 @@ def test_compiled_record_writes_compilation_context(monkeypatch):
+     tf_checksum = _make_checksum({"kind": "compiled-record-test"})
+     compilation_context = "f" * 64
+     compilation_time_seconds = 2.5
++    process_create_time_epoch = 4567.8
+     validation_snapshot = "8" * 64
+     job_contract_violations = ["native_link_outside_conda_prefix"]
+     captured_snapshot_kwargs = {}
+@@ -383,6 +388,11 @@ def test_compiled_record_writes_compilation_context(monkeypatch):
+             0, result={"compilation_time_seconds": compilation_time_seconds}
+         ),
+     )
++    monkeypatch.setattr(
++        transformation_cache,
++        "_process_create_time_epoch",
++        lambda: process_create_time_epoch,
++    )
+     monkeypatch.setattr(
+         transformation_cache, "run_transformation_dict", _fake_run_transformation_dict
+     )
+@@ -409,10 +419,14 @@ def test_compiled_record_writes_compilation_context(monkeypatch):
+     assert record["contract_violations"] == job_contract_violations
+     assert record["validation_snapshot"] == validation_snapshot
+     assert record["compilation_time_seconds"] == compilation_time_seconds
++    assert record["process_create_time_epoch"] == process_create_time_epoch
+     assert captured_snapshot_kwargs["job_contract_violations"] == job_contract_violations
+     assert captured_snapshot_kwargs["job_validation_diagnostics"] == {
+         "compiled": True
+     }
++    assert captured_snapshot_kwargs["runtime_metadata"]["process_create_time_epoch"] == (
++        process_create_time_epoch
++    )
+     assert record["input_total_bytes"] == 0
+     assert isinstance(record["output_total_bytes"], int)
+     assert record["output_total_bytes"] > 0
+@@ -468,6 +482,7 @@ def test_remote_jobserver_record_uses_returned_probe_context(monkeypatch):
+         "hostname": "jobserver-worker-1",
+         "pid": 4321,
+         "process_started_at": "2026-04-27T09:00:00Z",
++        "process_create_time_epoch": 9876.5,
+         "worker_execution_index": 17,
+         "retry_count": 1,
+     }
+@@ -550,6 +565,7 @@ def test_remote_jobserver_record_uses_returned_probe_context(monkeypatch):
+     assert record["hostname"] == record_runtime["hostname"]
+     assert record["pid"] == record_runtime["pid"]
+     assert record["process_started_at"] == record_runtime["process_started_at"]
++    assert record["process_create_time_epoch"] == record_runtime["process_create_time_epoch"]
+     assert record["worker_execution_index"] == record_runtime["worker_execution_index"]
+     assert record["retry_count"] == record_runtime["retry_count"]
+     assert record["input_total_bytes"] == 0

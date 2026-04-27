@@ -1,0 +1,78 @@
+commit 21f97a39a09f4eb7cb87bf04ad66048a1304984b
+Author: Sjoerd de Vries <sjdv1982@gmail.com>
+Date:   Mon Apr 27 10:50:25 2026 +0200
+
+    Populate local record memory usage
+
+diff --git a/seamless_transformer/transformation_cache.py b/seamless_transformer/transformation_cache.py
+index b556067..ab31cc2 100644
+--- a/seamless_transformer/transformation_cache.py
++++ b/seamless_transformer/transformation_cache.py
+@@ -11,6 +11,7 @@ import os
+ import os as _os
+ import platform
+ import re
++import resource
+ import shlex
+ import shutil
+ import socket
+@@ -79,6 +80,19 @@ def _debug(msg: str) -> None:
+         print(f"[transformation_cache] {msg}", flush=True)
+ 
+ 
++def _memory_peak_bytes() -> int | None:
++    try:
++        usage = resource.getrusage(resource.RUSAGE_SELF)
++        peak = int(usage.ru_maxrss)
++    except Exception:
++        return None
++    if peak <= 0:
++        return None
++    if sys.platform.startswith("linux"):
++        return peak * 1024
++    return peak
++
++
+ def _utcnow_iso() -> str:
+     return datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace(
+         "+00:00", "Z"
+@@ -1127,6 +1141,10 @@ class TransformationCache:
+                     job_contract_violations=job_contract_violations,
+                     job_validation_diagnostics=job_validation["diagnostics"],
+                 )
++                record_runtime_metadata = dict(runtime_metadata or {})
++                record_runtime_metadata.setdefault(
++                    "memory_peak_bytes", _memory_peak_bytes()
++                )
+                 record = build_execution_record(
+                     transformation_dict,
+                     tf_checksum=tf_checksum,
+@@ -1143,7 +1161,7 @@ class TransformationCache:
+                     job_contract_violations=job_contract_violations,
+                     compilation_context=compilation_context,
+                     validation_snapshot=validation_snapshot,
+-                    runtime_metadata=runtime_metadata,
++                    runtime_metadata=record_runtime_metadata,
+                 )
+                 record["execution_envelope"]["scratch"] = bool(scratch)
+                 record["input_total_bytes"] = input_total_bytes
+diff --git a/tests/test_execution_records.py b/tests/test_execution_records.py
+index 0f40531..3be25bc 100644
+--- a/tests/test_execution_records.py
++++ b/tests/test_execution_records.py
+@@ -134,6 +134,7 @@ def test_record_mode_writes_execution_record(monkeypatch):
+     monkeypatch.setattr(transformation_cache, "get_selected_cluster", lambda: None)
+     monkeypatch.setattr(transformation_cache, "get_queue", lambda cluster=None: None)
+     monkeypatch.setattr(transformation_cache, "get_node", lambda: None)
++    monkeypatch.setattr(transformation_cache, "_memory_peak_bytes", lambda: 654321)
+     monkeypatch.setattr(
+         transformation_cache,
+         "ensure_record_bucket_preconditions",
+@@ -193,6 +194,7 @@ def test_record_mode_writes_execution_record(monkeypatch):
+     assert record["execution_envelope"]["active_tf_dunder_keys"] == ["__env__"]
+     assert record["freshness"] == probe_context
+     assert record["validation_snapshot"] == validation_snapshot
++    assert record["memory_peak_bytes"] == 654321
+     assert record["input_total_bytes"] == 0
+     assert isinstance(record["output_total_bytes"], int)
+     assert record["output_total_bytes"] > 0

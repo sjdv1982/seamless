@@ -1,0 +1,315 @@
+commit 7547c39afb223dea37e0957721c8c9d1bc75ae46
+Author: Sjoerd de Vries <sjdv1982@gmail.com>
+Date:   Sun Apr 26 18:10:54 2026 +0200
+
+    Record Dask execution metadata
+
+diff --git a/seamless_dask/client.py b/seamless_dask/client.py
+index 8448e41..f66c5d3 100644
+--- a/seamless_dask/client.py
++++ b/seamless_dask/client.py
+@@ -10,6 +10,7 @@ import uuid
+ import asyncio
+ import sys
+ import threading
++from datetime import datetime, timezone
+ from typing import Any, Dict, Iterable, Mapping, Optional, Tuple, Callable, Coroutine
+ 
+ import dask.config
+@@ -63,6 +64,12 @@ def _should_ensure_result_upload() -> bool:
+ _ENSURE_RESULT_UPLOAD = _should_ensure_result_upload()
+ 
+ 
++def _utcnow_iso() -> str:
++    return datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace(
++        "+00:00", "Z"
++    )
++
++
+ def _scheduler_has_task_key(dask_scheduler, key: str) -> bool:
+     try:
+         return key in getattr(dask_scheduler, "tasks", {})
+@@ -307,12 +314,26 @@ async def _promise_and_write_result_async(
+     write_buffer: bool,
+     output_celltype: str | None = None,
+     result_buffer: Buffer | None = None,
++    transformation_dict: Mapping[str, Any] | None = None,
++    tf_dunder: Mapping[str, Any] | None = None,
++    scratch: bool = False,
++    execution: str = "remote",
++    started_at: str | None = None,
++    finished_at: str | None = None,
++    wall_time_seconds: float | None = None,
++    cpu_user_seconds: float | None = None,
++    cpu_system_seconds: float | None = None,
+ ) -> None:
+     """Persist a transformation result after ensuring buffer availability."""
+     try:
+         from seamless_remote import buffer_remote, database_remote
+     except Exception:
+         return
++    try:
++        from seamless_config.select import get_record
++    except Exception:
++        def get_record():
++            return False
+ 
+     async def _ensure_uploaded(
+         checksum: Checksum, *, preferred_buffer: Buffer | None = None
+@@ -421,6 +442,30 @@ async def _promise_and_write_result_async(
+                                 )
+                                 return
+         await database_remote.set_transformation_result(tf_checksum, result_checksum)
++        if get_record():
++            try:
++                from seamless_transformer.transformation_cache import (
++                    build_execution_record,
++                )
++
++                record = build_execution_record(
++                    dict(transformation_dict or {}),
++                    tf_checksum=tf_checksum,
++                    result_checksum=result_checksum,
++                    tf_dunder=dict(tf_dunder or {}),
++                    execution=execution,
++                    started_at=started_at or _utcnow_iso(),
++                    finished_at=finished_at or _utcnow_iso(),
++                    wall_time_seconds=wall_time_seconds or 0.0,
++                    cpu_user_seconds=cpu_user_seconds or 0.0,
++                    cpu_system_seconds=cpu_system_seconds or 0.0,
++                )
++                record["execution_envelope"]["scratch"] = bool(scratch)
++                await database_remote.set_execution_record(
++                    tf_checksum, result_checksum, record
++                )
++            except Exception:
++                return
+     except Exception:
+         # Best-effort; failures are swallowed to avoid task crashes.
+         return
+@@ -529,6 +574,9 @@ def _run_base(
+         owner_dask_priority = None
+     tf_dunder = payload.get("tf_dunder", {}) or {}
+     require_value = bool(payload.get("require_value", False))
++    started_at = _utcnow_iso()
++    wall_start = time.perf_counter()
++    cpu_start = os.times()
+ 
+     try:
+         for raw_spec in inputs:
+@@ -664,6 +712,11 @@ def _run_base(
+         try:
+             tf_checksum_obj = Checksum(tf_checksum_hex)
+             output_celltype = _output_celltype_from_transformation(transformation_dict)
++            finished_at = _utcnow_iso()
++            wall_time_seconds = round(time.perf_counter() - wall_start, 6)
++            cpu_end = os.times()
++            cpu_user_seconds = round(cpu_end.user - cpu_start.user, 6)
++            cpu_system_seconds = round(cpu_end.system - cpu_start.system, 6)
+             _run_on_worker_loop(
+                 lambda: _promise_and_write_result_async(
+                     tf_checksum_obj,
+@@ -671,6 +724,15 @@ def _run_base(
+                     write_buffer=not scratch,
+                     output_celltype=output_celltype,
+                     result_buffer=result_buffer,
++                    transformation_dict=transformation_dict,
++                    tf_dunder=tf_dunder,
++                    scratch=scratch,
++                    execution="remote",
++                    started_at=started_at,
++                    finished_at=finished_at,
++                    wall_time_seconds=wall_time_seconds,
++                    cpu_user_seconds=cpu_user_seconds,
++                    cpu_system_seconds=cpu_system_seconds,
+                 )
+             )
+         except Exception:
+diff --git a/seamless_dask/transformation_mixin.py b/seamless_dask/transformation_mixin.py
+index 0a57ecf..df2fa76 100644
+--- a/seamless_dask/transformation_mixin.py
++++ b/seamless_dask/transformation_mixin.py
+@@ -77,24 +77,55 @@ class TransformationDaskMixin:
+ 
+     def _remote_storage_error(self) -> str | None:
+         try:
+-            from seamless_config.select import get_execution
++            from seamless_config.select import get_execution, get_record
+         except Exception:
+             return None
+-        if get_execution() != "remote":
++        execution = get_execution()
++        record_mode = bool(get_record())
++        if execution != "remote" and not record_mode:
+             return None
+         try:
+             from seamless_remote import buffer_remote, database_remote
+         except Exception:
+-            return "Remote execution requires hashserver and database server"
+-        if (
+-            not buffer_remote.has_write_server()
+-            or not database_remote.has_write_server()
++            if execution == "remote":
++                return "Remote execution requires hashserver and database server"
++            if record_mode:
++                return "Record mode requires an active database write server"
++            return None
++        try:
++            buffer_write_server = bool(
++                buffer_remote is not None and buffer_remote.has_write_server()
++            )
++        except Exception:
++            buffer_write_server = False
++        try:
++            database_write_server = bool(
++                database_remote is not None and database_remote.has_write_server()
++            )
++        except Exception:
++            database_write_server = False
++        if execution == "remote" and (
++            not buffer_write_server or not database_write_server
+         ):
+             _ensure_remote_clients_from_env()
+-        if not buffer_remote.has_write_server():
++            try:
++                buffer_write_server = bool(
++                    buffer_remote is not None and buffer_remote.has_write_server()
++                )
++            except Exception:
++                buffer_write_server = False
++            try:
++                database_write_server = bool(
++                    database_remote is not None and database_remote.has_write_server()
++                )
++            except Exception:
++                database_write_server = False
++        if execution == "remote" and not buffer_write_server:
+             return "Remote execution requires an active hashserver"
+-        if not database_remote.has_write_server():
++        if execution == "remote" and not database_write_server:
+             return "Remote execution requires an active database server"
++        if record_mode and not database_write_server:
++            return "Record mode requires an active database write server"
+         return None
+ 
+     def _compute_with_dask(self, require_value: bool) -> Checksum | None:
+diff --git a/tests/test_execution_records.py b/tests/test_execution_records.py
+new file mode 100644
+index 0000000..327b438
+--- /dev/null
++++ b/tests/test_execution_records.py
+@@ -0,0 +1,114 @@
++import asyncio
++
++from seamless import Buffer, Checksum
++
++import seamless_config.select as select
++import seamless_dask.client as dask_client
++from seamless_dask.transformation_mixin import TransformationDaskMixin
++import seamless_remote
++import seamless_transformer.transformation_cache as transformation_cache
++
++
++class _FakeBufferRemote:
++    def __init__(self):
++        self.promised = []
++
++    async def promise(self, checksum):
++        self.promised.append(checksum.hex())
++        return True
++
++    def has_write_server(self):
++        return True
++
++
++class _FakeDatabaseRemote:
++    def __init__(self, *, write_server=True):
++        self.write_server = write_server
++        self.transformation_results = []
++        self.execution_records = []
++
++    async def set_transformation_result(self, tf_checksum, result_checksum):
++        self.transformation_results.append((tf_checksum.hex(), result_checksum.hex()))
++        return True
++
++    async def set_execution_record(self, tf_checksum, result_checksum, record):
++        self.execution_records.append(
++            (tf_checksum.hex(), result_checksum.hex(), record)
++        )
++        return True
++
++    def has_write_server(self):
++        return self.write_server
++
++
++class _DummyMixin(TransformationDaskMixin):
++    pass
++
++
++def _make_checksum(value, celltype="plain") -> Checksum:
++    buf = Buffer(value, celltype)
++    checksum = buf.get_checksum()
++    if len(buf):
++        buf.tempref()
++    return checksum
++
++
++def test_record_mode_requires_database_write_server(monkeypatch):
++    dummy = _DummyMixin()
++
++    monkeypatch.setattr(select, "get_execution", lambda: "process")
++    monkeypatch.setattr(select, "get_record", lambda: True)
++    monkeypatch.setattr(seamless_remote, "buffer_remote", _FakeBufferRemote())
++    monkeypatch.setattr(seamless_remote, "database_remote", None)
++
++    assert (
++        dummy._remote_storage_error()
++        == "Record mode requires an active database write server"
++    )
++
++
++def test_promise_and_write_result_writes_execution_record(monkeypatch):
++    fake_database_remote = _FakeDatabaseRemote()
++    fake_buffer_remote = _FakeBufferRemote()
++    tf_checksum = _make_checksum({"kind": "dask-record-test"})
++    result_checksum = _make_checksum(7, "mixed")
++
++    monkeypatch.setattr(select, "get_record", lambda: True)
++    monkeypatch.setattr(seamless_remote, "database_remote", fake_database_remote)
++    monkeypatch.setattr(seamless_remote, "buffer_remote", fake_buffer_remote)
++    monkeypatch.setattr(dask_client, "_ENSURE_RESULT_UPLOAD", False)
++    monkeypatch.setattr(transformation_cache, "get_remote", lambda: "daskserver")
++    monkeypatch.setattr(transformation_cache, "get_selected_cluster", lambda: None)
++    monkeypatch.setattr(transformation_cache, "get_queue", lambda cluster=None: None)
++    monkeypatch.setattr(transformation_cache, "get_node", lambda: None)
++
++    asyncio.run(
++        dask_client._promise_and_write_result_async(
++            tf_checksum,
++            result_checksum,
++            write_buffer=False,
++            transformation_dict={
++                "__language__": "python",
++                "__output__": ("result", "mixed", None),
++            },
++            tf_dunder={},
++            scratch=False,
++            execution="remote",
++            started_at="2026-04-26T12:00:00Z",
++            finished_at="2026-04-26T12:00:01Z",
++            wall_time_seconds=1.0,
++            cpu_user_seconds=0.4,
++            cpu_system_seconds=0.1,
++        )
++    )
++
++    assert fake_database_remote.transformation_results == [
++        (tf_checksum.hex(), result_checksum.hex())
++    ]
++    assert len(fake_database_remote.execution_records) == 1
++    record = fake_database_remote.execution_records[0][2]
++    assert record["tf_checksum"] == tf_checksum.hex()
++    assert record["result_checksum"] == result_checksum.hex()
++    assert record["execution_mode"] == "remote"
++    assert record["remote_target"] == "daskserver"
++    assert record["execution_envelope"]["scratch"] is False

@@ -1,0 +1,168 @@
+commit 2e07bf5d92a47651a8dafd92b4077f0d829e15e8
+Author: Sjoerd de Vries <sjdv1982@gmail.com>
+Date:   Mon Apr 27 09:14:52 2026 +0200
+
+    Aggregate bucket contract violations in records
+
+diff --git a/seamless_transformer/transformation_cache.py b/seamless_transformer/transformation_cache.py
+index d74cec6..229afd4 100644
+--- a/seamless_transformer/transformation_cache.py
++++ b/seamless_transformer/transformation_cache.py
+@@ -99,6 +99,8 @@ def build_execution_record(
+     cpu_user_seconds: float,
+     cpu_system_seconds: float,
+     probe_context: dict[str, Any] | None = None,
++    bucket_contract_violations: list[str] | None = None,
++    job_contract_violations: list[str] | None = None,
+ ) -> dict[str, Any]:
+     meta = transformation_dict.get("__meta__", {}) or {}
+     if not isinstance(meta, dict):
+@@ -134,6 +136,11 @@ def build_execution_record(
+         "active_tf_dunder_keys": sorted((tf_dunder or {}).keys()),
+     }
+     probe_context = probe_context or {}
++    bucket_contract_violations = sorted(set(bucket_contract_violations or []))
++    job_contract_violations = sorted(set(job_contract_violations or []))
++    contract_violations = sorted(
++        set(bucket_contract_violations) | set(job_contract_violations)
++    )
+     required_bucket_checksums = dict(probe_context.get("required_bucket_checksums", {}))
+     freshness = {
+         "required_bucket_labels": dict(
+@@ -168,9 +175,9 @@ def build_execution_record(
+         "execution_envelope": execution_envelope,
+         "compilation_context": None,
+         "freshness": freshness,
+-        "bucket_contract_violations": [],
+-        "job_contract_violations": [],
+-        "contract_violations": [],
++        "bucket_contract_violations": bucket_contract_violations,
++        "job_contract_violations": job_contract_violations,
++        "contract_violations": contract_violations,
+         "validation_snapshot": None,
+         "started_at": started_at,
+         "finished_at": finished_at,
+@@ -192,6 +199,33 @@ def build_execution_record(
+     }
+ 
+ 
++async def load_bucket_contract_violations(
++    probe_context: dict[str, Any] | None,
++) -> list[str]:
++    if not isinstance(probe_context, dict):
++        return []
++    required_bucket_checksums = probe_context.get("required_bucket_checksums", {})
++    if not isinstance(required_bucket_checksums, dict):
++        return []
++    violations: set[str] = set()
++    for checksum_hex in required_bucket_checksums.values():
++        if not checksum_hex:
++            continue
++        try:
++            payload = await Checksum(checksum_hex).resolution("plain")
++        except Exception:
++            continue
++        if not isinstance(payload, dict):
++            continue
++        contract_violations = payload.get("contract_violations")
++        if not isinstance(contract_violations, list):
++            continue
++        for code in contract_violations:
++            if isinstance(code, str) and code:
++                violations.add(code)
++    return sorted(violations)
++
++
+ async def _await_buffer_writer(checksum: Checksum) -> None:
+     if _buffer_writer is None:
+         return
+@@ -449,6 +483,9 @@ class TransformationCache:
+                         tf_dunder,
+                         execution=execution,
+                     )
++                bucket_contract_violations = await load_bucket_contract_violations(
++                    probe_context
++                )
+                 record = build_execution_record(
+                     transformation_dict,
+                     tf_checksum=tf_checksum,
+@@ -461,6 +498,7 @@ class TransformationCache:
+                     cpu_user_seconds=cpu_user_seconds,
+                     cpu_system_seconds=cpu_system_seconds,
+                     probe_context=probe_context,
++                    bucket_contract_violations=bucket_contract_violations,
+                 )
+                 record["execution_envelope"]["scratch"] = bool(scratch)
+                 await database_remote.set_execution_record(
+diff --git a/tests/test_execution_records.py b/tests/test_execution_records.py
+index 8d8bdaf..b309191 100644
+--- a/tests/test_execution_records.py
++++ b/tests/test_execution_records.py
+@@ -57,17 +57,35 @@ def test_record_mode_writes_execution_record(monkeypatch):
+     env_checksum = _make_checksum({"conda_environment": "seamless1"})
+     result_checksum = _make_checksum(3, "mixed")
+     tf_checksum = _make_checksum({"kind": "execution-record-test"})
++    node_checksum = _make_checksum(
++        {
++            "bucket_kind": "node",
++            "contract_violations": ["node.contract"],
++        }
++    )
++    environment_checksum = _make_checksum(
++        {
++            "bucket_kind": "environment",
++            "contract_violations": ["environment.contract"],
++        }
++    )
++    node_env_checksum = _make_checksum(
++        {
++            "bucket_kind": "node_env",
++            "contract_violations": ["node_env.contract"],
++        }
++    )
+     probe_context = {
+         "required_bucket_labels": {
+             "node": "worker-1",
+             "environment": "conda:/envs/seamless1",
+-            "node_env": "a" * 64 + ":" + "b" * 64,
+-        },
+-        "required_bucket_checksums": {
+-            "node": "a" * 64,
+-            "environment": "b" * 64,
+-            "node_env": "c" * 64,
+-        },
++                "node_env": node_checksum.hex() + ":" + environment_checksum.hex(),
++            },
++            "required_bucket_checksums": {
++                "node": node_checksum.hex(),
++                "environment": environment_checksum.hex(),
++                "node_env": node_env_checksum.hex(),
++            },
+         "live_tokens": {
+             "node": {"hostname": "worker-1", "boot_id": "boot-1"},
+             "environment": {"sys_prefix": "/envs/seamless1"},
+@@ -142,11 +160,21 @@ def test_record_mode_writes_execution_record(monkeypatch):
+     assert record["tf_checksum"] == tf_checksum.hex()
+     assert record["result_checksum"] == result_checksum.hex()
+     assert record["execution_mode"] == "process"
+-    assert record["node"] == "a" * 64
+-    assert record["environment"] == "b" * 64
+-    assert record["node_env"] == "c" * 64
++    assert record["node"] == node_checksum.hex()
++    assert record["environment"] == environment_checksum.hex()
++    assert record["node_env"] == node_env_checksum.hex()
+     assert record["queue"] is None
+     assert record["queue_node"] is None
++    assert record["bucket_contract_violations"] == [
++        "environment.contract",
++        "node.contract",
++        "node_env.contract",
++    ]
++    assert record["contract_violations"] == [
++        "environment.contract",
++        "node.contract",
++        "node_env.contract",
++    ]
+     assert record["execution_envelope"]["language_kind"] == "python"
+     assert record["execution_envelope"]["scratch"] is False
+     assert record["execution_envelope"]["resolved_env_checksum"] == env_checksum.hex()

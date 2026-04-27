@@ -1,0 +1,321 @@
+commit b8ce8e433a877cfd59ab99789b2af55b11c13fac
+Author: Sjoerd de Vries <sjdv1982@gmail.com>
+Date:   Mon Apr 27 10:27:24 2026 +0200
+
+    Store validation snapshots for early record runs
+
+diff --git a/seamless_transformer/transformation_cache.py b/seamless_transformer/transformation_cache.py
+index 8b44d47..29356d7 100644
+--- a/seamless_transformer/transformation_cache.py
++++ b/seamless_transformer/transformation_cache.py
+@@ -9,9 +9,12 @@ from importlib import metadata as importlib_metadata
+ import itertools
+ import os
+ import os as _os
++import platform
+ import shutil
+ import socket
+ import subprocess
++import sys
++import tempfile
+ import time
+ 
+ from seamless import Buffer, CacheMissError, Checksum, is_worker
+@@ -65,6 +68,7 @@ except Exception:  # pragma: no cover - fallback for editable/source-only instal
+         _SEAMLESS_VERSION = "unknown"
+ _PROCESS_STARTED_AT = datetime.now(timezone.utc)
+ _EXECUTION_RECORD_COUNTER = itertools.count(1)
++_VALIDATION_SNAPSHOT_COUNTS: dict[tuple, int] = {}
+ 
+ 
+ def _debug(msg: str) -> None:
+@@ -93,6 +97,15 @@ def _resolve_remote_target(execution: str) -> str | None:
+         return None
+ 
+ 
++def _validation_snapshot_limit() -> int:
++    raw = os.environ.get("SEAMLESS_RECORD_VALIDATION_SNAPSHOT_LIMIT", "1")
++    try:
++        value = int(raw)
++    except Exception:
++        return 1
++    return max(value, 0)
++
++
+ def _stable_digest(value: Any) -> str:
+     import hashlib
+     import json
+@@ -208,6 +221,95 @@ async def build_compilation_context_checksum(
+     return buffer.get_checksum().hex()
+ 
+ 
++def _validation_snapshot_key(
++    execution: str,
++    probe_context: dict[str, Any] | None,
++    compilation_context: str | None,
++) -> tuple:
++    required_bucket_checksums = {}
++    if isinstance(probe_context, dict):
++        required_bucket_checksums = dict(
++            probe_context.get("required_bucket_checksums", {}) or {}
++        )
++    return (
++        execution,
++        tuple(sorted(required_bucket_checksums.items())),
++        compilation_context,
++    )
++
++
++async def build_validation_snapshot_checksum(
++    transformation_dict: Dict[str, Any],
++    tf_dunder: Dict[str, Any] | None,
++    *,
++    execution: str,
++    probe_context: dict[str, Any] | None,
++    compilation_context: str | None,
++    bucket_contract_violations: list[str] | None,
++    job_contract_violations: list[str] | None,
++) -> str | None:
++    limit = _validation_snapshot_limit()
++    if limit <= 0:
++        return None
++    if buffer_remote is None or not buffer_remote.has_write_server():
++        return None
++
++    key = _validation_snapshot_key(execution, probe_context, compilation_context)
++    count = _VALIDATION_SNAPSHOT_COUNTS.get(key, 0)
++    if count >= limit:
++        return None
++
++    payload = {
++        "schema_version": 1,
++        "execution_mode": execution,
++        "remote_target": _resolve_remote_target(execution),
++        "language": transformation_dict.get("__language__", "python"),
++        "compiled": bool(
++            transformation_dict.get("__compiled__")
++            or (isinstance(tf_dunder, dict) and tf_dunder.get("__compiled__"))
++        ),
++        "requested_cluster": get_selected_cluster(),
++        "requested_queue": get_queue(get_selected_cluster()),
++        "requested_node": get_node(),
++        "probe_context": probe_context or {},
++        "compilation_context": compilation_context,
++        "bucket_contract_violations": sorted(set(bucket_contract_violations or [])),
++        "job_contract_violations": sorted(set(job_contract_violations or [])),
++        "hostname": socket.gethostname(),
++        "pid": _os.getpid(),
++        "cwd": os.getcwd(),
++        "tempdir": tempfile.gettempdir(),
++        "platform": {
++            "python_version": platform.python_version(),
++            "python_implementation": platform.python_implementation(),
++            "python_executable": sys.executable,
++            "system": platform.system(),
++            "release": platform.release(),
++            "machine": platform.machine(),
++        },
++        "environment": {
++            key: _os.environ.get(key)
++            for key in (
++                "PATH",
++                "PYTHONPATH",
++                "LD_LIBRARY_PATH",
++                "LD_PRELOAD",
++                "CONDA_PREFIX",
++                "CONDA_DEFAULT_ENV",
++                "CUDA_VISIBLE_DEVICES",
++            )
++            if _os.environ.get(key) is not None
++        },
++        "sys_path": list(sys.path),
++    }
++    buffer = Buffer(payload, "plain")
++    written = await buffer.write()
++    if not written:
++        return None
++    _VALIDATION_SNAPSHOT_COUNTS[key] = count + 1
++    return buffer.get_checksum().hex()
++
++
+ def build_execution_record(
+     transformation_dict: Dict[str, Any],
+     *,
+@@ -224,6 +326,7 @@ def build_execution_record(
+     bucket_contract_violations: list[str] | None = None,
+     job_contract_violations: list[str] | None = None,
+     compilation_context: str | None = None,
++    validation_snapshot: str | None = None,
+ ) -> dict[str, Any]:
+     meta = transformation_dict.get("__meta__", {}) or {}
+     if not isinstance(meta, dict):
+@@ -301,7 +404,7 @@ def build_execution_record(
+         "bucket_contract_violations": bucket_contract_violations,
+         "job_contract_violations": job_contract_violations,
+         "contract_violations": contract_violations,
+-        "validation_snapshot": None,
++        "validation_snapshot": validation_snapshot,
+         "started_at": started_at,
+         "finished_at": finished_at,
+         "wall_time_seconds": wall_time_seconds,
+@@ -668,6 +771,15 @@ class TransformationCache:
+                     compilation_context = await build_compilation_context_checksum(
+                         transformation_dict, tf_dunder
+                     )
++                validation_snapshot = await build_validation_snapshot_checksum(
++                    transformation_dict,
++                    tf_dunder,
++                    execution=execution,
++                    probe_context=probe_context,
++                    compilation_context=compilation_context,
++                    bucket_contract_violations=bucket_contract_violations,
++                    job_contract_violations=[],
++                )
+                 record = build_execution_record(
+                     transformation_dict,
+                     tf_checksum=tf_checksum,
+@@ -682,6 +794,7 @@ class TransformationCache:
+                     probe_context=probe_context,
+                     bucket_contract_violations=bucket_contract_violations,
+                     compilation_context=compilation_context,
++                    validation_snapshot=validation_snapshot,
+                 )
+                 record["execution_envelope"]["scratch"] = bool(scratch)
+                 record["input_total_bytes"] = input_total_bytes
+diff --git a/tests/test_execution_records.py b/tests/test_execution_records.py
+index 950b871..ed24c65 100644
+--- a/tests/test_execution_records.py
++++ b/tests/test_execution_records.py
+@@ -37,6 +37,11 @@ class _FakeBufferRemote:
+         return True
+ 
+ 
++async def _fake_buffer_write(self):
++    del self
++    return True
++
++
+ class _ImmediateLoop:
+     async def run_in_executor(self, executor, func, *args):
+         del executor
+@@ -103,6 +108,7 @@ def test_record_mode_writes_execution_record(monkeypatch):
+             },
+         },
+     }
++    validation_snapshot = "9" * 64
+ 
+     def _fake_run_transformation_dict(
+         transformation_dict,
+@@ -132,6 +138,11 @@ def test_record_mode_writes_execution_record(monkeypatch):
+         "ensure_record_bucket_preconditions",
+         lambda *args, **kwargs: asyncio.sleep(0, result=probe_context),
+     )
++    monkeypatch.setattr(
++        transformation_cache,
++        "build_validation_snapshot_checksum",
++        lambda *args, **kwargs: asyncio.sleep(0, result=validation_snapshot),
++    )
+     monkeypatch.setattr(
+         transformation_cache, "run_transformation_dict", _fake_run_transformation_dict
+     )
+@@ -180,6 +191,7 @@ def test_record_mode_writes_execution_record(monkeypatch):
+     assert record["execution_envelope"]["resolved_env_checksum"] == env_checksum.hex()
+     assert record["execution_envelope"]["active_tf_dunder_keys"] == ["__env__"]
+     assert record["freshness"] == probe_context
++    assert record["validation_snapshot"] == validation_snapshot
+     assert record["input_total_bytes"] == 0
+     assert isinstance(record["output_total_bytes"], int)
+     assert record["output_total_bytes"] > 0
+@@ -289,6 +301,7 @@ def test_compiled_record_writes_compilation_context(monkeypatch):
+     result_checksum = _make_checksum(13, "mixed")
+     tf_checksum = _make_checksum({"kind": "compiled-record-test"})
+     compilation_context = "f" * 64
++    validation_snapshot = "8" * 64
+ 
+     def _fake_run_transformation_dict(
+         transformation_dict,
+@@ -327,6 +340,11 @@ def test_compiled_record_writes_compilation_context(monkeypatch):
+         "build_compilation_context_checksum",
+         lambda *args, **kwargs: asyncio.sleep(0, result=compilation_context),
+     )
++    monkeypatch.setattr(
++        transformation_cache,
++        "build_validation_snapshot_checksum",
++        lambda *args, **kwargs: asyncio.sleep(0, result=validation_snapshot),
++    )
+     monkeypatch.setattr(
+         transformation_cache, "run_transformation_dict", _fake_run_transformation_dict
+     )
+@@ -349,6 +367,7 @@ def test_compiled_record_writes_compilation_context(monkeypatch):
+     assert result == result_checksum
+     record = fake_database_remote.execution_records[0][2]
+     assert record["compilation_context"] == compilation_context
++    assert record["validation_snapshot"] == validation_snapshot
+     assert record["input_total_bytes"] == 0
+     assert isinstance(record["output_total_bytes"], int)
+     assert record["output_total_bytes"] > 0
+@@ -419,6 +438,11 @@ def test_remote_jobserver_record_uses_returned_probe_context(monkeypatch):
+         "ensure_record_bucket_preconditions",
+         _unexpected_probe_context,
+     )
++    monkeypatch.setattr(
++        transformation_cache,
++        "build_validation_snapshot_checksum",
++        lambda *args, **kwargs: asyncio.sleep(0, result="7" * 64),
++    )
+ 
+     result = asyncio.run(
+         cache.run(
+@@ -444,6 +468,52 @@ def test_remote_jobserver_record_uses_returned_probe_context(monkeypatch):
+     assert record["node_env"] == "c" * 64
+     assert record["freshness"] == probe_context
+     assert record["compilation_context"] == compilation_context
++    assert record["validation_snapshot"] == "7" * 64
+     assert record["input_total_bytes"] == 0
+     assert isinstance(record["output_total_bytes"], int)
+     assert record["output_total_bytes"] > 0
++
++
++def test_validation_snapshot_helper_honors_first_n_policy(monkeypatch):
++    monkeypatch.setattr(
++        transformation_cache, "_VALIDATION_SNAPSHOT_COUNTS", {}, raising=False
++    )
++    monkeypatch.setenv("SEAMLESS_RECORD_VALIDATION_SNAPSHOT_LIMIT", "1")
++    monkeypatch.setattr(transformation_cache, "buffer_remote", _FakeBufferRemote())
++    monkeypatch.setattr(transformation_cache.Buffer, "write", _fake_buffer_write)
++    monkeypatch.setattr(transformation_cache, "get_selected_cluster", lambda: None)
++    monkeypatch.setattr(transformation_cache, "get_queue", lambda cluster=None: None)
++    monkeypatch.setattr(transformation_cache, "get_node", lambda: None)
++
++    probe_context = {
++        "required_bucket_checksums": {
++            "node": "a" * 64,
++            "environment": "b" * 64,
++        }
++    }
++
++    first = asyncio.run(
++        transformation_cache.build_validation_snapshot_checksum(
++            {"__language__": "python", "__output__": ("result", "mixed", None)},
++            {},
++            execution="process",
++            probe_context=probe_context,
++            compilation_context=None,
++            bucket_contract_violations=[],
++            job_contract_violations=[],
++        )
++    )
++    second = asyncio.run(
++        transformation_cache.build_validation_snapshot_checksum(
++            {"__language__": "python", "__output__": ("result", "mixed", None)},
++            {},
++            execution="process",
++            probe_context=probe_context,
++            compilation_context=None,
++            bucket_contract_violations=[],
++            job_contract_violations=[],
++        )
++    )
++
++    assert isinstance(first, str) and len(first) == 64
++    assert second is None

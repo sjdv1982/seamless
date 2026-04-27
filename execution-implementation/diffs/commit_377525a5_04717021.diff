@@ -1,0 +1,100 @@
+commit 377525a55317d5d3dbfff5c12af35577d6980e8d
+Author: Sjoerd de Vries <sjdv1982@gmail.com>
+Date:   Mon Apr 27 11:12:57 2026 +0200
+
+    Carry GPU memory into Dask records
+
+diff --git a/seamless_dask/client.py b/seamless_dask/client.py
+index 050c0df..5fdc739 100644
+--- a/seamless_dask/client.py
++++ b/seamless_dask/client.py
+@@ -323,6 +323,7 @@ async def _promise_and_write_result_async(
+     wall_time_seconds: float | None = None,
+     cpu_user_seconds: float | None = None,
+     cpu_system_seconds: float | None = None,
++    gpu_memory_peak_bytes: int | None = None,
+ ) -> None:
+     """Persist a transformation result after ensuring buffer availability."""
+     try:
+@@ -504,6 +505,10 @@ async def _promise_and_write_result_async(
+                     record_runtime_metadata = {
+                         "memory_peak_bytes": _memory_peak_bytes()
+                     }
++                    if gpu_memory_peak_bytes is not None:
++                        record_runtime_metadata["gpu_memory_peak_bytes"] = (
++                            gpu_memory_peak_bytes
++                        )
+                     record_runtime_metadata.update(
+                         await collect_compilation_runtime_metadata(
+                             dict(transformation_dict or {}),
+@@ -647,6 +652,7 @@ def _run_base(
+     started_at = _utcnow_iso()
+     wall_start = time.perf_counter()
+     cpu_start = os.times()
++    gpu_memory_peak_bytes = None
+ 
+     try:
+         for raw_spec in inputs:
+@@ -746,16 +752,25 @@ def _run_base(
+             else:
+                 return tf_checksum_hex, result_checksum_hex, None, None
+ 
+-        result_checksum = _run_on_worker_loop(
+-            lambda: transformer_worker.dispatch_to_workers(
+-                transformation_dict,
+-                tf_checksum=tf_checksum,
+-                tf_dunder=tf_dunder,
+-                scratch=scratch,
+-                owner_dask_key=owner_dask_key,
+-                owner_dask_priority=owner_dask_priority,
+-            )
++        from seamless_transformer.transformation_cache import (
++            start_gpu_memory_sampler,
++            stop_gpu_memory_sampler,
+         )
++
++        gpu_sampler = start_gpu_memory_sampler()
++        try:
++            result_checksum = _run_on_worker_loop(
++                lambda: transformer_worker.dispatch_to_workers(
++                    transformation_dict,
++                    tf_checksum=tf_checksum,
++                    tf_dunder=tf_dunder,
++                    scratch=scratch,
++                    owner_dask_key=owner_dask_key,
++                    owner_dask_priority=owner_dask_priority,
++                )
++            )
++        finally:
++            gpu_memory_peak_bytes = stop_gpu_memory_sampler(gpu_sampler)
+         if isinstance(result_checksum, str):
+             return tf_checksum_hex, None, None, result_checksum
+         result_checksum = Checksum(result_checksum)
+@@ -803,6 +818,7 @@ def _run_base(
+                     wall_time_seconds=wall_time_seconds,
+                     cpu_user_seconds=cpu_user_seconds,
+                     cpu_system_seconds=cpu_system_seconds,
++                    gpu_memory_peak_bytes=gpu_memory_peak_bytes,
+                 )
+             )
+         except Exception:
+diff --git a/tests/test_execution_records.py b/tests/test_execution_records.py
+index 5c50589..98ad9b2 100644
+--- a/tests/test_execution_records.py
++++ b/tests/test_execution_records.py
+@@ -184,6 +184,7 @@ def test_promise_and_write_result_writes_execution_record(monkeypatch):
+             wall_time_seconds=1.0,
+             cpu_user_seconds=0.4,
+             cpu_system_seconds=0.1,
++            gpu_memory_peak_bytes=333222111,
+         )
+     )
+ 
+@@ -211,6 +212,7 @@ def test_promise_and_write_result_writes_execution_record(monkeypatch):
+     assert record["freshness"] == probe_context
+     assert record["validation_snapshot"] == validation_snapshot
+     assert record["memory_peak_bytes"] == 987654
++    assert record["gpu_memory_peak_bytes"] == 333222111
+     assert record["input_total_bytes"] == 0
+     assert isinstance(record["output_total_bytes"], int)
+     assert record["output_total_bytes"] > 0

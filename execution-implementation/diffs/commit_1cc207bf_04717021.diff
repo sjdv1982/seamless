@@ -1,0 +1,1201 @@
+commit 1cc207bfed4dc7bc3f6e72cd609d5d5cd1fe70f5
+Author: Sjoerd de Vries <sjdv1982@gmail.com>
+Date:   Mon Apr 27 09:12:30 2026 +0200
+
+    Add seamless-probe bucket refresh path
+
+diff --git a/pyproject.toml b/pyproject.toml
+index 5235a62..36de6f8 100644
+--- a/pyproject.toml
++++ b/pyproject.toml
+@@ -40,6 +40,7 @@ Issues = "https://github.com/sjdv1982/seamless/issues"
+ 
+ [project.scripts]
+ seamless-run = "seamless_transformer.cmd.api.main:main"
++seamless-probe = "seamless_transformer.cmd.api.main:probe_main"
+ seamless-upload = "seamless_transformer.cmd.api.upload:main"
+ seamless-download = "seamless_transformer.cmd.api.download:main"
+ seamless-run-transformation = "seamless_transformer.api.run_transformation:main"
+diff --git a/seamless_transformer/cmd/api/main.py b/seamless_transformer/cmd/api/main.py
+index bd9210b..cdbbcc1 100755
+--- a/seamless_transformer/cmd/api/main.py
++++ b/seamless_transformer/cmd/api/main.py
+@@ -23,6 +23,7 @@ from seamless import Checksum, Buffer
+ from seamless.caching.buffer_cache import get_buffer_cache
+ from seamless.util import unchecksum
+ from seamless_transformer.cmd.message import (
++    set_header,
+     set_verbosity,
+     message as msg,
+     message_and_exit as err,
+@@ -137,7 +138,11 @@ def _require_config_file(workdir: str) -> None:
+     )
+ 
+ 
+-def _main(argv: list[str] | None = None) -> int:
++def _main(argv: list[str] | None = None, *, probe_mode: bool | None = None) -> int:
++    if probe_mode is None:
++        prog = pathlib.Path(sys.argv[0]).name
++        probe_mode = prog == "seamless-probe"
++    set_header("seamless-probe" if probe_mode else "seamless-run")
+     parser = argparse.ArgumentParser(description=__doc__)
+     parser.add_argument(
+         "-v",
+@@ -360,6 +365,17 @@ def _main(argv: list[str] | None = None) -> int:
+             "Supported for remote daskserver backends that can honor scheduler node targeting."
+         ),
+     )
++    parser.add_argument(
++        "--force",
++        help=(
++            "Reprobe every required execution-record bucket even when the shared "
++            "probe index already has a fresh entry."
++            if probe_mode
++            else argparse.SUPPRESS
++        ),
++        action="store_true",
++        default=False,
++    )
+ 
+     """
+     ### TODO
+@@ -430,9 +446,29 @@ def _main(argv: list[str] | None = None) -> int:
+ 
+     parser.add_argument("command", nargs=argparse.REMAINDER)
+ 
+-    args = parser.parse_args()
++    args = parser.parse_args(argv)
+     remote_job_write = bool(args.write_remote_job)
+ 
++    if probe_mode:
++        unsupported = []
++        if args.dry_run:
++            unsupported.append("--dry")
++        if args.qsubmit:
++            unsupported.append("--qsubmit")
++        if args.write_job:
++            unsupported.append("--write-job")
++        if args.write_remote_job:
++            unsupported.append("--write-remote-job")
++        if args.upload:
++            unsupported.append("--upload")
++        if args.undo:
++            unsupported.append("--undo")
++        if unsupported:
++            err(
++                "seamless-probe does not support "
++                + ", ".join(sorted(unsupported))
++            )
++
+     primary_index = args.primary - 1  # convert to 0-indexed
+ 
+     if args.dry_run:
+@@ -455,7 +491,12 @@ def _main(argv: list[str] | None = None) -> int:
+     verbosity = min(args.verbosity, 3)
+     set_verbosity(verbosity)
+     msg(1, "Verbosity set to {}".format(verbosity))
+-    msg(1, "seamless-run {}".format(__version__))
++    msg(
++        1,
++        "{} {}".format(
++            "seamless-probe" if probe_mode else "seamless-run", __version__
++        ),
++    )
+     msg(3, "Command:", json.dumps(command, indent=4))
+ 
+     local_mode = args.local
+@@ -1083,6 +1124,38 @@ def _main(argv: list[str] | None = None) -> int:
+     transformation_checksum = Checksum(transformation_checksum).hex()
+     msg(3, f"Transformation checksum: {transformation_checksum}")
+ 
++    if probe_mode:
++        from seamless_transformer.probe_capture import refresh_required_buckets_sync
++
++        tf_dunder = extract_tf_dunder(transformation_dict)
++        try:
++            summary = refresh_required_buckets_sync(
++                transformation_dict,
++                tf_dunder=tf_dunder,
++                force=bool(args.force),
++                msg_func=msg,
++            )
++        except Exception:
++            traceback.print_exc(limit=0)
++            return 1
++        refreshed = summary.get("refreshed", [])
++        reused = summary.get("reused", [])
++        if refreshed:
++            msg(
++                1,
++                "Refreshed bucket kinds: "
++                + ", ".join(item["bucket_kind"] for item in refreshed),
++            )
++        else:
++            msg(1, "No bucket refresh needed")
++        if reused:
++            msg(
++                2,
++                "Reused bucket kinds: "
++                + ", ".join(item["bucket_kind"] for item in reused),
++            )
++        return 0
++
+     def file_write(handle, buf):
+         if isinstance(buf, Buffer):
+             buf = buf.content
+@@ -1304,5 +1377,12 @@ def main(argv: list[str] | None = None) -> int:
+         seamless.close()
+ 
+ 
++def probe_main(argv: list[str] | None = None) -> int:
++    try:
++        return _main(argv, probe_mode=True)
++    finally:
++        seamless.close()
++
++
+ if __name__ == "__main__":
+     sys.exit(main())
+diff --git a/seamless_transformer/pretransformation.py b/seamless_transformer/pretransformation.py
+index b877bc1..1593e26 100644
+--- a/seamless_transformer/pretransformation.py
++++ b/seamless_transformer/pretransformation.py
+@@ -20,6 +20,7 @@ NON_CHECKSUM_ITEMS = (
+     "__code_checksum__",
+     "__compiled__",
+     "__compilation__",
++    "__record_probe__",
+     "__schema__",
+     "__header__",
+ )
+diff --git a/seamless_transformer/probe_capture.py b/seamless_transformer/probe_capture.py
+new file mode 100644
+index 0000000..35bd402
+--- /dev/null
++++ b/seamless_transformer/probe_capture.py
+@@ -0,0 +1,670 @@
++"""Probe capture helpers for seamless-probe and execution-record buckets."""
++
++from __future__ import annotations
++
++import asyncio
++import contextlib
++import dataclasses
++import importlib.metadata
++import io
++import locale
++import os
++import platform
++import resource
++import socket
++import sys
++import time
++from datetime import datetime, timezone
++from typing import Any
++
++from seamless import Buffer, Checksum
++
++from seamless_config.cluster import get_cluster
++from seamless_transformer.pretransformation import PreTransformation
++from seamless_transformer.probe_index import RECORD_PROBE_DUNDER, resolve_probe_plan
++from seamless_transformer.transformation_class import transformation_from_pretransformation
++from seamless_transformer.transformation_utils import resolve_env_checksum
++
++try:
++    from seamless_remote import buffer_remote, database_remote
++except ImportError:  # pragma: no cover - optional dependency
++    buffer_remote = None
++    database_remote = None
++
++
++PROBE_CODE = """
++from seamless_transformer.probe_capture import execute_probe_request
++result = execute_probe_request(probe_payload)
++""".strip()
++
++
++def _utcnow_iso() -> str:
++    return (
++        datetime.now(timezone.utc)
++        .isoformat(timespec="microseconds")
++        .replace("+00:00", "Z")
++    )
++
++
++def _json_safe(value: Any) -> Any:
++    if isinstance(value, dict):
++        return {str(k): _json_safe(v) for k, v in value.items()}
++    if isinstance(value, (list, tuple)):
++        return [_json_safe(v) for v in value]
++    if isinstance(value, (str, int, float, bool)) or value is None:
++        return value
++    if isinstance(value, bytes):
++        return value.decode("utf-8", errors="replace")
++    return str(value)
++
++
++def _selected_env_vars(*prefixes: str, names: tuple[str, ...] = ()) -> dict[str, str]:
++    result: dict[str, str] = {}
++    for key, value in os.environ.items():
++        if key in names or any(key.startswith(prefix) for prefix in prefixes):
++            result[key] = value
++    return dict(sorted(result.items()))
++
++
++def _memory_total_bytes() -> int | None:
++    try:
++        page_size = os.sysconf("SC_PAGE_SIZE")
++        phys_pages = os.sysconf("SC_PHYS_PAGES")
++    except Exception:
++        return None
++    try:
++        return int(page_size) * int(phys_pages)
++    except Exception:
++        return None
++
++
++def _affinity_count() -> int | None:
++    try:
++        return len(os.sched_getaffinity(0))
++    except Exception:
++        return None
++
++
++def _cgroup_memory_limit_bytes() -> int | None:
++    candidates = (
++        "/sys/fs/cgroup/memory.max",
++        "/sys/fs/cgroup/memory/memory.limit_in_bytes",
++    )
++    for path in candidates:
++        try:
++            value = open(path, "r", encoding="utf-8").read().strip()
++        except Exception:
++            continue
++        if not value or value == "max":
++            return None
++        try:
++            limit = int(value)
++        except Exception:
++            continue
++        if limit <= 0 or limit >= 2**60:
++            return None
++        return limit
++    return None
++
++
++def _resource_limits() -> dict[str, list[int | str]]:
++    limits: dict[str, list[int | str]] = {}
++    for name in (
++        "RLIMIT_CPU",
++        "RLIMIT_DATA",
++        "RLIMIT_STACK",
++        "RLIMIT_RSS",
++        "RLIMIT_NOFILE",
++        "RLIMIT_AS",
++    ):
++        if not hasattr(resource, name):
++            continue
++        try:
++            soft, hard = resource.getrlimit(getattr(resource, name))
++        except Exception:
++            continue
++        limits[name] = [
++            "unlimited" if value == resource.RLIM_INFINITY else int(value)
++            for value in (soft, hard)
++        ]
++    return limits
++
++
++def _python_packages() -> list[dict[str, str]]:
++    packages: list[dict[str, str]] = []
++    try:
++        distributions = importlib.metadata.distributions()
++    except Exception:
++        return packages
++    for dist in distributions:
++        name = dist.metadata.get("Name") or dist.metadata.get("Summary")
++        if not name:
++            continue
++        packages.append({"name": str(name), "version": str(dist.version)})
++    packages.sort(key=lambda item: item["name"].lower())
++    return packages
++
++
++def _numpy_show_config() -> str | None:
++    try:
++        import numpy as np
++    except Exception:
++        return None
++    stream = io.StringIO()
++    with contextlib.redirect_stdout(stream):
++        try:
++            np.show_config()
++        except Exception:
++            return None
++    result = stream.getvalue().strip()
++    return result or None
++
++
++def _threadpool_info() -> list[dict[str, Any]] | None:
++    try:
++        from threadpoolctl import threadpool_info
++    except Exception:
++        return None
++    try:
++        return _json_safe(threadpool_info())
++    except Exception:
++        return None
++
++
++def _common_payload(bucket_kind: str) -> dict[str, Any]:
++    return {
++        "schema_version": 1,
++        "bucket_kind": bucket_kind,
++        "contract_ok": True,
++        "contract_violations": [],
++        "validation_snapshot": None,
++    }
++
++
++def _build_node_payload(request: dict[str, Any]) -> dict[str, Any]:
++    hostname = socket.gethostname()
++    uname = platform.uname()
++    payload = _common_payload("node")
++    payload.update(
++        {
++            "label": request.get("label"),
++            "hostname": hostname,
++            "platform": {
++                "system": uname.system,
++                "node": uname.node,
++                "release": uname.release,
++                "version": uname.version,
++                "machine": uname.machine,
++                "processor": uname.processor,
++            },
++            "os": {
++                "python_build": list(platform.python_build()),
++                "python_compiler": platform.python_compiler(),
++                "libc": list(platform.libc_ver()),
++                "byteorder": sys.byteorder,
++            },
++            "cpu": {
++                "logical_cores": os.cpu_count(),
++                "affinity_cores": _affinity_count(),
++            },
++            "memory_total_bytes": _memory_total_bytes(),
++        }
++    )
++    return payload
++
++
++def _build_environment_payload(request: dict[str, Any]) -> dict[str, Any]:
++    payload = _common_payload("environment")
++    payload.update(
++        {
++            "label": request.get("label"),
++            "python": {
++                "version": platform.python_version(),
++                "implementation": platform.python_implementation(),
++                "executable": sys.executable,
++                "prefix": sys.prefix,
++                "path": list(sys.path),
++            },
++            "locale": {
++                "preferred_encoding": locale.getpreferredencoding(False),
++                "default_locale": list(locale.getlocale()),
++            },
++            "timezone": list(time.tzname),
++            "environment_variables": _selected_env_vars(
++                "OMP_",
++                "GOMP_",
++                "KMP_",
++                "MKL_",
++                "OPENBLAS_",
++                names=(
++                    "PATH",
++                    "PYTHONPATH",
++                    "LD_LIBRARY_PATH",
++                    "LD_PRELOAD",
++                    "PYTHONHASHSEED",
++                    "CUDA_VISIBLE_DEVICES",
++                    "CONDA_DEFAULT_ENV",
++                    "CONDA_PREFIX",
++                ),
++            ),
++            "python_packages": _python_packages(),
++        }
++    )
++    return payload
++
++
++def _build_node_env_payload(request: dict[str, Any]) -> dict[str, Any]:
++    payload = _common_payload("node_env")
++    payload.update(
++        {
++            "label": request.get("label"),
++            "node_checksum": request.get("node_checksum"),
++            "environment_checksum": request.get("environment_checksum"),
++            "numpy_show_config": _numpy_show_config(),
++            "threadpoolctl": _threadpool_info(),
++            "cuda_visible_devices": os.environ.get("CUDA_VISIBLE_DEVICES"),
++        }
++    )
++    return payload
++
++
++def _build_queue_payload(request: dict[str, Any]) -> dict[str, Any]:
++    cluster_name = request.get("cluster")
++    queue_name = request.get("queue")
++    queue_def = None
++    cluster_type = None
++    if isinstance(cluster_name, str) and cluster_name:
++        cluster = get_cluster(cluster_name)
++        cluster_type = cluster.type
++        queues = cluster.queues or {}
++        queue_def = queues.get(queue_name)
++    payload = _common_payload("queue")
++    payload.update(
++        {
++            "label": request.get("label"),
++            "cluster": cluster_name,
++            "cluster_type": cluster_type,
++            "queue": queue_name,
++            "remote_target": request.get("remote_target"),
++            "requested_node": request.get("requested_node"),
++            "queue_parameters": (
++                _json_safe(dataclasses.asdict(queue_def))
++                if queue_def is not None
++                else None
++            ),
++        }
++    )
++    return payload
++
++
++def _build_queue_node_payload(request: dict[str, Any]) -> dict[str, Any]:
++    payload = _common_payload("queue_node")
++    payload.update(
++        {
++            "label": request.get("label"),
++            "hostname": socket.gethostname(),
++            "queue_checksum": request.get("queue_checksum"),
++            "requested_node": request.get("requested_node"),
++            "environment_variables": _selected_env_vars(
++                "OMP_",
++                "GOMP_",
++                "KMP_",
++                "MKL_",
++                "OPENBLAS_",
++                names=("CUDA_VISIBLE_DEVICES",),
++            ),
++            "resource_limits": _resource_limits(),
++            "cgroup_memory_limit_bytes": _cgroup_memory_limit_bytes(),
++            "affinity_cores": _affinity_count(),
++        }
++    )
++    return payload
++
++
++def _probe_request_for_bucket(
++    bucket_kind: str,
++    plan: dict[str, Any],
++    *,
++    label: str,
++    current_checksums: dict[str, str],
++) -> dict[str, Any]:
++    request = {
++        "bucket_kind": bucket_kind,
++        "label": label,
++        "cluster": plan.get("cluster"),
++        "remote_target": plan.get("remote_target"),
++        "requested_node": plan["labels"].get("node"),
++        "hostname": plan.get("hostname"),
++        "live_tokens": plan.get("live_tokens", {}).get(bucket_kind),
++    }
++    if bucket_kind == "node_env":
++        request["node_checksum"] = current_checksums.get("node")
++        request["environment_checksum"] = current_checksums.get("environment")
++    elif bucket_kind == "queue":
++        queue_label = label.split("/", 2)
++        if len(queue_label) >= 2:
++            request["cluster"] = queue_label[0]
++            request["queue"] = queue_label[1]
++    elif bucket_kind == "queue_node":
++        request["queue_checksum"] = current_checksums.get("queue")
++    return request
++
++
++def execute_probe_request(probe_payload: dict[str, Any]) -> dict[str, Any]:
++    mode = probe_payload.get("mode")
++    if mode == "discover":
++        transformation_dict = dict(probe_payload.get("target_transformation_dict") or {})
++        tf_dunder = dict(probe_payload.get("target_tf_dunder") or {})
++        return resolve_probe_plan(transformation_dict, tf_dunder)
++
++    if mode != "capture":
++        raise ValueError(f"Unknown probe mode '{mode}'")
++
++    request = dict(probe_payload.get("request") or {})
++    bucket_kind = request.get("bucket_kind")
++    if bucket_kind == "node":
++        return _build_node_payload(request)
++    if bucket_kind == "environment":
++        return _build_environment_payload(request)
++    if bucket_kind == "node_env":
++        return _build_node_env_payload(request)
++    if bucket_kind == "queue":
++        return _build_queue_payload(request)
++    if bucket_kind == "queue_node":
++        return _build_queue_node_payload(request)
++    raise ValueError(f"Unknown bucket kind '{bucket_kind}'")
++
++
++def _run_probe_transformation_sync(
++    target_transformation_dict: dict[str, Any],
++    target_tf_dunder: dict[str, Any] | None,
++    *,
++    probe_payload: dict[str, Any],
++) -> dict[str, Any]:
++    env_checksum = resolve_env_checksum(target_transformation_dict, target_tf_dunder)
++    pretransformation_dict: dict[str, Any] = {
++        "__language__": "python",
++        "__output__": ("result", "plain", None),
++        RECORD_PROBE_DUNDER: {"mode": probe_payload["mode"]},
++        "code": ("python", None, PROBE_CODE),
++        "probe_payload": ("plain", None, probe_payload),
++        "nonce": ("str", None, _utcnow_iso()),
++    }
++    if env_checksum is not None:
++        pretransformation_dict["__env__"] = Checksum(env_checksum).hex()
++
++    pre = PreTransformation(pretransformation_dict)
++    tf = transformation_from_pretransformation(
++        pre,
++        upstream_dependencies={},
++        meta={},
++        scratch=False,
++    )
++    result = tf.run()
++    if not isinstance(result, dict):
++        raise RuntimeError(
++            f"Probe transformation returned {type(result).__name__}, expected dict"
++        )
++    return result
++
++
++def discover_probe_plan_sync(
++    target_transformation_dict: dict[str, Any],
++    target_tf_dunder: dict[str, Any] | None = None,
++) -> dict[str, Any]:
++    return _run_probe_transformation_sync(
++        target_transformation_dict,
++        target_tf_dunder,
++        probe_payload={
++            "mode": "discover",
++            "target_transformation_dict": target_transformation_dict,
++            "target_tf_dunder": target_tf_dunder or {},
++        },
++    )
++
++
++def capture_probe_payload_sync(
++    target_transformation_dict: dict[str, Any],
++    target_tf_dunder: dict[str, Any] | None,
++    *,
++    request: dict[str, Any],
++) -> dict[str, Any]:
++    return _run_probe_transformation_sync(
++        target_transformation_dict,
++        target_tf_dunder,
++        probe_payload={"mode": "capture", "request": request},
++    )
++
++
++def _needs_refresh(
++    existing_probe: dict[str, Any] | None,
++    *,
++    live_tokens: dict[str, Any],
++    force: bool,
++) -> tuple[bool, str]:
++    if force:
++        return True, "force"
++    if existing_probe is None:
++        return True, "missing"
++    if existing_probe.get("freshness_tokens") != live_tokens:
++        return True, "stale"
++    return False, "fresh"
++
++
++async def refresh_required_buckets(
++    target_transformation_dict: dict[str, Any],
++    target_tf_dunder: dict[str, Any] | None = None,
++    *,
++    force: bool = False,
++    msg_func=None,
++) -> dict[str, Any]:
++    if buffer_remote is None or database_remote is None:
++        raise RuntimeError("Bucket probing requires hashserver and database clients")
++    if not buffer_remote.has_write_server():
++        raise RuntimeError("Bucket probing requires an active hashserver")
++    if not database_remote.has_write_server():
++        raise RuntimeError("Bucket probing requires an active database server")
++    if not database_remote.has_read_server():
++        raise RuntimeError("Bucket probing requires an active database read server")
++
++    plan = discover_probe_plan_sync(target_transformation_dict, target_tf_dunder)
++    required_kinds = list(plan["required_kinds"])
++    labels = dict(plan["labels"])
++    live_tokens = dict(plan["live_tokens"])
++    current_probes: dict[str, dict[str, Any]] = {}
++    refreshed: list[dict[str, Any]] = []
++    reused: list[dict[str, Any]] = []
++    refreshed_kinds: set[str] = set()
++
++    async def _store_probe(bucket_kind: str, label: str, request: dict[str, Any]) -> None:
++        payload = capture_probe_payload_sync(
++            target_transformation_dict,
++            target_tf_dunder,
++            request=request,
++        )
++        checksum_hex = Buffer(payload, "plain").get_checksum().hex()
++        written = await Buffer(payload, "plain").write()
++        if not written:
++            raise RuntimeError(
++                f"Failed to write {bucket_kind} probe payload to the hashserver"
++            )
++        captured_at = _utcnow_iso()
++        await database_remote.set_bucket_probe(
++            bucket_kind,
++            label,
++            checksum_hex,
++            live_tokens[bucket_kind],
++            captured_at,
++        )
++        current_probes[bucket_kind] = {
++            "bucket_kind": bucket_kind,
++            "label": label,
++            "bucket_checksum": checksum_hex,
++            "captured_at": captured_at,
++            "freshness_tokens": live_tokens[bucket_kind],
++        }
++        refreshed_kinds.add(bucket_kind)
++        refreshed.append({"bucket_kind": bucket_kind, "label": label})
++        if msg_func is not None:
++            msg_func(1, f"Refreshed {bucket_kind} bucket for {label!r}")
++
++    for bucket_kind in ("node", "environment", "queue"):
++        if bucket_kind not in required_kinds:
++            continue
++        label = labels[bucket_kind]
++        existing = await database_remote.get_bucket_probe(bucket_kind, label)
++        need_refresh, reason = _needs_refresh(
++            existing,
++            live_tokens=live_tokens[bucket_kind],
++            force=force,
++        )
++        if need_refresh:
++            request = _probe_request_for_bucket(
++                bucket_kind,
++                plan,
++                label=label,
++                current_checksums={
++                    kind: probe["bucket_checksum"]
++                    for kind, probe in current_probes.items()
++                },
++            )
++            await _store_probe(bucket_kind, label, request)
++        else:
++            current_probes[bucket_kind] = existing
++            reused.append({"bucket_kind": bucket_kind, "label": label, "reason": reason})
++            if msg_func is not None:
++                msg_func(2, f"Reused fresh {bucket_kind} bucket for {label!r}")
++
++    if "node_env" in required_kinds:
++        labels["node_env"] = (
++            f"{current_probes['node']['bucket_checksum']}:"
++            f"{current_probes['environment']['bucket_checksum']}"
++        )
++        live_tokens["node_env"] = {
++            "node": live_tokens["node"],
++            "environment": live_tokens["environment"],
++        }
++        existing = await database_remote.get_bucket_probe("node_env", labels["node_env"])
++        need_refresh, reason = _needs_refresh(
++            existing,
++            live_tokens=live_tokens["node_env"],
++            force=force or bool({"node", "environment"} & refreshed_kinds),
++        )
++        if need_refresh:
++            request = _probe_request_for_bucket(
++                "node_env",
++                plan,
++                label=labels["node_env"],
++                current_checksums={
++                    "node": current_probes["node"]["bucket_checksum"],
++                    "environment": current_probes["environment"]["bucket_checksum"],
++                },
++            )
++            await _store_probe("node_env", labels["node_env"], request)
++        else:
++            current_probes["node_env"] = existing
++            reused.append(
++                {
++                    "bucket_kind": "node_env",
++                    "label": labels["node_env"],
++                    "reason": reason,
++                }
++            )
++
++    if "queue_node" in required_kinds:
++        labels["queue_node"] = (
++            f"{current_probes['queue']['bucket_checksum']}:{plan['hostname']}"
++        )
++        live_tokens["queue_node"] = {
++            "queue": live_tokens["queue"],
++            "node": live_tokens["node"],
++        }
++        existing = await database_remote.get_bucket_probe(
++            "queue_node", labels["queue_node"]
++        )
++        need_refresh, reason = _needs_refresh(
++            existing,
++            live_tokens=live_tokens["queue_node"],
++            force=force or bool({"queue", "node"} & refreshed_kinds),
++        )
++        if need_refresh:
++            request = _probe_request_for_bucket(
++                "queue_node",
++                plan,
++                label=labels["queue_node"],
++                current_checksums={
++                    "queue": current_probes["queue"]["bucket_checksum"],
++                },
++            )
++            await _store_probe("queue_node", labels["queue_node"], request)
++        else:
++            current_probes["queue_node"] = existing
++            reused.append(
++                {
++                    "bucket_kind": "queue_node",
++                    "label": labels["queue_node"],
++                    "reason": reason,
++                }
++            )
++
++    return {
++        "required_bucket_labels": {kind: labels[kind] for kind in required_kinds},
++        "required_bucket_checksums": {
++            kind: current_probes[kind]["bucket_checksum"] for kind in required_kinds
++        },
++        "live_tokens": {kind: live_tokens[kind] for kind in required_kinds},
++        "bucket_tokens": {
++            kind: current_probes[kind]["freshness_tokens"] for kind in required_kinds
++        },
++        "refreshed": refreshed,
++        "reused": reused,
++    }
++
++
++def refresh_required_buckets_sync(
++    target_transformation_dict: dict[str, Any],
++    target_tf_dunder: dict[str, Any] | None = None,
++    *,
++    force: bool = False,
++    msg_func=None,
++) -> dict[str, Any]:
++    async def _run():
++        return await refresh_required_buckets(
++            target_transformation_dict,
++            target_tf_dunder,
++            force=force,
++            msg_func=msg_func,
++        )
++
++    try:
++        asyncio.get_running_loop()
++    except RuntimeError:
++        return asyncio.run(_run())
++
++    result: dict[str, Any] = {}
++    error: dict[str, BaseException] = {}
++
++    def _runner():
++        try:
++            result["value"] = asyncio.run(_run())
++        except BaseException as exc:  # pragma: no cover - rare sync bridge
++            error["exc"] = exc
++
++    import threading
++
++    thread = threading.Thread(target=_runner, daemon=True, name="probe-refresh")
++    thread.start()
++    thread.join()
++    if error:
++        raise error["exc"]
++    return result["value"]
++
++
++__all__ = [
++    "RECORD_PROBE_DUNDER",
++    "discover_probe_plan_sync",
++    "capture_probe_payload_sync",
++    "execute_probe_request",
++    "refresh_required_buckets",
++    "refresh_required_buckets_sync",
++]
+diff --git a/seamless_transformer/probe_index.py b/seamless_transformer/probe_index.py
+index b418cc0..977b054 100644
+--- a/seamless_transformer/probe_index.py
++++ b/seamless_transformer/probe_index.py
+@@ -34,6 +34,21 @@ class RecordBucketError(RuntimeError):
+     """Raised when record-mode bucket preconditions are not satisfied."""
+ 
+ 
++RECORD_PROBE_DUNDER = "__record_probe__"
++
++
++def is_record_probe(
++    transformation_dict: dict[str, Any] | None = None,
++    tf_dunder: dict[str, Any] | None = None,
++) -> bool:
++    for payload in (tf_dunder, transformation_dict):
++        if not isinstance(payload, dict):
++            continue
++        if payload.get(RECORD_PROBE_DUNDER):
++            return True
++    return False
++
++
+ def _resolve_remote_target(execution: str) -> str | None:
+     if execution != "remote":
+         return None
+@@ -319,7 +334,9 @@ def ensure_record_bucket_preconditions_sync(
+ 
+ __all__ = [
+     "RecordBucketError",
++    "RECORD_PROBE_DUNDER",
+     "resolve_probe_plan",
+     "ensure_record_bucket_preconditions",
+     "ensure_record_bucket_preconditions_sync",
++    "is_record_probe",
+ ]
+diff --git a/seamless_transformer/run.py b/seamless_transformer/run.py
+index 65be6a4..8a530ac 100644
+--- a/seamless_transformer/run.py
++++ b/seamless_transformer/run.py
+@@ -25,7 +25,7 @@ from .transformation_utils import (
+     pack_deep_structure,
+     resolve_env_checksum,
+ )
+-from .probe_index import ensure_record_bucket_preconditions_sync
++from .probe_index import ensure_record_bucket_preconditions_sync, is_record_probe
+ from .execute_bash import execute_bash, write_bash_job
+ 
+ PACK_DEEP_RESULTS = True
+@@ -132,7 +132,8 @@ def run_transformation_dict(
+         if not isinstance(env_dict, dict):
+             env_dict = {}
+ 
+-    ensure_record_bucket_preconditions_sync(transformation, tf_dunder)
++    if not is_record_probe(transformation, tf_dunder):
++        ensure_record_bucket_preconditions_sync(transformation, tf_dunder)
+ 
+     inputs, output_name, output_celltype, output_subcelltype = (
+         get_transformation_inputs_output(transformation)
+diff --git a/seamless_transformer/transformation_cache.py b/seamless_transformer/transformation_cache.py
+index 8f84309..d74cec6 100644
+--- a/seamless_transformer/transformation_cache.py
++++ b/seamless_transformer/transformation_cache.py
+@@ -15,7 +15,7 @@ import time
+ from seamless import CacheMissError, Checksum, is_worker
+ 
+ from .remote_job import RemoteJobWritten, parse_remote_job_written
+-from .probe_index import ensure_record_bucket_preconditions
++from .probe_index import ensure_record_bucket_preconditions, is_record_probe
+ from .run import run_transformation_dict
+ from . import worker
+ from seamless_config.select import (
+@@ -304,6 +304,7 @@ class TransformationCache:
+                     return remote_result
+ 
+         execution = "process" if force_local else get_execution()
++        record_probe = is_record_probe(transformation_dict, tf_dunder)
+         meta = (
+             transformation_dict.get("__meta__")
+             if isinstance(transformation_dict, dict)
+@@ -439,7 +440,7 @@ class TransformationCache:
+             await database_remote.set_transformation_result(
+                 tf_checksum, result_checksum
+             )
+-            if record_mode:
++            if record_mode and not record_probe:
+                 if probe_context is None and (
+                     execution != "remote" or remote_target != "jobserver"
+                 ):
+diff --git a/seamless_transformer/transformation_utils.py b/seamless_transformer/transformation_utils.py
+index 62b3dc7..83334fc 100644
+--- a/seamless_transformer/transformation_utils.py
++++ b/seamless_transformer/transformation_utils.py
+@@ -14,6 +14,7 @@ TRANSFORMATION_LOCAL_DUNDER_KEYS = {"__meta__", "__env__"}
+ TRANSFORMATION_EXECUTION_DUNDER_KEYS = {
+     "__compiled__",
+     "__compilation__",
++    "__record_probe__",
+     "__schema__",
+     "__header__",
+ }
+diff --git a/tests/test_execution_records.py b/tests/test_execution_records.py
+index c8e23a4..8d8bdaf 100644
+--- a/tests/test_execution_records.py
++++ b/tests/test_execution_records.py
+@@ -193,6 +193,65 @@ def test_record_mode_requires_database_write_server(monkeypatch):
+         )
+ 
+ 
++def test_record_probe_skips_execution_record_write(monkeypatch):
++    cache = TransformationCache()
++    fake_database_remote = _FakeDatabaseRemote()
++    result_checksum = _make_checksum(9, "mixed")
++    tf_checksum = _make_checksum({"kind": "probe-record-skip"})
++
++    def _fake_run_transformation_dict(
++        transformation_dict,
++        tf_checksum_arg,
++        tf_dunder,
++        scratch,
++        require_value,
++    ):
++        del transformation_dict, tf_checksum_arg, tf_dunder, scratch, require_value
++        return result_checksum
++
++    async def _unexpected_probe_context(*args, **kwargs):
++        del args, kwargs
++        raise AssertionError("record probe should skip execution-record preflight")
++
++    monkeypatch.setattr(transformation_cache, "database_remote", fake_database_remote)
++    monkeypatch.setattr(transformation_cache, "buffer_remote", None)
++    monkeypatch.setattr(transformation_cache, "_buffer_writer", None)
++    monkeypatch.setattr(transformation_cache, "jobserver_remote", None)
++    monkeypatch.setattr(
++        transformation_cache.asyncio, "get_running_loop", lambda: _ImmediateLoop()
++    )
++    monkeypatch.setattr(transformation_cache, "get_execution", lambda: "process")
++    monkeypatch.setattr(transformation_cache, "get_record", lambda: True)
++    monkeypatch.setattr(
++        transformation_cache,
++        "ensure_record_bucket_preconditions",
++        _unexpected_probe_context,
++    )
++    monkeypatch.setattr(
++        transformation_cache, "run_transformation_dict", _fake_run_transformation_dict
++    )
++
++    result = asyncio.run(
++        cache.run(
++            {
++                "__language__": "python",
++                "__output__": ("result", "mixed", None),
++            },
++            tf_checksum=tf_checksum,
++            tf_dunder={"__record_probe__": {"mode": "capture"}},
++            scratch=False,
++            require_value=False,
++            force_local=True,
++        )
++    )
++
++    assert result == result_checksum
++    assert fake_database_remote.transformation_results == [
++        (tf_checksum.hex(), result_checksum.hex())
++    ]
++    assert fake_database_remote.execution_records == []
++
++
+ def test_remote_jobserver_record_uses_returned_probe_context(monkeypatch):
+     cache = TransformationCache()
+     fake_database_remote = _FakeDatabaseRemote()
+diff --git a/tests/test_probe_capture.py b/tests/test_probe_capture.py
+new file mode 100644
+index 0000000..52fc5c5
+--- /dev/null
++++ b/tests/test_probe_capture.py
+@@ -0,0 +1,140 @@
++import asyncio
++
++from seamless import Buffer
++
++import seamless_transformer.probe_capture as probe_capture
++
++
++class _FakeBufferRemote:
++    def has_write_server(self):
++        return True
++
++
++class _FakeDatabaseRemote:
++    def __init__(self, probes):
++        self.probes = dict(probes)
++        self.set_calls = []
++
++    async def get_bucket_probe(self, bucket_kind, label):
++        return self.probes.get((bucket_kind, label))
++
++    async def set_bucket_probe(
++        self, bucket_kind, label, bucket_checksum, freshness_tokens, captured_at
++    ):
++        probe = {
++            "bucket_kind": bucket_kind,
++            "label": label,
++            "bucket_checksum": str(bucket_checksum),
++            "freshness_tokens": freshness_tokens,
++            "captured_at": captured_at,
++        }
++        self.probes[(bucket_kind, label)] = probe
++        self.set_calls.append(probe)
++        return True
++
++    def has_write_server(self):
++        return True
++
++    def has_read_server(self):
++        return True
++
++
++def _checksum(value):
++    buf = Buffer(value, "plain")
++    checksum = buf.get_checksum()
++    if len(buf):
++        buf.tempref()
++    return checksum.hex()
++
++
++async def _fake_buffer_write(self):
++    del self
++    return True
++
++
++def test_refresh_required_buckets_updates_stale_base_and_composite(monkeypatch):
++    plan = {
++        "required_kinds": ["node", "environment", "node_env"],
++        "labels": {
++            "node": "worker-1",
++            "environment": "conda:/envs/seamless1",
++        },
++        "live_tokens": {
++            "node": {"hostname": "worker-1", "boot_id": "boot-1"},
++            "environment": {"sys_prefix": "/envs/seamless1"},
++        },
++        "hostname": "worker-1",
++        "cluster": None,
++        "remote_target": None,
++    }
++    node_probe = {
++        "bucket_kind": "node",
++        "label": "worker-1",
++        "bucket_checksum": "a" * 64,
++        "freshness_tokens": plan["live_tokens"]["node"],
++        "captured_at": "2026-04-26T12:00:00Z",
++    }
++    stale_env_probe = {
++        "bucket_kind": "environment",
++        "label": "conda:/envs/seamless1",
++        "bucket_checksum": "b" * 64,
++        "freshness_tokens": {"sys_prefix": "/envs/old"},
++        "captured_at": "2026-04-26T12:00:00Z",
++    }
++    fake_db = _FakeDatabaseRemote(
++        {
++            ("node", node_probe["label"]): node_probe,
++            ("environment", stale_env_probe["label"]): stale_env_probe,
++        }
++    )
++
++    def _fake_capture(_target_transformation, _target_tf_dunder, *, request):
++        return {
++            "bucket_kind": request["bucket_kind"],
++            "label": request["label"],
++            "node_checksum": request.get("node_checksum"),
++            "environment_checksum": request.get("environment_checksum"),
++        }
++
++    monkeypatch.setattr(probe_capture, "buffer_remote", _FakeBufferRemote())
++    monkeypatch.setattr(probe_capture, "database_remote", fake_db)
++    monkeypatch.setattr(
++        probe_capture, "discover_probe_plan_sync", lambda *args, **kwargs: plan
++    )
++    monkeypatch.setattr(
++        probe_capture, "capture_probe_payload_sync", _fake_capture
++    )
++    monkeypatch.setattr(probe_capture.Buffer, "write", _fake_buffer_write)
++
++    result = probe_capture.refresh_required_buckets_sync(
++        {"__language__": "python", "__output__": ("result", "plain", None)},
++        {},
++    )
++
++    env_payload = {
++        "bucket_kind": "environment",
++        "label": "conda:/envs/seamless1",
++        "node_checksum": None,
++        "environment_checksum": None,
++    }
++    env_checksum = _checksum(env_payload)
++    node_env_payload = {
++        "bucket_kind": "node_env",
++        "label": f"{'a' * 64}:{env_checksum}",
++        "node_checksum": "a" * 64,
++        "environment_checksum": env_checksum,
++    }
++    node_env_checksum = _checksum(node_env_payload)
++
++    assert result["required_bucket_checksums"] == {
++        "node": "a" * 64,
++        "environment": env_checksum,
++        "node_env": node_env_checksum,
++    }
++    assert result["required_bucket_labels"]["node_env"] == f"{'a' * 64}:{env_checksum}"
++    assert [item["bucket_kind"] for item in result["refreshed"]] == [
++        "environment",
++        "node_env",
++    ]
++    assert [item["bucket_kind"] for item in result["reused"]] == ["node"]
++
+diff --git a/tests/test_probe_index.py b/tests/test_probe_index.py
+index 9b1ca09..7dab826 100644
+--- a/tests/test_probe_index.py
++++ b/tests/test_probe_index.py
+@@ -142,3 +142,33 @@ def test_run_transformation_dict_checks_bucket_preconditions(monkeypatch):
+             Checksum("1" * 64),
+             {},
+         )
++
++
++def test_run_transformation_dict_skips_bucket_preconditions_for_record_probe(
++    monkeypatch,
++):
++    monkeypatch.setattr(
++        run_module,
++        "ensure_record_bucket_preconditions_sync",
++        lambda *args, **kwargs: (_ for _ in ()).throw(
++            AssertionError("record probe should bypass bucket preconditions")
++        ),
++    )
++    monkeypatch.setattr(
++        run_module,
++        "build_transformation_namespace_sync",
++        lambda transformation: (
++            "result = 7",
++            {"PINS": {}, "OUTPUTPIN": "mixed", "FILESYSTEM": {}},
++            {},
++            {},
++        ),
++    )
++
++    result = run_module.run_transformation_dict(
++        {"__language__": "python", "__output__": ("result", "mixed", None)},
++        Checksum("2" * 64),
++        {"__record_probe__": {"mode": "capture"}},
++    )
++
++    assert result.hex()

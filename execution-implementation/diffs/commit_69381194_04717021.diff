@@ -1,0 +1,1608 @@
+commit 69381194352e4adb6328b9d80d06f7b041fd5a28
+Author: Sjoerd de Vries <sjdv1982@gmail.com>
+Date:   Mon Apr 27 19:57:36 2026 +0200
+
+    Complete execution record validation coverage
+
+diff --git a/seamless_transformer/probe_capture.py b/seamless_transformer/probe_capture.py
+index d571bdf..663cf01 100644
+--- a/seamless_transformer/probe_capture.py
++++ b/seamless_transformer/probe_capture.py
+@@ -5,19 +5,28 @@ from __future__ import annotations
+ import asyncio
+ import contextlib
+ import dataclasses
++import ctypes
++import ctypes.util
+ import importlib.metadata
+ import io
+ import json
+ import locale
++import mmap
+ import os
+ import platform
+ import re
+ import resource
++import shutil
+ import socket
+ import subprocess
+ import sys
++import sysconfig
++import tempfile
++import threading
+ import time
++import hashlib
+ from datetime import datetime, timezone
++from pathlib import Path
+ from typing import Any
+ 
+ from seamless import Buffer, Checksum
+@@ -61,6 +70,14 @@ def _json_safe(value: Any) -> Any:
+     return str(value)
+ 
+ 
++def _stable_digest(value: Any) -> str:
++    try:
++        payload = json.dumps(value, sort_keys=True, default=repr).encode("utf-8")
++    except TypeError:
++        payload = repr(value).encode("utf-8")
++    return hashlib.sha256(payload).hexdigest()
++
++
+ def _selected_env_vars(*prefixes: str, names: tuple[str, ...] = ()) -> dict[str, str]:
+     result: dict[str, str] = {}
+     for key, value in os.environ.items():
+@@ -69,6 +86,27 @@ def _selected_env_vars(*prefixes: str, names: tuple[str, ...] = ()) -> dict[str,
+     return dict(sorted(result.items()))
+ 
+ 
++def _split_path_like(value: str) -> list[str]:
++    return [item for item in value.split(":") if item]
++
++
++def _split_preload(value: str) -> list[str]:
++    try:
++        import shlex
++
++        tokens = shlex.split(value)
++    except Exception:
++        tokens = value.split()
++    items: list[str] = []
++    for token in tokens:
++        items.extend(part for part in token.split(":") if part)
++    return items
++
++
++def _normalize_path(path: str) -> str:
++    return os.path.realpath(os.path.expanduser(os.path.expandvars(path)))
++
++
+ def _memory_total_bytes() -> int | None:
+     try:
+         page_size = os.sysconf("SC_PAGE_SIZE")
+@@ -81,6 +119,20 @@ def _memory_total_bytes() -> int | None:
+         return None
+ 
+ 
++def _physical_core_count() -> int | None:
++    try:
++        import psutil
++    except Exception:
++        return None
++    try:
++        count = psutil.cpu_count(logical=False)
++    except Exception:
++        return None
++    if count is None or count <= 0:
++        return None
++    return int(count)
++
++
+ def _affinity_count() -> int | None:
+     try:
+         return len(os.sched_getaffinity(0))
+@@ -144,6 +196,70 @@ def _os_release() -> dict[str, str] | None:
+     return result or None
+ 
+ 
++def _system_library_roots() -> tuple[str, ...]:
++    roots = {
++        "/lib",
++        "/lib64",
++        "/usr/lib",
++        "/usr/lib64",
++        "/lib/x86_64-linux-gnu",
++        "/usr/lib/x86_64-linux-gnu",
++    }
++    conda_prefix = os.environ.get("CONDA_PREFIX")
++    if conda_prefix:
++        roots.add(os.path.join(conda_prefix, "lib"))
++    return tuple(sorted(roots))
++
++
++def _path_allowed_for_contract(path: str, *, conda_prefix: str | None) -> bool:
++    if not path:
++        return True
++    if conda_prefix and path.startswith(conda_prefix + os.sep):
++        return True
++    return False
++
++
++def _allowlisted_library_name(name: str) -> bool:
++    return name.startswith(
++        (
++            "ld-linux",
++            "libc.so",
++            "libm.so",
++            "libdl.so",
++            "libpthread.so",
++            "librt.so",
++            "libutil.so",
++            "libcuda.so",
++            "libnvidia-ml.so",
++        )
++    )
++
++
++def _resolve_library_path(name: str) -> str | None:
++    if not name:
++        return None
++    if os.path.isabs(name):
++        path = os.path.realpath(name)
++        return path if os.path.exists(path) else None
++    for root in _system_library_roots():
++        candidate = os.path.realpath(os.path.join(root, name))
++        if os.path.exists(candidate):
++            return candidate
++    return None
++
++
++def _library_identity(short_name: str) -> dict[str, Any] | None:
++    library_name = ctypes.util.find_library(short_name)
++    if not library_name:
++        return None
++    path = _resolve_library_path(library_name)
++    return {
++        "name": library_name,
++        "path": path,
++        "basename": os.path.basename(path) if path else library_name,
++    }
++
++
+ def _kernel_setting(path: str) -> str | None:
+     return _read_text_file(path)
+ 
+@@ -193,6 +309,86 @@ def _resource_limits() -> dict[str, list[int | str]]:
+     return limits
+ 
+ 
++def _compiler_version(command: str) -> str | None:
++    try:
++        completed = subprocess.run(
++            [command, "--version"],
++            check=False,
++            capture_output=True,
++            text=True,
++            timeout=5,
++        )
++    except Exception:
++        return None
++    output = (completed.stdout or completed.stderr or "").strip().splitlines()
++    if not output:
++        return None
++    return output[0].strip() or None
++
++
++def _compiler_details(command_text: str | None) -> dict[str, Any] | None:
++    if not isinstance(command_text, str) or not command_text.strip():
++        return None
++    try:
++        import shlex
++
++        argv = shlex.split(command_text)
++    except Exception:
++        argv = command_text.split()
++    if not argv:
++        return None
++    binary = argv[0]
++    path = shutil.which(binary)
++    return {
++        "command": command_text,
++        "binary": binary,
++        "path": path,
++        "version": _compiler_version(path or binary),
++    }
++
++
++def _compiler_inventory() -> dict[str, Any]:
++    selected = {
++        name: _compiler_details(os.environ.get(name))
++        for name in ("CC", "CXX", "FC")
++        if os.environ.get(name)
++    }
++    defaults: dict[str, Any] = {}
++    for name, candidates in (
++        ("c", ("cc", "gcc", "clang")),
++        ("cxx", ("c++", "g++", "clang++")),
++        ("fortran", ("gfortran", "flang", "ifort", "ifx")),
++    ):
++        for candidate in candidates:
++            if shutil.which(candidate):
++                defaults[name] = _compiler_details(candidate)
++                break
++    return {
++        "selected": selected,
++        "defaults": defaults,
++    }
++
++
++def _conda_env_export() -> str | None:
++    conda_exe = os.environ.get("CONDA_EXE") or shutil.which("conda")
++    if not conda_exe or not os.environ.get("CONDA_PREFIX"):
++        return None
++    try:
++        completed = subprocess.run(
++            [conda_exe, "env", "export", "--no-builds"],
++            check=False,
++            capture_output=True,
++            text=True,
++            timeout=30,
++        )
++    except Exception:
++        return None
++    if completed.returncode != 0:
++        return None
++    result = completed.stdout.strip()
++    return result or None
++
++
+ def _python_packages() -> list[dict[str, Any]]:
+     packages: list[dict[str, Any]] = []
+     try:
+@@ -254,6 +450,23 @@ def _threadpool_info() -> list[dict[str, Any]] | None:
+         return None
+ 
+ 
++def _cudnn_version() -> int | None:
++    try:
++        import torch
++    except Exception:
++        return None
++    try:
++        version = torch.backends.cudnn.version()
++    except Exception:
++        return None
++    if version is None:
++        return None
++    try:
++        return int(version)
++    except Exception:
++        return None
++
++
+ def _cuda_toolkit_version() -> str | None:
+     try:
+         import torch
+@@ -436,6 +649,417 @@ def _node_gpu_inventory() -> dict[str, Any] | None:
+     }
+ 
+ 
++def _parse_mountinfo() -> list[dict[str, Any]]:
++    text = _read_text_file("/proc/self/mountinfo")
++    if not text:
++        return []
++    result = []
++    for line in text.splitlines():
++        if " - " not in line:
++            continue
++        left, right = line.split(" - ", 1)
++        left_fields = left.split()
++        right_fields = right.split()
++        if len(left_fields) < 6 or len(right_fields) < 3:
++            continue
++        result.append(
++            {
++                "mount_point": left_fields[4],
++                "root": left_fields[3],
++                "mount_options": left_fields[5],
++                "optional_fields": left_fields[6:],
++                "filesystem_type": right_fields[0],
++                "mount_source": right_fields[1],
++                "super_options": right_fields[2:],
++            }
++        )
++    return result
++
++
++def _mount_for_path(path: str, mountinfo: list[dict[str, Any]]) -> dict[str, Any] | None:
++    best = None
++    best_len = -1
++    for entry in mountinfo:
++        mount_point = entry.get("mount_point")
++        if not isinstance(mount_point, str):
++            continue
++        if path == mount_point or path.startswith(mount_point.rstrip("/") + "/"):
++            if len(mount_point) > best_len:
++                best = entry
++                best_len = len(mount_point)
++    return best
++
++
++def _filesystem_facts() -> dict[str, Any] | None:
++    mountinfo = _parse_mountinfo()
++    if not mountinfo:
++        return None
++    targets = {
++        "cwd": os.getcwd(),
++        "tempdir": tempfile.gettempdir(),
++        "sys_prefix": sys.prefix,
++    }
++    purelib = sysconfig.get_path("purelib")
++    if purelib:
++        targets["purelib"] = purelib
++    result: dict[str, Any] = {}
++    for name, path in targets.items():
++        resolved = os.path.realpath(path)
++        entry = _mount_for_path(resolved, mountinfo)
++        if entry is None:
++            continue
++        result[name] = {
++            "path": resolved,
++            "mount_point": entry["mount_point"],
++            "filesystem_type": entry["filesystem_type"],
++            "mount_source": entry["mount_source"],
++        }
++    return result or None
++
++
++def _container_identity() -> dict[str, Any] | None:
++    markers = []
++    for marker in ("/.dockerenv", "/run/.containerenv"):
++        if os.path.exists(marker):
++            markers.append(marker)
++    container_env = {
++        name: os.environ[name]
++        for name in ("SINGULARITY_CONTAINER", "APPTAINER_CONTAINER")
++        if os.environ.get(name)
++    }
++    mountinfo = _parse_mountinfo()
++    root_mount = _mount_for_path("/", mountinfo)
++    root_fstype = None if root_mount is None else root_mount.get("filesystem_type")
++    root_source = "" if root_mount is None else str(root_mount.get("mount_source") or "")
++    root_looks_containerized = root_fstype in ("overlay", "fuse-overlayfs", "squashfs") or (
++        "containers" in root_source or "overlay" in root_source
++    )
++    if not markers and not container_env and not root_looks_containerized:
++        return None
++    identity: dict[str, Any] = {
++        "markers": markers,
++        "environment": container_env or None,
++    }
++    if root_mount is not None:
++        mount_source = root_mount.get("mount_source")
++        super_options = list(root_mount.get("super_options") or [])
++        root_payload = {
++            "filesystem_type": root_mount.get("filesystem_type"),
++            "mount_source": mount_source,
++            "mount_point": root_mount.get("mount_point"),
++        }
++        layer_ids = sorted(set(re.findall(r"[0-9a-f]{64}", " ".join(super_options))))
++        if layer_ids:
++            root_payload["overlay_layer_ids"] = layer_ids
++        identity["root_mount"] = root_payload
++    return identity
++
++
++def _docker_image_digest(env_spec: dict[str, Any] | None) -> dict[str, Any] | None:
++    if not isinstance(env_spec, dict):
++        return None
++    docker = env_spec.get("docker")
++    if not isinstance(docker, dict):
++        return None
++    image_name = docker.get("name")
++    if not isinstance(image_name, str) or not image_name:
++        return None
++    payload: dict[str, Any] = {"name": image_name}
++    for client in ("docker", "podman"):
++        binary = shutil.which(client)
++        if not binary:
++            continue
++        try:
++            completed = subprocess.run(
++                [binary, "inspect", "--format={{.Id}}", image_name],
++                check=False,
++                capture_output=True,
++                text=True,
++                timeout=10,
++            )
++        except Exception:
++            continue
++        digest = completed.stdout.strip()
++        if completed.returncode == 0 and digest:
++            payload["digest"] = digest
++            payload["client"] = client
++            break
++    return payload
++
++
++def _resolve_env_spec(env_checksum: str | None) -> dict[str, Any]:
++    if not env_checksum:
++        return {}
++    try:
++        env_buffer = Checksum(env_checksum).resolve()
++    except Exception:
++        return {}
++    if env_buffer is None:
++        return {}
++    try:
++        env_spec = env_buffer.get_value("plain")
++    except Exception:
++        return {}
++    if not isinstance(env_spec, dict):
++        return {}
++    return env_spec
++
++
++def _mxcsr_state() -> dict[str, Any] | None:
++    if platform.machine().lower() not in ("x86_64", "amd64"):
++        return None
++    code = b"\x0f\xae\x1f\xc3"  # stmxcsr [rdi]; ret
++    try:
++        buf = mmap.mmap(
++            -1,
++            len(code),
++            prot=mmap.PROT_READ | mmap.PROT_WRITE | mmap.PROT_EXEC,
++        )
++    except Exception:
++        return None
++    try:
++        buf.write(code)
++        storage = ctypes.c_uint32()
++        func_type = ctypes.CFUNCTYPE(None, ctypes.POINTER(ctypes.c_uint32))
++        func = func_type(ctypes.addressof(ctypes.c_char.from_buffer(buf)))
++        func(ctypes.byref(storage))
++        raw = int(storage.value)
++    except Exception:
++        return None
++    finally:
++        buf.close()
++    return {
++        "raw": raw,
++        "ftz": bool(raw & (1 << 15)),
++        "daz": bool(raw & (1 << 6)),
++    }
++
++
++def _gpu_determinism_env() -> dict[str, str]:
++    return _selected_env_vars(
++        names=(
++            "CUBLAS_WORKSPACE_CONFIG",
++            "TF_DETERMINISTIC_OPS",
++            "TF_CUDNN_DETERMINISTIC",
++            "PYTORCH_CUDA_ALLOC_CONF",
++            "CUDA_DEVICE_ORDER",
++            "CUDA_LAUNCH_BLOCKING",
++            "NVIDIA_TF32_OVERRIDE",
++        )
++    )
++
++
++def _determinant_environment() -> dict[str, str]:
++    return _selected_env_vars(
++        "OMP_",
++        "GOMP_",
++        "KMP_",
++        "MKL_",
++        "OPENBLAS_",
++        names=(
++            "PATH",
++            "PYTHONPATH",
++            "LD_LIBRARY_PATH",
++            "LD_PRELOAD",
++            "PYTHONHASHSEED",
++            "LANG",
++            "LC_ALL",
++            "LC_CTYPE",
++            "TZ",
++        ),
++    ) | _gpu_determinism_env()
++
++
++def _environment_validation_views() -> dict[str, Any]:
++    determinant_env = _determinant_environment()
++    path_entries = [_normalize_path(item) for item in _split_path_like(os.environ.get("PATH", ""))]
++    sys_path_entries = [
++        _normalize_path(item) for item in sys.path if isinstance(item, str) and item
++    ]
++    ld_library_path = [
++        _normalize_path(item)
++        for item in _split_path_like(os.environ.get("LD_LIBRARY_PATH", ""))
++    ]
++    ld_preload = [
++        _normalize_path(item)
++        for item in _split_preload(os.environ.get("LD_PRELOAD", ""))
++    ]
++    return {
++        "determinant_env": determinant_env,
++        "determinant_env_hash": _stable_digest(determinant_env),
++        "path_entries": path_entries,
++        "path_hash": _stable_digest(path_entries),
++        "sys_path_entries": sys_path_entries,
++        "sys_path_hash": _stable_digest(sys_path_entries),
++        "ld_library_path_entries": ld_library_path,
++        "ld_preload_entries": ld_preload,
++    }
++
++
++def _queue_runtime_env() -> dict[str, str]:
++    return _selected_env_vars(
++        "GOMP_",
++        "KMP_",
++        names=(
++            "OMP_NUM_THREADS",
++            "OMP_SCHEDULE",
++            "OMP_PROC_BIND",
++            "OMP_PLACES",
++            "MKL_NUM_THREADS",
++            "OPENBLAS_NUM_THREADS",
++            "CUBLAS_WORKSPACE_CONFIG",
++            "TF_DETERMINISTIC_OPS",
++            "TF_CUDNN_DETERMINISTIC",
++            "PYTORCH_CUDA_ALLOC_CONF",
++            "CUDA_DEVICE_ORDER",
++            "TMPDIR",
++            "TEMP",
++            "TMP",
++        ),
++    )
++
++
++def _allocation_counts() -> dict[str, Any]:
++    payload: dict[str, Any] = {
++        "logical_cores": os.cpu_count(),
++        "affinity_cores": _affinity_count(),
++    }
++    for name in (
++        "SLURM_CPUS_PER_TASK",
++        "SLURM_CPUS_ON_NODE",
++        "SLURM_JOB_NUM_NODES",
++        "SLURM_NTASKS",
++        "PBS_NP",
++        "NCPUS",
++        "NSLOTS",
++    ):
++        value = os.environ.get(name)
++        if value is None:
++            continue
++        try:
++            payload[name.lower()] = int(value)
++        except Exception:
++            payload[name.lower()] = value
++    cuda_visible_devices = os.environ.get("CUDA_VISIBLE_DEVICES")
++    if cuda_visible_devices:
++        payload["visible_gpu_count"] = len(
++            [item for item in cuda_visible_devices.split(",") if item]
++        )
++    return payload
++
++
++def _write_snapshot_checksum_sync(value: Any) -> str | None:
++    buffer = Buffer(value, "plain")
++
++    async def _write() -> bool:
++        return await buffer.write()
++
++    try:
++        asyncio.get_running_loop()
++    except RuntimeError:
++        try:
++            written = asyncio.run(_write())
++        except Exception:
++            return None
++    else:
++        result: dict[str, bool] = {}
++        error: dict[str, BaseException] = {}
++
++        def _runner():
++            try:
++                result["written"] = asyncio.run(_write())
++            except BaseException as exc:
++                error["exc"] = exc
++
++        thread = threading.Thread(target=_runner, daemon=True, name="probe-snapshot")
++        thread.start()
++        thread.join()
++        if error:
++            return None
++        written = result.get("written", False)
++    if not written:
++        return None
++    return buffer.get_checksum().hex()
++
++
++def _apply_bucket_contract_summary(
++    payload: dict[str, Any],
++    *,
++    contract_violations: list[str],
++    validation_details: dict[str, Any] | None,
++) -> dict[str, Any]:
++    payload["contract_violations"] = sorted(
++        {code for code in contract_violations if isinstance(code, str) and code}
++    )
++    payload["contract_ok"] = not payload["contract_violations"]
++    payload["validation_snapshot"] = None
++    if validation_details:
++        payload["validation_snapshot"] = _write_snapshot_checksum_sync(validation_details)
++    return payload
++
++
++def _environment_contract_summary(
++    validation_views: dict[str, Any],
++) -> tuple[list[str], dict[str, Any]]:
++    conda_prefix = os.environ.get("CONDA_PREFIX")
++    if conda_prefix:
++        conda_prefix = _normalize_path(conda_prefix)
++    violations: set[str] = set()
++    for entry in validation_views.get("ld_library_path_entries", []):
++        if not _path_allowed_for_contract(entry, conda_prefix=conda_prefix):
++            violations.add("ld_library_path_outside_conda_prefix")
++            break
++    for entry in validation_views.get("ld_preload_entries", []):
++        if _allowlisted_library_name(os.path.basename(entry)):
++            continue
++        if not _path_allowed_for_contract(entry, conda_prefix=conda_prefix):
++            violations.add("ld_preload_outside_conda_prefix")
++            break
++    details = {
++        "schema_version": 1,
++        "bucket_kind": "environment",
++        "conda_prefix": conda_prefix,
++        "validation_views": validation_views,
++        "violations": sorted(violations),
++    }
++    return sorted(violations), details
++
++
++def _queue_node_contract_summary() -> tuple[list[str], dict[str, Any]]:
++    conda_prefix = os.environ.get("CONDA_PREFIX")
++    if conda_prefix:
++        conda_prefix = _normalize_path(conda_prefix)
++    ld_library_path_entries = [
++        _normalize_path(item)
++        for item in _split_path_like(os.environ.get("LD_LIBRARY_PATH", ""))
++    ]
++    ld_preload_entries = [
++        _normalize_path(item)
++        for item in _split_preload(os.environ.get("LD_PRELOAD", ""))
++    ]
++    violations: set[str] = set()
++    for entry in ld_library_path_entries:
++        if not _path_allowed_for_contract(entry, conda_prefix=conda_prefix):
++            violations.add("ld_library_path_outside_conda_prefix")
++            break
++    for entry in ld_preload_entries:
++        if _allowlisted_library_name(os.path.basename(entry)):
++            continue
++        if not _path_allowed_for_contract(entry, conda_prefix=conda_prefix):
++            violations.add("ld_preload_outside_conda_prefix")
++            break
++    details = {
++        "schema_version": 1,
++        "bucket_kind": "queue_node",
++        "conda_prefix": conda_prefix,
++        "runtime_environment": _queue_runtime_env(),
++        "ld_library_path_entries": ld_library_path_entries,
++        "ld_preload_entries": ld_preload_entries,
++        "violations": sorted(violations),
++    }
++    return sorted(violations), details
++
++
+ def _common_payload(bucket_kind: str) -> dict[str, Any]:
+     return {
+         "schema_version": 1,
+@@ -473,6 +1097,7 @@ def _build_node_payload(request: dict[str, Any]) -> dict[str, Any]:
+                 "model_name": None if cpuinfo is None else cpuinfo.get("model_name"),
+                 "microcode": None if cpuinfo is None else cpuinfo.get("microcode"),
+                 "flags": None if cpuinfo is None else cpuinfo.get("flags"),
++                "physical_cores": _physical_core_count(),
+                 "logical_cores": os.cpu_count(),
+                 "affinity_cores": _affinity_count(),
+             },
+@@ -480,17 +1105,29 @@ def _build_node_payload(request: dict[str, Any]) -> dict[str, Any]:
+             "numa_topology": _numa_topology(),
+             "gpu_inventory": _node_gpu_inventory(),
+             "distribution": _os_release(),
++            "container": _container_identity(),
++            "filesystems": _filesystem_facts(),
+             "transparent_hugepages": _kernel_setting(
+                 "/sys/kernel/mm/transparent_hugepage/enabled"
+             ),
+             "aslr": _kernel_setting("/proc/sys/kernel/randomize_va_space"),
+             "overcommit_memory": _kernel_setting("/proc/sys/vm/overcommit_memory"),
++            "libraries": {
++                "glibc": _library_identity("c"),
++                "libm": _library_identity("m"),
++            },
+         }
+     )
+-    return payload
++    return _apply_bucket_contract_summary(
++        payload,
++        contract_violations=[],
++        validation_details=None,
++    )
+ 
+ 
+ def _build_environment_payload(request: dict[str, Any]) -> dict[str, Any]:
++    env_spec = _resolve_env_spec(request.get("env_checksum"))
++    validation_views = _environment_validation_views()
+     payload = _common_payload("environment")
+     payload.update(
+         {
+@@ -502,6 +1139,13 @@ def _build_environment_payload(request: dict[str, Any]) -> dict[str, Any]:
+                 "prefix": sys.prefix,
+                 "path": list(sys.path),
+             },
++            "compiler_environment": {
++                name: os.environ[name]
++                for name in ("CC", "CXX", "FC")
++                if os.environ.get(name) is not None
++            },
++            "compiler_inventory": _compiler_inventory(),
++            "conda_env_export": _conda_env_export(),
+             "locale": {
+                 "preferred_encoding": locale.getpreferredencoding(False),
+                 "default_locale": list(locale.getlocale()),
+@@ -519,15 +1163,28 @@ def _build_environment_payload(request: dict[str, Any]) -> dict[str, Any]:
+                     "LD_LIBRARY_PATH",
+                     "LD_PRELOAD",
+                     "PYTHONHASHSEED",
+-                    "CUDA_VISIBLE_DEVICES",
+                     "CONDA_DEFAULT_ENV",
+                     "CONDA_PREFIX",
++                    "LANG",
++                    "LC_ALL",
++                    "LC_CTYPE",
++                    "TZ",
+                 ),
+             ),
++            "gpu_determinism_environment_variables": _gpu_determinism_env(),
++            "docker_image": _docker_image_digest(env_spec),
+             "python_packages": _python_packages(),
++            "validation_views": validation_views,
+         }
+     )
+-    return payload
++    contract_violations, validation_details = _environment_contract_summary(
++        validation_views
++    )
++    return _apply_bucket_contract_summary(
++        payload,
++        contract_violations=contract_violations,
++        validation_details=validation_details,
++    )
+ 
+ 
+ def _build_node_env_payload(request: dict[str, Any]) -> dict[str, Any]:
+@@ -542,9 +1199,22 @@ def _build_node_env_payload(request: dict[str, Any]) -> dict[str, Any]:
+             "cuda_visible_devices": os.environ.get("CUDA_VISIBLE_DEVICES"),
+             "visible_gpu_mapping": _visible_gpu_mapping(),
+             "cuda_toolkit_version": _cuda_toolkit_version(),
++            "cudnn_version": _cudnn_version(),
++            "mxcsr_state": _mxcsr_state(),
+         }
+     )
+-    return payload
++    return _apply_bucket_contract_summary(
++        payload,
++        contract_violations=[],
++        validation_details={
++            "schema_version": 1,
++            "bucket_kind": "node_env",
++            "visible_gpu_mapping": payload.get("visible_gpu_mapping"),
++            "cuda_toolkit_version": payload.get("cuda_toolkit_version"),
++            "cudnn_version": payload.get("cudnn_version"),
++            "mxcsr_state": payload.get("mxcsr_state"),
++        },
++    )
+ 
+ 
+ def _build_queue_payload(request: dict[str, Any]) -> dict[str, Any]:
+@@ -573,7 +1243,15 @@ def _build_queue_payload(request: dict[str, Any]) -> dict[str, Any]:
+             ),
+         }
+     )
+-    return payload
++    return _apply_bucket_contract_summary(
++        payload,
++        contract_violations=[],
++        validation_details={
++            "schema_version": 1,
++            "bucket_kind": "queue",
++            "queue_parameters": payload.get("queue_parameters"),
++        },
++    )
+ 
+ 
+ def _build_queue_node_payload(request: dict[str, Any]) -> dict[str, Any]:
+@@ -584,20 +1262,19 @@ def _build_queue_node_payload(request: dict[str, Any]) -> dict[str, Any]:
+             "hostname": socket.gethostname(),
+             "queue_checksum": request.get("queue_checksum"),
+             "requested_node": request.get("requested_node"),
+-            "environment_variables": _selected_env_vars(
+-                "OMP_",
+-                "GOMP_",
+-                "KMP_",
+-                "MKL_",
+-                "OPENBLAS_",
+-                names=("CUDA_VISIBLE_DEVICES",),
+-            ),
++            "environment_variables": _queue_runtime_env(),
++            "allocation_counts": _allocation_counts(),
+             "resource_limits": _resource_limits(),
+             "cgroup_memory_limit_bytes": _cgroup_memory_limit_bytes(),
+             "affinity_cores": _affinity_count(),
+         }
+     )
+-    return payload
++    contract_violations, validation_details = _queue_node_contract_summary()
++    return _apply_bucket_contract_summary(
++        payload,
++        contract_violations=contract_violations,
++        validation_details=validation_details,
++    )
+ 
+ 
+ def _probe_request_for_bucket(
+@@ -615,6 +1292,7 @@ def _probe_request_for_bucket(
+         "requested_node": plan["labels"].get("node"),
+         "hostname": plan.get("hostname"),
+         "live_tokens": plan.get("live_tokens", {}).get(bucket_kind),
++        "env_checksum": plan.get("env_checksum"),
+     }
+     if bucket_kind == "node_env":
+         request["node_checksum"] = current_checksums.get("node")
+diff --git a/seamless_transformer/transformation_cache.py b/seamless_transformer/transformation_cache.py
+index 38e3dc1..6b14de8 100644
+--- a/seamless_transformer/transformation_cache.py
++++ b/seamless_transformer/transformation_cache.py
+@@ -473,6 +473,256 @@ def _split_preload(value: str) -> list[str]:
+     return items
+ 
+ 
++def _selected_env_vars(
++    *prefixes: str, names: tuple[str, ...] = ()
++) -> dict[str, str]:
++    result: dict[str, str] = {}
++    for key, value in os.environ.items():
++        if key in names or any(key.startswith(prefix) for prefix in prefixes):
++            result[key] = value
++    return dict(sorted(result.items()))
++
++
++def _determinant_env_live() -> dict[str, str]:
++    return _selected_env_vars(
++        "OMP_",
++        "GOMP_",
++        "KMP_",
++        "MKL_",
++        "OPENBLAS_",
++        names=(
++            "PATH",
++            "PYTHONPATH",
++            "LD_LIBRARY_PATH",
++            "LD_PRELOAD",
++            "PYTHONHASHSEED",
++            "LANG",
++            "LC_ALL",
++            "LC_CTYPE",
++            "TZ",
++            "CUBLAS_WORKSPACE_CONFIG",
++            "TF_DETERMINISTIC_OPS",
++            "TF_CUDNN_DETERMINISTIC",
++            "PYTORCH_CUDA_ALLOC_CONF",
++            "CUDA_DEVICE_ORDER",
++            "CUDA_LAUNCH_BLOCKING",
++            "NVIDIA_TF32_OVERRIDE",
++        ),
++    )
++
++
++def _canonical_path_entries(value: str | None) -> list[str]:
++    if not value:
++        return []
++    return [_normalize_path(item) for item in _split_path_like(value)]
++
++
++def _canonical_sys_path() -> list[str]:
++    return [
++        _normalize_path(item)
++        for item in sys.path
++        if isinstance(item, str) and item
++    ]
++
++
++def _current_umask() -> int | None:
++    try:
++        value = os.umask(0)
++    except Exception:
++        return None
++    os.umask(value)
++    return value
++
++
++def _parse_mountinfo() -> list[dict[str, Any]]:
++    try:
++        with open("/proc/self/mountinfo", "r", encoding="utf-8") as f:
++            text = f.read()
++    except Exception:
++        return []
++    result = []
++    for line in text.splitlines():
++        if " - " not in line:
++            continue
++        left, right = line.split(" - ", 1)
++        left_fields = left.split()
++        right_fields = right.split()
++        if len(left_fields) < 6 or len(right_fields) < 3:
++            continue
++        result.append(
++            {
++                "mount_point": left_fields[4],
++                "filesystem_type": right_fields[0],
++                "mount_source": right_fields[1],
++            }
++        )
++    return result
++
++
++def _mount_for_path(path: str, mountinfo: list[dict[str, Any]]) -> dict[str, Any] | None:
++    best = None
++    best_len = -1
++    for entry in mountinfo:
++        mount_point = entry.get("mount_point")
++        if not isinstance(mount_point, str):
++            continue
++        if path == mount_point or path.startswith(mount_point.rstrip("/") + "/"):
++            if len(mount_point) > best_len:
++                best = entry
++                best_len = len(mount_point)
++    return best
++
++
++def _filesystem_facts_live() -> dict[str, Any]:
++    import sysconfig
++
++    mountinfo = _parse_mountinfo()
++    targets = {
++        "cwd": os.getcwd(),
++        "tempdir": tempfile.gettempdir(),
++        "sys_prefix": sys.prefix,
++    }
++    purelib = sysconfig.get_path("purelib")
++    if purelib:
++        targets["purelib"] = purelib
++    result: dict[str, Any] = {}
++    for name, path in targets.items():
++        resolved = _normalize_path(path)
++        entry = _mount_for_path(resolved, mountinfo)
++        if entry is None:
++            continue
++        result[name] = {
++            "path": resolved,
++            "mount_point": entry["mount_point"],
++            "filesystem_type": entry["filesystem_type"],
++            "mount_source": entry["mount_source"],
++        }
++    return result
++
++
++def _read_proc_self_maps_paths() -> list[str]:
++    try:
++        with open("/proc/self/maps", "r", encoding="utf-8") as f:
++            lines = f.readlines()
++    except Exception:
++        return []
++    result: list[str] = []
++    for line in lines:
++        fields = line.strip().split()
++        if len(fields) < 6:
++            continue
++        path = fields[-1]
++        if not path.startswith("/"):
++            continue
++        result.append(_normalize_path(path))
++    return sorted(set(result))
++
++
++def _path_under_any_root(path: str, roots: list[str]) -> bool:
++    for root in roots:
++        if path == root or path.startswith(root.rstrip(os.sep) + os.sep):
++            return True
++    return False
++
++
++def _allowed_map_roots(
++    *,
++    environment_payload: dict[str, Any] | None,
++    node_payload: dict[str, Any] | None,
++) -> list[str]:
++    roots: list[str] = list(_system_library_roots())
++    conda_prefix = os.environ.get("CONDA_PREFIX")
++    if conda_prefix:
++        roots.append(_normalize_path(conda_prefix))
++    if environment_payload:
++        validation_views = environment_payload.get("validation_views", {}) or {}
++        for path in validation_views.get("sys_path_entries", []) or []:
++            if isinstance(path, str) and path:
++                roots.append(_normalize_path(path))
++        python_payload = environment_payload.get("python", {}) or {}
++        prefix = python_payload.get("prefix")
++        if isinstance(prefix, str) and prefix:
++            roots.append(_normalize_path(prefix))
++    if node_payload:
++        libraries = node_payload.get("libraries", {}) or {}
++        for name in ("glibc", "libm"):
++            lib = libraries.get(name)
++            if isinstance(lib, dict):
++                lib_path = lib.get("path")
++                if isinstance(lib_path, str) and lib_path:
++                    roots.append(os.path.dirname(_normalize_path(lib_path)))
++    return sorted({root for root in roots if isinstance(root, str) and root})
++
++
++async def _load_bucket_payloads(
++    probe_context: dict[str, Any] | None,
++) -> dict[str, dict[str, Any]]:
++    result: dict[str, dict[str, Any]] = {}
++    if not isinstance(probe_context, dict):
++        return result
++    required_bucket_checksums = probe_context.get("required_bucket_checksums", {})
++    if not isinstance(required_bucket_checksums, dict):
++        return result
++    for kind, checksum_hex in required_bucket_checksums.items():
++        if not checksum_hex:
++            continue
++        try:
++            payload = await Checksum(checksum_hex).resolution("plain")
++        except Exception:
++            continue
++        if isinstance(payload, dict):
++            result[kind] = payload
++    return result
++
++
++def _expected_determinant_env(
++    environment_payload: dict[str, Any] | None,
++    queue_node_payload: dict[str, Any] | None,
++) -> dict[str, str]:
++    result: dict[str, str] = {}
++    if environment_payload:
++        validation_views = environment_payload.get("validation_views", {}) or {}
++        env_dict = validation_views.get("determinant_env", {}) or {}
++        if isinstance(env_dict, dict):
++            for key, value in env_dict.items():
++                if isinstance(key, str) and isinstance(value, str):
++                    result[key] = value
++    if queue_node_payload:
++        runtime_env = queue_node_payload.get("environment_variables", {}) or {}
++        if isinstance(runtime_env, dict):
++            for key, value in runtime_env.items():
++                if isinstance(key, str) and isinstance(value, str):
++                    result[key] = value
++    return dict(sorted(result.items()))
++
++
++def _gpu_policy_live() -> dict[str, Any]:
++    try:
++        from seamless_transformer.probe_capture import _visible_gpu_mapping
++    except Exception:
++        _visible_gpu_mapping = None
++    mapping = None
++    if callable(_visible_gpu_mapping):
++        try:
++            mapping = _visible_gpu_mapping()
++        except Exception:
++            mapping = None
++    return {
++        "cuda_visible_devices": os.environ.get("CUDA_VISIBLE_DEVICES"),
++        "visible_gpu_mapping": mapping,
++    }
++
++
++def _job_check_payload(expected: Any, actual: Any) -> dict[str, Any]:
++    return {
++        "expected": expected,
++        "actual": actual,
++        "expected_hash": _stable_digest(expected),
++        "actual_hash": _stable_digest(actual),
++        "ok": expected == actual,
++    }
++
++
+ def _parse_readelf_dynamic(text: str, *, module_dir: str) -> dict[str, Any]:
+     rpath_entries: list[str] = []
+     runpath_entries: list[str] = []
+@@ -540,12 +790,133 @@ async def collect_job_validation(
+     tf_dunder: Dict[str, Any] | None,
+     *,
+     compilation_context: str | None,
++    probe_context: dict[str, Any] | None = None,
+ ) -> dict[str, Any]:
+     compiled = bool(
+         transformation_dict.get("__compiled__")
+         or (isinstance(tf_dunder, dict) and tf_dunder.get("__compiled__"))
+     )
+-    diagnostics: dict[str, Any] = {"compiled": compiled}
++    bucket_payloads = await _load_bucket_payloads(probe_context)
++    environment_payload = bucket_payloads.get("environment")
++    node_payload = bucket_payloads.get("node")
++    node_env_payload = bucket_payloads.get("node_env")
++    queue_node_payload = bucket_payloads.get("queue_node")
++    checks: dict[str, Any] = {}
++
++    expected_env = _expected_determinant_env(environment_payload, queue_node_payload)
++    live_env = {
++        key: value
++        for key, value in _determinant_env_live().items()
++        if key in expected_env
++    }
++    if expected_env:
++        checks["determinant_env_hash"] = _job_check_payload(expected_env, live_env)
++
++    if environment_payload:
++        validation_views = environment_payload.get("validation_views", {}) or {}
++        expected_path_entries = validation_views.get("path_entries")
++        if isinstance(expected_path_entries, list):
++            checks["path_roots"] = _job_check_payload(
++                expected_path_entries,
++                _canonical_path_entries(os.environ.get("PATH")),
++            )
++        expected_sys_path_entries = validation_views.get("sys_path_entries")
++        if isinstance(expected_sys_path_entries, list):
++            checks["sys_path_roots"] = _job_check_payload(
++                expected_sys_path_entries,
++                _canonical_sys_path(),
++            )
++
++    live_filesystems = _filesystem_facts_live()
++    if node_payload:
++        expected_filesystems = node_payload.get("filesystems")
++        if isinstance(expected_filesystems, dict) and expected_filesystems:
++            expected_mount_view = {
++                key: {
++                    "filesystem_type": value.get("filesystem_type"),
++                    "mount_source": value.get("mount_source"),
++                }
++                for key, value in expected_filesystems.items()
++                if isinstance(value, dict)
++            }
++            actual_mount_view = {
++                key: {
++                    "filesystem_type": value.get("filesystem_type"),
++                    "mount_source": value.get("mount_source"),
++                }
++                for key, value in live_filesystems.items()
++            }
++            checks["mount_policy"] = _job_check_payload(
++                expected_mount_view,
++                actual_mount_view,
++            )
++
++    temp_env = {
++        name: os.environ.get(name)
++        for name in ("TMPDIR", "TEMP", "TMP")
++        if os.environ.get(name) is not None
++    }
++    expected_temp_env = {}
++    if queue_node_payload:
++        runtime_env = queue_node_payload.get("environment_variables", {}) or {}
++        if isinstance(runtime_env, dict):
++            expected_temp_env = {
++                key: value
++                for key, value in runtime_env.items()
++                if key in ("TMPDIR", "TEMP", "TMP")
++            }
++    checks["cwd_temp_umask"] = {
++        "cwd": os.getcwd(),
++        "cwd_exists": os.path.isdir(os.getcwd()),
++        "tempdir": tempfile.gettempdir(),
++        "temp_environment": _job_check_payload(expected_temp_env, temp_env)
++        if expected_temp_env
++        else {
++            "expected": {},
++            "actual": temp_env,
++            "expected_hash": _stable_digest({}),
++            "actual_hash": _stable_digest(temp_env),
++            "ok": True,
++        },
++        "umask": _current_umask(),
++    }
++    checks["cwd_temp_umask"]["ok"] = bool(
++        checks["cwd_temp_umask"]["cwd_exists"]
++        and checks["cwd_temp_umask"]["temp_environment"]["ok"]
++        and checks["cwd_temp_umask"]["umask"] is not None
++    )
++
++    allowed_roots = _allowed_map_roots(
++        environment_payload=environment_payload,
++        node_payload=node_payload,
++    )
++    mapped_paths = _read_proc_self_maps_paths()
++    outside_mapped_paths = [
++        path for path in mapped_paths if not _path_under_any_root(path, allowed_roots)
++    ]
++    checks["proc_self_maps"] = {
++        "allowed_roots": allowed_roots,
++        "outside_paths": outside_mapped_paths[:20],
++        "outside_count": len(outside_mapped_paths),
++        "ok": len(outside_mapped_paths) == 0,
++    }
++
++    expected_gpu_policy = {}
++    if node_env_payload:
++        expected_gpu_policy = {
++            "cuda_visible_devices": node_env_payload.get("cuda_visible_devices"),
++            "visible_gpu_mapping": node_env_payload.get("visible_gpu_mapping"),
++        }
++    if expected_gpu_policy:
++        checks["gpu_visible_device_policy"] = _job_check_payload(
++            expected_gpu_policy,
++            _gpu_policy_live(),
++        )
++
++    diagnostics: dict[str, Any] = {
++        "compiled": compiled,
++        "checks": checks,
++    }
+     job_contract_violations: set[str] = set()
+     if not compiled:
+         return {
+@@ -1332,6 +1703,7 @@ class TransformationCache:
+                         transformation_dict,
+                         tf_dunder,
+                         compilation_context=compilation_context,
++                        probe_context=probe_context,
+                     )
+                     job_validation = _normalize_job_validation_payload(job_validation)
+                 job_contract_violations = job_validation["job_contract_violations"]
+diff --git a/tests/test_execution_records.py b/tests/test_execution_records.py
+index fd7849a..da5c844 100644
+--- a/tests/test_execution_records.py
++++ b/tests/test_execution_records.py
+@@ -708,6 +708,131 @@ def test_collect_job_validation_reports_and_caches_native_linkage(monkeypatch, t
+     )
+ 
+ 
++def test_collect_job_validation_adds_runtime_contract_diagnostics(monkeypatch):
++    node_checksum = _make_checksum(
++        {
++            "filesystems": {
++                "cwd": {
++                    "filesystem_type": "overlay",
++                    "mount_source": "overlay",
++                },
++                "tempdir": {
++                    "filesystem_type": "tmpfs",
++                    "mount_source": "tmpfs",
++                },
++            }
++        }
++    )
++    environment_checksum = _make_checksum(
++        {
++            "validation_views": {
++                "determinant_env": {
++                    "PATH": "/env/bin",
++                    "PYTHONHASHSEED": "0",
++                    "LD_LIBRARY_PATH": "/env/lib",
++                },
++                "path_entries": ["/env/bin"],
++                "sys_path_entries": ["/env/lib/python3.12/site-packages"],
++            },
++            "python": {"prefix": "/env"},
++        }
++    )
++    node_env_checksum = _make_checksum(
++        {
++            "cuda_visible_devices": "0",
++            "visible_gpu_mapping": [{"gpu_uuid": "GPU-1"}],
++        }
++    )
++    queue_node_checksum = _make_checksum(
++        {
++            "environment_variables": {
++                "OMP_NUM_THREADS": "8",
++                "TMPDIR": "/tmp/runtime",
++            }
++        }
++    )
++    probe_context = {
++        "required_bucket_checksums": {
++            "node": node_checksum.hex(),
++            "environment": environment_checksum.hex(),
++            "node_env": node_env_checksum.hex(),
++            "queue_node": queue_node_checksum.hex(),
++        }
++    }
++
++    monkeypatch.setattr(
++        transformation_cache,
++        "_determinant_env_live",
++        lambda: {
++            "PATH": "/env/bin",
++            "PYTHONHASHSEED": "0",
++            "LD_LIBRARY_PATH": "/env/lib",
++            "OMP_NUM_THREADS": "8",
++            "TMPDIR": "/tmp/runtime",
++        },
++    )
++    monkeypatch.setattr(
++        transformation_cache,
++        "_canonical_path_entries",
++        lambda value: ["/env/bin"] if value is not None else [],
++    )
++    monkeypatch.setattr(
++        transformation_cache,
++        "_canonical_sys_path",
++        lambda: ["/env/lib/python3.12/site-packages"],
++    )
++    monkeypatch.setattr(
++        transformation_cache,
++        "_filesystem_facts_live",
++        lambda: {
++            "cwd": {
++                "filesystem_type": "overlay",
++                "mount_source": "overlay",
++            },
++            "tempdir": {
++                "filesystem_type": "tmpfs",
++                "mount_source": "tmpfs",
++            },
++        },
++    )
++    monkeypatch.setattr(
++        transformation_cache,
++        "_read_proc_self_maps_paths",
++        lambda: ["/env/lib/libpython3.12.so"],
++    )
++    monkeypatch.setattr(
++        transformation_cache,
++        "_gpu_policy_live",
++        lambda: {
++            "cuda_visible_devices": "0",
++            "visible_gpu_mapping": [{"gpu_uuid": "GPU-1"}],
++        },
++    )
++    monkeypatch.setattr(transformation_cache, "_current_umask", lambda: 0o022)
++    monkeypatch.setattr(transformation_cache, "_system_library_roots", lambda: ("/usr/lib",))
++    monkeypatch.setenv("PATH", "/env/bin")
++    monkeypatch.setenv("TMPDIR", "/tmp/runtime")
++
++    result = asyncio.run(
++        transformation_cache.collect_job_validation(
++            {"__language__": "python", "__output__": ("result", "mixed", None)},
++            {},
++            compilation_context=None,
++            probe_context=probe_context,
++        )
++    )
++
++    assert result["job_contract_violations"] == []
++    checks = result["diagnostics"]["checks"]
++    assert checks["determinant_env_hash"]["ok"] is True
++    assert checks["path_roots"]["ok"] is True
++    assert checks["sys_path_roots"]["ok"] is True
++    assert checks["mount_policy"]["ok"] is True
++    assert checks["cwd_temp_umask"]["ok"] is True
++    assert checks["proc_self_maps"]["ok"] is True
++    assert checks["gpu_visible_device_policy"]["ok"] is True
++
++
+ def test_gpu_memory_sampler_uses_pynvml(monkeypatch):
+     fake_pynvml = ModuleType("pynvml")
+     state = {"init": 0, "shutdown": 0}
+diff --git a/tests/test_probe_capture.py b/tests/test_probe_capture.py
+index 583547d..b369ea9 100644
+--- a/tests/test_probe_capture.py
++++ b/tests/test_probe_capture.py
+@@ -310,6 +310,22 @@ def test_build_node_payload_includes_proc_and_sys_facts(monkeypatch):
+             "/proc/sys/vm/overcommit_memory": "0",
+         }.get(path),
+     )
++    monkeypatch.setattr(probe_capture, "_physical_core_count", lambda: 64)
++    monkeypatch.setattr(
++        probe_capture,
++        "_container_identity",
++        lambda: {"markers": ["/.dockerenv"], "root_mount": {"filesystem_type": "overlay"}},
++    )
++    monkeypatch.setattr(
++        probe_capture,
++        "_filesystem_facts",
++        lambda: {"cwd": {"filesystem_type": "overlay"}},
++    )
++    monkeypatch.setattr(
++        probe_capture,
++        "_library_identity",
++        lambda name: {"name": f"lib{name}.so", "path": f"/usr/lib/lib{name}.so"},
++    )
+ 
+     payload = probe_capture._build_node_payload({"label": "worker-1"})
+ 
+@@ -317,9 +333,175 @@ def test_build_node_payload_includes_proc_and_sys_facts(monkeypatch):
+     assert payload["cpu"]["model_name"] == "AMD EPYC"
+     assert payload["cpu"]["microcode"] == "0x123"
+     assert payload["cpu"]["flags"] == ["avx2", "fma"]
++    assert payload["cpu"]["physical_cores"] == 64
+     assert payload["numa_topology"] == [{"node": "node0", "cpulist": "0-7"}]
+     assert payload["gpu_inventory"] == {"driver_version": "550.54", "gpus": []}
+     assert payload["distribution"] == {"ID": "ubuntu", "VERSION_ID": "24.04"}
++    assert payload["container"] == {
++        "markers": ["/.dockerenv"],
++        "root_mount": {"filesystem_type": "overlay"},
++    }
++    assert payload["filesystems"] == {"cwd": {"filesystem_type": "overlay"}}
+     assert payload["transparent_hugepages"] == "always [madvise] never"
+     assert payload["aslr"] == "2"
+     assert payload["overcommit_memory"] == "0"
++    assert payload["libraries"] == {
++        "glibc": {"name": "libc.so", "path": "/usr/lib/libc.so"},
++        "libm": {"name": "libm.so", "path": "/usr/lib/libm.so"},
++    }
++
++
++def test_build_environment_payload_includes_compilers_and_conda(monkeypatch):
++    monkeypatch.setattr(
++        probe_capture,
++        "_resolve_env_spec",
++        lambda env_checksum: {"docker": {"name": "repo/image:latest"}}
++        if env_checksum == "e" * 64
++        else {},
++    )
++    monkeypatch.setattr(
++        probe_capture,
++        "_compiler_inventory",
++        lambda: {"selected": {"CC": {"path": "/usr/bin/gcc", "version": "gcc 13"}}},
++    )
++    monkeypatch.setattr(
++        probe_capture,
++        "_conda_env_export",
++        lambda: "name: seamless1\ndependencies:\n  - python=3.12",
++    )
++    monkeypatch.setattr(
++        probe_capture,
++        "_gpu_determinism_env",
++        lambda: {"CUBLAS_WORKSPACE_CONFIG": ":16:8"},
++    )
++    monkeypatch.setattr(
++        probe_capture,
++        "_docker_image_digest",
++        lambda env_spec: {"name": env_spec["docker"]["name"], "digest": "sha256:abc"},
++    )
++    monkeypatch.setattr(
++        probe_capture,
++        "_python_packages",
++        lambda: [{"name": "demo", "version": "1.0"}],
++    )
++    monkeypatch.setattr(
++        probe_capture,
++        "_environment_validation_views",
++        lambda: {
++            "determinant_env": {"PATH": "/env/bin"},
++            "determinant_env_hash": "h" * 64,
++            "path_entries": ["/env/bin"],
++            "path_hash": "p" * 64,
++            "sys_path_entries": ["/env/lib/python3.12/site-packages"],
++            "sys_path_hash": "s" * 64,
++            "ld_library_path_entries": ["/env/lib"],
++            "ld_preload_entries": [],
++        },
++    )
++    monkeypatch.setattr(
++        probe_capture,
++        "_environment_contract_summary",
++        lambda validation_views: (
++            ["ld_library_path_outside_conda_prefix"],
++            {"validation_views": validation_views},
++        ),
++    )
++    monkeypatch.setattr(
++        probe_capture,
++        "_write_snapshot_checksum_sync",
++        lambda value: "v" * 64 if value else None,
++    )
++    monkeypatch.setenv("CC", "gcc")
++
++    payload = probe_capture._build_environment_payload(
++        {"label": "conda:/envs/seamless1", "env_checksum": "e" * 64}
++    )
++
++    assert payload["compiler_environment"] == {"CC": "gcc"}
++    assert payload["compiler_inventory"] == {
++        "selected": {"CC": {"path": "/usr/bin/gcc", "version": "gcc 13"}}
++    }
++    assert payload["conda_env_export"] == "name: seamless1\ndependencies:\n  - python=3.12"
++    assert payload["gpu_determinism_environment_variables"] == {
++        "CUBLAS_WORKSPACE_CONFIG": ":16:8"
++    }
++    assert payload["docker_image"] == {
++        "name": "repo/image:latest",
++        "digest": "sha256:abc",
++    }
++    assert payload["python_packages"] == [{"name": "demo", "version": "1.0"}]
++    assert payload["validation_views"]["determinant_env_hash"] == "h" * 64
++    assert payload["contract_violations"] == ["ld_library_path_outside_conda_prefix"]
++    assert payload["contract_ok"] is False
++    assert payload["validation_snapshot"] == "v" * 64
++
++
++def test_build_node_env_payload_includes_cudnn_and_mxcsr(monkeypatch):
++    monkeypatch.setattr(probe_capture, "_numpy_show_config", lambda: {"blas": {}})
++    monkeypatch.setattr(probe_capture, "_threadpool_info", lambda: [{"internal_api": "openblas"}])
++    monkeypatch.setattr(probe_capture, "_visible_gpu_mapping", lambda: [{"gpu_uuid": "GPU-1"}])
++    monkeypatch.setattr(probe_capture, "_cuda_toolkit_version", lambda: "12.4")
++    monkeypatch.setattr(probe_capture, "_cudnn_version", lambda: 91002)
++    monkeypatch.setattr(
++        probe_capture,
++        "_mxcsr_state",
++        lambda: {"raw": 32832, "ftz": True, "daz": True},
++    )
++    monkeypatch.setattr(
++        probe_capture,
++        "_write_snapshot_checksum_sync",
++        lambda value: "n" * 64 if value else None,
++    )
++
++    payload = probe_capture._build_node_env_payload({"label": "node:env"})
++
++    assert payload["cudnn_version"] == 91002
++    assert payload["mxcsr_state"] == {"raw": 32832, "ftz": True, "daz": True}
++    assert payload["validation_snapshot"] == "n" * 64
++
++
++def test_build_queue_node_payload_includes_runtime_env_and_allocations(monkeypatch):
++    monkeypatch.setattr(
++        probe_capture,
++        "_queue_runtime_env",
++        lambda: {"OMP_NUM_THREADS": "8", "MKL_NUM_THREADS": "8"},
++    )
++    monkeypatch.setattr(
++        probe_capture,
++        "_allocation_counts",
++        lambda: {"logical_cores": 16, "slurm_cpus_per_task": 8, "visible_gpu_count": 1},
++    )
++    monkeypatch.setattr(probe_capture, "_resource_limits", lambda: {"RLIMIT_NOFILE": [1024, 4096]})
++    monkeypatch.setattr(probe_capture, "_cgroup_memory_limit_bytes", lambda: 2 * 1024**3)
++    monkeypatch.setattr(probe_capture, "_affinity_count", lambda: 8)
++    monkeypatch.setattr(
++        probe_capture,
++        "_queue_node_contract_summary",
++        lambda: (
++            ["ld_preload_outside_conda_prefix"],
++            {"runtime_environment": {"OMP_NUM_THREADS": "8"}},
++        ),
++    )
++    monkeypatch.setattr(
++        probe_capture,
++        "_write_snapshot_checksum_sync",
++        lambda value: "q" * 64 if value else None,
++    )
++
++    payload = probe_capture._build_queue_node_payload(
++        {"label": "queue:worker-1", "queue_checksum": "a" * 64, "requested_node": "worker-1"}
++    )
++
++    assert payload["environment_variables"] == {
++        "OMP_NUM_THREADS": "8",
++        "MKL_NUM_THREADS": "8",
++    }
++    assert payload["allocation_counts"] == {
++        "logical_cores": 16,
++        "slurm_cpus_per_task": 8,
++        "visible_gpu_count": 1,
++    }
++    assert payload["resource_limits"] == {"RLIMIT_NOFILE": [1024, 4096]}
++    assert payload["cgroup_memory_limit_bytes"] == 2 * 1024**3
++    assert payload["contract_violations"] == ["ld_preload_outside_conda_prefix"]
++    assert payload["validation_snapshot"] == "q" * 64

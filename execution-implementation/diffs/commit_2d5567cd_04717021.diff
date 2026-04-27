@@ -1,0 +1,18 @@
+commit 2d5567cdfcac15cc7c9fb2f91ae66ba58e1be3dc
+Author: Sjoerd de Vries <sjdv1982@gmail.com>
+Date:   Mon Apr 27 19:57:36 2026 +0200
+
+    Pass probe context into jobserver validation
+
+diff --git a/jobserver.py b/jobserver.py
+index 4158ba7..314f6b5 100644
+--- a/jobserver.py
++++ b/jobserver.py
+@@ -404,6 +404,7 @@ class JobServer:
+                 transformation_dict,
+                 tf_dunder,
+                 compilation_context=compilation_context,
++                probe_context=probe_context,
+             )
+             record_runtime.update(
+                 await collect_compilation_runtime_metadata(

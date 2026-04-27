@@ -1,0 +1,185 @@
+commit efcb7a95a6d371884dd4973cb06d0fc16e4098d5
+Author: Sjoerd de Vries <sjdv1982@gmail.com>
+Date:   Mon Apr 27 18:07:10 2026 +0200
+
+    Capture CUDA probe details
+
+diff --git a/seamless_transformer/probe_capture.py b/seamless_transformer/probe_capture.py
+index e3f69a5..a9b98f1 100644
+--- a/seamless_transformer/probe_capture.py
++++ b/seamless_transformer/probe_capture.py
+@@ -11,8 +11,10 @@ import json
+ import locale
+ import os
+ import platform
++import re
+ import resource
+ import socket
++import subprocess
+ import sys
+ import time
+ from datetime import datetime, timezone
+@@ -192,6 +194,108 @@ def _threadpool_info() -> list[dict[str, Any]] | None:
+         return None
+ 
+ 
++def _cuda_toolkit_version() -> str | None:
++    try:
++        import torch
++    except Exception:
++        torch = None
++    if torch is not None:
++        try:
++            version = getattr(getattr(torch, "version", None), "cuda", None)
++        except Exception:
++            version = None
++        if isinstance(version, str) and version:
++            return version
++
++    cuda_home = os.environ.get("CUDA_HOME") or os.environ.get("CUDA_PATH")
++    if cuda_home:
++        version_txt = os.path.join(cuda_home, "version.txt")
++        try:
++            with open(version_txt, "r", encoding="utf-8") as f:
++                content = f.read().strip()
++        except Exception:
++            content = None
++        if content:
++            match = re.search(r"(\d+\.\d+(?:\.\d+)?)", content)
++            if match is not None:
++                return match.group(1)
++            return content
++
++    try:
++        completed = subprocess.run(
++            ["nvcc", "--version"],
++            check=False,
++            capture_output=True,
++            text=True,
++            timeout=5,
++        )
++    except Exception:
++        return None
++    output = "\n".join(
++        part for part in (completed.stdout, completed.stderr) if part
++    ).strip()
++    if not output:
++        return None
++    match = re.search(r"release (\d+\.\d+(?:\.\d+)?)", output)
++    if match is not None:
++        return match.group(1)
++    match = re.search(r"V(\d+\.\d+(?:\.\d+)?)", output)
++    if match is not None:
++        return match.group(1)
++    return None
++
++
++def _visible_gpu_mapping() -> list[dict[str, Any]] | None:
++    raw = os.environ.get("CUDA_VISIBLE_DEVICES")
++    if raw is None:
++        return None
++    tokens = [item.strip() for item in raw.split(",") if item.strip()]
++    if not tokens:
++        return []
++    try:
++        import pynvml
++    except Exception:
++        return None
++    try:
++        pynvml.nvmlInit()
++        device_count = int(pynvml.nvmlDeviceGetCount())
++        uuids = []
++        for index in range(device_count):
++            handle = pynvml.nvmlDeviceGetHandleByIndex(index)
++            uuid = pynvml.nvmlDeviceGetUUID(handle)
++            if isinstance(uuid, bytes):
++                uuid = uuid.decode("utf-8", errors="replace")
++            uuids.append(str(uuid))
++    except Exception:
++        return None
++    finally:
++        shutdown = getattr(pynvml, "nvmlShutdown", None)
++        if callable(shutdown):
++            try:
++                shutdown()
++            except Exception:
++                pass
++
++    mapping: list[dict[str, Any]] = []
++    for token in tokens:
++        entry: dict[str, Any] = {"visible_token": token}
++        try:
++            index = int(token)
++        except Exception:
++            index = None
++        if index is not None:
++            entry["device_index"] = index
++            if 0 <= index < len(uuids):
++                entry["gpu_uuid"] = uuids[index]
++        else:
++            for uuid in uuids:
++                if token == uuid or uuid.endswith(token):
++                    entry["gpu_uuid"] = uuid
++                    break
++        mapping.append(entry)
++    return mapping
++
++
+ def _common_payload(bucket_kind: str) -> dict[str, Any]:
+     return {
+         "schema_version": 1,
+@@ -284,6 +388,8 @@ def _build_node_env_payload(request: dict[str, Any]) -> dict[str, Any]:
+             "numpy_show_config": _numpy_show_config(),
+             "threadpoolctl": _threadpool_info(),
+             "cuda_visible_devices": os.environ.get("CUDA_VISIBLE_DEVICES"),
++            "visible_gpu_mapping": _visible_gpu_mapping(),
++            "cuda_toolkit_version": _cuda_toolkit_version(),
+         }
+     )
+     return payload
+diff --git a/tests/test_probe_capture.py b/tests/test_probe_capture.py
+index 97430ba..f51ef06 100644
+--- a/tests/test_probe_capture.py
++++ b/tests/test_probe_capture.py
+@@ -192,3 +192,41 @@ def test_python_packages_includes_direct_url(monkeypatch, tmp_path):
+             "direct_url": direct_url,
+         }
+     ]
++
++
++def test_cuda_toolkit_version_prefers_torch(monkeypatch):
++    fake_torch = ModuleType("torch")
++    fake_torch.version = ModuleType("torch.version")
++    fake_torch.version.cuda = "12.4"
++    monkeypatch.setitem(sys.modules, "torch", fake_torch)
++
++    result = probe_capture._cuda_toolkit_version()
++
++    assert result == "12.4"
++
++
++def test_visible_gpu_mapping_uses_pynvml(monkeypatch):
++    fake_pynvml = ModuleType("pynvml")
++    state = {"init": 0, "shutdown": 0}
++
++    def _init():
++        state["init"] += 1
++
++    def _shutdown():
++        state["shutdown"] += 1
++
++    fake_pynvml.nvmlInit = _init
++    fake_pynvml.nvmlShutdown = _shutdown
++    fake_pynvml.nvmlDeviceGetCount = lambda: 3
++    fake_pynvml.nvmlDeviceGetHandleByIndex = lambda index: index
++    fake_pynvml.nvmlDeviceGetUUID = lambda handle: f"GPU-{handle}"
++    monkeypatch.setitem(sys.modules, "pynvml", fake_pynvml)
++    monkeypatch.setenv("CUDA_VISIBLE_DEVICES", "2,0")
++
++    result = probe_capture._visible_gpu_mapping()
++
++    assert result == [
++        {"visible_token": "2", "device_index": 2, "gpu_uuid": "GPU-2"},
++        {"visible_token": "0", "device_index": 0, "gpu_uuid": "GPU-0"},
++    ]
++    assert state == {"init": 1, "shutdown": 1}

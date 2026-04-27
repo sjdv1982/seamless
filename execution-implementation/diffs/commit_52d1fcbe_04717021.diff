@@ -1,0 +1,60 @@
+commit 52d1fcbef79e456c9860ad206c4c230bebc175b0
+Author: Sjoerd de Vries <sjdv1982@gmail.com>
+Date:   Mon Apr 27 10:22:48 2026 +0200
+
+    Include buffer sizes in Dask records
+
+diff --git a/seamless_dask/client.py b/seamless_dask/client.py
+index ddd1804..d51fec2 100644
+--- a/seamless_dask/client.py
++++ b/seamless_dask/client.py
+@@ -447,6 +447,7 @@ async def _promise_and_write_result_async(
+                 from seamless_transformer.transformation_cache import (
+                     build_compilation_context_checksum,
+                     build_execution_record,
++                    compute_record_io_bytes,
+                     load_bucket_contract_violations,
+                 )
+                 from seamless_transformer.probe_index import (
+@@ -470,6 +471,11 @@ async def _promise_and_write_result_async(
+                         dict(transformation_dict or {}),
+                         dict(tf_dunder or {}),
+                     )
++                    input_total_bytes, output_total_bytes = (
++                        await compute_record_io_bytes(
++                            dict(transformation_dict or {}), result_checksum
++                        )
++                    )
+                     record = build_execution_record(
+                         dict(transformation_dict or {}),
+                         tf_checksum=tf_checksum,
+@@ -485,6 +491,8 @@ async def _promise_and_write_result_async(
+                         bucket_contract_violations=bucket_contract_violations,
+                         compilation_context=compilation_context,
+                     )
++                    record["input_total_bytes"] = input_total_bytes
++                    record["output_total_bytes"] = output_total_bytes
+                     record["execution_envelope"]["scratch"] = bool(scratch)
+                     await database_remote.set_execution_record(
+                         tf_checksum, result_checksum, record
+diff --git a/tests/test_execution_records.py b/tests/test_execution_records.py
+index 2109a2f..de0bd1c 100644
+--- a/tests/test_execution_records.py
++++ b/tests/test_execution_records.py
+@@ -202,6 +202,9 @@ def test_promise_and_write_result_writes_execution_record(monkeypatch):
+         "queue_node.contract",
+     ]
+     assert record["freshness"] == probe_context
++    assert record["input_total_bytes"] == 0
++    assert isinstance(record["output_total_bytes"], int)
++    assert record["output_total_bytes"] > 0
+     assert record["execution_envelope"]["scratch"] is False
+ 
+ 
+@@ -294,3 +297,6 @@ def test_compiled_dask_record_writes_compilation_context(monkeypatch):
+ 
+     record = fake_database_remote.execution_records[0][2]
+     assert record["compilation_context"] == compilation_context
++    assert record["input_total_bytes"] == 0
++    assert isinstance(record["output_total_bytes"], int)
++    assert record["output_total_bytes"] > 0

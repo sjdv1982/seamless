@@ -1,0 +1,31 @@
+commit 7bec5102f1c065b597d991e801eff3f6b593bbd5
+Author: Sjoerd de Vries <sjdv1982@gmail.com>
+Date:   Mon Apr 27 10:54:47 2026 +0200
+
+    Return compilation times from jobserver
+
+diff --git a/jobserver.py b/jobserver.py
+index 23f691f..236476f 100644
+--- a/jobserver.py
++++ b/jobserver.py
+@@ -362,6 +362,7 @@ class JobServer:
+         if get_record() and not is_record_probe(transformation_dict, tf_dunder):
+             from seamless_transformer.transformation_cache import (
+                 build_compilation_context_checksum,
++                collect_compilation_runtime_metadata,
+                 collect_job_validation,
+             )
+ 
+@@ -379,6 +380,12 @@ class JobServer:
+                 tf_dunder,
+                 compilation_context=compilation_context,
+             )
++            record_runtime.update(
++                await collect_compilation_runtime_metadata(
++                    transformation_dict,
++                    tf_dunder,
++                )
++            )
+             response_payload = json.dumps(
+                 {
+                     "result_checksum": result_checksum.hex(),

@@ -1,0 +1,180 @@
+commit 7a08251018a67677f69fcbcf060ccfec97e34961
+Author: Sjoerd de Vries <sjdv1982@gmail.com>
+Date:   Sun Apr 26 20:29:06 2026 +0200
+
+    Populate execution record freshness fields
+
+diff --git a/seamless_transformer/transformation_cache.py b/seamless_transformer/transformation_cache.py
+index 6f07fdc..f472a74 100644
+--- a/seamless_transformer/transformation_cache.py
++++ b/seamless_transformer/transformation_cache.py
+@@ -15,6 +15,7 @@ import time
+ from seamless import CacheMissError, Checksum, is_worker
+ 
+ from .remote_job import RemoteJobWritten, parse_remote_job_written
++from .probe_index import ensure_record_bucket_preconditions
+ from .run import run_transformation_dict
+ from . import worker
+ from seamless_config.select import (
+@@ -97,6 +98,7 @@ def build_execution_record(
+     wall_time_seconds: float,
+     cpu_user_seconds: float,
+     cpu_system_seconds: float,
++    probe_context: dict[str, Any] | None = None,
+ ) -> dict[str, Any]:
+     meta = transformation_dict.get("__meta__", {}) or {}
+     if not isinstance(meta, dict):
+@@ -131,6 +133,16 @@ def build_execution_record(
+         "resolved_env_checksum": env_checksum,
+         "active_tf_dunder_keys": sorted((tf_dunder or {}).keys()),
+     }
++    probe_context = probe_context or {}
++    required_bucket_checksums = dict(probe_context.get("required_bucket_checksums", {}))
++    freshness = {
++        "required_bucket_labels": dict(
++            probe_context.get("required_bucket_labels", {})
++        ),
++        "required_bucket_checksums": required_bucket_checksums,
++        "live_tokens": dict(probe_context.get("live_tokens", {})),
++        "bucket_tokens": dict(probe_context.get("bucket_tokens", {})),
++    }
+ 
+     return {
+         "schema_version": 1,
+@@ -148,19 +160,14 @@ def build_execution_record(
+         "seamless_version": _SEAMLESS_VERSION,
+         "execution_mode": execution,
+         "remote_target": remote_target,
+-        "node": None,
+-        "environment": env_checksum,
+-        "node_env": None,
+-        "queue": None,
+-        "queue_node": None,
++        "node": required_bucket_checksums.get("node"),
++        "environment": required_bucket_checksums.get("environment"),
++        "node_env": required_bucket_checksums.get("node_env"),
++        "queue": required_bucket_checksums.get("queue"),
++        "queue_node": required_bucket_checksums.get("queue_node"),
+         "execution_envelope": execution_envelope,
+         "compilation_context": None,
+-        "freshness": {
+-            "required_bucket_labels": [],
+-            "required_bucket_checksums": {},
+-            "live_tokens": {},
+-            "bucket_tokens": {},
+-        },
++        "freshness": freshness,
+         "bucket_contract_violations": [],
+         "job_contract_violations": [],
+         "contract_violations": [],
+@@ -304,6 +311,7 @@ class TransformationCache:
+         )
+         if isinstance(meta, dict) and meta.get("local") is True:
+             execution = "process"
++        remote_target = _resolve_remote_target(execution)
+         if record_mode:
+             if database_remote is None or not database_remote.has_write_server():
+                 raise RuntimeError(
+@@ -428,6 +436,13 @@ class TransformationCache:
+                 tf_checksum, result_checksum
+             )
+             if record_mode:
++                probe_context = None
++                if execution != "remote" or remote_target != "jobserver":
++                    probe_context = await ensure_record_bucket_preconditions(
++                        transformation_dict,
++                        tf_dunder,
++                        execution=execution,
++                    )
+                 record = build_execution_record(
+                     transformation_dict,
+                     tf_checksum=tf_checksum,
+@@ -439,6 +454,7 @@ class TransformationCache:
+                     wall_time_seconds=wall_time_seconds,
+                     cpu_user_seconds=cpu_user_seconds,
+                     cpu_system_seconds=cpu_system_seconds,
++                    probe_context=probe_context,
+                 )
+                 record["execution_envelope"]["scratch"] = bool(scratch)
+                 await database_remote.set_execution_record(
+diff --git a/tests/test_execution_records.py b/tests/test_execution_records.py
+index 8194ac5..a4b9a57 100644
+--- a/tests/test_execution_records.py
++++ b/tests/test_execution_records.py
+@@ -52,6 +52,34 @@ def test_record_mode_writes_execution_record(monkeypatch):
+     env_checksum = _make_checksum({"conda_environment": "seamless1"})
+     result_checksum = _make_checksum(3, "mixed")
+     tf_checksum = _make_checksum({"kind": "execution-record-test"})
++    probe_context = {
++        "required_bucket_labels": {
++            "node": "worker-1",
++            "environment": "conda:/envs/seamless1",
++            "node_env": "a" * 64 + ":" + "b" * 64,
++        },
++        "required_bucket_checksums": {
++            "node": "a" * 64,
++            "environment": "b" * 64,
++            "node_env": "c" * 64,
++        },
++        "live_tokens": {
++            "node": {"hostname": "worker-1", "boot_id": "boot-1"},
++            "environment": {"sys_prefix": "/envs/seamless1"},
++            "node_env": {
++                "node": {"hostname": "worker-1", "boot_id": "boot-1"},
++                "environment": {"sys_prefix": "/envs/seamless1"},
++            },
++        },
++        "bucket_tokens": {
++            "node": {"hostname": "worker-1", "boot_id": "boot-1"},
++            "environment": {"sys_prefix": "/envs/seamless1"},
++            "node_env": {
++                "node": {"hostname": "worker-1", "boot_id": "boot-1"},
++                "environment": {"sys_prefix": "/envs/seamless1"},
++            },
++        },
++    }
+ 
+     def _fake_run_transformation_dict(
+         transformation_dict,
+@@ -76,6 +104,11 @@ def test_record_mode_writes_execution_record(monkeypatch):
+     monkeypatch.setattr(transformation_cache, "get_selected_cluster", lambda: None)
+     monkeypatch.setattr(transformation_cache, "get_queue", lambda cluster=None: None)
+     monkeypatch.setattr(transformation_cache, "get_node", lambda: None)
++    monkeypatch.setattr(
++        transformation_cache,
++        "ensure_record_bucket_preconditions",
++        lambda *args, **kwargs: asyncio.sleep(0, result=probe_context),
++    )
+     monkeypatch.setattr(
+         transformation_cache, "run_transformation_dict", _fake_run_transformation_dict
+     )
+@@ -104,11 +137,16 @@ def test_record_mode_writes_execution_record(monkeypatch):
+     assert record["tf_checksum"] == tf_checksum.hex()
+     assert record["result_checksum"] == result_checksum.hex()
+     assert record["execution_mode"] == "process"
+-    assert record["environment"] == env_checksum.hex()
++    assert record["node"] == "a" * 64
++    assert record["environment"] == "b" * 64
++    assert record["node_env"] == "c" * 64
++    assert record["queue"] is None
++    assert record["queue_node"] is None
+     assert record["execution_envelope"]["language_kind"] == "python"
+     assert record["execution_envelope"]["scratch"] is False
+     assert record["execution_envelope"]["resolved_env_checksum"] == env_checksum.hex()
+     assert record["execution_envelope"]["active_tf_dunder_keys"] == ["__env__"]
++    assert record["freshness"] == probe_context
+     assert record["hostname"]
+     assert isinstance(record["worker_execution_index"], int)
+ 
+@@ -126,6 +164,11 @@ def test_record_mode_requires_database_write_server(monkeypatch):
+     )
+     monkeypatch.setattr(transformation_cache, "get_execution", lambda: "process")
+     monkeypatch.setattr(transformation_cache, "get_record", lambda: True)
++    monkeypatch.setattr(
++        transformation_cache,
++        "ensure_record_bucket_preconditions",
++        lambda *args, **kwargs: asyncio.sleep(0, result=None),
++    )
+ 
+     with pytest.raises(
+         RuntimeError, match="Record mode requires an active database write server"
