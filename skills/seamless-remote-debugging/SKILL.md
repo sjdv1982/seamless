@@ -14,6 +14,41 @@ Seamless remote clients talk to separate server processes (hashserver, database,
 
 When you see a remote failure related to connection or resource retrieval, **dig up the server-side logs** before attempting any fix. The logs will tell you whether the error originates on the server, which changes the diagnosis entirely.
 
+## SSH Guard and Helper Commands
+
+`remote-http-launcher` installs a set of helper commands (`rhl-*`) on the remote server. When the SSH guard is configured, **only these helpers and the specific command patterns sent by the launcher itself are permitted** — naked shell commands like `pkill`, `rm`, or `kill` are rejected.
+
+### Guard installation
+
+On the remote server, add to `~/.ssh/authorized_keys`:
+```
+command="rhl-guard" ssh-rsa AAAA... your-key-comment
+```
+
+`rhl-guard` reads `ssh_guard/tools.yaml` (bundled with `remote-http-launcher`) to determine which service binaries are allowed inside launcher scripts. Override with `RHL_TOOLS_YAML=/path/to/tools.yaml` if needed.
+
+### First-time conda setup (guarded servers only)
+
+Run once per remote server after installing the guard (conda discovery is cached so the launcher never sends raw probe commands):
+```bash
+ssh <ssh_hostname> rhl-cache-conda
+```
+Re-run if the conda environment changes. This is a no-op on servers without a guard.
+
+### Quick reference: rhl-* helpers
+
+| Command | What it does |
+|---------|-------------|
+| `rhl-cat-log <key>` | Print the service log |
+| `rhl-cat-json <key>` | Pretty-print the service state JSON (PID, port, status) |
+| `rhl-ls-services [--client]` | List service keys (server-side by default) |
+| `rhl-kill-service <key>` | SIGHUP the service PID and remove its state JSON |
+| `rhl-rm-state <key> [--client] [--server]` | Remove state JSON(s); default: both |
+| `rhl-restart-cluster <cluster>` | Kill all services for a cluster and clean up |
+| `rhl-clear-buffer <path>` | Remove files inside a buffer directory |
+| `rhl-clear-db <path>` | Remove `seamless.db` from a database directory |
+| `rhl-cache-conda` | Prime the conda discovery cache |
+
 ## The Service Topology
 
 A single Seamless test can exercise code across multiple repos and multiple processes on multiple machines. Understanding this topology is the first step in any debugging session.
@@ -119,19 +154,24 @@ To determine the actual key for your situation:
 ~/.remote-http-launcher/client/{key}.json    # hostname, port (connection info)
 ```
 
-You can also discover keys empirically by listing the files:
+You can also discover keys empirically using the helper commands:
 ```bash
-ls ~/.remote-http-launcher/client/           # local — shows all known connections
-ssh FRONTEND ls ~/.remote-http-launcher/server/  # remote — shows all running services
+rhl-ls-services --client          # local — shows all known connections
+ssh FRONTEND rhl-ls-services      # remote — shows all running services
 ```
 
 ### How to read server logs
 
-**For a local cluster**: logs are directly at `~/.remote-http-launcher/server/{key}.log`.
-
-**For a remote cluster**: the logs live on the frontend host. SSH to read them:
+**For a local cluster**:
 ```bash
-ssh <ssh_hostname> cat ~/.remote-http-launcher/server/{key}.log
+rhl-cat-log <key>
+rhl-cat-json <key>    # PID, port, status
+```
+
+**For a remote cluster**: the logs live on the frontend host:
+```bash
+ssh <ssh_hostname> rhl-cat-log <key>
+ssh <ssh_hostname> rhl-cat-json <key>
 ```
 
 The `ssh_hostname` to use is in the cluster YAML (under `frontends[].ssh_hostname`, falling back to `frontends[].hostname` if not set). The cluster YAML is at `~/.seamless/clusters/{clustername}.yaml` or defined inline in `~/.seamless/clusters.yaml`.
@@ -162,14 +202,15 @@ Read `~/.remote-http-launcher/server/{key}.json` (on the host running the servic
 
 To fully restart a service:
 
-**1. Kill the server process**:
+**1. Kill the server process and clean its state file**:
 ```bash
-# For a local cluster:
-kill -1 <pid>                          # PID from the server JSON
-
 # For a remote cluster:
-ssh <ssh_hostname> kill -1 <pid>
+ssh <ssh_hostname> rhl-kill-service <key>
+
+# For a local cluster (same machine):
+rhl-kill-service <key>
 ```
+`rhl-kill-service` reads the PID from the server JSON, sends SIGHUP, and removes the JSON file in one step.
 
 **2. Kill any SSH tunnel** (locally):
 If the cluster uses tunneling (`tunnel: true` in cluster YAML), there will be an SSH tunnel process forwarding a local port to the remote service port. Find and kill it:
@@ -181,15 +222,10 @@ ps aux | grep "ssh.*-N.*<ssh_hostname>"
 ```
 Killing stale tunnels avoids port conflicts on reconnection.
 
-**3. Clean up state files** (optional but recommended):
-Removing the JSON files is not strictly required — `remote-http-launcher` is tolerant of stale state — but it avoids slowdowns from stale-state detection on the next launch:
+**3. Clean up client state** (optional but recommended):
 ```bash
-# Local client state
-rm ~/.remote-http-launcher/client/{key}.json
-
-# Server state (remote or local depending on cluster)
-ssh <ssh_hostname> rm ~/.remote-http-launcher/server/{key}.json   # remote
-rm ~/.remote-http-launcher/server/{key}.json                      # local
+# Local client state (always local, no SSH needed)
+rhl-rm-state --client <key>
 ```
 
 **4. Re-run the test** — `remote-http-launcher` will re-launch the service automatically.
@@ -197,15 +233,11 @@ rm ~/.remote-http-launcher/server/{key}.json                      # local
 ### Bulk restart (all services for a cluster)
 
 ```bash
-# Locally — remove client state for a given cluster
-rm ~/.remote-http-launcher/client/*-MYCLUSTER-*.json
+# Kill and clean server state for all services in a cluster (on the frontend)
+ssh <ssh_hostname> rhl-restart-cluster <CLUSTERNAME>
 
-# On the frontend — kill all Seamless-launched processes and clean state
-ssh <ssh_hostname> 'for f in ~/.remote-http-launcher/server/*-MYCLUSTER-*.json; do
-  pid=$(python3 -c "import json; print(json.load(open(\"$f\"))[\"pid\"])")
-  kill -1 $pid 2>/dev/null
-  rm "$f"
-done'
+# Remove local client state for the same cluster
+rhl-ls-services --client | grep -- -<CLUSTERNAME>- | xargs -I{} rhl-rm-state --client {}
 ```
 
 ## Clearing Cache to Prevent False Passes
@@ -244,11 +276,15 @@ There are two caches, both must be cleared for a true re-execution:
 # On the host running the services (SSH for remote, direct for local):
 
 # Clear database
-rm <database_dir>/<project>/seamless.db
+ssh <ssh_hostname> rhl-clear-db <database_dir>/<project>/<stage>      # remote
+rhl-clear-db <database_dir>/<project>/<stage>                          # local
 
-# Clear buffers — be careful, this deletes all cached data for this project
-rm -rf <bufferdir>/<project>/*
+# Clear buffers — deletes all cached data for this project/stage
+ssh <ssh_hostname> rhl-clear-buffer <bufferdir>/<project>/<stage>      # remote
+rhl-clear-buffer <bufferdir>/<project>/<stage>                         # local
 ```
+
+`rhl-clear-buffer` removes all files directly inside the given directory (the project/stage buffer tree itself is preserved). `rhl-clear-db` removes `seamless.db` from the given directory.
 
 **Always derive the actual paths from the cluster YAML for the specific cluster in use.** Do not hardcode paths — they differ per cluster, per project, and per stage.
 
