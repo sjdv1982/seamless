@@ -110,7 +110,7 @@ Add a new config command:
 
 Behavior:
 
-- `record: false` or absence of the command: do not require or write execution records.
+- `record: false` or absence of the command: write one minimal execution record per successful non-probe execution, without strict probe preconditions.
 - `record: true`: enable strict record mode.
 
 Implementation points:
@@ -599,7 +599,7 @@ Examples:
 
 ## 8.4 Freshness policy
 
-- In `record: false`, stale buckets do not matter because no record precondition is enforced.
+- In `record: false`, stale buckets do not matter because strict probe preconditions are not enforced for the minimal record path.
 - In `record: true`, stale required buckets are fatal.
 
 This is intentionally strict.
@@ -729,8 +729,10 @@ For compiled jobs, step 4 must:
 For worker-based backends, do not write the record from the deepest child blindly.
 Return a structured success payload upward containing:
 
-- result checksum
-- execution record body
+- `result_checksum`
+- `record_runtime`
+- when `record: true`, also `probe_context`, `compilation_context`, and `job_validation`
+- when remote-job materialization happens, a dedicated `remote_job_written` field instead of a bare success string
 
 Then write the record once from the managing side after successful result handling.
 
