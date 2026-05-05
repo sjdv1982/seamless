@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "seamless-suite"
-version = "1.2.0"
+version = "1.3.0"
 description = "Seamless umbrella distribution (all components by default)"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -12,15 +12,15 @@ license = "MIT"
 license-files = ["LICENSE.txt"]
 authors = [{name = "Sjoerd de Vries"}]
 dependencies = [
-    "seamless-core>=0.1.2",
+    "seamless-core>=0.1.3",
     "seamless-config>=0.2.0",
-    "seamless-remote>=0.2.0",
-    "seamless-transformer>=0.3.0",
-    "seamless-dask",
-    "seamless-jobserver>=0.1.2",
-    "seamless-database>=2.0.2",
-    "hashserver>=1.0.3",
-    "remote-http-launcher>=0.2.0",
+    "seamless-remote>=0.3.0",
+    "seamless-transformer[compiled]>=0.4.0",
+    "seamless-dask>=0.2.0",
+    "seamless-jobserver>=0.2.0",
+    "seamless-database>=2.1.0",
+    "hashserver>=1.1.0",
+    "remote-http-launcher>=0.4.1",
     "seamless-signature",
 ]
 keywords = ["seamless", "suite", "workflow", "reproducibility", "caching", "pipeline", "HPC", "deterministic", "content-addressed"]
