@@ -25,6 +25,14 @@ On the remote server, add to `~/.ssh/authorized_keys`:
 command="rhl-guard" ssh-rsa AAAA... your-key-comment
 ```
 
+You will also need to add a flag to rhl-guard to use appropriate clear policies. For Seamless usage, the simplest method is:
+
+```
+command="rhl-guard --clear-policy seamless" ssh-rsa AAAA... your-key-comment
+```
+
+
+
 `rhl-guard` reads `ssh_guard/tools.yaml` (bundled with `remote-http-launcher`) to determine which service binaries are allowed inside launcher scripts. Override with `RHL_TOOLS_YAML=/path/to/tools.yaml` if needed.
 
 ### First-time conda setup (guarded servers only)
