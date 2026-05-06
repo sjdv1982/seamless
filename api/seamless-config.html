@@ -68,6 +68,12 @@
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../sharing.html">Sharing in depth</a>
                   </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../compiled-transformers.html">Compiled transformers</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../compression.html">Compressed data</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../service-management.html">Service management</a>
+                  </li>
               </ul>
               <p class="caption"><span class="caption-text">Reference API</span></p>
               <ul class="current">
@@ -633,29 +639,20 @@ versions.</p>
 <p>Cluster-wide variants (<code>--cluster MYCLUSTER</code>) operate on every service of
 that cluster.</p>
 <h3 id="server-side-requirements">Server-side requirements</h3>
-<p><code>seamless-service-*</code> always shells out to <code>rhl-*</code> helpers — there is <strong>no
-inline fallback</strong>. The <code>rhl-*</code> binaries must be reachable over SSH for
-non-interactive, non-login sessions on every frontend you target.</p>
+<p><code>remote-http-launcher</code> must be installed on every remote server that
+<code>seamless-service-*</code> targets — it provides all <code>rhl-*</code> helpers. There is
+<strong>no inline fallback</strong> in the wrappers. Two supported install paths:</p>
 <ul>
 <li><strong>System install</strong> (with root): <code>pip install remote-http-launcher</code> into
-  the system Python; helpers land in <code>/usr/local/bin</code> and are picked up
-  for free.</li>
-<li><strong>Conda base env install</strong> (no root): install into the remote host's
-  conda base environment, then edit <code>~/.bashrc</code> so the conda activation
-  hook is reached on non-interactive shells. Many distributions ship a
-  guard like
-  <code>bash
-  case $- in
-      *i*) ;;
-        *) return;;
-  esac</code>
-  near the top of <code>~/.bashrc</code> that returns early for non-interactive
-  shells, before the conda block runs. Comment those lines out (or move
-  them after the conda hook) so <code>ssh host rhl-ps</code> finds the helper.</li>
-<li><strong>Use <code>rhl-guard</code></strong>: when the SSH key in <code>authorized_keys</code> is gated
-  by <code>command="rhl-guard …"</code>, the guard locates and exec's the helpers
-  itself; the <code>.bashrc</code> edit is unnecessary.</li>
+  the system Python; helpers land in <code>/usr/local/bin</code>.</li>
+<li><strong>Conda base env install</strong> (no root): <code>pip install remote-http-launcher</code>
+  into the remote host's conda base environment; helpers land in
+  <code>$HOME/miniforge3/bin</code> or <code>$HOME/miniconda3/bin</code>.</li>
 </ul>
+<p>No <code>.bashrc</code> edit is required for either path. <code>seamless-service-*</code>
+automatically prepends <code>$HOME/miniforge3/bin:$HOME/miniconda3/bin</code> to
+PATH on every SSH call, so conda-base installs work without any shell
+startup changes.</p>
 <p>Note: <code>remote-http-launcher</code> itself has its own fallback — it can probe
 conda configuration via inline heredocs when no <code>rhl-*</code> helpers are
 available on the host. That fallback covers only the launcher's bootstrap;

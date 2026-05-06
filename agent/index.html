@@ -75,6 +75,10 @@
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="contracts/execution-backends.html">Execution Backends</a>
                   </li>
+                  <li class="toctree-l1"><a class="reference internal" href="contracts/execution-records.html">Execution Records</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="contracts/service-management.html">Service Management</a>
+                  </li>
                   <li class="toctree-l1"><a class="reference internal" href="contracts/compression.html">Compression</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="contracts/compiled-transformers.html">Compiled Transformers</a>
@@ -160,12 +164,28 @@
 <td><code>seamless-service-resolve</code>, <code>rhl-*</code> helpers, false-pass protocol</td>
 </tr>
 <tr>
+<td><code>contracts/execution-records.md</code></td>
+<td>Per-transformation records in <code>seamless.db</code>; minimal vs full mode, write-once semantics</td>
+</tr>
+<tr>
 <td><code>contracts/direct-delayed-and-transformation.md</code></td>
 <td>Transformation model, <code>direct</code>/<code>delayed</code> decorators</td>
 </tr>
 <tr>
 <td><code>contracts/scratch-witness-audit.md</code></td>
 <td>Scratch, witness, and audit trail semantics</td>
+</tr>
+<tr>
+<td><code>contracts/compiled-transformers.md</code></td>
+<td>C/C++/Fortran/Rust + open language set; identity model and pure-function constraint</td>
+</tr>
+<tr>
+<td><code>contracts/seamless-signature-schema.md</code></td>
+<td>Schema YAML format used by compiled transformers; dtype/shape/wildcard rules</td>
+</tr>
+<tr>
+<td><code>contracts/compression.md</code></td>
+<td><code>.zst</code>/<code>.gz</code> support; canonical-checksum invariant</td>
 </tr>
 </tbody>
 </table>
@@ -217,5 +237,5 @@
 
 <!--
 MkDocs version : 1.6.1
-Build Date UTC : 2026-05-06 07:55:29.120523+00:00
+Build Date UTC : 2026-05-06 09:45:38.587198+00:00
 -->

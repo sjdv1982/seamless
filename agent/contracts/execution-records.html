@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <link rel="shortcut icon" href="../img/favicon.ico" />
+    <title>Execution Records - Seamless — Agent Documentation</title>
+    <link rel="stylesheet" href="../css/theme.css" />
+    <link rel="stylesheet" href="../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "Execution Records";
+        var mkdocs_page_input_path = "contracts/execution-records.md";
+        var mkdocs_page_url = null;
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href="../index.html" class="icon icon-home"> Seamless — Agent Documentation
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../index.html">Home</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../overview.html">Agent Docs Overview</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../repos/index.html">Workspace Repos</a>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Contracts</span></p>
+              <ul class="current">
+                  <li class="toctree-l1"><a class="reference internal" href="identity-and-caching.html">Identity and Caching</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="direct-delayed-and-transformation.html">direct/delayed/Transformation</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="modules-and-closures.html">Modules and Closures</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="scratch-witness-audit.html">Scratch/Witness/Audit</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="seamless-run-and-argtyping.html">seamless-run/Argtyping</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="cache-storage-and-limits.html">Cache Storage and Limits</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="content-addressed-files-and-dirs.html">Content-addressed Files and Dirs</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="execution-backends.html">Execution Backends</a>
+                  </li>
+                  <li class="toctree-l1 current"><a class="reference internal current" href="#">Execution Records</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#what-execution-records-are">What execution records are</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#mental-model-evidence-not-identity">Mental model: evidence, not identity</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#when-records-are-written">When records are written</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#minimal-record-body-default">Minimal record body (default)</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#full-record-body-record-true">Full record body (record: true)</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#database-protocol">Database protocol</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#remote-client-api">Remote client API</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#what-records-do-not-do">What records do not do</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#agent-guidance">Agent guidance</a>
+    </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="service-management.html">Service Management</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="compression.html">Compression</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="compiled-transformers.html">Compiled Transformers</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="seamless-signature-schema.html">seamless-signature Schema</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">API</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/python/seamless.html">seamless</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/python/seamless.transformer.html">seamless.transformer</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/python/seamless.buffer_class.html">seamless.buffer_class</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/python/seamless.checksum_class.html">seamless.checksum_class</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/python/seamless_config.select.html">seamless_config.select</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/python/seamless_config.tools.html">seamless_config.tools</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/python/seamless_transformer.transformation_class.html">seamless_transformer.transformation_class</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/python/seamless_transformer.transformer_class.html">seamless_transformer.transformer_class</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">CLI</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/cli/seamless-run.html">seamless-run</a>
+                  </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Seamless — Agent Documentation</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../index.html" class="icon icon-home" aria-label="Docs"></a></li>
+          <li class="breadcrumb-item">Contracts</li>
+      <li class="breadcrumb-item active">Execution Records</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h1 id="execution-records-contract">Execution Records (Contract)</h1>
+<p>This page defines the agent-facing behavior of execution records: structured metadata that <code>seamless-database</code> stores for every successful, non-probe transformation.</p>
+<h2 id="what-execution-records-are">What execution records are</h2>
+<p>An execution record is a JSON body stored in the <code>MetaData</code> table of <code>seamless.db</code>, keyed by <code>tf_checksum</code>. It captures <strong>what ran, where, and how it performed</strong> — not the result itself, which lives in the normal <code>Transformation</code> cache. Records are <em>write-once per <code>tf_checksum</code></em>: once a successful execution writes a row, subsequent calls hit the normal cache and never re-enter the record path.</p>
+<p>Records exist for three concrete reasons:</p>
+<ol>
+<li><strong>Cache lifecycle decisions.</strong> Resource cost (CPU time, memory peak) feeds eviction policy.</li>
+<li><strong>Fingertipping diagnosis.</strong> When fingertipping fails or a result migrates to <code>IrreproducibleTransformation</code>, the record is the breadcrumb back to the original execution context.</li>
+<li><strong>Trust under sharing.</strong> When <code>seamless.db</code> is shared, the record lets a recipient inspect <em>in what context was this result produced</em> without trusting the publisher unconditionally.</li>
+</ol>
+<p>Records are <strong>not consulted for cache hits</strong> in normal operation. They are evidence preserved across the moment of execution.</p>
+<h2 id="mental-model-evidence-not-identity">Mental model: evidence, not identity</h2>
+<p>Seamless is a <strong>referential-transparency system, not a database-integrity system</strong>. The cache contract is "same <code>tf_checksum</code> ⇒ same result"; the cache key is the <code>tf_checksum</code>, and the determinant of identity for a transformation is its declared inputs and code, not its execution context.</p>
+<p>Execution records are <strong>evidence about the envelope</strong>, not part of the identity. They exist to make the optimistic null hypothesis (that scientifically meaningful results are invariant under environment variation) falsifiable later. Concretely:</p>
+<ul>
+<li>A metadata conflict is <strong>not</strong> automatically a cache-identity conflict. If two parties have the same <code>tf_checksum</code> and same <code>result_checksum</code> but different metadata bodies, that is <strong>evidence disagreement about the execution envelope</strong> — informative for audit, but it does not invalidate the cached result.</li>
+<li>A <code>result_checksum</code> mismatch for the same <code>tf_checksum</code>, on the other hand, <em>is</em> a referential-transparency violation. That is what <code>IrreproducibleTransformation</code> is for; metadata travels with the result on migration.</li>
+<li>During fingertipping, the goal is to <em>rematerialize</em> a checksum, not to author a new canonical execution record. Fingertip retries do not displace the original record.</li>
+</ul>
+<p>Treat records as a forensic substrate for human or agent investigators when something has gone wrong; do not treat them as a query target or a synchronization point in the normal cache path.</p>
+<h2 id="when-records-are-written">When records are written</h2>
+<table>
+<thead>
+<tr>
+<th>Trigger</th>
+<th>Record?</th>
+<th>Mode</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Successful, non-probe execution</td>
+<td>Yes (always)</td>
+<td><code>record: false</code> → minimal; <code>record: true</code> → full</td>
+</tr>
+<tr>
+<td>Probe execution</td>
+<td>No</td>
+<td>—</td>
+</tr>
+<tr>
+<td>Failed execution</td>
+<td>No</td>
+<td>—</td>
+</tr>
+<tr>
+<td>Cache hit on <code>Transformation</code></td>
+<td>No</td>
+<td>—</td>
+</tr>
+<tr>
+<td>Already-recorded <code>tf_checksum</code></td>
+<td>No (idempotent)</td>
+<td>identical body → success; differing body → reject</td>
+</tr>
+</tbody>
+</table>
+<p>The <code>record</code> boolean is a <code>seamless-config</code> command (<code>- record: true</code> in <code>seamless.profile.yaml</code>, or <code>seamless.config.select_record(True)</code>). It defaults to <code>false</code>, meaning the <strong>minimal</strong> record is persisted by default. The <code>record: true</code> opt-in adds the full payload.</p>
+<p>A successful execution writes <strong>exactly one record</strong> — never minimal first then full. The runtime honors the active <code>record</code> mode at the moment the call completes.</p>
+<p>Capture is <strong>worker-side</strong>: the record describes the environment in which the transformation actually ran (jobserver worker, Dask worker, spawn child, or local process), not where it was submitted. This is enforced across all backends — <code>process</code>, <code>spawn</code>, <code>remote: jobserver</code>, <code>remote: daskserver</code>.</p>
+<h2 id="minimal-record-body-default">Minimal record body (default)</h2>
+<p>The minimal record contains exactly:</p>
+<pre><code class="language-json">{
+  &quot;schema_version&quot;: 1,
+  &quot;tf_checksum&quot;: &quot;&lt;hex&gt;&quot;,
+  &quot;result_checksum&quot;: &quot;&lt;hex&gt;&quot;,
+  &quot;seamless_version&quot;: &quot;&lt;string&gt;&quot;,
+  &quot;execution_mode&quot;: &quot;process | spawn | remote&quot;,
+  &quot;remote_target&quot;: null | &quot;jobserver&quot; | &quot;daskserver&quot;,
+  &quot;wall_time_seconds&quot;: &lt;float&gt;,
+  &quot;cpu_time_user_seconds&quot;: &lt;float&gt;,
+  &quot;cpu_time_system_seconds&quot;: &lt;float&gt;,
+  &quot;memory_peak_bytes&quot;: &lt;int|null&gt;,
+  &quot;gpu_memory_peak_bytes&quot;: &lt;int|null&gt;
+}
+</code></pre>
+<p>No environment fingerprint, no compilation context, no validation snapshot, no per-job freshness. The hot path pays only timing/memory capture and one database write.</p>
+<h2 id="full-record-body-record-true">Full record body (<code>record: true</code>)</h2>
+<p>The full record extends the minimal body with:</p>
+<ul>
+<li><strong>Environment signature</strong> (content-addressed checksums to sub-buffers):</li>
+<li><code>node</code> — stable physical properties (CPU, RAM, GPU, OS, kernel, container)</li>
+<li><code>environment</code> — Python packages + conda env dump + numerics runtime config (BLAS, thread pools, relevant env vars)</li>
+<li><code>node_env</code> — per-node environment binding</li>
+<li><code>queue</code> / <code>queue_node</code> — scheduler/queue context</li>
+<li><strong>Compilation context</strong> (<code>compilation_context</code>) — checksum to a buffer recording compiler versions, flags, headers, and linked objects. Only for compiled transformers; cached by compiled-module digest.</li>
+<li><strong>Validation snapshot</strong> (<code>validation_snapshot</code>) — checksum to a buffer recording pre-execution validation state.</li>
+<li><strong>Execution envelope</strong> — requested cluster/queue/node, language kind, scratch/fingertip flags, resolved <code>__env__</code> checksum, active dunder-key set.</li>
+<li><strong>Freshness</strong> — required bucket labels/checksums, live tokens, bucket tokens.</li>
+<li><strong>Contract violations</strong> — <code>bucket_contract_violations</code>, <code>job_contract_violations</code>, <code>contract_violations</code> (e.g., <code>native_link_outside_conda_prefix</code> for compiled transformers linking outside the conda prefix).</li>
+<li><strong>Per-run diagnostics</strong> — <code>started_at</code>, <code>finished_at</code>, <code>hostname</code>, <code>pid</code>, <code>process_started_at</code>, <code>process_create_time_epoch</code>, <code>worker_execution_index</code>, <code>compilation_time_seconds</code>, retry counts.</li>
+</ul>
+<p>The <code>checksum_fields</code> list at the top of the record names which fields hold checksum pointers to content-addressed sub-buffers (currently <code>node</code>, <code>environment</code>, <code>node_env</code>, <code>queue</code>, <code>queue_node</code>, <code>compilation_context</code>, <code>validation_snapshot</code>).</p>
+<h2 id="database-protocol">Database protocol</h2>
+<ul>
+<li><strong>Protocol version: 2.1</strong></li>
+<li><strong><code>PUT metadata</code></strong> (request type): atomically creates <code>Transformation</code>, <code>RevTransformation</code>, and <code>MetaData</code> when missing. Validates identity (<code>tf_checksum</code> matches request, <code>result_checksum</code> matches request, <code>schema_version</code> integer, <code>checksum_fields</code> format if present). Identical duplicate is idempotent success; differing duplicate or result mismatch is rejected.</li>
+<li><strong><code>GET metadata</code></strong>: returns the canonical record body for a <code>tf_checksum</code>.</li>
+<li><strong><code>GET irreproducible</code></strong>: returns all rows for a <code>tf_checksum</code> (optionally filtered by <code>result</code>), each carrying <code>checksum</code>, <code>result</code>, and <code>metadata</code>.</li>
+<li><strong><code>PUT irreproducible</code></strong>: moves a normal entry into <code>IrreproducibleTransformation</code>, preserving the metadata body unchanged.</li>
+<li>Once <code>IrreproducibleTransformation</code> rows exist for a <code>tf_checksum</code>, <code>PUT metadata</code> for that checksum is <strong>rejected</strong> to avoid silently migrating it back.</li>
+</ul>
+<p>Schema upgrade: a fresh database creates the upgraded <code>meta_data</code> table directly. An empty legacy two-column table is dropped and recreated. A non-empty legacy table fails loudly (it must be migrated explicitly).</p>
+<h2 id="remote-client-api">Remote client API</h2>
+<p><code>seamless-remote/seamless_remote/database_client.py</code> and <code>database_remote.py</code> expose:</p>
+<ul>
+<li><code>set_execution_record(tf_checksum, result_checksum, record)</code> — write a record.</li>
+<li><code>get_execution_record(tf_checksum)</code> — read a record.</li>
+<li><code>get_irreproducible_records(tf_checksum, result_checksum=None)</code> — read irreproducible rows.</li>
+</ul>
+<p>Worker-side payloads carrying the record back from jobserver/daskserver are <strong>structured</strong> (typed dicts); the remote client tolerates legacy string responses for backwards compatibility but new code should expect structured payloads.</p>
+<h2 id="what-records-do-not-do">What records do not do</h2>
+<ul>
+<li>They are <strong>not a query target</strong>. Records are not indexed for reverse lookups (<code>find all rows with environment = X</code>); the database stores them as JSON blobs. Audit tooling consumes whole records, not selective columns.</li>
+<li>They are <strong>not a sharing redaction layer</strong>. Hostnames and timestamps stay in the record body; whether to redact on export is a per-share operator decision, not a schema column.</li>
+<li>They are <strong>not produced for failed executions</strong>. Failed jobs do not create durable reusable identities; they may be tracked elsewhere but not in <code>MetaData</code>.</li>
+<li>They are <strong>not the sole source of "how to run"</strong>. Execution-only dunder values (<code>__env__</code>, <code>__compilation__</code>, <code>__schema__</code>, <code>__header__</code>, …) needed to rerun or audit a transformation are stored by the transformation/replay substrate, not solely in the record.</li>
+</ul>
+<h2 id="agent-guidance">Agent guidance</h2>
+<ul>
+<li><strong>Default to minimal records.</strong> Do not enable <code>record: true</code> unless the user is explicitly debugging reproducibility, auditing, or measuring environment drift. The full record adds significant per-execution overhead.</li>
+<li><strong>Records describe the worker environment.</strong> When a record's <code>hostname</code> differs from the submitter's host, that is correct, not a bug.</li>
+<li><strong>Records are write-once per <code>tf_checksum</code>.</strong> Re-running a transformation that already has a record is a cache hit; the record is not refreshed. To force a fresh record, the underlying inputs must change (different <code>tf_checksum</code>).</li>
+<li><strong>Don't conflate metadata conflicts with cache-identity conflicts.</strong> A metadata difference for the same <code>(tf_checksum, result_checksum)</code> pair is evidence disagreement about the envelope — interesting for audit, but not a referential-transparency violation. Only a differing <code>result_checksum</code> for the same <code>tf_checksum</code> indicates a real reproducibility problem (and that path goes through <code>IrreproducibleTransformation</code>, not metadata rejection).</li>
+<li><strong>Fingertipping retries do not author new records.</strong> Fingertipping rematerializes a checksum; it does not displace the original record or trigger a new write.</li>
+<li><strong>For compiled transformers</strong>, the full record's <code>compilation_context</code> is cached by compiled-module digest — repeated builds of the same source produce the same context checksum without re-invoking compiler-version subprocesses.</li>
+<li><strong>Strict-mode failures</strong>: under <code>record: true</code>, record-write failures propagate. Under <code>record: false</code>, minimal-record write failures are best-effort for narrow transport/storage errors and emit a warning; programmer errors and <code>RecordBucketError</code> always propagate.</li>
+</ul>
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="execution-backends.html" class="btn btn-neutral float-left" title="Execution Backends"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="service-management.html" class="btn btn-neutral float-right" title="Service Management">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+    
+      <span><a href="execution-backends.html" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="service-management.html" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script src="../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "..";</script>
+    <script src="../js/theme_extra.js"></script>
+    <script src="../js/theme.js"></script>
+      <script src="../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>

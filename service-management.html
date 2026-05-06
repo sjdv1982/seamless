@@ -53,7 +53,7 @@
                   </li>
               </ul>
               <p class="caption"><span class="caption-text">How-To Guides</span></p>
-              <ul>
+              <ul class="current">
                   <li class="toctree-l1"><a class="reference internal" href="caching.html">Caching, identity, and sharing</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="composition.html">Composition</a>
@@ -67,6 +67,32 @@
                   <li class="toctree-l1"><a class="reference internal" href="remote-launch.html">Remote job launching</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="sharing.html">Sharing in depth</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="compiled-transformers.html">Compiled transformers</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="compression.html">Compressed data</a>
+                  </li>
+                  <li class="toctree-l1 current"><a class="reference internal current" href="#">Service management</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#two-layer-design">Two-layer design</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#viewing-service-state-seamless-service-ps">Viewing service state: seamless-service-ps</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#stopping-and-restarting-services">Stopping and restarting services</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#reading-logs">Reading logs</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#inspecting-service-state-json">Inspecting service state JSON</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#clearing-cached-data">Clearing cached data</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#debugging-false-pass-test-results">Debugging false-pass test results</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#service-lifecycle-reference">Service lifecycle reference</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#server-side-install-requirements">Server-side install requirements</a>
+    </li>
+    </ul>
                   </li>
               </ul>
               <p class="caption"><span class="caption-text">Reference API</span></p>
@@ -130,6 +156,7 @@
         <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
   <ul class="wy-breadcrumbs">
     <li><a href="index.html" class="icon icon-home" aria-label="Docs"></a></li>
+          <li class="breadcrumb-item">How-To Guides</li>
       <li class="breadcrumb-item active">Service management</li>
     <li class="wy-breadcrumbs-aside">
     </li>
@@ -315,9 +342,34 @@ seamless-service-clear --service database  --project myproject
 </table>
 <p>For the full <code>rhl-*</code> helper reference and the JSON state file schema, see the
 <a href="https://github.com/sjdv1982/remote-http-launcher">remote-http-launcher README</a>.</p>
+<hr />
+<h2 id="server-side-install-requirements">Server-side install requirements</h2>
+<p><code>seamless-service-*</code> always shells out to the <code>rhl-*</code> helpers — the
+wrappers do <strong>not</strong> carry an inline fallback. <code>remote-http-launcher</code> must
+be installed on every remote server that <code>seamless-service-*</code> targets; it
+provides all <code>rhl-*</code> helpers. Two supported server-side install paths:</p>
+<ul>
+<li><strong>System install</strong> (root required): <code>pip install remote-http-launcher</code>
+  into the system Python. Helpers land in <code>/usr/local/bin</code>.</li>
+<li><strong>Conda base env install</strong> (no root): <code>pip install remote-http-launcher</code>
+  into the remote host's conda base environment. Helpers land in
+  <code>$HOME/miniforge3/bin</code> or <code>$HOME/miniconda3/bin</code>.</li>
+</ul>
+<p>No <code>.bashrc</code> edit is required for either path. <code>seamless-service-*</code>
+automatically prepends <code>$HOME/miniforge3/bin:$HOME/miniconda3/bin</code> to
+PATH on every SSH call, so conda-base installs work without any shell
+startup changes.</p>
+<p><code>remote-http-launcher</code>'s own conda-discovery fallback (inline heredoc
+probes) covers only the launcher's bootstrap. It does not extend to
+<code>seamless-service-*</code>, agents calling <code>rhl-*</code> over SSH, or any other
+tooling that depends on the helpers.</p>
               
             </div>
           </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="compression.html" class="btn btn-neutral float-left" title="Compressed data"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="api/index.html" class="btn btn-neutral float-right" title="Overview">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
 
   <hr/>
 
@@ -339,6 +391,10 @@ seamless-service-clear --service database  --project myproject
   <span class="rst-current-version" data-toggle="rst-current-version">
     
     
+      <span><a href="compression.html" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="api/index.html" style="color: #fcfcfc">Next &raquo;</a></span>
     
   </span>
 </div>

@@ -5,14 +5,14 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
       <link rel="shortcut icon" href="../img/favicon.ico" />
-    <title>Service Management (Contract) - Seamless — Agent Documentation</title>
+    <title>Service Management - Seamless — Agent Documentation</title>
     <link rel="stylesheet" href="../css/theme.css" />
     <link rel="stylesheet" href="../css/theme_extra.css" />
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
     
       <script>
         // Current page data
-        var mkdocs_page_name = "Service Management (Contract)";
+        var mkdocs_page_name = "Service Management";
         var mkdocs_page_input_path = "contracts/service-management.md";
         var mkdocs_page_url = null;
       </script>
@@ -52,7 +52,7 @@
                 </li>
               </ul>
               <p class="caption"><span class="caption-text">Contracts</span></p>
-              <ul>
+              <ul class="current">
                   <li class="toctree-l1"><a class="reference internal" href="identity-and-caching.html">Identity and Caching</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="direct-delayed-and-transformation.html">direct/delayed/Transformation</a>
@@ -68,6 +68,34 @@
                   <li class="toctree-l1"><a class="reference internal" href="content-addressed-files-and-dirs.html">Content-addressed Files and Dirs</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="execution-backends.html">Execution Backends</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="execution-records.html">Execution Records</a>
+                  </li>
+                  <li class="toctree-l1 current"><a class="reference internal current" href="#">Service Management</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#two-layer-model">Two-layer model</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#seamless-service-resolve-extractor-contract">seamless-service-resolve: extractor contract</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#agent-mode-no-cwd-defaults">Agent mode (no cwd defaults)</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#agent-workflow">Agent workflow</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#key-rhl-commands-for-agents">Key rhl-* commands for agents</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#false-pass-identification">False-pass identification</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#server-side-requirements">Server-side requirements</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#rhl-install-paths">rhl-* install paths</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#client-contract-path-prepend-for-every-rhl-ssh-call">Client contract: PATH prepend for every rhl-* SSH call</a>
+    </li>
+        </ul>
+    </li>
+    </ul>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="compression.html">Compression</a>
                   </li>
@@ -114,7 +142,8 @@
         <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
   <ul class="wy-breadcrumbs">
     <li><a href="../index.html" class="icon icon-home" aria-label="Docs"></a></li>
-      <li class="breadcrumb-item active">Service Management (Contract)</li>
+          <li class="breadcrumb-item">Contracts</li>
+      <li class="breadcrumb-item active">Service Management</li>
     <li class="wy-breadcrumbs-aside">
     </li>
   </ul>
@@ -312,18 +341,67 @@ seamless-service-clear --service database   --project myproject
 <hr />
 <h2 id="server-side-requirements">Server-side requirements</h2>
 <p>Seamless does <strong>not</strong> need to be installed on the machine running the services.
-The server needs only:</p>
+The server needs:</p>
 <ol>
 <li>The service binary (<code>hashserver</code>, <code>seamless-database</code>, etc.)</li>
-<li>Optionally: <code>remote-http-launcher</code> — required only when the SSH key in
-   <code>authorized_keys</code> is guarded by <code>rhl-guard</code></li>
+<li>The <code>rhl-*</code> helpers from <code>remote-http-launcher</code> — needed for any tooling
+   that shells out to them (the <code>seamless-service-*</code> layer, agents calling
+   <code>rhl-ps</code> / <code>rhl-stop</code> / <code>rhl-logs</code> over SSH, etc.). The helpers must be on
+   the remote <code>PATH</code> for <strong>non-interactive, non-login</strong> SSH sessions.</li>
 </ol>
 <p>Key resolution happens entirely client-side. The launcher writes the resolved
 key/workdir/host to the server. There is no server-side Seamless that could
 produce a conflicting view.</p>
+<h3 id="rhl-install-paths"><code>rhl-*</code> install paths</h3>
+<p><code>remote-http-launcher</code> must be installed on every remote server — it provides
+all <code>rhl-*</code> helpers. Two supported install paths:</p>
+<table>
+<thead>
+<tr>
+<th>Path</th>
+<th>Root needed?</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>System Python install (<code>pip install remote-http-launcher</code> → <code>/usr/local/bin</code>)</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td>Conda base env install (<code>pip install remote-http-launcher</code> into conda base → <code>$HOME/miniforge3/bin</code> or <code>$HOME/miniconda3/bin</code>)</td>
+<td>No</td>
+</tr>
+</tbody>
+</table>
+<p>No <code>.bashrc</code> edit is required for either path (see client contract below).</p>
+<h3 id="client-contract-path-prepend-for-every-rhl-ssh-call">Client contract: PATH prepend for every <code>rhl-*</code> SSH call</h3>
+<p><code>seamless-service-*</code> has <strong>no inline fallback</strong> — it always dispatches via
+<code>rhl-*</code> over SSH. To cover conda-base installs without requiring <code>.bashrc</code>
+changes, every SSH invocation of an <code>rhl-*</code> helper <strong>must</strong> prepend the known
+conda bin dirs to PATH before the command. This is what <code>_dispatch.py</code> does:</p>
+<pre><code>ssh &lt;host&gt; 'PATH=$HOME/miniforge3/bin:$HOME/miniconda3/bin:$PATH' rhl-ps --json
+</code></pre>
+<p>Agents that call <code>rhl-*</code> directly over SSH must apply the same pattern. The
+<code>$HOME</code> tokens are intentionally unquoted so the remote shell expands them to
+the remote user's home directory.</p>
+<p>If <code>rhl-guard</code> is installed (<code>command="rhl-guard ..."</code> in <code>authorized_keys</code>),
+the guard strips leading <code>VAR=value</code> assignments before its whitelist check, so
+the PATH prepend passes through transparently — no special handling required.</p>
+<p>To verify reachability before assuming the layer works:</p>
+<pre><code class="language-bash">ssh &lt;host&gt; 'PATH=$HOME/miniforge3/bin:$HOME/miniconda3/bin:$PATH' rhl-ps --json
+</code></pre>
+<p>If this still returns <code>command not found</code>, <code>remote-http-launcher</code> is not
+installed on the server — fix the server-side install first.</p>
+<p><code>remote-http-launcher</code> itself carries an inline-heredoc fallback for its own
+conda discovery. That fallback is <strong>internal to the launcher</strong>: it does not
+cover <code>seamless-service-*</code> or any other consumer of the helpers.</p>
               
             </div>
           </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="execution-records.html" class="btn btn-neutral float-left" title="Execution Records"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="compression.html" class="btn btn-neutral float-right" title="Compression">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
 
   <hr/>
 
@@ -345,6 +423,10 @@ produce a conflicting view.</p>
   <span class="rst-current-version" data-toggle="rst-current-version">
     
     
+      <span><a href="execution-records.html" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="compression.html" style="color: #fcfcfc">Next &raquo;</a></span>
     
   </span>
 </div>

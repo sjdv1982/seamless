@@ -1,5 +1,5 @@
 {
-  "generated_at": 1778054128,
+  "generated_at": 1778060738,
   "symbols": {
     "ArgsWrapper": {
       "anchor": "argswrapper",
@@ -754,6 +754,7 @@
       "contracts/content-addressed-files-and-dirs.md",
       "contracts/direct-delayed-and-transformation.md",
       "contracts/execution-backends.md",
+      "contracts/execution-records.md",
       "contracts/identity-and-caching.md",
       "contracts/modules-and-closures.md",
       "contracts/scratch-witness-audit.md",

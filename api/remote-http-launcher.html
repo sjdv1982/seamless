@@ -68,6 +68,12 @@
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../sharing.html">Sharing in depth</a>
                   </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../compiled-transformers.html">Compiled transformers</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../compression.html">Compressed data</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../service-management.html">Service management</a>
+                  </li>
               </ul>
               <p class="caption"><span class="caption-text">Reference API</span></p>
               <ul class="current">
@@ -340,6 +346,7 @@ print(result[&quot;hostname&quot;], result[&quot;port&quot;])
 <h3 id="how-it-works_1">How it works</h3>
 <p>The SSH <code>command=</code> option in <code>authorized_keys</code> forces every incoming SSH session through <code>rhl-guard</code>. The guard reads <code>SSH_ORIGINAL_COMMAND</code>, validates it against a whitelist, and either <code>exec</code>s the command or exits with an error. Interactive sessions (no <code>SSH_ORIGINAL_COMMAND</code>) are always rejected.</p>
 <p>The guard whitelist covers only top-level <code>rhl-*</code> helper commands installed by this package (see below). The helpers perform state inspection, process checks, HTTP handshakes, port verification, conda cache reads, and service launch using structured argv/data instead of remote shell or Python source.</p>
+<p>The guard silently strips any leading <code>VAR=value</code> shell variable assignments before the whitelist check. This means the standard client PATH prepend (<code>PATH=$HOME/miniforge3/bin:$HOME/miniconda3/bin:$PATH rhl-ps</code>) passes through <code>rhl-guard</code> unchanged — the assignments are dropped and only the <code>rhl-*</code> command and its arguments are exec'd.</p>
 <p>Direct process-management commands such as <code>kill -1 &lt;pid&gt;</code> are rejected by
 the guard. Use helpers such as <code>rhl-stop &lt;key&gt;</code> instead.</p>
 <h3 id="path-policy">Path policy</h3>
@@ -448,18 +455,15 @@ server:</p>
 </code></pre>
 <p>Re-run this if the conda installation or environments change. On hosts where no <code>rhl-*</code> helpers are installed, the launcher falls back to inline heredoc probes automatically.</p>
 <h3 id="reaching-the-rhl-helpers-over-ssh">Reaching the <code>rhl-*</code> helpers over SSH</h3>
-<p>The launcher's fallback covers only its own conda discovery — anything that depends directly on the helpers (the <code>seamless-service-*</code> layer in <code>seamless-config</code>, agents shelling out to <code>rhl-ps</code> / <code>rhl-stop</code> / <code>rhl-logs</code>, etc.) needs the <code>rhl-*</code> binaries to actually be on the remote <code>PATH</code> for <strong>non-interactive, non-login</strong> SSH sessions. There are three deployment paths:</p>
+<p>The launcher's fallback covers only its own conda discovery — anything that depends directly on the helpers (the <code>seamless-service-*</code> layer in <code>seamless-config</code>, agents shelling out to <code>rhl-ps</code> / <code>rhl-stop</code> / <code>rhl-logs</code>, etc.) requires <code>remote-http-launcher</code> to be installed on the remote server. Two supported install paths:</p>
 <ul>
-<li><strong>System-wide install</strong> (recommended when you have root): <code>pip install remote-http-launcher</code> into the system Python. The helpers land under <code>/usr/local/bin</code> and are reachable without any shell setup.</li>
-<li><strong>Conda base env install</strong> (no root): install into the conda base environment on the remote host, then <strong>modify <code>~/.bashrc</code> so its early "interactive shell" guard does not skip conda activation for non-login SSH sessions</strong>. Typical <code>~/.bashrc</code> files contain something like
-  <code>bash
-  case $- in
-      *i*) ;;
-        *) return;;
-  esac</code>
-  near the top; this short-circuits before the conda hook on non-interactive shells, leaving <code>rhl-*</code> off <code>PATH</code> when SSH runs <code>ssh host rhl-ps</code>. Comment out (or move) those lines so the conda hook is reached for every shell.</li>
-<li><strong>Use <code>rhl-guard</code></strong> (no root, no <code>.bashrc</code> edit): when SSH is gated by <code>command="rhl-guard …"</code> in <code>authorized_keys</code>, the guard locates and exec's the helpers itself, so <code>PATH</code> setup in the user's shell is irrelevant. This is the cleanest deployment for environments where editing <code>.bashrc</code> is not desirable.</li>
+<li><strong>System-wide install</strong> (recommended when you have root): <code>pip install remote-http-launcher</code> into the system Python. The helpers land under <code>/usr/local/bin</code>.</li>
+<li><strong>Conda base env install</strong> (no root): <code>pip install remote-http-launcher</code> into the conda base environment on the remote host. The helpers land in <code>$HOME/miniforge3/bin</code> or <code>$HOME/miniconda3/bin</code>.</li>
 </ul>
+<p>Clients (<code>seamless-service-*</code> and agents) must prepend <code>$HOME/miniforge3/bin:$HOME/miniconda3/bin</code> to PATH on every SSH invocation of an <code>rhl-*</code> helper, which covers conda-base installs without any shell startup changes:</p>
+<pre><code class="language-bash">ssh &lt;host&gt; 'PATH=$HOME/miniforge3/bin:$HOME/miniconda3/bin:$PATH' rhl-ps --json
+</code></pre>
+<p>Use the command above to verify reachability. If it still returns <code>command not found</code>, <code>remote-http-launcher</code> is not installed on the server.</p>
 <h2 id="lifecycle-states">Lifecycle States</h2>
 <p>Launcher state normally moves through these states:</p>
 <table>
