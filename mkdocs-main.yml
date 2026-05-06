@@ -27,6 +27,9 @@ nav:
       - HPC specifics: hpc.md
       - Remote job launching: remote-launch.md
       - Sharing in depth: sharing.md
+      - Compiled transformers: compiled-transformers.md
+      - Compressed data: compression.md
+      - Service management: service-management.md
   - Reference API:
       - Overview: api/index.md
       - seamless-core: api/seamless-core.md

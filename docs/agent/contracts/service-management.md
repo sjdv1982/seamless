@@ -164,12 +164,33 @@ Only a pass on a cold cache is meaningful.
 ## Server-side requirements
 
 Seamless does **not** need to be installed on the machine running the services.
-The server needs only:
+The server needs:
 
 1. The service binary (`hashserver`, `seamless-database`, etc.)
-2. Optionally: `remote-http-launcher` — required only when the SSH key in
-   `authorized_keys` is guarded by `rhl-guard`
+2. The `rhl-*` helpers from `remote-http-launcher` — needed for any tooling
+   that shells out to them (the `seamless-service-*` layer, agents calling
+   `rhl-ps` / `rhl-stop` / `rhl-logs` over SSH, etc.). The helpers must be on
+   the remote `PATH` for **non-interactive, non-login** SSH sessions.
 
 Key resolution happens entirely client-side. The launcher writes the resolved
 key/workdir/host to the server. There is no server-side Seamless that could
 produce a conflicting view.
+
+### `rhl-*` install paths
+
+`seamless-service-*` has **no inline fallback** — it always dispatches via
+`rhl-*`. There are three deployment paths to make the helpers reachable over
+SSH:
+
+| Path | Root needed? | `.bashrc` edit needed? |
+|------|--------------|------------------------|
+| System Python install (`/usr/local/bin`) | Yes | No |
+| Conda base env install | No | **Yes** — the early non-interactive guard in `~/.bashrc` (e.g. `case $- in *i*) ;; *) return;; esac`) must be commented out or moved below the conda activation hook so SSH non-login shells reach `rhl-*` |
+| `rhl-guard` in `authorized_keys` | No | No — the guard locates and exec's helpers itself |
+
+`remote-http-launcher` itself carries an inline-heredoc fallback for its own
+conda discovery on hosts where the helpers are absent. That fallback is
+**internal to the launcher**: it does not cover `seamless-service-*` or any
+other consumer that calls `rhl-*` directly. Agents that need to inspect or
+manage services should treat the helpers as a hard requirement on the server
+and verify with `ssh <host> rhl-ps --json` before assuming the layer works.
