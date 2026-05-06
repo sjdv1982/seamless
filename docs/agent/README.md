@@ -24,6 +24,8 @@ Contract pages (hand-maintained, normative):
 - `contracts/seamless-run-and-argtyping.md`
 - `contracts/modules-and-closures.md`
 - `contracts/execution-backends.md`
+- `contracts/execution-records.md`
+- `contracts/service-management.md`
 - `contracts/content-addressed-files-and-dirs.md`
 - `contracts/cache-storage-and-limits.md`
 - `contracts/compression.md`

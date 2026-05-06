@@ -68,9 +68,13 @@ Load the relevant contract before changing the associated semantics:
 - Transformation identity and caching: `seamless/docs/agent/contracts/identity-and-caching.md`
 - Imports, modules, project code, and closures: `seamless/docs/agent/contracts/modules-and-closures.md`
 - Compiled transformers: `seamless/docs/agent/contracts/compiled-transformers.md`
+- seamless-signature schema (used by compiled transformers): `seamless/docs/agent/contracts/seamless-signature-schema.md`
 - Execution backend selection: `seamless/docs/agent/contracts/execution-backends.md`
+- Execution records (`seamless.db` `MetaData`): `seamless/docs/agent/contracts/execution-records.md`
+- Service management (`seamless-service-*`, `rhl-*`, false-pass): `seamless/docs/agent/contracts/service-management.md`
 - Scratch, fingertip, witnesses, and audit: `seamless/docs/agent/contracts/scratch-witness-audit.md`
 - Cache storage and scratch limits: `seamless/docs/agent/contracts/cache-storage-and-limits.md`
+- Compression (`.zst`/`.gz`): `seamless/docs/agent/contracts/compression.md`
 - Input fingertip API details: `seamless/docs/agent/api/python/seamless_transformer.transformation_class.md`
 
 ## 1. DAG Design
@@ -184,6 +188,8 @@ Keep local-cluster remote execution distinct from HPC execution:
 - HPC remote: scheduler/site-managed `remote: daskserver` or manual remote job deployment with queue, module, container, credential, filesystem, and policy constraints. Do not silently configure this unless requested or already clearly configured; list it as follow-up when relevant.
 
 Other common capability concerns are parallelization and incremental computing, including data-incremental and code-incremental computation. Add these when they serve the user's goal or a clear performance/scaling need.
+
+Execution records are a default capability: every successful transformation persists a minimal record into `seamless.db`. Do **not** enable full records (`- record: true`) by default — the full payload adds environment fingerprinting and content-addressed sub-buffer writes per execution. Reach for `record: true` only when the user is debugging environment drift, auditing irreproducibility, or producing a sharable `seamless.db`. Records are write-once per `tf_checksum`, so flipping the flag does not retroactively upgrade existing rows.
 
 When debugging operational complexity, use Seamless diagnostics/instrumentation, and use the `seamless-remote-debugging` skill when the failure is remote/backend-related.
 

@@ -65,9 +65,11 @@ seamless-run 'seq 1 10 | tac && sleep 5'    # cache hit — instant
 
 ## Documentation
 
-Full documentation — including getting-started guides, cluster setup, remote execution, and reference API — is at:
+Full documentation — including getting-started guides, cluster setup, remote execution, compiled transformers, compression, and reference API — is at:
 
 **<https://sjdv1982.github.io/seamless/>**
+
+For changes since v1.2 (April 2026), see [RELEASE-NOTES.md](RELEASE-NOTES.md).
 
 ## Agent Skill
 

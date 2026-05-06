@@ -134,6 +134,12 @@ seamless-download data/result.txt
 
 The `seamless-checksum` CLI tool computes and prints the checksum of a file without writing it. `seamless-checksum-file` computes and writes the sidecar. `seamless-checksum-index` builds a directory-level checksum index.
 
+## Execution records
+
+Every successful, non-probe transformation persists one structured record alongside its result in `seamless.db`. By default the record is **minimal** — `tf_checksum`, `result_checksum`, `seamless_version`, execution mode, remote target, wall/CPU timing, memory peak. With `- record: true` in `seamless.profile.yaml` (or `seamless.config.select_record(True)` in Python), the record is **full**: it adds environment fingerprints (hardware, conda env, Python packages, runtime numerics config), compilation context for compiled transformers, and per-job freshness/contract-violation fields.
+
+Records are **write-once per `tf_checksum`** and capture happens worker-side, so the recorded environment reflects where the job actually ran. They are not consulted on cache hits — they exist for cache eviction policy, fingertipping diagnosis, and auditability when `seamless.db` is shared. See [`docs/agent/contracts/execution-records.md`](../agent/contracts/execution-records.md) for the full contract.
+
 ## Why sharing follows from content-addressing
 
 Because every piece of data is identified by its checksum, and the transformation cache maps transformation identity to result identity, the following property holds: **if two parties have computed the same transformation, they have the same result** — regardless of when or where they ran it.
