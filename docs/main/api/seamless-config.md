@@ -73,6 +73,8 @@ single-key mapping:
 | `remote` | `null` / `daskserver` / `jobserver` | Pins the remote backend when a cluster exposes both |
 | `persistent` | boolean | Forces persistent storage on or off; defaults to `true` when a cluster is set |
 | `clusters` | mapping | Defines cluster objects inline (runs before other commands) |
+| `record` | boolean | Enables full execution-record capture (default: minimal records only) |
+| `node` | string / null | Selects a named node within the current cluster (advanced: cluster-internal scheduling) |
 | `inherit_from_parent` | — | Also reads commands from the parent directory, prepended |
 | `stage <name>` | list of commands | Runs the nested commands only when the current stage matches `<name>` |
 
@@ -339,6 +341,83 @@ variable is present, so that worker processes that bootstrap themselves with
 
 ---
 
+## Service management (`seamless-service-*`)
+
+`seamless-config` ships a Seamless-aware wrapper layer over the raw `rhl-*`
+helpers from `remote-http-launcher`. The wrappers accept Seamless-level
+arguments (`--service`, `--cluster`, `--project`, `--stage`) and dispatch
+to the right host over SSH; readers do not need to know the raw launcher key.
+
+| Command | Purpose |
+| --- | --- |
+| `seamless-service-ps [--server] [--persistent]` | Process state (and optionally persistent buffer/DB state) — `meta` block populates per-row `(service, project, stage)` |
+| `seamless-service-logs --service hashserver [--tail N]` | Read the service log without knowing the raw key |
+| `seamless-service-inspect --service hashserver` | Print the server state JSON (PID, port, status, workdir, command, `meta`) |
+| `seamless-service-stop` | Stop processes via SIGINT → SIGTERM → SIGKILL escalation; preserves JSON state |
+| `seamless-service-rm` | Remove JSON state; logs are preserved |
+| `seamless-service-clear --service hashserver --project P [--stage S]` | Clear hashserver buffers or `seamless.db` for a project/stage |
+| `seamless-service-resolve --service hashserver --cluster C --project P [--stage S]` | Translate Seamless-level args → raw `key`, `ssh_hostname`, `workdir`, `log_path` (no side effects, JSON output) |
+
+`seamless-service-resolve` is an **extractor**, not a synthesizer: it shares
+the same code path as `seamless-run` and the launched clients. Tools and
+agents should call it on every invocation rather than caching its outputs;
+keys, workdir paths, and host-selection logic may change between Seamless
+versions.
+
+Cluster-wide variants (`--cluster MYCLUSTER`) operate on every service of
+that cluster.
+
+### Server-side requirements
+
+`remote-http-launcher` must be installed on every remote server that
+`seamless-service-*` targets — it provides all `rhl-*` helpers. There is
+**no inline fallback** in the wrappers. Two supported install paths:
+
+- **System install** (with root): `pip install remote-http-launcher` into
+  the system Python; helpers land in `/usr/local/bin`.
+- **Conda base env install** (no root): `pip install remote-http-launcher`
+  into the remote host's conda base environment; helpers land in
+  `$HOME/miniforge3/bin` or `$HOME/miniconda3/bin`.
+
+No `.bashrc` edit is required for either path. `seamless-service-*`
+automatically prepends `$HOME/miniforge3/bin:$HOME/miniconda3/bin` to
+PATH on every SSH call, so conda-base installs work without any shell
+startup changes.
+
+Note: `remote-http-launcher` itself has its own fallback — it can probe
+conda configuration via inline heredocs when no `rhl-*` helpers are
+available on the host. That fallback covers only the launcher's bootstrap;
+it does not extend to `seamless-service-*` or any other tooling that
+calls `rhl-*` directly.
+
+## Execution records (`record` command)
+
+When a transformation completes successfully, Seamless writes one execution
+record into `seamless.db` keyed by `tf_checksum`. The `record` command in
+`seamless.profile.yaml` controls how much is captured:
+
+```yaml
+- record: true       # full record: env fingerprints, compilation context, freshness, ...
+- record: false      # minimal record (default): timing + memory + execution mode
+```
+
+The default (`record: false`) writes a small body containing `tf_checksum`,
+`result_checksum`, `seamless_version`, `execution_mode`, `remote_target`,
+wall/CPU/GPU timing, and memory peak. The `record: true` opt-in enables
+full reproducibility-audit capture, intended for debugging environment
+drift, auditing irreproducible results, and sharing receipts alongside
+shared `seamless.db` files. Records are write-once per `tf_checksum`;
+turning the flag on does not retroactively upgrade existing rows.
+
+The Python equivalent is `seamless.config.select_record(True)`. Capture
+is worker-side, so the recorded environment reflects where the job
+actually ran (jobserver worker, Dask worker, spawn child, or local).
+
+See [docs/agent/contracts/execution-records.md](https://github.com/sjdv1982/seamless/blob/main/docs/agent/contracts/execution-records.md)
+for the full behavioral contract.
+
+---
+
 ## Tool launch configuration
 
 `seamless-config` ships an internal `tools.yaml` that describes how to
@@ -353,6 +432,12 @@ The `configure_hashserver`, `configure_database`, `configure_jobserver`,
 definition and the current project/stage context. These functions are called
 internally by `seamless-config` and by launcher scripts in other packages;
 direct use is only needed when writing custom launch tooling.
+
+Each launch dict carries a `meta` block that the launcher writes verbatim
+into the server-side state JSON: `(service, cluster, mode, project,
+subproject, stage, substage, queue)`. `seamless-service-*` reads this
+block to populate the cluster/project/stage columns in `seamless-service-ps`
+output.
 
 ---
 

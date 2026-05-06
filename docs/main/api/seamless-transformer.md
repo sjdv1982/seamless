@@ -46,6 +46,28 @@ Installing `seamless-transformer` provides:
 | `seamless-queue-finish` | Signal the queue server to drain remaining jobs and shut down |
 | `seamless-mode-bind.sh` | Shell script: source it to bind seamless-mode commands and hotkeys into the current shell session |
 
+## Execution records
+
+Every successful, non-probe transformation persists one execution record in `seamless.db` (the `MetaData` table), keyed by `tf_checksum`. The default body is **minimal** (timing, memory, execution mode, remote target). The full record — environment fingerprints, compilation context, validation snapshots, contract violations, freshness — is opt-in via `seamless.config.select_record(True)` (or `- record: true` in `seamless.profile.yaml`).
+
+Capture is worker-side: timing, memory, GPU usage, and compilation-context checksums are collected wherever the transformation actually ran (process, spawn child, jobserver worker, or Dask worker). The shared assembly code lives in `seamless_transformer/record_assembly.py`; the runtime mode flag is cached process-locally and invalidated on `select_record()` calls. The hot path under `record: false` pays only timing/memory capture and one database write.
+
+For the agent contract, see `docs/agent/contracts/execution-records.md` in the main seamless repository.
+
+## Compiled language support
+
+`seamless-transformer` can wrap compiled source code as Seamless transformations. The compiled source defines a `transform()` function whose signature is described by a YAML schema; `seamless-signature` generates the C header, and CFFI builds the Python extension at runtime.
+
+Built-in languages: C, C++, Fortran, Rust. **The set is open** — additional languages can be registered at runtime with `define_compiled_language()`. To add permanent support for a new language, create a file in `seamless_transformer/languages/native/` following the pattern of `rust.py` (a single `define_compiled_language()` call with compiler name, flags, and compilation mode) and submit a pull request.
+
+This requires the `compiled` optional-dependency group:
+
+```bash
+pip install seamless-transformer[compiled]
+```
+
+See `docs/agent/contracts/compiled-transformers.md` for the full behavioral contract.
+
 ## Installation
 
 ```bash
