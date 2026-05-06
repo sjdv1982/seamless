@@ -52,9 +52,9 @@ The executor is chosen based on whether `hostname` is present in the tool config
 ### Process management
 
 - **Processes run in a new session** (`start_new_session=True`): they survive if the launcher exits
-- **Kill signal**: `kill -1 <pid>` (SIGHUP) — sent via the executor (SSH or local)
-- **Stale detection**: if the JSON exists but the PID is dead (`ps -p <pid>` fails), the launcher treats it as stale and relaunches
-- **Tolerance for stale JSON**: the launcher handles stale state gracefully but wastes time on SSH roundtrips to check dead PIDs. Cleaning up JSON files after killing processes speeds up subsequent launches.
+- **Stop signal**: `rhl-stop <key>` escalates SIGINT → SIGTERM → SIGKILL with short polling intervals between escalations. The JSON state is **preserved** so logs remain reachable for post-mortem; run `rhl-rm` (or `seamless-service-rm`) afterwards to clean up.
+- **`stale` state**: if the JSON exists but the PID is dead (`rhl-pid-alive <pid>` fails), the launcher treats the state as stale and relaunches. For non-persistent services (jobserver, daskserver), the post-mortem window is the time between the process exiting and `rhl-rm` being run — read the log first.
+- **Direct `kill -<signal> <pid>` is rejected by `rhl-guard`** when SSH-guarded. Use `rhl-stop <key>` (or `seamless-service-stop`) instead.
 
 ### Tunnel management
 

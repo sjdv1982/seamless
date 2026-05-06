@@ -14,40 +14,87 @@ Seamless remote clients talk to separate server processes (hashserver, database,
 
 When you see a remote failure related to connection or resource retrieval, **dig up the server-side logs** before attempting any fix. The logs will tell you whether the error originates on the server, which changes the diagnosis entirely.
 
-## SSH Guard and Helper Commands
+## Two-layer service management: `seamless-service-*` and `rhl-*`
 
-`remote-http-launcher` installs a set of helper commands (`rhl-*`) on the remote server. When the SSH guard is configured, **only these helpers and the specific command patterns sent by the launcher itself are permitted** — naked shell commands like `pkill`, `rm`, or `kill` are rejected.
+Service inspection and management is split across two layers. **Prefer the `seamless-service-*` layer** — it understands cluster/project/stage and dispatches to the right host. Drop down to `rhl-*` only when you already know the raw key (e.g., from `seamless-service-resolve`) or you are operating on the server directly.
 
-### Guard installation
+### `seamless-service-*` (from `seamless-config`)
 
-On the remote server, add to `~/.ssh/authorized_keys`:
+Run client-side, from a project directory (reads `seamless.yaml` + `seamless.profile.yaml`) or with explicit flags:
+
+| Command | Purpose |
+|---------|---------|
+| `seamless-service-ps [--server] [--persistent] [--cluster C] [--project P] [--stage S]` | Process state and (optionally) persistent buffer/DB state |
+| `seamless-service-logs --service hashserver [--tail N]` | Read service log (no key needed) |
+| `seamless-service-inspect --service hashserver` | Print the server state JSON |
+| `seamless-service-stop [--service S \| --cluster C]` | SIGINT → SIGTERM → SIGKILL escalation; preserves JSON for post-mortem |
+| `seamless-service-rm [--service S \| --cluster C]` | Remove JSON state; logs survive |
+| `seamless-service-clear --service hashserver --project P [--stage S]` | Wipe persistent buffer or database data |
+| `seamless-service-resolve --service hashserver --cluster C --project P [--stage S]` | Translate Seamless-level args → raw `key`, `ssh_hostname`, `workdir`, `log_path` (JSON, no side effects) |
+
+`seamless-service-resolve` is the agent's bridge between Seamless semantics and the raw `rhl-*` layer. It is an **extractor**, not a synthesizer: it reports what the currently-installed runtime would compute, using the same code path as `seamless-run`. **Never construct keys by hand** — formats may change between Seamless versions.
+
+### `rhl-*` helpers (from `remote-http-launcher`)
+
+Operate on raw keys. Run server-side over SSH (or locally for `--client` operations):
+
+| Command | Purpose |
+|---------|---------|
+| `rhl-ps [--client] [--json]` | List process state; `--json` emits NDJSON with a `meta` block |
+| `rhl-ps-persistent <path> [--marker NAME] [--json]` | Report absent / empty / populated state of buffer/DB directories |
+| `rhl-logs <key> [--tail N]` | Read service log |
+| `rhl-inspect <key>` | Pretty-print the server state JSON (PID, port, status, workdir, command) |
+| `rhl-stop <key>` | SIGINT → SIGTERM → SIGKILL; preserves JSON state |
+| `rhl-rm <key> [--client] [--server]` | Remove JSON state files; logs are preserved |
+| `rhl-clear <path>` | Remove direct children of a validated persistent directory |
+| `rhl-pid-alive PID`, `rhl-verify-port HOST PORT`, `rhl-handshake URL` | Liveness checks |
+| `rhl-cache-conda` | Prime conda discovery cache (run once after guard installation) |
+
+### SSH Guard
+
+When configured in `authorized_keys`, `rhl-guard` restricts the service account to the `rhl-*` helpers above. Naked shell commands (`pkill`, `rm`, `kill`, `bash -lc`, `python3 -c`) are rejected.
+
 ```
-command="rhl-guard" ssh-rsa AAAA... your-key-comment
+# Recommended: explicit allowlist of paths the guard will let helpers touch
+command="rhl-guard --data-roots /home/svc/.config/rhl/data-roots" ssh-rsa AAAA... user@host
+
+# Alternative: marker-based policy for Seamless deployments (no allowlist file)
+command="rhl-guard --clear-policy seamless" ssh-rsa AAAA... user@host
 ```
 
-`rhl-guard` reads `ssh_guard/tools.yaml` (bundled with `remote-http-launcher`) to determine which service binaries are allowed inside launcher scripts. Override with `RHL_TOOLS_YAML=/path/to/tools.yaml` if needed.
+The path policy applies to the three helpers that accept client-chosen paths: `rhl-clear`, `rhl-ps-persistent`, and `rhl-launch-service --workdir`. With `--clear-policy seamless`, the guard accepts only directories containing a `seamless.db` or `.HASHSERVER_PREFIX` marker. With `--data-roots <file>`, paths must (after `~`-expansion and symlink resolution) live under one of the listed roots. If no policy is declared, those three helpers refuse to dispatch.
 
-### First-time conda setup (guarded servers only)
+Always-on heuristics apply in every mode: paths must be absolute, must not equal or be ancestors of `$HOME`, must not contain dotfile segments, and must not resolve to system roots (`/`, `/etc`, `/usr`, …).
 
-Run once per remote server after installing the guard (conda discovery is cached so the launcher never sends raw probe commands):
+After installing the guard, prime the conda cache once per remote host:
 ```bash
 ssh <ssh_hostname> rhl-cache-conda
 ```
-Re-run if the conda environment changes. This is a no-op on servers without a guard.
+Re-run if the conda installation changes. No-op on servers without a guard.
 
-### Quick reference: rhl-* helpers
+### Server-side install of `rhl-*` (deployment gotcha)
 
-| Command | What it does |
-|---------|-------------|
-| `rhl-cat-log <key>` | Print the service log |
-| `rhl-cat-json <key>` | Pretty-print the service state JSON (PID, port, status) |
-| `rhl-ls-services [--client]` | List service keys (server-side by default) |
-| `rhl-kill-service <key>` | SIGHUP the service PID and remove its state JSON |
-| `rhl-rm-state <key> [--client] [--server]` | Remove state JSON(s); default: both |
-| `rhl-restart-cluster <cluster>` | Kill all services for a cluster and clean up |
-| `rhl-clear-buffer <path>` | Remove files inside a buffer directory |
-| `rhl-clear-db <path>` | Remove `seamless.db` from a database directory |
-| `rhl-cache-conda` | Prime the conda discovery cache |
+`seamless-service-*` has **no inline fallback** — every operation dispatches via `rhl-*` over SSH. `remote-http-launcher` must be installed on every remote server (system Python or conda base env — see below). If `rhl-*` helpers are still not found, the failure is a deployment problem, not a Seamless bug.
+
+**Client-side PATH contract:** `seamless-service-*` automatically prepends `$HOME/miniforge3/bin:$HOME/miniconda3/bin` to PATH on every SSH call, covering conda-base installs. Agents invoking `rhl-*` directly must do the same:
+
+```bash
+ssh <ssh_hostname> 'PATH=$HOME/miniforge3/bin:$HOME/miniconda3/bin:$PATH' rhl-ps --json
+```
+
+Use this as your reachability probe. Diagnosis table:
+
+| Symptom | Likely cause | Fix |
+|---------|--------------|-----|
+| `command not found` with PATH-prepend probe above | `remote-http-launcher` not installed on the server | `pip install remote-http-launcher` into the system Python (root) **or** the conda base env on the host |
+| `command not found` without PATH-prepend, but works with it | conda base install, client code missing the PATH prepend | Add `PATH=$HOME/miniforge3/bin:$HOME/miniconda3/bin:$PATH` before the helper in the SSH command (already done in `_dispatch.py`; agents must do it manually) |
+| Works manually but `seamless-service-*` says the host is unreachable | client-side host/SSH config mismatch | Check `frontends[].ssh_hostname` (vs `hostname`) in the cluster YAML |
+
+`remote-http-launcher` carries its own inline-heredoc fallback for conda discovery, but **only for the launcher's bootstrap** — it does not extend to `seamless-service-*`, `rhl-ps`, `rhl-logs`, or any other consumer of the helpers.
+
+If `rhl-guard` is installed, it strips leading `VAR=value` assignments before its whitelist check, so the PATH prepend passes through transparently.
+
+If the probe fails, fix the server-side install first — do not patch client code.
 
 ## The Service Topology
 
@@ -124,28 +171,33 @@ Root cause (e.g., Starlette API removal in hashserver)
 
 This is the most important debugging step. Client-side errors tell you *that* something failed; server logs tell you *why*.
 
+### Discover the service first
+
+From a project directory, the easiest path is the Seamless-aware layer:
+
+```bash
+seamless-service-ps                   # client connection state (fast, no SSH)
+seamless-service-ps --server --cluster MYCLUSTER
+seamless-service-logs --service hashserver --tail 100
+seamless-service-inspect --service hashserver    # PID, port, status, workdir
+```
+
+If you need the raw key for some reason (e.g., to script `rhl-*` directly), use the resolver:
+
+```bash
+seamless-service-resolve --service hashserver --cluster MYCLUSTER --project myproject [--stage fingertip]
+# → JSON: {key, ssh_hostname, workdir, log_path, service, cluster, mode, project, ...}
+```
+
+**Do not construct keys by hand.** Key formats may change between Seamless versions; always go through `seamless-service-resolve`.
+
 ### File locations
 
-All managed by `remote-http-launcher`. The key is derived from `tools.yaml` templates:
-
-**Key pattern**: `{tool}-{cluster}-{mode}-{project-path}`
-
-Examples for a cluster named `MYCLUSTER`, project `myproject`, no stage:
-- `hashserver-MYCLUSTER-rw-myproject`
-- `database-MYCLUSTER-rw-myproject`
-- `daskserver-MYCLUSTER-rw-myproject`
-
-With a stage (e.g., `fingertip`):
-- `hashserver-MYCLUSTER-rw-myproject--STAGE-fingertip`
-
-To determine the actual key for your situation:
-1. Read `seamless.yaml` for the project name and stage
-2. Read `seamless.profile.yaml` for the cluster name
-3. The mode is `rw` for read-write clients, `ro` for read-only
+All managed by `remote-http-launcher`:
 
 **Server-side files** (on the machine running the service — the frontend for remote clusters, local for local clusters):
 ```
-~/.remote-http-launcher/server/{key}.json    # PID, status, port, workdir
+~/.remote-http-launcher/server/{key}.json    # PID, status, port, workdir, meta
 ~/.remote-http-launcher/server/{key}.log     # stdout+stderr of the server process
 ```
 
@@ -154,38 +206,37 @@ To determine the actual key for your situation:
 ~/.remote-http-launcher/client/{key}.json    # hostname, port (connection info)
 ```
 
-You can also discover keys empirically using the helper commands:
-```bash
-rhl-ls-services --client          # local — shows all known connections
-ssh FRONTEND rhl-ls-services      # remote — shows all running services
-```
+The server JSON now carries a `meta` block populated by `seamless-config` with `(service, cluster, mode, project, subproject, stage, substage, queue)`. Older state files predate this and may have no `meta`; readers must treat it as optional.
 
 ### How to read server logs
 
-**For a local cluster**:
+**Preferred (Seamless-aware, dispatches to the right host automatically):**
 ```bash
-rhl-cat-log <key>
-rhl-cat-json <key>    # PID, port, status
+seamless-service-logs --service hashserver
+seamless-service-logs --service hashserver --tail 50
+seamless-service-inspect --service hashserver
 ```
 
-**For a remote cluster**: the logs live on the frontend host:
+**Raw `rhl-*` (if you already have the key, e.g., from `seamless-service-resolve`):**
 ```bash
-ssh <ssh_hostname> rhl-cat-log <key>
-ssh <ssh_hostname> rhl-cat-json <key>
+ssh <ssh_hostname> rhl-logs <key> --tail 100
+ssh <ssh_hostname> rhl-inspect <key>
 ```
 
 The `ssh_hostname` to use is in the cluster YAML (under `frontends[].ssh_hostname`, falling back to `frontends[].hostname` if not set). The cluster YAML is at `~/.seamless/clusters/{clustername}.yaml` or defined inline in `~/.seamless/clusters.yaml`.
+
+**Read logs before removing state.** For non-persistent services (jobserver, daskserver, pure-daskserver), the log file is the only post-mortem artefact. It is reachable through the helper only while the server JSON exists; once you run `rhl-rm` / `seamless-service-rm`, the log file survives on disk but becomes unreachable by key.
 
 ### What to look for in server logs
 
 - **Python tracebacks**: the server crashed. Read the traceback to find the root cause. Common: dependency API changes (e.g., Starlette removing a parameter), import errors from wrong conda env, missing files.
 - **No log file at all**: the server never started. Check the JSON status file - if `status` is `starting` and never became `running`, the launch script itself failed. Check conda activation, SSH connectivity.
 
-## Finding PID Files and Restarting Services
+## Restarting Services
 
-### The server JSON contains the PID
+### The server JSON contains the PID and status
 
-Read `~/.remote-http-launcher/server/{key}.json` (on the host running the service):
+`seamless-service-inspect --service hashserver` (or `rhl-inspect <key>` if you have the key) prints:
 ```json
 {
   "workdir": "<bufferdir>/<project>",
@@ -194,51 +245,48 @@ Read `~/.remote-http-launcher/server/{key}.json` (on the host running the servic
   "uid": 1000,
   "pid": 12345,
   "status": "running",
-  "port": 60757
+  "port": 60757,
+  "meta": {"service": "hashserver", "cluster": "MYCLUSTER", "project": "myproject", ...}
 }
 ```
 
 ### Clean restart procedure
 
-To fully restart a service:
+**Stop is a separate step from remove.** `rhl-stop` / `seamless-service-stop` sends SIGINT → SIGTERM → SIGKILL but **preserves the JSON state** so logs remain reachable for post-mortem. Run `rhl-rm` / `seamless-service-rm` afterwards to clean up.
 
-**1. Kill the server process and clean its state file**:
+**1. Stop the service**:
 ```bash
-# For a remote cluster:
-ssh <ssh_hostname> rhl-kill-service <key>
+# Seamless-aware (dispatches to the right host):
+seamless-service-stop --service hashserver
+# or for everything on a cluster:
+seamless-service-stop --cluster MYCLUSTER
 
-# For a local cluster (same machine):
-rhl-kill-service <key>
+# Raw (when you have the key):
+ssh <ssh_hostname> rhl-stop <key>
 ```
-`rhl-kill-service` reads the PID from the server JSON, sends SIGHUP, and removes the JSON file in one step.
 
-**2. Kill any SSH tunnel** (locally):
-If the cluster uses tunneling (`tunnel: true` in cluster YAML), there will be an SSH tunnel process forwarding a local port to the remote service port. Find and kill it:
+**2. Read the log if you suspect a crash** — do this before step 3 (after `rhl-rm`, the log file remains on disk but is no longer reachable through `rhl-logs <key>`).
+
+**3. Remove JSON state** (server and/or client):
 ```bash
-# Find tunnel processes for this service
+seamless-service-rm --service hashserver
+seamless-service-rm --cluster MYCLUSTER         # cluster-wide
+
+# Raw equivalents:
+ssh <ssh_hostname> rhl-rm --server <key>
+rhl-rm --client <key>
+```
+
+**4. Kill any stale SSH tunnel** (locally):
+If the cluster uses tunneling (`tunnel: true` in cluster YAML), an SSH tunnel forwards a local port to the remote service port. Find and kill stale ones to avoid port conflicts on reconnection:
+```bash
 ps aux | grep "ssh.*-L.*<remote_port>"
-# Or more broadly for a given frontend:
 ps aux | grep "ssh.*-N.*<ssh_hostname>"
 ```
-Killing stale tunnels avoids port conflicts on reconnection.
 
-**3. Clean up client state** (optional but recommended):
-```bash
-# Local client state (always local, no SSH needed)
-rhl-rm-state --client <key>
-```
+**5. Re-run the test** — `remote-http-launcher` will re-launch the service automatically.
 
-**4. Re-run the test** — `remote-http-launcher` will re-launch the service automatically.
-
-### Bulk restart (all services for a cluster)
-
-```bash
-# Kill and clean server state for all services in a cluster (on the frontend)
-ssh <ssh_hostname> rhl-restart-cluster <CLUSTERNAME>
-
-# Remove local client state for the same cluster
-rhl-ls-services --client | grep -- -<CLUSTERNAME>- | xargs -I{} rhl-rm-state --client {}
-```
+There is no longer a single "restart cluster" command in the helper layer; cluster-wide actions live in `seamless-service-stop --cluster ...` and `seamless-service-rm --cluster ...`. The launcher repo intentionally keeps `rhl-*` per-key — cluster semantics belong on the Seamless side, not in `remote-http-launcher`.
 
 ## Clearing Cache to Prevent False Passes
 
@@ -272,21 +320,34 @@ There are two caches, both must be cleared for a true re-execution:
 
 ### How to clear
 
+**Preferred (Seamless-aware, no path derivation needed):**
 ```bash
-# On the host running the services (SSH for remote, direct for local):
+# Stop the service first (clearing requires the directory not be in use by a writer):
+seamless-service-stop --service hashserver --project myproject
+seamless-service-stop --service database  --project myproject
 
-# Clear database
-ssh <ssh_hostname> rhl-clear-db <database_dir>/<project>/<stage>      # remote
-rhl-clear-db <database_dir>/<project>/<stage>                          # local
-
-# Clear buffers — deletes all cached data for this project/stage
-ssh <ssh_hostname> rhl-clear-buffer <bufferdir>/<project>/<stage>      # remote
-rhl-clear-buffer <bufferdir>/<project>/<stage>                         # local
+seamless-service-clear --service hashserver --project myproject [--stage fingertip]
+seamless-service-clear --service database  --project myproject [--stage fingertip]
 ```
 
-`rhl-clear-buffer` removes all files directly inside the given directory (the project/stage buffer tree itself is preserved). `rhl-clear-db` removes `seamless.db` from the given directory.
+`seamless-service-clear` errors cleanly for non-persistent services (jobserver, daskserver, pure-daskserver), which use `/tmp` and have no data directory to clear.
 
-**Always derive the actual paths from the cluster YAML for the specific cluster in use.** Do not hardcode paths — they differ per cluster, per project, and per stage.
+**Raw (when you have the path):**
+```bash
+ssh <ssh_hostname> rhl-clear <bufferdir>/<project>/STAGE-<stage>
+ssh <ssh_hostname> rhl-clear <database_dir>/<project>/STAGE-<stage>
+```
+
+`rhl-clear` removes the direct children of the given directory (the directory itself is preserved). When dispatched through `rhl-guard`, the path must satisfy the configured path policy (`--data-roots` allowlist, `--clear-policy seamless` marker, etc.) — otherwise the guard refuses to dispatch.
+
+To inspect persistent state without clearing:
+```bash
+seamless-service-ps --persistent --project myproject
+# or raw:
+ssh <ssh_hostname> rhl-ps-persistent <bufferdir>/<project> --json
+```
+
+**Always derive the actual paths from the cluster YAML for the specific cluster in use.** Do not hardcode paths — they differ per cluster, per project, and per stage. `seamless-service-clear` does this for you.
 
 After clearing, restart the hashserver and database (see above), then re-run the test.
 
@@ -357,12 +418,12 @@ When a Seamless integration/remote test fails:
 
 1. **Read the full traceback.** Identify which client method failed and what exception was raised.
 2. **Identify the service.** `buffer_client.py` → hashserver. `database_client.py` → seamless-database. `jobserver_client.py` → seamless-jobserver. Dask errors → seamless-dask-wrapper or worker nodes.
-3. **Read the server log.** SSH to the frontend if needed. The log file path is `~/.remote-http-launcher/server/{key}.log`.
+3. **Read the server log.** Use `seamless-service-logs --service <name>` (or `seamless-service-inspect` for status). For raw access, `seamless-service-resolve` → `ssh <ssh_hostname> rhl-logs <key>`.
 4. **Find the root cause.** Is it a code bug? A dependency incompatibility? A stale process? A network issue?
 5. **Fix in the right repo.** Don't patch the test or the client. Fix the server, the dependency, or the configuration.
-6. **Clear the cache.** Delete both the bufferdir contents and seamless.db for the project, so you test actual re-execution, not cached results.
-7. **Restart the service.** Kill the PID, clean up JSON state and tunnels, then re-run.
-8. **Verify the fix.** The test must pass on a cold cache. A pass on a warm cache proves nothing.
+6. **Clear the cache.** `seamless-service-clear --service hashserver --project ...` and `--service database --project ...` so you test actual re-execution, not cached results.
+7. **Restart the service.** `seamless-service-stop` → (read log) → `seamless-service-rm` → re-run.
+8. **Verify the fix.** The test must pass on a cold cache. A pass on a warm cache proves nothing — see "Clearing Cache to Prevent False Passes".
 
 ## Reference Map (load only as needed)
 

@@ -80,6 +80,9 @@ seamless-run 'seq 1 10 | tac && sleep 5'    # cache hit — instant
 - [HPC specifics](hpc.md) — SLURM/OAR queue definitions, adaptive scaling, pure Dask mode
 - [Remote job launching](remote-launch.md) — CLI workflow for remote clusters, checksum vs buffer distinction, deep checksums
 - [Sharing in depth](sharing.md) — `seamless.db` portability, scratch, fingertipping, replay by checksum
+- [Compiled transformers](compiled-transformers.md) — wrap C/C++/Fortran/Rust source code as transformations; open language set
+- [Compressed data](compression.md) — `.zst`/`.gz` support that never affects identity
+- [Service management](service-management.md) — `seamless-service-*` and `rhl-*` helpers; false-pass debugging
 
 **Reference API**
 

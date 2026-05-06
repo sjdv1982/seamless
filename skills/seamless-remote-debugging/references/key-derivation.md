@@ -1,5 +1,7 @@
 ## Key Derivation: how tool keys map to file paths
 
+> **Prefer `seamless-service-resolve`.** It runs the same code path the launcher uses and reports the current key for given cluster/project/stage/service inputs. The mechanics below are background only — useful when reading code or debugging the resolver itself, but **not** for building keys by hand at call sites. Key formats are not stable across Seamless versions.
+
 ### The key template
 
 Each tool (hashserver, database, jobserver, daskserver) has a `key_template` in `seamless-config/seamless_config/tools.yaml`. The template uses two kinds of variables:

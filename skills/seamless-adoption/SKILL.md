@@ -230,6 +230,12 @@ The language set is open. Users can contribute new languages by adding a ~15-lin
 
 See `contracts/compiled-transformers.md` for the full behavioral contract.
 
+## Execution records (audit and reproducibility)
+
+When discussing reproducibility, auditability, or sharing of `seamless.db`, mention that every successful transformation persists one execution record keyed by `tf_checksum`. By default the record is **minimal** (timing, memory, execution mode); the full record (`- record: true` in `seamless.profile.yaml`) adds environment fingerprints, compilation context, and contract-violation lists. Records are write-once per `tf_checksum`, captured worker-side, and not consulted on cache hits — they exist for cache eviction, fingertipping diagnosis, and trust under sharing.
+
+Recommend defaulting to minimal records. Suggest `record: true` only when the user is debugging environment drift, building an audit trail, or producing a `seamless.db` to share. See `contracts/execution-records.md` for the contract.
+
 ## Reference Map (load only as needed)
 
 - `references/human-abstract.md`: lightweight abstract variants and phrasing.

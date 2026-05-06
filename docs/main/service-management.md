@@ -187,3 +187,28 @@ Only a pass on a cold cache is meaningful.
 
 For the full `rhl-*` helper reference and the JSON state file schema, see the
 [remote-http-launcher README](https://github.com/sjdv1982/remote-http-launcher).
+
+---
+
+## Server-side install requirements
+
+`seamless-service-*` always shells out to the `rhl-*` helpers — the
+wrappers do **not** carry an inline fallback. `remote-http-launcher` must
+be installed on every remote server that `seamless-service-*` targets; it
+provides all `rhl-*` helpers. Two supported server-side install paths:
+
+- **System install** (root required): `pip install remote-http-launcher`
+  into the system Python. Helpers land in `/usr/local/bin`.
+- **Conda base env install** (no root): `pip install remote-http-launcher`
+  into the remote host's conda base environment. Helpers land in
+  `$HOME/miniforge3/bin` or `$HOME/miniconda3/bin`.
+
+No `.bashrc` edit is required for either path. `seamless-service-*`
+automatically prepends `$HOME/miniforge3/bin:$HOME/miniconda3/bin` to
+PATH on every SSH call, so conda-base installs work without any shell
+startup changes.
+
+`remote-http-launcher`'s own conda-discovery fallback (inline heredoc
+probes) covers only the launcher's bootstrap. It does not extend to
+`seamless-service-*`, agents calling `rhl-*` over SSH, or any other
+tooling that depends on the helpers.

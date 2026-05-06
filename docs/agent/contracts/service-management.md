@@ -164,12 +164,58 @@ Only a pass on a cold cache is meaningful.
 ## Server-side requirements
 
 Seamless does **not** need to be installed on the machine running the services.
-The server needs only:
+The server needs:
 
 1. The service binary (`hashserver`, `seamless-database`, etc.)
-2. Optionally: `remote-http-launcher` — required only when the SSH key in
-   `authorized_keys` is guarded by `rhl-guard`
+2. The `rhl-*` helpers from `remote-http-launcher` — needed for any tooling
+   that shells out to them (the `seamless-service-*` layer, agents calling
+   `rhl-ps` / `rhl-stop` / `rhl-logs` over SSH, etc.). The helpers must be on
+   the remote `PATH` for **non-interactive, non-login** SSH sessions.
 
 Key resolution happens entirely client-side. The launcher writes the resolved
 key/workdir/host to the server. There is no server-side Seamless that could
 produce a conflicting view.
+
+### `rhl-*` install paths
+
+`remote-http-launcher` must be installed on every remote server — it provides
+all `rhl-*` helpers. Two supported install paths:
+
+| Path | Root needed? |
+|------|--------------|
+| System Python install (`pip install remote-http-launcher` → `/usr/local/bin`) | Yes |
+| Conda base env install (`pip install remote-http-launcher` into conda base → `$HOME/miniforge3/bin` or `$HOME/miniconda3/bin`) | No |
+
+No `.bashrc` edit is required for either path (see client contract below).
+
+### Client contract: PATH prepend for every `rhl-*` SSH call
+
+`seamless-service-*` has **no inline fallback** — it always dispatches via
+`rhl-*` over SSH. To cover conda-base installs without requiring `.bashrc`
+changes, every SSH invocation of an `rhl-*` helper **must** prepend the known
+conda bin dirs to PATH before the command. This is what `_dispatch.py` does:
+
+```
+ssh <host> 'PATH=$HOME/miniforge3/bin:$HOME/miniconda3/bin:$PATH' rhl-ps --json
+```
+
+Agents that call `rhl-*` directly over SSH must apply the same pattern. The
+`$HOME` tokens are intentionally unquoted so the remote shell expands them to
+the remote user's home directory.
+
+If `rhl-guard` is installed (`command="rhl-guard ..."` in `authorized_keys`),
+the guard strips leading `VAR=value` assignments before its whitelist check, so
+the PATH prepend passes through transparently — no special handling required.
+
+To verify reachability before assuming the layer works:
+
+```bash
+ssh <host> 'PATH=$HOME/miniforge3/bin:$HOME/miniconda3/bin:$PATH' rhl-ps --json
+```
+
+If this still returns `command not found`, `remote-http-launcher` is not
+installed on the server — fix the server-side install first.
+
+`remote-http-launcher` itself carries an inline-heredoc fallback for its own
+conda discovery. That fallback is **internal to the launcher**: it does not
+cover `seamless-service-*` or any other consumer of the helpers.
