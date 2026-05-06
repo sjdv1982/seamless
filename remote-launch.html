@@ -235,6 +235,7 @@ seamless-download out-0.1.csv out-0.2.csv out-0.5.csv
 </table>
 <p>Checksums are tiny and can be shared freely — by email, in a config file, in a paper's supplementary material. Buffers are the actual data and can be large.</p>
 <p>A result that has been computed is always in the database (the transformation→result checksum mapping). The result bytes may or may not be in the hashserver, depending on whether the transformation used <code>--scratch</code> (see <a href="sharing.html">Sharing in depth</a>).</p>
+<p>For ordinary inputs, a remote worker materializes bytes by fetching the buffer from the hashserver. Scratch inputs with fingertipping are different: if the input checksum is known but the buffer is absent, Seamless recomputes the producer transformation where the consuming job needs the bytes. This makes scratch useful for bulky generated intermediates that should not be uploaded or stored as durable buffers; the checksum travels, and the bytes are regenerated co-located with the consumer.</p>
 <p><code>seamless-resolve</code> fetches a buffer by checksum:</p>
 <pre><code class="language-bash">seamless-resolve a3f2...  &gt; result.csv
 </code></pre>

@@ -1,0 +1,676 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <link rel="shortcut icon" href="../../../img/favicon.ico" />
+    <title>Porting Plan: Environment (clearing the ground for compiled language support) - Seamless — Agent Documentation</title>
+    <link rel="stylesheet" href="../../../css/theme.css" />
+    <link rel="stylesheet" href="../../../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "Porting Plan: Environment (clearing the ground for compiled language support)";
+        var mkdocs_page_input_path = "repos/seamless-transformer/source/environment-porting-plan.md";
+        var mkdocs_page_url = null;
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../../../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href="../../../index.html" class="icon icon-home"> Seamless — Agent Documentation
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../../index.html">Home</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../../overview.html">Agent Docs Overview</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../index.html">Workspace Repos</a>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Contracts</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/identity-and-caching.html">Identity and Caching</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/direct-delayed-and-transformation.html">direct/delayed/Transformation</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/modules-and-closures.html">Modules and Closures</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/scratch-witness-audit.html">Scratch/Witness/Audit</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/seamless-run-and-argtyping.html">seamless-run/Argtyping</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/cache-storage-and-limits.html">Cache Storage and Limits</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/content-addressed-files-and-dirs.html">Content-addressed Files and Dirs</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/execution-backends.html">Execution Backends</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/compression.html">Compression</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/compiled-transformers.html">Compiled Transformers</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/seamless-signature-schema.html">seamless-signature Schema</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">API</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../api/python/seamless.html">seamless</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../api/python/seamless.transformer.html">seamless.transformer</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../api/python/seamless.buffer_class.html">seamless.buffer_class</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../api/python/seamless.checksum_class.html">seamless.checksum_class</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../api/python/seamless_config.select.html">seamless_config.select</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../api/python/seamless_config.tools.html">seamless_config.tools</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../api/python/seamless_transformer.transformation_class.html">seamless_transformer.transformation_class</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../api/python/seamless_transformer.transformer_class.html">seamless_transformer.transformer_class</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">CLI</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../api/cli/seamless-run.html">seamless-run</a>
+                  </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">Seamless — Agent Documentation</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../../../index.html" class="icon icon-home" aria-label="Docs"></a></li>
+      <li class="breadcrumb-item active">Porting Plan: Environment (clearing the ground for compiled language support)</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h1 id="porting-plan-environment-clearing-the-ground-for-compiled-language-support">Porting Plan: Environment (clearing the ground for compiled language support)</h1>
+<h2 id="goal">Goal</h2>
+<p>Port <code>Environment</code> from legacy Seamless into <code>seamless-transformer</code>, enabling:</p>
+<ol>
+<li><code>Transformer.environment</code> to work as a real attribute (not a stub).</li>
+<li>The <code>__env__</code> pipeline that already exists in the current code to be
+   populated from user-supplied values.</li>
+<li>A <code>ContextEnvironment</code> stub holding language/compiler tables — the exact
+   hook that compiled language support will need in the follow-on step.</li>
+</ol>
+<p>The compiled language machinery itself (<code>htf["compiled"]=True</code>, header
+generation, <code>build_compiled_module</code>, CFFI) is <strong>out of scope</strong> here.</p>
+<hr />
+<h2 id="background-what-legacy-environment-does">Background: what legacy <code>Environment</code> does</h2>
+<p>Legacy Seamless has two classes in
+<a href="legacy-seamless/seamless/Environment.py">seamless/Environment.py</a>:</p>
+<p><strong><code>Environment</code></strong> — per-transformer environment.<br />
+Serializable props (<code>_props</code>): <code>conda</code>, <code>conda_env_name</code>, <code>which</code>, <code>powers</code>,
+<code>docker</code>.<br />
+Lives on <code>Transformer.environment</code>. Serializes to a state dict via <code>_save()</code>,
+round-trips with <code>_load()</code>, and is embedded in the transformation dict as
+<code>__env__</code> (a checksum of the state dict serialized as <code>"plain"</code>).</p>
+<p><strong><code>ContextEnvironment(Environment)</code></strong> — global environment for a whole context.<br />
+Adds: <code>_languages</code> / <code>_compilers</code> (override the shipped <code>languages.cson</code> /
+<code>compilers.cson</code> tables — the compiled-language extensibility hook),
+<code>_ipy_templates</code>, <code>_py_bridges</code>.</p>
+<p>The <code>_to_lowlevel()</code> method on <code>Environment</code> converts the internal state into
+the <code>env_dict</code> that is checksum-stored as <code>__env__</code>:</p>
+<table>
+<thead>
+<tr>
+<th><code>env_dict</code> key</th>
+<th>source prop</th>
+<th>used by</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>conda</code></td>
+<td><code>_conda</code> (YAML dict)</td>
+<td>remote/jobserver env setup</td>
+</tr>
+<tr>
+<td><code>conda_env_name</code></td>
+<td><code>_conda_env_name</code></td>
+<td>Python transformer conda env</td>
+</tr>
+<tr>
+<td><code>conda_bash_env_name</code></td>
+<td><code>_conda_env_name</code></td>
+<td>bash transformer conda env</td>
+</tr>
+<tr>
+<td><code>which</code></td>
+<td><code>_which</code></td>
+<td>pre-flight binary check</td>
+</tr>
+<tr>
+<td><code>powers</code></td>
+<td><code>_powers</code></td>
+<td>abstract capability dispatch</td>
+</tr>
+<tr>
+<td><code>docker</code></td>
+<td><code>_docker</code></td>
+<td>Docker/Singularity dispatch</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="current-state-in-seamless-transformer">Current state in <code>seamless-transformer</code></h2>
+<p>The <code>__env__</code> plumbing already exists end-to-end:</p>
+<ul>
+<li>
+<p><strong><a href="seamless-transformer/seamless_transformer/pretransformation.py#L268-L271">pretransformation.py:268-271</a></strong><br />
+<code>direct_transformer_to_pretransformation()</code> accepts <code>env</code>, serializes it as
+  <code>Buffer(env, "plain")</code>, stores the checksum as <code>__env__</code>.</p>
+</li>
+<li>
+<p><strong><a href="seamless-transformer/seamless_transformer/transformation_utils.py#L102-L110">transformation_utils.py:102-110</a></strong><br />
+<code>resolve_env_checksum()</code> extracts <code>__env__</code> from the transformation dict or
+  <code>tf_dunder</code>.</p>
+</li>
+<li>
+<p><strong><a href="seamless-transformer/seamless_transformer/run.py#L122-L129">run.py:122-129</a></strong><br />
+  Resolves <code>__env__</code> → <code>env_dict</code>, passes <code>env_dict.get("conda_environment", "")</code>
+  into the bash path.</p>
+</li>
+<li>
+<p><strong><a href="seamless-transformer/seamless_transformer/execute_bash.py#L119-L136">execute_bash.py:119-136</a></strong><br />
+  Uses <code>conda_environment_</code> to emit <code>conda activate</code> in <code>transform.sh</code>.</p>
+</li>
+</ul>
+<p>What is <strong>stubbed out</strong> in
+<a href="seamless-transformer/seamless_transformer/transformer_class.py">transformer_class.py</a>:</p>
+<pre><code class="language-python"># __init__, lines 147-149
+&quot;&quot;&quot;
+STUB
+self._environment = Environment(self)
+self._environment_state = None
+&quot;&quot;&quot;
+
+# environment property, lines 218-223
+'''
+STUB
+@property
+def environment(self) -&gt; &quot;Environment&quot;:
+    &quot;&quot;&quot;Computing environment to execute transformations in&quot;&quot;&quot;
+    return self._environment
+/STUB
+'''
+
+# __call__, line 253
+env = None  # environment handling not ported
+</code></pre>
+<h3 id="gap-table">Gap table</h3>
+<table>
+<thead>
+<tr>
+<th>Legacy component</th>
+<th>Current status</th>
+<th>Gap</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>Environment</code> class with all <code>_props</code></td>
+<td>Does not exist</td>
+<td>Entire class missing</td>
+</tr>
+<tr>
+<td><code>_save()</code> / <code>_load()</code> / <code>_to_lowlevel()</code></td>
+<td>Nothing</td>
+<td>Serialization lifecycle missing</td>
+</tr>
+<tr>
+<td><code>Transformer._environment</code> attribute</td>
+<td>Stubbed</td>
+<td>Property/init stubs present, inactive</td>
+</tr>
+<tr>
+<td><code>env = None</code> in <code>Transformer.__call__</code></td>
+<td>Hardcoded <code>None</code></td>
+<td>Should call <code>self._environment._to_lowlevel()</code></td>
+</tr>
+<tr>
+<td><code>__env__</code> → <code>conda_bash_env_name</code> (bash)</td>
+<td><strong>Working</strong></td>
+<td><code>run.py</code> already picks up <code>conda_environment</code></td>
+</tr>
+<tr>
+<td><code>__env__</code> → <code>conda</code> (full YAML spec)</td>
+<td>Not consumed</td>
+<td>Only named-env path is consumed</td>
+</tr>
+<tr>
+<td><code>__env__</code> → <code>which</code></td>
+<td>Not consumed</td>
+<td>No pre-flight check</td>
+</tr>
+<tr>
+<td><code>__env__</code> → <code>powers</code>, <code>docker</code></td>
+<td>Not consumed</td>
+<td>Not interpreted</td>
+</tr>
+<tr>
+<td><code>ContextEnvironment</code> (languages/compilers)</td>
+<td>Does not exist</td>
+<td>Required for compiled language support</td>
+</tr>
+<tr>
+<td><code>set_ipy_templates</code>, <code>set_py_bridges</code></td>
+<td>Not present</td>
+<td>Out of scope (separate concern)</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="step-by-step-porting-plan">Step-by-step porting plan</h2>
+<h3 id="step-1-create-seamless_transformerenvironmentpy">Step 1 — Create <code>seamless_transformer/environment.py</code></h3>
+<p>Port <code>Environment</code> as a standalone, self-contained class.</p>
+<p><strong>Changes from legacy:</strong></p>
+<ul>
+<li>Remove <code>weakref</code> parent reference and the reactive <code>_update()</code> / <code>_sync()</code>
+  lifecycle methods. In the current design the transformer is functional (not
+  reactive): environment state is read once at call time via <code>_to_lowlevel()</code>,
+  not live-synced to a running graph.</li>
+<li>Keep <code>_save()</code> and <code>_load()</code> for serialization round-tripping and for use
+  by <code>DirectTransformer._environment_state</code> if needed later.</li>
+<li>Keep <code>_to_lowlevel(*, bash=False)</code> unchanged — this is the bridge to
+  <code>__env__</code>.</li>
+<li>Keep all public setters/getters: <code>set_conda</code>, <code>set_conda_env</code>, <code>get_conda</code>,
+  <code>set_which</code>, <code>get_which</code>, <code>set_powers</code>, <code>get_powers</code>, <code>set_docker</code>,
+  <code>get_docker</code>.</li>
+<li>Dependencies: <code>ruamel.yaml</code>, <code>json</code>, <code>copy.deepcopy</code> — same as legacy,
+  nothing new.</li>
+</ul>
+<pre><code class="language-python"># seamless_transformer/environment.py
+
+import json
+from copy import deepcopy
+import ruamel.yaml
+
+yaml = ruamel.yaml.YAML(typ=&quot;safe&quot;)
+
+
+class Environment:
+    &quot;&quot;&quot;Execution environment for an individual transformer.&quot;&quot;&quot;
+
+    _props = [&quot;_conda&quot;, &quot;_conda_env_name&quot;, &quot;_which&quot;, &quot;_powers&quot;, &quot;_docker&quot;]
+
+    def __init__(self):
+        self._conda = None
+        self._conda_env_name = None
+        self._which = None
+        self._powers = None
+        self._docker = None
+
+    def _save(self) -&gt; dict | None:
+        state = {}
+        for prop in self._props:
+            v = getattr(self, prop)
+            if v is not None:
+                state[prop[1:]] = v
+        if not state:
+            return None
+        json.dumps(state)   # validate serializability
+        return state
+
+    def _load(self, state: dict):
+        for prop in self._props:
+            v = state.get(prop[1:])
+            if v is not None:
+                setattr(self, prop, v)
+
+    def _to_lowlevel(self, *, bash=False) -&gt; dict | None:
+        result = {}
+        if self._which is not None:
+            result[&quot;which&quot;] = deepcopy(self._which)
+        if self._conda is not None:
+            conda_env = yaml.load(self._conda)
+            result[&quot;conda&quot;] = conda_env
+        if self._conda_env_name is not None:
+            if bash:
+                result[&quot;conda_bash_env_name&quot;] = self._conda_env_name
+            else:
+                result[&quot;conda_env_name&quot;] = self._conda_env_name
+        if self._powers is not None:
+            result[&quot;powers&quot;] = deepcopy(self._powers)
+        if self._docker is not None:
+            result[&quot;docker&quot;] = self._docker
+        if not result:
+            return None
+        return result
+
+    # --- public API -----------------------------------------------------------
+
+    def set_conda(self, conda, format=&quot;yaml&quot;):
+        &quot;&quot;&quot;Set the conda environment definition (YAML string or file-like).&quot;&quot;&quot;
+        if format != &quot;yaml&quot;:
+            raise NotImplementedError(format)
+        if conda is None:
+            self._conda = None
+            return
+        if hasattr(conda, &quot;read&quot;) and callable(conda.read):
+            conda = conda.read()
+        elif isinstance(conda, str) and (
+            conda.endswith(&quot;.yaml&quot;) or conda.endswith(&quot;.yml&quot;)
+        ):
+            conda = open(conda).read()
+        result = yaml.load(conda)
+        if not isinstance(result, dict):
+            raise TypeError(f&quot;Must be dict, not {type(result)}&quot;)
+        _ = result[&quot;dependencies&quot;]
+        self._conda = conda
+
+    def set_conda_env(self, conda_env_name):
+        &quot;&quot;&quot;Name of an existing conda environment to run the transformer in.&quot;&quot;&quot;
+        self._conda_env_name = conda_env_name
+
+    def get_conda(self, format=&quot;yaml&quot;):
+        if format != &quot;yaml&quot;:
+            raise NotImplementedError(format)
+        return deepcopy(self._conda)
+
+    def set_which(self, which, format=&quot;plain&quot;):
+        &quot;&quot;&quot;List of binaries that must be present on PATH.&quot;&quot;&quot;
+        if format != &quot;plain&quot;:
+            raise NotImplementedError(format)
+        if which is None:
+            self._which = None
+            return
+        if not isinstance(which, list):
+            raise TypeError(f&quot;Must be list, not {type(which)}&quot;)
+        for w in which:
+            if not isinstance(w, str):
+                raise TypeError(&quot;Must be list of strings&quot;)
+        self._which = which
+
+    def get_which(self, format=&quot;plain&quot;):
+        if format != &quot;plain&quot;:
+            raise NotImplementedError(format)
+        return deepcopy(self._which)
+
+    def set_powers(self, powers):
+        &quot;&quot;&quot;List of abstract capabilities required (e.g. 'docker', 'ipython').&quot;&quot;&quot;
+        if powers is None:
+            self._powers = None
+            return
+        if not isinstance(powers, list):
+            raise TypeError(f&quot;Must be list, not {type(powers)}&quot;)
+        for p in powers:
+            if not isinstance(p, str):
+                raise TypeError(&quot;Must be list of strings&quot;)
+        self._powers = powers
+
+    def get_powers(self):
+        return deepcopy(self._powers)
+
+    def set_docker(self, docker: dict):
+        &quot;&quot;&quot;Docker config dict; must contain at least 'name'.&quot;&quot;&quot;
+        if docker is not None:
+            if not isinstance(docker, dict):
+                raise TypeError(f&quot;Must be dict, not {type(docker)}&quot;)
+            if &quot;name&quot; not in docker:
+                raise ValueError('Docker dict must contain at least &quot;name&quot;')
+        self._docker = deepcopy(docker)
+
+    def get_docker(self):
+        return deepcopy(self._docker)
+
+
+class ContextEnvironment(Environment):
+    &quot;&quot;&quot;Environment stub for a whole context — holds language/compiler tables.
+
+    Only the language and compiler table API is ported here; ipy_templates and
+    py_bridges are left for a later step.
+    &quot;&quot;&quot;
+
+    _props = Environment._props + [&quot;_languages&quot;, &quot;_compilers&quot;]
+
+    def __init__(self):
+        super().__init__()
+        self._languages = None
+        self._compilers = None
+
+    def set_languages(self, languages, format=&quot;plain&quot;):
+        &quot;&quot;&quot;Override the shipped language table.
+
+        format='plain'  — pass a dict directly.
+        format='cson'   — pass a CSON string (requires seamless.util.cson2json).
+        Setting languages=None resets to the shipped default.
+        &quot;&quot;&quot;
+        if format not in (&quot;cson&quot;, &quot;plain&quot;):
+            raise NotImplementedError(format)
+        if languages is None:
+            self._languages = None
+            return
+        if format == &quot;cson&quot;:
+            from seamless.util import cson2json
+            result = cson2json(languages)
+            self._languages = languages  # stored as cson, like legacy
+        else:
+            json.dumps(languages)        # validate serializability
+            self._languages = json.dumps(languages, sort_keys=True, indent=2)
+
+    def get_languages(self, format=&quot;plain&quot;):
+        &quot;&quot;&quot;Return the current language table (falls back to shipped default).&quot;&quot;&quot;
+        from seamless.util import cson2json
+
+        if format not in (&quot;cson&quot;, &quot;plain&quot;):
+            raise NotImplementedError(format)
+        if self._languages is None:
+            from seamless.compiler import languages_cson as default
+            src = default
+        else:
+            src = self._languages
+        if format == &quot;cson&quot;:
+            return deepcopy(src)
+        return cson2json(src)
+
+    def set_compilers(self, compilers, format=&quot;plain&quot;):
+        &quot;&quot;&quot;Override the shipped compiler table.
+
+        format='plain'  — pass a dict directly.
+        format='cson'   — pass a CSON string.
+        Setting compilers=None resets to the shipped default.
+        &quot;&quot;&quot;
+        if format not in (&quot;cson&quot;, &quot;plain&quot;):
+            raise NotImplementedError(format)
+        if compilers is None:
+            self._compilers = None
+            return
+        if format == &quot;cson&quot;:
+            from seamless.util import cson2json
+            result = cson2json(compilers)
+            self._compilers = compilers  # stored as cson
+        else:
+            json.dumps(compilers)        # validate serializability
+            self._compilers = json.dumps(compilers, sort_keys=True, indent=2)
+
+    def get_compilers(self, format=&quot;plain&quot;):
+        &quot;&quot;&quot;Return the current compiler table (falls back to shipped default).&quot;&quot;&quot;
+        from seamless.util import cson2json
+
+        if format not in (&quot;cson&quot;, &quot;plain&quot;):
+            raise NotImplementedError(format)
+        if self._compilers is None:
+            from seamless.compiler import compilers_cson as default
+            src = default
+        else:
+            src = self._compilers
+        if format == &quot;cson&quot;:
+            return deepcopy(src)
+        return cson2json(src)
+
+    def _find_language(self, language):
+        &quot;&quot;&quot;Resolve a language name against the active language table.&quot;&quot;&quot;
+        from seamless.compiler import find_language
+        return find_language(language, self.get_languages(&quot;plain&quot;))
+</code></pre>
+<hr />
+<h3 id="step-2-wire-environment-into-transformer">Step 2 — Wire <code>environment</code> into <code>Transformer</code></h3>
+<p>In <a href="seamless-transformer/seamless_transformer/transformer_class.py">transformer_class.py</a>:</p>
+<p><strong>In <code>__init__</code></strong>, replace the two-line STUB:</p>
+<pre><code class="language-python"># Remove:
+&quot;&quot;&quot;
+STUB
+self._environment = Environment(self)
+self._environment_state = None
+&quot;&quot;&quot;
+
+# Add (at the same indentation level, after self._set_code):
+from .environment import Environment
+self._environment = Environment()
+</code></pre>
+<p><strong>Add the <code>environment</code> property</strong>, replacing the STUB block:</p>
+<pre><code class="language-python">@property
+def environment(self) -&gt; &quot;Environment&quot;:
+    &quot;&quot;&quot;Execution environment for this transformer.&quot;&quot;&quot;
+    return self._environment
+</code></pre>
+<p><strong>In <code>__call__</code></strong>, replace <code>env = None</code>:</p>
+<pre><code class="language-python">env = self._environment._to_lowlevel(bash=(self._language == &quot;bash&quot;))
+</code></pre>
+<p><code>DirectTransformer</code> inherits all of this automatically.</p>
+<hr />
+<h3 id="step-3-export-from-the-package">Step 3 — Export from the package</h3>
+<p>In <a href="seamless-transformer/seamless_transformer/__init__.py">seamless_transformer/<strong>init</strong>.py</a>:</p>
+<pre><code class="language-python">from .environment import Environment, ContextEnvironment
+
+__all__ = [
+    ...
+    &quot;Environment&quot;,
+    &quot;ContextEnvironment&quot;,
+]
+</code></pre>
+<hr />
+<h3 id="step-4-tests">Step 4 — Tests</h3>
+<p><strong>Unit tests</strong> for <code>Environment</code> (no Seamless infrastructure needed):</p>
+<ul>
+<li><code>_save()</code> returns <code>None</code> for a fresh instance.</li>
+<li><code>_save()</code> / <code>_load()</code> round-trip preserves all props.</li>
+<li><code>_to_lowlevel(bash=False)</code> maps <code>conda_env_name</code> → <code>conda_env_name</code>.</li>
+<li><code>_to_lowlevel(bash=True)</code> maps <code>conda_env_name</code> → <code>conda_bash_env_name</code>.</li>
+<li><code>_to_lowlevel()</code> returns <code>None</code> for a fresh instance.</li>
+</ul>
+<p><strong>Integration test</strong> for the bash path (the one working path today):</p>
+<pre><code class="language-python">@direct
+def mytf():
+    result = &quot;ok&quot;
+
+mytf.language = &quot;bash&quot;
+mytf.environment.set_conda_env(&quot;myenv&quot;)
+# call and assert transform.sh contains &quot;conda activate myenv&quot;
+</code></pre>
+<p><strong>Regression</strong>: run the full existing test suite — all tests currently pass
+<code>env=None</code>, so <code>_to_lowlevel()</code> returning <code>None</code> for a fresh <code>Environment()</code>
+must leave the existing behaviour unchanged.</p>
+<hr />
+<h3 id="step-5-note-on-_to_lowlevel-key-naming">Step 5 — Note on <code>_to_lowlevel</code> key naming</h3>
+<p>Legacy uses two different key names depending on <code>bash=</code>:</p>
+<ul>
+<li><code>bash=False</code> → <code>"conda_env_name"</code></li>
+<li><code>bash=True</code>  → <code>"conda_bash_env_name"</code></li>
+</ul>
+<p>But <code>run.py</code> line 189 currently reads:</p>
+<pre><code class="language-python">env_dict.get(&quot;conda_environment&quot;, &quot;&quot;)
+</code></pre>
+<p>This key name (<code>conda_environment</code>) matches neither legacy key. This is a
+pre-existing inconsistency in the current code — the bash path happens to
+work only because <code>execute_bash.py</code> is invoked with this key name.</p>
+<p><strong>Action</strong>: when wiring up <code>_to_lowlevel</code>, verify whether <code>run.py</code> should read
+<code>conda_bash_env_name</code> (matching legacy) or whether <code>_to_lowlevel</code> should emit
+<code>conda_environment</code> (matching the current consumer). Align the two; do not
+silently leave them mismatched.</p>
+<hr />
+<h2 id="out-of-scope-follow-on-compiled-language-support">Out of scope (follow-on: compiled language support)</h2>
+<ul>
+<li><code>Transformer.language</code> routing into a compiled path (<code>htf["compiled"]=True</code>,
+  schema-driven C-header generation, <code>build_compiled_module</code>, CFFI).</li>
+<li><code>ContextEnvironment</code> wired to a <code>Context</code> class (no <code>Context</code> exists yet
+  in seamless-transformer).</li>
+<li><code>_parse_and_validate</code> (pre-flight <code>which</code> check).</li>
+<li><code>_ipy_templates</code>, <code>_py_bridges</code>.</li>
+</ul>
+<p>The <code>ContextEnvironment</code> stub created in Step 1 is the landing zone for the
+compiled language work: once it is present, language and compiler tables can
+be set, and the compiled transformer translator can call <code>_find_language()</code>.</p>
+<h2 id="note">Note</h2>
+<p>One thing worth flagging that emerged during the analysis — see Step 5 in the plan. There's a pre-existing key name mismatch: _to_lowlevel(bash=True) emits conda_bash_env_name, but run.py:189 reads env_dict.get("conda_environment", ""). The bash env path appears to work today only because env=None is always passed (the stub), so the dict is always empty. When the wire-up happens in Step 2 this mismatch will surface immediately — worth resolving then rather than being surprised by it.</p>
+              
+            </div>
+          </div><footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+    
+    
+  </span>
+</div>
+    <script src="../../../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "../../..";</script>
+    <script src="../../../js/theme_extra.js"></script>
+    <script src="../../../js/theme.js"></script>
+      <script src="../../../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>

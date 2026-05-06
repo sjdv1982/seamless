@@ -115,6 +115,14 @@
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#seamless-init-cli">seamless-init CLI</a>
     </li>
+    <li class="toctree-l2"><a class="reference internal" href="#service-management-seamless-service-">Service management (seamless-service-*)</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#server-side-requirements">Server-side requirements</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#execution-records-record-command">Execution records (record command)</a>
+    </li>
     <li class="toctree-l2"><a class="reference internal" href="#tool-launch-configuration">Tool launch configuration</a>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#relation-to-the-seamless-ecosystem">Relation to the Seamless ecosystem</a>
@@ -291,6 +299,16 @@ single-key mapping:</p>
 <td><code>clusters</code></td>
 <td>mapping</td>
 <td>Defines cluster objects inline (runs before other commands)</td>
+</tr>
+<tr>
+<td><code>record</code></td>
+<td>boolean</td>
+<td>Enables full execution-record capture (default: minimal records only)</td>
+</tr>
+<tr>
+<td><code>node</code></td>
+<td>string / null</td>
+<td>Selects a named node within the current cluster (advanced: cluster-internal scheduling)</td>
 </tr>
 <tr>
 <td><code>inherit_from_parent</code></td>
@@ -564,6 +582,105 @@ to verify that the servers are reachable before the workflow starts.</p>
 variable is present, so that worker processes that bootstrap themselves with
 <code>set_remote_clients</code> are not affected.</p>
 <hr />
+<h2 id="service-management-seamless-service-">Service management (<code>seamless-service-*</code>)</h2>
+<p><code>seamless-config</code> ships a Seamless-aware wrapper layer over the raw <code>rhl-*</code>
+helpers from <code>remote-http-launcher</code>. The wrappers accept Seamless-level
+arguments (<code>--service</code>, <code>--cluster</code>, <code>--project</code>, <code>--stage</code>) and dispatch
+to the right host over SSH; readers do not need to know the raw launcher key.</p>
+<table>
+<thead>
+<tr>
+<th>Command</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>seamless-service-ps [--server] [--persistent]</code></td>
+<td>Process state (and optionally persistent buffer/DB state) — <code>meta</code> block populates per-row <code>(service, project, stage)</code></td>
+</tr>
+<tr>
+<td><code>seamless-service-logs --service hashserver [--tail N]</code></td>
+<td>Read the service log without knowing the raw key</td>
+</tr>
+<tr>
+<td><code>seamless-service-inspect --service hashserver</code></td>
+<td>Print the server state JSON (PID, port, status, workdir, command, <code>meta</code>)</td>
+</tr>
+<tr>
+<td><code>seamless-service-stop</code></td>
+<td>Stop processes via SIGINT → SIGTERM → SIGKILL escalation; preserves JSON state</td>
+</tr>
+<tr>
+<td><code>seamless-service-rm</code></td>
+<td>Remove JSON state; logs are preserved</td>
+</tr>
+<tr>
+<td><code>seamless-service-clear --service hashserver --project P [--stage S]</code></td>
+<td>Clear hashserver buffers or <code>seamless.db</code> for a project/stage</td>
+</tr>
+<tr>
+<td><code>seamless-service-resolve --service hashserver --cluster C --project P [--stage S]</code></td>
+<td>Translate Seamless-level args → raw <code>key</code>, <code>ssh_hostname</code>, <code>workdir</code>, <code>log_path</code> (no side effects, JSON output)</td>
+</tr>
+</tbody>
+</table>
+<p><code>seamless-service-resolve</code> is an <strong>extractor</strong>, not a synthesizer: it shares
+the same code path as <code>seamless-run</code> and the launched clients. Tools and
+agents should call it on every invocation rather than caching its outputs;
+keys, workdir paths, and host-selection logic may change between Seamless
+versions.</p>
+<p>Cluster-wide variants (<code>--cluster MYCLUSTER</code>) operate on every service of
+that cluster.</p>
+<h3 id="server-side-requirements">Server-side requirements</h3>
+<p><code>seamless-service-*</code> always shells out to <code>rhl-*</code> helpers — there is <strong>no
+inline fallback</strong>. The <code>rhl-*</code> binaries must be reachable over SSH for
+non-interactive, non-login sessions on every frontend you target.</p>
+<ul>
+<li><strong>System install</strong> (with root): <code>pip install remote-http-launcher</code> into
+  the system Python; helpers land in <code>/usr/local/bin</code> and are picked up
+  for free.</li>
+<li><strong>Conda base env install</strong> (no root): install into the remote host's
+  conda base environment, then edit <code>~/.bashrc</code> so the conda activation
+  hook is reached on non-interactive shells. Many distributions ship a
+  guard like
+  <code>bash
+  case $- in
+      *i*) ;;
+        *) return;;
+  esac</code>
+  near the top of <code>~/.bashrc</code> that returns early for non-interactive
+  shells, before the conda block runs. Comment those lines out (or move
+  them after the conda hook) so <code>ssh host rhl-ps</code> finds the helper.</li>
+<li><strong>Use <code>rhl-guard</code></strong>: when the SSH key in <code>authorized_keys</code> is gated
+  by <code>command="rhl-guard …"</code>, the guard locates and exec's the helpers
+  itself; the <code>.bashrc</code> edit is unnecessary.</li>
+</ul>
+<p>Note: <code>remote-http-launcher</code> itself has its own fallback — it can probe
+conda configuration via inline heredocs when no <code>rhl-*</code> helpers are
+available on the host. That fallback covers only the launcher's bootstrap;
+it does not extend to <code>seamless-service-*</code> or any other tooling that
+calls <code>rhl-*</code> directly.</p>
+<h2 id="execution-records-record-command">Execution records (<code>record</code> command)</h2>
+<p>When a transformation completes successfully, Seamless writes one execution
+record into <code>seamless.db</code> keyed by <code>tf_checksum</code>. The <code>record</code> command in
+<code>seamless.profile.yaml</code> controls how much is captured:</p>
+<pre><code class="language-yaml">- record: true       # full record: env fingerprints, compilation context, freshness, ...
+- record: false      # minimal record (default): timing + memory + execution mode
+</code></pre>
+<p>The default (<code>record: false</code>) writes a small body containing <code>tf_checksum</code>,
+<code>result_checksum</code>, <code>seamless_version</code>, <code>execution_mode</code>, <code>remote_target</code>,
+wall/CPU/GPU timing, and memory peak. The <code>record: true</code> opt-in enables
+full reproducibility-audit capture, intended for debugging environment
+drift, auditing irreproducible results, and sharing receipts alongside
+shared <code>seamless.db</code> files. Records are write-once per <code>tf_checksum</code>;
+turning the flag on does not retroactively upgrade existing rows.</p>
+<p>The Python equivalent is <code>seamless.config.select_record(True)</code>. Capture
+is worker-side, so the recorded environment reflects where the job
+actually ran (jobserver worker, Dask worker, spawn child, or local).</p>
+<p>See <a href="https://github.com/sjdv1982/seamless/blob/main/docs/agent/contracts/execution-records.md">docs/agent/contracts/execution-records.md</a>
+for the full behavioral contract.</p>
+<hr />
 <h2 id="tool-launch-configuration">Tool launch configuration</h2>
 <p><code>seamless-config</code> ships an internal <code>tools.yaml</code> that describes how to
 construct the launch parameters for each server type (<code>hashserver</code>, <code>database</code>,
@@ -576,6 +693,11 @@ SSH tunnel if needed) and returns a live port.</p>
 definition and the current project/stage context. These functions are called
 internally by <code>seamless-config</code> and by launcher scripts in other packages;
 direct use is only needed when writing custom launch tooling.</p>
+<p>Each launch dict carries a <code>meta</code> block that the launcher writes verbatim
+into the server-side state JSON: <code>(service, cluster, mode, project,
+subproject, stage, substage, queue)</code>. <code>seamless-service-*</code> reads this
+block to populate the cluster/project/stage columns in <code>seamless-service-ps</code>
+output.</p>
 <hr />
 <h2 id="relation-to-the-seamless-ecosystem">Relation to the Seamless ecosystem</h2>
 <pre><code class="language-text">seamless-core          ← the computation engine (cells, transformers, caching)

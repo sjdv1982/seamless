@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <link rel="shortcut icon" href="../img/favicon.ico" />
+    <title>Compression - Seamless — Agent Documentation</title>
+    <link rel="stylesheet" href="../css/theme.css" />
+    <link rel="stylesheet" href="../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "Compression";
+        var mkdocs_page_input_path = "contracts/compression.md";
+        var mkdocs_page_url = null;
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href="../index.html" class="icon icon-home"> Seamless — Agent Documentation
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../index.html">Home</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../overview.html">Agent Docs Overview</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../repos/index.html">Workspace Repos</a>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Contracts</span></p>
+              <ul class="current">
+                  <li class="toctree-l1"><a class="reference internal" href="identity-and-caching.html">Identity and Caching</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="direct-delayed-and-transformation.html">direct/delayed/Transformation</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="modules-and-closures.html">Modules and Closures</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="scratch-witness-audit.html">Scratch/Witness/Audit</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="seamless-run-and-argtyping.html">seamless-run/Argtyping</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="cache-storage-and-limits.html">Cache Storage and Limits</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="content-addressed-files-and-dirs.html">Content-addressed Files and Dirs</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="execution-backends.html">Execution Backends</a>
+                  </li>
+                  <li class="toctree-l1 current"><a class="reference internal current" href="#">Compression</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#core-invariant">Core invariant</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#what-compression-affects-and-what-it-does-not">What compression affects and what it does not</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#supported-formats">Supported formats</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#buffer-storage-layout">Buffer storage layout</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#the-bufferlength-sidecar">The .BUFFERLENGTH sidecar</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#strip_compression_suffix">strip_compression_suffix</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#sidecar-files-checksum-index">Sidecar files (.CHECKSUM, .INDEX)</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#cli-bash-face">CLI / bash face</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#directory-deepfolder-pins">Directory (deepfolder) pins</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#read-buffer-materialization-worker-side">Read-buffer materialization (worker side)</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#hashserver-http-protocol">Hashserver HTTP protocol</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#put-upload">PUT (upload)</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#get-download">GET (download)</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#has-and-has-now">/has and /has-now</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#buffer-length">/buffer-length</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#agent-guidance">Agent guidance</a>
+    </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="compiled-transformers.html">Compiled Transformers</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="seamless-signature-schema.html">seamless-signature Schema</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">API</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/python/seamless.html">seamless</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/python/seamless.transformer.html">seamless.transformer</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/python/seamless.buffer_class.html">seamless.buffer_class</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/python/seamless.checksum_class.html">seamless.checksum_class</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/python/seamless_config.select.html">seamless_config.select</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/python/seamless_config.tools.html">seamless_config.tools</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/python/seamless_transformer.transformation_class.html">seamless_transformer.transformation_class</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/python/seamless_transformer.transformer_class.html">seamless_transformer.transformer_class</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">CLI</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/cli/seamless-run.html">seamless-run</a>
+                  </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Seamless — Agent Documentation</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../index.html" class="icon icon-home" aria-label="Docs"></a></li>
+          <li class="breadcrumb-item">Contracts</li>
+      <li class="breadcrumb-item active">Compression</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h1 id="native-compression-support-contract">Native Compression Support (Contract)</h1>
+<p>Seamless natively supports <code>.zst</code> (Zstandard) and <code>.gz</code> (gzip) compression for file buffers. Compression is a <strong>materialization detail</strong> — it never participates in identity or caching.</p>
+<p>Scientific workflows can produce massive amounts of data, and the hashserver buffer directory often lives on a shared HPC network filesystem where storage pressure is real. Native compression support provides transparent, optional relief: compressed and uncompressed forms coexist under the same checksum identity, so teams can compress buffers at their own pace without coordination.</p>
+<p>This also means that common scientific datasets distributed in compressed form (PDB as <code>.pdb.gz</code>, array data as <code>.npy.zst</code>) can be ingested directly without decompressing to disk — and with <code>--hardlink</code>, without any storage overhead at all.</p>
+<p>The design is transparent enough that even running <code>zstd --rm</code> on the entire buffer directory after the fact will "just work" — the hashserver and all clients (seamless-upload, seamless-download, worker materialization) check for <code>.zst</code> and <code>.gz</code> variants on every lookup. The only caveat: without <code>.BUFFERLENGTH</code> sidecar files, the <code>/buffer-length</code> endpoint must decompress each buffer to determine its uncompressed size (correct but expensive). Pre-generating sidecars before compressing avoids this:</p>
+<pre><code class="language-bash">for f in /path/to/buffers/*/*; do
+  if [[ -f &quot;$f&quot; &amp;&amp; &quot;$f&quot; != *.zst &amp;&amp; &quot;$f&quot; != *.gz &amp;&amp; &quot;$f&quot; != *.BUFFERLENGTH &amp;&amp; &quot;$f&quot; != *.LOCK ]]; then
+    stat -c%s &quot;$f&quot; &gt; &quot;${f}.BUFFERLENGTH&quot;
+    zstd --rm &quot;$f&quot;
+  fi
+done
+</code></pre>
+<h2 id="core-invariant">Core invariant</h2>
+<p><strong>The canonical checksum is always computed over the <em>decompressed</em> bytes.</strong></p>
+<p><code>file.npy.zst</code> and <code>file.npy</code> have the same canonical checksum. A compressed and an uncompressed form of the same content are identical artifacts from the caching system's point of view. Uploading a buffer in compressed form does not create a new identity; it adds a new stored form for an existing identity.</p>
+<h2 id="what-compression-affects-and-what-it-does-not">What compression affects and what it does not</h2>
+<table>
+<thead>
+<tr>
+<th>Aspect</th>
+<th>Affected by compression?</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Canonical checksum</td>
+<td>No — always decompressed bytes</td>
+</tr>
+<tr>
+<td>Transformation cache key</td>
+<td>No</td>
+</tr>
+<tr>
+<td><code>.INDEX</code> leaf names for deep/directory pins</td>
+<td>No — always canonical names</td>
+</tr>
+<tr>
+<td>Storage path on disk</td>
+<td>Yes — <code>ab/abcd.zst</code> vs <code>ab/abcd</code></td>
+</tr>
+<tr>
+<td>HTTP <code>Content-Encoding</code> on GET</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td>HTTP <code>Content-Encoding</code> on PUT</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td>Pin name in CLI/bash face</td>
+<td>Yes — suffix is encoded in the filename</td>
+</tr>
+<tr>
+<td><code>buffer-length</code> endpoint</td>
+<td>No — always returns uncompressed size</td>
+</tr>
+</tbody>
+</table>
+<h2 id="supported-formats">Supported formats</h2>
+<ul>
+<li><code>.zst</code> — Zstandard (preferred: faster decompression)</li>
+<li><code>.gz</code> — gzip</li>
+</ul>
+<p>The constant <code>COMPRESSION_PREFERENCE = (".zst", ".gz")</code> governs preference order when both forms are present.</p>
+<h2 id="buffer-storage-layout">Buffer storage layout</h2>
+<p>Compressed and uncompressed forms of the same buffer coexist naturally under the same prefix directory:</p>
+<pre><code class="language-text">./ab/abcd          # uncompressed
+./ab/abcd.zst      # Zstandard-compressed form
+./ab/abcd.gz       # gzip-compressed form
+./ab/abcd.BUFFERLENGTH  # sidecar: uncompressed byte count (only when no uncompressed file present)
+</code></pre>
+<p>Any or all of these may exist. Their coexistence is safe; having both does not cause inconsistency.</p>
+<h2 id="the-bufferlength-sidecar">The <code>.BUFFERLENGTH</code> sidecar</h2>
+<p>When a buffer is stored <strong>only</strong> in compressed form, the hashserver writes a <code>.BUFFERLENGTH</code> sidecar file containing the uncompressed byte count as a decimal integer. This lets the <code>/buffer-length</code> endpoint return the canonical (uncompressed) size without decompressing on read.</p>
+<p>The sidecar is deleted automatically when an uncompressed form of the same buffer is later uploaded, because the size can then be obtained directly via <code>stat()</code>.</p>
+<p>Agents should not write or read <code>.BUFFERLENGTH</code> sidecars directly — they are an internal implementation detail of the hashserver.</p>
+<h2 id="strip_compression_suffix"><code>strip_compression_suffix</code></h2>
+<p>A utility function available in both <code>hashserver.compression_utils</code> and <code>seamless_transformer.compression_utils</code>:</p>
+<pre><code class="language-python">from seamless_transformer.compression_utils import strip_compression_suffix
+
+base, suffix = strip_compression_suffix(&quot;file.npy.zst&quot;)
+# base = &quot;file.npy&quot;, suffix = &quot;.zst&quot;
+
+base, suffix = strip_compression_suffix(&quot;file.npy&quot;)
+# base = &quot;file.npy&quot;, suffix = None
+</code></pre>
+<p><strong>Always use <code>strip_compression_suffix</code> before calling <code>os.path.splitext</code>.</strong> Calling <code>os.path.splitext("file.npy.zst")</code> returns <code>(".zst")</code> which discards the semantic extension.</p>
+<h2 id="sidecar-files-checksum-index">Sidecar files (<code>.CHECKSUM</code>, <code>.INDEX</code>)</h2>
+<p>Compression suffixes are stripped before deriving sidecar names:</p>
+<ul>
+<li><code>file.npy.zst</code> → sidecar is <code>file.npy.CHECKSUM</code> (not <code>file.npy.zst.CHECKSUM</code>)</li>
+<li><code>file.npy.gz</code> → sidecar is <code>file.npy.CHECKSUM</code></li>
+</ul>
+<p><code>file.npy.zst.CHECKSUM</code> is <strong>never</strong> a valid sidecar name.</p>
+<h2 id="cli-bash-face">CLI / bash face</h2>
+<p>In the CLI and bash transformation face, compression is encoded in the filename and therefore in the pin name:</p>
+<pre><code class="language-bash"># Input: file.npy.zst → pin name becomes file1.npy.zst
+seamless-run --input file.npy.zst mycommand
+</code></pre>
+<p>Pin names carry the compression suffix. The worker reads the suffix from the pin name and materializes the buffer in the matching compression format.</p>
+<h2 id="directory-deepfolder-pins">Directory (deepfolder) pins</h2>
+<p>For directory-typed pins, the compression suffix on the <strong>pin name</strong> applies to all leaves:</p>
+<ul>
+<li>Pin <code>mydata.zst</code> → directory on disk is <code>mydata/</code>, each leaf <code>file.npy</code> is materialized as <code>mydata/file.npy.zst</code></li>
+<li>Pin <code>mydata</code> → each leaf is materialized uncompressed (or whatever stored form is available)</li>
+</ul>
+<p>The <code>.INDEX</code> always uses canonical leaf names (no compression suffixes). The directory checksum is unaffected by which compression format is used for leaf storage.</p>
+<h2 id="read-buffer-materialization-worker-side">Read-buffer materialization (worker side)</h2>
+<p>When materializing a pin from the read buffer folder:</p>
+<ol>
+<li><strong>Fast path</strong>: if the stored form matches the requested suffix, create a symlink.</li>
+<li><strong>Fallback</strong>: if only a non-matching form is available, read it, transcode (decompress and/or compress), and write the result to the pin path. No symlink.</li>
+</ol>
+<p>Agents should not assume that the fast path is always taken, but can assume that the resulting bytes at the pin path will always match what was uploaded (decompressed if needed).</p>
+<p>Decompression failures during materialization raise an error — there is no silent fallback to corrupt data.</p>
+<h2 id="hashserver-http-protocol">Hashserver HTTP protocol</h2>
+<h3 id="put-upload">PUT (upload)</h3>
+<p>Send <code>Content-Encoding: zstd</code> or <code>Content-Encoding: gzip</code> with the compressed body. The URL checksum is always the canonical (decompressed) checksum:</p>
+<pre><code class="language-http">PUT /{canonical_checksum}
+Content-Encoding: zstd
+&lt;compressed body&gt;
+</code></pre>
+<p>The hashserver decompresses the body on-the-fly during PUT to verify the canonical checksum and compute the uncompressed size. The compressed bytes are stored as-is.</p>
+<p>If the checksum of the decompressed content does not match the URL, the server returns 400.</p>
+<h3 id="get-download">GET (download)</h3>
+<p>The URL remains <code>/{canonical_checksum}</code>. The response <code>Content-Encoding</code> header tells the client which stored form was served:</p>
+<pre><code class="language-http">GET /{canonical_checksum}
+→ Content-Encoding: zstd   (if only compressed form is stored)
+→ (no Content-Encoding)    (if uncompressed form is served)
+</code></pre>
+<p>The server serves whichever stored form exists, there is only limited client-driven content negotiation (<code>Accept-Encoding</code>) — the server will only serve what it has. If you need a specific form, request it from an upload that provided that form.</p>
+<p>The client must decompress the body if <code>Content-Encoding</code> is set.</p>
+<h3 id="has-and-has-now"><code>/has</code> and <code>/has-now</code></h3>
+<p>These endpoints answer "do you have this canonical content?", not "do you have it in a specific encoding?". Any stored form (uncompressed, <code>.zst</code>, <code>.gz</code>) satisfies the query. An agent can rely on <code>/has</code> returning true whenever the buffer was uploaded in any form.</p>
+<h3 id="buffer-length"><code>/buffer-length</code></h3>
+<p>Always returns the <strong>uncompressed</strong> byte count, regardless of what form is stored.</p>
+<h2 id="agent-guidance">Agent guidance</h2>
+<ul>
+<li>Never include a compression suffix in a URL checksum path — URLs always use the raw 64-hex-char checksum.</li>
+<li>When uploading compressed files, send <code>Content-Encoding</code> on PUT; the URL checksum must be the canonical (decompressed) checksum.</li>
+<li>When processing GET responses, check <code>Content-Encoding</code> and decompress before use.</li>
+<li>Use <code>strip_compression_suffix</code> anywhere a filename may carry a compression suffix before calling <code>os.path.splitext</code> or deriving sidecar names.</li>
+<li>Do not assume a specific stored form exists — the client should handle both compressed and uncompressed responses from GET.</li>
+<li>The Python face (<code>transformer.compression.my_pin</code>) is deferred and not yet implemented; use the CLI face (suffix in the pin/filename) for now.</li>
+</ul>
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="execution-backends.html" class="btn btn-neutral float-left" title="Execution Backends"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="compiled-transformers.html" class="btn btn-neutral float-right" title="Compiled Transformers">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+    
+      <span><a href="execution-backends.html" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="compiled-transformers.html" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script src="../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "..";</script>
+    <script src="../js/theme_extra.js"></script>
+    <script src="../js/theme.js"></script>
+      <script src="../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>

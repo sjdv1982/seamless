@@ -107,6 +107,30 @@
     </li>
         </ul>
     </li>
+    <li class="toctree-l2"><a class="reference internal" href="#ssh-guard">SSH Guard</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#how-it-works_1">How it works</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#path-policy">Path policy</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#always-on-heuristics">Always-on heuristics</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#installation_1">Installation</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#conda-cache">Conda cache</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#reaching-the-rhl-helpers-over-ssh">Reaching the rhl-* helpers over SSH</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#lifecycle-states">Lifecycle States</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#json-state-schema">JSON State Schema</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#helper-commands-rhl-">Helper commands (rhl-*)</a>
+    </li>
     <li class="toctree-l2"><a class="reference internal" href="#cli-scripts">CLI scripts</a>
     </li>
     </ul>
@@ -260,6 +284,11 @@
 <td>no</td>
 <td>Arbitrary parameters written into the server-side JSON file</td>
 </tr>
+<tr>
+<td><code>meta</code></td>
+<td>no</td>
+<td>Opaque caller-provided JSON metadata copied into client/server state</td>
+</tr>
 </tbody>
 </table>
 <p>The <code>key</code> and <code>command</code> fields are Python f-string templates evaluated against the full config namespace.</p>
@@ -306,10 +335,312 @@ result = run({
 })
 print(result[&quot;hostname&quot;], result[&quot;port&quot;])
 </code></pre>
+<h2 id="ssh-guard">SSH Guard</h2>
+<p><code>remote-http-launcher</code> ships an SSH guard (<code>rhl-guard</code>) that restricts what commands can be run on the remote server under the service user account. When installed, only named <code>rhl-*</code> helper programs are permitted — naked shell commands such as <code>pkill</code>, <code>rm -rf</code>, <code>bash -lc ...</code>, or arbitrary <code>python3 -c</code> are rejected.</p>
+<h3 id="how-it-works_1">How it works</h3>
+<p>The SSH <code>command=</code> option in <code>authorized_keys</code> forces every incoming SSH session through <code>rhl-guard</code>. The guard reads <code>SSH_ORIGINAL_COMMAND</code>, validates it against a whitelist, and either <code>exec</code>s the command or exits with an error. Interactive sessions (no <code>SSH_ORIGINAL_COMMAND</code>) are always rejected.</p>
+<p>The guard whitelist covers only top-level <code>rhl-*</code> helper commands installed by this package (see below). The helpers perform state inspection, process checks, HTTP handshakes, port verification, conda cache reads, and service launch using structured argv/data instead of remote shell or Python source.</p>
+<p>Direct process-management commands such as <code>kill -1 &lt;pid&gt;</code> are rejected by
+the guard. Use helpers such as <code>rhl-stop &lt;key&gt;</code> instead.</p>
+<h3 id="path-policy">Path policy</h3>
+<p>Three of the helpers — <code>rhl-clear</code>, <code>rhl-ps-persistent</code>, and
+<code>rhl-launch-service</code> (the <code>--workdir</code> argument) — accept filesystem paths
+chosen by the SSH client. Without bounding which paths the client may
+supply, a stolen SSH key with <code>command="rhl-guard"</code> would still reach
+helpers that destroy or probe arbitrary directories.</p>
+<blockquote>
+<p><strong>Path policy is enforced entirely by <code>rhl-guard</code>. The <code>rhl-*</code> helpers
+are not modified.</strong> They behave identically to previous versions when
+invoked directly — locally on the server, via tests, or in any
+client-side context (<code>rhl-ps</code>, <code>rhl-rm --client</code>, etc.). The guard is
+the single point that parses <code>SSH_ORIGINAL_COMMAND</code>, identifies any
+path arguments destined for the three helpers above, validates those
+paths against the configured policy, and only then <code>exec</code>s the helper.
+Direct invocations bypass <code>rhl-guard</code> entirely and are <em>unaffected</em>
+by the policy.</p>
+</blockquote>
+<p>The policy is declared via one of the following mutually-exclusive flags
+on <code>rhl-guard</code> in the <code>authorized_keys</code> <code>command=</code> directive:</p>
+<table>
+<thead>
+<tr>
+<th>Flag</th>
+<th>Effect</th>
+<th>When to use</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>--data-roots /path/to/roots-file</code></td>
+<td><strong>Strict allowlist.</strong> Each path the guard extracts from the SSH command must, after <code>~</code>-expansion and symlink resolution, equal or live under one of the absolute paths listed in the file. One path per line; blank lines and <code>#</code> comments are ignored. The same list governs <code>rhl-clear</code>, <code>rhl-ps-persistent</code>, and <code>rhl-launch-service --workdir</code>.</td>
+<td>Recommended for production. Fully explicit; no heuristics.</td>
+</tr>
+<tr>
+<td><code>--clear-policy seamless</code></td>
+<td><strong>Marker preset for Seamless.</strong> The guard accepts a target directory for <code>rhl-clear</code> and <code>rhl-ps-persistent</code> only if it contains either a <code>seamless.db</code> file or a <code>.HASHSERVER_PREFIX</code> file. <code>rhl-launch-service --workdir</code> is checked against the always-on heuristics only (since a workdir that has not yet been created cannot contain a marker). No allowlist file required.</td>
+<td>Seamless deployments.</td>
+</tr>
+<tr>
+<td><code>--clear-policy marker:NAME</code></td>
+<td><strong>Generic marker.</strong> Same shape as the <code>seamless</code> preset, but the marker filename is configurable. Drop <code>touch &lt;dir&gt;/&lt;NAME&gt;</code> into each directory you wish to authorise.</td>
+<td>Non-Seamless deployments that prefer per-directory markers over a central allowlist.</td>
+</tr>
+<tr>
+<td><code>--permissive-paths</code></td>
+<td><strong>Disables the policy.</strong> The guard accepts any path that passes the always-on heuristics below.</td>
+<td>Compatibility for deployments that cannot configure any of the modes above. <strong>Not recommended.</strong> Mutually exclusive with <code>--data-roots</code> and <code>--clear-policy</code>; combining them is a fatal <code>rhl-guard</code> configuration error.</td>
+</tr>
+</tbody>
+</table>
+<p>If none of these flags is present, <strong><code>rhl-guard</code> refuses to dispatch
+<code>rhl-clear</code>, <code>rhl-ps-persistent</code>, or <code>rhl-launch-service</code></strong> (any
+invocation of those three, not only those that include a path argument)
+and exits with an error pointing the operator at this section. The
+other <code>rhl-*</code> helpers do not accept client-chosen paths and continue
+to be dispatched normally.</p>
+<h4 id="always-on-heuristics">Always-on heuristics</h4>
+<p>In every mode (including <code>--permissive-paths</code>), <code>rhl-guard</code> rejects the
+dispatch if any path it extracts from the SSH command is:</p>
+<ul>
+<li>not absolute after <code>~</code> expansion;</li>
+<li>equal to <code>$HOME</code>, or an ancestor of <code>$HOME</code> (e.g. <code>/</code>, <code>/home</code>);</li>
+<li>containing any segment that begins with <code>.</code> (e.g. <code>~/.ssh</code>,
+  <code>/tmp/.cache/foo</code>); or</li>
+<li>resolved to one of the system-root directories (<code>/</code>, <code>/etc</code>, <code>/usr</code>,
+  <code>/bin</code>, <code>/sbin</code>, <code>/lib</code>, <code>/lib64</code>, <code>/boot</code>, <code>/sys</code>, <code>/proc</code>, <code>/run</code>,
+  <code>/var</code>, <code>/opt</code>).</li>
+</ul>
+<p>These are guard-side checks applied <em>before</em> the helper is <code>exec</code>'d.
+They are independent of, and additional to, the helper's own existing
+checks; nothing in the helper changes.</p>
+<h3 id="installation_1">Installation</h3>
+<p>On the remote server, add to <code>~/.ssh/authorized_keys</code> a <code>command=</code> directive
+that includes one of the <a href="#path-policy">path-policy flags</a>. The recommended
+form pins an explicit allowlist file:</p>
+<pre><code>command=&quot;rhl-guard --data-roots /home/svc/.config/rhl/data-roots&quot; ssh-rsa AAAA... your-key-comment
+</code></pre>
+<p>with <code>~/.config/rhl/data-roots</code> containing, e.g.:</p>
+<pre><code># Persistent workdirs mirroring clusters.yaml
+~/seamless-buffers
+~/hashserver-bufferdir
+~/seamless-databasedir
+</code></pre>
+<p>Alternative forms for deployments that prefer markers over a central
+allowlist:</p>
+<pre><code># Seamless preset — no allowlist file needed
+command=&quot;rhl-guard --clear-policy seamless&quot; ssh-rsa AAAA... your-key-comment
+
+# Generic marker — drop &quot;.rhl-clearable&quot; into each authorised workdir
+command=&quot;rhl-guard --clear-policy marker:.rhl-clearable&quot; ssh-rsa AAAA... your-key-comment
+</code></pre>
+<p>Compatibility form for deployments that cannot configure either of the
+above (not recommended):</p>
+<pre><code>command=&quot;rhl-guard --permissive-paths&quot; ssh-rsa AAAA... your-key-comment
+</code></pre>
+<p>Running <code>rhl-guard</code> directly prints an installation-oriented error explaining
+that it must be invoked by SSH. To test one guarded command locally on the
+server:</p>
+<pre><code class="language-bash">SSH_ORIGINAL_COMMAND=&quot;rhl-ps&quot; rhl-guard
+</code></pre>
+<h3 id="conda-cache">Conda cache</h3>
+<p>The launcher reads conda configuration via <code>rhl-conda-info</code> automatically. Prime the cache once on the remote server before using conda environments:</p>
+<pre><code class="language-bash">ssh &lt;remote_host&gt; rhl-cache-conda
+</code></pre>
+<p>Re-run this if the conda installation or environments change. On hosts where no <code>rhl-*</code> helpers are installed, the launcher falls back to inline heredoc probes automatically.</p>
+<h3 id="reaching-the-rhl-helpers-over-ssh">Reaching the <code>rhl-*</code> helpers over SSH</h3>
+<p>The launcher's fallback covers only its own conda discovery — anything that depends directly on the helpers (the <code>seamless-service-*</code> layer in <code>seamless-config</code>, agents shelling out to <code>rhl-ps</code> / <code>rhl-stop</code> / <code>rhl-logs</code>, etc.) needs the <code>rhl-*</code> binaries to actually be on the remote <code>PATH</code> for <strong>non-interactive, non-login</strong> SSH sessions. There are three deployment paths:</p>
+<ul>
+<li><strong>System-wide install</strong> (recommended when you have root): <code>pip install remote-http-launcher</code> into the system Python. The helpers land under <code>/usr/local/bin</code> and are reachable without any shell setup.</li>
+<li><strong>Conda base env install</strong> (no root): install into the conda base environment on the remote host, then <strong>modify <code>~/.bashrc</code> so its early "interactive shell" guard does not skip conda activation for non-login SSH sessions</strong>. Typical <code>~/.bashrc</code> files contain something like
+  <code>bash
+  case $- in
+      *i*) ;;
+        *) return;;
+  esac</code>
+  near the top; this short-circuits before the conda hook on non-interactive shells, leaving <code>rhl-*</code> off <code>PATH</code> when SSH runs <code>ssh host rhl-ps</code>. Comment out (or move) those lines so the conda hook is reached for every shell.</li>
+<li><strong>Use <code>rhl-guard</code></strong> (no root, no <code>.bashrc</code> edit): when SSH is gated by <code>command="rhl-guard …"</code> in <code>authorized_keys</code>, the guard locates and exec's the helpers itself, so <code>PATH</code> setup in the user's shell is irrelevant. This is the cleanest deployment for environments where editing <code>.bashrc</code> is not desirable.</li>
+</ul>
+<h2 id="lifecycle-states">Lifecycle States</h2>
+<p>Launcher state normally moves through these states:</p>
+<table>
+<thead>
+<tr>
+<th>State</th>
+<th>Meaning</th>
+<th>Next action</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>absent</code></td>
+<td>No launcher state or persistent directory exists</td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>starting</code></td>
+<td>Process launched, waiting for it to report a port</td>
+<td>Wait, or check logs if it hangs</td>
+</tr>
+<tr>
+<td><code>running</code></td>
+<td>Service healthy and port known</td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>failed</code></td>
+<td>Startup failed or timed out</td>
+<td>Read log with <code>rhl-logs</code>, fix, restart</td>
+</tr>
+<tr>
+<td><code>stale</code></td>
+<td>Server JSON exists but process is dead</td>
+<td>Read log with <code>rhl-logs</code>, then <code>rhl-rm</code> to clear</td>
+</tr>
+<tr>
+<td><code>persistent</code></td>
+<td>Workdir contains data even when no process is running</td>
+<td><code>rhl-ps-persistent</code> to inspect; <code>rhl-clear</code> to wipe</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Persistent state causes false-pass test results.</strong> A service launched against
+a populated buffer directory or <code>seamless.db</code> returns cached results without
+exercising the underlying computation. When a test passes suspiciously after
+changes that should affect results, use <code>rhl-ps-persistent</code> (or
+<code>seamless-service-ps --persistent</code> from <code>seamless-config</code>) to inspect cached
+data, and <code>rhl-clear</code> (or <code>seamless-service-clear</code>) to wipe it before
+re-testing on a cold cache.</p>
+<p><strong>The <code>stale</code> state is the post-mortem window for non-persistent services.</strong>
+<code>jobserver</code>, <code>daskserver</code>, and <code>pure-daskserver</code> have no persistent data; the
+log file is the only post-mortem artefact, and it is reachable via <code>rhl-logs</code>
+only while the server JSON exists. Read the log <em>before</em> running <code>rhl-rm</code> — the
+log file itself survives JSON removal but is no longer addressable by key
+through the helper.</p>
+<h2 id="json-state-schema">JSON State Schema</h2>
+<p>Server JSON files live under <code>~/.remote-http-launcher/server/&lt;key&gt;.json</code> and
+client files under <code>~/.remote-http-launcher/client/&lt;key&gt;.json</code>. Readers must
+tolerate rows without <code>meta</code> — older launcher versions and callers that do not
+populate it still write valid state files.</p>
+<p>When written by <code>seamless-config</code>, the <code>meta</code> block contains:</p>
+<pre><code class="language-json">{
+  &quot;meta&quot;: {
+    &quot;service&quot;:    &quot;hashserver&quot;,
+    &quot;cluster&quot;:    &quot;MYCLUSTER&quot;,
+    &quot;mode&quot;:       &quot;rw&quot;,
+    &quot;project&quot;:    &quot;myproject&quot;,
+    &quot;subproject&quot;: null,
+    &quot;stage&quot;:      &quot;fingertip&quot;,
+    &quot;substage&quot;:   null,
+    &quot;queue&quot;:      null
+  }
+}
+</code></pre>
+<p><code>rhl-ps --json</code> emits this block verbatim alongside the process-state fields
+(<code>key</code>, <code>status</code>, <code>port</code>, <code>pid</code>, <code>workdir</code>, <code>log</code>). The launcher treats <code>meta</code>
+as opaque and does not validate its contents — Seamless-specific semantics live
+entirely in <code>seamless-config</code>, not in <code>remote-http-launcher</code>.</p>
+<h2 id="helper-commands-rhl-">Helper commands (<code>rhl-*</code>)</h2>
+<p>Installing <code>remote-http-launcher</code> adds a set of server-side helper programs that perform specific, safe operations on launcher state. These are the commands agents and operators should use instead of raw <code>kill</code>, <code>rm</code>, or shell loops.</p>
+<table>
+<thead>
+<tr>
+<th>Command</th>
+<th>Runs on</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>rhl-guard</code></td>
+<td>server</td>
+<td>SSH guard entry point; validates <code>SSH_ORIGINAL_COMMAND</code> before exec</td>
+</tr>
+<tr>
+<td><code>rhl-cache-conda</code></td>
+<td>server</td>
+<td>Discover conda setup and write <code>~/.remote-http-launcher/conda-setup.json</code></td>
+</tr>
+<tr>
+<td><code>rhl-conda-info</code></td>
+<td>server</td>
+<td>Print the cached conda-setup JSON; exit 1 if cache is absent</td>
+</tr>
+<tr>
+<td><code>rhl-launch-service --key K --workdir D [--conda-env E] [--network-interface I] [--parameters J] [--meta J] -- BINARY ARG...</code></td>
+<td>server</td>
+<td>Launch a whitelisted service binary as a daemon; write server-side JSON</td>
+</tr>
+<tr>
+<td><code>rhl-inspect &lt;key&gt; [--with-mtime]</code></td>
+<td>server</td>
+<td>Pretty-print the server state JSON; <code>--with-mtime</code> emits <code>{"mtime": …, "data": …}</code></td>
+</tr>
+<tr>
+<td><code>rhl-logs &lt;key&gt; [--tail N]</code></td>
+<td>server</td>
+<td>Print the stdout/stderr log for a service</td>
+</tr>
+<tr>
+<td><code>rhl-stop &lt;key&gt;</code></td>
+<td>server</td>
+<td>Stop service processes without deleting JSON state</td>
+</tr>
+<tr>
+<td><code>rhl-pid-alive PID</code></td>
+<td>server</td>
+<td>Exit 0 if the process is alive, 1 if it is not</td>
+</tr>
+<tr>
+<td><code>rhl-verify-port HOST PORT</code></td>
+<td>server</td>
+<td>TCP-connect to HOST:PORT (3 retries); exit 0 on success, 1 on failure</td>
+</tr>
+<tr>
+<td><code>rhl-handshake URL</code></td>
+<td>server</td>
+<td>GET URL; exit 0 on 2xx, 1 on network error, 2 on non-2xx status</td>
+</tr>
+<tr>
+<td><code>rhl-ps [--client]</code></td>
+<td>client/server</td>
+<td>List process state rows; client mode lists local connection state</td>
+</tr>
+<tr>
+<td><code>rhl-ps-persistent &lt;path&gt; [--marker FILENAME]</code></td>
+<td>server</td>
+<td>Report absent, empty, or populated filesystem-backed state; optionally report only directories containing a marker file</td>
+</tr>
+<tr>
+<td><code>rhl-rm &lt;key&gt; [--client] [--server]</code></td>
+<td>client/server</td>
+<td>Remove launcher JSON state files while leaving logs on disk</td>
+</tr>
+<tr>
+<td><code>rhl-clear &lt;path&gt;</code></td>
+<td>server</td>
+<td>Remove direct children of a validated persistent directory</td>
+</tr>
+</tbody>
+</table>
+<p>When dispatched through <code>rhl-guard</code>, calls to <code>rhl-clear</code>,
+<code>rhl-ps-persistent</code>, and <code>rhl-launch-service</code> are subject to the path
+policy declared on the guard itself (see <a href="#path-policy">Path policy</a>);
+the guard validates the SSH-supplied paths and refuses to dispatch if
+no policy was declared. The helpers themselves are not modified —
+direct local invocation (e.g. on the server, in tests, or for
+client-side helpers such as <code>rhl-ps</code> and <code>rhl-rm --client</code>) bypasses
+the guard and behaves exactly as in earlier versions.</p>
+<p>All state-file helpers respect the <code>REMOTE_HTTP_LAUNCHER_DIR</code> environment variable (same as the launcher).</p>
+<p>Cluster-wide Seamless operations are intentionally not implemented by <code>rhl-*</code>
+helpers. Use <code>seamless-service-stop</code>, <code>seamless-service-rm</code>, and
+<code>seamless-service-ps</code> from <code>seamless-config</code>; those tools resolve Seamless
+cluster/project/stage semantics on the client side and then dispatch safe
+<code>rhl-*</code> operations.</p>
 <h2 id="cli-scripts">CLI scripts</h2>
 <p>Installing <code>remote-http-launcher</code> also provides:</p>
 <ul>
-<li><code>remote-http-launcher</code></li>
+<li><code>remote-http-launcher</code> — main launcher CLI</li>
+<li>All <code>rhl-*</code> helpers listed in the table above</li>
 </ul>
               
             </div>

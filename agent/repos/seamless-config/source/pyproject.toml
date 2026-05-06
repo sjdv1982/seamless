@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "seamless-config"
-version = "0.2.0"
+version = "0.3.1"
 description = "Configuration layer and cluster/remote selection tooling for Seamless"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -12,6 +12,7 @@ license = "MIT"
 authors = [{name = "Sjoerd de Vries"}]
 dependencies = [
     "PyYAML",
+    "remote-http-launcher",
     "seamless-core",
     "seamless-remote",
 ]
@@ -37,6 +38,15 @@ seamless_config = ["tools.yaml"]
 
 [tool.setuptools]
 script-files = ["bin/seamless-init"]
+
+[project.scripts]
+seamless-service-resolve = "seamless_config.service.resolve:main"
+seamless-service-ps = "seamless_config.service.ps:main"
+seamless-service-stop = "seamless_config.service.stop:main"
+seamless-service-rm = "seamless_config.service.rm:main"
+seamless-service-logs = "seamless_config.service.logs:main"
+seamless-service-inspect = "seamless_config.service.inspect:main"
+seamless-service-clear = "seamless_config.service.clear:main"
 
 [tool.setuptools.packages.find]
 where = ["."]

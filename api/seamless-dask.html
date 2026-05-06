@@ -201,8 +201,10 @@
 <li>Request a permission token from the throttle manager.</li>
 <li>Submit the transformation to the Dask cluster.</li>
 <li>Store the result back in the cache.</li>
+<li>Persist an execution record (minimal by default; full when <code>record: true</code>) carrying the worker-side timing, memory, GPU, validation snapshot, and compilation-context fields collected on the Dask worker.</li>
 </ol>
 <p>If the cluster is at capacity, permission requests may be denied; when remote execution is optional, the caller retries and may eventually fall back to local execution.</p>
+<p>Under <code>record: true</code>, record-write failures propagate to the Dask caller (no silent swallowing). Under <code>record: false</code>, minimal-record write failures are best-effort for narrow transport/storage errors and emit a warning; programmer errors and <code>RecordBucketError</code> always propagate.</p>
 <h3 id="worker-plugin">Worker plugin</h3>
 <p><code>SeamlessWorkerPlugin</code> (a Dask <code>WorkerPlugin</code>) runs inside each Dask worker. On setup it:</p>
 <ul>

@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <link rel="shortcut icon" href="../img/favicon.ico" />
+    <title>Service Management (Contract) - Seamless — Agent Documentation</title>
+    <link rel="stylesheet" href="../css/theme.css" />
+    <link rel="stylesheet" href="../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "Service Management (Contract)";
+        var mkdocs_page_input_path = "contracts/service-management.md";
+        var mkdocs_page_url = null;
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href="../index.html" class="icon icon-home"> Seamless — Agent Documentation
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../index.html">Home</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../overview.html">Agent Docs Overview</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../repos/index.html">Workspace Repos</a>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Contracts</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="identity-and-caching.html">Identity and Caching</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="direct-delayed-and-transformation.html">direct/delayed/Transformation</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="modules-and-closures.html">Modules and Closures</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="scratch-witness-audit.html">Scratch/Witness/Audit</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="seamless-run-and-argtyping.html">seamless-run/Argtyping</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="cache-storage-and-limits.html">Cache Storage and Limits</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="content-addressed-files-and-dirs.html">Content-addressed Files and Dirs</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="execution-backends.html">Execution Backends</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="compression.html">Compression</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="compiled-transformers.html">Compiled Transformers</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="seamless-signature-schema.html">seamless-signature Schema</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">API</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/python/seamless.html">seamless</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/python/seamless.transformer.html">seamless.transformer</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/python/seamless.buffer_class.html">seamless.buffer_class</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/python/seamless.checksum_class.html">seamless.checksum_class</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/python/seamless_config.select.html">seamless_config.select</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/python/seamless_config.tools.html">seamless_config.tools</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/python/seamless_transformer.transformation_class.html">seamless_transformer.transformation_class</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/python/seamless_transformer.transformer_class.html">seamless_transformer.transformer_class</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">CLI</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/cli/seamless-run.html">seamless-run</a>
+                  </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Seamless — Agent Documentation</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../index.html" class="icon icon-home" aria-label="Docs"></a></li>
+      <li class="breadcrumb-item active">Service Management (Contract)</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h1 id="service-management-contract">Service Management (Contract)</h1>
+<p>This page defines the agent-facing interface for inspecting and managing Seamless
+service processes. It covers the two-layer model, how to use
+<code>seamless-service-resolve</code>, and the false-pass hazard.</p>
+<hr />
+<h2 id="two-layer-model">Two-layer model</h2>
+<table>
+<thead>
+<tr>
+<th>Layer</th>
+<th>Package</th>
+<th>Audience</th>
+<th>Knows about</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>rhl-*</code> helpers</td>
+<td><code>remote-http-launcher</code></td>
+<td>Raw key operations</td>
+<td>Keys, PID files, log files, buffer paths</td>
+</tr>
+<tr>
+<td><code>seamless-service-*</code></td>
+<td><code>seamless-config</code></td>
+<td>Semantic wrappers</td>
+<td>Cluster, project, stage, service name</td>
+</tr>
+</tbody>
+</table>
+<p>Agents should use <code>seamless-service-resolve</code> to translate Seamless-level inputs
+into <code>rhl-*</code> inputs, then call <code>rhl-*</code> directly — or use the
+<code>seamless-service-*</code> wrappers when working from a project directory
+(with <code>seamless.yaml</code> + <code>seamless.profile.yaml</code> in cwd).</p>
+<hr />
+<h2 id="seamless-service-resolve-extractor-contract">seamless-service-resolve: extractor contract</h2>
+<p><code>seamless-service-resolve</code> translates Seamless-level arguments into rhl-level
+identifiers (key, ssh_hostname, workdir, log_path) without side effects.</p>
+<pre><code class="language-bash">seamless-service-resolve \
+  --service hashserver \
+  --cluster MYCLUSTER \
+  --project myproject \
+  [--stage fingertip]
+</code></pre>
+<p>Output (JSON to stdout):</p>
+<pre><code class="language-json">{
+  &quot;key&quot;:        &quot;hashserver-MYCLUSTER-rw-myproject--STAGE-fingertip&quot;,
+  &quot;ssh_hostname&quot;: &quot;frontend.lab&quot;,
+  &quot;workdir&quot;:    &quot;/data/buffers/myproject/STAGE-fingertip&quot;,
+  &quot;log_path&quot;:   &quot;~/.remote-http-launcher/server/hashserver-MYCLUSTER-rw-myproject--STAGE-fingertip.log&quot;,
+  &quot;service&quot;:    &quot;hashserver&quot;,
+  &quot;cluster&quot;:    &quot;MYCLUSTER&quot;,
+  &quot;mode&quot;:       &quot;rw&quot;,
+  &quot;project&quot;:    &quot;myproject&quot;,
+  &quot;subproject&quot;: null,
+  &quot;stage&quot;:      &quot;fingertip&quot;,
+  &quot;substage&quot;:   null,
+  &quot;queue&quot;:      null
+}
+</code></pre>
+<p><strong>Required disclaimer</strong> (must appear wherever documentation refers to resolver
+output):</p>
+<blockquote>
+<p><code>seamless-service-resolve</code> reports what the currently-installed Seamless
+runtime would compute for the given inputs. Outputs are not part of any stable
+contract: keys, workdir paths, and host-selection logic may change between
+Seamless versions. Tools that need stability should pin a Seamless version, or
+shell out to this command on every invocation rather than caching its outputs.</p>
+</blockquote>
+<p>The tool is an <strong>extractor</strong>, not a synthesizer: its output reflects what the
+runtime would compute, via the same implementation used by <code>seamless-run</code> and
+the <code>seamless-service-*</code> wrappers. Drift between resolver output and runtime
+behavior is structurally impossible — they share the same code path.</p>
+<p><strong>Do not construct keys by hand.</strong> Never rely on the key format pattern
+(e.g., <code>{service}-{cluster}-{mode}-...</code>). Always call <code>seamless-service-resolve</code>.</p>
+<h3 id="agent-mode-no-cwd-defaults">Agent mode (no cwd defaults)</h3>
+<p>By default, <code>seamless-service-resolve</code> does <strong>not</strong> read <code>seamless.yaml</code> or
+<code>seamless.profile.yaml</code> from the current directory. All inputs must be explicit
+flags or environment variables. To opt in to cwd-style defaulting, pass
+<code>--workdir &lt;path&gt;</code> pointing to a directory that contains those files.</p>
+<hr />
+<h2 id="agent-workflow">Agent workflow</h2>
+<p>To inspect or manage a specific service:</p>
+<ol>
+<li>Call <code>seamless-service-resolve</code> → receive JSON with <code>key</code>, <code>ssh_hostname</code>,
+   <code>workdir</code>, <code>log_path</code>.</li>
+<li>Call <code>rhl-*</code> helpers directly using those fields.</li>
+</ol>
+<p>Example (bash):</p>
+<pre><code class="language-bash">RESOLVED=$(seamless-service-resolve \
+  --service hashserver --cluster MYCLUSTER --project myproject)
+
+KEY=$(echo &quot;$RESOLVED&quot; | python3 -c &quot;import sys,json; print(json.load(sys.stdin)['key'])&quot;)
+SSH=$(echo &quot;$RESOLVED&quot; | python3 -c &quot;import sys,json; d=json.load(sys.stdin); print(d['ssh_hostname'] or '')&quot;)
+
+# Read last 50 lines of the log:
+ssh &quot;$SSH&quot; rhl-logs &quot;$KEY&quot; --tail 50
+
+# Stop the service:
+ssh &quot;$SSH&quot; rhl-stop &quot;$KEY&quot;
+
+# Remove JSON state (server side, then client side):
+ssh &quot;$SSH&quot; rhl-rm --server &quot;$KEY&quot;
+rhl-rm --client &quot;$KEY&quot;
+</code></pre>
+<p>When <code>ssh_hostname</code> is <code>null</code> (local cluster), omit the <code>ssh</code> prefix and run
+the <code>rhl-*</code> command directly.</p>
+<hr />
+<h2 id="key-rhl-commands-for-agents">Key rhl-* commands for agents</h2>
+<table>
+<thead>
+<tr>
+<th>Command</th>
+<th>Runs on</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>rhl-ps --json</code></td>
+<td>server</td>
+<td>List all service state as NDJSON; each row includes the <code>meta</code> block (<code>service</code>, <code>cluster</code>, <code>project</code>, <code>stage</code>, <code>mode</code>)</td>
+</tr>
+<tr>
+<td><code>rhl-ps --client --json</code></td>
+<td>client</td>
+<td>List local connection state as NDJSON</td>
+</tr>
+<tr>
+<td><code>rhl-ps-persistent &lt;path&gt; --level N --json</code></td>
+<td>server</td>
+<td>Report data-directory state (absent / empty / populated)</td>
+</tr>
+<tr>
+<td><code>rhl-logs &lt;key&gt; [--tail N]</code></td>
+<td>server</td>
+<td>Read service log</td>
+</tr>
+<tr>
+<td><code>rhl-inspect &lt;key&gt;</code></td>
+<td>server</td>
+<td>Read full server state JSON</td>
+</tr>
+<tr>
+<td><code>rhl-stop &lt;key&gt; [&lt;key&gt;...]</code></td>
+<td>server</td>
+<td>Stop process via signal escalation; preserves JSON</td>
+</tr>
+<tr>
+<td><code>rhl-rm &lt;key&gt; [&lt;key&gt;...] [--client] [--server]</code></td>
+<td>client/server</td>
+<td>Remove state JSON(s); log files are preserved</td>
+</tr>
+<tr>
+<td><code>rhl-clear &lt;path&gt;</code></td>
+<td>server</td>
+<td>Clear all direct children of a persistent data directory</td>
+</tr>
+</tbody>
+</table>
+<p>The <code>meta</code> block in <code>rhl-ps --json</code> output is populated by <code>seamless-config</code>
+and contains <code>service</code>, <code>cluster</code>, <code>project</code>, <code>mode</code>, and optional
+<code>subproject</code>, <code>stage</code>, <code>substage</code>, <code>queue</code>. It is absent in legacy rows written
+by older launcher versions; treat it as optional.</p>
+<hr />
+<h2 id="false-pass-identification">False-pass identification</h2>
+<p>Seamless caches results. A test can pass because old cached data survives, not
+because the current code is correct. This is a <strong>silent correctness hazard</strong>:
+the test shows green, the developer believes the fix works, and the problem
+resurfaces later.</p>
+<p><strong>Signs of a false pass:</strong>
+- Test passes immediately after a service restart
+- Test passes after changes that logically should affect the result
+- <code>seamless-service-ps --persistent</code> shows <code>populated</code> state even after all processes are stopped</p>
+<p><strong>Protocol:</strong></p>
+<pre><code class="language-bash"># 1. Stop and remove all service state for the cluster:
+seamless-service-stop --cluster MYCLUSTER
+seamless-service-rm   --cluster MYCLUSTER
+
+# 2. Clear persistent data for the project:
+seamless-service-clear --service hashserver --project myproject
+seamless-service-clear --service database   --project myproject
+
+# 3. Restart services and re-run the test on a cold cache.
+</code></pre>
+<p>Only a pass on a cold cache is meaningful.</p>
+<hr />
+<h2 id="server-side-requirements">Server-side requirements</h2>
+<p>Seamless does <strong>not</strong> need to be installed on the machine running the services.
+The server needs only:</p>
+<ol>
+<li>The service binary (<code>hashserver</code>, <code>seamless-database</code>, etc.)</li>
+<li>Optionally: <code>remote-http-launcher</code> — required only when the SSH key in
+   <code>authorized_keys</code> is guarded by <code>rhl-guard</code></li>
+</ol>
+<p>Key resolution happens entirely client-side. The launcher writes the resolved
+key/workdir/host to the server. There is no server-side Seamless that could
+produce a conflicting view.</p>
+              
+            </div>
+          </div><footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+    
+    
+  </span>
+</div>
+    <script src="../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "..";</script>
+    <script src="../js/theme_extra.js"></script>
+    <script src="../js/theme.js"></script>
+      <script src="../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>

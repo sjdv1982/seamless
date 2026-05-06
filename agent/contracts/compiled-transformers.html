@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <link rel="shortcut icon" href="../img/favicon.ico" />
+    <title>Compiled Transformers - Seamless — Agent Documentation</title>
+    <link rel="stylesheet" href="../css/theme.css" />
+    <link rel="stylesheet" href="../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "Compiled Transformers";
+        var mkdocs_page_input_path = "contracts/compiled-transformers.md";
+        var mkdocs_page_url = null;
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href="../index.html" class="icon icon-home"> Seamless — Agent Documentation
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../index.html">Home</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../overview.html">Agent Docs Overview</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../repos/index.html">Workspace Repos</a>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Contracts</span></p>
+              <ul class="current">
+                  <li class="toctree-l1"><a class="reference internal" href="identity-and-caching.html">Identity and Caching</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="direct-delayed-and-transformation.html">direct/delayed/Transformation</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="modules-and-closures.html">Modules and Closures</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="scratch-witness-audit.html">Scratch/Witness/Audit</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="seamless-run-and-argtyping.html">seamless-run/Argtyping</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="cache-storage-and-limits.html">Cache Storage and Limits</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="content-addressed-files-and-dirs.html">Content-addressed Files and Dirs</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="execution-backends.html">Execution Backends</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="compression.html">Compression</a>
+                  </li>
+                  <li class="toctree-l1 current"><a class="reference internal current" href="#">Compiled Transformers</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#what-compiled-transformers-are">What compiled transformers are</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#delayed-vs-direct">Delayed vs direct</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#referential-transparency-constraint">Referential transparency constraint</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#architecture">Architecture</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#c-as-the-abi-lingua-franca">C as the ABI lingua franca</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#the-schema">The schema</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#calling-convention">Calling convention</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#transformation-identity-and-caching">Transformation identity and caching</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#result-types">Result types</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#input-type-rules">Input type rules</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#struct-type-rules">Struct type rules</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#output-only-wildcards">Output-only wildcards</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#additional-compiled-objects">Additional compiled objects</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#custom-language-registration">Custom language registration</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#environment">Environment</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#reference-map-load-only-as-needed">Reference Map (load only as needed)</a>
+    </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="seamless-signature-schema.html">seamless-signature Schema</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">API</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/python/seamless.html">seamless</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/python/seamless.transformer.html">seamless.transformer</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/python/seamless.buffer_class.html">seamless.buffer_class</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/python/seamless.checksum_class.html">seamless.checksum_class</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/python/seamless_config.select.html">seamless_config.select</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/python/seamless_config.tools.html">seamless_config.tools</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/python/seamless_transformer.transformation_class.html">seamless_transformer.transformation_class</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/python/seamless_transformer.transformer_class.html">seamless_transformer.transformer_class</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">CLI</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/cli/seamless-run.html">seamless-run</a>
+                  </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Seamless — Agent Documentation</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../index.html" class="icon icon-home" aria-label="Docs"></a></li>
+          <li class="breadcrumb-item">Contracts</li>
+      <li class="breadcrumb-item active">Compiled Transformers</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h1 id="compiled-transformers-contract">Compiled Transformers (Contract)</h1>
+<p>This page defines the behavior an agent may rely on when working with compiled-language transformers in Seamless.</p>
+<h2 id="what-compiled-transformers-are">What compiled transformers are</h2>
+<p><code>CompiledTransformer</code> and <code>DirectCompiledTransformer</code> extend the same delayed/direct model as Python transformers, but execute <strong>compiled source code</strong> instead of a Python function. The compiled source must define a <code>transform()</code> function whose signature matches the C header generated from the schema (see <code>tf.header</code>). The schema is written in the seamless-signature YAML format.</p>
+<p>Built-in languages: <code>c</code>, <code>cpp</code>, <code>fortran</code>, <code>rust</code>. <strong>The set is open.</strong> Additional languages can be registered at runtime with <code>define_compiled_language()</code> (see "Custom language registration" below). Any language that compiles to a C-ABI-compatible <code>transform()</code> symbol is supported.</p>
+<p>Compiled transformers require the <code>compiled</code> optional-dependency group:</p>
+<pre><code class="language-sh">pip install seamless-transformer[compiled]
+# or: pip install cffi numpy seamless-signature
+</code></pre>
+<h2 id="delayed-vs-direct">Delayed vs direct</h2>
+<p><code>CompiledTransformer(language)</code> — calling returns a <code>Transformation</code> handle (delayed, same as <code>delayed</code> for Python).</p>
+<p><code>DirectCompiledTransformer(language)</code> — calling executes the build pipeline immediately and returns the value (same as <code>direct</code> for Python).</p>
+<p>Both classes support all the same attributes (<code>schema</code>, <code>code</code>, <code>header</code>, <code>metavars</code>, <code>objects</code>, <code>compilation</code>, <code>environment</code>).</p>
+<h2 id="referential-transparency-constraint">Referential transparency constraint</h2>
+<p>A compiled transformer is a <strong>pure function of its declared inputs</strong> as far as the return value is concerned. This is the same constraint as for Python transformers, but without a sandbox to enforce it — the <code>.so</code> runs natively.</p>
+<p><strong>Forbidden:</strong> any persistent state that could change the return value across calls:</p>
+<ul>
+<li><code>static</code> accumulators in C</li>
+<li><code>SAVE</code> variables in Fortran</li>
+<li>mutable <code>static</code> in Rust</li>
+<li>cached models, open database sessions</li>
+</ul>
+<p>Code like <code>load_model()</code> or <code>open_database_session()</code> <strong>cannot be wrapped</strong> as a compiled transformer — these create persistent state that subsequent calls depend on, violating the identity model.</p>
+<p><strong>Tolerated:</strong> side effects that do <em>not</em> affect the return value — logging, diagnostic output, writing dashboards. The runtime does not police these.</p>
+<p><strong>The runtime will not detect violations.</strong> The consequence is <strong>silently incorrect caching</strong>: the same inputs return a stale cached result instead of re-executing with the invisibly changed persistent state.</p>
+<h2 id="architecture">Architecture</h2>
+<p>Compiled transformers share a <code>TransformerCore</code> base with Python transformers. The distinction is in the mixin:</p>
+<ul>
+<li><code>TransformerCore</code> — shared state and <code>__call__</code> dispatch flow</li>
+<li><code>PythonMixin</code> — Python source, Python callable signature, sandbox execution</li>
+<li><code>CompiledMixin</code> — schema, compiled source, CFFI build pipeline</li>
+</ul>
+<p><code>CompiledTransformer</code> = <code>TransformerCore</code> + <code>CompiledMixin</code> (delayed).
+<code>DirectCompiledTransformer</code> = <code>TransformerCore</code> + <code>CompiledMixin</code> (direct).</p>
+<h2 id="c-as-the-abi-lingua-franca">C as the ABI lingua franca</h2>
+<p>Regardless of which compiled language a transformer uses, the interface is always expressed as a <strong>C header</strong>. Seamless uses C as the shared ABI between all compiled languages and Python:</p>
+<ul>
+<li><code>seamless-signature</code> generates a C header from the schema (<code>tf.header</code>)</li>
+<li>CFFI reads that C header to build the Python extension <code>.so</code></li>
+<li>The compiled source — whatever language — must export <code>transform()</code> as a <strong>C-compatible symbol</strong></li>
+</ul>
+<p>This means each language must opt in to the C ABI explicitly:</p>
+<ul>
+<li><strong>C</strong>: nothing special needed; functions are C by default</li>
+<li><strong>C++</strong>: wrap the function in <code>extern "C" { ... }</code> to suppress name mangling</li>
+<li><strong>Fortran</strong>: add <code>bind(C, name="transform")</code> to the function declaration and use <code>iso_c_binding</code> types</li>
+<li><strong>Rust</strong>: declare the function as <code>#[no_mangle] pub unsafe extern "C" fn transform(...)</code></li>
+</ul>
+<p><code>seamless-signature</code> currently only generates C headers. For non-C languages, derive the function declaration from the schema or from the generated C header — in practice, a human may pase the schema YAML or <code>tf.header</code> and ask you for the equivalent declaration in their language.</p>
+<p>For the full schema YAML format, dtype-to-language type mappings, and worked examples of deriving Fortran and Rust signatures, load <code>contracts/seamless-signature-schema.md</code>.</p>
+<h2 id="the-schema">The schema</h2>
+<p>The schema is a YAML string in the seamless-signature format. <code>seamless-signature</code> is a separate package that parses the schema and generates the C header — it is the single source of truth from which the C header, the Python callable signature, and all type marshalling are derived. The schema YAML is the user-authored artifact; the C header (<code>tf.header</code>) is a derived artifact that is never hand-edited.</p>
+<p>It describes input and output parameters by name, dtype, and shape:</p>
+<pre><code class="language-yaml">inputs:
+  - name: a
+    dtype: int32
+  - name: b
+    dtype: int32
+outputs:
+  - name: result
+    dtype: int32
+</code></pre>
+<p>Assigning the schema to <code>tf.schema</code>:</p>
+<ul>
+<li>validates it and parses it into a <code>Signature</code> object</li>
+<li>generates the Python callable signature from the input names</li>
+<li>generates the C header (<code>tf.header</code>) that the compiled code must match</li>
+<li>rebuilds <code>tf.metavars</code> when output-only wildcards are present</li>
+</ul>
+<p>For the full schema reference including dtypes, shapes, wildcards, and struct types, load <code>contracts/seamless-signature-schema.md</code>.</p>
+<h2 id="calling-convention">Calling convention</h2>
+<p>The <code>transform()</code> C function receives arguments in this order (matching <code>tf.header</code>):</p>
+<ol>
+<li>Input wildcard sizes (one <code>unsigned int</code> per input wildcard, in schema order)</li>
+<li>Output wildcard maxima (one <code>unsigned int</code> per output wildcard, in schema order)</li>
+<li>Input parameters (in schema order — scalars by value, arrays as pointer)</li>
+<li>Output wildcard return pointers (one <code>unsigned int *</code> per output wildcard)</li>
+<li>Output parameter pointers (in schema order)</li>
+</ol>
+<p>Return value: <code>int</code> — must return 0 on success.</p>
+<h2 id="transformation-identity-and-caching">Transformation identity and caching</h2>
+<p>Compiled transformation identity is determined by <strong>source code content and input values</strong> only. Compiler flags (<code>-O3</code>, <code>-ffast-math</code>, etc.) are execution-only metadata and are <strong>not</strong> part of the cache key.</p>
+<p>This follows the general plain-key vs dunder-key split described in <code>contracts/identity-and-caching.md</code>. Source code and input arguments are plain keys (determinant). Compilation config, schema, header, and environment settings are dunder keys (<code>__compilation__</code>, <code>__schema__</code>, <code>__header__</code>, <code>__env__</code>) — they travel to workers for execution but are excluded from the checksum.</p>
+<p>Implication: two runs with the same code and inputs but different optimization flags are cache-equivalent. This is intentional — the scientific result should be invariant under flag variation. If it is not, that is detected via recomputation and witness comparison.</p>
+<h2 id="result-types">Result types</h2>
+<ul>
+<li><strong>Single output</strong>: returns the bare scalar or numpy array.</li>
+<li><strong>Multiple outputs</strong>: returns a Python <code>dict</code> keyed by schema output name.</li>
+<li><code>result celltype = "mixed"</code> (default): the dict is serialized as a single mixed object.</li>
+<li><code>result celltype = "deepcell"</code>: each dict value is individually checksum-addressed for independent caching. Use <code>tf.celltypes.result = "deepcell"</code> before calling.</li>
+<li>Any other celltype is rejected for multi-output schemas.</li>
+</ul>
+<h2 id="input-type-rules">Input type rules</h2>
+<ul>
+<li>Plain Python scalars (<code>int</code>, <code>float</code>, <code>bool</code>) are accepted for scalar parameters.</li>
+<li>NumPy scalars are accepted if they have the correct dtype and native byte order.</li>
+<li>NumPy arrays must be native-endian, C-contiguous, and aligned.</li>
+<li>Non-native-endian inputs are rejected with an explicit <code>TypeError</code> (not silently reinterpreted).</li>
+<li><strong>Struct parameters</strong> (scalar or array) must be supplied as NumPy structured arrays or scalars with a compatible dtype.</li>
+</ul>
+<h2 id="struct-type-rules">Struct type rules</h2>
+<p>A schema parameter with a <code>StructDType</code> maps to a C struct in the generated header (e.g. <code>ItemStruct</code>). The struct name is the parameter name in CamelCase with <code>Struct</code> appended.</p>
+<p><strong>NumPy side</strong>: the runtime constructs an aligned NumPy structured dtype from the schema fields using <code>np.dtype([...], align=True)</code>. Input values must be supplied as:</p>
+<ul>
+<li>A <strong>scalar struct</strong>: a <code>np.void</code> or 0-d <code>np.ndarray</code> with a compatible structured dtype.</li>
+<li>An <strong>array of structs</strong>: a 1-D (or N-D) <code>np.ndarray</code> with a compatible structured dtype.</li>
+</ul>
+<p>"Compatible" means all schema-defined fields are present at the correct byte offsets and with matching dtypes. Padding fields (<code>"V"</code> kind with no sub-fields) that numpy may insert for alignment are accepted and ignored.</p>
+<p>If the dtype has correct field offsets but a different itemsize or field order, the runtime copies the data into the expected layout before passing it to CFFI.</p>
+<p><strong>Struct fields with fixed shapes</strong> (e.g. <code>{name: xy, dtype: float64, shape: [2]}</code>) map to sub-arrays in the numpy dtype: <code>("xy", "float64", (2,))</code>. The generated C struct uses a fixed array field (<code>double xy[2];</code>).</p>
+<p><strong>Output scalar structs</strong> are returned as <code>np.void</code> values. <strong>Output arrays of structs</strong> are returned as NumPy structured arrays with the aligned dtype.</p>
+<h2 id="output-only-wildcards">Output-only wildcards</h2>
+<p>If a schema output has a wildcard dimension that does not appear in any input (e.g. <code>K</code>), the caller must set <code>tf.metavars.maxK</code> before calling. This value is the upper bound on the output size; the compiled function writes the actual size back via the output wildcard pointer, and the implementation slices the output array down to the actual size.</p>
+<h2 id="additional-compiled-objects">Additional compiled objects</h2>
+<p><code>tf.objects</code> is an <code>ObjectList</code> of <code>CompiledObject</code> instances. Each object has its own language (which may differ from the main transformer's language) and source code. Objects are compiled and linked alongside the main source.</p>
+<p>Example — C main with a Fortran helper:</p>
+<pre><code class="language-python">from seamless_transformer import DirectCompiledTransformer, CompiledObject
+
+tf = DirectCompiledTransformer(&quot;c&quot;)
+tf.schema = ...
+tf.code = main_c_code
+
+obj = CompiledObject(language=&quot;fortran&quot;)
+obj.code = fortran_helper_code
+tf.objects.append(obj)
+</code></pre>
+<h2 id="custom-language-registration">Custom language registration</h2>
+<p>Languages beyond the built-ins can be registered with <code>define_compiled_language()</code>. The built-in languages are defined by single files in <code>seamless_transformer/languages/native/</code> — each is a ~15-line file calling <code>define_compiled_language()</code> with compiler name, flags, and mode. To add permanent support for a new language, create such a file and submit a pull request.</p>
+<pre><code class="language-python">from seamless_transformer.languages import define_compiled_language
+
+define_compiled_language(
+    name=&quot;mylang&quot;,
+    compilation={
+        &quot;compiler&quot;: &quot;mycc&quot;,
+        &quot;mode&quot;: &quot;object&quot;,          # &quot;object&quot; (.o) or &quot;archive&quot; (.a)
+        &quot;options&quot;: [&quot;-O2&quot;, &quot;-fPIC&quot;],
+        &quot;debug_options&quot;: [&quot;-g&quot;, &quot;-fPIC&quot;],
+        &quot;profile_options&quot;: [],
+        &quot;release_options&quot;: [],
+        &quot;compile_flag&quot;: &quot;-c&quot;,
+        &quot;output_flag&quot;: &quot;-o&quot;,
+        &quot;language_flag&quot;: &quot;&quot;,       # e.g. &quot;-x c&quot; for gcc
+    },
+)
+</code></pre>
+<h2 id="environment">Environment</h2>
+<p><code>tf.environment</code> is an <code>Environment</code> object that controls the execution environment of the transformation worker:</p>
+<ul>
+<li><code>set_conda_env("myenv")</code> — activate a named conda environment.</li>
+<li><code>set_conda(yaml_text)</code> — provide a full conda spec (YAML with <code>dependencies</code>).</li>
+<li><code>set_docker({"name": "image:tag"})</code> — run inside a Docker container.</li>
+<li><code>set_which(["gcc", "make"])</code> — assert that these binaries are on PATH.</li>
+</ul>
+<p>These settings propagate to the worker as part of the transformation's <code>__env__</code> dunder, which is excluded from the cache key (execution-only, not determinant).</p>
+<hr />
+<h2 id="reference-map-load-only-as-needed">Reference Map (load only as needed)</h2>
+<ul>
+<li><code>contracts/seamless-signature-schema.md</code> — full schema YAML format, dtype tables, wildcard rules, shape constraints, and language-native derivation examples</li>
+<li><code>contracts/identity-and-caching.md</code> — plain-key vs dunder-key split, caching model, referential transparency</li>
+</ul>
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="compression.html" class="btn btn-neutral float-left" title="Compression"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="seamless-signature-schema.html" class="btn btn-neutral float-right" title="seamless-signature Schema">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+    
+      <span><a href="compression.html" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="seamless-signature-schema.html" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script src="../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "..";</script>
+    <script src="../js/theme_extra.js"></script>
+    <script src="../js/theme.js"></script>
+      <script src="../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>

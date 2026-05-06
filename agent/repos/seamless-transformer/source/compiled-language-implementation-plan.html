@@ -1,0 +1,1567 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <link rel="shortcut icon" href="../../../img/favicon.ico" />
+    <title>Implementation Plan: Compiled Language Support for seamless-transformer - Seamless — Agent Documentation</title>
+    <link rel="stylesheet" href="../../../css/theme.css" />
+    <link rel="stylesheet" href="../../../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "Implementation Plan: Compiled Language Support for seamless-transformer";
+        var mkdocs_page_input_path = "repos/seamless-transformer/source/compiled-language-implementation-plan.md";
+        var mkdocs_page_url = null;
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../../../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href="../../../index.html" class="icon icon-home"> Seamless — Agent Documentation
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../../index.html">Home</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../../overview.html">Agent Docs Overview</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../index.html">Workspace Repos</a>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Contracts</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/identity-and-caching.html">Identity and Caching</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/direct-delayed-and-transformation.html">direct/delayed/Transformation</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/modules-and-closures.html">Modules and Closures</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/scratch-witness-audit.html">Scratch/Witness/Audit</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/seamless-run-and-argtyping.html">seamless-run/Argtyping</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/cache-storage-and-limits.html">Cache Storage and Limits</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/content-addressed-files-and-dirs.html">Content-addressed Files and Dirs</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/execution-backends.html">Execution Backends</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/compression.html">Compression</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/compiled-transformers.html">Compiled Transformers</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/seamless-signature-schema.html">seamless-signature Schema</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">API</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../api/python/seamless.html">seamless</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../api/python/seamless.transformer.html">seamless.transformer</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../api/python/seamless.buffer_class.html">seamless.buffer_class</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../api/python/seamless.checksum_class.html">seamless.checksum_class</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../api/python/seamless_config.select.html">seamless_config.select</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../api/python/seamless_config.tools.html">seamless_config.tools</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../api/python/seamless_transformer.transformation_class.html">seamless_transformer.transformation_class</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../api/python/seamless_transformer.transformer_class.html">seamless_transformer.transformer_class</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">CLI</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../api/cli/seamless-run.html">seamless-run</a>
+                  </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">Seamless — Agent Documentation</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../../../index.html" class="icon icon-home" aria-label="Docs"></a></li>
+      <li class="breadcrumb-item active">Implementation Plan: Compiled Language Support for seamless-transformer</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h1 id="implementation-plan-compiled-language-support-for-seamless-transformer">Implementation Plan: Compiled Language Support for seamless-transformer</h1>
+<h2 id="overview">Overview</h2>
+<p>This plan adds compiled language support to <code>seamless-transformer</code>, covering
+the full pipeline from language registration through compilation, CFFI linking,
+and <code>.so</code> generation. It also ports <code>Environment</code> from legacy Seamless as a
+prerequisite.</p>
+<p>The plan is organized into eight steps. Step 0 is a prerequisite refactor of
+the transformer architecture. Steps 1–2 are prerequisites
+(environment, language registry). Steps 3–6 are the core compiled transformer
+data model, pretransformation support, and build pipeline. Step 7 is tests.</p>
+<p>This document is a handoff specification, not just a roadmap. Where the
+current code leaves room for interpretation, this plan defines the required
+behavior explicitly so an implementation agent does not need to invent APIs or
+data shapes mid-flight.</p>
+<h3 id="phase-1-scope-boundary">Phase-1 scope boundary</h3>
+<p>The initial compiled-language port supports:</p>
+<ul>
+<li>A shared transformer core with Python-specific logic factored into a
+    <code>PythonMixin</code>.</li>
+<li><code>Environment</code> on ordinary transformers.</li>
+<li>Registration of compiled languages and compilation settings.</li>
+<li>Compiled transformers with one or more schema outputs.</li>
+<li>Scalar parameters and homogeneous array parameters described by
+    <code>seamless-signature</code>.</li>
+<li>Output-only wildcards via <code>.metavars.maxX</code>.</li>
+<li>Additional compiled objects (<code>.objects</code>) in <code>"object"</code>/<code>"archive"</code> mode only.</li>
+<li>Multi-output result packaging using Seamless result celltype <code>"mixed"</code> or
+  <code>"deepcell"</code>.</li>
+</ul>
+<p>The initial port does <strong>not</strong> support:</p>
+<ul>
+<li>Structured dtypes (<code>StructDType</code>) in compiled execution. Reject them with
+    <code>NotImplementedError</code> during schema validation.</li>
+<li>Python modules/globals injection for compiled transformers.</li>
+<li>Alternate compile modes beyond <code>"object"</code> and <code>"archive"</code>.</li>
+<li>A dedicated <code>BashMixin</code>. Bash remains on the shared transformer core path in
+    phase 1; the refactor must preserve room for a future bash-specific mixin if
+    later requirements justify it.</li>
+</ul>
+<hr />
+<h2 id="corrections-applied">Corrections applied</h2>
+<p>These corrections override the <code>environment-porting-plan.md</code> where they
+conflict:</p>
+<ul>
+<li><strong>No <code>ContextEnvironment</code></strong> — only <code>Environment</code>. Language/compiler tables
+  do not live on an environment class; they live in the new
+  <code>seamless_transformer.languages</code> module.</li>
+<li><strong>No cson</strong> — no <code>cson2json</code>, no <code>.cson</code> files, no <code>format="cson"</code> API.
+  Language/compiler definitions are plain Python dicts.</li>
+<li><strong>Drop "extension" storage</strong> — file extensions are not stored in language
+  definitions; the compiled transformer infers them from language name or
+  receives them as part of <code>CompiledObject</code>.</li>
+<li><strong>The environment plan's proposed test</strong> (changing a Python function's
+  language to <code>"bash"</code>) is invalid and will be replaced with sensible tests.</li>
+</ul>
+<hr />
+<h2 id="step-0-refactor-transformer-into-core-pythonmixin">Step 0 — Refactor <code>Transformer</code> Into Core + <code>PythonMixin</code></h2>
+<p>Before adding compiled transformers, factor Python-specific behavior out of the
+current <code>Transformer</code> implementation.</p>
+<h3 id="motivation">Motivation</h3>
+<p>The current <code>Transformer</code> class mixes together:</p>
+<ul>
+<li>Generic transformation state and call assembly.</li>
+<li>Python-source handling (<code>_set_code</code>, <code>_codebuf</code>, <code>_signature</code>, callable
+    wrapping).</li>
+<li>Language selection for Python versus bash.</li>
+</ul>
+<p>Compiled transformers need the first category but not the second. Without this
+refactor, compiled support has to bypass or emulate Python-only state, which is
+the wrong architectural direction.</p>
+<h3 id="required-refactor-shape">Required refactor shape</h3>
+<p>Create a generic core class, referred to here as <code>TransformerCore</code>, with these
+responsibilities:</p>
+<ul>
+<li><code>_args</code>, <code>_modules</code>, <code>_globals</code>, <code>_celltypes</code>, <code>_meta</code>, <code>_scratch</code>,
+    <code>direct_print</code>, <code>driver</code>, <code>local</code>, and <code>environment</code> state.</li>
+<li>The generic <code>__call__()</code> flow that turns current state plus bound arguments
+    into a pretransformation and then a <code>Transformation</code>.</li>
+<li>Wrapper objects such as <code>ArgsWrapper</code>, <code>CelltypesWrapper</code>, <code>ModulesWrapper</code>,
+    and <code>GlobalsWrapper</code>, unless a later refactor chooses to separate those too.</li>
+</ul>
+<p>Create a <code>PythonMixin</code> with these responsibilities:</p>
+<ul>
+<li><code>_set_code()</code> for Python callables and Python source text.</li>
+<li><code>_codebuf</code> management.</li>
+<li><code>_signature</code> management for Python callables.</li>
+<li>Python callable wrapping behavior currently done in <code>direct()</code> / <code>delayed()</code>.</li>
+</ul>
+<p>Required resulting class relationships:</p>
+<pre><code class="language-text">TransformerCore
+        ↑
+PythonMixin + TransformerCore -&gt; Transformer / DirectTransformer
+CompiledMixin + TransformerCore -&gt; CompiledTransformer / DirectCompiledTransformer
+</code></pre>
+<h3 id="bash-specific-decision">Bash-specific decision</h3>
+<p>Do <strong>not</strong> introduce a <code>BashMixin</code> in phase 1.</p>
+<p>Reasoning:</p>
+<ul>
+<li>Bash currently behaves as text-source execution with a runtime branch, not as
+    a distinct state model with the same degree of language-specific machinery as
+    Python.</li>
+<li>Introducing <code>BashMixin</code> now would increase refactor scope without resolving a
+    concrete current problem.</li>
+<li>The refactor must, however, preserve a clean seam for a future <code>BashMixin</code> if
+    bash later acquires distinct source/state behavior worth isolating.</li>
+</ul>
+<h3 id="refactor-acceptance-criteria">Refactor acceptance criteria</h3>
+<ul>
+<li><code>TransformerCore</code> contains no Python-specific <code>_signature</code> or <code>_codebuf</code>
+    assumptions.</li>
+<li>Python delayed/direct transformers continue to behave exactly as before.</li>
+<li>Bash transformers continue to behave exactly as before.</li>
+<li>Compiled transformers can be built on top of <code>TransformerCore</code> without
+    bypassing Python-only initialization.</li>
+</ul>
+<hr />
+<h2 id="step-1-create-seamless_transformerenvironmentpy">Step 1 — Create <code>seamless_transformer/environment.py</code></h2>
+<p>Port <code>Environment</code> as a standalone class. This is a simplified version of
+legacy <code>Environment</code> without the reactive lifecycle, without cson support,
+and without <code>ContextEnvironment</code>.</p>
+<h3 id="what-to-port">What to port</h3>
+<table>
+<thead>
+<tr>
+<th>Legacy feature</th>
+<th>Port?</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>_props</code>: <code>_conda</code>, <code>_conda_env_name</code>, <code>_which</code>, <code>_powers</code>, <code>_docker</code></td>
+<td>Yes</td>
+<td>All five properties</td>
+</tr>
+<tr>
+<td><code>_save()</code> / <code>_load()</code></td>
+<td>Yes</td>
+<td>Serialization round-trip</td>
+</tr>
+<tr>
+<td><code>_to_lowlevel(*, bash=False)</code></td>
+<td>Yes</td>
+<td>Bridge to <code>__env__</code> pipeline</td>
+</tr>
+<tr>
+<td>Public setters/getters</td>
+<td>Yes</td>
+<td><code>set_conda</code>, <code>set_conda_env</code>, etc.</td>
+</tr>
+<tr>
+<td><code>weakref</code> parent reference</td>
+<td>No</td>
+<td>No reactive sync in current design</td>
+</tr>
+<tr>
+<td><code>_update()</code> / <code>_sync()</code> lifecycle</td>
+<td>No</td>
+<td>Transformer reads env at call time</td>
+</tr>
+<tr>
+<td><code>ContextEnvironment</code></td>
+<td>No</td>
+<td>Language tables live in <code>languages</code> module</td>
+</tr>
+<tr>
+<td><code>set_ipy_templates</code> / <code>set_py_bridges</code></td>
+<td>No</td>
+<td>Out of scope</td>
+</tr>
+<tr>
+<td>cson format support</td>
+<td>No</td>
+<td>Plain dicts only</td>
+</tr>
+</tbody>
+</table>
+<h3 id="key-name-alignment-conda_environment">Key name alignment (<code>conda_environment</code>)</h3>
+<p>The current code in <code>run.py</code> reads <code>env_dict.get("conda_environment", "")</code>.
+The legacy <code>_to_lowlevel(bash=True)</code> emits <code>"conda_bash_env_name"</code>, which
+does not match.</p>
+<p><strong>Resolution</strong>: <code>_to_lowlevel()</code> will emit <code>"conda_environment"</code> (matching
+the current consumer in <code>run.py</code> and <code>cmd/api/main.py</code>). The legacy key names
+<code>conda_env_name</code> / <code>conda_bash_env_name</code> are not carried forward — <code>run.py</code>
+already handles both Python and bash paths using the single
+<code>"conda_environment"</code> key.</p>
+<h3 id="class-sketch">Class sketch</h3>
+<pre><code class="language-python"># seamless_transformer/environment.py
+
+import json
+from copy import deepcopy
+
+import yaml  # PyYAML, already a dependency
+
+
+class Environment:
+    &quot;&quot;&quot;Execution environment for an individual transformer.&quot;&quot;&quot;
+
+    _props = (&quot;_conda&quot;, &quot;_conda_env_name&quot;, &quot;_which&quot;, &quot;_powers&quot;, &quot;_docker&quot;)
+
+    def __init__(self):
+        self._conda = None
+        self._conda_env_name = None
+        self._which = None
+        self._powers = None
+        self._docker = None
+
+    def _save(self) -&gt; dict | None:
+        state = {}
+        for prop in self._props:
+            v = getattr(self, prop)
+            if v is not None:
+                state[prop[1:]] = v
+        return state or None
+
+    def _load(self, state: dict):
+        for prop in self._props:
+            v = state.get(prop[1:])
+            if v is not None:
+                setattr(self, prop, v)
+
+    def _to_lowlevel(self) -&gt; dict | None:
+        result = {}
+        if self._which is not None:
+            result[&quot;which&quot;] = deepcopy(self._which)
+        if self._conda is not None:
+            result[&quot;conda&quot;] = yaml.safe_load(self._conda)
+        if self._conda_env_name is not None:
+            result[&quot;conda_environment&quot;] = self._conda_env_name
+        if self._powers is not None:
+            result[&quot;powers&quot;] = deepcopy(self._powers)
+        if self._docker is not None:
+            result[&quot;docker&quot;] = deepcopy(self._docker)
+        return result or None
+
+    # --- public API ---------------------------------------------------------
+
+    def set_conda(self, conda):
+        # Accept YAML string, file path string, or file-like object
+        ...
+
+    def set_conda_env(self, conda_env_name):
+        self._conda_env_name = conda_env_name
+
+    def get_conda(self):
+        return deepcopy(self._conda)
+
+    def set_which(self, which):
+        # list of binary names that must be on PATH
+        ...
+
+    def get_which(self):
+        return deepcopy(self._which)
+
+    def set_powers(self, powers):
+        ...
+
+    def get_powers(self):
+        return deepcopy(self._powers)
+
+    def set_docker(self, docker: dict):
+        ...
+
+    def get_docker(self):
+        return deepcopy(self._docker)
+</code></pre>
+<h3 id="differences-from-environment-porting-planmd">Differences from <code>environment-porting-plan.md</code></h3>
+<ol>
+<li>No <code>bash</code> parameter on <code>_to_lowlevel()</code> — emit <code>"conda_environment"</code>
+   always (matching existing consumers).</li>
+<li>No <code>ContextEnvironment</code> subclass.</li>
+<li>No <code>format</code> parameter on setters (no cson support).</li>
+<li>Uses <code>yaml.safe_load</code> (PyYAML) instead of <code>ruamel.yaml</code>.</li>
+</ol>
+<hr />
+<h2 id="step-2-wire-environment-into-transformer">Step 2 — Wire <code>Environment</code> into <code>Transformer</code></h2>
+<h3 id="in-transformer_classpy">In <code>transformer_class.py</code></h3>
+<p><strong><code>__init__</code></strong>: replace the STUB comment with:</p>
+<pre><code class="language-python">from .environment import Environment
+self._environment = Environment()
+</code></pre>
+<p><strong>Add the <code>environment</code> property</strong>, replacing the STUB block:</p>
+<pre><code class="language-python">@property
+def environment(self) -&gt; &quot;Environment&quot;:
+    &quot;&quot;&quot;Execution environment for this transformer.&quot;&quot;&quot;
+    return self._environment
+</code></pre>
+<p><strong>In <code>__call__</code></strong>, replace <code>env = None</code>:</p>
+<pre><code class="language-python">env = self._environment._to_lowlevel()
+</code></pre>
+<p>The existing call to <code>direct_transformer_to_pretransformation(..., env, ...)</code>
+already handles <code>env=None</code> (fresh Environment with no settings returns <code>None</code>
+from <code>_to_lowlevel()</code>), so all existing tests continue to pass unchanged.</p>
+<h3 id="in-__init__py">In <code>__init__.py</code></h3>
+<pre><code class="language-python">from .environment import Environment
+</code></pre>
+<p>Add <code>"Environment"</code> to <code>__all__</code>.</p>
+<h3 id="in-cmdapimainpy">In <code>cmd/api/main.py</code></h3>
+<p>Uncomment the existing TODO block (lines ~857–878) that creates an
+<code>Environment()</code> and calls <code>env.set_docker()</code> / <code>env.set_conda_env()</code>. Update
+the import to <code>from seamless_transformer.environment import Environment</code>.</p>
+<hr />
+<h2 id="step-3-create-seamless_transformerlanguages-module">Step 3 — Create <code>seamless_transformer/languages/</code> module</h2>
+<p>A new package <code>seamless_transformer.languages</code> with a public API for
+registering compiled language definitions.</p>
+<h3 id="file-structure">File structure</h3>
+<pre><code class="language-text">seamless_transformer/languages/
+    __init__.py          # define_compiled_language(), get_language(), registry
+    native/
+        __init__.py      # auto-imports all definition files below
+        c.py
+        cpp.py
+        fortran.py
+        rust.py
+</code></pre>
+<h3 id="registry-api">Registry API</h3>
+<pre><code class="language-python"># seamless_transformer/languages/__init__.py
+
+_registry: dict[str, LanguageDefinition] = {}
+
+@dataclass
+class CompilationConfig:
+    compiler: str
+    mode: str                    # &quot;object&quot; or &quot;archive&quot;
+    options: list[str]
+    debug_options: list[str]
+    profile_options: list[str]
+    release_options: list[str]
+    compile_flag: str            # e.g. &quot;-c&quot; for gcc, &quot;&quot; for rustc
+    output_flag: str             # e.g. &quot;-o&quot;
+    language_flag: str           # e.g. &quot;-x c&quot; for gcc, &quot;&quot; for rustc
+
+@dataclass
+class LanguageDefinition:
+    name: str
+    compilation: CompilationConfig
+
+def define_compiled_language(name: str, compilation: dict) -&gt; None:
+    &quot;&quot;&quot;Register a compiled language definition.
+
+    Example:
+        define_compiled_language(
+            name=&quot;rust&quot;,
+            compilation={
+                &quot;compiler&quot;: &quot;rustc&quot;,
+                &quot;mode&quot;: &quot;archive&quot;,
+                &quot;options&quot;: [&quot;--crate-type=staticlib&quot;],
+                &quot;debug_options&quot;: [&quot;--crate-type=staticlib&quot;],
+                &quot;profile_options&quot;: [],
+                &quot;release_options&quot;: [],
+                &quot;compile_flag&quot;: &quot;&quot;,
+                &quot;output_flag&quot;: &quot;-o&quot;,
+                &quot;language_flag&quot;: &quot;&quot;,
+            }
+        )
+    &quot;&quot;&quot;
+    config = CompilationConfig(**compilation)
+    if config.mode not in (&quot;object&quot;, &quot;archive&quot;):
+        raise ValueError(f&quot;Unsupported compile mode: {config.mode!r}&quot;)
+    _registry[name] = LanguageDefinition(name=name, compilation=config)
+
+def get_language(name: str) -&gt; LanguageDefinition:
+    &quot;&quot;&quot;Look up a registered compiled language.
+
+    Raises KeyError if the language has not been registered.
+    &quot;&quot;&quot;
+    if name not in _registry:
+        raise KeyError(f&quot;Unknown compiled language: {name!r}&quot;)
+    return _registry[name]
+
+def is_compiled_language(name: str) -&gt; bool:
+    return name in _registry
+
+# Auto-import native definitions
+from . import native  # noqa: F401, E402
+</code></pre>
+<h3 id="native-language-definitions">Native language definitions</h3>
+<p>Each file in <code>native/</code> calls <code>define_compiled_language()</code> at import time.</p>
+<pre><code class="language-python"># seamless_transformer/languages/native/c.py
+from seamless_transformer.languages import define_compiled_language
+
+define_compiled_language(
+    name=&quot;c&quot;,
+    compilation={
+        &quot;compiler&quot;: &quot;gcc&quot;,
+        &quot;mode&quot;: &quot;object&quot;,
+        &quot;options&quot;: [&quot;-O3&quot;, &quot;-ffast-math&quot;, &quot;-march=native&quot;, &quot;-fPIC&quot;, &quot;-fopenmp&quot;],
+        &quot;debug_options&quot;: [&quot;-g&quot;, &quot;-fPIC&quot;],
+        &quot;profile_options&quot;: [],
+        &quot;release_options&quot;: [],
+        &quot;compile_flag&quot;: &quot;-c&quot;,
+        &quot;output_flag&quot;: &quot;-o&quot;,
+        &quot;language_flag&quot;: &quot;-x c&quot;,
+    }
+)
+</code></pre>
+<pre><code class="language-python"># seamless_transformer/languages/native/cpp.py
+define_compiled_language(
+    name=&quot;cpp&quot;,
+    compilation={
+        &quot;compiler&quot;: &quot;g++&quot;,
+        &quot;mode&quot;: &quot;object&quot;,
+        &quot;options&quot;: [&quot;-O3&quot;, &quot;-ffast-math&quot;, &quot;-march=native&quot;, &quot;-fPIC&quot;, &quot;-fopenmp&quot;],
+        &quot;debug_options&quot;: [&quot;-g&quot;, &quot;-fPIC&quot;],
+        &quot;profile_options&quot;: [],
+        &quot;release_options&quot;: [],
+        &quot;compile_flag&quot;: &quot;-c&quot;,
+        &quot;output_flag&quot;: &quot;-o&quot;,
+        &quot;language_flag&quot;: &quot;-x c++&quot;,
+    }
+)
+</code></pre>
+<pre><code class="language-python"># seamless_transformer/languages/native/fortran.py
+define_compiled_language(
+    name=&quot;fortran&quot;,
+    compilation={
+        &quot;compiler&quot;: &quot;gfortran&quot;,
+        &quot;mode&quot;: &quot;object&quot;,
+        &quot;options&quot;: [&quot;-O3&quot;, &quot;-fno-automatic&quot;, &quot;-fcray-pointer&quot;,
+                    &quot;-ffast-math&quot;, &quot;-march=native&quot;, &quot;-fPIC&quot;],
+        &quot;debug_options&quot;: [&quot;-g&quot;, &quot;-fPIC&quot;],
+        &quot;profile_options&quot;: [],
+        &quot;release_options&quot;: [],
+        &quot;compile_flag&quot;: &quot;-c&quot;,
+        &quot;output_flag&quot;: &quot;-o&quot;,
+        &quot;language_flag&quot;: &quot;-x f95&quot;,
+    }
+)
+</code></pre>
+<pre><code class="language-python"># seamless_transformer/languages/native/rust.py
+define_compiled_language(
+    name=&quot;rust&quot;,
+    compilation={
+        &quot;compiler&quot;: &quot;rustc&quot;,
+        &quot;mode&quot;: &quot;archive&quot;,
+        &quot;options&quot;: [&quot;--crate-type=staticlib&quot;],
+        &quot;debug_options&quot;: [&quot;--crate-type=staticlib&quot;],
+        &quot;profile_options&quot;: [],
+        &quot;release_options&quot;: [],
+        &quot;compile_flag&quot;: &quot;&quot;,
+        &quot;output_flag&quot;: &quot;-o&quot;,
+        &quot;language_flag&quot;: &quot;&quot;,
+    }
+)
+</code></pre>
+<pre><code class="language-python"># seamless_transformer/languages/native/__init__.py
+from . import c, cpp, fortran, rust  # noqa: F401
+</code></pre>
+<hr />
+<h2 id="step-4-create-compiledtransformer-mixin-classes">Step 4 — Create <code>CompiledTransformer</code> (mixin + classes)</h2>
+<p>New module <code>seamless_transformer/compiled_transformer.py</code>.</p>
+<h3 id="architecture">Architecture</h3>
+<p><code>CompiledTransformer</code> is implemented as a <strong>mixin class</strong> (<code>CompiledMixin</code>)
+that is combined with the refactored shared transformer core.</p>
+<pre><code class="language-text">TransformerCore
+    ├─ PythonMixin + TransformerCore -&gt; Transformer / DirectTransformer
+    └─ CompiledMixin + TransformerCore -&gt; CompiledTransformer / DirectCompiledTransformer
+</code></pre>
+<h3 id="construction-contract">Construction contract</h3>
+<p>Compiled transformers do <strong>not</strong> call the Python-specific transformer
+initialization path. After Step 0, Python callable/text initialization lives in
+<code>PythonMixin</code>, and compiled transformers build on the shared transformer core
+instead.</p>
+<p>Instead, <code>CompiledMixin.__init_compiled__()</code> must initialize the shared
+transformer-core state directly, matching the fields that the runtime relies
+on:</p>
+<pre><code class="language-python">self._args = {}
+self._modules = {}
+self._globals = {}
+self._celltypes = {&quot;result&quot;: &quot;mixed&quot;}
+self._meta = {&quot;transformer_path&quot;: [&quot;tf&quot;, &quot;tf&quot;], &quot;local&quot;: local}
+self._scratch = scratch
+self._compiled_language = language
+self.compilation = deepcopy(lang_def.compilation)
+self._environment = Environment()
+self._schema_text = None
+self._schema = None
+self._code_text = None
+self._metavars = MetaVars()
+self._objects = ObjectList()
+</code></pre>
+<p>Required semantics:</p>
+<ul>
+<li><code>.language</code> is read-only and returns <code>self._compiled_language</code>.</li>
+<li><code>.code</code> is the compiled source string, not a <code>Buffer</code>.</li>
+<li><code>.args</code> remains available for pre-binding inputs.</li>
+<li><code>.celltypes</code> is not configurable for compiled transformers. All Seamless pins
+    use <code>"mixed"</code>; ABI typing comes from the schema.</li>
+<li><code>.modules</code> and <code>.globals</code> are unsupported. If either mapping is non-empty at
+    call time, raise <code>NotImplementedError</code>.</li>
+<li><code>CompiledTransformer.__call__()</code> returns a delayed <code>Transformation</code>.</li>
+<li><code>DirectCompiledTransformer.__call__()</code> delegates to the delayed path and then
+    uses the same immediate compute/run sequence as <code>DirectTransformer</code>.</li>
+</ul>
+<h3 id="compiledmixin-responsibilities"><code>CompiledMixin</code> responsibilities</h3>
+<ol>
+<li><strong>Constructor</strong> takes <code>language</code> argument.</li>
+<li>Calls <code>get_language(language)</code> from <code>seamless_transformer.languages</code>.</li>
+<li>Raises <code>KeyError</code> if not registered.</li>
+<li>Test-imports <code>seamless_signature</code>: raises <code>ImportError</code> with a clear
+     message if not installed.</li>
+<li>Stores <code>.compilation</code> (mutable <code>CompilationConfig</code> copy).</li>
+<li>
+<p><code>.language</code> is read-only after construction (immutable).</p>
+</li>
+<li>
+<p><strong><code>.schema</code></strong> attribute (string).</p>
+</li>
+<li>Setter also accepts <code>pathlib.Path</code> — reads file contents immediately.</li>
+<li>Parsed by <code>seamless_signature.load_signature()</code> (from the YAML string)
+     or <code>Signature.from_dict()</code> to validate.</li>
+<li>
+<p>Stored as the raw YAML string.</p>
+</li>
+<li>
+<p><strong><code>.code</code></strong> attribute (string).</p>
+</li>
+<li>Setter also accepts <code>pathlib.Path</code> — reads file contents immediately.</li>
+<li>
+<p>Stored as a raw string (the compiled source code).</p>
+</li>
+<li>
+<p><strong><code>.header</code></strong> read-only property.</p>
+</li>
+<li>Generated from <code>.schema</code> via <code>seamless_signature.generate_header()</code>.</li>
+<li>
+<p>Returns <code>None</code> if schema is not set.</p>
+</li>
+<li>
+<p><strong><code>.metavars</code></strong> attribute.</p>
+</li>
+<li>If the schema has output-only wildcard dimensions (e.g. <code>K</code>), the
+     metavars namespace exposes <code>.maxK</code> for user assignment.</li>
+<li>Changing the schema rebuilds metavars, dropping stale entries.</li>
+<li>
+<p>A <code>MetaVars</code> helper class with <code>__getattr__</code> / <code>__setattr__</code>.</p>
+</li>
+<li>
+<p><strong><code>.objects</code></strong> attribute.</p>
+</li>
+<li>A list-like container (<code>ObjectList</code>) of <code>CompiledObject</code> instances.</li>
+<li>
+<p>Supports <code>append()</code> and index access.</p>
+</li>
+<li>
+<p><strong>Callable behavior</strong>.</p>
+</li>
+<li>Requires <code>.schema</code>, <code>.code</code>, and all required metavars to be set.</li>
+<li>Generates a Python <code>inspect.Signature</code> from the seamless-signature
+     <code>Signature</code> object (mapping input parameters to Python parameters,
+     output names to the result).</li>
+<li>Calling creates a <code>Transformation</code> object (delayed) or executes
+     immediately (direct), depending on the concrete class.</li>
+<li>The transformation dict includes <code>__language__</code> set to the compiled
+     language name, plus <code>__compiled__: True</code>, the code, schema, header,
+     compilation config, objects, and metavars.</li>
+</ol>
+<h3 id="compiledobject"><code>CompiledObject</code></h3>
+<p>A simplified version of <code>CompiledMixin</code> without the schema:</p>
+<pre><code class="language-python">class CompiledObject:
+    def __init__(self, *, language: str):
+        # Can be a different language from parent CompiledTransformer
+        lang_def = get_language(language)
+        self._language = language
+        self.compilation = deepcopy(lang_def.compilation)
+        self._code = None
+
+    @property
+    def language(self) -&gt; str:
+        return self._language
+
+    @property
+    def code(self) -&gt; str | None:
+        return self._code
+
+    @code.setter
+    def code(self, value: str | Path):
+        if isinstance(value, Path):
+            value = value.read_text()
+        self._code = value
+</code></pre>
+<p>Compilation target is <code>.o</code> (mode <code>"object"</code>) or <code>.a</code> (mode <code>"archive"</code>),
+determined by the object's language's <code>compilation.mode</code>.</p>
+<h3 id="metavars-helper"><code>MetaVars</code> helper</h3>
+<pre><code class="language-python">class MetaVars:
+    &quot;&quot;&quot;Dynamic attribute namespace for output-wildcard max-values.&quot;&quot;&quot;
+
+    def __init__(self):
+        self._allowed: set[str] = set()
+        self._values: dict[str, int] = {}
+
+    def _rebuild(self, output_wildcards: tuple[str, ...]):
+        new_allowed = {f&quot;max{w}&quot; for w in output_wildcards}
+        # Remove stale entries
+        for key in list(self._values):
+            if key not in new_allowed:
+                del self._values[key]
+        self._allowed = new_allowed
+
+    def __getattr__(self, name):
+        if name.startswith(&quot;_&quot;):
+            return super().__getattribute__(name)
+        if name not in self._allowed:
+            raise AttributeError(f&quot;No metavar {name!r}&quot;)
+        return self._values.get(name)
+
+    def __setattr__(self, name, value):
+        if name.startswith(&quot;_&quot;):
+            return super().__setattr__(name, value)
+        if name not in self._allowed:
+            raise AttributeError(f&quot;No metavar {name!r}&quot;)
+        self._values[name] = int(value)
+
+    @property
+    def is_complete(self) -&gt; bool:
+        return all(name in self._values for name in self._allowed)
+</code></pre>
+<h3 id="schema-validation-contract">Schema Validation Contract</h3>
+<p>When <code>.schema</code> is assigned:</p>
+<ul>
+<li>Accept either a YAML string or a <code>pathlib.Path</code>, reading path contents
+    immediately.</li>
+<li>Parse into a <code>seamless_signature.schema.Signature</code> object and store both the
+    raw YAML text and the parsed object.</li>
+<li>If any input or output parameter uses <code>StructDType</code>, raise
+    <code>NotImplementedError("Structured dtypes are not supported yet")</code>.</li>
+<li>Rebuild <code>self._metavars</code> from <code>sig.output_wildcards</code>.</li>
+<li>Rebuild the Python <code>inspect.Signature</code> from <code>sig.inputs</code> only.</li>
+</ul>
+<p>Output-count semantics:</p>
+<ul>
+<li>One output remains the trivial case.</li>
+<li>Multiple outputs are supported.</li>
+<li>The compiled transformer result celltype must then be either <code>"mixed"</code> or
+    <code>"deepcell"</code>.</li>
+<li>If the user explicitly sets <code>tf.celltypes.result</code>, any value other than
+    <code>"mixed"</code> or <code>"deepcell"</code> must raise <code>TypeError</code> for multi-output schemas.</li>
+<li>If the user does not set a result celltype explicitly, the default is
+    <code>"mixed"</code>.</li>
+</ul>
+<p>The generated Python callable signature must contain exactly the schema input
+names in order, all as positional-or-keyword parameters with no defaults.</p>
+<h3 id="mixin-sketch">Mixin Sketch</h3>
+<pre><code class="language-python">class CompiledMixin:
+    &quot;&quot;&quot;Mixin that adds compiled-language attributes to a Transformer.&quot;&quot;&quot;
+
+    def __init_compiled__(self, language: str):
+        try:
+            import seamless_signature  # noqa: F401
+        except ImportError:
+            raise ImportError(
+                &quot;seamless-signature is required for compiled transformers. &quot;
+                &quot;Install it with: pip install seamless-signature&quot;
+            ) from None
+        from seamless_transformer.languages import get_language
+        lang_def = get_language(language)
+        self._compiled_language = language
+        self.compilation = deepcopy(lang_def.compilation)
+        self._schema_text = None
+        self._schema = None
+        self._code_text = None
+        self._metavars = MetaVars()
+        self._objects = ObjectList()
+
+    # properties: language (read-only), schema, code, header, metavars, objects
+    ...
+
+
+class CompiledTransformer(CompiledMixin, Transformer):
+    def __init__(self, language: str, **kwargs):
+        self.__init_compiled__(language)
+        # Transformer.__init__ with language set, no callable code
+        ...
+
+    def __call__(self, *args, **kwargs) -&gt; Transformation:
+        # Build pretransformation with compiled info
+        ...
+
+
+class DirectCompiledTransformer(CompiledMixin, DirectTransformer):
+    def __init__(self, language: str, **kwargs):
+        self.__init_compiled__(language)
+        ...
+
+    def __call__(self, *args, **kwargs):
+        tf = CompiledTransformer.__call__(self, *args, **kwargs)
+        tf._compute(api_origin=&quot;call&quot;)
+        return tf.run()
+</code></pre>
+<hr />
+<h2 id="step-5-pretransformation-support-for-compiled-transformers">Step 5 — Pretransformation support for compiled transformers</h2>
+<p>Extend <code>pretransformation.py</code> to handle compiled transformation dicts.</p>
+<h3 id="transformation-payload-contract">Transformation Payload Contract</h3>
+<p>Compiled transformations must stay compatible with the current generic
+pretransformation and namespace code, which expects every non-dunder entry to
+be a standard three-tuple <code>(celltype, subcelltype, value_or_checksum)</code>.</p>
+<p>Therefore, the compiled payload is:</p>
+<pre><code class="language-python">{
+    &quot;__language__&quot;: &quot;c&quot;,
+    &quot;__output__&quot;: (&quot;result&quot;, &quot;mixed&quot;, None),
+    &quot;__compiled__&quot;: True,
+    &quot;__schema__&quot;: &lt;checksum hex of schema YAML&gt;,
+    &quot;__header__&quot;: &lt;checksum hex of generated C header&gt;,
+    &quot;__compilation__&quot;: &lt;checksum hex of main compilation config&gt;,
+    &quot;__env__&quot;: &lt;checksum hex of env dict, optional&gt;,
+    &quot;__meta__&quot;: {
+        ...,
+        &quot;metavars&quot;: {&quot;maxK&quot;: 100},
+    },
+    &quot;code&quot;: (&quot;text&quot;, &quot;transformer&quot;, &lt;compiled source string or checksum&gt;),
+    &quot;objects&quot;: (&quot;plain&quot;, &quot;compiled-objects&quot;, [
+        {
+            &quot;name&quot;: &quot;obj0&quot;,
+            &quot;language&quot;: &quot;fortran&quot;,
+            &quot;code&quot;: &lt;source string or checksum&gt;,
+            &quot;compilation&quot;: &lt;dict&gt;,
+        },
+    ]),
+    &quot;arg1&quot;: (&quot;mixed&quot;, None, &lt;value_or_checksum&gt;),
+}
+</code></pre>
+<p><code>objects</code> is a normal pin because it is determinant. It uses celltype
+<code>"plain"</code> so the existing checksum machinery can serialize it as ordinary data.
+Its entries contain object source code plus per-object compilation overrides.</p>
+<p>When <code>CompiledTransformer.__call__</code> is invoked, it must produce a
+pretransformation dict that includes:</p>
+<pre><code class="language-python">{
+    # determinant payload
+    &quot;__language__&quot;: &quot;c&quot;,
+    &quot;__output__&quot;: (&quot;result&quot;, &quot;mixed&quot;, None),
+    &quot;code&quot;: (&quot;text&quot;, &quot;transformer&quot;, &lt;checksum of source code&gt;),
+    &quot;objects&quot;: (&quot;plain&quot;, &quot;compiled-objects&quot;, [
+        {&quot;name&quot;: &quot;obj0&quot;, &quot;language&quot;: &quot;fortran&quot;, &quot;code&quot;: &lt;checksum&gt;, ...},
+    ]),
+    # ordinary input pins...
+
+    # execution-only dunders
+    &quot;__compiled__&quot;: True,
+    &quot;__compilation__&quot;: &lt;checksum of compilation config dict&gt;,
+    &quot;__schema__&quot;: &lt;checksum of schema YAML&gt;,
+    &quot;__header__&quot;: &lt;checksum of generated C header&gt;,
+    &quot;__meta__&quot;: { ..., &quot;metavars&quot;: {&quot;maxK&quot;: 100} },
+    &quot;__env__&quot;: &lt;checksum of env dict&gt;,
+}
+</code></pre>
+<p><strong>Naming convention</strong>: dunder keys (<code>__x__</code>) are reserved for attributes that
+do not affect the transformation result (or are grandfathered in, like
+<code>__language__</code> and <code>__output__</code> — see
+<code>legacy-seamless/seamless/util/transformation.py</code> line 17). Determinant keys
+— those that change the result when they change — use plain names. For
+compiled transformers, <code>code</code> and <code>objects</code> are determinant (different source
+code produces different results), so they must be plain keys. This matches
+how bash transformations already use <code>code</code> as a plain key rather than
+<code>__code__</code>.</p>
+<p><strong>Compilation config is execution-only, not determinant.</strong> Compiler flags
+(<code>-O3</code>, <code>-ffast-math</code>, <code>-march=native</code>, debug vs release) are analogous to
+the Python interpreter version or BLAS backend — they are nuisance
+parameters under the env-null-hypothesis. The scientifically meaningful
+result should be invariant under compiler flag variation. If it isn't, that
+is detected through recomputation and witness comparison, not by baking
+flags into the cache key. This matches legacy Seamless, where <code>__compilers__</code>
+and <code>__languages__</code> were dunders excluded from the transformation checksum.
+Compilation config for objects is likewise part of their <code>__compilation__</code>,
+not stored inside the determinant <code>objects</code> list.</p>
+<h3 id="required-checksum-path-changes">Required Checksum-Path Changes</h3>
+<p>To make the above rule real, the implementation must update the checksum and
+transport helpers rather than merely documenting the intent.</p>
+<p>In <code>transformation_utils.py</code>:</p>
+<ul>
+<li>Introduce <code>TRANSFORMATION_EXECUTION_DUNDER_KEYS = {"__compiled__",
+    "__compilation__", "__schema__", "__header__"}</code>.</li>
+<li>Make <code>tf_get_buffer()</code> exclude those keys from the checksum-defining buffer.</li>
+<li>Make <code>extract_tf_dunder()</code> and <code>extract_job_dunder()</code> include those keys so
+    they still travel to workers/jobserver execution.</li>
+</ul>
+<p>In <code>pretransformation.py</code>:</p>
+<ul>
+<li>Add the same keys to <code>NON_CHECKSUM_ITEMS</code>.</li>
+</ul>
+<p>In <code>transformation_namespace.py</code> and <code>run.py</code>:</p>
+<ul>
+<li>Skip those dunders in generic pin iteration.</li>
+<li>Resolve their referenced buffers explicitly when <code>__compiled__</code> is true.</li>
+</ul>
+<p>This is not optional. Without these edits, the current code would still hash
+the new compiled dunders into the transformation checksum.</p>
+<p>A new function <code>compiled_transformer_to_pretransformation()</code> in
+<code>pretransformation.py</code> handles this. It reuses the existing machinery for
+checksumming arguments and building the pretransformation dict, adding the
+compiled-specific keys.</p>
+<p>The Python signature for callable behavior is generated from the schema:</p>
+<ul>
+<li>Each schema input becomes a Python parameter.</li>
+<li>Schema outputs map to a single Seamless result pin named <code>"result"</code>.</li>
+<li>Wildcards used only in outputs require corresponding <code>metavars.maxX</code> to be
+  set.</li>
+</ul>
+<h3 id="result-contract">Result Contract</h3>
+<p>Phase 1 supports one or more schema outputs.</p>
+<ul>
+<li>For a single output:
+    The compiled transformer may return the bare scalar/array value, matching the
+    current single-output expectation.</li>
+<li>For multiple outputs with result celltype <code>"mixed"</code>:
+    The compiled transformer returns a Python dict keyed by schema output name.
+    Each dict value is either a Python scalar or a numpy array.</li>
+<li>For multiple outputs with result celltype <code>"deepcell"</code>:
+    The compiled transformer returns a Python dict keyed by schema output name,
+    but before the final result buffer is created each leaf value is packed as an
+    individual checksum-addressed element so downstream Seamless code sees a true
+    deep structure.</li>
+<li>Supporting <code>"deepcell"</code> removes the earlier concern that multi-output values
+    would only be cached as one undifferentiated mixed object.</li>
+<li>The implementation must verify both multi-output result modes with tests.</li>
+</ul>
+<hr />
+<h2 id="step-6-build-pipeline-compilation-cffi-so">Step 6 — Build pipeline: compilation + CFFI + <code>.so</code></h2>
+<p>This is the runtime execution path for compiled transformers. It ports and
+modernizes the legacy <code>build_compiled_module</code> → <code>compile</code> → <code>cffi</code> →
+<code>build_extension_cffi</code> → <code>import_extension_module</code> pipeline.</p>
+<h3 id="new-modules">New modules</h3>
+<pre><code class="language-text">seamless_transformer/
+    compiler/
+        __init__.py          # public API: build_compiled_module()
+        compile.py           # compile(): source → binary objects (.o / .a)
+        cffi_wrapper.py      # CFFI wrapper generation and extension building
+        locks.py             # file-based directory lock (ported from legacy)
+</code></pre>
+<h3 id="6a-compilercompilepy-source-binary-objects">6a — <code>compiler/compile.py</code>: source → binary objects</h3>
+<p>Ported from legacy <code>seamless/compiler/compile.py</code>. Takes a completed module
+definition (with resolved compiler paths, flags, etc.) and runs the compiler
+to produce binary objects.</p>
+<p><strong>Changes from legacy:</strong></p>
+<ul>
+<li>Uses <code>subprocess.run()</code> with explicit arguments list (no <code>shell=True</code>) for
+  security. The command is constructed as a list, not a string.</li>
+<li>Removes Silk dependency (<code>complete()</code> takes plain dicts, not Silk objects).</li>
+<li>The <code>complete()</code> function resolves compilation config from <code>CompilationConfig</code>
+  objects (from the language registry) rather than from cson tables.</li>
+<li>Source files are written with a generic name (<code>code</code>) — the compiler is
+  told which language to use via <code>language_flag</code> (e.g. <code>-x c</code> for gcc,
+  <code>-x c++</code> for g++, <code>-x f95</code> for gfortran). Compilers that don't need it
+  (rustc) have an empty <code>language_flag</code>. This eliminates the need for a
+  file extension mapping.</li>
+<li>Build dir is a <code>tempfile.TemporaryDirectory</code> context manager for automatic
+  cleanup.</li>
+</ul>
+<p><strong>Pipeline:</strong></p>
+<pre><code class="language-text">For each object in module_definition[&quot;objects&quot;]:
+    1. Write header files to build dir
+    2. Write source code to build dir as &quot;code&quot; (no extension)
+    3. Run compiler with language_flag:
+       - mode &quot;object&quot;:  gcc -x c -c -O3 ... -o objname.o code
+       - mode &quot;archive&quot;: rustc --crate-type=staticlib -o objname.a code
+    4. Read binary output into dict
+</code></pre>
+<p><strong><code>_merge_objects()</code></strong>: Same logic as legacy — handles <code>"object"</code> mode
+(one <code>.o</code> per source) and <code>"archive"</code> mode (one <code>.a</code>). <code>"package"</code> mode is
+not implemented.</p>
+<p><strong><code>complete()</code></strong>: Takes the raw module definition from <code>CompiledTransformer</code>
+and fills in compiler binary path, flags for the chosen target
+(debug/profile/release), etc., using the <code>CompilationConfig</code> from the
+language registry.</p>
+<pre><code class="language-python">def complete(module_definition: dict, languages_registry) -&gt; dict:
+    &quot;&quot;&quot;Complete a module definition using the language registry.&quot;&quot;&quot;
+    m = deepcopy(module_definition)
+    target = m.get(&quot;target&quot;, &quot;profile&quot;)
+    m[&quot;target&quot;] = target
+    m[&quot;link_options&quot;] = m.get(&quot;link_options&quot;, [])
+
+    for objname, obj in m[&quot;objects&quot;].items():
+        lang_name = obj[&quot;language&quot;]
+        lang_def = languages_registry.get_language(lang_name)
+        comp = lang_def.compilation
+
+        obj[&quot;compile_mode&quot;] = comp.mode
+        obj[&quot;compiler_binary&quot;] = comp.compiler  # or shutil.which(comp.compiler)
+        obj[&quot;compile_flag&quot;] = comp.compile_flag
+        obj[&quot;output_flag&quot;] = comp.output_flag
+        obj[&quot;language_flag&quot;] = comp.language_flag
+
+        # Resolve options for target
+        if target in (&quot;release&quot;, &quot;profile&quot;):
+            options = list(obj.get(&quot;options&quot;, comp.options))
+            if target == &quot;profile&quot;:
+                options += list(comp.profile_options)
+        else:
+            options = list(obj.get(&quot;debug_options&quot;, comp.debug_options))
+        obj[&quot;options&quot;] = options
+
+    return m
+</code></pre>
+<h3 id="6b-compilercffi_wrapperpy-cffi-wrapper-extension-building">6b — <code>compiler/cffi_wrapper.py</code>: CFFI wrapper + extension building</h3>
+<p>Ported from legacy <code>seamless/compiler/cffi.py</code> and
+<code>seamless/compiler/build_extension.py</code>.</p>
+<p><strong>What it does:</strong></p>
+<ol>
+<li>Takes the C header (generated by seamless-signature) and generates CFFI
+   wrapper C source code using <code>cffi.FFI</code> + <code>cffi.recompiler.Recompiler</code>.</li>
+<li>Links the CFFI wrapper C source with the compiled binary objects (<code>.o</code> /
+   <code>.a</code> files) to produce a Python extension <code>.so</code>.</li>
+<li>Returns the <code>.so</code> bytes.</li>
+</ol>
+<p><strong>Changes from legacy:</strong></p>
+<ul>
+<li>Uses <code>setuptools</code> instead of <code>distutils</code> (which is removed in Python 3.12).
+  Specifically: <code>setuptools.Extension</code> and <code>setuptools.Distribution</code>.</li>
+<li>Same temp-directory lifecycle: create temp dir, write objects and CFFI
+  wrapper, build, read <code>.so</code>, clean up.</li>
+<li>Explicit <code>cffi</code> availability check with a clear error message.</li>
+</ul>
+<pre><code class="language-python">def build_extension_cffi(
+    full_module_name: str,
+    binary_objects: dict[str, bytes],
+    target: str,
+    c_header: str,
+    link_options: list[str],
+    compiler_verbose: bool = False,
+) -&gt; bytes:
+    &quot;&quot;&quot;Build a Python extension .so from binary objects and a C header.
+
+    Uses CFFI to generate a wrapper that exposes the C functions declared
+    in c_header, links them with the binary objects, and returns the .so
+    file contents as bytes.
+    &quot;&quot;&quot;
+    try:
+        from cffi import FFI
+        from cffi.recompiler import Recompiler
+    except ImportError:
+        raise ImportError(
+            &quot;cffi is required for compiled transformers. &quot;
+            &quot;Install it with: pip install cffi&quot;
+        ) from None
+
+    from setuptools import Extension, Distribution
+    ...
+</code></pre>
+<h3 id="6c-compiler__init__py-orchestrator">6c — <code>compiler/__init__.py</code>: orchestrator</h3>
+<p>Ported from legacy <code>build_compiled_module()</code> in <code>build_module.py</code>.</p>
+<p><strong>What it does:</strong></p>
+<ol>
+<li>Takes a module definition (from <code>CompiledTransformer</code>) with <code>objects</code>,
+   <code>public_header</code>, <code>link_options</code>, <code>target</code>.</li>
+<li>Calls <code>complete()</code> to resolve compiler paths and flags.</li>
+<li>For each object: check cache → if miss, call <code>compile()</code>.</li>
+<li>Call <code>build_extension_cffi()</code> to link everything into a <code>.so</code>.</li>
+<li>Import the <code>.so</code> as a Python module via <code>importlib</code>.</li>
+<li>Return the module (with <code>.lib</code> attribute exposing C functions).</li>
+</ol>
+<p><strong>Caching:</strong></p>
+<ul>
+<li>Object-level caching: binary objects (<code>.o</code> / <code>.a</code>) cached by checksum of
+  their source + compiler config.</li>
+<li>Module-level caching: final <code>.so</code> cached by checksum of the complete
+  module definition.</li>
+<li>Uses <code>functools.lru_cache</code> or a simple dict cache.</li>
+<li>Database/remote caching hooks are left as stubs (matching legacy's
+  disabled code).</li>
+</ul>
+<pre><code class="language-python">def build_compiled_module(
+    module_definition: dict,
+    *,
+    module_name: str | None = None,
+) -&gt; ModuleType:
+    &quot;&quot;&quot;Build and import a compiled Python extension module.
+
+    Pipeline:
+        module_definition → complete() → compile() → build_extension_cffi()
+        → import_extension_module() → Python module with .lib attribute
+    &quot;&quot;&quot;
+    ...
+</code></pre>
+<h3 id="6d-compilerlockspy-directory-lock">6d — <code>compiler/locks.py</code>: directory lock</h3>
+<p>Ported directly from legacy <code>seamless/compiler/locks.py</code>. A file-based mutex
+for thread-safe compilation to shared temp directories. No changes needed.</p>
+<h3 id="6e-integration-with-runpy">6e — Integration with <code>run.py</code></h3>
+<p>When <code>run.py</code> encounters a transformation with <code>__compiled__: True</code>:</p>
+<ol>
+<li>Resolve schema, code, objects, compilation config from checksums.</li>
+<li>Build the module definition dict:</li>
+</ol>
+<p><code>python
+   module_definition = {
+       "type": "compiled",
+       "objects": {
+           "main": {"code": code, "language": language},
+           **additional_objects
+       },
+       "public_header": {"language": "c", "code": c_header},
+       "link_options": link_options,
+       "target": target,
+   }</code></p>
+<ol>
+<li>Call <code>build_compiled_module(module_definition)</code>.</li>
+<li>Call the <code>transform()</code> function on the result module's <code>.lib</code> attribute,
+   passing the input values with appropriate type conversions.</li>
+</ol>
+<p><strong>Type marshalling</strong> (inputs → C types → outputs):</p>
+<p>The C header generated by seamless-signature defines the function signature.
+CFFI handles the Python↔C type conversion, but the caller must build the exact
+argument list in the same order as <code>seamless_signature.generate_header()</code>:</p>
+<ol>
+<li>Input wildcard values in <code>sig.input_wildcards</code> order.</li>
+<li>Output wildcard maxima in <code>sig.output_wildcards</code> order.</li>
+<li>Input parameters in <code>sig.inputs</code> order.</li>
+<li>Output wildcard result pointers in <code>sig.output_wildcards</code> order.</li>
+<li>Output parameter buffers in <code>sig.outputs</code> order.</li>
+</ol>
+<p><code>call_compiled_transform()</code> implements this contract exactly.</p>
+<h3 id="abi-marshalling-rules">ABI Marshalling Rules</h3>
+<h4 id="input-wildcards">Input wildcards</h4>
+<ul>
+<li>For every wildcard in <code>sig.input_wildcards</code>, derive the concrete runtime size
+    from the provided numpy input arrays.</li>
+<li>All parameters that reference the same wildcard must agree on the resolved
+    size, or raise <code>ValueError</code> before calling into C.</li>
+<li>Pass these sizes as Python integers; CFFI converts them to <code>unsigned int</code>.</li>
+</ul>
+<h4 id="output-only-wildcards">Output-only wildcards</h4>
+<ul>
+<li>For every wildcard in <code>sig.output_wildcards</code>, require the corresponding
+    <code>tf.metavars.maxX</code> value to be present.</li>
+<li>Pass <code>maxX</code> as the <code>unsigned int maxX</code> argument.</li>
+<li>Also allocate <code>ffi.new("unsigned int *")</code> for the runtime-returned <code>X</code>
+    argument and pass that pointer.</li>
+<li>After the C call returns, read back the actual output size from the pointer.</li>
+</ul>
+<h4 id="scalar-parameters">Scalar parameters</h4>
+<ul>
+<li>Supported scalar dtypes are those that <code>seamless-signature</code> maps to C scalar
+    types.</li>
+<li>For scalar inputs, accept either plain Python scalar values (<code>int</code>, <code>float</code>,
+    <code>bool</code>) or native-endian numpy scalar values whose dtype matches the schema.</li>
+<li>For plain Python scalar inputs, pass the value through directly and rely on
+    CFFI to coerce it to the target C scalar type.</li>
+<li>For numpy scalar inputs, require native endianness and exact dtype match with
+    the schema, then pass the scalar value through directly and rely on CFFI to
+    coerce it to the target C scalar type.</li>
+<li>The implementation must not silently reinterpret non-native-endian numpy
+    scalar values.</li>
+<li>For scalar outputs, allocate <code>ffi.new("&lt;ctype&gt; *")</code> and dereference after the
+    call.</li>
+</ul>
+<h4 id="array-parameters">Array parameters</h4>
+<ul>
+<li>Array inputs and outputs require <code>numpy</code>.</li>
+<li>Accept only native-endian numpy arrays with dtype exactly matching the
+    schema's scalar dtype.</li>
+<li>Input arrays must be normalized to satisfy all of: native-endian,
+    C-contiguous, and aligned. The plan-level intent is equivalent to using
+    <code>np.require(value, dtype=expected_dtype, requirements=["C", "ALIGNED"])</code>,
+    with the additional rule that byte order must already be native-endian or a
+    safe explicit conversion must be performed before the CFFI call.</li>
+<li>Output arrays must be allocated as native-endian, C-contiguous, aligned numpy
+    arrays. The plan-level intent is equivalent to <code>np.empty(shape,
+    dtype=expected_dtype, order="C")</code>; the implementation must verify that the
+    resulting array is aligned before handing its buffer to CFFI.</li>
+<li>Compute the full shape as <code>resolved_wildcard_prefix + parameter.element_shape</code>.</li>
+<li>For output arrays with output-only wildcards, allocate using the wildcard
+    maxima, call into C, then slice down to the returned runtime shape.</li>
+<li>Pass array buffers using <code>ffi.from_buffer()</code>.</li>
+</ul>
+<h3 id="required-cffi-verification">Required CFFI Verification</h3>
+<p>The implementation must verify, with tests, that the assumed CFFI coercions and
+buffer handling actually work in the supported cases. This is a hard
+requirement, not an implementation note.</p>
+<p>At minimum, the agent must add tests that demonstrate all of the following:</p>
+<ul>
+<li>A compiled transformer accepts plain Python scalar inputs for each scalar type
+    used in the tests and produces the correct result.</li>
+<li>A compiled transformer accepts native-endian numpy scalar inputs and produces
+    the correct result.</li>
+<li>A compiled transformer accepts aligned, C-contiguous native-endian numpy
+    array inputs and produces the correct result.</li>
+<li>Output arrays allocated by the implementation are accepted by CFFI and yield
+    correct values after slicing to runtime shape.</li>
+<li>If the implementation chooses to normalize non-contiguous input arrays, that
+    normalization path is exercised by a test.</li>
+<li>Non-native-endian numpy scalars or arrays are either rejected explicitly or
+    converted explicitly, and the chosen behavior is covered by tests.</li>
+</ul>
+<h4 id="unsupported-schema-features-in-phase-1">Unsupported schema features in phase 1</h4>
+<ul>
+<li><code>StructDType</code> parameters are rejected before execution.</li>
+</ul>
+<h3 id="required-module-definition-shape">Required Module-Definition Shape</h3>
+<p><code>run.py</code> must construct the compiler input with this exact schema:</p>
+<pre><code class="language-python">module_definition = {
+        &quot;type&quot;: &quot;compiled&quot;,
+        &quot;target&quot;: target,
+        &quot;link_options&quot;: [],
+        &quot;public_header&quot;: {&quot;language&quot;: &quot;c&quot;, &quot;code&quot;: c_header},
+        &quot;objects&quot;: {
+                &quot;main&quot;: {
+                        &quot;language&quot;: language,
+                        &quot;code&quot;: code,
+                        &quot;options&quot;: compilation_override.get(&quot;options&quot;),
+                        &quot;debug_options&quot;: compilation_override.get(&quot;debug_options&quot;),
+                },
+                &quot;obj0&quot;: {
+                        &quot;language&quot;: &quot;fortran&quot;,
+                        &quot;code&quot;: object_code,
+                        &quot;options&quot;: object_override.get(&quot;options&quot;),
+                },
+        },
+}
+</code></pre>
+<p><code>build_compiled_module()</code> and <code>complete()</code> must consume this exact object-map
+format, not a list.</p>
+<p>This marshalling logic lives in a new helper function
+<code>call_compiled_transform()</code> that sits alongside <code>build_compiled_module()</code>.</p>
+<hr />
+<h2 id="step-7-tests">Step 7 — Tests</h2>
+<h3 id="7a-environment-tests-teststest_environmentpy">7a — Environment tests (<code>tests/test_environment.py</code>)</h3>
+<p>Unit tests for <code>Environment</code> (no Seamless infrastructure needed):</p>
+<ul>
+<li><code>_save()</code> returns <code>None</code> for a fresh instance.</li>
+<li><code>_save()</code> / <code>_load()</code> round-trip preserves all props.</li>
+<li><code>_to_lowlevel()</code> returns <code>None</code> for a fresh instance.</li>
+<li><code>_to_lowlevel()</code> emits <code>"conda_environment"</code> after <code>set_conda_env()</code>.</li>
+<li><code>set_which()</code> validates input types.</li>
+<li><code>set_docker()</code> validates presence of <code>"name"</code> key.</li>
+<li><code>set_conda()</code> validates YAML string is a dict with <code>"dependencies"</code>.</li>
+</ul>
+<p>Regression: all existing tests pass unchanged (fresh <code>Environment()</code> returns
+<code>None</code> from <code>_to_lowlevel()</code>, matching the previous <code>env = None</code>).</p>
+<h3 id="7b-language-registry-tests-teststest_languagespy">7b — Language registry tests (<code>tests/test_languages.py</code>)</h3>
+<ul>
+<li>Native languages (c, cpp, fortran, rust) are registered on import.</li>
+<li><code>get_language("c")</code> returns the correct <code>LanguageDefinition</code>.</li>
+<li><code>is_compiled_language("python")</code> returns <code>False</code>.</li>
+<li><code>define_compiled_language()</code> with invalid mode raises <code>ValueError</code>.</li>
+<li>Custom language registration works and is retrievable.</li>
+</ul>
+<h3 id="7c-compiledtransformer-api-tests-teststest_compiled_transformerpy">7c — CompiledTransformer API tests (<code>tests/test_compiled_transformer.py</code>)</h3>
+<ul>
+<li>Construction with valid language succeeds.</li>
+<li>Construction with unregistered language raises <code>KeyError</code>.</li>
+<li>Construction without seamless-signature installed raises <code>ImportError</code>
+  (mock the import).</li>
+<li><code>.language</code> is immutable after construction.</li>
+<li><code>.schema</code> setter accepts <code>str</code> and <code>pathlib.Path</code>.</li>
+<li><code>.code</code> setter accepts <code>str</code> and <code>pathlib.Path</code>.</li>
+<li><code>.header</code> generates correct C header from schema.</li>
+<li><code>.metavars</code> exposes <code>maxK</code> when schema has output wildcard <code>K</code>.</li>
+<li><code>.metavars</code> drops stale entries when schema changes.</li>
+<li>Setting a schema with structured dtypes raises <code>NotImplementedError</code>.</li>
+<li>A multi-output schema is accepted.</li>
+<li>For a multi-output schema, result celltype <code>"mixed"</code> is accepted.</li>
+<li>For a multi-output schema, result celltype <code>"deepcell"</code> is accepted.</li>
+<li>For a multi-output schema, any other result celltype is rejected.</li>
+<li>Not callable when schema/code/metavars incomplete.</li>
+<li>Callable when all are set; produces a <code>Transformation</code> object.</li>
+<li><code>.objects</code> supports <code>append()</code> and index access.</li>
+<li><code>CompiledObject</code> has its own language (can differ from parent).</li>
+</ul>
+<h3 id="7d-compilation-pipeline-tests-teststest_compilerpy">7d — Compilation pipeline tests (<code>tests/test_compiler.py</code>)</h3>
+<p>These tests require a C compiler (gcc) to be installed. They can be marked
+with <code>@pytest.mark.skipif(not shutil.which("gcc"))</code>.</p>
+<ul>
+<li><code>complete()</code> resolves compiler config from language registry.</li>
+<li><code>compile()</code> compiles a simple C source to a <code>.o</code> file.</li>
+<li><code>_merge_objects()</code> handles <code>"object"</code> and <code>"archive"</code> modes.</li>
+<li><code>build_extension_cffi()</code> links a <code>.o</code> with a CFFI wrapper to produce a
+  <code>.so</code> (requires cffi).</li>
+<li><code>build_compiled_module()</code> full pipeline: C source → <code>.so</code> → importable
+  module with correct <code>transform()</code> result.</li>
+<li>A focused CFFI coercion test verifies that plain Python scalars and
+    native-endian numpy scalars are both accepted for scalar arguments.</li>
+<li>A focused buffer test verifies that aligned native-endian numpy arrays are
+    accepted for array arguments.</li>
+<li>A focused result-packing test verifies that multi-output results can be
+    packaged as <code>"mixed"</code> and as <code>"deepcell"</code>.</li>
+</ul>
+<h3 id="7e-end-to-end-compiled-transformer-tests-teststest_compiled_e2epy">7e — End-to-end compiled transformer tests (<code>tests/test_compiled_e2e.py</code>)</h3>
+<p>Full integration tests (require gcc + cffi):</p>
+<p><strong>C test:</strong></p>
+<pre><code class="language-python">tf = DirectCompiledTransformer(&quot;c&quot;)
+tf.schema = &quot;...&quot;  # simple add(a: int32, b: int32) -&gt; result: int32
+tf.code = &quot;&quot;&quot;
+int transform(int32_t a, int32_t b, int32_t *result) {
+    *result = a + b;
+    return 0;
+}
+&quot;&quot;&quot;
+assert tf(a=2, b=3) == 5
+</code></pre>
+<p>This test must be exercised twice:</p>
+<ul>
+<li>once with plain Python scalar inputs;</li>
+<li>once with native-endian numpy scalar inputs.</li>
+</ul>
+<p><strong>C++ test (with extern "C"):</strong></p>
+<pre><code class="language-python">tf = DirectCompiledTransformer(&quot;cpp&quot;)
+tf.schema = ...
+tf.code = &quot;&quot;&quot;
+extern &quot;C&quot; int transform(int32_t a, int32_t b, int32_t *result) {
+    *result = a + b;
+    return 0;
+}
+&quot;&quot;&quot;
+</code></pre>
+<p><strong>Rust test (with archive mode):</strong></p>
+<pre><code class="language-python">tf = DirectCompiledTransformer(&quot;rust&quot;)
+tf.schema = ...
+tf.code = &quot;&quot;&quot;
+#[no_mangle]
+pub unsafe extern &quot;C&quot; fn transform(a: i32, b: i32, c: *mut i32) -&gt; i32 {
+    (*c) = a + b;
+    return 0;
+}
+&quot;&quot;&quot;
+</code></pre>
+<p><strong>Multi-object test (C main + Fortran helper):</strong></p>
+<pre><code class="language-python">tf = DirectCompiledTransformer(&quot;c&quot;)
+tf.schema = ...
+tf.code = main_c_code
+obj = CompiledObject(language=&quot;fortran&quot;)
+obj.code = fortran_helper_code
+tf.objects.append(obj)
+</code></pre>
+<p><strong>Delayed (non-direct) test:</strong></p>
+<pre><code class="language-python">tf = CompiledTransformer(&quot;c&quot;)
+tf.schema = ...
+tf.code = ...
+result = tf(a=2, b=3)  # returns Transformation
+assert isinstance(result, Transformation)
+value = result.run()    # actually runs
+assert value == 5
+</code></pre>
+<p><strong>Multi-output packaging tests:</strong></p>
+<pre><code class="language-python">tf = DirectCompiledTransformer(&quot;c&quot;)
+tf.schema = &quot;...&quot;  # two outputs
+tf.celltypes.result = &quot;mixed&quot;
+result = tf(...)
+assert isinstance(result, dict)
+assert set(result) == {&quot;first&quot;, &quot;second&quot;}
+</code></pre>
+<pre><code class="language-python">tf = DirectCompiledTransformer(&quot;c&quot;)
+tf.schema = &quot;...&quot;  # two outputs
+tf.celltypes.result = &quot;deepcell&quot;
+result = tf(...)
+assert isinstance(result, dict)
+assert set(result) == {&quot;first&quot;, &quot;second&quot;}
+</code></pre>
+<p>The implementation must verify not only the returned Python values but also
+that the <code>"deepcell"</code> mode produces an actual packed deep result, not a plain
+mixed dict serialized wholesale.</p>
+<p><strong>Phase-1 negative tests:</strong></p>
+<ul>
+<li>A schema with a structured dtype is rejected at assignment time.</li>
+<li>If non-native-endian numpy inputs are not normalized, they are rejected with
+    an explicit error that is covered by tests.</li>
+</ul>
+<hr />
+<h2 id="dependency-changes">Dependency changes</h2>
+<h3 id="pyprojecttoml-updates"><code>pyproject.toml</code> updates</h3>
+<pre><code class="language-toml">[project.optional-dependencies]
+compiled = [&quot;cffi&quot;, &quot;numpy&quot;, &quot;seamless-signature&quot;]
+</code></pre>
+<p><code>cffi</code>, <code>numpy</code>, and <code>seamless-signature</code> are optional dependencies — only
+needed when using compiled transformers. The code does runtime import checks
+with clear error messages.</p>
+<hr />
+<h2 id="file-summary">File summary</h2>
+<p>New files to create:</p>
+<table>
+<thead>
+<tr>
+<th>File</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>seamless_transformer/environment.py</code></td>
+<td><code>Environment</code> class</td>
+</tr>
+<tr>
+<td><code>seamless_transformer/languages/__init__.py</code></td>
+<td>Language registry API</td>
+</tr>
+<tr>
+<td><code>seamless_transformer/languages/native/__init__.py</code></td>
+<td>Auto-import native defs</td>
+</tr>
+<tr>
+<td><code>seamless_transformer/languages/native/c.py</code></td>
+<td>C language definition</td>
+</tr>
+<tr>
+<td><code>seamless_transformer/languages/native/cpp.py</code></td>
+<td>C++ language definition</td>
+</tr>
+<tr>
+<td><code>seamless_transformer/languages/native/fortran.py</code></td>
+<td>Fortran language definition</td>
+</tr>
+<tr>
+<td><code>seamless_transformer/languages/native/rust.py</code></td>
+<td>Rust language definition</td>
+</tr>
+<tr>
+<td><code>seamless_transformer/compiled_transformer.py</code></td>
+<td><code>CompiledMixin</code>, <code>CompiledTransformer</code>, <code>DirectCompiledTransformer</code>, <code>CompiledObject</code>, <code>MetaVars</code>, <code>ObjectList</code></td>
+</tr>
+<tr>
+<td><code>seamless_transformer/compiler/__init__.py</code></td>
+<td><code>build_compiled_module()</code> orchestrator</td>
+</tr>
+<tr>
+<td><code>seamless_transformer/compiler/compile.py</code></td>
+<td><code>compile()</code>, <code>complete()</code></td>
+</tr>
+<tr>
+<td><code>seamless_transformer/compiler/cffi_wrapper.py</code></td>
+<td>CFFI wrapper generation + extension building</td>
+</tr>
+<tr>
+<td><code>seamless_transformer/compiler/locks.py</code></td>
+<td>File-based directory lock</td>
+</tr>
+<tr>
+<td><code>tests/test_environment.py</code></td>
+<td>Environment unit tests</td>
+</tr>
+<tr>
+<td><code>tests/test_languages.py</code></td>
+<td>Language registry tests</td>
+</tr>
+<tr>
+<td><code>tests/test_compiled_transformer.py</code></td>
+<td>CompiledTransformer API tests</td>
+</tr>
+<tr>
+<td><code>tests/test_compiler.py</code></td>
+<td>Compilation pipeline tests</td>
+</tr>
+<tr>
+<td><code>tests/test_compiled_e2e.py</code></td>
+<td>End-to-end integration tests</td>
+</tr>
+</tbody>
+</table>
+<p>Files to modify:</p>
+<table>
+<thead>
+<tr>
+<th>File</th>
+<th>Change</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>seamless_transformer/transformer_class.py</code></td>
+<td>Extract <code>TransformerCore</code> and <code>PythonMixin</code>; preserve existing Python/bash behavior</td>
+</tr>
+<tr>
+<td><code>seamless_transformer/transformer_class.py</code></td>
+<td>Wire Environment into Transformer</td>
+</tr>
+<tr>
+<td><code>seamless_transformer/__init__.py</code></td>
+<td>Export Environment, CompiledTransformer</td>
+</tr>
+<tr>
+<td><code>seamless_transformer/pretransformation.py</code></td>
+<td>Add compiled pretransformation support</td>
+</tr>
+<tr>
+<td><code>seamless_transformer/run.py</code></td>
+<td>Add compiled execution path</td>
+</tr>
+<tr>
+<td><code>pyproject.toml</code></td>
+<td>Add optional <code>compiled</code> dependencies</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="implementation-order">Implementation order</h2>
+<p>The steps have dependencies:</p>
+<pre><code class="language-text">Step 0 (TransformerCore + PythonMixin)
+    ↓
+Step 1 (Environment)
+    ↓
+Step 2 (Wire into Transformer)     Step 3 (Language registry)
+    ↓                                  ↓
+    ↓                              Step 4 (CompiledTransformer API)
+    ↓                                  ↓
+    ↓                              Step 5 (Pretransformation support)
+    ↓                                  ↓
+    └──────────────────────────→  Step 6 (Build pipeline)
+                                       ↓
+                                  Step 7 (Tests — can be written alongside each step)
+</code></pre>
+<p>Step 0 is mandatory before the compiled transformer implementation.
+Steps 1–2 and Step 3 are independent after Step 0 and can be done in parallel.
+Steps 4–5 depend on Step 0 and Step 3.
+Step 6 depends on Steps 0–2 (for core architecture and env) and Steps 4–5 (for the data model).
+Tests are written alongside each step but the integration tests (7d, 7e) need
+everything.</p>
+              
+            </div>
+          </div><footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+    
+    
+  </span>
+</div>
+    <script src="../../../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "../../..";</script>
+    <script src="../../../js/theme_extra.js"></script>
+    <script src="../../../js/theme.js"></script>
+      <script src="../../../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>

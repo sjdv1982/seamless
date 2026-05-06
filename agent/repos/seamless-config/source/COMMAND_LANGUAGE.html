@@ -69,6 +69,12 @@
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../../../contracts/execution-backends.html">Execution Backends</a>
                   </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/compression.html">Compression</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/compiled-transformers.html">Compiled Transformers</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/seamless-signature-schema.html">seamless-signature Schema</a>
+                  </li>
               </ul>
               <p class="caption"><span class="caption-text">API</span></p>
               <ul>
@@ -192,6 +198,16 @@ an example (<code>- project: myproject</code>).</p>
 <td><code>persistent</code></td>
 <td>boolean</td>
 <td>Calls <code>seamless_config.select_persistent(value)</code></td>
+</tr>
+<tr>
+<td><code>record</code></td>
+<td>boolean</td>
+<td>Calls <code>seamless_config.select_record(value)</code>. When <code>true</code>, successful executions persist a full execution record (environment fingerprints, compilation context, freshness, etc.) instead of the default minimal record. Invalidates the cached record-mode flag in the transformer runtime.</td>
+</tr>
+<tr>
+<td><code>node</code></td>
+<td>string or null</td>
+<td>Calls <code>seamless_config.select_node(value)</code>. Selects a named node within the active cluster (advanced: cluster-internal scheduling).</td>
 </tr>
 <tr>
 <td><code>project</code></td>

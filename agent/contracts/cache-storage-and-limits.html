@@ -81,6 +81,12 @@
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="execution-backends.html">Execution Backends</a>
                   </li>
+                  <li class="toctree-l1"><a class="reference internal" href="compression.html">Compression</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="compiled-transformers.html">Compiled Transformers</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="seamless-signature-schema.html">seamless-signature Schema</a>
+                  </li>
               </ul>
               <p class="caption"><span class="caption-text">API</span></p>
               <ul>
@@ -144,6 +150,8 @@
 <ul>
 <li>If a result is marked scratch, Seamless may keep only the <strong>result checksum</strong> and not retain the bytes needed to materialize the value later.</li>
 <li>Scratch is appropriate for bulky intermediates that are cheap to recompute.</li>
+<li>Scratch is not only a storage policy. With input fingertipping, a missing scratch input is recomputed at the consumer's execution location, so scratch can keep large producer-consumer edges local to the consuming work.</li>
+<li>Input fingertipping must be enabled per consumer transformation. Use <code>allow_input_fingertip = True</code> on the downstream Python transformer/core before constructing the transformation, or <code>--fingertip</code> when executing a transformation checksum from the CLI.</li>
 <li>Do not scratch meaning-bearing “witness” artifacts that you may need for audit/falsification or cross-environment comparison.</li>
 </ul>
 <h2 id="buffer-cache-local-memory-pressure">Buffer cache (local memory pressure)</h2>
@@ -154,11 +162,13 @@
 <h2 id="remotepersistent-storage-where-bytes-live">Remote/persistent storage (where bytes live)</h2>
 <p>In remote/persistent setups, bytes/checksums are typically stored in dedicated services (e.g. hashserver/database layers), and the local process may:
 - push buffers it produces (unless scratch)
-- fetch buffers it needs (materialization/fingertip), subject to availability</p>
+- fetch buffers it needs (materialization/fingertip), subject to availability
+- regenerate missing scratch inputs by fingertipping them where the consumer is executing</p>
 <h2 id="agent-checklist">Agent checklist</h2>
 <ul>
 <li>Always ask which artifacts must remain materializable (witness outputs).</li>
-<li>If results are huge, plan for scratch + witness patterns, and expect I/O bottlenecks to dominate runtime.</li>
+<li>If results are huge, distinguish final artifacts from generated intermediates. For intermediates, plan for scratch + input fingertipping before proposing invasive rewrites.</li>
+<li>Expect I/O bottlenecks for materialized artifacts, but remember that scratch can avoid durable buffer traffic for bulky generated edges by recomputing them next to consumers.</li>
 </ul>
               
             </div>

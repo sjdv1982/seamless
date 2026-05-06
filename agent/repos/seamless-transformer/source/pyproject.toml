@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "seamless-transformer"
-version = "0.3.0"
+version = "0.4.1"
 description = "Computation engine for Seamless: execute checksum-addressed transformations in Python or bash"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -15,6 +15,7 @@ dependencies = [
     "PyYAML",
     "tqdm",
     "seamless-core",
+    "zstandard",
 ]
 keywords = ["seamless", "transformer", "computation", "checksum", "reproducible"]
 classifiers = [
@@ -28,6 +29,9 @@ classifiers = [
     "Topic :: Software Development :: Libraries",
 ]
 
+[project.optional-dependencies]
+compiled = ["cffi", "setuptools", "seamless-signature"]
+
 [project.urls]
 Homepage = "https://github.com/sjdv1982/seamless"
 Repository = "https://github.com/sjdv1982/seamless-transformer"
@@ -35,6 +39,7 @@ Issues = "https://github.com/sjdv1982/seamless/issues"
 
 [project.scripts]
 seamless-run = "seamless_transformer.cmd.api.main:main"
+seamless-probe = "seamless_transformer.cmd.api.main:probe_main"
 seamless-upload = "seamless_transformer.cmd.api.upload:main"
 seamless-download = "seamless_transformer.cmd.api.download:main"
 seamless-run-transformation = "seamless_transformer.api.run_transformation:main"

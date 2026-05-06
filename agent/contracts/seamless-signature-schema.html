@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <link rel="shortcut icon" href="../img/favicon.ico" />
+    <title>seamless-signature Schema - Seamless — Agent Documentation</title>
+    <link rel="stylesheet" href="../css/theme.css" />
+    <link rel="stylesheet" href="../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "seamless-signature Schema";
+        var mkdocs_page_input_path = "contracts/seamless-signature-schema.md";
+        var mkdocs_page_url = null;
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href="../index.html" class="icon icon-home"> Seamless — Agent Documentation
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../index.html">Home</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../overview.html">Agent Docs Overview</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../repos/index.html">Workspace Repos</a>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Contracts</span></p>
+              <ul class="current">
+                  <li class="toctree-l1"><a class="reference internal" href="identity-and-caching.html">Identity and Caching</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="direct-delayed-and-transformation.html">direct/delayed/Transformation</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="modules-and-closures.html">Modules and Closures</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="scratch-witness-audit.html">Scratch/Witness/Audit</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="seamless-run-and-argtyping.html">seamless-run/Argtyping</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="cache-storage-and-limits.html">Cache Storage and Limits</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="content-addressed-files-and-dirs.html">Content-addressed Files and Dirs</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="execution-backends.html">Execution Backends</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="compression.html">Compression</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="compiled-transformers.html">Compiled Transformers</a>
+                  </li>
+                  <li class="toctree-l1 current"><a class="reference internal current" href="#">seamless-signature Schema</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#top-level-structure">Top-level structure</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#parameter-dtype">Parameter dtype</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#scalar-dtypes">Scalar dtypes</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#struct-dtypes">Struct dtypes</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#parameter-shape">Parameter shape</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#wildcard-dimensions">Wildcard dimensions</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#input-wildcards">Input wildcards</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#output-only-wildcards">Output-only wildcards</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#generated-c-header-structure">Generated C header structure</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#deriving-language-native-signatures-from-the-schema">Deriving language-native signatures from the schema</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#c-trivial">C++ (trivial)</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#fortran-iso_c_binding">Fortran (iso_c_binding)</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#rust">Rust</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#role-of-seamless-signature">Role of seamless-signature</a>
+    </li>
+    </ul>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">API</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/python/seamless.html">seamless</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/python/seamless.transformer.html">seamless.transformer</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/python/seamless.buffer_class.html">seamless.buffer_class</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/python/seamless.checksum_class.html">seamless.checksum_class</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/python/seamless_config.select.html">seamless_config.select</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/python/seamless_config.tools.html">seamless_config.tools</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/python/seamless_transformer.transformation_class.html">seamless_transformer.transformation_class</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/python/seamless_transformer.transformer_class.html">seamless_transformer.transformer_class</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">CLI</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/cli/seamless-run.html">seamless-run</a>
+                  </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Seamless — Agent Documentation</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../index.html" class="icon icon-home" aria-label="Docs"></a></li>
+          <li class="breadcrumb-item">Contracts</li>
+      <li class="breadcrumb-item active">seamless-signature Schema</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h1 id="seamless-signature-schema-reference">seamless-signature Schema Reference</h1>
+<p>This page documents the YAML schema format used by <code>seamless-signature</code> to
+describe compiled transformer function signatures.</p>
+<p>The schema fully determines what <code>tf.header</code> (the generated C header) looks
+like, and therefore what function signature the compiled source must implement.
+It is also the source of truth an agent should use when deriving
+language-native declarations for Fortran, Rust, or other compiled languages.</p>
+<h2 id="top-level-structure">Top-level structure</h2>
+<pre><code class="language-yaml">inputs:
+  - name: &lt;C identifier&gt;        # required
+    dtype: &lt;dtype&gt;              # required
+    shape: [&lt;dim&gt;, ...]         # optional; omit for scalars
+  # ... more inputs ...
+outputs:
+  - name: &lt;C identifier&gt;
+    dtype: &lt;dtype&gt;
+    shape: [&lt;dim&gt;, ...]
+  # ... more outputs ...
+</code></pre>
+<p><code>inputs</code> and <code>outputs</code> are lists of parameter entries. Both keys are required
+(use an empty list if a side is absent). The compiled entry-point name is
+always <code>transform</code>.</p>
+<hr />
+<h2 id="parameter-dtype">Parameter dtype</h2>
+<h3 id="scalar-dtypes">Scalar dtypes</h3>
+<p>A scalar dtype is a plain string. The supported names and their C / numpy / Fortran <code>iso_c_binding</code> / Rust equivalents are:</p>
+<table>
+<thead>
+<tr>
+<th>Schema dtype</th>
+<th>C type</th>
+<th>numpy dtype</th>
+<th>Fortran (<code>iso_c_binding</code>)</th>
+<th>Rust</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>int8</code></td>
+<td><code>int8_t</code></td>
+<td><code>np.int8</code></td>
+<td><code>integer(c_int8_t)</code></td>
+<td><code>i8</code></td>
+</tr>
+<tr>
+<td><code>int16</code></td>
+<td><code>int16_t</code></td>
+<td><code>np.int16</code></td>
+<td><code>integer(c_int16_t)</code></td>
+<td><code>i16</code></td>
+</tr>
+<tr>
+<td><code>int32</code></td>
+<td><code>int32_t</code></td>
+<td><code>np.int32</code></td>
+<td><code>integer(c_int32_t)</code></td>
+<td><code>i32</code></td>
+</tr>
+<tr>
+<td><code>int64</code></td>
+<td><code>int64_t</code></td>
+<td><code>np.int64</code></td>
+<td><code>integer(c_int64_t)</code></td>
+<td><code>i64</code></td>
+</tr>
+<tr>
+<td><code>uint8</code></td>
+<td><code>uint8_t</code></td>
+<td><code>np.uint8</code></td>
+<td><code>integer(c_int8_t)</code> †</td>
+<td><code>u8</code></td>
+</tr>
+<tr>
+<td><code>uint16</code></td>
+<td><code>uint16_t</code></td>
+<td><code>np.uint16</code></td>
+<td><code>integer(c_int16_t)</code> †</td>
+<td><code>u16</code></td>
+</tr>
+<tr>
+<td><code>uint32</code></td>
+<td><code>uint32_t</code></td>
+<td><code>np.uint32</code></td>
+<td><code>integer(c_int32_t)</code> †</td>
+<td><code>u32</code></td>
+</tr>
+<tr>
+<td><code>uint64</code></td>
+<td><code>uint64_t</code></td>
+<td><code>np.uint64</code></td>
+<td><code>integer(c_int64_t)</code> †</td>
+<td><code>u64</code></td>
+</tr>
+<tr>
+<td><code>float32</code></td>
+<td><code>float</code></td>
+<td><code>np.float32</code></td>
+<td><code>real(c_float)</code></td>
+<td><code>f32</code></td>
+</tr>
+<tr>
+<td><code>float64</code></td>
+<td><code>double</code></td>
+<td><code>np.float64</code></td>
+<td><code>real(c_double)</code></td>
+<td><code>f64</code></td>
+</tr>
+<tr>
+<td><code>bool</code></td>
+<td><code>bool</code></td>
+<td><code>np.bool_</code></td>
+<td><code>logical(c_bool)</code></td>
+<td><code>bool</code></td>
+</tr>
+<tr>
+<td><code>char</code></td>
+<td><code>char</code></td>
+<td><code>np.bytes_</code></td>
+<td><code>character(kind=c_char)</code></td>
+<td><code>c_char</code> (libc)</td>
+</tr>
+<tr>
+<td><code>complex64</code></td>
+<td><code>_Complex float</code></td>
+<td><code>np.complex64</code></td>
+<td><code>complex(c_float_complex)</code></td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>complex128</code></td>
+<td><code>_Complex double</code></td>
+<td><code>np.complex128</code></td>
+<td><code>complex(c_double_complex)</code></td>
+<td>—</td>
+</tr>
+</tbody>
+</table>
+<p>† Fortran's <code>iso_c_binding</code> does not define unsigned integer kinds. Use the
+same bit-width signed kind and treat the bits as unsigned in your implementation.</p>
+<h3 id="struct-dtypes">Struct dtypes</h3>
+<p>A struct dtype is a YAML mapping with a <code>fields</code> key:</p>
+<pre><code class="language-yaml">dtype:
+  fields:
+    - name: &lt;C identifier&gt;
+      dtype: &lt;scalar dtype or nested struct&gt;
+      shape: [&lt;positive int&gt;, ...]   # optional; fixed-size only, no wildcards
+</code></pre>
+<p>Struct fields may have a fixed-size shape (e.g. a 3-vector embedded in each
+struct instance), but not wildcard dimensions.</p>
+<p>Structs may be nested: a field's dtype may itself be a struct mapping.</p>
+<p>Struct parameters map to aligned NumPy structured dtypes on the Python side
+and to generated C structs in the header. See
+<code>contracts/compiled-transformers.md</code> for the full struct marshalling rules.</p>
+<p>The C header generator names struct types using CamelCase from the parameter
+path: a parameter named <code>particle</code> with a struct dtype produces <code>ParticleStruct</code>;
+a nested field <code>vel</code> inside <code>particle</code> would produce <code>ParticleVelStruct</code>.</p>
+<hr />
+<h2 id="parameter-shape">Parameter shape</h2>
+<p><code>shape</code> is an optional YAML list. Omitting it means the parameter is a scalar.</p>
+<p>Shape entries are either:</p>
+<ul>
+<li><strong>Positive integers</strong>: fixed-size dimensions (part of the element shape)</li>
+<li><strong>Strings</strong> (valid C identifiers): wildcard dimensions whose size is
+  determined at runtime</li>
+</ul>
+<p>Shape constraint: <strong>wildcard dimensions must precede all fixed dimensions</strong>.
+<code>[N, 3]</code> (N rows of length-3 vectors) is valid; <code>[3, N]</code> is not.</p>
+<p>Examples:</p>
+<table>
+<thead>
+<tr>
+<th>Schema shape</th>
+<th>Meaning</th>
+<th>C argument type (input)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><em>(absent)</em></td>
+<td>scalar</td>
+<td><code>int32_t a</code></td>
+</tr>
+<tr>
+<td><code>[N]</code></td>
+<td>1-D array of N elements</td>
+<td><code>const int32_t *a</code></td>
+</tr>
+<tr>
+<td><code>[N, M]</code></td>
+<td>2-D array, N×M (both wildcards)</td>
+<td><code>const int32_t *a</code></td>
+</tr>
+<tr>
+<td><code>[N, 3]</code></td>
+<td>N rows, each a length-3 vector</td>
+<td><code>const float64_3 *a</code> †</td>
+</tr>
+<tr>
+<td><code>[4, 4]</code></td>
+<td>fixed 4×4 matrix</td>
+<td><code>const float64_4x4 *a</code> †</td>
+</tr>
+</tbody>
+</table>
+<p>† The C header introduces a <code>typedef</code> for the element shape: <code>typedef double
+float64_3[3];</code> so the pointer type is <code>const float64_3 *</code>.</p>
+<hr />
+<h2 id="wildcard-dimensions">Wildcard dimensions</h2>
+<p>Wildcards in the schema serve two distinct roles depending on where they appear.</p>
+<h3 id="input-wildcards">Input wildcards</h3>
+<p>A wildcard that appears in at least one <strong>input</strong> parameter is an <em>input
+wildcard</em>. Its runtime value is derived from the actual input array size.</p>
+<p>In the C header, input wildcards become leading <code>unsigned int</code> arguments:</p>
+<pre><code class="language-c">int transform(
+    unsigned int N,      // &lt;- derived from the sizes of inputs that use N
+    const int32_t *a,    // input array of length N
+    ...
+);
+</code></pre>
+<p>The Seamless runtime resolves input wildcard values automatically from the
+supplied numpy arrays before the C call. All input arrays that reference the
+same wildcard must agree on the resolved size.</p>
+<h3 id="output-only-wildcards">Output-only wildcards</h3>
+<p>A wildcard that appears <strong>only in output</strong> parameters (never in any input) is
+an <em>output-only wildcard</em>. Its maximum value must be provided by the caller
+via <code>tf.metavars.maxK</code> before calling the transformer.</p>
+<p>In the C header, output-only wildcards appear twice:</p>
+<pre><code class="language-c">int transform(
+    ...
+    unsigned int maxK,   // &lt;- upper bound, set via tf.metavars.maxK
+    ...
+    unsigned int *K,     // &lt;- actual runtime size written back by the C code
+    double *result       // &lt;- output buffer allocated for maxK elements,
+                         //    valid slice is result[0 .. *K]
+);
+</code></pre>
+<p>The Seamless runtime allocates the output buffer for <code>maxK</code> elements, calls
+the C function, reads back <code>*K</code>, and slices the output array to <code>result[:K]</code>.</p>
+<hr />
+<h2 id="generated-c-header-structure">Generated C header structure</h2>
+<p><code>seamless-signature</code> generates a C header from the schema. Here is the full
+argument order of the generated <code>transform()</code> declaration:</p>
+<ol>
+<li><strong>Input wildcard sizes</strong> — one <code>unsigned int &lt;name&gt;</code> per input wildcard,
+   in the order they first appear across the input parameters.</li>
+<li><strong>Output wildcard maxima</strong> — one <code>unsigned int max&lt;name&gt;</code> per output-only
+   wildcard, in the order they first appear across the output parameters.</li>
+<li><strong>Input parameters</strong> — in schema order; scalars passed by value, arrays as
+   <code>const &lt;T&gt; *</code>.</li>
+<li><strong>Output wildcard return pointers</strong> — one <code>unsigned int *&lt;name&gt;</code> per
+   output-only wildcard, same order as (2).</li>
+<li><strong>Output parameters</strong> — in schema order; scalars as <code>&lt;T&gt; *</code>, arrays as
+   <code>&lt;T&gt; *</code>.</li>
+</ol>
+<p>Return value: <code>int</code> (must be 0 on success).</p>
+<p>A concrete example with one input wildcard (<code>N</code>), one output-only wildcard
+(<code>K</code>), one scalar input, one array input, and one array output:</p>
+<pre><code class="language-yaml">function_name: filter
+inputs:
+  - name: threshold
+    dtype: float32
+  - name: data
+    dtype: float64
+    shape: [N]
+outputs:
+  - name: out
+    dtype: float64
+    shape: [K]
+</code></pre>
+<p>Generated header:</p>
+<pre><code class="language-c">/* Auto-generated from filter.yaml; do not edit. */
+#include &lt;stdint.h&gt;
+#include &lt;stdbool.h&gt;
+
+int transform(
+    unsigned int N,          /* input wildcard */
+    unsigned int maxK,       /* output-only wildcard max */
+    float threshold,         /* scalar input, by value */
+    const double *data,      /* array input */
+    unsigned int *K,         /* output-only wildcard return pointer */
+    double *out              /* array output */
+);
+</code></pre>
+<hr />
+<h2 id="deriving-language-native-signatures-from-the-schema">Deriving language-native signatures from the schema</h2>
+<p><code>seamless-signature</code> only generates C headers. For other languages, a
+language-native declaration must be derived. An AI agent is the natural tool
+for this in the current Seamless design — the schema gives all the information
+needed.</p>
+<h3 id="c-trivial">C++ (trivial)</h3>
+<p>The C header is valid C++. Include it inside <code>extern "C"</code> to prevent name
+mangling, then implement normally:</p>
+<pre><code class="language-cpp">extern &quot;C&quot; {
+#include &quot;transform.h&quot;   // the generated C header
+}
+
+extern &quot;C&quot; int transform(unsigned int N, const double *data, double *result) {
+    // C++ implementation
+    return 0;
+}
+</code></pre>
+<p>Alternatively, write the function directly with <code>extern "C"</code> and match the
+argument list from the C header by hand (or let an agent do it).</p>
+<h3 id="fortran-iso_c_binding">Fortran (<code>iso_c_binding</code>)</h3>
+<p>Fortran can implement a C-callable function using <code>bind(C)</code> and the
+<code>iso_c_binding</code> intrinsic module. The mapping from schema dtypes to Fortran
+kinds is given in the dtype table above.</p>
+<p>Rules:</p>
+<ul>
+<li>Use <code>bind(C, name="transform")</code> on the function definition.</li>
+<li>Use <code>iso_c_binding</code> kinds for all arguments (<code>c_int32_t</code>, <code>c_double</code>, etc.).</li>
+<li>Scalar inputs are passed by value in C but by reference in Fortran — use
+  the <code>value</code> attribute for scalar parameters.</li>
+<li>Array inputs/outputs are already passed as pointers; declare them as assumed-size
+  (<code>a(*)</code>) or with explicit dimensions.</li>
+<li>The function return type must be <code>integer(c_int)</code>.</li>
+</ul>
+<p>Example for the <code>filter</code> schema above:</p>
+<pre><code class="language-fortran">function transform(N, maxK, threshold, data, K, out) &amp;
+    bind(C, name=&quot;transform&quot;) result(retval)
+  use iso_c_binding, only: c_int, c_int32_t, c_float, c_double
+  implicit none
+  integer(c_int32_t), value, intent(in)  :: N
+  integer(c_int32_t), value, intent(in)  :: maxK
+  real(c_float),      value, intent(in)  :: threshold
+  real(c_double),           intent(in)   :: data(N)
+  integer(c_int32_t),       intent(out)  :: K
+  real(c_double),           intent(out)  :: out(maxK)
+  integer(c_int) :: retval
+  ! ... implementation ...
+  retval = 0
+end function transform
+</code></pre>
+<h3 id="rust">Rust</h3>
+<p>Rust implements a C-callable function with <code>#[no_mangle] pub unsafe extern "C"</code>.
+Use the type mappings from the dtype table above (Rust primitives like <code>i32</code>,
+<code>f64</code>, etc.).</p>
+<p>Rules:</p>
+<ul>
+<li>Scalar inputs are passed by value.</li>
+<li>Array inputs are <code>*const T</code>; array outputs are <code>*mut T</code>.</li>
+<li>The return type is <code>std::os::raw::c_int</code> (or just <code>i32</code>).</li>
+<li>Wildcard sizes are <code>u32</code> (<code>unsigned int</code> in C).</li>
+</ul>
+<p>Example for the <code>filter</code> schema above:</p>
+<pre><code class="language-rust">#[no_mangle]
+pub unsafe extern &quot;C&quot; fn transform(
+    n: u32,
+    max_k: u32,
+    threshold: f32,
+    data: *const f64,
+    k: *mut u32,
+    out: *mut f64,
+) -&gt; i32 {
+    let data_slice = std::slice::from_raw_parts(data, n as usize);
+    let out_slice = std::slice::from_raw_parts_mut(out, max_k as usize);
+    // ... implementation; write actual output count to *k ...
+    *k = /* actual count */ 0;
+    0
+}
+</code></pre>
+<hr />
+<h2 id="role-of-seamless-signature">Role of <code>seamless-signature</code></h2>
+<p><code>seamless-signature</code> has a deliberately limited scope:</p>
+<ul>
+<li>It parses the schema YAML into a <code>Signature</code> object.</li>
+<li>It generates the C header string (<code>generate_header(sig)</code>).</li>
+<li>It validates parameter names, dtypes, and shape constraints.</li>
+</ul>
+<p>It does <strong>not</strong> generate Fortran interface blocks, Rust stubs, or any other
+language-native declarations. Adding such support to <code>seamless-signature</code> is
+possible but not on the current roadmap. In practice, deriving the correct
+signature for a target language from the schema (or from the C header) is a
+task well-suited to an AI agent: the mapping is mechanical and the dtype table
+and argument-order rules above provide all the information needed.</p>
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="compiled-transformers.html" class="btn btn-neutral float-left" title="Compiled Transformers"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../api/python/seamless.html" class="btn btn-neutral float-right" title="seamless">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+    
+      <span><a href="compiled-transformers.html" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="../api/python/seamless.html" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script src="../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "..";</script>
+    <script src="../js/theme_extra.js"></script>
+    <script src="../js/theme.js"></script>
+      <script src="../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>

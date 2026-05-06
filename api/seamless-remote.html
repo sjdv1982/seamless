@@ -219,12 +219,12 @@
 </tr>
 <tr>
 <td><code>database_remote</code></td>
-<td><code>get_transformation_result()</code>, <code>set_transformation_result()</code>, <code>get_rev_transformations()</code></td>
-<td><code>seamless-transformer</code> (cache lookup/store)</td>
+<td><code>get_transformation_result()</code>, <code>set_transformation_result()</code>, <code>get_rev_transformations()</code>, <code>set_execution_record()</code>, <code>get_execution_record()</code>, <code>get_irreproducible_records()</code>, <code>get_bucket_probe_index()</code></td>
+<td><code>seamless-transformer</code> (cache lookup/store, record persistence, bucket-probe lookups)</td>
 </tr>
 <tr>
 <td><code>jobserver_remote</code></td>
-<td><code>run_transformation()</code></td>
+<td><code>run_transformation()</code> (parses structured success payloads with worker freshness, GPU memory, compilation/validation, retry counts, runtime metadata)</td>
 <td><code>seamless-transformer</code> (remote job dispatch)</td>
 </tr>
 <tr>

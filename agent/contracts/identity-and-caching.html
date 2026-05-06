@@ -59,6 +59,8 @@
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#caching">Caching</a>
     </li>
+    <li class="toctree-l2"><a class="reference internal" href="#plain-keys-vs-dunder-keys-in-a-transformation-dict">Plain keys vs dunder keys in a transformation dict</a>
+    </li>
     <li class="toctree-l2"><a class="reference internal" href="#forcing-recomputation-auditing">Forcing recomputation / auditing</a>
     </li>
     </ul>
@@ -76,6 +78,12 @@
                   <li class="toctree-l1"><a class="reference internal" href="content-addressed-files-and-dirs.html">Content-addressed Files and Dirs</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="execution-backends.html">Execution Backends</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="compression.html">Compression</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="compiled-transformers.html">Compiled Transformers</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="seamless-signature-schema.html">seamless-signature Schema</a>
                   </li>
               </ul>
               <p class="caption"><span class="caption-text">API</span></p>
@@ -150,7 +158,19 @@
 <li>The cache may store “transformation checksum → result checksum” mappings.</li>
 <li>A result checksum can be reused without re-executing code only when it is resolvable/materializable (or recomputable, if scratch).</li>
 <li>Content-addressed reads are not semantic side effects: resolving a pre-declared checksum is materialization, not “reading whatever is on disk”.</li>
+<li>Compression (<code>.zst</code>, <code>.gz</code>) is a materialization detail — it does not affect identity or caching. A compressed and uncompressed form of the same buffer have the same checksum and are cache-equivalent. See <code>contracts/compression.md</code>.</li>
 </ul>
+<h2 id="plain-keys-vs-dunder-keys-in-a-transformation-dict">Plain keys vs dunder keys in a transformation dict</h2>
+<p>Internally, a transformation is represented as a dict. Its keys fall into two categories:</p>
+<p><strong>Plain keys</strong> (e.g. <code>code</code>, <code>arg1</code>, <code>objects</code>) — these are <strong>determinant</strong>: their content is included in the transformation checksum (the cache key). Changing any plain-key value produces a different transformation identity and bypasses the cache.</p>
+<p><strong>Dunder keys</strong> (double-underscore names, e.g. <code>__language__</code>, <code>__env__</code>, <code>__meta__</code>, <code>__compiled__</code>) — these are <strong>execution-only</strong>: they are excluded from the transformation checksum and do not affect caching, but they are still forwarded to workers so that execution can use them.</p>
+<p>Practical consequence: two transformations that differ only in dunder values are considered cache-equivalent. For example:</p>
+<ul>
+<li>Compiler flags live in <code>__compilation__</code> (a dunder) → switching from <code>-O3</code> to <code>-g</code> does not invalidate the cache.</li>
+<li>The conda environment name lives in <code>__env__</code> (a dunder) → activating a different environment reuses a cached result if the code and inputs are unchanged.</li>
+<li>Source code lives in the plain key <code>code</code> → any source change is a cache miss.</li>
+</ul>
+<p>This split is load-bearing: dunders capture the "how to run" envelope, while plain keys capture the "what to run" identity. An agent should not move determinant data into dunders to avoid cache misses — doing so would corrupt the identity model.</p>
 <h2 id="forcing-recomputation-auditing">Forcing recomputation / auditing</h2>
 <p>An agent should assume there is (or should be) a way to:</p>
 <ul>

@@ -73,11 +73,19 @@
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#practical-limitations-to-keep-in-mind">Practical limitations to keep in mind</a>
     </li>
+    <li class="toctree-l2"><a class="reference internal" href="#compression">Compression</a>
+    </li>
     <li class="toctree-l2"><a class="reference internal" href="#porting-guidance-agent">Porting guidance (agent)</a>
     </li>
     </ul>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="execution-backends.html">Execution Backends</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="compression.html">Compression</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="compiled-transformers.html">Compiled Transformers</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="seamless-signature-schema.html">seamless-signature Schema</a>
                   </li>
               </ul>
               <p class="caption"><span class="caption-text">API</span></p>
@@ -134,7 +142,7 @@
 <ul>
 <li>A file can be represented by a <strong>checksum</strong> of its bytes.</li>
 <li>When the checksum is known, the file content is treated as an immutable artifact identified by that checksum.</li>
-<li>“Reading by checksum” is not treated as a semantic side effect in the Seamless model; it is a cache/materialization operation.</li>
+<li>“Reading by checksum” is not treated as a semantic side effect in the Seamless model; it is a cache/materialization operation. Therefore, <em>materialization configuration</em> (paths or URLs where to find artifacts) can be made available to atransformation without breaking referential transparency, as long as the checksum of each artifact is passed as explicit argument.</li>
 </ul>
 <h2 id="directories-deep-identity">Directories (deep identity)</h2>
 <ul>
@@ -147,10 +155,14 @@
 <li>Some tooling will checksum inputs by reading them from disk; if a file is very large, the checksum pass is real I/O work.</li>
 <li>Depending on implementation, checksum calculation may read whole files into memory; for very large files, agents should consider streaming-friendly paths or avoid re-checksumming by reusing known checksums where possible.</li>
 </ul>
+<h2 id="compression">Compression</h2>
+<p>Files may be stored in compressed form (<code>.zst</code> or <code>.gz</code>). Compression is a materialization detail — the canonical checksum is always computed over the <strong>decompressed</strong> bytes. A compressed and an uncompressed form of the same content share the same checksum and are interchangeable from the identity model's point of view.</p>
+<p>For a full treatment, see <code>contracts/compression.md</code>.</p>
 <h2 id="porting-guidance-agent">Porting guidance (agent)</h2>
 <ul>
 <li>Prefer “pass a checksum identifier as an explicit input” over “read an ambient path”.</li>
 <li>If a transformation must do its own I/O, make the I/O target an explicit content identity (checksum/deep checksum), not an implicit location.</li>
+<li>When filenames may carry compression suffixes (<code>.npy.zst</code>, <code>.csv.gz</code>), use <code>strip_compression_suffix</code> before <code>os.path.splitext</code> or sidecar derivation.</li>
 </ul>
               
             </div>

@@ -184,10 +184,11 @@
 <tr>
 <td><code>/run-transformation</code></td>
 <td>GET</td>
-<td>Execute a transformation and return the result checksum</td>
+<td>Execute a transformation and return a structured success payload (result checksum + worker-side metadata for the execution record)</td>
 </tr>
 </tbody>
 </table>
+<p>The <code>/run-transformation</code> response is a structured JSON payload carrying the result checksum together with fields needed for execution-record assembly: worker freshness, GPU memory peak, compiled-module digest and compilation times, retry counts, and probe context. Older callers that only consumed the bare checksum string still work — <code>seamless-remote</code> parses both shapes.</p>
 <h3 id="lifecycle">Lifecycle</h3>
 <ol>
 <li><code>seamless-config</code> writes a status file and launches <code>seamless-jobserver</code> (via <code>remote-http-launcher</code> or directly).</li>

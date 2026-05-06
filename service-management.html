@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <link rel="shortcut icon" href="img/favicon.ico" />
+    <title>Service management - Seamless</title>
+    <link rel="stylesheet" href="css/theme.css" />
+    <link rel="stylesheet" href="css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "Service management";
+        var mkdocs_page_input_path = "service-management.md";
+        var mkdocs_page_url = null;
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href="index.html" class="icon icon-home"> Seamless
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="./search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="index.html">Home</a>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Getting Started</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="getting-started.html">Wrapping Python and bash</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="cluster.html">Setting up a local cluster</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="seamless-mode.html">Seamless mode</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">How-To Guides</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="caching.html">Caching, identity, and sharing</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="composition.html">Composition</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="parallelism.html">Local parallelism</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="remote.html">Remote execution</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="hpc.html">HPC specifics</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="remote-launch.html">Remote job launching</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="sharing.html">Sharing in depth</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Reference API</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="api/index.html">Overview</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="api/seamless-core.html">seamless-core</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="api/seamless-transformer.html">seamless-transformer</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="api/seamless-config.html">seamless-config</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="api/seamless-remote.html">seamless-remote</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="api/seamless-dask.html">seamless-dask</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="api/seamless-jobserver.html">seamless-jobserver</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="api/seamless-database.html">seamless-database</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="api/remote-http-launcher.html">remote-http-launcher</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Python docstrings</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="api/reference/seamless.html">seamless</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="api/reference/seamless.checksum_class.html">Checksum</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="api/reference/seamless.buffer_class.html">Buffer</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="api/reference/seamless.transformer.html">seamless.transformer</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="api/reference/seamless_transformer.transformation_class.html">Transformation</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="api/reference/seamless_transformer.transformer_class.html">Transformer properties</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="api/reference/seamless_config.select.html">seamless.config.select</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="api/reference/seamless_config.tools.html">seamless.config.tools</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >CLI docstrings</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="api/reference/seamless-run.html">seamless-run</a>
+                </li>
+    </ul>
+                  </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">Seamless</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="index.html" class="icon icon-home" aria-label="Docs"></a></li>
+      <li class="breadcrumb-item active">Service management</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h1 id="service-management">Service management</h1>
+<p>Seamless services (hashserver, database, jobserver, daskserver) are launched and
+supervised by <code>remote-http-launcher</code>, a separate package that manages process
+lifecycle, SSH tunnels, and state files. This guide covers how to inspect, stop,
+restart, and clear services during normal development and debugging.</p>
+<h2 id="two-layer-design">Two-layer design</h2>
+<p>Service management is split across two layers:</p>
+<ul>
+<li>
+<p><strong><code>rhl-*</code> helpers</strong> (from <code>remote-http-launcher</code>): operate on raw <em>keys</em> —
+  opaque identifiers that <code>remote-http-launcher</code> uses for its JSON state files.
+  They run on whichever machine holds the state (server-side for <code>rhl-stop</code>,
+  <code>rhl-logs</code>, etc.; client or server for <code>rhl-rm</code>). They have no knowledge of
+  Seamless clusters, projects, or stages.</p>
+</li>
+<li>
+<p><strong><code>seamless-service-*</code> wrappers</strong> (from <code>seamless-config</code>): accept
+  Seamless-level arguments (<code>--service</code>, <code>--cluster</code>, <code>--project</code>, <code>--stage</code>)
+  and translate them to <code>rhl-*</code> calls. They run client-side and dispatch to the
+  right host over SSH.</p>
+</li>
+</ul>
+<p>As a Seamless user, you typically use only the <code>seamless-service-*</code> layer. The
+<code>rhl-*</code> helpers are available for lower-level access when you already know the
+key (e.g., from <code>seamless-service-resolve</code>).</p>
+<hr />
+<h2 id="viewing-service-state-seamless-service-ps">Viewing service state: seamless-service-ps</h2>
+<pre><code class="language-bash"># List client-side connection state (fast, no SSH):
+seamless-service-ps
+
+# List server-side process state for a cluster:
+seamless-service-ps --server --cluster MYCLUSTER
+
+# Include persistent data state (buffer dirs, seamless.db):
+seamless-service-ps --server --persistent --cluster MYCLUSTER
+
+# Filter by project or status:
+seamless-service-ps --server --project myproject --status stale
+</code></pre>
+<p>Example output with <code>--persistent</code>:</p>
+<pre><code>SERVICE      PROJECT      STAGE       PROCESS    PORT     PERSISTENT  SIZE
+hashserver   myproject    -           running    10501    populated   42 MB
+hashserver   myproject    fingertip   stale      -        populated   17 MB
+database     myproject    -           running    10502    populated   3 MB
+jobserver    myproject    fingertip   failed     -        n/a         -
+</code></pre>
+<p>Process states: <code>running</code> | <code>starting</code> | <code>failed</code> | <code>stale</code> | <code>absent</code></p>
+<p>Persistent states: <code>populated</code> | <code>empty</code> | <code>absent</code> | <code>n/a</code> (non-persistent
+services such as jobserver and daskserver use <code>/tmp</code> and have no durable data)</p>
+<hr />
+<h2 id="stopping-and-restarting-services">Stopping and restarting services</h2>
+<pre><code class="language-bash"># Stop a specific service (reads defaults from seamless.yaml + seamless.profile.yaml):
+seamless-service-stop --service hashserver
+
+# Stop with explicit args:
+seamless-service-stop --service hashserver --cluster MYCLUSTER --project myproject
+
+# Stop all services for a cluster:
+seamless-service-stop --cluster MYCLUSTER
+</code></pre>
+<p><code>seamless-service-stop</code> sends SIGINT → SIGTERM → SIGKILL with short polling
+intervals between escalations. It does <strong>not</strong> remove state JSON files — the
+<code>stale</code> state is preserved so you can inspect logs afterwards.</p>
+<p>To remove JSON state after stopping:</p>
+<pre><code class="language-bash">seamless-service-rm --service hashserver
+seamless-service-rm --cluster MYCLUSTER     # cluster-wide
+</code></pre>
+<p>To restart: stop, remove, then re-run your script or <code>seamless.config.init()</code>.
+<code>remote-http-launcher</code> will start the service fresh.</p>
+<hr />
+<h2 id="reading-logs">Reading logs</h2>
+<pre><code class="language-bash"># Stream full log (from project directory — reads seamless.yaml for defaults):
+seamless-service-logs --service hashserver
+
+# Last 50 lines only:
+seamless-service-logs --service hashserver --tail 50
+</code></pre>
+<p>Note: for non-persistent services (jobserver, daskserver, pure-daskserver), read
+the log <strong>before</strong> removing state with <code>seamless-service-rm</code>. The log file
+survives JSON removal but becomes unreachable through the helper once the JSON
+is gone.</p>
+<hr />
+<h2 id="inspecting-service-state-json">Inspecting service state JSON</h2>
+<pre><code class="language-bash">seamless-service-inspect --service hashserver
+</code></pre>
+<p>Prints the full server-side state JSON: PID, port, status, workdir, command,
+and the <code>meta</code> block containing service/cluster/project/stage identifiers.</p>
+<hr />
+<h2 id="clearing-cached-data">Clearing cached data</h2>
+<p>Seamless caches transformation results in two places:</p>
+<ul>
+<li><strong>Buffer directory</strong> (hashserver): stores actual data bytes, indexed by checksum</li>
+<li><strong>Database</strong> (database): stores transformation → result checksum mappings in <code>seamless.db</code></li>
+</ul>
+<p>Both must be cleared for a true cold-cache re-execution:</p>
+<pre><code class="language-bash"># From the project directory:
+seamless-service-clear --service hashserver
+seamless-service-clear --service database
+
+# With explicit args:
+seamless-service-clear --service hashserver --cluster MYCLUSTER --project myproject --stage fingertip
+seamless-service-clear --service database  --cluster MYCLUSTER --project myproject --stage fingertip
+</code></pre>
+<p><code>seamless-service-clear</code> errors cleanly for non-persistent services (jobserver,
+daskserver, pure-daskserver), which use <code>/tmp</code> and have no data directory to
+clear.</p>
+<hr />
+<h2 id="debugging-false-pass-test-results">Debugging false-pass test results</h2>
+<p><strong>A test can pass even when the underlying code is broken</strong>, because Seamless
+returns a cached result from a prior successful run. This is the most common
+source of incorrect "fixes" — the test passes, the developer commits, and the
+problem resurfaces later.</p>
+<p>Signs of a false pass:
+- Test passes immediately after a service restart
+- Test passes after changes that should have affected results
+- <code>seamless-service-ps --persistent</code> shows <code>populated</code> after all processes stopped</p>
+<p>Protocol for ruling out a false pass:</p>
+<pre><code class="language-bash"># 1. Check what persistent data is present:
+seamless-service-ps --server --persistent --project myproject --cluster MYCLUSTER
+
+# 2. Stop and clean services:
+seamless-service-stop --cluster MYCLUSTER
+seamless-service-rm --cluster MYCLUSTER
+
+# 3. Clear cached data:
+seamless-service-clear --service hashserver --project myproject
+seamless-service-clear --service database  --project myproject
+
+# 4. Restart services and re-run the test on a cold cache.
+</code></pre>
+<p>Only a pass on a cold cache is meaningful.</p>
+<hr />
+<h2 id="service-lifecycle-reference">Service lifecycle reference</h2>
+<table>
+<thead>
+<tr>
+<th>State</th>
+<th>Meaning</th>
+<th>What to do</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>absent</code></td>
+<td>No JSON or data exists</td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>starting</code></td>
+<td>Process launched, waiting for port</td>
+<td>Wait; if it hangs, read log</td>
+</tr>
+<tr>
+<td><code>running</code></td>
+<td>Service healthy, port known</td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>failed</code></td>
+<td>Startup failed or timed out</td>
+<td>Read log, fix, restart</td>
+</tr>
+<tr>
+<td><code>stale</code></td>
+<td>JSON exists but process is dead</td>
+<td>Read log, then <code>seamless-service-rm</code></td>
+</tr>
+<tr>
+<td><code>persistent</code></td>
+<td>Data directory populated, no process</td>
+<td>Inspect with <code>--persistent</code>; clear if needed</td>
+</tr>
+</tbody>
+</table>
+<p>For the full <code>rhl-*</code> helper reference and the JSON state file schema, see the
+<a href="https://github.com/sjdv1982/remote-http-launcher">remote-http-launcher README</a>.</p>
+              
+            </div>
+          </div><footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+    
+    
+  </span>
+</div>
+    <script src="js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = ".";</script>
+    <script src="js/theme_extra.js"></script>
+    <script src="js/theme.js"></script>
+      <script src="search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>

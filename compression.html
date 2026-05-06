@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <link rel="shortcut icon" href="img/favicon.ico" />
+    <title>Working with compressed data - Seamless</title>
+    <link rel="stylesheet" href="css/theme.css" />
+    <link rel="stylesheet" href="css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "Working with compressed data";
+        var mkdocs_page_input_path = "compression.md";
+        var mkdocs_page_url = null;
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href="index.html" class="icon icon-home"> Seamless
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="./search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="index.html">Home</a>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Getting Started</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="getting-started.html">Wrapping Python and bash</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="cluster.html">Setting up a local cluster</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="seamless-mode.html">Seamless mode</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">How-To Guides</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="caching.html">Caching, identity, and sharing</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="composition.html">Composition</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="parallelism.html">Local parallelism</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="remote.html">Remote execution</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="hpc.html">HPC specifics</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="remote-launch.html">Remote job launching</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="sharing.html">Sharing in depth</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Reference API</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="api/index.html">Overview</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="api/seamless-core.html">seamless-core</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="api/seamless-transformer.html">seamless-transformer</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="api/seamless-config.html">seamless-config</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="api/seamless-remote.html">seamless-remote</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="api/seamless-dask.html">seamless-dask</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="api/seamless-jobserver.html">seamless-jobserver</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="api/seamless-database.html">seamless-database</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="api/remote-http-launcher.html">remote-http-launcher</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Python docstrings</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="api/reference/seamless.html">seamless</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="api/reference/seamless.checksum_class.html">Checksum</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="api/reference/seamless.buffer_class.html">Buffer</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="api/reference/seamless.transformer.html">seamless.transformer</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="api/reference/seamless_transformer.transformation_class.html">Transformation</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="api/reference/seamless_transformer.transformer_class.html">Transformer properties</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="api/reference/seamless_config.select.html">seamless.config.select</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="api/reference/seamless_config.tools.html">seamless.config.tools</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >CLI docstrings</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="api/reference/seamless-run.html">seamless-run</a>
+                </li>
+    </ul>
+                  </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">Seamless</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="index.html" class="icon icon-home" aria-label="Docs"></a></li>
+      <li class="breadcrumb-item active">Working with compressed data</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h1 id="working-with-compressed-data">Working with compressed data</h1>
+<p>Seamless natively supports <code>.zst</code> (Zstandard) and <code>.gz</code> (gzip) compressed files. Compression never affects identity or caching — a compressed file and its uncompressed form have the same checksum, the same cache key, and are interchangeable.</p>
+<h2 id="uploading-compressed-datasets">Uploading compressed datasets</h2>
+<pre><code class="language-bash"># Upload a directory of gzip-compressed PDB files with zero-copy hardlinking
+seamless-upload --destination /buffers --hardlink /data/pdb/
+</code></pre>
+<p>For each compressed file, <code>seamless-upload</code> computes the canonical checksum by decompressing in-memory (no decompressed copy on disk), then hard-links the original compressed file into the buffer directory. This is the recommended approach for large compressed datasets: zero storage overhead, one-time decompression cost for checksumming.</p>
+<h2 id="sidecar-convention">Sidecar convention</h2>
+<p>The <code>.CHECKSUM</code> sidecar always uses the canonical name — compression suffixes are stripped:
+- <code>file.npy.zst</code> → <code>file.npy.CHECKSUM</code> (not <code>file.npy.zst.CHECKSUM</code>)
+- <code>file.npy.gz</code> → <code>file.npy.CHECKSUM</code></p>
+<h2 id="downloading-in-compressed-form">Downloading in compressed form</h2>
+<pre><code class="language-bash">seamless-download --destination /buffers --compression zst mydir/
+</code></pre>
+<p><code>--compression</code> is all-or-nothing: all output files get the suffix.</p>
+<h2 id="compressing-an-existing-buffer-directory">Compressing an existing buffer directory</h2>
+<p>The design is transparent enough that you can compress an existing hashserver buffer directory after the fact:</p>
+<pre><code class="language-bash">for f in /path/to/buffers/*/*; do
+  if [[ -f &quot;$f&quot; &amp;&amp; &quot;$f&quot; != *.zst &amp;&amp; &quot;$f&quot; != *.gz &amp;&amp; &quot;$f&quot; != *.BUFFERLENGTH &amp;&amp; &quot;$f&quot; != *.LOCK ]]; then
+    stat -c%s &quot;$f&quot; &gt; &quot;${f}.BUFFERLENGTH&quot;
+    zstd --rm &quot;$f&quot;
+  fi
+done
+</code></pre>
+<p>The hashserver, seamless-upload, seamless-download, and worker materialization all check for <code>.zst</code> and <code>.gz</code> variants on every file lookup. The <code>.BUFFERLENGTH</code> sidecar ensures <code>/buffer-length</code> returns the uncompressed size without decompressing. Pre-generating sidecars before compressing is important: without them, the <code>/buffer-length</code> endpoint would need to decompress each buffer to determine its uncompressed size (correct but expensive).</p>
+<h2 id="python-face">Python face</h2>
+<p>A Python-face compression mechanism (<code>transformer.compression.my_pin</code>) is planned but not yet implemented. Currently, compression is used through the CLI face (filename suffixes).</p>
+              
+            </div>
+          </div><footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+    
+    
+  </span>
+</div>
+    <script src="js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = ".";</script>
+    <script src="js/theme_extra.js"></script>
+    <script src="js/theme.js"></script>
+      <script src="search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>

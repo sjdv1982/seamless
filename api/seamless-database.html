@@ -89,6 +89,14 @@
     <ul class="current">
     <li class="toctree-l2"><a class="reference internal" href="#how-it-works">How it works</a>
     </li>
+    <li class="toctree-l2"><a class="reference internal" href="#execution-records">Execution records</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#schema-upgrade-from-legacy">Schema upgrade from legacy</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#endpoints-request-types">Endpoints (request types)</a>
+    </li>
+        </ul>
+    </li>
     <li class="toctree-l2"><a class="reference internal" href="#role-in-the-seamless-ecosystem">Role in the Seamless ecosystem</a>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#installation">Installation</a>
@@ -193,15 +201,41 @@
 </tr>
 <tr>
 <td><strong>MetaData</strong></td>
-<td>Stores execution metadata for transformations (executor, environment, timing)</td>
+<td>Stores a canonical execution record for each successful, non-probe transformation</td>
 </tr>
 <tr>
 <td><strong>IrreproducibleTransformation</strong></td>
-<td>Records transformations whose results are not reproducible</td>
+<td>Records transformations whose results are not reproducible; metadata is preserved on migration</td>
 </tr>
 </tbody>
 </table>
-<p>All data is persisted in a single SQLite file (typically <code>seamless.db</code>).</p>
+<p>All data is persisted in a single SQLite file (typically <code>seamless.db</code>). The current protocol version is <strong>2.1</strong>.</p>
+<h2 id="execution-records">Execution records</h2>
+<p><code>MetaData</code> stores one canonical execution record per successful, non-probe transformation, keyed by <code>tf_checksum</code>. Records are <strong>write-once</strong>: subsequent calls to a recorded transformation hit the normal <code>Transformation</code> cache and do not re-enter the record path.</p>
+<p>Two record sizes coexist under the same schema:</p>
+<ul>
+<li><strong>Minimal record (default)</strong> — <code>schema_version</code>, <code>tf_checksum</code>, <code>result_checksum</code>, <code>seamless_version</code>, <code>execution_mode</code>, <code>remote_target</code>, <code>wall_time_seconds</code>, <code>cpu_time_user_seconds</code>, <code>cpu_time_system_seconds</code>, <code>memory_peak_bytes</code>, <code>gpu_memory_peak_bytes</code>. The hot path pays only timing/memory capture and one write.</li>
+<li><strong>Full record (<code>record: true</code> in <code>seamless.profile.yaml</code>)</strong> — adds environment fingerprints (content-addressed <code>node</code>, <code>environment</code>, <code>queue</code> sub-buffer checksums), compilation context, validation snapshots, contract-violation lists, execution envelope (requested cluster/queue/node, scratch/fingertip flags, resolved <code>__env__</code>), and per-job freshness/retry/worker fields.</li>
+</ul>
+<p>The validator on <code>PUT metadata</code> checks identity only — record syntax (integer <code>schema_version</code>, body <code>tf_checksum</code>/<code>result_checksum</code> matching the request, sane <code>checksum_fields</code> if present) — not the full payload schema. Identical duplicates are idempotent successes; differing bodies are rejected. Once <code>IrreproducibleTransformation</code> rows exist for a <code>tf_checksum</code>, <code>PUT metadata</code> for that checksum is rejected to avoid silently migrating it back into the normal cache.</p>
+<p>When a normal entry moves to <code>IrreproducibleTransformation</code>, its metadata body travels with it unchanged.</p>
+<h3 id="schema-upgrade-from-legacy">Schema upgrade from legacy</h3>
+<p>The legacy <code>meta_data</code> table had two columns (<code>checksum PRIMARY KEY</code>, <code>metadata JSON</code>). On startup, <code>seamless-database</code>:</p>
+<ul>
+<li>creates the upgraded table fresh if absent,</li>
+<li>drops and recreates the legacy table if it is empty,</li>
+<li>preserves an already-upgraded table on subsequent starts,</li>
+<li>and <strong>fails loudly</strong> if a non-empty legacy table is present (it must be migrated explicitly).</li>
+</ul>
+<h3 id="endpoints-request-types">Endpoints (request types)</h3>
+<ul>
+<li><code>PUT metadata</code> — atomically creates missing <code>Transformation</code> and <code>RevTransformation</code> rows alongside the <code>MetaData</code> row. Body: <code>{type: "metadata", checksum: &lt;tf&gt;, result: &lt;result&gt;, value: &lt;record&gt;}</code>.</li>
+<li><code>GET metadata</code> — return the canonical record body for a <code>tf_checksum</code>.</li>
+<li><code>GET irreproducible</code> — return all rows for a <code>tf_checksum</code>, optionally filtered by <code>result</code>. Each row includes <code>checksum</code>, <code>result</code>, and <code>metadata</code>.</li>
+<li><code>PUT irreproducible</code> — move a normal entry into <code>IrreproducibleTransformation</code>, preserving metadata.</li>
+</ul>
+<p>The remote-client equivalents are <code>set_execution_record</code>, <code>get_execution_record</code>, and <code>get_irreproducible_records</code> in <code>seamless-remote</code>.</p>
+<p>See the <a href="https://github.com/sjdv1982/seamless/blob/main/docs/agent/contracts/execution-records.md">agent contract</a> for the full behavioral spec.</p>
 <h2 id="role-in-the-seamless-ecosystem">Role in the Seamless ecosystem</h2>
 <p>Other Seamless components interact with the database over HTTP:</p>
 <ul>

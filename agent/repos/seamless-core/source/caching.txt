@@ -1,3 +1,7 @@
+*************************************************
+NOTE: this has not all been implemented yet
+*************************************************
+
 # Caching, done right
 
 The buffer cache contains two Checksum-to-Buffer caches: a weak cache (WeakValueDictionary) 

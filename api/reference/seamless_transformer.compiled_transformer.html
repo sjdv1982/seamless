@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <link rel="shortcut icon" href="../../img/favicon.ico" />
+    <title>seamless_transformer.compiled_transformer - Seamless</title>
+    <link rel="stylesheet" href="../../css/theme.css" />
+    <link rel="stylesheet" href="../../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "seamless_transformer.compiled_transformer";
+        var mkdocs_page_input_path = "api/reference/seamless_transformer.compiled_transformer.md";
+        var mkdocs_page_url = null;
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href="../../index.html" class="icon icon-home"> Seamless
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../index.html">Home</a>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Getting Started</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../getting-started.html">Wrapping Python and bash</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../cluster.html">Setting up a local cluster</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../seamless-mode.html">Seamless mode</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">How-To Guides</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../caching.html">Caching, identity, and sharing</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../composition.html">Composition</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../parallelism.html">Local parallelism</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../remote.html">Remote execution</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../hpc.html">HPC specifics</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../remote-launch.html">Remote job launching</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../sharing.html">Sharing in depth</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Reference API</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../index.html">Overview</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../seamless-core.html">seamless-core</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../seamless-transformer.html">seamless-transformer</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../seamless-config.html">seamless-config</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../seamless-remote.html">seamless-remote</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../seamless-dask.html">seamless-dask</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../seamless-jobserver.html">seamless-jobserver</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../seamless-database.html">seamless-database</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../remote-http-launcher.html">remote-http-launcher</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Python docstrings</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="seamless.html">seamless</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="seamless.checksum_class.html">Checksum</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="seamless.buffer_class.html">Buffer</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="seamless.transformer.html">seamless.transformer</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="seamless_transformer.transformation_class.html">Transformation</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="seamless_transformer.transformer_class.html">Transformer properties</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="seamless_config.select.html">seamless.config.select</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="seamless_config.tools.html">seamless.config.tools</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >CLI docstrings</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="seamless-run.html">seamless-run</a>
+                </li>
+    </ul>
+                  </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">Seamless</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../../index.html" class="icon icon-home" aria-label="Docs"></a></li>
+      <li class="breadcrumb-item active">seamless_transformer.compiled_transformer</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h1 id="seamless_transformercompiled_transformer">seamless_transformer.compiled_transformer</h1>
+<p>Compiled-language transformers.</p>
+<h2 id="compiledcelltypeswrapper"><code>CompiledCelltypesWrapper</code></h2>
+<ul>
+<li>kind: <code>class</code></li>
+<li>signature: <code>CompiledCelltypesWrapper</code></li>
+</ul>
+<p>Restricted celltype wrapper for compiled transformers.</p>
+<h2 id="compiledmixin"><code>CompiledMixin</code></h2>
+<ul>
+<li>kind: <code>class</code></li>
+<li>signature: <code>CompiledMixin</code></li>
+</ul>
+<p>Mixin that adds compiled-language attributes to a transformer core.</p>
+<p>Not for direct use. Consumed by CompiledTransformer and DirectCompiledTransformer.</p>
+<h2 id="compiledmixinargs"><code>CompiledMixin.args</code></h2>
+<ul>
+<li>kind: <code>method</code></li>
+<li>signature: <code>args(self)</code></li>
+</ul>
+<p>Pre-bound input arguments, same as for Python transformers.</p>
+<h2 id="compiledmixincelltypes"><code>CompiledMixin.celltypes</code></h2>
+<ul>
+<li>kind: <code>method</code></li>
+<li>signature: <code>celltypes(self)</code></li>
+</ul>
+<p><em>No docstring.</em></p>
+<h2 id="compiledmixincode"><code>CompiledMixin.code</code></h2>
+<ul>
+<li>kind: <code>method</code></li>
+<li>signature: <code>code(self, value)</code></li>
+</ul>
+<p><em>No docstring.</em></p>
+<h2 id="compiledmixinglobals"><code>CompiledMixin.globals</code></h2>
+<ul>
+<li>kind: <code>method</code></li>
+<li>signature: <code>globals(self)</code></li>
+</ul>
+<p>Not supported for compiled transformers. Raises NotImplementedError if accessed.</p>
+<h2 id="compiledmixinheader"><code>CompiledMixin.header</code></h2>
+<ul>
+<li>kind: <code>method</code></li>
+<li>signature: <code>header(self)</code></li>
+</ul>
+<p>C header generated from the current schema, or None if schema is not set.</p>
+<p>Generated by seamless-signature from the schema YAML. This is the header
+that defines the <code>transform()</code> function signature in C, and is also
+passed to CFFI to build the Python extension module.</p>
+<h2 id="compiledmixinlanguage"><code>CompiledMixin.language</code></h2>
+<ul>
+<li>kind: <code>method</code></li>
+<li>signature: <code>language(self, _value)</code></li>
+</ul>
+<p><em>No docstring.</em></p>
+<h2 id="compiledmixinmetavars"><code>CompiledMixin.metavars</code></h2>
+<ul>
+<li>kind: <code>method</code></li>
+<li>signature: <code>metavars(self)</code></li>
+</ul>
+<p>Output-wildcard max-value namespace.</p>
+<p>If the schema has output-only wildcard dimensions (e.g. <code>K</code>), this
+namespace exposes <code>.maxK</code> for user assignment before calling the
+transformer. These values bound the allocated output buffer size; the
+actual runtime output size is reported back by the compiled function.</p>
+<p>Changing the schema rebuilds metavars, dropping any stale entries.</p>
+<h2 id="compiledmixinmodules"><code>CompiledMixin.modules</code></h2>
+<ul>
+<li>kind: <code>method</code></li>
+<li>signature: <code>modules(self)</code></li>
+</ul>
+<p>Not supported for compiled transformers. Raises NotImplementedError if accessed.</p>
+<h2 id="compiledmixinobjects"><code>CompiledMixin.objects</code></h2>
+<ul>
+<li>kind: <code>method</code></li>
+<li>signature: <code>objects(self)</code></li>
+</ul>
+<p>Additional compiled objects linked into this transformer.</p>
+<p>Each entry is a CompiledObject with its own language and source code.
+Objects may use a different language from the main transformer (e.g.
+a Fortran helper linked into a C transformer).</p>
+<h2 id="compiledmixinschema"><code>CompiledMixin.schema</code></h2>
+<ul>
+<li>kind: <code>method</code></li>
+<li>signature: <code>schema(self, value)</code></li>
+</ul>
+<p><em>No docstring.</em></p>
+<h2 id="compiledobject"><code>CompiledObject</code></h2>
+<ul>
+<li>kind: <code>class</code></li>
+<li>signature: <code>CompiledObject</code></li>
+</ul>
+<p>Additional compiled source object linked into a compiled transformer.</p>
+<h2 id="compiledobjectcode"><code>CompiledObject.code</code></h2>
+<ul>
+<li>kind: <code>method</code></li>
+<li>signature: <code>code(self, value)</code></li>
+</ul>
+<p><em>No docstring.</em></p>
+<h2 id="compiledobjectlanguage"><code>CompiledObject.language</code></h2>
+<ul>
+<li>kind: <code>method</code></li>
+<li>signature: <code>language(self)</code></li>
+</ul>
+<p><em>No docstring.</em></p>
+<h2 id="compiledobjectto_compilation_payload"><code>CompiledObject.to_compilation_payload</code></h2>
+<ul>
+<li>kind: <code>method</code></li>
+<li>signature: <code>to_compilation_payload(self)</code></li>
+</ul>
+<p><em>No docstring.</em></p>
+<h2 id="compiledobjectto_object_payload"><code>CompiledObject.to_object_payload</code></h2>
+<ul>
+<li>kind: <code>method</code></li>
+<li>signature: <code>to_object_payload(self, name)</code></li>
+</ul>
+<p><em>No docstring.</em></p>
+<h2 id="compiledtransformer"><code>CompiledTransformer</code></h2>
+<ul>
+<li>kind: <code>class</code></li>
+<li>signature: <code>CompiledTransformer</code></li>
+</ul>
+<p>Delayed compiled-language transformer.</p>
+<p>Wraps C, C++, Fortran, or Rust source code as a Seamless transformation.
+Calling the transformer returns a :class:<code>Transformation</code> handle that can
+be executed later — the same delayed semantics as :func:<code>delayed</code> for
+Python transformers.</p>
+<p>Basic usage::</p>
+<pre><code>from seamless_transformer import CompiledTransformer, DirectCompiledTransformer
+
+tf = DirectCompiledTransformer("c")
+tf.schema = """
+inputs:
+  - name: a
+    dtype: int32
+  - name: b
+    dtype: int32
+outputs:
+  - name: result
+    dtype: int32
+"""
+tf.code = """
+#include &lt;stdint.h&gt;
+int transform(int32_t a, int32_t b, int32_t *result) {
+    *result = a + b;
+    return 0;
+}
+"""
+assert tf(a=2, b=3) == 5
+</code></pre>
+<p>For a delayed (non-direct) workflow::</p>
+<pre><code>tf = CompiledTransformer("c")
+tf.schema = ...
+tf.code = ...
+t = tf(a=2, b=3)    # returns a Transformation
+value = t.run()     # execute and return value
+</code></pre>
+<p><strong>Schema</strong>: a YAML string in the seamless-signature format. Accepts a
+string or a :class:<code>pathlib.Path</code>. The schema defines input/output parameter
+names, dtypes, and shapes. Struct parameters map to aligned NumPy
+structured dtypes and generated C structs in the header.</p>
+<p><strong>Code</strong>: the compiled source as a string or :class:<code>pathlib.Path</code>. The
+source must define a <code>transform()</code> function matching the schema signature
+generated in <code>tf.header</code>.</p>
+<p><strong>Compilation settings</strong>: <code>tf.compilation</code> is a
+:class:<code>~seamless_transformer.languages.CompilationConfig</code> dataclass with
+the compiler binary, flags, and mode. Modify it before calling to override
+defaults (e.g. switch from <code>profile</code> to <code>debug</code>).</p>
+<p><strong>Environment</strong>: <code>tf.environment</code> is an :class:<code>~seamless_transformer.environment.Environment</code>
+that controls conda, docker, and execution powers for the transformation.</p>
+<p><strong>Additional objects</strong>: <code>tf.objects</code> holds a list of
+:class:<code>CompiledObject</code> instances — extra source files in the same or a
+different compiled language (e.g. a Fortran helper) that are compiled and
+linked alongside the main source.</p>
+<p><strong>Caching</strong>: transformation identity is determined by source code content
+and input values, not by compiler flags. Two runs with the same code and
+inputs but different <code>-O</code> flags share a cache entry. This matches
+Seamless's content-addressed identity model.</p>
+<p>Constructor arguments:</p>
+<ul>
+<li><code>language</code>: registered compiled language name (<code>"c"</code>, <code>"cpp"</code>,
+  <code>"fortran"</code>, <code>"rust"</code>, or any custom language added via
+  :func:<code>~seamless_transformer.languages.define_compiled_language</code>).</li>
+<li><code>scratch</code>: if True, the result buffer may be dropped after computation.</li>
+<li><code>direct_print</code>: if True, forward transformer stdout/stderr directly.</li>
+<li><code>local</code>: if True, force local execution (ignore remote backend config).</li>
+</ul>
+<p>Requires <code>seamless-signature</code>, <code>cffi</code>, and <code>numpy</code> (install with
+<code>pip install seamless-transformer[compiled]</code>).</p>
+<h2 id="directcompiledtransformer"><code>DirectCompiledTransformer</code></h2>
+<ul>
+<li>kind: <code>class</code></li>
+<li>signature: <code>DirectCompiledTransformer</code></li>
+</ul>
+<p>Compiled transformer that computes immediately and returns the value.</p>
+<p>Identical to :class:<code>CompiledTransformer</code> except that calling the
+transformer runs the compilation and execution pipeline immediately and
+returns the result value, rather than a :class:<code>Transformation</code> handle.</p>
+<p>Use this for interactive or script workflows where you want an immediate
+result. For pipeline or deferred execution, use :class:<code>CompiledTransformer</code>.</p>
+<h2 id="metavars"><code>MetaVars</code></h2>
+<ul>
+<li>kind: <code>class</code></li>
+<li>signature: <code>MetaVars</code></li>
+</ul>
+<p>Dynamic attribute namespace for output-wildcard max-values.</p>
+<h2 id="metavarsis_complete"><code>MetaVars.is_complete</code></h2>
+<ul>
+<li>kind: <code>method</code></li>
+<li>signature: <code>is_complete(self)</code></li>
+</ul>
+<p><em>No docstring.</em></p>
+<h2 id="metavarsto_dict"><code>MetaVars.to_dict</code></h2>
+<ul>
+<li>kind: <code>method</code></li>
+<li>signature: <code>to_dict(self)</code></li>
+</ul>
+<p><em>No docstring.</em></p>
+<h2 id="objectlist"><code>ObjectList</code></h2>
+<ul>
+<li>kind: <code>class</code></li>
+<li>signature: <code>ObjectList</code></li>
+</ul>
+<p>List-like container of CompiledObject instances.</p>
+<h2 id="objectlistappend"><code>ObjectList.append</code></h2>
+<ul>
+<li>kind: <code>method</code></li>
+<li>signature: <code>append(self, obj)</code></li>
+</ul>
+<p><em>No docstring.</em></p>
+<h2 id="_as_plain"><code>_as_plain</code></h2>
+<ul>
+<li>kind: <code>function</code></li>
+<li>signature: <code>_as_plain(value)</code></li>
+</ul>
+<p><em>No docstring.</em></p>
+<h2 id="_expected_numpy_dtype"><code>_expected_numpy_dtype</code></h2>
+<ul>
+<li>kind: <code>function</code></li>
+<li>signature: <code>_expected_numpy_dtype(dtype_spec)</code></li>
+</ul>
+<p><em>No docstring.</em></p>
+<h2 id="_install_deferred_validation"><code>_install_deferred_validation</code></h2>
+<ul>
+<li>kind: <code>function</code></li>
+<li>signature: <code>_install_deferred_validation(tf, pre_transformation, deferred_validations)</code></li>
+</ul>
+<p>Run _validate_native_numpy_value after deferred inputs are materialized.</p>
+<p>The checks run after prepare_transformation has replaced Transformation/
+Checksum pins with concrete hex checksums, so the resolved buffer carries
+the value actually supplied to the compiled runner.</p>
+<h2 id="_is_deferred_input"><code>_is_deferred_input</code></h2>
+<ul>
+<li>kind: <code>function</code></li>
+<li>signature: <code>_is_deferred_input(value)</code></li>
+</ul>
+<p>Return True if the input must be resolved before dtype validation.</p>
+<h2 id="_numpy_dtype_matches"><code>_numpy_dtype_matches</code></h2>
+<ul>
+<li>kind: <code>function</code></li>
+<li>signature: <code>_numpy_dtype_matches(actual, expected)</code></li>
+</ul>
+<p><em>No docstring.</em></p>
+<h2 id="_require_signature_package"><code>_require_signature_package</code></h2>
+<ul>
+<li>kind: <code>function</code></li>
+<li>signature: <code>_require_signature_package()</code></li>
+</ul>
+<p><em>No docstring.</em></p>
+<h2 id="_resolve_deferred_value"><code>_resolve_deferred_value</code></h2>
+<ul>
+<li>kind: <code>function</code></li>
+<li>signature: <code>_resolve_deferred_value(prepared_value)</code></li>
+</ul>
+<p>Resolve a prepared pin value (hex string or None) to a Python value.</p>
+<h2 id="_resolve_deferred_value_async"><code>_resolve_deferred_value_async</code></h2>
+<ul>
+<li>kind: <code>function</code></li>
+<li>signature: <code>_resolve_deferred_value_async(prepared_value)</code></li>
+</ul>
+<p><em>No docstring.</em></p>
+<h2 id="_validate_native_numpy_value"><code>_validate_native_numpy_value</code></h2>
+<ul>
+<li>kind: <code>function</code></li>
+<li>signature: <code>_validate_native_numpy_value(name, value, dtype_spec, is_array)</code></li>
+</ul>
+<p><em>No docstring.</em></p>
+              
+            </div>
+          </div><footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+    
+    
+  </span>
+</div>
+    <script src="../../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "../..";</script>
+    <script src="../../js/theme_extra.js"></script>
+    <script src="../../js/theme.js"></script>
+      <script src="../../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>

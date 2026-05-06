@@ -87,6 +87,10 @@
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#cli-scripts">CLI scripts</a>
     </li>
+    <li class="toctree-l2"><a class="reference internal" href="#execution-records">Execution records</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#compiled-language-support">Compiled language support</a>
+    </li>
     <li class="toctree-l2"><a class="reference internal" href="#installation">Installation</a>
         <ul>
     <li class="toctree-l3"><a class="reference internal" href="#setting-up-seamless-mode">Setting up seamless-mode</a>
@@ -226,6 +230,17 @@
 </tr>
 </tbody>
 </table>
+<h2 id="execution-records">Execution records</h2>
+<p>Every successful, non-probe transformation persists one execution record in <code>seamless.db</code> (the <code>MetaData</code> table), keyed by <code>tf_checksum</code>. The default body is <strong>minimal</strong> (timing, memory, execution mode, remote target). The full record — environment fingerprints, compilation context, validation snapshots, contract violations, freshness — is opt-in via <code>seamless.config.select_record(True)</code> (or <code>- record: true</code> in <code>seamless.profile.yaml</code>).</p>
+<p>Capture is worker-side: timing, memory, GPU usage, and compilation-context checksums are collected wherever the transformation actually ran (process, spawn child, jobserver worker, or Dask worker). The shared assembly code lives in <code>seamless_transformer/record_assembly.py</code>; the runtime mode flag is cached process-locally and invalidated on <code>select_record()</code> calls. The hot path under <code>record: false</code> pays only timing/memory capture and one database write.</p>
+<p>For the agent contract, see <code>docs/agent/contracts/execution-records.md</code> in the main seamless repository.</p>
+<h2 id="compiled-language-support">Compiled language support</h2>
+<p><code>seamless-transformer</code> can wrap compiled source code as Seamless transformations. The compiled source defines a <code>transform()</code> function whose signature is described by a YAML schema; <code>seamless-signature</code> generates the C header, and CFFI builds the Python extension at runtime.</p>
+<p>Built-in languages: C, C++, Fortran, Rust. <strong>The set is open</strong> — additional languages can be registered at runtime with <code>define_compiled_language()</code>. To add permanent support for a new language, create a file in <code>seamless_transformer/languages/native/</code> following the pattern of <code>rust.py</code> (a single <code>define_compiled_language()</code> call with compiler name, flags, and compilation mode) and submit a pull request.</p>
+<p>This requires the <code>compiled</code> optional-dependency group:</p>
+<pre><code class="language-bash">pip install seamless-transformer[compiled]
+</code></pre>
+<p>See <code>docs/agent/contracts/compiled-transformers.md</code> for the full behavioral contract.</p>
 <h2 id="installation">Installation</h2>
 <pre><code class="language-bash">pip install seamless-transformer
 </code></pre>

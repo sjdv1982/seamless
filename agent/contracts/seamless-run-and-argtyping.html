@@ -87,6 +87,12 @@
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="execution-backends.html">Execution Backends</a>
                   </li>
+                  <li class="toctree-l1"><a class="reference internal" href="compression.html">Compression</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="compiled-transformers.html">Compiled Transformers</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="seamless-signature-schema.html">seamless-signature Schema</a>
+                  </li>
               </ul>
               <p class="caption"><span class="caption-text">API</span></p>
               <ul>
@@ -181,7 +187,8 @@ invalidate the cache when it changes.</p>
 - For “many short tasks”, prefer a backend designed for high task throughput (e.g. Dask-backed execution) rather than naive “fork 1000 subprocesses locally”.</p>
 <h2 id="remote-execution-guidance">Remote execution guidance</h2>
 <p>The same “content-bound” rule applies:
-- don’t assume remotes have local files; treat inputs as artifacts and materialize where executed</p>
+- don’t assume remotes have local files; treat inputs as artifacts and materialize where executed
+- if an input checksum refers to a scratch result and input fingertipping is enabled, materialization means recomputing the producer at the consumer execution site, not fetching a durable buffer from the hashserver</p>
 <h2 id="manual-remote-deployment-mode">Manual Remote Deployment Mode</h2>
 <p><code>seamless-run --dry --write-remote-job DIR ...</code> is a deployment-only mode for
 remote execution, typically on HPC systems.</p>

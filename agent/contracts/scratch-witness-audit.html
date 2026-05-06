@@ -79,6 +79,12 @@
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="execution-backends.html">Execution Backends</a>
                   </li>
+                  <li class="toctree-l1"><a class="reference internal" href="compression.html">Compression</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="compiled-transformers.html">Compiled Transformers</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="seamless-signature-schema.html">seamless-signature Schema</a>
+                  </li>
               </ul>
               <p class="caption"><span class="caption-text">API</span></p>
               <ul>
@@ -134,7 +140,15 @@ Anything “tolerance-based” requires a separate user-defined witness/comparis
 <h2 id="scratch">Scratch</h2>
 <p>Scratch is an optimization knob:
 - Scratch allows bulky intermediates to be dropped (not materializable later).
+- Scratch plus input fingertipping is also a placement mechanism: if a downstream transformation needs a missing scratch input, the producer transformation is rerun where the consumer needs the bytes.
+- Use scratch for bulky generated intermediates that are not meaning-bearing and whose main purpose is to feed another transformation.
 - Scratch must not remove the ability to evaluate the meaning-bearing outcome of the computation.</p>
+<p>Input fingertipping is opt-in on each consumer transformation. Marking an upstream
+producer as scratch does not automatically allow downstream consumers to
+fingertip missing inputs. In Python, set the downstream transformer/core's
+<code>allow_input_fingertip = True</code> before constructing the consuming transformation;
+for CLI execution of a transformation checksum, use <code>--fingertip</code>.</p>
+<p>Agent porting implication: do not replace a compact, reliable producer implementation just to avoid a large edge. If the producer is deterministic and cheap enough to rerun, prefer a scratch producer plus fingertipping consumer so the large value is materialized co-located with the consumer.</p>
 <h2 id="witness-outputs-do-not-scratch">Witness outputs (do not scratch)</h2>
 <p>A witness is a small, persistent artifact that encodes scientific meaning and diagnostics, e.g.:
 - classifier: <code>(label, margin)</code> (or other stability diagnostics)

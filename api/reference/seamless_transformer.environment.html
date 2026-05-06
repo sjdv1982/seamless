@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <link rel="shortcut icon" href="../../img/favicon.ico" />
+    <title>seamless_transformer.environment - Seamless</title>
+    <link rel="stylesheet" href="../../css/theme.css" />
+    <link rel="stylesheet" href="../../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "seamless_transformer.environment";
+        var mkdocs_page_input_path = "api/reference/seamless_transformer.environment.md";
+        var mkdocs_page_url = null;
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href="../../index.html" class="icon icon-home"> Seamless
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../index.html">Home</a>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Getting Started</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../getting-started.html">Wrapping Python and bash</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../cluster.html">Setting up a local cluster</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../seamless-mode.html">Seamless mode</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">How-To Guides</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../caching.html">Caching, identity, and sharing</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../composition.html">Composition</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../parallelism.html">Local parallelism</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../remote.html">Remote execution</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../hpc.html">HPC specifics</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../remote-launch.html">Remote job launching</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../sharing.html">Sharing in depth</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Reference API</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../index.html">Overview</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../seamless-core.html">seamless-core</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../seamless-transformer.html">seamless-transformer</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../seamless-config.html">seamless-config</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../seamless-remote.html">seamless-remote</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../seamless-dask.html">seamless-dask</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../seamless-jobserver.html">seamless-jobserver</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../seamless-database.html">seamless-database</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../remote-http-launcher.html">remote-http-launcher</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Python docstrings</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="seamless.html">seamless</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="seamless.checksum_class.html">Checksum</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="seamless.buffer_class.html">Buffer</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="seamless.transformer.html">seamless.transformer</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="seamless_transformer.transformation_class.html">Transformation</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="seamless_transformer.transformer_class.html">Transformer properties</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="seamless_config.select.html">seamless.config.select</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="seamless_config.tools.html">seamless.config.tools</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >CLI docstrings</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="seamless-run.html">seamless-run</a>
+                </li>
+    </ul>
+                  </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">Seamless</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../../index.html" class="icon icon-home" aria-label="Docs"></a></li>
+      <li class="breadcrumb-item active">seamless_transformer.environment</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h1 id="seamless_transformerenvironment">seamless_transformer.environment</h1>
+<p>Execution environment for transformer calls.</p>
+<h2 id="environment"><code>Environment</code></h2>
+<ul>
+<li>kind: <code>class</code></li>
+<li>signature: <code>Environment</code></li>
+</ul>
+<p>Execution environment for an individual transformer.</p>
+<p>Controls the conda environment, Docker container, required binaries, and
+execution powers that the transformation worker will use.</p>
+<p>Access via <code>transformer.environment</code> on any :class:<code>~seamless_transformer.transformer_class.Transformer</code>
+or :class:<code>~seamless_transformer.compiled_transformer.CompiledTransformer</code>::</p>
+<pre><code>tf.environment.set_conda_env("myenv")
+tf.environment.set_docker({"name": "my-image:latest"})
+</code></pre>
+<p>A fresh <code>Environment()</code> with no settings contributes nothing to the
+transformation — all methods accept <code>None</code> to clear a previously set value.</p>
+<p>Properties (set/get pairs):</p>
+<ul>
+<li><strong>conda</strong>: a conda environment YAML spec (string, path, or file object).
+  The YAML must be a mapping with a <code>dependencies</code> key.</li>
+<li><strong>conda_env</strong>: the name of an existing conda environment to activate.</li>
+<li><strong>which</strong>: a list of binary names that must be on <code>PATH</code> in the worker.</li>
+<li><strong>powers</strong>: a dict of execution privilege escalations (platform-specific).</li>
+<li><strong>docker</strong>: a dict with at least a <code>"name"</code> key specifying the Docker image.</li>
+</ul>
+<h2 id="environmentget_conda"><code>Environment.get_conda</code></h2>
+<ul>
+<li>kind: <code>method</code></li>
+<li>signature: <code>get_conda(self)</code></li>
+</ul>
+<p><em>No docstring.</em></p>
+<h2 id="environmentget_conda_env"><code>Environment.get_conda_env</code></h2>
+<ul>
+<li>kind: <code>method</code></li>
+<li>signature: <code>get_conda_env(self)</code></li>
+</ul>
+<p><em>No docstring.</em></p>
+<h2 id="environmentget_docker"><code>Environment.get_docker</code></h2>
+<ul>
+<li>kind: <code>method</code></li>
+<li>signature: <code>get_docker(self)</code></li>
+</ul>
+<p><em>No docstring.</em></p>
+<h2 id="environmentget_powers"><code>Environment.get_powers</code></h2>
+<ul>
+<li>kind: <code>method</code></li>
+<li>signature: <code>get_powers(self)</code></li>
+</ul>
+<p><em>No docstring.</em></p>
+<h2 id="environmentget_which"><code>Environment.get_which</code></h2>
+<ul>
+<li>kind: <code>method</code></li>
+<li>signature: <code>get_which(self)</code></li>
+</ul>
+<p><em>No docstring.</em></p>
+<h2 id="environmentset_conda"><code>Environment.set_conda</code></h2>
+<ul>
+<li>kind: <code>method</code></li>
+<li>signature: <code>set_conda(self, conda)</code></li>
+</ul>
+<p>Set a conda environment spec from YAML text, a path, or a file object.</p>
+<p>The argument may be:</p>
+<ul>
+<li>a YAML string (must contain <code>dependencies</code>),</li>
+<li>a file path string or :class:<code>pathlib.Path</code> pointing to a YAML file,</li>
+<li>a file-like object with a <code>read()</code> method.</li>
+</ul>
+<p>Pass <code>None</code> to clear.</p>
+<h2 id="environmentset_conda_env"><code>Environment.set_conda_env</code></h2>
+<ul>
+<li>kind: <code>method</code></li>
+<li>signature: <code>set_conda_env(self, conda_env_name)</code></li>
+</ul>
+<p>Set the name of an existing conda environment to activate on the worker.</p>
+<h2 id="environmentset_docker"><code>Environment.set_docker</code></h2>
+<ul>
+<li>kind: <code>method</code></li>
+<li>signature: <code>set_docker(self, docker)</code></li>
+</ul>
+<p>Set the Docker image to run the transformation in.</p>
+<p>Argument must be a dict with at least a <code>"name"</code> key (the image name).
+Pass <code>None</code> to clear.</p>
+<h2 id="environmentset_powers"><code>Environment.set_powers</code></h2>
+<ul>
+<li>kind: <code>method</code></li>
+<li>signature: <code>set_powers(self, powers)</code></li>
+</ul>
+<p>Set execution privilege escalations (platform-specific dict).</p>
+<p>Pass <code>None</code> to clear.</p>
+<h2 id="environmentset_which"><code>Environment.set_which</code></h2>
+<ul>
+<li>kind: <code>method</code></li>
+<li>signature: <code>set_which(self, which)</code></li>
+</ul>
+<p>Set a list of binary names that must be on PATH in the worker.</p>
+<p>Pass a list of strings (e.g. <code>["gcc", "make"]</code>) or <code>None</code> to clear.</p>
+              
+            </div>
+          </div><footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+    
+    
+  </span>
+</div>
+    <script src="../../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "../..";</script>
+    <script src="../../js/theme_extra.js"></script>
+    <script src="../../js/theme.js"></script>
+      <script src="../../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>

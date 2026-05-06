@@ -1,5 +1,5 @@
 {
-  "generated_at": 1775921750,
+  "generated_at": 1778054128,
   "symbols": {
     "ArgsWrapper": {
       "anchor": "argswrapper",
@@ -125,16 +125,176 @@
       "anchor": "checksum-tempref",
       "page": "api/python/seamless.checksum_class.md"
     },
+    "CompilationConfig": {
+      "anchor": "compilationconfig",
+      "page": "api/python/seamless_transformer.languages.md"
+    },
+    "CompiledCelltypesWrapper": {
+      "anchor": "compiledcelltypeswrapper",
+      "page": "api/python/seamless_transformer.compiled_transformer.md"
+    },
+    "CompiledMixin": {
+      "anchor": "compiledmixin",
+      "page": "api/python/seamless_transformer.compiled_transformer.md"
+    },
+    "CompiledMixin.args": {
+      "anchor": "compiledmixin-args",
+      "page": "api/python/seamless_transformer.compiled_transformer.md"
+    },
+    "CompiledMixin.celltypes": {
+      "anchor": "compiledmixin-celltypes",
+      "page": "api/python/seamless_transformer.compiled_transformer.md"
+    },
+    "CompiledMixin.code": {
+      "anchor": "compiledmixin-code",
+      "page": "api/python/seamless_transformer.compiled_transformer.md"
+    },
+    "CompiledMixin.globals": {
+      "anchor": "compiledmixin-globals",
+      "page": "api/python/seamless_transformer.compiled_transformer.md"
+    },
+    "CompiledMixin.header": {
+      "anchor": "compiledmixin-header",
+      "page": "api/python/seamless_transformer.compiled_transformer.md"
+    },
+    "CompiledMixin.language": {
+      "anchor": "compiledmixin-language",
+      "page": "api/python/seamless_transformer.compiled_transformer.md"
+    },
+    "CompiledMixin.metavars": {
+      "anchor": "compiledmixin-metavars",
+      "page": "api/python/seamless_transformer.compiled_transformer.md"
+    },
+    "CompiledMixin.modules": {
+      "anchor": "compiledmixin-modules",
+      "page": "api/python/seamless_transformer.compiled_transformer.md"
+    },
+    "CompiledMixin.objects": {
+      "anchor": "compiledmixin-objects",
+      "page": "api/python/seamless_transformer.compiled_transformer.md"
+    },
+    "CompiledMixin.schema": {
+      "anchor": "compiledmixin-schema",
+      "page": "api/python/seamless_transformer.compiled_transformer.md"
+    },
+    "CompiledObject": {
+      "anchor": "compiledobject",
+      "page": "api/python/seamless_transformer.compiled_transformer.md"
+    },
+    "CompiledObject.code": {
+      "anchor": "compiledobject-code",
+      "page": "api/python/seamless_transformer.compiled_transformer.md"
+    },
+    "CompiledObject.language": {
+      "anchor": "compiledobject-language",
+      "page": "api/python/seamless_transformer.compiled_transformer.md"
+    },
+    "CompiledObject.to_compilation_payload": {
+      "anchor": "compiledobject-to-compilation-payload",
+      "page": "api/python/seamless_transformer.compiled_transformer.md"
+    },
+    "CompiledObject.to_object_payload": {
+      "anchor": "compiledobject-to-object-payload",
+      "page": "api/python/seamless_transformer.compiled_transformer.md"
+    },
+    "CompiledTransformer": {
+      "anchor": "compiledtransformer",
+      "page": "api/python/seamless_transformer.compiled_transformer.md"
+    },
+    "DirectCompiledTransformer": {
+      "anchor": "directcompiledtransformer",
+      "page": "api/python/seamless_transformer.compiled_transformer.md"
+    },
     "DirectTransformer": {
       "anchor": "directtransformer",
       "page": "api/python/seamless_transformer.transformer_class.md"
+    },
+    "Environment": {
+      "anchor": "environment",
+      "page": "api/python/seamless_transformer.environment.md"
+    },
+    "Environment.get_conda": {
+      "anchor": "environment-get-conda",
+      "page": "api/python/seamless_transformer.environment.md"
+    },
+    "Environment.get_conda_env": {
+      "anchor": "environment-get-conda-env",
+      "page": "api/python/seamless_transformer.environment.md"
+    },
+    "Environment.get_docker": {
+      "anchor": "environment-get-docker",
+      "page": "api/python/seamless_transformer.environment.md"
+    },
+    "Environment.get_powers": {
+      "anchor": "environment-get-powers",
+      "page": "api/python/seamless_transformer.environment.md"
+    },
+    "Environment.get_which": {
+      "anchor": "environment-get-which",
+      "page": "api/python/seamless_transformer.environment.md"
+    },
+    "Environment.set_conda": {
+      "anchor": "environment-set-conda",
+      "page": "api/python/seamless_transformer.environment.md"
+    },
+    "Environment.set_conda_env": {
+      "anchor": "environment-set-conda-env",
+      "page": "api/python/seamless_transformer.environment.md"
+    },
+    "Environment.set_docker": {
+      "anchor": "environment-set-docker",
+      "page": "api/python/seamless_transformer.environment.md"
+    },
+    "Environment.set_powers": {
+      "anchor": "environment-set-powers",
+      "page": "api/python/seamless_transformer.environment.md"
+    },
+    "Environment.set_which": {
+      "anchor": "environment-set-which",
+      "page": "api/python/seamless_transformer.environment.md"
     },
     "GlobalsWrapper": {
       "anchor": "globalswrapper",
       "page": "api/python/seamless_transformer.transformer_class.md"
     },
+    "LanguageDefinition": {
+      "anchor": "languagedefinition",
+      "page": "api/python/seamless_transformer.languages.md"
+    },
+    "MetaVars": {
+      "anchor": "metavars",
+      "page": "api/python/seamless_transformer.compiled_transformer.md"
+    },
+    "MetaVars.is_complete": {
+      "anchor": "metavars-is-complete",
+      "page": "api/python/seamless_transformer.compiled_transformer.md"
+    },
+    "MetaVars.to_dict": {
+      "anchor": "metavars-to-dict",
+      "page": "api/python/seamless_transformer.compiled_transformer.md"
+    },
     "ModulesWrapper": {
       "anchor": "moduleswrapper",
+      "page": "api/python/seamless_transformer.transformer_class.md"
+    },
+    "ObjectList": {
+      "anchor": "objectlist",
+      "page": "api/python/seamless_transformer.compiled_transformer.md"
+    },
+    "ObjectList.append": {
+      "anchor": "objectlist-append",
+      "page": "api/python/seamless_transformer.compiled_transformer.md"
+    },
+    "PythonMixin": {
+      "anchor": "pythonmixin",
+      "page": "api/python/seamless_transformer.transformer_class.md"
+    },
+    "PythonMixin.code": {
+      "anchor": "pythonmixin-code",
+      "page": "api/python/seamless_transformer.transformer_class.md"
+    },
+    "PythonMixin.language": {
+      "anchor": "pythonmixin-language",
       "page": "api/python/seamless_transformer.transformer_class.md"
     },
     "Transformation": {
@@ -225,53 +385,61 @@
       "anchor": "transformer",
       "page": "api/python/seamless_transformer.transformer_class.md"
     },
-    "Transformer.allow_input_fingertip": {
-      "anchor": "transformer-allow-input-fingertip",
+    "TransformerCore": {
+      "anchor": "transformercore",
       "page": "api/python/seamless_transformer.transformer_class.md"
     },
-    "Transformer.args": {
-      "anchor": "transformer-args",
+    "TransformerCore.allow_input_fingertip": {
+      "anchor": "transformercore-allow-input-fingertip",
       "page": "api/python/seamless_transformer.transformer_class.md"
     },
-    "Transformer.celltypes": {
-      "anchor": "transformer-celltypes",
+    "TransformerCore.args": {
+      "anchor": "transformercore-args",
       "page": "api/python/seamless_transformer.transformer_class.md"
     },
-    "Transformer.code": {
-      "anchor": "transformer-code",
+    "TransformerCore.celltypes": {
+      "anchor": "transformercore-celltypes",
       "page": "api/python/seamless_transformer.transformer_class.md"
     },
-    "Transformer.direct_print": {
-      "anchor": "transformer-direct-print",
+    "TransformerCore.direct_print": {
+      "anchor": "transformercore-direct-print",
       "page": "api/python/seamless_transformer.transformer_class.md"
     },
-    "Transformer.driver": {
-      "anchor": "transformer-driver",
+    "TransformerCore.driver": {
+      "anchor": "transformercore-driver",
       "page": "api/python/seamless_transformer.transformer_class.md"
     },
-    "Transformer.globals": {
-      "anchor": "transformer-globals",
+    "TransformerCore.environment": {
+      "anchor": "transformercore-environment",
       "page": "api/python/seamless_transformer.transformer_class.md"
     },
-    "Transformer.language": {
-      "anchor": "transformer-language",
+    "TransformerCore.globals": {
+      "anchor": "transformercore-globals",
       "page": "api/python/seamless_transformer.transformer_class.md"
     },
-    "Transformer.local": {
-      "anchor": "transformer-local",
+    "TransformerCore.language": {
+      "anchor": "transformercore-language",
       "page": "api/python/seamless_transformer.transformer_class.md"
     },
-    "Transformer.meta": {
-      "anchor": "transformer-meta",
+    "TransformerCore.local": {
+      "anchor": "transformercore-local",
       "page": "api/python/seamless_transformer.transformer_class.md"
     },
-    "Transformer.modules": {
-      "anchor": "transformer-modules",
+    "TransformerCore.meta": {
+      "anchor": "transformercore-meta",
       "page": "api/python/seamless_transformer.transformer_class.md"
     },
-    "Transformer.scratch": {
-      "anchor": "transformer-scratch",
+    "TransformerCore.modules": {
+      "anchor": "transformercore-modules",
       "page": "api/python/seamless_transformer.transformer_class.md"
+    },
+    "TransformerCore.scratch": {
+      "anchor": "transformercore-scratch",
+      "page": "api/python/seamless_transformer.transformer_class.md"
+    },
+    "_as_plain": {
+      "anchor": "as-plain",
+      "page": "api/python/seamless_transformer.compiled_transformer.md"
     },
     "_build_injected": {
       "anchor": "build-injected",
@@ -293,13 +461,41 @@
       "anchor": "ensure-loop-running",
       "page": "api/python/seamless_transformer.transformation_class.md"
     },
+    "_expected_numpy_dtype": {
+      "anchor": "expected-numpy-dtype",
+      "page": "api/python/seamless_transformer.compiled_transformer.md"
+    },
     "_format_exception": {
       "anchor": "format-exception",
       "page": "api/python/seamless_transformer.transformation_class.md"
     },
+    "_install_deferred_validation": {
+      "anchor": "install-deferred-validation",
+      "page": "api/python/seamless_transformer.compiled_transformer.md"
+    },
+    "_is_deferred_input": {
+      "anchor": "is-deferred-input",
+      "page": "api/python/seamless_transformer.compiled_transformer.md"
+    },
+    "_numpy_dtype_matches": {
+      "anchor": "numpy-dtype-matches",
+      "page": "api/python/seamless_transformer.compiled_transformer.md"
+    },
     "_prepare_tool": {
       "anchor": "prepare-tool",
       "page": "api/python/seamless_config.tools.md"
+    },
+    "_require_signature_package": {
+      "anchor": "require-signature-package",
+      "page": "api/python/seamless_transformer.compiled_transformer.md"
+    },
+    "_resolve_deferred_value": {
+      "anchor": "resolve-deferred-value",
+      "page": "api/python/seamless_transformer.compiled_transformer.md"
+    },
+    "_resolve_deferred_value_async": {
+      "anchor": "resolve-deferred-value-async",
+      "page": "api/python/seamless_transformer.compiled_transformer.md"
     },
     "_run_coro_in_new_loop": {
       "anchor": "run-coro-in-new-loop",
@@ -312,6 +508,10 @@
     "_validate": {
       "anchor": "validate",
       "page": "api/python/seamless_config.select.md"
+    },
+    "_validate_native_numpy_value": {
+      "anchor": "validate-native-numpy-value",
+      "page": "api/python/seamless_transformer.compiled_transformer.md"
     },
     "check_remote_redundancy": {
       "anchor": "check-remote-redundancy",
@@ -340,6 +540,10 @@
     "configure_pure_daskserver": {
       "anchor": "configure-pure-daskserver",
       "page": "api/python/seamless_config.tools.md"
+    },
+    "define_compiled_language": {
+      "anchor": "define-compiled-language",
+      "page": "api/python/seamless_transformer.languages.md"
     },
     "define_tools": {
       "anchor": "define-tools",
@@ -373,6 +577,14 @@
       "anchor": "get-execution",
       "page": "api/python/seamless_config.select.md"
     },
+    "get_language": {
+      "anchor": "get-language",
+      "page": "api/python/seamless_transformer.languages.md"
+    },
+    "get_node": {
+      "anchor": "get-node",
+      "page": "api/python/seamless_config.select.md"
+    },
     "get_nparallel": {
       "anchor": "get-nparallel",
       "page": "api/python/seamless_config.select.md"
@@ -383,6 +595,10 @@
     },
     "get_queue": {
       "anchor": "get-queue",
+      "page": "api/python/seamless_config.select.md"
+    },
+    "get_record": {
+      "anchor": "get-record",
       "page": "api/python/seamless_config.select.md"
     },
     "get_remote": {
@@ -400,6 +616,10 @@
     "get_stage": {
       "anchor": "get-stage",
       "page": "api/python/seamless_config.select.md"
+    },
+    "is_compiled_language": {
+      "anchor": "is-compiled-language",
+      "page": "api/python/seamless_transformer.languages.md"
     },
     "is_worker": {
       "anchor": "is-worker",
@@ -421,12 +641,20 @@
       "anchor": "reset-execution-before-load",
       "page": "api/python/seamless_config.select.md"
     },
+    "reset_node_before_load": {
+      "anchor": "reset-node-before-load",
+      "page": "api/python/seamless_config.select.md"
+    },
     "reset_persistent_before_load": {
       "anchor": "reset-persistent-before-load",
       "page": "api/python/seamless_config.select.md"
     },
     "reset_queue_before_load": {
       "anchor": "reset-queue-before-load",
+      "page": "api/python/seamless_config.select.md"
+    },
+    "reset_record_before_load": {
+      "anchor": "reset-record-before-load",
       "page": "api/python/seamless_config.select.md"
     },
     "reset_remote_before_load": {
@@ -445,6 +673,10 @@
       "anchor": "select-execution",
       "page": "api/python/seamless_config.select.md"
     },
+    "select_node": {
+      "anchor": "select-node",
+      "page": "api/python/seamless_config.select.md"
+    },
     "select_nparallel": {
       "anchor": "select-nparallel",
       "page": "api/python/seamless_config.select.md"
@@ -459,6 +691,10 @@
     },
     "select_queue": {
       "anchor": "select-queue",
+      "page": "api/python/seamless_config.select.md"
+    },
+    "select_record": {
+      "anchor": "select-record",
       "page": "api/python/seamless_config.select.md"
     },
     "select_remote": {
@@ -505,18 +741,25 @@
       "seamless.transformer": "api/python/seamless.transformer.md",
       "seamless_config.select": "api/python/seamless_config.select.md",
       "seamless_config.tools": "api/python/seamless_config.tools.md",
+      "seamless_transformer.compiled_transformer": "api/python/seamless_transformer.compiled_transformer.md",
+      "seamless_transformer.environment": "api/python/seamless_transformer.environment.md",
+      "seamless_transformer.languages": "api/python/seamless_transformer.languages.md",
       "seamless_transformer.transformation_class": "api/python/seamless_transformer.transformation_class.md",
       "seamless_transformer.transformer_class": "api/python/seamless_transformer.transformer_class.md"
     },
     "contracts": [
       "contracts/cache-storage-and-limits.md",
+      "contracts/compiled-transformers.md",
+      "contracts/compression.md",
       "contracts/content-addressed-files-and-dirs.md",
       "contracts/direct-delayed-and-transformation.md",
       "contracts/execution-backends.md",
       "contracts/identity-and-caching.md",
       "contracts/modules-and-closures.md",
       "contracts/scratch-witness-audit.md",
-      "contracts/seamless-run-and-argtyping.md"
+      "contracts/seamless-run-and-argtyping.md",
+      "contracts/seamless-signature-schema.md",
+      "contracts/service-management.md"
     ]
   },
   "version": 1

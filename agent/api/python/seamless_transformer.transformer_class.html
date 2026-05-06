@@ -69,6 +69,12 @@
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../../contracts/execution-backends.html">Execution Backends</a>
                   </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../contracts/compression.html">Compression</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../contracts/compiled-transformers.html">Compiled Transformers</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../contracts/seamless-signature-schema.html">seamless-signature Schema</a>
+                  </li>
               </ul>
               <p class="caption"><span class="caption-text">API</span></p>
               <ul class="current">
@@ -98,31 +104,39 @@
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#moduleswrapper">ModulesWrapper</a>
     </li>
+    <li class="toctree-l2"><a class="reference internal" href="#pythonmixin">PythonMixin</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#pythonmixincode">PythonMixin.code</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#pythonmixinlanguage">PythonMixin.language</a>
+    </li>
     <li class="toctree-l2"><a class="reference internal" href="#transformer">Transformer</a>
     </li>
-    <li class="toctree-l2"><a class="reference internal" href="#transformerallow_input_fingertip">Transformer.allow_input_fingertip</a>
+    <li class="toctree-l2"><a class="reference internal" href="#transformercore">TransformerCore</a>
     </li>
-    <li class="toctree-l2"><a class="reference internal" href="#transformerargs">Transformer.args</a>
+    <li class="toctree-l2"><a class="reference internal" href="#transformercoreallow_input_fingertip">TransformerCore.allow_input_fingertip</a>
     </li>
-    <li class="toctree-l2"><a class="reference internal" href="#transformercelltypes">Transformer.celltypes</a>
+    <li class="toctree-l2"><a class="reference internal" href="#transformercoreargs">TransformerCore.args</a>
     </li>
-    <li class="toctree-l2"><a class="reference internal" href="#transformercode">Transformer.code</a>
+    <li class="toctree-l2"><a class="reference internal" href="#transformercorecelltypes">TransformerCore.celltypes</a>
     </li>
-    <li class="toctree-l2"><a class="reference internal" href="#transformerdirect_print">Transformer.direct_print</a>
+    <li class="toctree-l2"><a class="reference internal" href="#transformercoredirect_print">TransformerCore.direct_print</a>
     </li>
-    <li class="toctree-l2"><a class="reference internal" href="#transformerdriver">Transformer.driver</a>
+    <li class="toctree-l2"><a class="reference internal" href="#transformercoredriver">TransformerCore.driver</a>
     </li>
-    <li class="toctree-l2"><a class="reference internal" href="#transformerglobals">Transformer.globals</a>
+    <li class="toctree-l2"><a class="reference internal" href="#transformercoreenvironment">TransformerCore.environment</a>
     </li>
-    <li class="toctree-l2"><a class="reference internal" href="#transformerlanguage">Transformer.language</a>
+    <li class="toctree-l2"><a class="reference internal" href="#transformercoreglobals">TransformerCore.globals</a>
     </li>
-    <li class="toctree-l2"><a class="reference internal" href="#transformerlocal">Transformer.local</a>
+    <li class="toctree-l2"><a class="reference internal" href="#transformercorelanguage">TransformerCore.language</a>
     </li>
-    <li class="toctree-l2"><a class="reference internal" href="#transformermeta">Transformer.meta</a>
+    <li class="toctree-l2"><a class="reference internal" href="#transformercorelocal">TransformerCore.local</a>
     </li>
-    <li class="toctree-l2"><a class="reference internal" href="#transformermodules">Transformer.modules</a>
+    <li class="toctree-l2"><a class="reference internal" href="#transformercoremeta">TransformerCore.meta</a>
     </li>
-    <li class="toctree-l2"><a class="reference internal" href="#transformerscratch">Transformer.scratch</a>
+    <li class="toctree-l2"><a class="reference internal" href="#transformercoremodules">TransformerCore.modules</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#transformercorescratch">TransformerCore.scratch</a>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#delayed">delayed</a>
     </li>
@@ -167,7 +181,7 @@
 <li>kind: <code>class</code></li>
 <li>signature: <code>ArgsWrapper</code></li>
 </ul>
-<p>Wrapper around an imperative transformer's celltypes.</p>
+<p>Wrapper around an imperative transformer's arguments.</p>
 <h2 id="celltypeswrapper"><code>CelltypesWrapper</code></h2>
 <ul>
 <li>kind: <code>class</code></li>
@@ -179,7 +193,7 @@
 <li>kind: <code>class</code></li>
 <li>signature: <code>DirectTransformer</code></li>
 </ul>
-<p>Transformer that can be called and gives an immediate result</p>
+<p>Transformer that computes immediately.</p>
 <h2 id="globalswrapper"><code>GlobalsWrapper</code></h2>
 <ul>
 <li>kind: <code>class</code></li>
@@ -192,82 +206,103 @@
 <li>signature: <code>ModulesWrapper</code></li>
 </ul>
 <p>Wrapper around an imperative transformer's imported modules.</p>
-<h2 id="transformer"><code>Transformer</code></h2>
+<h2 id="pythonmixin"><code>PythonMixin</code></h2>
 <ul>
 <li>kind: <code>class</code></li>
-<li>signature: <code>Transformer</code></li>
+<li>signature: <code>PythonMixin</code></li>
 </ul>
-<p>Transformer.
-Transformers can be called as normal functions, but
-the source code of the function and the arguments are converted
-into a Seamless Transformation that is returned.</p>
-<h2 id="transformerallow_input_fingertip"><code>Transformer.allow_input_fingertip</code></h2>
-<ul>
-<li>kind: <code>method</code></li>
-<li>signature: <code>allow_input_fingertip(self, value)</code></li>
-</ul>
-<p><em>No docstring.</em></p>
-<h2 id="transformerargs"><code>Transformer.args</code></h2>
-<ul>
-<li>kind: <code>method</code></li>
-<li>signature: <code>args(self)</code></li>
-</ul>
-<p>The arguments</p>
-<h2 id="transformercelltypes"><code>Transformer.celltypes</code></h2>
-<ul>
-<li>kind: <code>method</code></li>
-<li>signature: <code>celltypes(self)</code></li>
-</ul>
-<p>The celltypes</p>
-<h2 id="transformercode"><code>Transformer.code</code></h2>
+<p>Python and text-source behavior for ordinary transformers.</p>
+<h2 id="pythonmixincode"><code>PythonMixin.code</code></h2>
 <ul>
 <li>kind: <code>method</code></li>
 <li>signature: <code>code(self, code)</code></li>
 </ul>
 <p><em>No docstring.</em></p>
-<h2 id="transformerdirect_print"><code>Transformer.direct_print</code></h2>
-<ul>
-<li>kind: <code>method</code></li>
-<li>signature: <code>direct_print(self, value)</code></li>
-</ul>
-<p><em>No docstring.</em></p>
-<h2 id="transformerdriver"><code>Transformer.driver</code></h2>
-<ul>
-<li>kind: <code>method</code></li>
-<li>signature: <code>driver(self, value)</code></li>
-</ul>
-<p><em>No docstring.</em></p>
-<h2 id="transformerglobals"><code>Transformer.globals</code></h2>
-<ul>
-<li>kind: <code>method</code></li>
-<li>signature: <code>globals(self)</code></li>
-</ul>
-<p>Global symbols injected via modules.main.</p>
-<h2 id="transformerlanguage"><code>Transformer.language</code></h2>
+<h2 id="pythonmixinlanguage"><code>PythonMixin.language</code></h2>
 <ul>
 <li>kind: <code>method</code></li>
 <li>signature: <code>language(self, lang)</code></li>
 </ul>
 <p><em>No docstring.</em></p>
-<h2 id="transformerlocal"><code>Transformer.local</code></h2>
+<h2 id="transformer"><code>Transformer</code></h2>
+<ul>
+<li>kind: <code>class</code></li>
+<li>signature: <code>Transformer</code></li>
+</ul>
+<p>Ordinary Python/bash transformer.</p>
+<h2 id="transformercore"><code>TransformerCore</code></h2>
+<ul>
+<li>kind: <code>class</code></li>
+<li>signature: <code>TransformerCore</code></li>
+</ul>
+<p>Shared transformer state and call assembly.</p>
+<h2 id="transformercoreallow_input_fingertip"><code>TransformerCore.allow_input_fingertip</code></h2>
+<ul>
+<li>kind: <code>method</code></li>
+<li>signature: <code>allow_input_fingertip(self, value)</code></li>
+</ul>
+<p><em>No docstring.</em></p>
+<h2 id="transformercoreargs"><code>TransformerCore.args</code></h2>
+<ul>
+<li>kind: <code>method</code></li>
+<li>signature: <code>args(self)</code></li>
+</ul>
+<p>Pre-bound transformer arguments.</p>
+<h2 id="transformercorecelltypes"><code>TransformerCore.celltypes</code></h2>
+<ul>
+<li>kind: <code>method</code></li>
+<li>signature: <code>celltypes(self)</code></li>
+</ul>
+<p>The celltypes.</p>
+<h2 id="transformercoredirect_print"><code>TransformerCore.direct_print</code></h2>
+<ul>
+<li>kind: <code>method</code></li>
+<li>signature: <code>direct_print(self, value)</code></li>
+</ul>
+<p><em>No docstring.</em></p>
+<h2 id="transformercoredriver"><code>TransformerCore.driver</code></h2>
+<ul>
+<li>kind: <code>method</code></li>
+<li>signature: <code>driver(self, value)</code></li>
+</ul>
+<p><em>No docstring.</em></p>
+<h2 id="transformercoreenvironment"><code>TransformerCore.environment</code></h2>
+<ul>
+<li>kind: <code>method</code></li>
+<li>signature: <code>environment(self)</code></li>
+</ul>
+<p>Execution environment for this transformer.</p>
+<h2 id="transformercoreglobals"><code>TransformerCore.globals</code></h2>
+<ul>
+<li>kind: <code>method</code></li>
+<li>signature: <code>globals(self)</code></li>
+</ul>
+<p>Global symbols injected via modules.main.</p>
+<h2 id="transformercorelanguage"><code>TransformerCore.language</code></h2>
+<ul>
+<li>kind: <code>method</code></li>
+<li>signature: <code>language(self, lang)</code></li>
+</ul>
+<p><em>No docstring.</em></p>
+<h2 id="transformercorelocal"><code>TransformerCore.local</code></h2>
 <ul>
 <li>kind: <code>method</code></li>
 <li>signature: <code>local(self, value)</code></li>
 </ul>
 <p><em>No docstring.</em></p>
-<h2 id="transformermeta"><code>Transformer.meta</code></h2>
+<h2 id="transformercoremeta"><code>TransformerCore.meta</code></h2>
 <ul>
 <li>kind: <code>method</code></li>
 <li>signature: <code>meta(self, meta)</code></li>
 </ul>
 <p><em>No docstring.</em></p>
-<h2 id="transformermodules"><code>Transformer.modules</code></h2>
+<h2 id="transformercoremodules"><code>TransformerCore.modules</code></h2>
 <ul>
 <li>kind: <code>method</code></li>
 <li>signature: <code>modules(self)</code></li>
 </ul>
-<p>The imported modules</p>
-<h2 id="transformerscratch"><code>Transformer.scratch</code></h2>
+<p>Imported Python modules.</p>
+<h2 id="transformercorescratch"><code>TransformerCore.scratch</code></h2>
 <ul>
 <li>kind: <code>method</code></li>
 <li>signature: <code>scratch(self, value)</code></li>
