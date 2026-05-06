@@ -15,10 +15,43 @@ The database stores the following kinds of records:
 | **BufferInfo** | Stores buffer metadata (length, dtype, encoding, etc.) for a checksum |
 | **SyntacticToSemantic** | Maps between syntactic and semantic checksums per celltype |
 | **Expression** | Caches expression evaluation results (input checksum + path + celltype → result checksum) |
-| **MetaData** | Stores execution metadata for transformations (executor, environment, timing) |
-| **IrreproducibleTransformation** | Records transformations whose results are not reproducible |
+| **MetaData** | Stores a canonical execution record for each successful, non-probe transformation |
+| **IrreproducibleTransformation** | Records transformations whose results are not reproducible; metadata is preserved on migration |
 
-All data is persisted in a single SQLite file (typically `seamless.db`).
+All data is persisted in a single SQLite file (typically `seamless.db`). The current protocol version is **2.1**.
+
+## Execution records
+
+`MetaData` stores one canonical execution record per successful, non-probe transformation, keyed by `tf_checksum`. Records are **write-once**: subsequent calls to a recorded transformation hit the normal `Transformation` cache and do not re-enter the record path.
+
+Two record sizes coexist under the same schema:
+
+- **Minimal record (default)** — `schema_version`, `tf_checksum`, `result_checksum`, `seamless_version`, `execution_mode`, `remote_target`, `wall_time_seconds`, `cpu_time_user_seconds`, `cpu_time_system_seconds`, `memory_peak_bytes`, `gpu_memory_peak_bytes`. The hot path pays only timing/memory capture and one write.
+- **Full record (`record: true` in `seamless.profile.yaml`)** — adds environment fingerprints (content-addressed `node`, `environment`, `queue` sub-buffer checksums), compilation context, validation snapshots, contract-violation lists, execution envelope (requested cluster/queue/node, scratch/fingertip flags, resolved `__env__`), and per-job freshness/retry/worker fields.
+
+The validator on `PUT metadata` checks identity only — record syntax (integer `schema_version`, body `tf_checksum`/`result_checksum` matching the request, sane `checksum_fields` if present) — not the full payload schema. Identical duplicates are idempotent successes; differing bodies are rejected. Once `IrreproducibleTransformation` rows exist for a `tf_checksum`, `PUT metadata` for that checksum is rejected to avoid silently migrating it back into the normal cache.
+
+When a normal entry moves to `IrreproducibleTransformation`, its metadata body travels with it unchanged.
+
+### Schema upgrade from legacy
+
+The legacy `meta_data` table had two columns (`checksum PRIMARY KEY`, `metadata JSON`). On startup, `seamless-database`:
+
+- creates the upgraded table fresh if absent,
+- drops and recreates the legacy table if it is empty,
+- preserves an already-upgraded table on subsequent starts,
+- and **fails loudly** if a non-empty legacy table is present (it must be migrated explicitly).
+
+### Endpoints (request types)
+
+- `PUT metadata` — atomically creates missing `Transformation` and `RevTransformation` rows alongside the `MetaData` row. Body: `{type: "metadata", checksum: <tf>, result: <result>, value: <record>}`.
+- `GET metadata` — return the canonical record body for a `tf_checksum`.
+- `GET irreproducible` — return all rows for a `tf_checksum`, optionally filtered by `result`. Each row includes `checksum`, `result`, and `metadata`.
+- `PUT irreproducible` — move a normal entry into `IrreproducibleTransformation`, preserving metadata.
+
+The remote-client equivalents are `set_execution_record`, `get_execution_record`, and `get_irreproducible_records` in `seamless-remote`.
+
+See the [agent contract](https://github.com/sjdv1982/seamless/blob/main/docs/agent/contracts/execution-records.md) for the full behavioral spec.
 
 ## Role in the Seamless ecosystem
 

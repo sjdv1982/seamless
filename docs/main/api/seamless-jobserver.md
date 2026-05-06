@@ -14,7 +14,9 @@ The jobserver is a single-module (`jobserver.py`) aiohttp server. On startup it 
 | --- | --- | --- |
 | `/` | GET | Welcome / version check |
 | `/healthcheck` | GET | Liveness probe |
-| `/run-transformation` | GET | Execute a transformation and return the result checksum |
+| `/run-transformation` | GET | Execute a transformation and return a structured success payload (result checksum + worker-side metadata for the execution record) |
+
+The `/run-transformation` response is a structured JSON payload carrying the result checksum together with fields needed for execution-record assembly: worker freshness, GPU memory peak, compiled-module digest and compilation times, retry counts, and probe context. Older callers that only consumed the bare checksum string still work — `seamless-remote` parses both shapes.
 
 ### Lifecycle
 

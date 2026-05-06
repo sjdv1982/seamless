@@ -18,8 +18,11 @@ A mixin class that extends `seamless-transformer`'s `Transformation` with Dask e
 2. Request a permission token from the throttle manager.
 3. Submit the transformation to the Dask cluster.
 4. Store the result back in the cache.
+5. Persist an execution record (minimal by default; full when `record: true`) carrying the worker-side timing, memory, GPU, validation snapshot, and compilation-context fields collected on the Dask worker.
 
 If the cluster is at capacity, permission requests may be denied; when remote execution is optional, the caller retries and may eventually fall back to local execution.
+
+Under `record: true`, record-write failures propagate to the Dask caller (no silent swallowing). Under `record: false`, minimal-record write failures are best-effort for narrow transport/storage errors and emit a warning; programmer errors and `RecordBucketError` always propagate.
 
 ### Worker plugin
 
