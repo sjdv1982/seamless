@@ -1,6 +1,6 @@
 # Seamless Release Notes
 
-## Unreleased
+## version 1.3
 
 ### Service management: rhl-* helper redesign and seamless-service-* layer
 
