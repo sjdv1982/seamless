@@ -192,35 +192,23 @@ For the full `rhl-*` helper reference and the JSON state file schema, see the
 
 ## Server-side install requirements
 
-`seamless-service-*` always shells out to the `rhl-*` helpers — unlike
-`remote-http-launcher` itself, the wrappers do **not** carry an inline
-fallback. The helpers must be on the remote `PATH` for non-interactive,
-non-login SSH sessions on every frontend you target. Three deployment
-paths:
+`seamless-service-*` always shells out to the `rhl-*` helpers — the
+wrappers do **not** carry an inline fallback. `remote-http-launcher` must
+be installed on every remote server that `seamless-service-*` targets; it
+provides all `rhl-*` helpers. Two supported server-side install paths:
 
 - **System install** (root required): `pip install remote-http-launcher`
-  into the system Python. Helpers land in `/usr/local/bin` and are picked
-  up for free.
-- **Conda base env install** (no root): install into the remote conda
-  base, then edit `~/.bashrc` so the conda activation hook runs for
-  non-interactive shells. Many `~/.bashrc` files contain an early guard
-  like
-  ```bash
-  case $- in
-      *i*) ;;
-        *) return;;
-  esac
-  ```
-  that short-circuits before the conda hook, leaving `rhl-*` off `PATH`
-  when SSH runs `ssh host rhl-ps`. Comment those lines out (or move them
-  below the conda hook).
-- **Use `rhl-guard`**: when the SSH key in `authorized_keys` is gated by
-  `command="rhl-guard …"`, the guard locates and exec's the helpers
-  itself. The `.bashrc` edit is then unnecessary; this is the cleanest
-  deployment when you cannot — or do not want to — touch the user's
-  shell startup.
+  into the system Python. Helpers land in `/usr/local/bin`.
+- **Conda base env install** (no root): `pip install remote-http-launcher`
+  into the remote host's conda base environment. Helpers land in
+  `$HOME/miniforge3/bin` or `$HOME/miniconda3/bin`.
+
+No `.bashrc` edit is required for either path. `seamless-service-*`
+automatically prepends `$HOME/miniforge3/bin:$HOME/miniconda3/bin` to
+PATH on every SSH call, so conda-base installs work without any shell
+startup changes.
 
 `remote-http-launcher`'s own conda-discovery fallback (inline heredoc
-probes when no `rhl-*` helpers are present) covers only the launcher's
-bootstrap. It does not extend to `seamless-service-*`, agents calling
-`rhl-*` over SSH, or any other tooling that depends on the helpers.
+probes) covers only the launcher's bootstrap. It does not extend to
+`seamless-service-*`, agents calling `rhl-*` over SSH, or any other
+tooling that depends on the helpers.

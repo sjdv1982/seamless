@@ -74,21 +74,27 @@ Re-run if the conda installation changes. No-op on servers without a guard.
 
 ### Server-side install of `rhl-*` (deployment gotcha)
 
-`seamless-service-*` has **no inline fallback** — every operation dispatches via `rhl-*` over SSH. If `ssh <host> rhl-ps` exits with `command not found`, the failure is a deployment problem, not a Seamless bug:
+`seamless-service-*` has **no inline fallback** — every operation dispatches via `rhl-*` over SSH. `remote-http-launcher` must be installed on every remote server (system Python or conda base env — see below). If `rhl-*` helpers are still not found, the failure is a deployment problem, not a Seamless bug.
+
+**Client-side PATH contract:** `seamless-service-*` automatically prepends `$HOME/miniforge3/bin:$HOME/miniconda3/bin` to PATH on every SSH call, covering conda-base installs. Agents invoking `rhl-*` directly must do the same:
+
+```bash
+ssh <ssh_hostname> 'PATH=$HOME/miniforge3/bin:$HOME/miniconda3/bin:$PATH' rhl-ps --json
+```
+
+Use this as your reachability probe. Diagnosis table:
 
 | Symptom | Likely cause | Fix |
 |---------|--------------|-----|
-| `bash: rhl-ps: command not found` over SSH, but `rhl-ps` works in an interactive shell on the same host | conda base env install + early non-interactive guard in `~/.bashrc` | Comment out or move the `case $- in *i*) ;; *) return;; esac` block so the conda activation hook runs for non-login shells. Or switch to `rhl-guard` (no `.bashrc` edit needed). |
-| `command not found` even in an interactive shell | `remote-http-launcher` not installed at all | `pip install remote-http-launcher` into the system Python (root) **or** the conda base env on the host |
+| `command not found` with PATH-prepend probe above | `remote-http-launcher` not installed on the server | `pip install remote-http-launcher` into the system Python (root) **or** the conda base env on the host |
+| `command not found` without PATH-prepend, but works with it | conda base install, client code missing the PATH prepend | Add `PATH=$HOME/miniforge3/bin:$HOME/miniconda3/bin:$PATH` before the helper in the SSH command (already done in `_dispatch.py`; agents must do it manually) |
 | Works manually but `seamless-service-*` says the host is unreachable | client-side host/SSH config mismatch | Check `frontends[].ssh_hostname` (vs `hostname`) in the cluster YAML |
 
-`remote-http-launcher` carries its own inline-heredoc fallback for conda discovery, but **only for the launcher's bootstrap** — it does not extend to `seamless-service-*`, `rhl-ps`, `rhl-logs`, or any other consumer of the helpers. Verify reachability up front:
+`remote-http-launcher` carries its own inline-heredoc fallback for conda discovery, but **only for the launcher's bootstrap** — it does not extend to `seamless-service-*`, `rhl-ps`, `rhl-logs`, or any other consumer of the helpers.
 
-```bash
-ssh <ssh_hostname> rhl-ps        # should list services or print an empty table, not "command not found"
-```
+If `rhl-guard` is installed, it strips leading `VAR=value` assignments before its whitelist check, so the PATH prepend passes through transparently.
 
-If this fails, do not start patching client code — fix the server-side install first.
+If the probe fails, fix the server-side install first — do not patch client code.
 
 ## The Service Topology
 
