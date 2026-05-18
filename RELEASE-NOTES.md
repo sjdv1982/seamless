@@ -1,6 +1,6 @@
 # Seamless Release Notes
 
-## Unreleased
+## v1.3
 
 Three large changes since v1.2:
 
