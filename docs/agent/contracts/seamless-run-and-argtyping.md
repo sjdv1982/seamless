@@ -24,19 +24,30 @@ Assume `seamless-run` needs to decide which arguments are:
 - file/directory inputs that should be mapped/materialized by content identity
 
 An agent should:
-- prefer explicit specification when guessing is ambiguous
+- prefer explicit specification when guessing is ambiguous — use `-i`/`-I` for inputs that are not positional command arguments
 - avoid relying on CWD surprises; set/record workdir
 
-## Meta variables (`--metavar`)
+## Canonical dependency management
 
-`--metavar NAME=VALUE` injects a variable into the bash command environment
-without contributing to the transformation identity (cache key).
+The three canonical ways to declare extra dependencies for a bash transformation are:
+
+- `-i PATH` / `--input PATH` — add a single file or directory as an explicit identity-contributing input (repeatable).
+- `-I FILE` / `--input-file FILE` — read file paths (one per line) from `FILE`; each becomes an explicit identity-contributing input. Paths may be absolute or relative to `FILE`.
+- `--metafile FILE` — add `FILE` as a **meta-pin** input (repeatable). The file is checksummed and injected into the transformation workspace under its mapped name (same path-mapping rules as `-i`), but its pin is stored with the `META__FILE__` prefix and does **not** contribute to the transformation identity (cache key). Use for config files, hints, or any input whose change should not invalidate the cache.
+
+These three flags are the recommended mechanism for managing dependencies that cannot be expressed as positional arguments in the wrapped command. Prefer them over any implicit or auto-discovered mechanisms.
+
+## Meta variables (`--metavar` and `--metafile`)
+
+`--metavar NAME=VALUE` (or `--metafile FILE` with NAME=VALUE lines) injects a
+variable into the bash command environment without contributing to the
+transformation identity (cache key).
 
 - Accessible inside the bash script as `$NAME` — same ergonomics as `--var`.
 - Does **not** change the transformation checksum when its value changes.
-- Two invocations differing only in `--metavar` values share a cache entry.
+- Two invocations differing only in `--metavar`/`--metafile` values share a cache entry.
 
-Use `--metavar` for execution hints that should not invalidate the cache:
+Use `--metavar` / `--metafile` for execution hints that should not invalidate the cache:
 thread counts, verbosity flags, temp dirs, debug toggles, and similar operational
 parameters.
 

@@ -81,3 +81,7 @@ Goal: preserve Unix philosophy.
 - Wrap commands/pipelines as explicit steps that declare which args are files vs values.
 - Ensure scripts are idempotent and environment-stable (pin tools, avoid “latest”).
 - Prefer output canonicalization (e.g. sort) when parallelism only changes ordering, so meaning becomes stable bytes.
+- Use `-i PATH` / `-I FILE` / `--metafile FILE` to declare extra dependencies that are not positional command arguments.
+  - `-i PATH`: add a single file or directory as an explicit input.
+  - `-I FILE`: read input file paths (one per line) from `FILE`.
+  - `--metafile FILE`: inject meta variables (`NAME=VALUE` lines) from a file — same as `--metavar` but file-sourced; does not affect the cache key.
