@@ -26,6 +26,8 @@ This page defines the minimum operational model an agent may rely on when discus
    - Uses Dask as the execution/scheduling substrate.
    - Intended for HPC/distributed throughput; can integrate with schedulers (commonly via `dask-jobqueue` on SLURM/OAR).
    - Operationally: typically long-lived/bundled workers execute many tasks (not one scheduler submission per Seamless step).
+   - Supports opt-in live stdout/stderr streaming per transformation; see
+     [Streaming](streaming.md).
 
 ## Testing surface
 

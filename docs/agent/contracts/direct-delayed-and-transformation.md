@@ -43,6 +43,9 @@ Assume these meanings (confirm with docs/docstrings for exact behavior):
 - `.run()`: execute and return the resolved/materialized value.
 - `.start()`: schedule computation (useful when starting many tasks before collecting results).
 - `.task()` / `await`: async execution; preferred in Jupyter/async contexts.
+- `.streaming`: when true, opt into live stdout/stderr streaming for fresh
+  `remote: daskserver` executions without changing transformation identity.
+  See [Streaming](streaming.md).
 
 ## Optional Dask backend
 
