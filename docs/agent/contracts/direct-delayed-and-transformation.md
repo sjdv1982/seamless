@@ -35,6 +35,7 @@ If you call the same transformer again with the same explicit inputs, Seamless m
 
 - Treat `delayed(f)` as “call returns a `Transformation` handle”.
 - `delayed` is the default for pipelines: you can build a graph of handles and decide when/how to run them.
+- Constructing a delayed `Transformation` snapshots its concrete (non-dependency) inputs to checksums at construction time. A malformed concrete input can therefore raise when the handle is **built**, not only when it is run — building a handle you never intend to run is not guaranteed to be error-free. Transformation-valued inputs remain unresolved dependency edges and are not snapshotted.
 
 ## `Transformation` handle
 
@@ -43,6 +44,11 @@ Assume these meanings (confirm with docs/docstrings for exact behavior):
 - `.run()`: execute and return the resolved/materialized value.
 - `.start()`: schedule computation (useful when starting many tasks before collecting results).
 - `.task()` / `await`: async execution; preferred in Jupyter/async contexts.
+- `.cancel(*, recursive=False)` / `await .cancel_async(*, recursive=False)`: move the transformation to a terminal **canceled** state. Returns `True` if it transitioned active work (or a local promise) to canceled or requested backend cancellation, `False` if nothing was active. After cancellation, `status` reports `"Status: canceled"`, `result_checksum` raises `TransformationError`, and `clear_exception()` does **not** revive it — a retry requires a new object. Cancellation never invalidates the `tf_checksum`; a later submission of the same checksum is a new submission. With `recursive=True`, known upstream dependency checksums are canceled too.
+
+## Immutability
+
+A returned `Transformation` is a frozen computation definition plus a mutable execution promise. The definition (checksum payload, orthogonal dunder envelope, dependency edges, scratch policy) is immutable: `tf.meta` is a recursively read-only view and assigning `tf.meta`, `tf.meta[...]`, or `tf.scratch` raises. Mutating the objects you passed in (the original `meta`/dunder dict, inputs) after the handle is built does not affect its checksum or execution. Only execution-promise state (computed checksums, futures, result, status, exception) changes over the handle's lifetime.
 
 ## Optional Dask backend
 
