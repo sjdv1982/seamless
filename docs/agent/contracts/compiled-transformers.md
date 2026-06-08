@@ -110,11 +110,11 @@ Return value: `int` — must return 0 on success.
 
 ## Transformation identity and caching
 
-Compiled transformation identity is determined by **source code content and input values** only. Compiler flags (`-O3`, `-ffast-math`, etc.) are execution-only metadata and are **not** part of the cache key.
+Compiled transformation identity is determined by **source code content, input values, and the function schema (`__schema__`)**. The schema is the compiled function's ABI/signature — it is not derivable from `code`, and it changes the declared call semantics — so it is **load-bearing**. Compiler flags (`-O3`, `-ffast-math`, etc.) are execution-only and are **not** part of the cache key.
 
-This follows the general plain-key vs dunder-key split described in `contracts/identity-and-caching.md`. Source code and input arguments are plain keys (determinant). Compilation config, schema, header, and environment settings are dunder keys (`__compilation__`, `__schema__`, `__header__`, `__env__`) — they travel to workers for execution but are excluded from the checksum.
+This follows the load-bearing vs orthogonal split described in `contracts/identity-and-caching.md`. Source code, input arguments, and `__schema__` are load-bearing (determinant). Compilation config and environment settings are orthogonal dunders (`__compilation__`, `__env__`) — they travel to workers for execution but are excluded from the checksum. `__header__` is **derived** from `__schema__` via `seamless-signature` and is not independent identity state: if a caller supplies it, it is validated against the generated header and then discarded.
 
-Implication: two runs with the same code and inputs but different optimization flags are cache-equivalent. This is intentional — the scientific result should be invariant under flag variation. If it is not, that is detected via recomputation and witness comparison.
+Implication: two runs with the same code, schema, and inputs but different optimization flags are cache-equivalent. This is intentional — the scientific result should be invariant under flag variation. If it is not, that is detected via recomputation and witness comparison. Conversely, changing `__schema__` (e.g. a different input dtype or shape) is a different computation and a cache miss.
 
 ## Result types
 
@@ -152,6 +152,8 @@ If the dtype has correct field offsets but a different itemsize or field order, 
 ## Output-only wildcards
 
 If a schema output has a wildcard dimension that does not appear in any input (e.g. `K`), the caller must set `tf.metavars.maxK` before calling. This value is the upper bound on the output size; the compiled function writes the actual size back via the output wildcard pointer, and the implementation slices the output array down to the actual size.
+
+`metavars` such as `maxK` are **orthogonal** (excluded from the cache key): they are allocation bounds, not computation identity. This holds only as long as the result value never depends on `maxK`: any `maxK` large enough to hold the output must produce a byte-identical result, so two runs differing only in a *sufficient* `maxK` are cache-equivalent. An **insufficient** `maxK` (too small for the actual output) must cause a failure, not a truncated or otherwise different *successful* value — a successful result that varies with `maxK` would make `maxK` load-bearing and is a contract violation. How the invariant is enforced is a performance-vs-safety tradeoff outside Seamless's scope: the caller may guarantee a sufficient `maxK` (faster), or the transformation may bounds-check its output (safer). Seamless mandates only the invariant, not the mechanism.
 
 ## Additional compiled objects
 
@@ -210,4 +212,4 @@ These settings propagate to the worker as part of the transformation's `__env__`
 ## Reference Map (load only as needed)
 
 - `contracts/seamless-signature-schema.md` — full schema YAML format, dtype tables, wildcard rules, shape constraints, and language-native derivation examples
-- `contracts/identity-and-caching.md` — plain-key vs dunder-key split, caching model, referential transparency
+- `contracts/identity-and-caching.md` — load-bearing vs orthogonal key split, caching model, referential transparency

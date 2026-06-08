@@ -13,11 +13,18 @@ The core contract is referential transparency with respect to the declared input
 
 At minimum, assume transformation identity is determined by:
 
-- the executed code (or code checksum)
+- the executed code (or code checksum), including embedded module definitions
 - the set of input pins and their content identities (checksums)
-- any metadata that changes execution semantics (e.g. “local vs remote”, scratch policy, module definitions)
+- the **load-bearing** metadata that changes the computation's meaning: code
+  language (`__language__`), output type (`__output__`), pin namespace mapping
+  (`__as__`), pin materialization format (`__format__`), and compiled function
+  schema/ABI (`__schema__`)
 
-If the platform allows environment-dependent semantics, it should also record an **environment signature** as provenance (see `contracts/scratch-witness-audit.md`).
+Identity is *not* affected by the orthogonal execution envelope — where/how the
+computation runs (`__meta__` including local-vs-remote placement, `__env__`,
+`__compilation__`, scratch policy, …). Those change execution, not the denoted
+result. If the platform allows environment-dependent semantics, it should record
+an **environment signature** as provenance (see `contracts/scratch-witness-audit.md`).
 
 ## Caching
 
@@ -30,21 +37,27 @@ Practical rules:
 - Content-addressed reads are not semantic side effects: resolving a pre-declared checksum is materialization, not “reading whatever is on disk”.
 - Compression (`.zst`, `.gz`) is a materialization detail — it does not affect identity or caching. A compressed and uncompressed form of the same buffer have the same checksum and are cache-equivalent. See `contracts/compression.md`.
 
-## Plain keys vs dunder keys in a transformation dict
+### Concurrent submissions of the same checksum
 
-Internally, a transformation is represented as a dict. Its keys fall into two categories:
+Because orthogonal-only differences are cache-equivalent, a second submission of an already-running `tf_checksum` under a different orthogonal envelope does not start a second execution. By default it **latches on**: it attaches to the running submission, adopts that submission's envelope, and returns its result *value* (not the latcher's envelope side-effects, e.g. its own direct-print, placement, or record request). A caller that requires its own envelope to execute can opt into `strict` mode (e.g. `--strict` for the CLI), which instead fails while a differently-dundered submission is active — the prior submission must finish or be canceled (`seamless-cancel <tf_checksum>`) first. This reflects a backend limitation — the same `tf_checksum` cannot execute concurrently under two different envelopes — not a property of the identity model.
 
-**Plain keys** (e.g. `code`, `arg1`, `objects`) — these are **determinant**: their content is included in the transformation checksum (the cache key). Changing any plain-key value produces a different transformation identity and bypasses the cache.
+## Load-bearing vs orthogonal keys in a transformation dict
 
-**Dunder keys** (double-underscore names, e.g. `__language__`, `__env__`, `__meta__`, `__compiled__`) — these are **execution-only**: they are excluded from the transformation checksum and do not affect caching, but they are still forwarded to workers so that execution can use them.
+Internally, a transformation is represented as a dict. A dunder (double-underscore) key is **not** automatically excluded from the checksum — each key is classified as one of three kinds:
 
-Practical consequence: two transformations that differ only in dunder values are considered cache-equivalent. For example:
+**Load-bearing** (determinant) — included in the transformation checksum (the cache key). Changing the value produces a different transformation identity and bypasses the cache. This is every plain pin (`code`, `arg1`, `objects`, …) **and** the load-bearing dunders: `__language__` (code interpretation/execution semantics), `__output__` (output name/celltype), `__as__` (pin namespace mapping, observable by code), `__format__` (pin materialization), and `__schema__` (compiled function ABI/signature; not derivable from `code`).
 
-- Compiler flags live in `__compilation__` (a dunder) → switching from `-O3` to `-g` does not invalidate the cache.
-- The conda environment name lives in `__env__` (a dunder) → activating a different environment reuses a cached result if the code and inputs are unchanged.
-- Source code lives in the plain key `code` → any source change is a cache miss.
+**Orthogonal** — frozen and carried with the transformation, but excluded from the checksum. Changing the value changes the execution envelope, not identity, and must not change the denoted result value. These include `__meta__` (incl. local-vs-remote placement and compiled `metavars`), `__env__`, `__compilation__`, `__record_probe__`, `__code_checksum__`, `__code_text__`, scratch policy, the legacy `__compilers__`/`__languages__`, and any `META__*` key.
 
-This split is load-bearing: dunders capture the "how to run" envelope, while plain keys capture the "what to run" identity. An agent should not move determinant data into dunders to avoid cache misses — doing so would corrupt the identity model.
+**Derived/eliminable** — not independent identity state; regenerated from load-bearing data, and only validated then discarded if a caller supplies them. These include `__header__` (generated from `__schema__` via `seamless-signature`), `__compiled__` (derived from the presence of compiled definition state), and `__deps__` (derived from the dependency graph).
+
+Practical consequence: two transformations that differ only in orthogonal values are cache-equivalent. For example:
+
+- Compiler flags live in `__compilation__` (orthogonal) → switching from `-O3` to `-g` does not invalidate the cache.
+- The conda environment name lives in `__env__` (orthogonal) → activating a different environment reuses a cached result if the code and inputs are unchanged.
+- Source code lives in the plain key `code`, and the code language lives in `__language__` (load-bearing) → changing either is a cache miss. The same `code` bytes interpreted as Python versus bash are *different computations* and must not alias to one cache key.
+
+This split is the heart of the identity model: load-bearing keys capture the "what to run" identity, orthogonal keys capture the "how to run" envelope. An agent must not move load-bearing data into the orthogonal set to avoid cache misses — doing so corrupts the identity model by aliasing distinct computations to one key.
 
 ## Forcing recomputation / auditing
 

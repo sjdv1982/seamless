@@ -33,6 +33,7 @@ Treat records as a forensic substrate for human or agent investigators when some
 | Successful, non-probe execution | Yes (always) | `record: false` → minimal; `record: true` → full |
 | Probe execution | No | — |
 | Failed execution | No | — |
+| Canceled execution | No | — |
 | Cache hit on `Transformation` | No | — |
 | Already-recorded `tf_checksum` | No (idempotent) | identical body → success; differing body → reject |
 
@@ -75,7 +76,7 @@ The full record extends the minimal body with:
   - `queue` / `queue_node` — scheduler/queue context
 - **Compilation context** (`compilation_context`) — checksum to a buffer recording compiler versions, flags, headers, and linked objects. Only for compiled transformers; cached by compiled-module digest.
 - **Validation snapshot** (`validation_snapshot`) — checksum to a buffer recording pre-execution validation state.
-- **Execution envelope** — requested cluster/queue/node, language kind, scratch/fingertip flags, resolved `__env__` checksum, active dunder-key set.
+- **Execution summary/envelope** — load-bearing execution summary such as language kind, plus requested cluster/queue/node, scratch/fingertip flags, resolved `__env__` checksum, and active orthogonal dunder-key set.
 - **Freshness** — required bucket labels/checksums, live tokens, bucket tokens.
 - **Contract violations** — `bucket_contract_violations`, `job_contract_violations`, `contract_violations` (e.g., `native_link_outside_conda_prefix` for compiled transformers linking outside the conda prefix).
 - **Per-run diagnostics** — `started_at`, `finished_at`, `hostname`, `pid`, `process_started_at`, `process_create_time_epoch`, `worker_execution_index`, `compilation_time_seconds`, retry counts.
@@ -107,8 +108,8 @@ Worker-side payloads carrying the record back from jobserver/daskserver are **st
 
 - They are **not a query target**. Records are not indexed for reverse lookups (`find all rows with environment = X`); the database stores them as JSON blobs. Audit tooling consumes whole records, not selective columns.
 - They are **not a sharing redaction layer**. Hostnames and timestamps stay in the record body; whether to redact on export is a per-share operator decision, not a schema column.
-- They are **not produced for failed executions**. Failed jobs do not create durable reusable identities; they may be tracked elsewhere but not in `MetaData`.
-- They are **not the sole source of "how to run"**. Execution-only dunder values (`__env__`, `__compilation__`, `__schema__`, `__header__`, …) needed to rerun or audit a transformation are stored by the transformation/replay substrate, not solely in the record.
+- They are **not produced for failed or canceled executions**. Failed or canceled jobs do not create durable reusable identities; a canceled submission also writes no `result_checksum`, even if its dropped work later completes. They may be tracked elsewhere but not in `MetaData`.
+- They are **not the sole source of "how to run"**. The orthogonal execution-only dunder values (`__env__`, `__compilation__`, `__meta__`, `__record_probe__`, …) needed to rerun or audit a transformation are stored by the transformation/replay substrate, not solely in the record. (Load-bearing keys such as `__schema__` live in the checksum-defining payload itself; `__header__` is derived from `__schema__`.)
 
 ## Agent guidance
 
