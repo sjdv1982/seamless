@@ -114,6 +114,58 @@ The transformation dict (inputs, code, language) is identified by the checksum. 
 
 This is also useful for debugging: if a transformation in your database produced an unexpected result, re-execute it by checksum to confirm the result is reproducible, and compare with the stored result.
 
+Internally, replay follows the normal `Transformation` path. The command resolves the transformation dict, builds a synthetic `Transformation` object from it, and computes that object. This means replay honors the current Seamless execution configuration: process, spawn, jobserver, or daskserver. It is not a jobserver-only path.
+
+### Replaying a `seamless-run --dry-run` job directory
+
+The first common producer path is a standalone job directory:
+
+```bash
+seamless-run --dry-run --upload -j X 'sleep 10.48 && echo 48'
+seamless-run-transformation X/transformation.json.CHECKSUM
+```
+
+With `--upload`, `seamless-run` uploads the prepared transformation dict and the small buffers needed to identify the job, then writes `X/transformation.json.CHECKSUM`. If execution dunder metadata is needed, `seamless-run` writes `X/dunder.json`; `seamless-run-transformation` reads that file automatically when it sits next to the checksum file. You can also pass an explicit dunder file:
+
+```bash
+seamless-run-transformation --dunder X/dunder.json X/transformation.json.CHECKSUM
+```
+
+The `--scratch`, `--fingertip`, `--direct-print`, and `--strict` options are applied to the synthetic `Transformation` execution envelope.
+
+### Replaying a delayed Python transformation
+
+The second path starts from a Python `Transformation`, for example one created with `delayed`:
+
+```python
+import seamless
+import seamless.config as seamless_config
+from seamless.transformer import delayed
+
+seamless_config.init()
+
+@delayed
+def add(a, b):
+    return a + b
+
+tf = add(19, 23)
+tf.construct()
+
+# Make the transformation identity buffer available to the replay process.
+tf.transformation_checksum.resolve().incref()
+
+print(tf.transformation_checksum.hex())
+seamless.close()
+```
+
+Then replay the printed checksum:
+
+```bash
+seamless-run-transformation <printed-transformation-checksum>
+```
+
+For this path, the producing process must make the transformation dict and its referenced buffers available to the replay process. Use the same configured project, hashserver, or `SEAMLESS_CACHE` for both processes, and persist the transformation identity buffer as shown above.
+
 ---
 
 ## The full sharing picture
