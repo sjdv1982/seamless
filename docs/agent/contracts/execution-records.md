@@ -83,6 +83,26 @@ The full record extends the minimal body with:
 
 The `checksum_fields` list at the top of the record names which fields hold checksum pointers to content-addressed sub-buffers (currently `node`, `environment`, `node_env`, `queue`, `queue_node`, `compilation_context`, `validation_snapshot`).
 
+## Probing is manual
+
+The full record's environment signature is **not** re-fingerprinted on every job. Full introspection costs seconds, but the execution context is stable across many jobs that share the same hardware, software environment, and queue. So the signature is split into the five independently cached buckets named above (`node`, `environment`, `node_env`, `queue`, `queue_node`), each captured **once** by a *probe* — a probing script wrapped in a dummy transformation, flagged with the orthogonal `__record_probe__` dunder — and thereafter reused by content checksum for every job run under the same conditions.
+
+**The operator triggers probes; Seamless never auto-detects staleness or auto-recaptures.** A captured bucket is reused until the next explicit re-probe. If you change a numerical library, upgrade a driver, or reprovision a node and do not re-probe, Seamless keeps reusing the prior bucket checksum — by design. Auto-recapturing on *suspicion* of drift would couple records to ambient state and defeat the content-addressed deduplication that makes buckets cheap; staleness is therefore an operator responsibility, not an automatic guarantee. (Canonical design detail: `conversation/records/bucket-recording.md`.)
+
+Probes run through the normal execution path, but because they carry `__record_probe__` they are detected by `is_record_probe()` and **write no execution record of their own** — consistent with the "Probe execution → No" row above.
+
+### The one sanctioned exception: a missing conda environment
+
+Exactly one situation auto-triggers a probe instead of waiting for the operator: when a transformation requires a conda environment that is **absent** from the remote launcher's cached environment list. There, `remote-http-launcher` performs a single automatic refresh of its conda cache — re-running its `rhl-cache-conda` probe on the same target — and re-checks the environment list once before failing.
+
+This exception is narrow by construction and does **not** loosen the rule elsewhere:
+
+- It fires on a **definite miss, not a suspicion of staleness.** The environment is simply not present and the job cannot run at all; a present-but-possibly-outdated cache is never auto-recaptured.
+- It is **bounded**: exactly one re-probe, then a hard failure whose message names the target and states that `rhl-cache-conda` has already been run.
+- It is **observable**: the refresh is dispatched as the ordinary `rhl-cache-conda` helper (not an inline shell probe), so it appears in the launcher's debug logs like any manually triggered probe.
+
+The five record-mode environment buckets themselves have no equivalent auto-refresh; they remain manual-only. (Note: this exception lives in the launcher's *own* conda-discovery cache, which is reusable outside Seamless — so "record mode" is never named there; the principle and the exception are described here, on the Seamless side.)
+
 ## Database protocol
 
 - **Protocol version: 2.1**
@@ -118,5 +138,6 @@ Worker-side payloads carrying the record back from jobserver/daskserver are **st
 - **Records are write-once per `tf_checksum`.** Re-running a transformation that already has a record is a cache hit; the record is not refreshed. To force a fresh record, the underlying inputs must change (different `tf_checksum`).
 - **Don't conflate metadata conflicts with cache-identity conflicts.** A metadata difference for the same `(tf_checksum, result_checksum)` pair is evidence disagreement about the envelope — interesting for audit, but not a referential-transparency violation. Only a differing `result_checksum` for the same `tf_checksum` indicates a real reproducibility problem (and that path goes through `IrreproducibleTransformation`, not metadata rejection).
 - **Fingertipping retries do not author new records.** Fingertipping rematerializes a checksum; it does not displace the original record or trigger a new write.
+- **Probing is manual; do not script auto-recapture.** Full-record environment buckets are captured by manually triggered probes and reused by checksum until the operator re-probes. Seamless deliberately does not detect staleness or recapture on its own (see "Probing is manual" above). The sole exception is a *missing* conda environment, which triggers one bounded launcher-side refresh — do not generalize that into auto-refreshing buckets whenever you suspect environment drift.
 - **For compiled transformers**, the full record's `compilation_context` is cached by compiled-module digest — repeated builds of the same source produce the same context checksum without re-invoking compiler-version subprocesses.
 - **Strict-mode failures**: under `record: true`, record-write failures propagate. Under `record: false`, minimal-record write failures are best-effort for narrow transport/storage errors and emit a warning; programmer errors and `RecordBucketError` always propagate.
