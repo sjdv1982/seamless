@@ -25,6 +25,12 @@ The `/run-transformation` response is a structured JSON payload carrying the res
 3. It writes its port and status back to the status file so `seamless-remote` can discover it.
 4. If no requests arrive within the inactivity timeout, the jobserver shuts down automatically.
 
+### Cancellation does not reclaim worker slots
+
+When a running transformation is canceled (via `seamless-cancel`, `Transformation.cancel()`, or a `SIGINT`/`SIGTERM` on a `seamless-run*` command), the jobserver moves the submission to a terminal `canceled` state and **ignores** its result: the caller is told the transformation was canceled and no execution record or result checksum is written.
+
+However, the jobserver does **not** reclaim the worker slot. Unlike the local spawn and Dask backends — which terminate and respawn the worker subprocess running the canceled checksum, freeing the slot immediately — the jobserver lets the already-running computation **run to completion in the background** and simply discards the outcome. The slot stays occupied until the work finishes on its own; the cancellation only guarantees that the Seamless promise is detached, not that the underlying CPU work stops.
+
 ---
 
 ## Relation to the Seamless ecosystem

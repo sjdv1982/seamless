@@ -46,6 +46,79 @@ Installing `seamless-transformer` provides:
 | `seamless-queue-finish` | Signal the queue server to drain remaining jobs and shut down |
 | `seamless-mode-bind.sh` | Shell script: source it to bind seamless-mode commands and hotkeys into the current shell session |
 
+### `seamless-run-transformation`
+
+`seamless-run-transformation` executes an pre-constructed transformation. It
+takes a transformation checksum, resolves the transformation dict that checksum
+identifies, builds a synthetic `Transformation` object from that dict, and runs
+the normal `Transformation` lifecycle. 
+
+The command prints the result checksum:
+
+```bash
+seamless-run-transformation <transformation-checksum>
+```
+
+It also accepts a checksum sidecar file:
+
+```bash
+seamless-run-transformation transformation.json.CHECKSUM
+```
+
+When the argument is a `*.CHECKSUM` file, the command automatically reads
+`dunder.json` from the same directory if it exists. You can override that with
+`--dunder PATH`. The dunder payload is merged into the execution envelope, while
+`--scratch`, `--fingertip`, `--direct-print`, and `--strict` are passed into the
+synthetic `Transformation` execution path.
+
+There are two common producer paths.
+
+The standalone job-directory path is produced by `seamless-run --dry-run`:
+
+```bash
+seamless-run --dry-run --upload -j X 'sleep 10.48 && echo 48'
+seamless-run-transformation X/transformation.json.CHECKSUM
+```
+
+With `--upload`, `seamless-run` uploads the prepared transformation dict and
+small job buffers, then writes `X/transformation.json.CHECKSUM`. If the job has
+execution dunder metadata, `X/dunder.json` is written too and run-transformation will pick it
+up automatically.
+
+The alternative Python path starts from a delayed `Transformation`:
+
+```python
+import seamless
+import seamless.config as seamless_config
+from seamless.transformer import delayed
+
+seamless_config.init()
+
+@delayed
+def add(a, b):
+    return a + b
+
+tf = add(19, 23)
+tf.construct()
+
+# Make the transformation identity buffer available to the run-transformation process.
+tf.transformation_checksum.resolve().incref()
+
+print(tf.transformation_checksum.hex())
+seamless.close()
+```
+
+Then run-transformation that printed checksum:
+
+```bash
+seamless-run-transformation <printed-transformation-checksum>
+```
+
+For this path, the producer must keep the transformation dict and its referenced
+buffers available to the run-transformation process. In practice, use the same configured
+project, hashserver, or `SEAMLESS_CACHE` for both processes, and persist the
+transformation identity buffer as shown above.
+
 ## Execution records
 
 Every successful, non-probe transformation persists one execution record in `seamless.db` (the `MetaData` table), keyed by `tf_checksum`. The default body is **minimal** (timing, memory, execution mode, remote target). The full record — environment fingerprints, compilation context, validation snapshots, contract violations, freshness — is opt-in via `seamless.config.select_record(True)` (or `- record: true` in `seamless.profile.yaml`).
