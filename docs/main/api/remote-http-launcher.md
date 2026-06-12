@@ -96,7 +96,26 @@ remote-http-launcher config.yaml --connection-dir /tmp/my-connections
 
 # Print the evaluated command without launching
 remote-http-launcher config.yaml --dry-run
+
+# Log detailed launcher activity, including helper commands
+remote-http-launcher config.yaml --log-level debug --debug-log-file rhl-debug.log
 ```
+
+### Logging
+
+`remote-http-launcher` exposes all launcher-side probes and helper dispatches
+through the observer/logging interface. Use `--log-level debug` or
+`--debug-log-file PATH` to log the commands sent to the local or SSH target,
+including `rhl-*` helper calls such as `rhl-cache-conda`, `rhl-conda-info`,
+`rhl-inspect`, and `rhl-launch-service`.
+
+Debug logs intentionally show the target executor (`LocalExecutor` for local
+services, `SSHExecutor[host]` for SSH targets). This matters for conda: a local
+target runs its helper calls locally, so they should not be read as remote SSH
+probes.
+
+`--dry-run` prints the evaluated launch command and does not perform conda
+setup or cache refreshes.
 
 ### Python API
 
@@ -226,13 +245,28 @@ SSH_ORIGINAL_COMMAND="rhl-ps" rhl-guard
 
 ### Conda cache
 
-The launcher reads conda configuration via `rhl-conda-info` automatically. Prime the cache once on the remote server before using conda environments:
+The launcher reads conda configuration via `rhl-conda-info` automatically. You can prime the cache once on the remote server before using conda environments:
 
 ```bash
 ssh <remote_host> rhl-cache-conda
 ```
 
-Re-run this if the conda installation or environments change. On hosts where no `rhl-*` helpers are installed, the launcher falls back to inline heredoc probes automatically.
+The cache is also refreshed automatically in the specific case where a cached
+conda setup exists but does not list the requested environment. In that case
+the launcher runs `rhl-cache-conda` on the same target, reloads
+`~/.remote-http-launcher/conda-setup.json`, and checks the environment list
+again before failing. If the environment is still absent, the error names the
+target and says that `rhl-cache-conda` has already been run.
+
+For guarded SSH servers this automatic refresh is an allowed `rhl-*` helper
+command, not an inline shell probe. It is therefore visible in debug logs just
+like manual helper calls. For local targets the same refresh runs through
+`LocalExecutor`.
+
+Re-run `rhl-cache-conda` manually if you want to update the cache ahead of
+time after changing the conda installation or environments. On hosts where no
+`rhl-*` helpers are installed, the launcher falls back to inline heredoc probes
+for its own conda discovery automatically.
 
 ### Reaching the `rhl-*` helpers over SSH
 
