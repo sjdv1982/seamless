@@ -81,6 +81,12 @@
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#full-record-body-record-true">Full record body (record: true)</a>
     </li>
+    <li class="toctree-l2"><a class="reference internal" href="#probing-is-manual">Probing is manual</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#the-one-sanctioned-exception-a-missing-conda-environment">The one sanctioned exception: a missing conda environment</a>
+    </li>
+        </ul>
+    </li>
     <li class="toctree-l2"><a class="reference internal" href="#database-protocol">Database protocol</a>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#remote-client-api">Remote client API</a>
@@ -194,6 +200,11 @@
 <td>—</td>
 </tr>
 <tr>
+<td>Canceled execution</td>
+<td>No</td>
+<td>—</td>
+</tr>
+<tr>
 <td>Cache hit on <code>Transformation</code></td>
 <td>No</td>
 <td>—</td>
@@ -235,12 +246,25 @@
 <li><code>queue</code> / <code>queue_node</code> — scheduler/queue context</li>
 <li><strong>Compilation context</strong> (<code>compilation_context</code>) — checksum to a buffer recording compiler versions, flags, headers, and linked objects. Only for compiled transformers; cached by compiled-module digest.</li>
 <li><strong>Validation snapshot</strong> (<code>validation_snapshot</code>) — checksum to a buffer recording pre-execution validation state.</li>
-<li><strong>Execution envelope</strong> — requested cluster/queue/node, language kind, scratch/fingertip flags, resolved <code>__env__</code> checksum, active dunder-key set.</li>
+<li><strong>Execution summary/envelope</strong> — load-bearing execution summary such as language kind, plus requested cluster/queue/node, scratch/fingertip flags, resolved <code>__env__</code> checksum, and active orthogonal dunder-key set.</li>
 <li><strong>Freshness</strong> — required bucket labels/checksums, live tokens, bucket tokens.</li>
 <li><strong>Contract violations</strong> — <code>bucket_contract_violations</code>, <code>job_contract_violations</code>, <code>contract_violations</code> (e.g., <code>native_link_outside_conda_prefix</code> for compiled transformers linking outside the conda prefix).</li>
 <li><strong>Per-run diagnostics</strong> — <code>started_at</code>, <code>finished_at</code>, <code>hostname</code>, <code>pid</code>, <code>process_started_at</code>, <code>process_create_time_epoch</code>, <code>worker_execution_index</code>, <code>compilation_time_seconds</code>, retry counts.</li>
 </ul>
 <p>The <code>checksum_fields</code> list at the top of the record names which fields hold checksum pointers to content-addressed sub-buffers (currently <code>node</code>, <code>environment</code>, <code>node_env</code>, <code>queue</code>, <code>queue_node</code>, <code>compilation_context</code>, <code>validation_snapshot</code>).</p>
+<h2 id="probing-is-manual">Probing is manual</h2>
+<p>The full record's environment signature is <strong>not</strong> re-fingerprinted on every job. Full introspection costs seconds, but the execution context is stable across many jobs that share the same hardware, software environment, and queue. So the signature is split into the five independently cached buckets named above (<code>node</code>, <code>environment</code>, <code>node_env</code>, <code>queue</code>, <code>queue_node</code>), each captured <strong>once</strong> by a <em>probe</em> — a probing script wrapped in a dummy transformation, flagged with the orthogonal <code>__record_probe__</code> dunder — and thereafter reused by content checksum for every job run under the same conditions.</p>
+<p><strong>The operator triggers probes; Seamless never auto-detects staleness or auto-recaptures.</strong> A captured bucket is reused until the next explicit re-probe. If you change a numerical library, upgrade a driver, or reprovision a node and do not re-probe, Seamless keeps reusing the prior bucket checksum — by design. Auto-recapturing on <em>suspicion</em> of drift would couple records to ambient state and defeat the content-addressed deduplication that makes buckets cheap; staleness is therefore an operator responsibility, not an automatic guarantee. (Canonical design detail: <code>conversation/records/bucket-recording.md</code>.)</p>
+<p>Probes run through the normal execution path, but because they carry <code>__record_probe__</code> they are detected by <code>is_record_probe()</code> and <strong>write no execution record of their own</strong> — consistent with the "Probe execution → No" row above.</p>
+<h3 id="the-one-sanctioned-exception-a-missing-conda-environment">The one sanctioned exception: a missing conda environment</h3>
+<p>Exactly one situation auto-triggers a probe instead of waiting for the operator: when a transformation requires a conda environment that is <strong>absent</strong> from the remote launcher's cached environment list. There, <code>remote-http-launcher</code> performs a single automatic refresh of its conda cache — re-running its <code>rhl-cache-conda</code> probe on the same target — and re-checks the environment list once before failing.</p>
+<p>This exception is narrow by construction and does <strong>not</strong> loosen the rule elsewhere:</p>
+<ul>
+<li>It fires on a <strong>definite miss, not a suspicion of staleness.</strong> The environment is simply not present and the job cannot run at all; a present-but-possibly-outdated cache is never auto-recaptured.</li>
+<li>It is <strong>bounded</strong>: exactly one re-probe, then a hard failure whose message names the target and states that <code>rhl-cache-conda</code> has already been run.</li>
+<li>It is <strong>observable</strong>: the refresh is dispatched as the ordinary <code>rhl-cache-conda</code> helper (not an inline shell probe), so it appears in the launcher's debug logs like any manually triggered probe.</li>
+</ul>
+<p>The five record-mode environment buckets themselves have no equivalent auto-refresh; they remain manual-only. (Note: this exception lives in the launcher's <em>own</em> conda-discovery cache, which is reusable outside Seamless — so "record mode" is never named there; the principle and the exception are described here, on the Seamless side.)</p>
 <h2 id="database-protocol">Database protocol</h2>
 <ul>
 <li><strong>Protocol version: 2.1</strong></li>
@@ -263,8 +287,8 @@
 <ul>
 <li>They are <strong>not a query target</strong>. Records are not indexed for reverse lookups (<code>find all rows with environment = X</code>); the database stores them as JSON blobs. Audit tooling consumes whole records, not selective columns.</li>
 <li>They are <strong>not a sharing redaction layer</strong>. Hostnames and timestamps stay in the record body; whether to redact on export is a per-share operator decision, not a schema column.</li>
-<li>They are <strong>not produced for failed executions</strong>. Failed jobs do not create durable reusable identities; they may be tracked elsewhere but not in <code>MetaData</code>.</li>
-<li>They are <strong>not the sole source of "how to run"</strong>. Execution-only dunder values (<code>__env__</code>, <code>__compilation__</code>, <code>__schema__</code>, <code>__header__</code>, …) needed to rerun or audit a transformation are stored by the transformation/replay substrate, not solely in the record.</li>
+<li>They are <strong>not produced for failed or canceled executions</strong>. Failed or canceled jobs do not create durable reusable identities; a canceled submission also writes no <code>result_checksum</code>, even if its dropped work later completes. They may be tracked elsewhere but not in <code>MetaData</code>.</li>
+<li>They are <strong>not the sole source of "how to run"</strong>. The orthogonal execution-only dunder values (<code>__env__</code>, <code>__compilation__</code>, <code>__meta__</code>, <code>__record_probe__</code>, …) needed to rerun or audit a transformation are stored by the transformation/replay substrate, not solely in the record. (Load-bearing keys such as <code>__schema__</code> live in the checksum-defining payload itself; <code>__header__</code> is derived from <code>__schema__</code>.)</li>
 </ul>
 <h2 id="agent-guidance">Agent guidance</h2>
 <ul>
@@ -273,6 +297,7 @@
 <li><strong>Records are write-once per <code>tf_checksum</code>.</strong> Re-running a transformation that already has a record is a cache hit; the record is not refreshed. To force a fresh record, the underlying inputs must change (different <code>tf_checksum</code>).</li>
 <li><strong>Don't conflate metadata conflicts with cache-identity conflicts.</strong> A metadata difference for the same <code>(tf_checksum, result_checksum)</code> pair is evidence disagreement about the envelope — interesting for audit, but not a referential-transparency violation. Only a differing <code>result_checksum</code> for the same <code>tf_checksum</code> indicates a real reproducibility problem (and that path goes through <code>IrreproducibleTransformation</code>, not metadata rejection).</li>
 <li><strong>Fingertipping retries do not author new records.</strong> Fingertipping rematerializes a checksum; it does not displace the original record or trigger a new write.</li>
+<li><strong>Probing is manual; do not script auto-recapture.</strong> Full-record environment buckets are captured by manually triggered probes and reused by checksum until the operator re-probes. Seamless deliberately does not detect staleness or recapture on its own (see "Probing is manual" above). The sole exception is a <em>missing</em> conda environment, which triggers one bounded launcher-side refresh — do not generalize that into auto-refreshing buckets whenever you suspect environment drift.</li>
 <li><strong>For compiled transformers</strong>, the full record's <code>compilation_context</code> is cached by compiled-module digest — repeated builds of the same source produce the same context checksum without re-invoking compiler-version subprocesses.</li>
 <li><strong>Strict-mode failures</strong>: under <code>record: true</code>, record-write failures propagate. Under <code>record: false</code>, minimal-record write failures are best-effort for narrow transport/storage errors and emit a warning; programmer errors and <code>RecordBucketError</code> always propagate.</li>
 </ul>

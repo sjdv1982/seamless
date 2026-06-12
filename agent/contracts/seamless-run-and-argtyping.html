@@ -188,7 +188,8 @@ invalidate the cache when it changes.</p>
 <p><code>seamless-run</code> itself is just one command invocation; bulk concurrency happens when you schedule many transformations (Python face) or run many <code>seamless-run</code> invocations in parallel.</p>
 <p>Agent guidance:
 - Expect practical limits to come from worker pool sizing / OS process limits / filesystem throughput.
-- For “many short tasks”, prefer a backend designed for high task throughput (e.g. Dask-backed execution) rather than naive “fork 1000 subprocesses locally”.</p>
+- For “many short tasks”, prefer a backend designed for high task throughput (e.g. Dask-backed execution) rather than naive “fork 1000 subprocesses locally”.
+- If two submissions resolve to the <strong>same</strong> <code>tf_checksum</code> while one is still running (e.g. running an existing checksum with different execution-only flags), the second does not start a second execution: by default it latches onto the running one and returns its result value. Pass <code>--strict</code> to instead fail when an active submission carries a different execution envelope; the prior submission must finish or be canceled (<code>seamless-cancel &lt;tf_checksum&gt;</code>) first. See <code>contracts/identity-and-caching.md</code> for the full latch-on/<code>strict</code> contract.</p>
 <h2 id="remote-execution-guidance">Remote execution guidance</h2>
 <p>The same “content-bound” rule applies:
 - don’t assume remotes have local files; treat inputs as artifacts and materialize where executed

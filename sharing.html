@@ -83,6 +83,12 @@
         </ul>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#replay-by-checksum-seamless-run-transformation">Replay by checksum: seamless-run-transformation</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#replaying-a-seamless-run-dry-run-job-directory">Replaying a seamless-run --dry-run job directory</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#replaying-a-delayed-python-transformation">Replaying a delayed Python transformation</a>
+    </li>
+        </ul>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#the-full-sharing-picture">The full sharing picture</a>
     </li>
@@ -239,6 +245,41 @@ seamless-run-transformation b7e4...
 <p>This is the "give someone a checksum and they re-run it" sharing path. If you publish a transformation checksum alongside your <code>seamless.db</code>, anyone with Seamless — and with the exact same inputs that you used — can re-execute your exact computation and verify that they get the same result checksum.</p>
 <p>The transformation dict (inputs, code, language) is identified by the checksum. As long as the transformation dict's buffer is available (in the hashserver or resolvable via fingertipping), <code>seamless-run-transformation</code> can execute it.</p>
 <p>This is also useful for debugging: if a transformation in your database produced an unexpected result, re-execute it by checksum to confirm the result is reproducible, and compare with the stored result.</p>
+<p>Internally, replay follows the normal <code>Transformation</code> path. The command resolves the transformation dict, builds a synthetic <code>Transformation</code> object from it, and computes that object. This means replay honors the current Seamless execution configuration: process, spawn, jobserver, or daskserver. It is not a jobserver-only path.</p>
+<h3 id="replaying-a-seamless-run-dry-run-job-directory">Replaying a <code>seamless-run --dry-run</code> job directory</h3>
+<p>The first common producer path is a standalone job directory:</p>
+<pre><code class="language-bash">seamless-run --dry-run --upload -j X 'sleep 10.48 &amp;&amp; echo 48'
+seamless-run-transformation X/transformation.json.CHECKSUM
+</code></pre>
+<p>With <code>--upload</code>, <code>seamless-run</code> uploads the prepared transformation dict and the small buffers needed to identify the job, then writes <code>X/transformation.json.CHECKSUM</code>. If execution dunder metadata is needed, <code>seamless-run</code> writes <code>X/dunder.json</code>; <code>seamless-run-transformation</code> reads that file automatically when it sits next to the checksum file. You can also pass an explicit dunder file:</p>
+<pre><code class="language-bash">seamless-run-transformation --dunder X/dunder.json X/transformation.json.CHECKSUM
+</code></pre>
+<p>The <code>--scratch</code>, <code>--fingertip</code>, <code>--direct-print</code>, and <code>--strict</code> options are applied to the synthetic <code>Transformation</code> execution envelope.</p>
+<h3 id="replaying-a-delayed-python-transformation">Replaying a delayed Python transformation</h3>
+<p>The second path starts from a Python <code>Transformation</code>, for example one created with <code>delayed</code>:</p>
+<pre><code class="language-python">import seamless
+import seamless.config as seamless_config
+from seamless.transformer import delayed
+
+seamless_config.init()
+
+@delayed
+def add(a, b):
+    return a + b
+
+tf = add(19, 23)
+tf.construct()
+
+# Make the transformation identity buffer available to the replay process.
+tf.transformation_checksum.resolve().incref()
+
+print(tf.transformation_checksum.hex())
+seamless.close()
+</code></pre>
+<p>Then replay the printed checksum:</p>
+<pre><code class="language-bash">seamless-run-transformation &lt;printed-transformation-checksum&gt;
+</code></pre>
+<p>For this path, the producing process must make the transformation dict and its referenced buffers available to the replay process. Use the same configured project, hashserver, or <code>SEAMLESS_CACHE</code> for both processes, and persist the transformation identity buffer as shown above.</p>
 <hr />
 <h2 id="the-full-sharing-picture">The full sharing picture</h2>
 <table>

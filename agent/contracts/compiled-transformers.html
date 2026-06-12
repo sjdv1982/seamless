@@ -243,9 +243,9 @@ outputs:
 </ol>
 <p>Return value: <code>int</code> — must return 0 on success.</p>
 <h2 id="transformation-identity-and-caching">Transformation identity and caching</h2>
-<p>Compiled transformation identity is determined by <strong>source code content and input values</strong> only. Compiler flags (<code>-O3</code>, <code>-ffast-math</code>, etc.) are execution-only metadata and are <strong>not</strong> part of the cache key.</p>
-<p>This follows the general plain-key vs dunder-key split described in <code>contracts/identity-and-caching.md</code>. Source code and input arguments are plain keys (determinant). Compilation config, schema, header, and environment settings are dunder keys (<code>__compilation__</code>, <code>__schema__</code>, <code>__header__</code>, <code>__env__</code>) — they travel to workers for execution but are excluded from the checksum.</p>
-<p>Implication: two runs with the same code and inputs but different optimization flags are cache-equivalent. This is intentional — the scientific result should be invariant under flag variation. If it is not, that is detected via recomputation and witness comparison.</p>
+<p>Compiled transformation identity is determined by <strong>source code content, input values, and the function schema (<code>__schema__</code>)</strong>. The schema is the compiled function's ABI/signature — it is not derivable from <code>code</code>, and it changes the declared call semantics — so it is <strong>load-bearing</strong>. Compiler flags (<code>-O3</code>, <code>-ffast-math</code>, etc.) are execution-only and are <strong>not</strong> part of the cache key.</p>
+<p>This follows the load-bearing vs orthogonal split described in <code>contracts/identity-and-caching.md</code>. Source code, input arguments, and <code>__schema__</code> are load-bearing (determinant). Compilation config and environment settings are orthogonal dunders (<code>__compilation__</code>, <code>__env__</code>) — they travel to workers for execution but are excluded from the checksum. <code>__header__</code> is <strong>derived</strong> from <code>__schema__</code> via <code>seamless-signature</code> and is not independent identity state: if a caller supplies it, it is validated against the generated header and then discarded.</p>
+<p>Implication: two runs with the same code, schema, and inputs but different optimization flags are cache-equivalent. This is intentional — the scientific result should be invariant under flag variation. If it is not, that is detected via recomputation and witness comparison. Conversely, changing <code>__schema__</code> (e.g. a different input dtype or shape) is a different computation and a cache miss.</p>
 <h2 id="result-types">Result types</h2>
 <ul>
 <li><strong>Single output</strong>: returns the bare scalar or numpy array.</li>
@@ -275,6 +275,7 @@ outputs:
 <p><strong>Output scalar structs</strong> are returned as <code>np.void</code> values. <strong>Output arrays of structs</strong> are returned as NumPy structured arrays with the aligned dtype.</p>
 <h2 id="output-only-wildcards">Output-only wildcards</h2>
 <p>If a schema output has a wildcard dimension that does not appear in any input (e.g. <code>K</code>), the caller must set <code>tf.metavars.maxK</code> before calling. This value is the upper bound on the output size; the compiled function writes the actual size back via the output wildcard pointer, and the implementation slices the output array down to the actual size.</p>
+<p><code>metavars</code> such as <code>maxK</code> are <strong>orthogonal</strong> (excluded from the cache key): they are allocation bounds, not computation identity. This holds only as long as the result value never depends on <code>maxK</code>: any <code>maxK</code> large enough to hold the output must produce a byte-identical result, so two runs differing only in a <em>sufficient</em> <code>maxK</code> are cache-equivalent. An <strong>insufficient</strong> <code>maxK</code> (too small for the actual output) must cause a failure, not a truncated or otherwise different <em>successful</em> value — a successful result that varies with <code>maxK</code> would make <code>maxK</code> load-bearing and is a contract violation. How the invariant is enforced is a performance-vs-safety tradeoff outside Seamless's scope: the caller may guarantee a sufficient <code>maxK</code> (faster), or the transformation may bounds-check its output (safer). Seamless mandates only the invariant, not the mechanism.</p>
 <h2 id="additional-compiled-objects">Additional compiled objects</h2>
 <p><code>tf.objects</code> is an <code>ObjectList</code> of <code>CompiledObject</code> instances. Each object has its own language (which may differ from the main transformer's language) and source code. Objects are compiled and linked alongside the main source.</p>
 <p>Example — C main with a Fortran helper:</p>
@@ -320,7 +321,7 @@ define_compiled_language(
 <h2 id="reference-map-load-only-as-needed">Reference Map (load only as needed)</h2>
 <ul>
 <li><code>contracts/seamless-signature-schema.md</code> — full schema YAML format, dtype tables, wildcard rules, shape constraints, and language-native derivation examples</li>
-<li><code>contracts/identity-and-caching.md</code> — plain-key vs dunder-key split, caching model, referential transparency</li>
+<li><code>contracts/identity-and-caching.md</code> — load-bearing vs orthogonal key split, caching model, referential transparency</li>
 </ul>
               
             </div>

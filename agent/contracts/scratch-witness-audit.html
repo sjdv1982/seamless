@@ -147,6 +147,7 @@ Anything “tolerance-based” requires a separate user-defined witness/comparis
 - Scratch plus input fingertipping is also a placement mechanism: if a downstream transformation needs a missing scratch input, the producer transformation is rerun where the consumer needs the bytes.
 - Use scratch for bulky generated intermediates that are not meaning-bearing and whose main purpose is to feed another transformation.
 - Scratch must not remove the ability to evaluate the meaning-bearing outcome of the computation.</p>
+<p>Scratch is <strong>orthogonal</strong> to transformation identity: it controls whether a buffer is durably stored, not the value it denotes. The <code>result_checksum</code> is unchanged by scratch, scratch is excluded from <code>tf_checksum</code>, and two transformations differing only in scratch policy are cache-equivalent (see <code>contracts/identity-and-caching.md</code>). The "must not remove the ability to evaluate the meaning-bearing outcome" rule above is a <em>usage</em> constraint, not a checksum rule.</p>
 <p>Input fingertipping is opt-in on each consumer transformation. Marking an upstream
 producer as scratch does not automatically allow downstream consumers to
 fingertip missing inputs. In Python, set the downstream transformer/core's

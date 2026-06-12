@@ -113,6 +113,10 @@
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#transformationbuffer">Transformation.buffer</a>
     </li>
+    <li class="toctree-l3"><a class="reference internal" href="#transformationcancel">Transformation.cancel</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#transformationcancel_async">Transformation.cancel_async</a>
+    </li>
     <li class="toctree-l3"><a class="reference internal" href="#transformationcelltype">Transformation.celltype</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#transformationclear_exception">Transformation.clear_exception</a>
@@ -126,6 +130,10 @@
     <li class="toctree-l3"><a class="reference internal" href="#transformationconstruction">Transformation.construction</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#transformationexception">Transformation.exception</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#transformationis_cached">Transformation.is_cached</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#transformationis_cached_async">Transformation.is_cached_async</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#transformationlogs">Transformation.logs</a>
     </li>
@@ -156,6 +164,8 @@
     <li class="toctree-l3"><a class="reference internal" href="#_ensure_loop_running">_ensure_loop_running</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#_format_exception">_format_exception</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#_readonly_recursive">_readonly_recursive</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#compute_transformation_sync">compute_transformation_sync</a>
     </li>
@@ -236,6 +246,21 @@
 <li>signature: <code>buffer(self)</code></li>
 </ul>
 <p><em>No docstring.</em></p>
+<h2 id="transformationcancel"><code>Transformation.cancel</code></h2>
+<ul>
+<li>kind: <code>method</code></li>
+<li>signature: <code>cancel(self, *, recursive)</code></li>
+</ul>
+<p>Cancel this transformation promise.</p>
+<h2 id="transformationcancel_async"><code>Transformation.cancel_async</code></h2>
+<ul>
+<li>kind: <code>method</code></li>
+<li>signature: <code>cancel_async(self, *, recursive)</code></li>
+</ul>
+<p>Cancel this transformation promise.</p>
+<p>Cancellation is terminal for this Python object. Already-running CPU work
+may continue outside Python's control, but its result is detached from
+this promise.</p>
 <h2 id="transformationcelltype"><code>Transformation.celltype</code></h2>
 <ul>
 <li>kind: <code>method</code></li>
@@ -289,6 +314,18 @@ In case of failure, set .exception and return None</p>
 <li>signature: <code>exception(self)</code></li>
 </ul>
 <p><em>No docstring.</em></p>
+<h2 id="transformationis_cached"><code>Transformation.is_cached</code></h2>
+<ul>
+<li>kind: <code>method</code></li>
+<li>signature: <code>is_cached(self)</code></li>
+</ul>
+<p>Return whether this transformation is present in the database cache.</p>
+<h2 id="transformationis_cached_async"><code>Transformation.is_cached_async</code></h2>
+<ul>
+<li>kind: <code>method</code></li>
+<li>signature: <code>is_cached_async(self)</code></li>
+</ul>
+<p>Return whether this transformation is present in the database cache.</p>
 <h2 id="transformationlogs"><code>Transformation.logs</code></h2>
 <ul>
 <li>kind: <code>method</code></li>
@@ -383,6 +420,12 @@ Raise RuntimeError in case of an exception.</p>
 <li>signature: <code>_format_exception(exc)</code></li>
 </ul>
 <p><em>No docstring.</em></p>
+<h2 id="_readonly_recursive"><code>_readonly_recursive</code></h2>
+<ul>
+<li>kind: <code>function</code></li>
+<li>signature: <code>_readonly_recursive(value)</code></li>
+</ul>
+<p><em>No docstring.</em></p>
 <h2 id="compute_transformation_sync"><code>compute_transformation_sync</code></h2>
 <ul>
 <li>kind: <code>function</code></li>
@@ -413,13 +456,13 @@ sync evaluation because that blocks on coroutines running in the same loop</p>
 <h2 id="transformation_from_dict"><code>transformation_from_dict</code></h2>
 <ul>
 <li>kind: <code>function</code></li>
-<li>signature: <code>transformation_from_dict(transformation_dict, *, meta, scratch, tf_dunder)</code></li>
+<li>signature: <code>transformation_from_dict(transformation_dict, *, meta, scratch, tf_dunder, strict_dunder)</code></li>
 </ul>
 <p>Build a Transformation from an already-prepared transformation dict.</p>
 <h2 id="transformation_from_pretransformation"><code>transformation_from_pretransformation</code></h2>
 <ul>
 <li>kind: <code>function</code></li>
-<li>signature: <code>transformation_from_pretransformation(pre_transformation, *, upstream_dependencies, meta, scratch, tf_dunder)</code></li>
+<li>signature: <code>transformation_from_pretransformation(pre_transformation, *, upstream_dependencies, meta, scratch, tf_dunder, strict_dunder, post_prepare_sync, post_prepare_async)</code></li>
 </ul>
 <p>Build a Transformation from a PreTransformation</p>
               

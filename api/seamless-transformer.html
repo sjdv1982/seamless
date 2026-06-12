@@ -92,6 +92,10 @@
     <li class="toctree-l2"><a class="reference internal" href="#integration-with-the-seamless-ecosystem">Integration with the Seamless ecosystem</a>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#cli-scripts">CLI scripts</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#seamless-run-transformation">seamless-run-transformation</a>
+    </li>
+        </ul>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#execution-records">Execution records</a>
     </li>
@@ -236,6 +240,58 @@
 </tr>
 </tbody>
 </table>
+<h3 id="seamless-run-transformation"><code>seamless-run-transformation</code></h3>
+<p><code>seamless-run-transformation</code> executes an pre-constructed transformation. It
+takes a transformation checksum, resolves the transformation dict that checksum
+identifies, builds a synthetic <code>Transformation</code> object from that dict, and runs
+the normal <code>Transformation</code> lifecycle. </p>
+<p>The command prints the result checksum:</p>
+<pre><code class="language-bash">seamless-run-transformation &lt;transformation-checksum&gt;
+</code></pre>
+<p>It also accepts a checksum sidecar file:</p>
+<pre><code class="language-bash">seamless-run-transformation transformation.json.CHECKSUM
+</code></pre>
+<p>When the argument is a <code>*.CHECKSUM</code> file, the command automatically reads
+<code>dunder.json</code> from the same directory if it exists. You can override that with
+<code>--dunder PATH</code>. The dunder payload is merged into the execution envelope, while
+<code>--scratch</code>, <code>--fingertip</code>, <code>--direct-print</code>, and <code>--strict</code> are passed into the
+synthetic <code>Transformation</code> execution path.</p>
+<p>There are two common producer paths.</p>
+<p>The standalone job-directory path is produced by <code>seamless-run --dry-run</code>:</p>
+<pre><code class="language-bash">seamless-run --dry-run --upload -j X 'sleep 10.48 &amp;&amp; echo 48'
+seamless-run-transformation X/transformation.json.CHECKSUM
+</code></pre>
+<p>With <code>--upload</code>, <code>seamless-run</code> uploads the prepared transformation dict and
+small job buffers, then writes <code>X/transformation.json.CHECKSUM</code>. If the job has
+execution dunder metadata, <code>X/dunder.json</code> is written too and run-transformation will pick it
+up automatically.</p>
+<p>The alternative Python path starts from a delayed <code>Transformation</code>:</p>
+<pre><code class="language-python">import seamless
+import seamless.config as seamless_config
+from seamless.transformer import delayed
+
+seamless_config.init()
+
+@delayed
+def add(a, b):
+    return a + b
+
+tf = add(19, 23)
+tf.construct()
+
+# Make the transformation identity buffer available to the run-transformation process.
+tf.transformation_checksum.resolve().incref()
+
+print(tf.transformation_checksum.hex())
+seamless.close()
+</code></pre>
+<p>Then run-transformation that printed checksum:</p>
+<pre><code class="language-bash">seamless-run-transformation &lt;printed-transformation-checksum&gt;
+</code></pre>
+<p>For this path, the producer must keep the transformation dict and its referenced
+buffers available to the run-transformation process. In practice, use the same configured
+project, hashserver, or <code>SEAMLESS_CACHE</code> for both processes, and persist the
+transformation identity buffer as shown above.</p>
 <h2 id="execution-records">Execution records</h2>
 <p>Every successful, non-probe transformation persists one execution record in <code>seamless.db</code> (the <code>MetaData</code> table), keyed by <code>tf_checksum</code>. The default body is <strong>minimal</strong> (timing, memory, execution mode, remote target). The full record — environment fingerprints, compilation context, validation snapshots, contract violations, freshness — is opt-in via <code>seamless.config.select_record(True)</code> (or <code>- record: true</code> in <code>seamless.profile.yaml</code>).</p>
 <p>Capture is worker-side: timing, memory, GPU usage, and compilation-context checksums are collected wherever the transformation actually ran (process, spawn child, jobserver worker, or Dask worker). The shared assembly code lives in <code>seamless_transformer/record_assembly.py</code>; the runtime mode flag is cached process-locally and invalidated on <code>select_record()</code> calls. The hot path under <code>record: false</code> pays only timing/memory capture and one database write.</p>

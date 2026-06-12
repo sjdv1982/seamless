@@ -380,21 +380,40 @@ result. For pipeline or deferred execution, use :class:<code>CompiledTransformer
 <li>signature: <code>_as_plain(value)</code></li>
 </ul>
 <p><em>No docstring.</em></p>
+<h2 id="_checksum_hex"><code>_checksum_hex</code></h2>
+<ul>
+<li>kind: <code>function</code></li>
+<li>signature: <code>_checksum_hex(value, celltype)</code></li>
+</ul>
+<p><em>No docstring.</em></p>
+<h2 id="_compose_post_prepare_async_hooks"><code>_compose_post_prepare_async_hooks</code></h2>
+<ul>
+<li>kind: <code>function</code></li>
+<li>signature: <code>_compose_post_prepare_async_hooks(always_sync_hook, async_hook)</code></li>
+</ul>
+<p><em>No docstring.</em></p>
+<h2 id="_compose_post_prepare_hooks"><code>_compose_post_prepare_hooks</code></h2>
+<ul>
+<li>kind: <code>function</code></li>
+<li>signature: <code>_compose_post_prepare_hooks(*sync_hooks)</code></li>
+</ul>
+<p><em>No docstring.</em></p>
+<h2 id="_deferred_validation_hooks"><code>_deferred_validation_hooks</code></h2>
+<ul>
+<li>kind: <code>function</code></li>
+<li>signature: <code>_deferred_validation_hooks(deferred_validations)</code></li>
+</ul>
+<p>Run _validate_native_numpy_value after deferred inputs are materialized.</p>
+<p>The hooks run after the transformation factory has replaced Transformation/
+Checksum pins with concrete hex checksums in its frozen prepared payload, so
+the resolved buffer carries the value actually supplied to the compiled
+runner.</p>
 <h2 id="_expected_numpy_dtype"><code>_expected_numpy_dtype</code></h2>
 <ul>
 <li>kind: <code>function</code></li>
 <li>signature: <code>_expected_numpy_dtype(dtype_spec)</code></li>
 </ul>
 <p><em>No docstring.</em></p>
-<h2 id="_install_deferred_validation"><code>_install_deferred_validation</code></h2>
-<ul>
-<li>kind: <code>function</code></li>
-<li>signature: <code>_install_deferred_validation(tf, pre_transformation, deferred_validations)</code></li>
-</ul>
-<p>Run _validate_native_numpy_value after deferred inputs are materialized.</p>
-<p>The checks run after prepare_transformation has replaced Transformation/
-Checksum pins with concrete hex checksums, so the resolved buffer carries
-the value actually supplied to the compiled runner.</p>
 <h2 id="_is_deferred_input"><code>_is_deferred_input</code></h2>
 <ul>
 <li>kind: <code>function</code></li>
@@ -425,6 +444,16 @@ the value actually supplied to the compiled runner.</p>
 <li>signature: <code>_resolve_deferred_value_async(prepared_value)</code></li>
 </ul>
 <p><em>No docstring.</em></p>
+<h2 id="_validate_derived_compiled_dunders"><code>_validate_derived_compiled_dunders</code></h2>
+<ul>
+<li>kind: <code>function</code></li>
+<li>signature: <code>_validate_derived_compiled_dunders(prepared_transformation, *, header)</code></li>
+</ul>
+<p>Validate caller-supplied derived compiled support before checksuming.</p>
+<p><code>__compiled__</code> and <code>__header__</code> are derived/eliminable: they are carried
+for execution compatibility but excluded from transformation identity. If a
+caller or legacy path supplied them, they must agree with the schema-derived
+compiled state before they are discarded from the immutable definition.</p>
 <h2 id="_validate_native_numpy_value"><code>_validate_native_numpy_value</code></h2>
 <ul>
 <li>kind: <code>function</code></li>

@@ -1,5 +1,5 @@
 {
-  "generated_at": 1778060738,
+  "generated_at": 1781256421,
   "symbols": {
     "ArgsWrapper": {
       "anchor": "argswrapper",
@@ -309,6 +309,14 @@
       "anchor": "transformation-buffer",
       "page": "api/python/seamless_transformer.transformation_class.md"
     },
+    "Transformation.cancel": {
+      "anchor": "transformation-cancel",
+      "page": "api/python/seamless_transformer.transformation_class.md"
+    },
+    "Transformation.cancel_async": {
+      "anchor": "transformation-cancel-async",
+      "page": "api/python/seamless_transformer.transformation_class.md"
+    },
     "Transformation.celltype": {
       "anchor": "transformation-celltype",
       "page": "api/python/seamless_transformer.transformation_class.md"
@@ -335,6 +343,14 @@
     },
     "Transformation.exception": {
       "anchor": "transformation-exception",
+      "page": "api/python/seamless_transformer.transformation_class.md"
+    },
+    "Transformation.is_cached": {
+      "anchor": "transformation-is-cached",
+      "page": "api/python/seamless_transformer.transformation_class.md"
+    },
+    "Transformation.is_cached_async": {
+      "anchor": "transformation-is-cached-async",
       "page": "api/python/seamless_transformer.transformation_class.md"
     },
     "Transformation.logs": {
@@ -445,6 +461,18 @@
       "anchor": "build-injected",
       "page": "api/python/seamless_config.tools.md"
     },
+    "_checksum_hex": {
+      "anchor": "checksum-hex",
+      "page": "api/python/seamless_transformer.compiled_transformer.md"
+    },
+    "_compose_post_prepare_async_hooks": {
+      "anchor": "compose-post-prepare-async-hooks",
+      "page": "api/python/seamless_transformer.compiled_transformer.md"
+    },
+    "_compose_post_prepare_hooks": {
+      "anchor": "compose-post-prepare-hooks",
+      "page": "api/python/seamless_transformer.compiled_transformer.md"
+    },
     "_compute_executor_max_workers": {
       "anchor": "compute-executor-max-workers",
       "page": "api/python/seamless_transformer.transformation_class.md"
@@ -456,6 +484,10 @@
     "_dask_available": {
       "anchor": "dask-available",
       "page": "api/python/seamless_transformer.transformation_class.md"
+    },
+    "_deferred_validation_hooks": {
+      "anchor": "deferred-validation-hooks",
+      "page": "api/python/seamless_transformer.compiled_transformer.md"
     },
     "_ensure_loop_running": {
       "anchor": "ensure-loop-running",
@@ -469,10 +501,6 @@
       "anchor": "format-exception",
       "page": "api/python/seamless_transformer.transformation_class.md"
     },
-    "_install_deferred_validation": {
-      "anchor": "install-deferred-validation",
-      "page": "api/python/seamless_transformer.compiled_transformer.md"
-    },
     "_is_deferred_input": {
       "anchor": "is-deferred-input",
       "page": "api/python/seamless_transformer.compiled_transformer.md"
@@ -484,6 +512,10 @@
     "_prepare_tool": {
       "anchor": "prepare-tool",
       "page": "api/python/seamless_config.tools.md"
+    },
+    "_readonly_recursive": {
+      "anchor": "readonly-recursive",
+      "page": "api/python/seamless_transformer.transformation_class.md"
     },
     "_require_signature_package": {
       "anchor": "require-signature-package",
@@ -508,6 +540,10 @@
     "_validate": {
       "anchor": "validate",
       "page": "api/python/seamless_config.select.md"
+    },
+    "_validate_derived_compiled_dunders": {
+      "anchor": "validate-derived-compiled-dunders",
+      "page": "api/python/seamless_transformer.compiled_transformer.md"
     },
     "_validate_native_numpy_value": {
       "anchor": "validate-native-numpy-value",

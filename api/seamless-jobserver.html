@@ -97,6 +97,8 @@
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#lifecycle">Lifecycle</a>
     </li>
+    <li class="toctree-l3"><a class="reference internal" href="#cancellation-does-not-reclaim-worker-slots">Cancellation does not reclaim worker slots</a>
+    </li>
         </ul>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#relation-to-the-seamless-ecosystem">Relation to the Seamless ecosystem</a>
@@ -202,6 +204,9 @@
 <li>It writes its port and status back to the status file so <code>seamless-remote</code> can discover it.</li>
 <li>If no requests arrive within the inactivity timeout, the jobserver shuts down automatically.</li>
 </ol>
+<h3 id="cancellation-does-not-reclaim-worker-slots">Cancellation does not reclaim worker slots</h3>
+<p>When a running transformation is canceled (via <code>seamless-cancel</code>, <code>Transformation.cancel()</code>, or a <code>SIGINT</code>/<code>SIGTERM</code> on a <code>seamless-run*</code> command), the jobserver moves the submission to a terminal <code>canceled</code> state and <strong>ignores</strong> its result: the caller is told the transformation was canceled and no execution record or result checksum is written.</p>
+<p>However, the jobserver does <strong>not</strong> reclaim the worker slot. Unlike the local spawn and Dask backends — which terminate and respawn the worker subprocess running the canceled checksum, freeing the slot immediately — the jobserver lets the already-running computation <strong>run to completion in the background</strong> and simply discards the outcome. The slot stays occupied until the work finishes on its own; the cancellation only guarantees that the Seamless promise is detached, not that the underlying CPU work stops.</p>
 <hr />
 <h2 id="relation-to-the-seamless-ecosystem">Relation to the Seamless ecosystem</h2>
 <pre><code class="language-text">    seamless-transformer                (user-facing API: direct, delayed)

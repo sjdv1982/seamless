@@ -65,6 +65,8 @@
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#transformation-handle">Transformation handle</a>
     </li>
+    <li class="toctree-l2"><a class="reference internal" href="#immutability">Immutability</a>
+    </li>
     <li class="toctree-l2"><a class="reference internal" href="#optional-dask-backend">Optional Dask backend</a>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#composition">Composition</a>
@@ -174,13 +176,17 @@ v2 = tf.run()          # resolves checksum into the value
 <ul>
 <li>Treat <code>delayed(f)</code> as “call returns a <code>Transformation</code> handle”.</li>
 <li><code>delayed</code> is the default for pipelines: you can build a graph of handles and decide when/how to run them.</li>
+<li>Constructing a delayed <code>Transformation</code> snapshots its concrete (non-dependency) inputs to checksums at construction time. A malformed concrete input can therefore raise when the handle is <strong>built</strong>, not only when it is run — building a handle you never intend to run is not guaranteed to be error-free. Transformation-valued inputs remain unresolved dependency edges and are not snapshotted.</li>
 </ul>
 <h2 id="transformation-handle"><code>Transformation</code> handle</h2>
 <p>Assume these meanings (confirm with docs/docstrings for exact behavior):
 - <code>.compute()</code>: execute and return an identifier (checksum) for the result.
 - <code>.run()</code>: execute and return the resolved/materialized value.
 - <code>.start()</code>: schedule computation (useful when starting many tasks before collecting results).
-- <code>.task()</code> / <code>await</code>: async execution; preferred in Jupyter/async contexts.</p>
+- <code>.task()</code> / <code>await</code>: async execution; preferred in Jupyter/async contexts.
+- <code>.cancel(*, recursive=False)</code> / <code>await .cancel_async(*, recursive=False)</code>: move the transformation to a terminal <strong>canceled</strong> state. Returns <code>True</code> if it transitioned active work (or a local promise) to canceled or requested backend cancellation, <code>False</code> if nothing was active. After cancellation, <code>status</code> reports <code>"Status: canceled"</code>, <code>result_checksum</code> raises <code>TransformationError</code>, and <code>clear_exception()</code> does <strong>not</strong> revive it — a retry requires a new object. Cancellation never invalidates the <code>tf_checksum</code>; a later submission of the same checksum is a new submission. With <code>recursive=True</code>, known upstream dependency checksums are canceled too.</p>
+<h2 id="immutability">Immutability</h2>
+<p>A returned <code>Transformation</code> is a frozen computation definition plus a mutable execution promise. The definition (checksum payload, orthogonal dunder envelope, dependency edges, scratch policy) is immutable: <code>tf.meta</code> is a recursively read-only view and assigning <code>tf.meta</code>, <code>tf.meta[...]</code>, or <code>tf.scratch</code> raises. Mutating the objects you passed in (the original <code>meta</code>/dunder dict, inputs) after the handle is built does not affect its checksum or execution. Only execution-promise state (computed checksums, futures, result, status, exception) changes over the handle's lifetime.</p>
 <h2 id="optional-dask-backend">Optional Dask backend</h2>
 <p>If Seamless’s Dask integration is available/configured:
 - a <code>Transformation</code> may delegate execution/scheduling to Dask (distributed task graph execution)
