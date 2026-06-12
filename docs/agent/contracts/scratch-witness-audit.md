@@ -11,6 +11,8 @@ Scratch is an optimization knob:
 - Use scratch for bulky generated intermediates that are not meaning-bearing and whose main purpose is to feed another transformation.
 - Scratch must not remove the ability to evaluate the meaning-bearing outcome of the computation.
 
+Scratch is **orthogonal** to transformation identity: it controls whether a buffer is durably stored, not the value it denotes. The `result_checksum` is unchanged by scratch, scratch is excluded from `tf_checksum`, and two transformations differing only in scratch policy are cache-equivalent (see `contracts/identity-and-caching.md`). The "must not remove the ability to evaluate the meaning-bearing outcome" rule above is a *usage* constraint, not a checksum rule.
+
 Input fingertipping is opt-in on each consumer transformation. Marking an upstream
 producer as scratch does not automatically allow downstream consumers to
 fingertip missing inputs. In Python, set the downstream transformer/core's

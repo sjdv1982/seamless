@@ -28,8 +28,8 @@ Each service type has an *activation module* that manages the active set of clie
 | Module | Key functions | Used by |
 | --- | --- | --- |
 | `buffer_remote` | `get_buffer()`, `write_buffer()`, `get_buffer_lengths()`, `promise()` | `seamless-core` (`Checksum.resolve`, `Buffer.write`) |
-| `database_remote` | `get_transformation_result()`, `set_transformation_result()`, `get_rev_transformations()` | `seamless-transformer` (cache lookup/store) |
-| `jobserver_remote` | `run_transformation()` | `seamless-transformer` (remote job dispatch) |
+| `database_remote` | `get_transformation_result()`, `set_transformation_result()`, `get_rev_transformations()`, `set_execution_record()`, `get_execution_record()`, `get_irreproducible_records()`, `get_bucket_probe_index()` | `seamless-transformer` (cache lookup/store, record persistence, bucket-probe lookups) |
+| `jobserver_remote` | `run_transformation()` (parses structured success payloads with worker freshness, GPU memory, compilation/validation, retry counts, runtime metadata) | `seamless-transformer` (remote job dispatch) |
 | `daskserver_remote` | `activate()`, `deactivate()` | `seamless-config` (stage changes) |
 
 Each module maintains separate lists of read and write clients (or a single launched handle for the daskserver). `activate()` is called by `seamless-config` during stage transitions; it instantiates the appropriate clients from the cluster definition and makes them available to downstream consumers.

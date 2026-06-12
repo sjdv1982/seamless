@@ -56,6 +56,7 @@ For pipelines where parallelism only affects ordering:
 Agent guidance:
 - Expect practical limits to come from worker pool sizing / OS process limits / filesystem throughput.
 - For “many short tasks”, prefer a backend designed for high task throughput (e.g. Dask-backed execution) rather than naive “fork 1000 subprocesses locally”.
+- If two submissions resolve to the **same** `tf_checksum` while one is still running (e.g. running an existing checksum with different execution-only flags), the second does not start a second execution: by default it latches onto the running one and returns its result value. Pass `--strict` to instead fail when an active submission carries a different execution envelope; the prior submission must finish or be canceled (`seamless-cancel <tf_checksum>`) first. See `contracts/identity-and-caching.md` for the full latch-on/`strict` contract.
 
 ## Remote execution guidance
 

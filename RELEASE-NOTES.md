@@ -1,6 +1,65 @@
 # Seamless Release Notes
 
-## v1.3
+## version 1.4
+
+- Transformation model slightly reworked: a `Transformation` is now
+explicitly an **immutable computation definition plus a mutable execution promise**, the
+dunder set has been reclassified along a load-bearing/orthogonal boundary, and
+there is a public **checksum-addressed cancellation** API. This **breaks cache
+compatibility** for affected transformations (see below). 
+
+- seamless-core ships an
+independent fix for checksumming compressed files.
+
+### Transformation immutability and dunder separation
+
+A `Transformation` now freezes its definition at construction: the
+checksum-defining payload, the orthogonal dunder envelope, scratch policy, result
+celltype, and the dependency graph edges are all copy-owned and read-only.
+Execution state (transformation/result checksums, futures, status, exception)
+stays mutable.
+
+**Cache break (intentional).** Moving `__meta__` and `__env__` *out* of the
+checksum and moving `__schema__` *into* it changes transformation identity. This
+is the only checksum algorithm — there are no legacy aliases. Existing cache
+entries under the old boundary may not be found and will be recomputed; results
+that must be preserved need external/manual migration. Note this supersedes the
+v1.3 compiled-transformer statement that the schema was execution-only metadata:
+as of 1.4, **`__schema__` is part of the cache key**, while compiler flags,
+`__compilation__`, `__env__`, and metavars remain orthogonal.
+
+### Checksum-addressed cancellation
+
+An active submission can now be moved to an observable terminal `canceled` state
+across all backends (local asyncio, thread/executor, Dask, spawn/delegation,
+jobserver). Use `seamless-cancel <tf_checksum>` or `Ctrl-C` / SIGTERM during a
+`seamless-run*` command; in Python, `Transformation.cancel(recursive=False)` /
+`await cancel_async(...)`. Afterwards `status` is `"Status: canceled"`,
+`result_checksum` raises, the state is terminal (`clear_exception()` will not
+revive it), and **no execution record or result checksum is written**.
+Cancellation of already-running native code is best-effort — only the Seamless
+promise is guaranteed inactive.
+
+### Latch-on vs. strict re-submission
+
+When the same `tf_checksum` is re-submitted with a *different* orthogonal dunder
+envelope while the first is still running, the default is now **latch-on**: the
+second submission attaches to the running one and returns its result, with the
+active envelope authoritative. Pass `--strict` (`seamless-run-transformation`) or
+`strict_dunder=True` (Python / Dask / jobserver) to require your own envelope
+instead — it is rejected while another submission is active and may proceed only
+once that one is done, failed, or canceled. CLI flags like `--direct-print`,
+`--fingertip`, and `--scratch` spice the envelope only, never the checksum.
+
+### seamless-core: transparent checksumming of compressed files
+
+`seamless-checksum`, `seamless-checksum-file`, and `seamless-checksum-index` now
+treat `.zst` and `.gz` files transparently — they decompress before checksumming,
+so a buffer and its compressed form yield the **same** checksum, and the
+compression suffix is stripped from written `.CHECKSUM`/index names. Fixes a bug
+where compressed files were checksummed by their compressed bytes.
+
+## version 1.3
 
 Three large changes since v1.2:
 
