@@ -97,7 +97,9 @@ Internally a `Context` holds **only a DAG of nodes**. `Cell`s and `Transformer`s
   celltypes)` **on the edge** — not as a stored `Expression`.
 - **E/T are private to the `Context`.** On each tick they are *materialized* from
   `(edge path + current upstream checksum)`, fired, and discarded. A `Context`
-  **contains** only builders (as node state); it **fires** E/T but never stores them.
+  **contains** only builders (as node state); it **fires** E/T but never stores them. The
+  per-tick materialization cost is bounded to the **invalidated cone** (not the whole graph)
+  and is a small `tf_checksum` hash over checksum-sized inputs — never a re-hash of buffers.
 
 ### Single source of truth
 
@@ -144,14 +146,26 @@ Rules:
 
 - A node reaches `computing` iff **all required upstream are `complete`, and every
   connected-optional upstream is either `complete` or definitively in its empty/dropped
-  case** (Part II) — *not* the naive "all upstream complete," which would wedge a node
-  forever behind one errored optional pin.
+  (JSON-`null`) case** (Part II). The empty/dropped case is the upstream resolving to the
+  `null`-absence value — **not** failure. A connected-optional pin gates exactly like a
+  required pin; its *only* relaxation versus required is that resolving to `null`
+  satisfies the gate (by dropping the pin). An **errored (failed)** connected-optional
+  upstream therefore **blocks** the node (`blocked`), exactly like a failed required
+  upstream — it is *not* skipped.
 - **Upstream failure does not propagate as `failed`.** A dependent of a failed node is
   `blocked`, not `failed`. `failed` is reserved for a node's **own** evaluation.
 - **The block reason is a first-class, queryable enum** `{blocked-by-unwired,
   blocked-by-error}`. Both are one *state* (both need an external change to leave), but
   they imply different user actions (wire something vs. fix code), so the *reason* must
-  be inspectable by UI and tests.
+  be inspectable by UI and tests. **When both apply** (a node has an unwired input *and*
+  an errored input), **`blocked-by-unwired` is reported** — wiring is the more
+  fundamental prerequisite, and an errored upstream is sometimes errored only because
+  something below *it* is still unwired.
+- **A `failed` node leaves `failed` only via an external change.**
+  **`ctx.node.clear_exception()`** — forwarded to the failed `Context`-private E/T — is
+  that change: it clears the node's recorded exception and re-derives it, recomputing
+  from current inputs. (Auto-retry of *transient* infrastructure failures is a
+  Transformation/backend concern, deliberately out of scope here — §I.8.)
 
 ### Equilibrium vs. out-of-equilibrium
 
@@ -258,10 +272,13 @@ This splits the holds into **three** cases:
   upstream resolves, then compare its output checksum:** if unchanged, **reinstate** `B`
   (it was never really interrupted — mechanically, `B` re-derives the *same* `tf_checksum`
   and re-latches onto the still-running submission, Part III); if changed, cancel and
-  relaunch. The window is **the time until the upstream resolves** (an *event*), with a
-  timer only as a backstop. A fixed timer would be wrong precisely when the upstream is
-  slow — it would expire before confirmation, killing `B` at exactly the case the hold
-  exists to protect.
+  relaunch. The window is **event-driven** — primarily the time until the upstream
+  resolves — under a **fixed maximum of ~5 minutes**, which is a reasonable ceiling in its
+  own right: if the upstream has not resolved within that bound, release `B`'s hold
+  regardless. Event-driven release handles the common case (a fast upstream confirms
+  quickly); the 5-minute maximum both keeps `B` held while a genuinely slow upstream is
+  still resolving and bounds worst-case slot occupation, so a stuck upstream cannot pin a
+  superseded run indefinitely.
 - **(b) Self-edit revert hold — fixed window, behavioural.** A node is `computing` and
   its **own** identity (code / load-bearing `meta`) is edited; its `tf_checksum` changes,
   so the old run is reusable **only if the user reverts**. This is a behavioural bet on a
@@ -276,14 +293,20 @@ This splits the holds into **three** cases:
   protect — reinstating a *completed* `Y` is a **pure cache hit** — so what is held is
   `Y`'s **output buffer** (and the upstream's old output) via a `tempref`, so the cache
   hit lands if the upstream re-resolves to the same output. As in (a), the right lifetime
-  is **bounded by the upstream event**; a fixed lifetime is an acceptable approximation
-  only when the upstream is fast. Memory pressure may evict early regardless — the correct
-  compute-vs-memory trade-off.
+  is **bounded by the upstream event** (with the same ~5-minute maximum backstop as case
+  (a)); a fixed lifetime is an acceptable approximation only when the upstream is fast.
+  Memory pressure may evict early regardless — the correct compute-vs-memory trade-off.
 
 Cases (a) and (c) are the **same event-driven downstream hold** (hold until the changed
 upstream resolves, then compare), split only by whether the downstream is still
 `computing` (protect live compute) or already `complete` (retain a buffer). Case (b)
 keeps a fixed window because no upstream event governs it.
+
+**Reinstatement is not a special operation.** "Reinstate `B`" (case (a)) is mechanically
+*nothing*: `B` re-derives the **same** `tf_checksum` and re-latches onto the
+still-running submission via the §III awaiter set. There is no surgical resurrection of a
+run — the hold merely keeps that submission alive long enough for the re-derivation to
+find it.
 
 ### Nodes do not "hang on" to completed work
 
@@ -309,7 +332,9 @@ cache cannot recover that: once cancelled, an in-flight run's partial progress i
   node's superseded holds occupying a slot another node's *current* run needs) is a
   corner case of *non-local rapid editing of a wide wavefront*; an **optional** preemption
   nicety (*current everywhere preempts superseded anywhere* under saturation) covers it.
-  *(Part V.3 argues this preemption should not be optional.)*
+  *(Part V.3 argued this preemption should be mandatory; **resolved: kept optional** — the
+  user reclaims slots explicitly via `ctx.a.prune()` (below), with automated prune policy
+  deferred.)*
 
 ### `ctx.prune()` — drop obsolete work on demand
 
@@ -322,6 +347,16 @@ freeze, *not* a commit. After `prune`, all running work is current work, so once
 wavefront finishes the cluster is genuinely idle (*quiescence == idle*). The same call is
 what fire-and-forget issues before detaching (§I.7).
 
+**`prune` is also a per-node operation: `ctx.a.prune()`.** It `softcancel`s only the obsolete
+(superseded / grace-held) runs in `ctx.a`'s own subtree — `ctx.a` and its downstream cone —
+leaving the rest of the `Context`'s speculation untouched. This is the **user's manual control**
+over which superseded work to reclaim: rather than the scheduler guessing a tighter automatic
+cancellation policy (the rejected Part V.2/V.3 alternatives), the user — who knows which held run
+is still worth keeping and which is dead weight — prunes exactly the subtree they want.
+`ctx.prune()` is then just `ctx.a.prune()` applied at the graph root. Configurable machinery to
+call `ctx.a.prune()` automatically (edit-rate / saturation / cost driven) can be layered on later,
+but is not part of v1.
+
 ## I.6 Future-wired vs. checksum-wired E/T
 
 - A **`waiting`** node owns a **future-wired** E/T: its inputs are upstream futures, not
@@ -332,7 +367,13 @@ what fire-and-forget issues before detaching (§I.7).
 - A **`computing`** node owns a **checksum-wired** ("running") E/T: a concrete E/T whose
   inputs are resolved checksums and which therefore has a constructed `tf_checksum`. At
   `waiting → computing` the checksum-wired E/T **replaces** the future-wired one (which is
-  cancelled).
+  cancelled — but **not instantly**: its cancellation is deferred until **~10 s after the
+  checksum-wired E/T is submitted**, giving Dask time to **latch-on** (deduplicate) the new
+  submission onto whatever run the future-wired E/T already started. Cancelling the
+  future-wired E/T immediately would race the latch-on and could discard a run the
+  checksum-wired submission would otherwise reuse). This delayed, *forward-transition*
+  cancellation is distinct from §I.5's *immediate* cancellation of future-wired E/T on
+  **supersession** — there the node is being invalidated, with no replacement to latch onto.
 
 **Phasing (sequencing only).** Future-wired E/T's sole present benefit (a few seconds of
 latency) is not worth its complexity on its own; it is **necessary** for headless frontier
@@ -376,8 +417,10 @@ Bounds:
   submission** for a checksum-wired node (all input checksums in hand), **deferred to
   runtime** for a future-wired node (some input still a future). The optional-pin drop-if-
   `null` rule (Part II) is one rule within tf-construction, applied whenever construction
-  happens. *(Part V.9 flags that value-dependent tf-construction makes "deferred to
-  runtime" on Dask a dynamic-task-generation problem, not plain dataflow.)*
+  happens. *(Part V.9 argued value-dependent tf-construction makes "deferred to runtime" a
+  dynamic-task problem; **resolved: non-issue** — a future-wired E/T is already a
+  runtime-constructed continuation, so value-dependent shape rides the ordinary future-wired
+  mechanism, not a new one. See Part V.7/V.9.)*
 
 ## I.8 Scope, assumptions, and admitted trade-offs
 
@@ -391,6 +434,16 @@ by the content-addressed cache by default** — it surfaces only in consumers of
 nondeterministic result that is `scratch` (forcing recomputation), a **universal** Seamless
 property, not a `Context` hazard. Expressions are **deterministic by construction**, so the
 retain-and-compare is unconditionally safe on expression edges.
+
+**Concurrency model (made explicit, per the V.5 resolution).** Every `Context` state
+transition — edits, the §I.4 marking pass and cascade, the §I.2 attach/detach migration, and
+the handling of each arriving update or new result — runs **synchronously on a single thread,
+the instant the update/result arrives**. The **only** concurrent activity is the actual E/T
+`.compute()` invocations, which run in a **dedicated event loop**. This is what makes §I.4's
+"one non-yielding pass" and §I.2's "no dual-write window" hold *by construction*: nothing
+interleaves with a marking pass or a state migration, because state transitions are never
+concurrent with one another — only with compute, and a compute result re-entering the
+`Context` is itself handled synchronously on arrival.
 
 **Admitted trade-offs (stated, not silently accepted):**
 
@@ -432,14 +485,26 @@ retain-and-compare is unconditionally safe on expression edges.
 So **"sufficiently connected"** = every required pin wired + every connected-optional pin
 wired; unconnected optional pins are absent.
 
-### Admitted restriction
+### Admitted restrictions — optional pins are genuinely awkward
 
-A connected optional pin cannot also carry an *intentional* `null` value distinct from
-"absent," because `null` is spoken-for as the absence encoding. This is a deliberate
-tradeoff, not a defect: the only alternative (pass `null` through as a value) would
-contradict the chosen semantics. *(Part V.6/V.7 note two sharper consequences: the escape
-valve covers only null-encodable result types, and the transformation's very shape becomes
-input-value-dependent.)*
+Two deliberate restrictions, both stated plainly because together they make optional pins
+**difficult to use**:
+
+1. A connected optional pin cannot also carry an *intentional* `null` value distinct from
+   "absent," because `null` is spoken-for as the absence encoding. The only alternative (pass
+   `null` through as a value) would contradict the chosen semantics.
+2. **The drop-on-`null` escape valve covers only `null`-encodable result celltypes
+   (`plain`/`mixed`).** A connected optional pin whose result celltype is `binary`, a deep
+   structure, or any other non-`null`-encodable type has **no in-band way to signal "no
+   result"** — it can be absent only while *unconnected*, never conditionally dropped once
+   computed. For such celltypes "connected optional" collapses back to plain "required." (An
+   out-of-band absence sentinel — a distinguished "absent" checksum independent of celltype —
+   would restore conditional absence for all celltypes, at the cost of a second magic value
+   threaded through tf-construction; it is deliberately **not** adopted in v1.)
+
+Net: optional pins can be difficult to use, and that difficulty is accepted, not hidden.
+*(Part V.7's further consequence — the transformation's shape becoming input-value-dependent —
+is real but not a defect; it is handled by the ordinary future-wired mechanism. See Part V.7.)*
 
 ---
 
@@ -532,13 +597,19 @@ work for everyone; that coupling is exactly wrong for soft-cancel.
    unconditional kill one process hop downstream — the footgun unfixed.
 2. **`[OPTIONAL — slot reclamation, not correctness]` Cross-process membership liveness.**
    The in-process set self-cleans via `finally`; a server-side set does not. **But a leaked
-   member is benign**: it causes *under*-cancellation, never a peer kill — a
-   crashed/disconnected client that never sends `softcancel` does not pin the job
-   indefinitely; the job simply **runs to completion** and the set is then forgotten. Take
-   liveness **for free** where membership is naturally **connection-scoped** (a dropped
-   connection auto-removes the member); do **not** build TTL heartbeats merely for this.
-   *(Part V.8 argues connection-scoped liveness should be required, because the unbounded
-   cost lands precisely on the expensive jobs cancellation exists to free.)*
+   member is benign — and more than benign, often *correct*.** It causes *under*-cancellation,
+   never a peer kill: a crashed/disconnected client that never sends `softcancel` does not pin
+   a peer's job and corrupts nothing; the job simply **runs to completion** and the set is then
+   forgotten. Critically, **a crashed holder usually still wants its result** — a crash is not
+   a statement that the work has become uninteresting, more often the opposite — so the run
+   completing and depositing its result in the content-addressed cache is exactly what the
+   holder needs on reconnect. Building TTL heartbeats to *force* cancellation on disconnect
+   would therefore destroy work that is still wanted. Connection-scoped auto-deregister may be
+   taken **where it is free**, but it must **not** be relied on as a cancellation trigger, and
+   dedicated liveness machinery is **not** built.
+   *(This resolves Part V.8, which argued liveness should be required: it should not — the
+   "unbounded cost" it cites is the result being computed once and cached, which the
+   disconnected holder reclaims on reconnect, not waste.)*
 3. **`[HYGIENE]` Per-set atomicity.** "remove last member → empty → cancel" races "a new
    submitter wants to latch." Keep membership-change and empty-check-and-cancel under one
    lock **per set** (in-process
@@ -582,6 +653,15 @@ materialization and output writing share the one running-checksum refcount; I/O 
 separate layer). This requires replacing the
 [`NotImplementedError`](../seamless-core/seamless/expression_class.py#L222) stub.
 
+**`Expression.clear_exception()` (substrate, per the V.4 resolution).** Orthogonally to
+cancellation, the failed-node recovery of §I.3 needs a substrate hook.
+`ctx.node.clear_exception()` forwards to the failed `Context`-private E/T; for an
+`Expression`-backed node that is **`Expression.clear_exception()`** — clear the recorded
+exception and re-derive from current inputs, the `Expression` analog of a `Transformation`'s
+clear-and-recompute. Like `Expression.cancel()`, it replaces a not-yet-existing stub.
+(Automatic retry of *transient* failures stays a `Transformation`/backend concern, out of
+scope — §I.8 / Part V.4.)
+
 ### III.7 What this buys
 
 This **fixes** the jobserver multi-tenant footgun (rather than admitting it), at the cost
@@ -623,9 +703,11 @@ future-wired** transition — is the open item. It is the §I.6 future-wired/che
 split applied specifically to *declared dependency edges*, and it governs how navigation-
 derived dependencies cache, fire, and reattach.
 
-*(Part V.10 sketches a concrete contract and flags that a declared edge into an optional
-pin — Part II — cannot even be **shaped** until its upstream resolves, which is the
-mechanism behind the admitted "loses laziness.")*
+*(Part V.10 sketches a concrete contract — a declared edge stored as a **future-wired
+`Expression`** that transitions to checksum-wired by substitution when its input resolves.
+Its "optional-pin landmine" — that such an edge cannot be *shaped* until the upstream resolves
+— is **not** a special blocker: that is simply what a future-wired E/T is (a runtime-constructed
+continuation), and pre-submission remains possible. See Part V.7/V.10.)*
 
 ---
 
@@ -668,6 +750,12 @@ benefit is removing the design's **only** hard synchronous-latency obligation. I
 the design at least *justify* keeping eager marking over epoch-stamping; right now it adopts
 the more expensive option without comparison.
 
+> **Resolution (pass 3, per user).** Rejected — eager cone-marking is kept; epoch-stamping is
+> **not** adopted until the O(cone) synchronous-marking latency is actually *observed* to bite.
+> Simplicity first. Residual risk acknowledged: on very large graphs (10⁵–10⁶ nodes) a
+> root-level edit's marking pass is O(cone) on the single `Context` thread; revisit
+> epoch/generation stamping if and when that latency materializes.
+
 ## V.2 The hold window is bounded by the slowest *transitive* changed upstream, not the immediate one
 
 §I.5 case (a) is framed throughout as "hold `B` until **`A`** resolves, then compare `A`'s
@@ -693,6 +781,14 @@ cone, one early divergence) into an early release, and needs no new bookkeeping 
 a flat ≤3 — a node running an expensive GPU job should be allowed fewer or shorter holds than
 one running a cheap op (the design already gestures at this for case (b); generalise it).
 
+> **Resolution (pass 3, per user).** Rejected — no automatic cancel-on-first-divergence. The
+> restored cache hit is **not always immediately downstream**: there are real cases where a
+> superseded run/buffer pays off several levels down (e.g. a non-injective transformation
+> collapses an upstream divergence back to an unchanged output), so eager per-edge cancellation
+> would discard work that still has downstream value. Keep the event-driven grace-hold (≤5 min)
+> and give the user **`ctx.a.prune()`** (§I.5) for explicit, surgical reclamation — the user
+> knows which held run is worth keeping; the scheduler should not guess.
+
 ## V.3 Speculation harms the canonical reactive workload; "preemption is optional" is backwards
 
 The reactive `Context` exists for **live, interactive** editing. The defining interactive
@@ -714,6 +810,12 @@ cancel-on-supersede when edits are raining in, full hold when edits are sparse. 
 generalises the design's own "GPU lifetime shrinks toward zero" instinct from *cost* to
 *cost × contention × edit-rate*, and it makes speculation self-disabling exactly when it
 would otherwise hurt.
+
+> **Resolution (pass 3, per user).** Rejected — preemption stays **optional** and the hold
+> window is not made adaptive. Same principle as V.2: the user reclaims slots explicitly via
+> **`ctx.a.prune()`** rather than the scheduler guessing. Configurable machinery to call
+> `ctx.a.prune()` automatically (edit-rate / saturation / cost driven) can be layered on later;
+> it is out of v1.
 
 ## V.4 No transient/retryable-failure model — every `failed` is terminal-until-external-change
 
@@ -737,6 +839,13 @@ backend a bounded retry-with-backoff policy for the transient class. This is mos
 by the `Context` as the sub-state — but the *design* must decide the taxonomy now, because
 "all failures are terminal" is baked into the equilibrium definition and the headless bounds.
 
+> **Resolution (pass 3, per user).** Mostly rejected as out of scope: the
+> transient-vs-deterministic failure taxonomy and retry-with-backoff are a
+> **`Transformation`/backend** concern, not `Context` logic, so `failed` stays one equilibrium
+> state (V.12.3's `failed-transient` UX falls with it). **Adopted:** `ctx.node.clear_exception()`
+> (forwarded to the failed `Context`-private E/T — §I.3) and, at the substrate,
+> **`Expression.clear_exception()`** (Part III.6).
+
 ## V.5 The concurrency model is never stated — and the substrate evidence contradicts the implicit one
 
 Several load-bearing claims are correct **only** under a single-threaded event loop that
@@ -758,6 +867,12 @@ thread are marshalled onto it (`loop.call_soon_threadsafe` or equivalent) before
 node state. This is probably what the author intends; it is currently load-bearing and
 unwritten, and the `RLock` is concrete evidence the boundary is real.
 
+> **Resolution (pass 3, per user).** Addressed by *stating the model*, not by the proposed
+> off-thread marshalling. The concurrency contract (now in §I.8): every `Context` state
+> transition runs **synchronously on a single thread the instant an update/result arrives**;
+> the **only** concurrency is E/T `.compute()`, which runs in a **dedicated event loop**.
+> §I.4's non-yielding pass and §I.2's no-dual-write window therefore hold by construction.
+
 ## V.6 Substrate A: drop-on-`null` only covers null-encodable result types
 
 Part II's escape valve — "a transformer may return no result, provided its result celltype
@@ -776,6 +891,11 @@ of the pin's celltype) would restore conditional absence for all celltypes — a
 second magic value to thread through tf-construction. Whether that is worth it is a real
 choice; the current design makes it by omission.
 
+> **Resolution (pass 3, per user).** Accepted — documented. The drop-on-`null` escape valve
+> covers only `null`-encodable (`plain`/`mixed`) result celltypes; for any other celltype
+> "connected optional" collapses to "required." Now stated in Part II's *Admitted restrictions*,
+> with the plain admission that **optional pins can be difficult to use**.
+
 ## V.7 Substrate A: the transformation's *shape* becomes input-value-dependent
 
 A subtler consequence of the drop-on-`null` rule: whether a connected-optional pin is **part
@@ -789,6 +909,12 @@ should own: (1) the `Context` cannot construct, key, or pre-submit such a node's
 optional upstream has *resolved* (not merely been *wired*); (2) this is the root cause of the
 Part IV / V.10 problem and the V.9 Dask problem. Worth promoting from an implicit property to a
 stated one, because it ripples into three other sections.
+
+> **Resolution (pass 3, per user).** Rebutted. The property (a connected-optional consumer's
+> shape is input-value-dependent) is real and admitted, but the claimed *consequence* — "cannot
+> pre-submit until the upstream resolves" — is wrong. **Every** future-wired E/T has an input it
+> cannot key until resolution; that *is* future-wiring (a runtime-constructed continuation), and
+> **pre-submission remains possible**. No special blocker; V.9 and V.10's landmine fall with it.
 
 ## V.8 Substrate B: declining liveness strands exactly the expensive jobs cancellation exists to free
 
@@ -812,6 +938,12 @@ without reintroducing the machinery constraint 2 rightly rejects. Reframe the co
 *liveness is optional for correctness, load-bearing for the cost goal that motivates cancellation
 in the first place.*
 
+> **Resolution (pass 3, per user).** Rebutted — liveness stays optional, on a *stronger* ground
+> than "benign": a crashed/disconnected holder **usually still wants its result**, so forcing
+> cancellation on disconnect would destroy work the holder will reclaim from the content-addressed
+> cache on reconnect. The "unbounded cost on expensive jobs" is that result being computed once
+> and cached — not wasted. (Part III constraint 2 updated.)
+
 ## V.9 Headless advance of a value-dependent cone needs dynamic task generation on Dask, not dataflow
 
 §I.7 asserts the future-wired forward cone "advances `waiting → computing → complete` headlessly
@@ -827,6 +959,11 @@ and-forget requires dynamic task generation for value-dependent nodes and accept
 or (b) **restrict the headless cone to nodes whose shape is already determined** (no unresolved
 optional-pin dependence), making fire-and-forget's eligibility a checkable property rather than an
 assumed one. Option (b) is the cleaner contract and worth preferring.
+
+> **Resolution (pass 3, per user).** Rebutted (follows from V.7). No special "dynamic task
+> generation" is required: a future-wired E/T is already a runtime-constructed continuation, so a
+> value-dependent headless node advances as ordinary future-wired work. Fire-and-forget
+> eligibility needs no extra shape-determinacy restriction.
 
 ## V.10 Part IV: a concrete dependency-declaration contract — and the optional-pin landmine in it
 
@@ -849,6 +986,11 @@ lose laziness," and it should be written into the Part IV contract as an explici
 edge into a connected-optional pin defers the consumer's tf-construction past the upstream's
 resolution, not merely past its wiring.* Settling Part IV without naming this case will reproduce
 the V.9 problem inside the dependency model.
+
+> **Resolution (pass 3, per user).** Contract sketch accepted as the working shape for Part IV
+> (a declared edge is a **future-wired `Expression`** that becomes checksum-wired by substitution
+> on resolution). The "optional-pin landmine" is rebutted (follows from V.7 — pre-submission
+> works), so Part IV stays formally open but is no longer blocked by the optional-pin case.
 
 ## V.11 Architectural alternative: a pull/demand-driven `Context` instead of push/speculation
 
@@ -883,6 +1025,12 @@ flag that turns on the §I.5 speculation machinery only for the interactive subg
 benefits. That would let the speculation/hold/prune complexity be **paid for only where it earns its
 keep**, instead of being the unconditional default.
 
+> **Resolution (pass 3, per user).** Rebutted — push is retained; the `Context` is **not**
+> switched to pull-by-default. Eager-vs-lazy is a real, available axis, but V.11's premise — that
+> pull makes §I.5's supersession/holds **disappear** — is false: **a pull coroutine is still
+> concurrent with input updates**, so a demanded computation can still be superseded mid-flight
+> and the same hold/supersession questions recur. Pull does not buy the claimed simplification.
+
 ## V.12 Minor
 
 - **Reinstatement is not a special operation — say so once, plainly.** §I.5 case (a) "reinstate
@@ -896,3 +1044,37 @@ keep**, instead of being the unconditional default.
   situation appears ("nothing is wrong, it's retrying") that is neither an equilibrium error nor a
   wiring gap; the queryable-reason enum should cover it so a UI can show "retrying" rather than a
   spurious error badge.
+
+
+> **Resolution (pass 3, per user).** 12.1 (reinstatement is not a special operation) — agreed;
+> already stated plainly in §I.5. 12.2 (per-tick materialization cost) — agreed; sentence added
+> to §I.2. 12.3 (`failed-transient` "retrying" UX) — rejected with V.4; no fourth user-facing
+> state, the block-reason enum stays `{blocked-by-unwired, blocked-by-error}`.
+
+## Response by the user
+
+
+"A node reaches computing iff all required upstream are complete, and every connected-optional upstream is either complete or definitively in its empty/dropped case (Part II) — not the naive "all upstream complete," which would wedge a node forever behind one errored optional pin."
+
+This is false. Errored optional pins *do* cause a node to be blocked.
+
+
+"The block reason is a first-class, queryable enum {blocked-by-unwired, blocked-by-error}" In case of multiple reasons, blocked-by-unwired takes priority.
+
+"A fixed timer would be wrong precisely when the upstream is slow — it would expire before confirmation, killing B at exactly the case the hold exists to protect." This is not quite right. I think five minutes is a reasonable maximum value to hold on to B.
+
+ctx.prune() . This should also be implemented at the node level (ctx.a.prune())
+
+"the checksum-wired E/T replaces the future-wired one (which is cancelled)" Cancelling should be ~10 seconds after the checksum-wired E/T was submitted, in order to allow Dask latch-on to happen.
+
+V.1: reject proposal. Keep it simple until the outlined problem is proven to occur.
+V.2: reject proposal. I know counterexamples where the restored cache hit is not immediately downstream. User knows best, `ctx.a.prune()` will help.
+V.3: reject proposal. Same reason: user knows best, `ctx.a.prune()` will help. Configurable machinery for automated `ctx.a.prune()` calling can be added later.
+V.4: mostly reject as out-of-scope. Retries and Transformation.clear_exception() are a Transformation feature. That being said. `ctx.node.clear_exception()` (call forwarded to failed Context-private E/T) is to be added. On a substrate level, `Expression.clear_exception()` is to be implemented.
+V.5: No. Everything is synchronously as soon as an update/new result arrives, except the actual E/T .compute() invocations, these are in a dedicated event loop.
+V.6: The tension is admitted, and it must be documented. Optional pins can be difficult to use.
+V.7: The consequences are plain wrong. Any future-wired E/T has this problem, and it is dealt with: pre-submission remains possible.
+V.8: Shrug. Holders may crash and leak, causing work to be not-cancelled. In any case, "crash" doesn't imply "my submitted work is no longer of interest and should be softcanceled", usually quite the opposite.
+V.9/V.10: Wrong because V.7 is wrong.
+V.10: Right that evaluation can be eager or lazy, wrong on all the specifics. A pull coroutine can still be concurrent with input updates!
+V.12: 1., 2. agree. 3., reject.
