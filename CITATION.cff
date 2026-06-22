@@ -1,0 +1,22 @@
+cff-version: 1.2.0
+message: "If you use Seamless, please cite it as below."
+title: "Seamless"
+abstract: >-
+  Seamless is a workflow tool for scientific computing that wraps existing
+  Python and command-line code as reproducible, cached transformations.
+  Define your computation once — cache it, scale it, share it.
+type: software
+license: MIT
+authors:
+  - family-names: "de Vries"
+    given-names: "Sjoerd"
+repository-code: "https://github.com/sjdv1982/seamless"
+url: "https://sjdv1982.github.io/seamless/"
+keywords:
+  - workflow
+  - reproducibility
+  - caching
+  - content-addressed
+  - scientific-computing
+  - HPC
+  - pipeline

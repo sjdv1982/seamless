@@ -1,0 +1,125 @@
+commit 82d376002f68925befb9241dcba0ba103d53a962
+Author: Sjoerd de Vries <sjdv1982@gmail.com>
+Date:   Mon Apr 27 10:22:48 2026 +0200
+
+    Record input and output buffer sizes
+
+diff --git a/seamless_transformer/transformation_cache.py b/seamless_transformer/transformation_cache.py
+index 1fde29d..8b44d47 100644
+--- a/seamless_transformer/transformation_cache.py
++++ b/seamless_transformer/transformation_cache.py
+@@ -21,6 +21,7 @@ from .probe_index import ensure_record_bucket_preconditions, is_record_probe
+ from .run import (
+     _module_definition_from_payload,
+     _resolve_dunder_value,
++    get_transformation_inputs_output,
+     run_transformation_dict,
+ )
+ from . import worker
+@@ -348,6 +349,56 @@ async def load_bucket_contract_violations(
+     return sorted(violations)
+ 
+ 
++async def _checksum_length(checksum_hex: str | None) -> int | None:
++    if not checksum_hex:
++        return None
++    checksum = Checksum(checksum_hex)
++    try:
++        if buffer_remote is not None:
++            lengths = await buffer_remote.get_buffer_lengths([checksum])
++            if lengths and lengths[0] is not None:
++                return int(lengths[0])
++    except Exception:
++        pass
++    try:
++        buffer = await checksum.resolution()
++    except Exception:
++        return None
++    return len(buffer) if buffer is not None else None
++
++
++async def compute_record_io_bytes(
++    transformation_dict: Dict[str, Any], result_checksum: Checksum
++) -> tuple[int | None, int | None]:
++    input_total_bytes = 0
++    seen: set[str] = set()
++    inputs, _output_name, _output_celltype, _output_subcelltype = (
++        get_transformation_inputs_output(transformation_dict)
++    )
++    as_ = transformation_dict.get("__as__", {})
++    reverse_as = {mapped: original for original, mapped in as_.items()}
++    for input_name in inputs:
++        pinname = reverse_as.get(input_name, input_name)
++        try:
++            _celltype, _subcelltype, checksum_hex = transformation_dict[pinname]
++        except Exception:
++            continue
++        if not checksum_hex:
++            continue
++        checksum_hex = Checksum(checksum_hex).hex()
++        if checksum_hex in seen:
++            continue
++        seen.add(checksum_hex)
++        length = await _checksum_length(checksum_hex)
++        if length is None:
++            input_total_bytes = None
++            break
++        input_total_bytes += length
++
++    output_total_bytes = await _checksum_length(result_checksum.hex())
++    return input_total_bytes, output_total_bytes
++
++
+ async def _await_buffer_writer(checksum: Checksum) -> None:
+     if _buffer_writer is None:
+         return
+@@ -610,6 +661,9 @@ class TransformationCache:
+                 bucket_contract_violations = await load_bucket_contract_violations(
+                     probe_context
+                 )
++                input_total_bytes, output_total_bytes = await compute_record_io_bytes(
++                    transformation_dict, result_checksum
++                )
+                 if compilation_context is None:
+                     compilation_context = await build_compilation_context_checksum(
+                         transformation_dict, tf_dunder
+@@ -630,6 +684,8 @@ class TransformationCache:
+                     compilation_context=compilation_context,
+                 )
+                 record["execution_envelope"]["scratch"] = bool(scratch)
++                record["input_total_bytes"] = input_total_bytes
++                record["output_total_bytes"] = output_total_bytes
+                 await database_remote.set_execution_record(
+                     tf_checksum, result_checksum, record
+                 )
+diff --git a/tests/test_execution_records.py b/tests/test_execution_records.py
+index ad0537a..950b871 100644
+--- a/tests/test_execution_records.py
++++ b/tests/test_execution_records.py
+@@ -180,6 +180,9 @@ def test_record_mode_writes_execution_record(monkeypatch):
+     assert record["execution_envelope"]["resolved_env_checksum"] == env_checksum.hex()
+     assert record["execution_envelope"]["active_tf_dunder_keys"] == ["__env__"]
+     assert record["freshness"] == probe_context
++    assert record["input_total_bytes"] == 0
++    assert isinstance(record["output_total_bytes"], int)
++    assert record["output_total_bytes"] > 0
+     assert record["hostname"]
+     assert isinstance(record["worker_execution_index"], int)
+ 
+@@ -346,6 +349,9 @@ def test_compiled_record_writes_compilation_context(monkeypatch):
+     assert result == result_checksum
+     record = fake_database_remote.execution_records[0][2]
+     assert record["compilation_context"] == compilation_context
++    assert record["input_total_bytes"] == 0
++    assert isinstance(record["output_total_bytes"], int)
++    assert record["output_total_bytes"] > 0
+ 
+ 
+ def test_remote_jobserver_record_uses_returned_probe_context(monkeypatch):
+@@ -438,3 +444,6 @@ def test_remote_jobserver_record_uses_returned_probe_context(monkeypatch):
+     assert record["node_env"] == "c" * 64
+     assert record["freshness"] == probe_context
+     assert record["compilation_context"] == compilation_context
++    assert record["input_total_bytes"] == 0
++    assert isinstance(record["output_total_bytes"], int)
++    assert record["output_total_bytes"] > 0

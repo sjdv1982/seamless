@@ -1,0 +1,115 @@
+commit 5dbb06d68ecb57f0d700a30fcc47e0461fe6fafb
+Author: Sjoerd de Vries <sjdv1982@gmail.com>
+Date:   Mon Apr 27 09:12:30 2026 +0200
+
+    Skip execution records for probe jobs
+
+diff --git a/seamless_dask/client.py b/seamless_dask/client.py
+index e353488..872acfc 100644
+--- a/seamless_dask/client.py
++++ b/seamless_dask/client.py
+@@ -449,30 +449,35 @@ async def _promise_and_write_result_async(
+                 )
+                 from seamless_transformer.probe_index import (
+                     ensure_record_bucket_preconditions,
++                    is_record_probe,
+                 )
+ 
+-                probe_context = await ensure_record_bucket_preconditions(
++                if not is_record_probe(
+                     dict(transformation_dict or {}),
+                     dict(tf_dunder or {}),
+-                    execution=execution,
+-                )
+-                record = build_execution_record(
+-                    dict(transformation_dict or {}),
+-                    tf_checksum=tf_checksum,
+-                    result_checksum=result_checksum,
+-                    tf_dunder=dict(tf_dunder or {}),
+-                    execution=execution,
+-                    started_at=started_at or _utcnow_iso(),
+-                    finished_at=finished_at or _utcnow_iso(),
+-                    wall_time_seconds=wall_time_seconds or 0.0,
+-                    cpu_user_seconds=cpu_user_seconds or 0.0,
+-                    cpu_system_seconds=cpu_system_seconds or 0.0,
+-                    probe_context=probe_context,
+-                )
+-                record["execution_envelope"]["scratch"] = bool(scratch)
+-                await database_remote.set_execution_record(
+-                    tf_checksum, result_checksum, record
+-                )
++                ):
++                    probe_context = await ensure_record_bucket_preconditions(
++                        dict(transformation_dict or {}),
++                        dict(tf_dunder or {}),
++                        execution=execution,
++                    )
++                    record = build_execution_record(
++                        dict(transformation_dict or {}),
++                        tf_checksum=tf_checksum,
++                        result_checksum=result_checksum,
++                        tf_dunder=dict(tf_dunder or {}),
++                        execution=execution,
++                        started_at=started_at or _utcnow_iso(),
++                        finished_at=finished_at or _utcnow_iso(),
++                        wall_time_seconds=wall_time_seconds or 0.0,
++                        cpu_user_seconds=cpu_user_seconds or 0.0,
++                        cpu_system_seconds=cpu_system_seconds or 0.0,
++                        probe_context=probe_context,
++                    )
++                    record["execution_envelope"]["scratch"] = bool(scratch)
++                    await database_remote.set_execution_record(
++                        tf_checksum, result_checksum, record
++                    )
+             except Exception:
+                 return
+     except Exception:
+diff --git a/tests/test_execution_records.py b/tests/test_execution_records.py
+index fcbdeaa..f6e87a9 100644
+--- a/tests/test_execution_records.py
++++ b/tests/test_execution_records.py
+@@ -166,3 +166,44 @@ def test_promise_and_write_result_writes_execution_record(monkeypatch):
+     assert record["queue_node"] == "e" * 64
+     assert record["freshness"] == probe_context
+     assert record["execution_envelope"]["scratch"] is False
++
++
++def test_probe_jobs_skip_execution_record_write(monkeypatch):
++    fake_database_remote = _FakeDatabaseRemote()
++    fake_buffer_remote = _FakeBufferRemote()
++    tf_checksum = _make_checksum({"kind": "dask-probe-skip"})
++    result_checksum = _make_checksum(11, "mixed")
++
++    async def _unexpected_probe_context(*args, **kwargs):
++        del args, kwargs
++        raise AssertionError("record probe should skip execution-record preflight")
++
++    monkeypatch.setattr(select, "get_record", lambda: True)
++    monkeypatch.setattr(seamless_remote, "database_remote", fake_database_remote)
++    monkeypatch.setattr(seamless_remote, "buffer_remote", fake_buffer_remote)
++    monkeypatch.setattr(dask_client, "_ENSURE_RESULT_UPLOAD", False)
++    monkeypatch.setattr(
++        probe_index,
++        "ensure_record_bucket_preconditions",
++        _unexpected_probe_context,
++    )
++
++    asyncio.run(
++        dask_client._promise_and_write_result_async(
++            tf_checksum,
++            result_checksum,
++            write_buffer=False,
++            transformation_dict={
++                "__language__": "python",
++                "__output__": ("result", "mixed", None),
++            },
++            tf_dunder={"__record_probe__": {"mode": "capture"}},
++            scratch=False,
++            execution="remote",
++        )
++    )
++
++    assert fake_database_remote.transformation_results == [
++        (tf_checksum.hex(), result_checksum.hex())
++    ]
++    assert fake_database_remote.execution_records == []

@@ -8,8 +8,6 @@ Seamless wraps both Python and command-line code. In Python, `direct` runs a fun
 
 Sharing works at two levels. The lightweight path is to exchange checksums: if two researchers have computed the same transformation, they already have the same result — no data transfer needed. The concrete path is to share the `seamless.db` file, a portable SQLite database that maps transformation checksums to result checksums. Copy it to a colleague, a cluster, or a publication archive, and every cached result travels with it. Combined, these two paths let a lab build up a shared computation cache that grows over time and never recomputes what anyone has already computed.
 
-Compiled languages (C/C++, Fortran, Rust, Go, ...) are also supported, they are called by Seamless from Python.
-
 ## What about interactivity?
 
 This is Seamless 1.x, running on a new code architecture. Seamless 0.x offered an interactive, notebook-first workflow experience with reactive cells, Jupyter widget integration, filesystem mounting, and collaborative web interfaces. These
@@ -31,9 +29,7 @@ This installs all standard Seamless components. For a minimal install, the core 
 | `seamless-transformer` | `from seamless.transformer import direct, delayed, parallel` | `direct`, `delayed`, `parallel`, `parallel_async`, `TransformationList`, `seamless-run`, `seamless-upload`, `seamless-download` |
 | `seamless-config` | `import seamless.config` | `seamless.config.init()`, `seamless.config.set_nparallel()`, `seamless-init` |
 
-## Source code
-
-All source code is on GitHub: [seamless-core](https://github.com/sjdv1982/seamless-core), [seamless-transformer](https://github.com/sjdv1982/seamless-transformer), [seamless-config](https://github.com/sjdv1982/seamless-config), [seamless-remote](https://github.com/sjdv1982/seamless-remote), [seamless-jobserver](https://github.com/sjdv1982/seamless-jobserver), [seamless-dask](https://github.com/sjdv1982/seamless-dask)
+---
 
 ## Quick Examples
 
@@ -63,16 +59,39 @@ seamless-run 'seq 1 10 | tac && sleep 5'    # cache hit — instant
 
 ### Automatically wrap the bash commands you type
 
-![seamless-mode demo](docs/main/seamless-mode.gif)
+![seamless-mode demo](./seamless-mode.gif)
 
-## Documentation
+---
 
-Full documentation — including getting-started guides, cluster setup, remote execution, compiled transformers, compression, and reference API — is at:
+## In this documentation
 
-**<https://sjdv1982.github.io/seamless/>**
+**Getting started**
 
-For changes, see [RELEASE-NOTES.md](RELEASE-NOTES.md).
+- [Wrapping Python and bash](getting-started.md) — `direct`/`delayed` hello-world + `seamless-run` basics + pitfalls
+- [Setting up a local cluster](cluster.md) — persistent caching, service configuration, `seamless-init`
+- [Seamless mode](seamless-mode.md) — interactive shell mode that wraps commands with `seamless-run` automatically
 
-## Agent Skill
+**How-to guides**
 
-Seamless includes an agent skill (`seamless-adoption`) for AI coding assistants. It guides assessment of codebase fit and planning/executing ports — covering both the Python face (`direct`/`delayed`) and the Unix face (`seamless-run`). See [skills/seamless-adoption/SKILL.md](skills/seamless-adoption/SKILL.md).
+- [Caching, identity, and sharing](caching.md) — what constitutes a cache key, `Checksum` and `Buffer`, `.CHECKSUM` sidecars, the `persistent` command
+- [Composition](composition.md) — driver transformations, fan-out, `.modules` and `.globals`
+- [Local parallelism](parallelism.md) — `execution: spawn`, `spawn(N)`, `parallel()`, `TransformationList`, `seamless-queue`
+- [Remote execution](remote.md) — jobserver vs daskserver, `set_stage()`, `--local`
+- [HPC specifics](hpc.md) — SLURM/OAR queue definitions, adaptive scaling, pure Dask mode
+- [Remote job launching](remote-launch.md) — CLI workflow for remote clusters, checksum vs buffer distinction, deep checksums
+- [Sharing in depth](sharing.md) — `seamless.db` portability, scratch, fingertipping, replay by checksum
+- [Compiled transformers](compiled-transformers.md) — wrap C/C++/Fortran/Rust source code as transformations; open language set
+- [Compressed data](compression.md) — `.zst`/`.gz` support that never affects identity
+- [Service management](service-management.md) — `seamless-service-*` and `rhl-*` helpers; false-pass debugging
+
+**Reference API**
+
+- [Overview](api/index.md) — full API symbol classification
+- [seamless-core](api/seamless-core.md) — `Checksum`, `Buffer`, cell types
+- [seamless-transformer](api/seamless-transformer.md) — `direct`, `delayed`, `parallel`, `Transformation`, `spawn`
+- [seamless-config](api/seamless-config.md) — `init()`, `set_stage()`, YAML command language, cluster definitions
+- [seamless-remote](api/seamless-remote.md) — remote clients, `seamless-resolve`, `seamless-fingertip`
+- [seamless-dask](api/seamless-dask.md) — Dask integration, `seamless-dask-wrapper`
+- [seamless-jobserver](api/seamless-jobserver.md) — lightweight HTTP job dispatcher
+- [seamless-database](api/seamless-database.md) — transformation result cache server
+- [remote-http-launcher](api/remote-http-launcher.md) — service launcher and lifecycle manager

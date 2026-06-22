@@ -1,0 +1,48 @@
+commit a0e30e1fde20bdcf7f10ec8d75f781c79d66b0af
+Author: Sjoerd de Vries <sjdv1982@gmail.com>
+Date:   Sun Apr 26 21:15:50 2026 +0200
+
+    Return probe context for record mode
+
+diff --git a/jobserver.py b/jobserver.py
+index be3fee1..bb0ca14 100644
+--- a/jobserver.py
++++ b/jobserver.py
+@@ -12,9 +12,11 @@ import time
+ from seamless import Checksum, Buffer
+ from seamless.transformer import spawn
+ from seamless_transformer import worker
++from seamless_transformer.probe_index import ensure_record_bucket_preconditions
+ from seamless_transformer.remote_job import parse_remote_job_written
+ import seamless
+ from seamless.util.get_event_loop import get_event_loop
++from seamless_config.select import get_record
+ 
+ try:
+     from seamless_remote.client import close_all_clients as _close_all_clients
+@@ -294,11 +296,24 @@ class JobServer:
+         if not scratch:
+             result_buf = await result_checksum.resolution()
+             assert isinstance(result_buf, Buffer)
++        response_payload = result_checksum.hex()
++        if get_record():
++            probe_context = await ensure_record_bucket_preconditions(
++                transformation_dict,
++                tf_dunder,
++                execution="remote",
++            )
++            response_payload = json.dumps(
++                {
++                    "result_checksum": result_checksum.hex(),
++                    "probe_context": probe_context,
++                }
++            )
+         print(
+             f"[jobserver] Completed transformation {tf_checksum_hex} -> {result_checksum.hex()}",
+             flush=True,
+         )
+-        return web.Response(status=200, text=result_checksum.hex())
++        return web.Response(status=200, text=response_payload)
+ 
+ 
+ def main():

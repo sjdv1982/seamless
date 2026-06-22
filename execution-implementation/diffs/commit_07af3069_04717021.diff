@@ -1,0 +1,27 @@
+commit 07af3069f68a240a6a6c40d9a5d7ea1a80ff15a0
+Author: Sjoerd de Vries <sjdv1982@gmail.com>
+Date:   Mon Apr 27 10:52:44 2026 +0200
+
+    Assert parsed jobserver retry counts
+
+diff --git a/tests/test_jobserver_client.py b/tests/test_jobserver_client.py
+index 1fdd4e0..158e107 100644
+--- a/tests/test_jobserver_client.py
++++ b/tests/test_jobserver_client.py
+@@ -79,7 +79,7 @@ class JobserverClientTests(unittest.IsolatedAsyncioTestCase):
+         client.url = "http://jobserver.invalid"
+         client._initialized = True
+         client._get_session = lambda: _FakeSession(
+-            '{"result_checksum": "%s", "probe_context": {"required_bucket_checksums": {"node": "%s"}}, "compilation_context": "%s", "job_validation": {"job_contract_violations": ["runpath_outside_conda_prefix"], "diagnostics": {"compiled": true}}, "record_runtime": {"started_at": "2026-04-27T10:00:00Z", "finished_at": "2026-04-27T10:00:03Z", "wall_time_seconds": 3.0, "cpu_user_seconds": 1.2, "cpu_system_seconds": 0.4, "memory_peak_bytes": 123456, "hostname": "jobserver-worker-1", "pid": 4321, "process_started_at": "2026-04-27T09:00:00Z", "worker_execution_index": 17, "retry_count": 0}}'
++            '{"result_checksum": "%s", "probe_context": {"required_bucket_checksums": {"node": "%s"}}, "compilation_context": "%s", "job_validation": {"job_contract_violations": ["runpath_outside_conda_prefix"], "diagnostics": {"compiled": true}}, "record_runtime": {"started_at": "2026-04-27T10:00:00Z", "finished_at": "2026-04-27T10:00:03Z", "wall_time_seconds": 3.0, "cpu_user_seconds": 1.2, "cpu_system_seconds": 0.4, "memory_peak_bytes": 123456, "hostname": "jobserver-worker-1", "pid": 4321, "process_started_at": "2026-04-27T09:00:00Z", "worker_execution_index": 17, "retry_count": 1}}'
+             % ("2" * 64, "3" * 64, "4" * 64)
+         )
+ 
+@@ -116,6 +116,6 @@ class JobserverClientTests(unittest.IsolatedAsyncioTestCase):
+                 "pid": 4321,
+                 "process_started_at": "2026-04-27T09:00:00Z",
+                 "worker_execution_index": 17,
+-                "retry_count": 0,
++                "retry_count": 1,
+             },
+         )

@@ -1,0 +1,145 @@
+commit 3f10325d0efd33d25d03661ada8ac5da86655199
+Author: Sjoerd de Vries <sjdv1982@gmail.com>
+Date:   Mon Apr 27 18:15:56 2026 +0200
+
+    Strengthen environment freshness tokens
+
+diff --git a/seamless_transformer/probe_index.py b/seamless_transformer/probe_index.py
+index 977b054..19efb03 100644
+--- a/seamless_transformer/probe_index.py
++++ b/seamless_transformer/probe_index.py
+@@ -8,6 +8,7 @@ import hashlib
+ import json
+ import socket
+ import sys
++import sysconfig
+ from pathlib import Path
+ from typing import Any
+ 
+@@ -69,9 +70,9 @@ def _read_boot_id() -> str | None:
+         return None
+ 
+ 
+-def _conda_meta_mtime_ns(prefix: str) -> int | None:
++def _path_mtime_ns(path: Path) -> int | None:
+     try:
+-        return int((Path(prefix) / "conda-meta").stat().st_mtime_ns)
++        return int(path.stat().st_mtime_ns)
+     except Exception:
+         return None
+ 
+@@ -124,16 +125,29 @@ def _environment_label_and_tokens(
+     if "conda" in env_dict or "conda_environment" in env_dict:
+         prefix = sys.prefix
+         tokens: dict[str, Any] = {"sys_prefix": prefix}
+-        conda_meta_mtime_ns = _conda_meta_mtime_ns(prefix)
+-        if conda_meta_mtime_ns is not None:
+-            tokens["conda_meta_mtime_ns"] = conda_meta_mtime_ns
++        conda_history_mtime_ns = _path_mtime_ns(
++            Path(prefix) / "conda-meta" / "history"
++        )
++        if conda_history_mtime_ns is not None:
++            tokens["conda_history_mtime_ns"] = conda_history_mtime_ns
++        purelib = sysconfig.get_path("purelib")
++        if purelib:
++            purelib_mtime_ns = _path_mtime_ns(Path(purelib))
++            if purelib_mtime_ns is not None:
++                tokens["purelib_mtime_ns"] = purelib_mtime_ns
+         conda_environment = env_dict.get("conda_environment")
+         if isinstance(conda_environment, str) and conda_environment:
+             tokens["conda_environment"] = conda_environment
+         return f"conda:{prefix}", tokens
+ 
+     prefix = sys.prefix
+-    return f"python:{prefix}", {"sys_prefix": prefix}
++    tokens = {"sys_prefix": prefix}
++    purelib = sysconfig.get_path("purelib")
++    if purelib:
++        purelib_mtime_ns = _path_mtime_ns(Path(purelib))
++        if purelib_mtime_ns is not None:
++            tokens["purelib_mtime_ns"] = purelib_mtime_ns
++    return f"python:{prefix}", tokens
+ 
+ 
+ def _required_bucket_kinds(execution: str, remote_target: str | None) -> list[str]:
+diff --git a/tests/test_probe_index.py b/tests/test_probe_index.py
+index 7dab826..6b94d6a 100644
+--- a/tests/test_probe_index.py
++++ b/tests/test_probe_index.py
+@@ -1,4 +1,6 @@
+ import pytest
++import sysconfig
++from pathlib import Path
+ 
+ from seamless import Buffer, Checksum
+ 
+@@ -87,6 +89,69 @@ def test_ensure_record_bucket_preconditions_process_success(monkeypatch):
+     ]
+ 
+ 
++def test_resolve_probe_plan_conda_environment_tokens_include_freshness_mtims(
++    monkeypatch, tmp_path
++):
++    prefix = tmp_path / "env"
++    conda_meta = prefix / "conda-meta"
++    conda_meta.mkdir(parents=True)
++    history = conda_meta / "history"
++    history.write_text("demo\n", encoding="utf-8")
++    purelib = tmp_path / "purelib"
++    purelib.mkdir()
++
++    monkeypatch.setattr(probe_index.sys, "prefix", str(prefix))
++    monkeypatch.setattr(
++        probe_index.sysconfig,
++        "get_path",
++        lambda name: str(purelib) if name == "purelib" else sysconfig.get_path(name),
++    )
++
++    plan = probe_index.resolve_probe_plan(
++        {
++            "__language__": "python",
++            "__output__": ("result", "mixed", None),
++            "__env__": _env_checksum({"conda_environment": "demo"}),
++        },
++        {},
++    )
++
++    tokens = plan["live_tokens"]["environment"]
++    assert tokens["sys_prefix"] == str(prefix)
++    assert tokens["conda_environment"] == "demo"
++    assert tokens["conda_history_mtime_ns"] == history.stat().st_mtime_ns
++    assert tokens["purelib_mtime_ns"] == purelib.stat().st_mtime_ns
++
++
++def test_resolve_probe_plan_python_environment_tokens_include_purelib_mtime(
++    monkeypatch, tmp_path
++):
++    prefix = tmp_path / "pyenv"
++    purelib = tmp_path / "site-packages"
++    purelib.mkdir(parents=True)
++
++    monkeypatch.setattr(probe_index.sys, "prefix", str(prefix))
++    monkeypatch.setattr(
++        probe_index.sysconfig,
++        "get_path",
++        lambda name: str(purelib) if name == "purelib" else sysconfig.get_path(name),
++    )
++
++    plan = probe_index.resolve_probe_plan(
++        {
++            "__language__": "python",
++            "__output__": ("result", "mixed", None),
++        },
++        {},
++    )
++
++    tokens = plan["live_tokens"]["environment"]
++    assert tokens == {
++        "sys_prefix": str(prefix),
++        "purelib_mtime_ns": purelib.stat().st_mtime_ns,
++    }
++
++
+ def test_ensure_record_bucket_preconditions_process_missing_bucket(monkeypatch):
+     transformation_dict = {
+         "__language__": "python",

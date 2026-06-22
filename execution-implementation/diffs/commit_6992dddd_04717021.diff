@@ -1,0 +1,18 @@
+commit 6992dddd88ec695a28752f1c12ef96bc2e84b499
+Author: Sjoerd de Vries <sjdv1982@gmail.com>
+Date:   Mon Apr 27 19:57:36 2026 +0200
+
+    Pass probe context into Dask record validation
+
+diff --git a/seamless_dask/client.py b/seamless_dask/client.py
+index 31e0f30..d709078 100644
+--- a/seamless_dask/client.py
++++ b/seamless_dask/client.py
+@@ -483,6 +483,7 @@ async def _promise_and_write_result_async(
+                             dict(transformation_dict or {}),
+                             dict(tf_dunder or {}),
+                             compilation_context=compilation_context,
++                            probe_context=probe_context,
+                         )
+                     )
+                     job_contract_violations = job_validation[

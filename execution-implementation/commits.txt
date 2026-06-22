@@ -1,0 +1,676 @@
+Repository: seamless-config
+Timestamp: 2026-04-26T17:13:50+02:00
+Commit Hash: 408e0b89deded8e84cab26db80d25dc3755a4d00
+Message: Add record mode and node selection plumbing
+Files changed:
+  M seamless_config/config_files.py
+  M seamless_config/select.py
+  M seamless_config/tools.py
+  M tests/test_execution_command.py
+Diff file: diffs/commit_408e0b89_04717021.diff
+
+---
+
+Repository: seamless-database
+Timestamp: 2026-04-26T17:13:50+02:00
+Commit Hash: c8e9bbbb5e46838ce3f7509af0ffba6f0a5320d2
+Message: Implement execution record storage
+Files changed:
+  M database.py
+  M database_models.py
+  A tests/test_execution_records.py
+Diff file: diffs/commit_c8e9bbbb_04717021.diff
+
+---
+
+Repository: seamless-remote
+Timestamp: 2026-04-26T17:13:50+02:00
+Commit Hash: dedbff38b9bf1bf61a082eb09b4230958f0b7f1e
+Message: Add remote execution record APIs
+Files changed:
+  M seamless_remote/database_client.py
+  M seamless_remote/database_remote.py
+  A tests/test_database_client_execution_records.py
+Diff file: diffs/commit_dedbff38_04717021.diff
+
+---
+
+Repository: seamless-transformer
+Timestamp: 2026-04-26T17:13:50+02:00
+Commit Hash: c04e6fc804c1b216ccb670a83a2ecccbe26ee1d5
+Message: Add seamless-run node targeting
+Files changed:
+  M seamless_transformer/cmd/api/main.py
+Diff file: diffs/commit_c04e6fc8_04717021.diff
+
+---
+
+Repository: seamless-transformer
+Timestamp: 2026-04-26T18:10:53+02:00
+Commit Hash: f1419143e69349f7a6338f3fa287db8102e1c0af
+Message: Record successful executions in transformer runtime
+Files changed:
+  M seamless_transformer/transformation_cache.py
+  A tests/test_execution_records.py
+Diff file: diffs/commit_f1419143_04717021.diff
+
+---
+
+Repository: seamless-dask
+Timestamp: 2026-04-26T18:10:54+02:00
+Commit Hash: 7547c39afb223dea37e0957721c8c9d1bc75ae46
+Message: Record Dask execution metadata
+Files changed:
+  M seamless_dask/client.py
+  M seamless_dask/transformation_mixin.py
+  A tests/test_execution_records.py
+Diff file: diffs/commit_7547c39a_04717021.diff
+
+---
+
+Repository: seamless-database
+Timestamp: 2026-04-26T18:14:58+02:00
+Commit Hash: ee14f3cc26733843eed5569001c8fbb44d8cccda
+Message: Add shared bucket probe index
+Files changed:
+  M database.py
+  M database_models.py
+  M tests/test_execution_records.py
+Diff file: diffs/commit_ee14f3cc_04717021.diff
+
+---
+
+Repository: seamless-remote
+Timestamp: 2026-04-26T18:14:58+02:00
+Commit Hash: f19f6693bb15c401d54a8d0fed1d9de469b215d2
+Message: Expose bucket probe database APIs
+Files changed:
+  M seamless_remote/database_client.py
+  M seamless_remote/database_remote.py
+  M tests/test_database_client_execution_records.py
+Diff file: diffs/commit_f19f6693_04717021.diff
+
+---
+
+Repository: seamless-transformer
+Timestamp: 2026-04-26T18:20:06+02:00
+Commit Hash: 9272e6f6b3d641509919a463592123206a17c856
+Message: Enforce record-mode bucket preflight
+Files changed:
+  A seamless_transformer/probe_index.py
+  M seamless_transformer/run.py
+  A tests/test_probe_index.py
+Diff file: diffs/commit_9272e6f6_04717021.diff
+
+---
+
+Repository: seamless-dask
+Timestamp: 2026-04-26T20:29:06+02:00
+Commit Hash: 2d017c9c8166d3e47c68b7e155b1dc45499c3de0
+Message: Include freshness data in Dask records
+Files changed:
+  M seamless_dask/client.py
+  M tests/test_execution_records.py
+Diff file: diffs/commit_2d017c9c_04717021.diff
+
+---
+
+Repository: seamless-transformer
+Timestamp: 2026-04-26T20:29:06+02:00
+Commit Hash: 7a08251018a67677f69fcbcf060ccfec97e34961
+Message: Populate execution record freshness fields
+Files changed:
+  M seamless_transformer/transformation_cache.py
+  M tests/test_execution_records.py
+Diff file: diffs/commit_7a082510_04717021.diff
+
+---
+
+Repository: seamless-jobserver
+Timestamp: 2026-04-26T21:15:50+02:00
+Commit Hash: a0e30e1fde20bdcf7f10ec8d75f781c79d66b0af
+Message: Return probe context for record mode
+Files changed:
+  M jobserver.py
+Diff file: diffs/commit_a0e30e1f_04717021.diff
+
+---
+
+Repository: seamless-remote
+Timestamp: 2026-04-26T21:15:50+02:00
+Commit Hash: 960e883e3f715873f17b747133786aa32680261a
+Message: Parse structured jobserver success payloads
+Files changed:
+  M seamless_remote/jobserver_client.py
+  A tests/test_jobserver_client.py
+Diff file: diffs/commit_960e883e_04717021.diff
+
+---
+
+Repository: seamless-transformer
+Timestamp: 2026-04-26T21:15:50+02:00
+Commit Hash: e9bff80a1fe570000ef099ac3f93afa2805340d7
+Message: Use jobserver probe context in records
+Files changed:
+  M seamless_transformer/transformation_cache.py
+  M tests/test_execution_records.py
+Diff file: diffs/commit_e9bff80a_04717021.diff
+
+---
+
+Repository: seamless-dask
+Timestamp: 2026-04-27T09:12:30+02:00
+Commit Hash: 5dbb06d68ecb57f0d700a30fcc47e0461fe6fafb
+Message: Skip execution records for probe jobs
+Files changed:
+  M seamless_dask/client.py
+  M tests/test_execution_records.py
+Diff file: diffs/commit_5dbb06d6_04717021.diff
+
+---
+
+Repository: seamless-jobserver
+Timestamp: 2026-04-27T09:12:30+02:00
+Commit Hash: 8d113452c520cc1ce9421ed69fddece8ee4d2ebd
+Message: Skip probe preflight payloads on jobserver
+Files changed:
+  M jobserver.py
+Diff file: diffs/commit_8d113452_04717021.diff
+
+---
+
+Repository: seamless-transformer
+Timestamp: 2026-04-27T09:12:30+02:00
+Commit Hash: 1cc207bfed4dc7bc3f6e72cd609d5d5cd1fe70f5
+Message: Add seamless-probe bucket refresh path
+Files changed:
+  M pyproject.toml
+  M seamless_transformer/cmd/api/main.py
+  M seamless_transformer/pretransformation.py
+  A seamless_transformer/probe_capture.py
+  M seamless_transformer/probe_index.py
+  M seamless_transformer/run.py
+  M seamless_transformer/transformation_cache.py
+  M seamless_transformer/transformation_utils.py
+  M tests/test_execution_records.py
+  A tests/test_probe_capture.py
+  M tests/test_probe_index.py
+Diff file: diffs/commit_1cc207bf_04717021.diff
+
+---
+
+Repository: seamless-dask
+Timestamp: 2026-04-27T09:14:52+02:00
+Commit Hash: 92dace88308fb552e811a0b410d5be2778c3b240
+Message: Carry bucket contract violations into Dask records
+Files changed:
+  M seamless_dask/client.py
+  M tests/test_execution_records.py
+Diff file: diffs/commit_92dace88_04717021.diff
+
+---
+
+Repository: seamless-transformer
+Timestamp: 2026-04-27T09:14:52+02:00
+Commit Hash: 2e07bf5d92a47651a8dafd92b4077f0d829e15e8
+Message: Aggregate bucket contract violations in records
+Files changed:
+  M seamless_transformer/transformation_cache.py
+  M tests/test_execution_records.py
+Diff file: diffs/commit_2e07bf5d_04717021.diff
+
+---
+
+Repository: seamless-dask
+Timestamp: 2026-04-27T10:21:27+02:00
+Commit Hash: cb363fcb21773e3e79fd66fbd859f80f3b919a3a
+Message: Attach compiled contexts to Dask records
+Files changed:
+  M seamless_dask/client.py
+  M tests/test_execution_records.py
+Diff file: diffs/commit_cb363fcb_04717021.diff
+
+---
+
+Repository: seamless-jobserver
+Timestamp: 2026-04-27T10:21:27+02:00
+Commit Hash: d9526e227f54daa9ff8d9cf944bf2db827171e20
+Message: Return compiled context from jobserver
+Files changed:
+  M jobserver.py
+Diff file: diffs/commit_d9526e22_04717021.diff
+
+---
+
+Repository: seamless-remote
+Timestamp: 2026-04-27T10:21:27+02:00
+Commit Hash: f635c4cca8e9f93c7332ff3398a3f8aed15bd990
+Message: Parse compiled context from jobserver payloads
+Files changed:
+  M seamless_remote/jobserver_client.py
+  M tests/test_jobserver_client.py
+Diff file: diffs/commit_f635c4cc_04717021.diff
+
+---
+
+Repository: seamless-transformer
+Timestamp: 2026-04-27T10:21:27+02:00
+Commit Hash: addc061e4a93e40a37106f3d3aed30ee0c33a61d
+Message: Store compiled execution contexts in records
+Files changed:
+  M seamless_transformer/transformation_cache.py
+  M tests/test_execution_records.py
+Diff file: diffs/commit_addc061e_04717021.diff
+
+---
+
+Repository: seamless-dask
+Timestamp: 2026-04-27T10:22:48+02:00
+Commit Hash: 52d1fcbef79e456c9860ad206c4c230bebc175b0
+Message: Include buffer sizes in Dask records
+Files changed:
+  M seamless_dask/client.py
+  M tests/test_execution_records.py
+Diff file: diffs/commit_52d1fcbe_04717021.diff
+
+---
+
+Repository: seamless-transformer
+Timestamp: 2026-04-27T10:22:48+02:00
+Commit Hash: 82d376002f68925befb9241dcba0ba103d53a962
+Message: Record input and output buffer sizes
+Files changed:
+  M seamless_transformer/transformation_cache.py
+  M tests/test_execution_records.py
+Diff file: diffs/commit_82d37600_04717021.diff
+
+---
+
+Repository: seamless-dask
+Timestamp: 2026-04-27T10:27:24+02:00
+Commit Hash: 0e04a513c259c443232523c2c482c9036c0b9a3f
+Message: Attach validation snapshots to Dask records
+Files changed:
+  M seamless_dask/client.py
+  M tests/test_execution_records.py
+Diff file: diffs/commit_0e04a513_04717021.diff
+
+---
+
+Repository: seamless-transformer
+Timestamp: 2026-04-27T10:27:24+02:00
+Commit Hash: b8ce8e433a877cfd59ab99789b2af55b11c13fac
+Message: Store validation snapshots for early record runs
+Files changed:
+  M seamless_transformer/transformation_cache.py
+  M tests/test_execution_records.py
+Diff file: diffs/commit_b8ce8e43_04717021.diff
+
+---
+
+Repository: seamless-transformer
+Timestamp: 2026-04-27T10:32:47+02:00
+Commit Hash: 2d47131926d27d151f960daf84236bf10edf6136
+Message: Prepare compiled linkage validation helpers
+Files changed:
+  M seamless_transformer/compiler/__init__.py
+  M seamless_transformer/transformation_cache.py
+Diff file: diffs/commit_2d471319_04717021.diff
+
+---
+
+Repository: seamless-dask
+Timestamp: 2026-04-27T10:38:17+02:00
+Commit Hash: 74012413acfc5adb578081490caa1f6f7e57dbd3
+Message: Carry job validation into Dask records
+Files changed:
+  M seamless_dask/client.py
+  M tests/test_execution_records.py
+Diff file: diffs/commit_74012413_04717021.diff
+
+---
+
+Repository: seamless-jobserver
+Timestamp: 2026-04-27T10:38:17+02:00
+Commit Hash: 89afa24d51cafc96f61bbf45b6a2dcbee3a37653
+Message: Return job validation from jobserver
+Files changed:
+  M jobserver.py
+Diff file: diffs/commit_89afa24d_04717021.diff
+
+---
+
+Repository: seamless-remote
+Timestamp: 2026-04-27T10:38:17+02:00
+Commit Hash: e4a953c856856acbb2fe1db8ed72c09d86611c4a
+Message: Parse job validation from jobserver payloads
+Files changed:
+  M seamless_remote/jobserver_client.py
+  M tests/test_jobserver_client.py
+Diff file: diffs/commit_e4a953c8_04717021.diff
+
+---
+
+Repository: seamless-transformer
+Timestamp: 2026-04-27T10:38:17+02:00
+Commit Hash: 6b485d9ee9119253ef1ad2dcddd41ea78d1ad83a
+Message: Validate compiled job linkage in records
+Files changed:
+  M seamless_transformer/transformation_cache.py
+  M tests/test_execution_records.py
+Diff file: diffs/commit_6b485d9e_04717021.diff
+
+---
+
+Repository: seamless-jobserver
+Timestamp: 2026-04-27T10:47:54+02:00
+Commit Hash: 7a72dfa6ddc6e5fe1f38a67ac301f644c774a754
+Message: Return runtime metadata from jobserver
+Files changed:
+  M jobserver.py
+Diff file: diffs/commit_7a72dfa6_04717021.diff
+
+---
+
+Repository: seamless-remote
+Timestamp: 2026-04-27T10:47:54+02:00
+Commit Hash: 1222cd86720c1b7f61db7b578765910f5028c879
+Message: Parse jobserver runtime metadata payloads
+Files changed:
+  M seamless_remote/jobserver_client.py
+  M tests/test_jobserver_client.py
+Diff file: diffs/commit_1222cd86_04717021.diff
+
+---
+
+Repository: seamless-transformer
+Timestamp: 2026-04-27T10:47:54+02:00
+Commit Hash: f80a344636e9d4dfecff0999a5310b895c445f8e
+Message: Use jobserver runtime metadata in records
+Files changed:
+  M seamless_transformer/transformation_cache.py
+  M tests/test_execution_records.py
+Diff file: diffs/commit_f80a3446_04717021.diff
+
+---
+
+Repository: seamless-dask
+Timestamp: 2026-04-27T10:50:25+02:00
+Commit Hash: bfe570d6601fe00cd135a1d9545561da946f63ee
+Message: Populate Dask record memory usage
+Files changed:
+  M seamless_dask/client.py
+  M tests/test_execution_records.py
+Diff file: diffs/commit_bfe570d6_04717021.diff
+
+---
+
+Repository: seamless-transformer
+Timestamp: 2026-04-27T10:50:25+02:00
+Commit Hash: 21f97a39a09f4eb7cb87bf04ad66048a1304984b
+Message: Populate local record memory usage
+Files changed:
+  M seamless_transformer/transformation_cache.py
+  M tests/test_execution_records.py
+Diff file: diffs/commit_21f97a39_04717021.diff
+
+---
+
+Repository: seamless-jobserver
+Timestamp: 2026-04-27T10:52:44+02:00
+Commit Hash: f64dd3a7af4a5a8302c0760d98b5211045ec5811
+Message: Track jobserver retry counts in records
+Files changed:
+  M jobserver.py
+Diff file: diffs/commit_f64dd3a7_04717021.diff
+
+---
+
+Repository: seamless-remote
+Timestamp: 2026-04-27T10:52:44+02:00
+Commit Hash: 07af3069f68a240a6a6c40d9a5d7ea1a80ff15a0
+Message: Assert parsed jobserver retry counts
+Files changed:
+  M tests/test_jobserver_client.py
+Diff file: diffs/commit_07af3069_04717021.diff
+
+---
+
+Repository: seamless-transformer
+Timestamp: 2026-04-27T10:52:44+02:00
+Commit Hash: e1f02768ef4f0efe2bc0ef09fecc7f4667f409f2
+Message: Assert jobserver retry count passthrough
+Files changed:
+  M tests/test_execution_records.py
+Diff file: diffs/commit_e1f02768_04717021.diff
+
+---
+
+Repository: seamless-dask
+Timestamp: 2026-04-27T10:54:47+02:00
+Commit Hash: 5fea8715843ecad96c6c19273cd700ee1272f373
+Message: Carry compilation times into Dask records
+Files changed:
+  M seamless_dask/client.py
+  M tests/test_execution_records.py
+Diff file: diffs/commit_5fea8715_04717021.diff
+
+---
+
+Repository: seamless-jobserver
+Timestamp: 2026-04-27T10:54:47+02:00
+Commit Hash: 7bec5102f1c065b597d991e801eff3f6b593bbd5
+Message: Return compilation times from jobserver
+Files changed:
+  M jobserver.py
+Diff file: diffs/commit_7bec5102_04717021.diff
+
+---
+
+Repository: seamless-remote
+Timestamp: 2026-04-27T10:54:47+02:00
+Commit Hash: 513567e5ccb7d3246419bf4512f58e356346cd67
+Message: Assert parsed jobserver compilation times
+Files changed:
+  M tests/test_jobserver_client.py
+Diff file: diffs/commit_513567e5_04717021.diff
+
+---
+
+Repository: seamless-transformer
+Timestamp: 2026-04-27T10:54:57+02:00
+Commit Hash: 86bc35615cf175ba392ef5b8d8743308bcabf484
+Message: Populate compilation times in records
+Files changed:
+  M seamless_transformer/compiler/__init__.py
+  M seamless_transformer/transformation_cache.py
+  M tests/test_execution_records.py
+Diff file: diffs/commit_86bc3561_04717021.diff
+
+---
+
+Repository: seamless-dask
+Timestamp: 2026-04-27T11:12:57+02:00
+Commit Hash: 377525a55317d5d3dbfff5c12af35577d6980e8d
+Message: Carry GPU memory into Dask records
+Files changed:
+  M seamless_dask/client.py
+  M tests/test_execution_records.py
+Diff file: diffs/commit_377525a5_04717021.diff
+
+---
+
+Repository: seamless-jobserver
+Timestamp: 2026-04-27T11:12:57+02:00
+Commit Hash: f86574a547ee70dac11c133efc3da04fb6a5d069
+Message: Return GPU memory from jobserver
+Files changed:
+  M jobserver.py
+Diff file: diffs/commit_f86574a5_04717021.diff
+
+---
+
+Repository: seamless-remote
+Timestamp: 2026-04-27T11:12:57+02:00
+Commit Hash: 9a9fc5907f30d41a861200a96e01eadd28b0368e
+Message: Assert parsed jobserver GPU memory
+Files changed:
+  M tests/test_jobserver_client.py
+Diff file: diffs/commit_9a9fc590_04717021.diff
+
+---
+
+Repository: seamless-transformer
+Timestamp: 2026-04-27T11:12:57+02:00
+Commit Hash: 07882f08f8442b3d089d983338469e4534b9ff0a
+Message: Track GPU memory in local records
+Files changed:
+  M seamless_transformer/transformation_cache.py
+  M tests/test_execution_records.py
+Diff file: diffs/commit_07882f08_04717021.diff
+
+---
+
+Repository: seamless-transformer
+Timestamp: 2026-04-27T18:05:58+02:00
+Commit Hash: 3a82f61424e4279ab65c0a54b92d2c054ba859b1
+Message: Align record tooling with discussion guidance
+Files changed:
+  M seamless_transformer/probe_capture.py
+  M seamless_transformer/transformation_cache.py
+  M tests/test_execution_records.py
+  M tests/test_probe_capture.py
+Diff file: diffs/commit_3a82f614_04717021.diff
+
+---
+
+Repository: seamless-transformer
+Timestamp: 2026-04-27T18:07:10+02:00
+Commit Hash: efcb7a95a6d371884dd4973cb06d0fc16e4098d5
+Message: Capture CUDA probe details
+Files changed:
+  M seamless_transformer/probe_capture.py
+  M tests/test_probe_capture.py
+Diff file: diffs/commit_efcb7a95_04717021.diff
+
+---
+
+Repository: seamless-transformer
+Timestamp: 2026-04-27T18:15:56+02:00
+Commit Hash: 3f10325d0efd33d25d03661ada8ac5da86655199
+Message: Strengthen environment freshness tokens
+Files changed:
+  M seamless_transformer/probe_index.py
+  M tests/test_probe_index.py
+Diff file: diffs/commit_3f10325d_04717021.diff
+
+---
+
+Repository: seamless-dask
+Timestamp: 2026-04-27T18:18:58+02:00
+Commit Hash: 1e34e808c75a860d17d059dfbd262a1e2f2a8018
+Message: Carry worker freshness into Dask records
+Files changed:
+  M seamless_dask/client.py
+  M tests/test_execution_records.py
+Diff file: diffs/commit_1e34e808_04717021.diff
+
+---
+
+Repository: seamless-jobserver
+Timestamp: 2026-04-27T18:18:58+02:00
+Commit Hash: 33fcf03b96c43d383f568ef2213a1efc111785e1
+Message: Return worker freshness from jobserver
+Files changed:
+  M jobserver.py
+Diff file: diffs/commit_33fcf03b_04717021.diff
+
+---
+
+Repository: seamless-remote
+Timestamp: 2026-04-27T18:18:58+02:00
+Commit Hash: 58f3e206a5ad29820271a4d9e045534aec569fb3
+Message: Assert parsed worker freshness payloads
+Files changed:
+  M tests/test_jobserver_client.py
+Diff file: diffs/commit_58f3e206_04717021.diff
+
+---
+
+Repository: seamless-transformer
+Timestamp: 2026-04-27T18:18:58+02:00
+Commit Hash: 8eac10a9148ebe2c1bb2e1bfd369463388749ed0
+Message: Record worker freshness diagnostics
+Files changed:
+  M seamless_transformer/transformation_cache.py
+  M tests/test_execution_records.py
+Diff file: diffs/commit_8eac10a9_04717021.diff
+
+---
+
+Repository: seamless-transformer
+Timestamp: 2026-04-27T18:19:55+02:00
+Commit Hash: c7d65905c5c60ac8c3ca8222ecefdf30911536a3
+Message: Capture node GPU inventory
+Files changed:
+  M seamless_transformer/probe_capture.py
+  M tests/test_probe_capture.py
+Diff file: diffs/commit_c7d65905_04717021.diff
+
+---
+
+Repository: seamless-transformer
+Timestamp: 2026-04-27T19:20:16+02:00
+Commit Hash: 87ddf56fc3d3a4efdb5a2bb3e570d590496a0b2b
+Message: Capture node probe system facts
+Files changed:
+  M seamless_transformer/probe_capture.py
+  M tests/test_probe_capture.py
+Diff file: diffs/commit_87ddf56f_04717021.diff
+
+---
+
+Repository: seamless-dask
+Timestamp: 2026-04-27T19:57:36+02:00
+Commit Hash: 6992dddd88ec695a28752f1c12ef96bc2e84b499
+Message: Pass probe context into Dask record validation
+Files changed:
+  M seamless_dask/client.py
+Diff file: diffs/commit_6992dddd_04717021.diff
+
+---
+
+Repository: seamless-jobserver
+Timestamp: 2026-04-27T19:57:36+02:00
+Commit Hash: 2d5567cdfcac15cc7c9fb2f91ae66ba58e1be3dc
+Message: Pass probe context into jobserver validation
+Files changed:
+  M jobserver.py
+Diff file: diffs/commit_2d5567cd_04717021.diff
+
+---
+
+Repository: seamless-transformer
+Timestamp: 2026-04-27T19:57:36+02:00
+Commit Hash: 69381194352e4adb6328b9d80d06f7b041fd5a28
+Message: Complete execution record validation coverage
+Files changed:
+  M seamless_transformer/probe_capture.py
+  M seamless_transformer/transformation_cache.py
+  M tests/test_execution_records.py
+  M tests/test_probe_capture.py
+Diff file: diffs/commit_69381194_04717021.diff
+
+---
+
+Repository: seamless
+Timestamp: 2026-04-27T19:57:36+02:00
+Commit Hash: 732d2f8b9e810f927f739864a0dddb371d945c88
+Message: Add execution records closure checklist
+Files changed:
+  A conversation/records/execution-records-open-checklist.md
+Diff file: diffs/commit_732d2f8b_04717021.diff
+
+---
+
+

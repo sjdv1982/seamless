@@ -1,0 +1,36 @@
+commit 89afa24d51cafc96f61bbf45b6a2dcbee3a37653
+Author: Sjoerd de Vries <sjdv1982@gmail.com>
+Date:   Mon Apr 27 10:38:17 2026 +0200
+
+    Return job validation from jobserver
+
+diff --git a/jobserver.py b/jobserver.py
+index 7b67be6..cf945d2 100644
+--- a/jobserver.py
++++ b/jobserver.py
+@@ -303,6 +303,7 @@ class JobServer:
+         if get_record() and not is_record_probe(transformation_dict, tf_dunder):
+             from seamless_transformer.transformation_cache import (
+                 build_compilation_context_checksum,
++                collect_job_validation,
+             )
+ 
+             probe_context = await ensure_record_bucket_preconditions(
+@@ -314,11 +315,17 @@ class JobServer:
+                 transformation_dict,
+                 tf_dunder,
+             )
++            job_validation = await collect_job_validation(
++                transformation_dict,
++                tf_dunder,
++                compilation_context=compilation_context,
++            )
+             response_payload = json.dumps(
+                 {
+                     "result_checksum": result_checksum.hex(),
+                     "probe_context": probe_context,
+                     "compilation_context": compilation_context,
++                    "job_validation": job_validation,
+                 }
+             )
+         print(

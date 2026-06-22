@@ -1,0 +1,566 @@
+commit c8e9bbbb5e46838ce3f7509af0ffba6f0a5320d2
+Author: Sjoerd de Vries <sjdv1982@gmail.com>
+Date:   Sun Apr 26 17:13:50 2026 +0200
+
+    Implement execution record storage
+
+diff --git a/database.py b/database.py
+index cbf6c49..5fa57b8 100644
+--- a/database.py
++++ b/database.py
+@@ -138,6 +138,77 @@ class DatabaseError(Exception):
+     pass
+ 
+ 
++def _conflict_response(message: str) -> web.Response:
++    return web.Response(status=409, text="ERROR: " + message)
++
++
++def _normalize_metadata_value(value):
++    if isinstance(value, dict):
++        return value
++    if isinstance(value, str):
++        value = json.loads(value)
++        if isinstance(value, dict):
++            return value
++    raise TypeError(type(value))
++
++
++def _validate_execution_record_identity(
++    checksum: str, result: str, value: dict
++) -> None:
++    schema_version = value.get("schema_version")
++    if not isinstance(schema_version, int):
++        raise ValueError("schema_version")
++    if value.get("tf_checksum") != checksum:
++        raise ValueError("tf_checksum")
++    if value.get("result_checksum") != result:
++        raise ValueError("result_checksum")
++    checksum_fields = value.get("checksum_fields")
++    if checksum_fields is not None:
++        if not isinstance(checksum_fields, list):
++            raise ValueError("checksum_fields")
++        for field in checksum_fields:
++            if not isinstance(field, str) or not field:
++                raise ValueError("checksum_fields")
++
++
++def _get_transformation_row(checksum: str):
++    try:
++        return Transformation[checksum]
++    except DoesNotExist:
++        return None
++
++
++def _get_metadata_row(checksum: str):
++    try:
++        return MetaData[checksum]
++    except DoesNotExist:
++        return None
++
++
++def _ensure_rev_transformation_row(checksum: str, result: str) -> None:
++    query = RevTransformation.select().where(
++        RevTransformation.checksum == checksum, RevTransformation.result == result
++    )
++    if query.exists():
++        return
++    RevTransformation.create(checksum=checksum, result=result)
++
++
++def _delete_rev_transformation_rows(checksum: str, result: str) -> None:
++    (
++        RevTransformation.delete()
++        .where(RevTransformation.checksum == checksum, RevTransformation.result == result)
++        .execute()
++    )
++
++
++def _irreproducible_exists(checksum: str) -> bool:
++    query = IrreproducibleTransformation.select().where(
++        IrreproducibleTransformation.checksum == checksum
++    )
++    return query.exists()
++
++
+ def is_port_in_use(address, port):
+     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+         return s.connect_ex((address, port)) == 0
+@@ -248,7 +319,7 @@ types = (
+     "transformation",
+     "metadata",
+     "expression",
+-    "irreproducible",  # only PUT
++    "irreproducible",
+     "rev_expression",  # only GET
+     "rev_transformations",  # only GET
+ )
+@@ -276,7 +347,7 @@ def format_response(response, *, none_as_404=False):
+ 
+ class DatabaseServer:
+     future = None
+-    PROTOCOL = ("seamless", "database", "2.0")
++    PROTOCOL = ("seamless", "database", "2.1")
+ 
+     def __init__(
+         self,
+@@ -463,6 +534,8 @@ class DatabaseServer:
+             except DatabaseError as exc:
+                 status = 400
+                 response = "ERROR: " + exc.args[0]
++            if isinstance(response, web.Response):
++                return response
+             status2, response = format_response(response)
+             if status == 200 and status2 is not None:
+                 status = status2
+@@ -527,6 +600,33 @@ class DatabaseServer:
+             except DoesNotExist:
+                 return None  # None is also a valid response
+ 
++        elif type_ == "irreproducible":
++            result_checksum = request.get("result")
++            if result_checksum is not None:
++                try:
++                    result_checksum = parse_checksum(result_checksum, as_bytes=False)
++                except ValueError:
++                    raise DatabaseError("Malformed irreproducible request") from None
++            rows = (
++                IrreproducibleTransformation.select()
++                .where(IrreproducibleTransformation.checksum == checksum)
++                .execute()
++            )
++            result = []
++            for row in rows:
++                if result_checksum is not None and row.result != result_checksum:
++                    continue
++                result.append(
++                    {
++                        "checksum": row.checksum,
++                        "result": row.result,
++                        "metadata": row.metadata,
++                    }
++                )
++            if not result:
++                return None
++            return result
++
+         elif type_ == "expression":
+             try:
+                 celltype = request["celltype"]
+@@ -678,43 +778,78 @@ class DatabaseServer:
+ 
+         elif type_ == "metadata":
+             try:
+-                value = request["value"]
+-                value = json.loads(value)
+-            except (KeyError, ValueError):
++                value = _normalize_metadata_value(request["value"])
++                result = parse_checksum(request["result"], as_bytes=False)
++                _validate_execution_record_identity(checksum, result, value)
++            except (KeyError, ValueError, TypeError):
+                 raise DatabaseError("Malformed PUT metadata request") from None
+-            MetaData.create(checksum=checksum, metadata=value)
++            with db_atomic():
++                if _irreproducible_exists(checksum):
++                    return _conflict_response(
++                        "Transformation already has irreproducible records"
++                    )
++                tf_row = _get_transformation_row(checksum)
++                if tf_row is not None:
++                    tf_result = parse_checksum(tf_row.result, as_bytes=False)
++                    if tf_result != result:
++                        return _conflict_response(
++                            "Transformation result does not match execution record result"
++                        )
++                metadata_row = _get_metadata_row(checksum)
++                if metadata_row is not None:
++                    metadata_result = parse_checksum(metadata_row.result, as_bytes=False)
++                    if metadata_result != result:
++                        return _conflict_response(
++                            "Execution record result does not match stored metadata result"
++                        )
++                    if metadata_row.metadata != value:
++                        return _conflict_response(
++                            "Execution record already exists with different metadata"
++                        )
++                    if tf_row is None:
++                        Transformation.create(checksum=checksum, result=result)
++                    _ensure_rev_transformation_row(checksum, result)
++                    return "OK"
++
++                if tf_row is None:
++                    Transformation.create(checksum=checksum, result=result)
++                    _ensure_rev_transformation_row(checksum, result)
++                else:
++                    _ensure_rev_transformation_row(checksum, result)
++                MetaData.create(checksum=checksum, result=result, metadata=value)
+ 
+         elif type_ == "irreproducible":
+             try:
+                 result = parse_checksum(request["result"], as_bytes=False)
+             except (KeyError, ValueError):
+                 raise DatabaseError("Malformed 'irreproducible' request") from None
+-            in_transformations = False
+-            try:
+-                tf = Transformation[checksum]
+-                tf_result = parse_checksum(tf.result, as_bytes=False)
+-                in_transformations = True
+-            except DoesNotExist:
+-                pass
+-            if in_transformations:
+-                if tf_result != result:
+-                    return web.Response(
+-                        status=404,
+-                        reason="Transformation does not have the irreproducible result",
+-                    )
+-            try:
+-                metadata = MetaData[checksum].metadata
+-                in_metadata = True
+-            except DoesNotExist:
+-                metadata = ""
+-                in_metadata = False
+-            IrreproducibleTransformation.create(
+-                checksum=checksum, result=result, metadata=metadata
+-            )
+-            if in_transformations:
+-                tf.delete_instance()
+-            if in_metadata:
+-                MetaData[checksum].delete_instance()
++            with db_atomic():
++                tf_row = _get_transformation_row(checksum)
++                if tf_row is not None:
++                    tf_result = parse_checksum(tf_row.result, as_bytes=False)
++                    if tf_result != result:
++                        return web.Response(
++                            status=404,
++                            text="ERROR: Transformation does not have the irreproducible result",
++                        )
++                metadata_row = _get_metadata_row(checksum)
++                if metadata_row is not None:
++                    metadata_result = parse_checksum(metadata_row.result, as_bytes=False)
++                    if metadata_result != result:
++                        return _conflict_response(
++                            "Stored metadata result does not match irreproducible result"
++                        )
++                    metadata = metadata_row.metadata
++                else:
++                    metadata = ""
++                IrreproducibleTransformation.create(
++                    checksum=checksum, result=result, metadata=metadata
++                )
++                if tf_row is not None:
++                    tf_row.delete_instance()
++                    _delete_rev_transformation_rows(checksum, result)
++                if metadata_row is not None:
++                    metadata_row.delete_instance()
+         else:
+             raise DatabaseError("Unknown request type")
+         return "OK"
+diff --git a/database_models.py b/database_models.py
+index 5e8258a..36a8f0a 100644
+--- a/database_models.py
++++ b/database_models.py
+@@ -7,6 +7,7 @@ from peewee import (
+     CompositeKey,
+     IntegrityError,
+ )
++import sqlite3
+ from playhouse.sqlite_ext import JSONField
+ 
+ 
+@@ -134,6 +135,7 @@ class MetaData(BaseModel):
+     # - execution time (also if failed)
+     # - last recorded progress (if failed)
+     checksum = ChecksumField(primary_key=True)
++    result = ChecksumField(index=True, unique=False)
+     metadata = JSONField()
+ 
+ 
+@@ -158,6 +160,7 @@ for model_class in _model_classes:
+         model_class is Expression
+         or model_class is SyntacticToSemantic
+         or model_class is RevTransformation
++        or model_class is MetaData
+     ):
+         continue
+     for fieldname, field in model_class._meta.fields.items():
+@@ -175,6 +178,8 @@ def db_init(
+     *,
+     create_tables: bool = True,
+ ):
++    if not _db.is_closed():
++        _db.close()
+     if init_parameters is None:
+         init_parameters = {}
+     if connection_parameters is None:
+@@ -182,7 +187,47 @@ def db_init(
+     _db.init(filename, **init_parameters)
+     _db.connect(**connection_parameters)
+     if create_tables:
++        _ensure_meta_data_schema()
+         _db.create_tables(_model_classes, safe=True)
+ 
+ 
+ db_atomic = _db.atomic
++
++
++def _table_columns(table_name: str) -> list[str]:
++    cursor = _db.execute_sql(f"PRAGMA table_info({table_name})")
++    rows = cursor.fetchall()
++    return [row[1] for row in rows]
++
++
++def _table_rowcount(table_name: str) -> int:
++    cursor = _db.execute_sql(f"SELECT COUNT(*) FROM {table_name}")
++    row = cursor.fetchone()
++    assert row is not None
++    return int(row[0])
++
++
++def _ensure_meta_data_schema() -> None:
++    table_name = MetaData._meta.table_name
++    try:
++        tables = set(_db.get_tables())
++    except sqlite3.OperationalError:
++        tables = set()
++    if table_name not in tables:
++        return
++
++    columns = _table_columns(table_name)
++    column_set = set(columns)
++    if len(columns) == 3 and column_set == {"checksum", "result", "metadata"}:
++        return
++    if len(columns) == 2 and column_set == {"checksum", "metadata"}:
++        if _table_rowcount(table_name) == 0:
++            _db.execute_sql(f"DROP TABLE {table_name}")
++            return
++        raise RuntimeError(
++            "Existing legacy 'meta_data' table is non-empty and cannot be upgraded automatically"
++        )
++
++    raise RuntimeError(
++        f"Unsupported schema for '{table_name}': columns={columns!r}"
++    )
+diff --git a/tests/test_execution_records.py b/tests/test_execution_records.py
+new file mode 100644
+index 0000000..717a07c
+--- /dev/null
++++ b/tests/test_execution_records.py
+@@ -0,0 +1,217 @@
++import asyncio
++import sqlite3
++import sys
++from pathlib import Path
++
++import pytest
++
++
++ROOT = Path(__file__).resolve().parents[2]
++DATABASE_DIR = ROOT / "seamless-database"
++if str(DATABASE_DIR) not in sys.path:
++    sys.path.insert(0, str(DATABASE_DIR))
++
++from database import DatabaseServer  # noqa: E402
++from database_models import (  # noqa: E402
++    MetaData,
++    RevTransformation,
++    Transformation,
++    IrreproducibleTransformation,
++    _db,
++    db_init,
++)
++
++
++TF_CHECKSUM = "1" * 64
++RESULT_CHECKSUM = "2" * 64
++
++
++def _close_db():
++    if not _db.is_closed():
++        _db.close()
++
++
++def _init_db(path: Path):
++    _close_db()
++    db_init(str(path))
++
++
++def _record(
++    tf_checksum: str = TF_CHECKSUM,
++    result_checksum: str = RESULT_CHECKSUM,
++    schema_version=1,
++):
++    return {
++        "schema_version": schema_version,
++        "checksum_fields": ["node", "environment"],
++        "tf_checksum": tf_checksum,
++        "result_checksum": result_checksum,
++    }
++
++
++def test_db_init_recreates_empty_legacy_metadata_table(tmp_path):
++    dbfile = tmp_path / "legacy-empty.db"
++    con = sqlite3.connect(dbfile)
++    try:
++        con.execute("CREATE TABLE meta_data (checksum TEXT PRIMARY KEY, metadata TEXT)")
++        con.commit()
++    finally:
++        con.close()
++
++    _init_db(dbfile)
++    try:
++        con = sqlite3.connect(dbfile)
++        try:
++            columns = [
++                row[1]
++                for row in con.execute("PRAGMA table_info(meta_data)").fetchall()
++            ]
++        finally:
++            con.close()
++        assert columns == ["checksum", "result", "metadata"]
++    finally:
++        _close_db()
++
++
++def test_db_init_rejects_nonempty_legacy_metadata_table(tmp_path):
++    dbfile = tmp_path / "legacy-nonempty.db"
++    con = sqlite3.connect(dbfile)
++    try:
++        con.execute("CREATE TABLE meta_data (checksum TEXT PRIMARY KEY, metadata TEXT)")
++        con.execute(
++            "INSERT INTO meta_data(checksum, metadata) VALUES(?, ?)",
++            (TF_CHECKSUM, "{}"),
++        )
++        con.commit()
++    finally:
++        con.close()
++
++    with pytest.raises(RuntimeError, match="legacy 'meta_data' table is non-empty"):
++        _init_db(dbfile)
++    _close_db()
++
++
++def test_put_metadata_auto_creates_and_gets_record(tmp_path):
++    dbfile = tmp_path / "records.db"
++    _init_db(dbfile)
++    server = DatabaseServer("127.0.0.1", 0)
++    record = _record()
++    request = {
++        "type": "metadata",
++        "checksum": TF_CHECKSUM,
++        "result": RESULT_CHECKSUM,
++        "value": record,
++    }
++
++    try:
++        result = asyncio.run(server._put("metadata", TF_CHECKSUM, request))
++        assert result == "OK"
++        assert Transformation[TF_CHECKSUM].result == RESULT_CHECKSUM
++        assert MetaData[TF_CHECKSUM].result == RESULT_CHECKSUM
++        assert (
++            asyncio.run(
++                server._get(
++                    "metadata", TF_CHECKSUM, {"type": "metadata", "checksum": TF_CHECKSUM}
++                )
++            )
++            == record
++        )
++    finally:
++        _close_db()
++
++
++def test_put_metadata_is_idempotent_and_rejects_conflicts(tmp_path):
++    dbfile = tmp_path / "records-conflict.db"
++    _init_db(dbfile)
++    server = DatabaseServer("127.0.0.1", 0)
++    record = _record()
++    request = {
++        "type": "metadata",
++        "checksum": TF_CHECKSUM,
++        "result": RESULT_CHECKSUM,
++        "value": record,
++    }
++    bad_request = {
++        "type": "metadata",
++        "checksum": TF_CHECKSUM,
++        "result": RESULT_CHECKSUM,
++        "value": {
++            **record,
++            "checksum_fields": ["node"],
++        },
++    }
++
++    try:
++        assert asyncio.run(server._put("metadata", TF_CHECKSUM, request)) == "OK"
++        assert asyncio.run(server._put("metadata", TF_CHECKSUM, request)) == "OK"
++        response = asyncio.run(server._put("metadata", TF_CHECKSUM, bad_request))
++        assert response.status == 409
++    finally:
++        _close_db()
++
++
++def test_put_irreproducible_moves_metadata_and_deletes_normal_rows(tmp_path):
++    dbfile = tmp_path / "irreproducible.db"
++    _init_db(dbfile)
++    server = DatabaseServer("127.0.0.1", 0)
++    record = _record()
++
++    try:
++        asyncio.run(
++            server._put(
++                "metadata",
++                TF_CHECKSUM,
++                {
++                    "type": "metadata",
++                    "checksum": TF_CHECKSUM,
++                    "result": RESULT_CHECKSUM,
++                    "value": record,
++                },
++            )
++        )
++        assert RevTransformation.select().count() == 1
++        result = asyncio.run(
++            server._put(
++                "irreproducible",
++                TF_CHECKSUM,
++                {
++                    "type": "irreproducible",
++                    "checksum": TF_CHECKSUM,
++                    "result": RESULT_CHECKSUM,
++                },
++            )
++        )
++        assert result == "OK"
++        assert Transformation.select().count() == 0
++        assert MetaData.select().count() == 0
++        assert RevTransformation.select().count() == 0
++        rows = asyncio.run(
++            server._get(
++                "irreproducible",
++                TF_CHECKSUM,
++                {"type": "irreproducible", "checksum": TF_CHECKSUM},
++            )
++        )
++        assert rows == [
++            {
++                "checksum": TF_CHECKSUM,
++                "result": RESULT_CHECKSUM,
++                "metadata": record,
++            }
++        ]
++        response = asyncio.run(
++            server._put(
++                "metadata",
++                TF_CHECKSUM,
++                {
++                    "type": "metadata",
++                    "checksum": TF_CHECKSUM,
++                    "result": RESULT_CHECKSUM,
++                    "value": record,
++                },
++            )
++        )
++        assert response.status == 409
++        assert IrreproducibleTransformation.select().count() == 1
++    finally:
++        _close_db()

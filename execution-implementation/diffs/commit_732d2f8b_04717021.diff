@@ -1,0 +1,13 @@
+commit 732d2f8b9e810f927f739864a0dddb371d945c88
+Author: Sjoerd de Vries <sjdv1982@gmail.com>
+Date:   Mon Apr 27 19:57:36 2026 +0200
+
+    Add execution records closure checklist
+
+diff --git a/conversation/records/execution-records-open-checklist.md b/conversation/records/execution-records-open-checklist.md
+new file mode 100644
+index 00000000..93f73abb
+--- /dev/null
++++ b/conversation/records/execution-records-open-checklist.md
+@@ -0,0 +1 @@
++# Execution Records Remaining Checklist

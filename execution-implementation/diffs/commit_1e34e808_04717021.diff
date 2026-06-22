@@ -1,0 +1,115 @@
+commit 1e34e808c75a860d17d059dfbd262a1e2f2a8018
+Author: Sjoerd de Vries <sjdv1982@gmail.com>
+Date:   Mon Apr 27 18:18:58 2026 +0200
+
+    Carry worker freshness into Dask records
+
+diff --git a/seamless_dask/client.py b/seamless_dask/client.py
+index 5fdc739..31e0f30 100644
+--- a/seamless_dask/client.py
++++ b/seamless_dask/client.py
+@@ -447,6 +447,7 @@ async def _promise_and_write_result_async(
+             try:
+                 from seamless_transformer.transformation_cache import (
+                     _memory_peak_bytes,
++                    _process_create_time_epoch,
+                     build_compilation_context_checksum,
+                     build_execution_record,
+                     build_validation_snapshot_checksum,
+@@ -492,18 +493,9 @@ async def _promise_and_write_result_async(
+                             dict(transformation_dict or {}), result_checksum
+                         )
+                     )
+-                    validation_snapshot = await build_validation_snapshot_checksum(
+-                        dict(transformation_dict or {}),
+-                        dict(tf_dunder or {}),
+-                        execution=execution,
+-                        probe_context=probe_context,
+-                        compilation_context=compilation_context,
+-                        bucket_contract_violations=bucket_contract_violations,
+-                        job_contract_violations=job_contract_violations,
+-                        job_validation_diagnostics=job_validation["diagnostics"],
+-                    )
+                     record_runtime_metadata = {
+-                        "memory_peak_bytes": _memory_peak_bytes()
++                        "memory_peak_bytes": _memory_peak_bytes(),
++                        "process_create_time_epoch": _process_create_time_epoch(),
+                     }
+                     if gpu_memory_peak_bytes is not None:
+                         record_runtime_metadata["gpu_memory_peak_bytes"] = (
+@@ -515,6 +507,17 @@ async def _promise_and_write_result_async(
+                             dict(tf_dunder or {}),
+                         )
+                     )
++                    validation_snapshot = await build_validation_snapshot_checksum(
++                        dict(transformation_dict or {}),
++                        dict(tf_dunder or {}),
++                        execution=execution,
++                        probe_context=probe_context,
++                        compilation_context=compilation_context,
++                        bucket_contract_violations=bucket_contract_violations,
++                        job_contract_violations=job_contract_violations,
++                        job_validation_diagnostics=job_validation["diagnostics"],
++                        runtime_metadata=record_runtime_metadata,
++                    )
+                     record = build_execution_record(
+                         dict(transformation_dict or {}),
+                         tf_checksum=tf_checksum,
+diff --git a/tests/test_execution_records.py b/tests/test_execution_records.py
+index 98ad9b2..5452dba 100644
+--- a/tests/test_execution_records.py
++++ b/tests/test_execution_records.py
+@@ -156,6 +156,9 @@ def test_promise_and_write_result_writes_execution_record(monkeypatch):
+     monkeypatch.setattr(transformation_cache, "get_queue", lambda cluster=None: None)
+     monkeypatch.setattr(transformation_cache, "get_node", lambda: None)
+     monkeypatch.setattr(transformation_cache, "_memory_peak_bytes", lambda: 987654)
++    monkeypatch.setattr(
++        transformation_cache, "_process_create_time_epoch", lambda: 2468.0
++    )
+     monkeypatch.setattr(
+         probe_index,
+         "ensure_record_bucket_preconditions",
+@@ -213,6 +216,7 @@ def test_promise_and_write_result_writes_execution_record(monkeypatch):
+     assert record["validation_snapshot"] == validation_snapshot
+     assert record["memory_peak_bytes"] == 987654
+     assert record["gpu_memory_peak_bytes"] == 333222111
++    assert record["process_create_time_epoch"] == 2468.0
+     assert record["input_total_bytes"] == 0
+     assert isinstance(record["output_total_bytes"], int)
+     assert record["output_total_bytes"] > 0
+@@ -267,6 +271,7 @@ def test_compiled_dask_record_writes_compilation_context(monkeypatch):
+     result_checksum = _make_checksum(17, "mixed")
+     compilation_context = "f" * 64
+     compilation_time_seconds = 3.25
++    process_create_time_epoch = 1357.0
+     validation_snapshot = "5" * 64
+     job_contract_violations = ["ld_preload_outside_conda_prefix"]
+     captured_snapshot_kwargs = {}
+@@ -321,6 +326,11 @@ def test_compiled_dask_record_writes_compilation_context(monkeypatch):
+             0, result={"compilation_time_seconds": compilation_time_seconds}
+         ),
+     )
++    monkeypatch.setattr(
++        transformation_cache,
++        "_process_create_time_epoch",
++        lambda: process_create_time_epoch,
++    )
+ 
+     asyncio.run(
+         dask_client._promise_and_write_result_async(
+@@ -344,11 +354,15 @@ def test_compiled_dask_record_writes_compilation_context(monkeypatch):
+     assert record["contract_violations"] == job_contract_violations
+     assert record["validation_snapshot"] == validation_snapshot
+     assert record["compilation_time_seconds"] == compilation_time_seconds
++    assert record["process_create_time_epoch"] == process_create_time_epoch
+     assert captured_snapshot_kwargs["job_contract_violations"] == job_contract_violations
+     assert captured_snapshot_kwargs["job_validation_diagnostics"] == {
+         "compiled": True,
+         "origin": "dask-worker",
+     }
++    assert captured_snapshot_kwargs["runtime_metadata"]["process_create_time_epoch"] == (
++        process_create_time_epoch
++    )
+     assert record["input_total_bytes"] == 0
+     assert isinstance(record["output_total_bytes"], int)
+     assert record["output_total_bytes"] > 0

@@ -1,0 +1,35 @@
+commit d9526e227f54daa9ff8d9cf944bf2db827171e20
+Author: Sjoerd de Vries <sjdv1982@gmail.com>
+Date:   Mon Apr 27 10:21:27 2026 +0200
+
+    Return compiled context from jobserver
+
+diff --git a/jobserver.py b/jobserver.py
+index 576159f..7b67be6 100644
+--- a/jobserver.py
++++ b/jobserver.py
+@@ -301,15 +301,24 @@ class JobServer:
+             assert isinstance(result_buf, Buffer)
+         response_payload = result_checksum.hex()
+         if get_record() and not is_record_probe(transformation_dict, tf_dunder):
++            from seamless_transformer.transformation_cache import (
++                build_compilation_context_checksum,
++            )
++
+             probe_context = await ensure_record_bucket_preconditions(
+                 transformation_dict,
+                 tf_dunder,
+                 execution="remote",
+             )
++            compilation_context = await build_compilation_context_checksum(
++                transformation_dict,
++                tf_dunder,
++            )
+             response_payload = json.dumps(
+                 {
+                     "result_checksum": result_checksum.hex(),
+                     "probe_context": probe_context,
++                    "compilation_context": compilation_context,
+                 }
+             )
+         print(

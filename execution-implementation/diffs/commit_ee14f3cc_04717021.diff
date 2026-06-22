@@ -1,0 +1,323 @@
+commit ee14f3cc26733843eed5569001c8fbb44d8cccda
+Author: Sjoerd de Vries <sjdv1982@gmail.com>
+Date:   Sun Apr 26 18:14:58 2026 +0200
+
+    Add shared bucket probe index
+
+diff --git a/database.py b/database.py
+index 5fa57b8..b211dcd 100644
+--- a/database.py
++++ b/database.py
+@@ -20,6 +20,7 @@ from database_models import (
+     SyntacticToSemantic,
+     Expression,
+     MetaData,
++    BucketProbe,
+     IrreproducibleTransformation,
+ )
+ 
+@@ -152,6 +153,16 @@ def _normalize_metadata_value(value):
+     raise TypeError(type(value))
+ 
+ 
++def _normalize_freshness_tokens(value):
++    if isinstance(value, dict):
++        return value
++    if isinstance(value, str):
++        value = json.loads(value)
++        if isinstance(value, dict):
++            return value
++    raise TypeError(type(value))
++
++
+ def _validate_execution_record_identity(
+     checksum: str, result: str, value: dict
+ ) -> None:
+@@ -171,6 +182,24 @@ def _validate_execution_record_identity(
+                 raise ValueError("checksum_fields")
+ 
+ 
++def _validate_bucket_probe_request(
++    bucket_kind: str,
++    label: str,
++    bucket_checksum: str,
++    freshness_tokens: dict,
++    captured_at: str,
++) -> None:
++    if bucket_kind not in BUCKET_KINDS:
++        raise ValueError("bucket_kind")
++    if not isinstance(label, str) or not label:
++        raise ValueError("label")
++    parse_checksum(bucket_checksum, as_bytes=False)
++    if not isinstance(freshness_tokens, dict):
++        raise ValueError("freshness_tokens")
++    if not isinstance(captured_at, str) or not captured_at:
++        raise ValueError("captured_at")
++
++
+ def _get_transformation_row(checksum: str):
+     try:
+         return Transformation[checksum]
+@@ -318,6 +347,7 @@ types = (
+     "semantic_to_syntactic",
+     "transformation",
+     "metadata",
++    "bucket_probe",
+     "expression",
+     "irreproducible",
+     "rev_expression",  # only GET
+@@ -347,7 +377,7 @@ def format_response(response, *, none_as_404=False):
+ 
+ class DatabaseServer:
+     future = None
+-    PROTOCOL = ("seamless", "database", "2.1")
++    PROTOCOL = ("seamless", "database", "2.2")
+ 
+     def __init__(
+         self,
+@@ -461,13 +491,15 @@ class DatabaseServer:
+                     type_ = rq["type"]
+                     if type_ not in types:
+                         raise KeyError
+-                    if type_ != "protocol":
++                    if type_ not in ("protocol", "bucket_probe"):
+                         checksum = rq["checksum"]
+                 except KeyError:
+                     raise DatabaseError("Malformed request") from None
+ 
+                 if type_ == "protocol":
+                     response = list(self.PROTOCOL)
++                elif type_ == "bucket_probe":
++                    response = await self._get(type_, None, rq)
+                 else:
+                     try:
+                         checksum = parse_checksum(checksum, as_bytes=False)
+@@ -519,16 +551,20 @@ class DatabaseServer:
+                     type_ = rq["type"]
+                     if type_ not in types:
+                         raise KeyError
+-                    checksum = rq["checksum"]
++                    if type_ != "bucket_probe":
++                        checksum = rq["checksum"]
++                    else:
++                        checksum = None
+                 except KeyError:
+                     # import traceback; traceback.print_exc()
+                     raise DatabaseError("Malformed request") from None
+ 
+-                try:
+-                    checksum = parse_checksum(checksum, as_bytes=False)
+-                except ValueError:
+-                    # import traceback; traceback.print_exc()
+-                    raise DatabaseError("Malformed request") from None
++                if type_ != "bucket_probe":
++                    try:
++                        checksum = parse_checksum(checksum, as_bytes=False)
++                    except ValueError:
++                        # import traceback; traceback.print_exc()
++                        raise DatabaseError("Malformed request") from None
+ 
+                 response = await self._put(type_, checksum, rq)
+             except DatabaseError as exc:
+@@ -600,6 +636,27 @@ class DatabaseServer:
+             except DoesNotExist:
+                 return None  # None is also a valid response
+ 
++        elif type_ == "bucket_probe":
++            try:
++                bucket_kind = request["bucket_kind"]
++                label = request["label"]
++            except KeyError:
++                raise DatabaseError("Malformed bucket_probe request") from None
++            try:
++                row = BucketProbe.get(
++                    BucketProbe.bucket_kind == bucket_kind,
++                    BucketProbe.label == label,
++                )
++            except DoesNotExist:
++                return None
++            return {
++                "bucket_kind": row.bucket_kind,
++                "label": row.label,
++                "bucket_checksum": row.bucket_checksum,
++                "captured_at": row.captured_at,
++                "freshness_tokens": row.freshness_tokens,
++            }
++
+         elif type_ == "irreproducible":
+             result_checksum = request.get("result")
+             if result_checksum is not None:
+@@ -818,6 +875,46 @@ class DatabaseServer:
+                     _ensure_rev_transformation_row(checksum, result)
+                 MetaData.create(checksum=checksum, result=result, metadata=value)
+ 
++        elif type_ == "bucket_probe":
++            try:
++                bucket_kind = request["bucket_kind"]
++                label = request["label"]
++                bucket_checksum = parse_checksum(
++                    request["bucket_checksum"], as_bytes=False
++                )
++                freshness_tokens = _normalize_freshness_tokens(
++                    request["freshness_tokens"]
++                )
++                captured_at = request["captured_at"]
++                _validate_bucket_probe_request(
++                    bucket_kind,
++                    label,
++                    bucket_checksum,
++                    freshness_tokens,
++                    captured_at,
++                )
++            except (KeyError, ValueError, TypeError):
++                raise DatabaseError("Malformed PUT bucket_probe request") from None
++            with db_atomic():
++                query = BucketProbe.select().where(
++                    BucketProbe.bucket_kind == bucket_kind,
++                    BucketProbe.label == label,
++                )
++                if query.exists():
++                    row = query.get()
++                    row.bucket_checksum = bucket_checksum
++                    row.captured_at = captured_at
++                    row.freshness_tokens = freshness_tokens
++                    row.save()
++                else:
++                    BucketProbe.create(
++                        bucket_kind=bucket_kind,
++                        label=label,
++                        bucket_checksum=bucket_checksum,
++                        captured_at=captured_at,
++                        freshness_tokens=freshness_tokens,
++                    )
++
+         elif type_ == "irreproducible":
+             try:
+                 result = parse_checksum(request["result"], as_bytes=False)
+@@ -976,3 +1073,7 @@ If it doesn't exist, a new file is created.""",
+         raise
+     finally:
+         loop.run_until_complete(database_server.stop())
++BUCKET_KINDS = frozenset(
++    ("node", "environment", "node_env", "queue", "queue_node")
++)
++
+diff --git a/database_models.py b/database_models.py
+index 36a8f0a..4cc92b6 100644
+--- a/database_models.py
++++ b/database_models.py
+@@ -139,6 +139,19 @@ class MetaData(BaseModel):
+     metadata = JSONField()
+ 
+ 
++class BucketProbe(BaseModel):
++    bucket_kind = CharField(max_length=20)
++    label = TextField()
++    bucket_checksum = ChecksumField(index=True, unique=False)
++    captured_at = TextField()
++    freshness_tokens = JSONField()
++
++    class Meta:
++        database = _db
++        legacy_table_names = False
++        primary_key = CompositeKey("bucket_kind", "label")
++
++
+ class IrreproducibleTransformation(BaseModel):
+     result = ChecksumField(index=True, unique=False)
+     checksum = ChecksumField(index=True, unique=False)
+@@ -152,6 +165,7 @@ _model_classes = [
+     SyntacticToSemantic,
+     Expression,
+     MetaData,
++    BucketProbe,
+     IrreproducibleTransformation,
+ ]
+ _primary = {}
+@@ -161,6 +175,7 @@ for model_class in _model_classes:
+         or model_class is SyntacticToSemantic
+         or model_class is RevTransformation
+         or model_class is MetaData
++        or model_class is BucketProbe
+     ):
+         continue
+     for fieldname, field in model_class._meta.fields.items():
+diff --git a/tests/test_execution_records.py b/tests/test_execution_records.py
+index 717a07c..216bd5d 100644
+--- a/tests/test_execution_records.py
++++ b/tests/test_execution_records.py
+@@ -13,6 +13,7 @@ if str(DATABASE_DIR) not in sys.path:
+ 
+ from database import DatabaseServer  # noqa: E402
+ from database_models import (  # noqa: E402
++    BucketProbe,
+     MetaData,
+     RevTransformation,
+     Transformation,
+@@ -24,6 +25,8 @@ from database_models import (  # noqa: E402
+ 
+ TF_CHECKSUM = "1" * 64
+ RESULT_CHECKSUM = "2" * 64
++BUCKET_CHECKSUM = "3" * 64
++BUCKET_CHECKSUM_2 = "4" * 64
+ 
+ 
+ def _close_db():
+@@ -215,3 +218,57 @@ def test_put_irreproducible_moves_metadata_and_deletes_normal_rows(tmp_path):
+         assert IrreproducibleTransformation.select().count() == 1
+     finally:
+         _close_db()
++
++
++def test_bucket_probe_roundtrip_and_overwrite(tmp_path):
++    dbfile = tmp_path / "bucket-probe.db"
++    _init_db(dbfile)
++    server = DatabaseServer("127.0.0.1", 0)
++    request = {
++        "type": "bucket_probe",
++        "bucket_kind": "environment",
++        "label": "conda:/envs/seamless1",
++        "bucket_checksum": BUCKET_CHECKSUM,
++        "captured_at": "2026-04-26T12:00:00Z",
++        "freshness_tokens": {"conda_meta_mtime": 123},
++    }
++    expected_probe = {k: v for k, v in request.items() if k != "type"}
++    updated_request = {
++        **request,
++        "bucket_checksum": BUCKET_CHECKSUM_2,
++        "captured_at": "2026-04-26T12:05:00Z",
++        "freshness_tokens": {"conda_meta_mtime": 456},
++    }
++
++    try:
++        assert asyncio.run(server._put("bucket_probe", None, request)) == "OK"
++        probe = asyncio.run(
++            server._get(
++                "bucket_probe",
++                None,
++                {
++                    "type": "bucket_probe",
++                    "bucket_kind": request["bucket_kind"],
++                    "label": request["label"],
++                },
++            )
++        )
++        assert probe == expected_probe
++        assert BucketProbe.select().count() == 1
++
++        assert asyncio.run(server._put("bucket_probe", None, updated_request)) == "OK"
++        probe = asyncio.run(
++            server._get(
++                "bucket_probe",
++                None,
++                {
++                    "type": "bucket_probe",
++                    "bucket_kind": request["bucket_kind"],
++                    "label": request["label"],
++                },
++            )
++        )
++        assert probe == {k: v for k, v in updated_request.items() if k != "type"}
++        assert BucketProbe.select().count() == 1
++    finally:
++        _close_db()

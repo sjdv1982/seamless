@@ -1,0 +1,112 @@
+commit 74012413acfc5adb578081490caa1f6f7e57dbd3
+Author: Sjoerd de Vries <sjdv1982@gmail.com>
+Date:   Mon Apr 27 10:38:17 2026 +0200
+
+    Carry job validation into Dask records
+
+diff --git a/seamless_dask/client.py b/seamless_dask/client.py
+index 9da536f..369b334 100644
+--- a/seamless_dask/client.py
++++ b/seamless_dask/client.py
+@@ -448,8 +448,10 @@ async def _promise_and_write_result_async(
+                     build_compilation_context_checksum,
+                     build_execution_record,
+                     build_validation_snapshot_checksum,
++                    collect_job_validation,
+                     compute_record_io_bytes,
+                     load_bucket_contract_violations,
++                    _normalize_job_validation_payload,
+                 )
+                 from seamless_transformer.probe_index import (
+                     ensure_record_bucket_preconditions,
+@@ -472,6 +474,16 @@ async def _promise_and_write_result_async(
+                         dict(transformation_dict or {}),
+                         dict(tf_dunder or {}),
+                     )
++                    job_validation = _normalize_job_validation_payload(
++                        await collect_job_validation(
++                            dict(transformation_dict or {}),
++                            dict(tf_dunder or {}),
++                            compilation_context=compilation_context,
++                        )
++                    )
++                    job_contract_violations = job_validation[
++                        "job_contract_violations"
++                    ]
+                     input_total_bytes, output_total_bytes = (
+                         await compute_record_io_bytes(
+                             dict(transformation_dict or {}), result_checksum
+@@ -484,7 +496,8 @@ async def _promise_and_write_result_async(
+                         probe_context=probe_context,
+                         compilation_context=compilation_context,
+                         bucket_contract_violations=bucket_contract_violations,
+-                        job_contract_violations=[],
++                        job_contract_violations=job_contract_violations,
++                        job_validation_diagnostics=job_validation["diagnostics"],
+                     )
+                     record = build_execution_record(
+                         dict(transformation_dict or {}),
+@@ -499,6 +512,7 @@ async def _promise_and_write_result_async(
+                         cpu_system_seconds=cpu_system_seconds or 0.0,
+                         probe_context=probe_context,
+                         bucket_contract_violations=bucket_contract_violations,
++                        job_contract_violations=job_contract_violations,
+                         compilation_context=compilation_context,
+                         validation_snapshot=validation_snapshot,
+                     )
+diff --git a/tests/test_execution_records.py b/tests/test_execution_records.py
+index 992835a..f8602af 100644
+--- a/tests/test_execution_records.py
++++ b/tests/test_execution_records.py
+@@ -263,6 +263,8 @@ def test_compiled_dask_record_writes_compilation_context(monkeypatch):
+     result_checksum = _make_checksum(17, "mixed")
+     compilation_context = "f" * 64
+     validation_snapshot = "5" * 64
++    job_contract_violations = ["ld_preload_outside_conda_prefix"]
++    captured_snapshot_kwargs = {}
+ 
+     monkeypatch.setattr(select, "get_record", lambda: True)
+     monkeypatch.setattr(seamless_remote, "database_remote", fake_database_remote)
+@@ -286,10 +288,26 @@ def test_compiled_dask_record_writes_compilation_context(monkeypatch):
+         "build_compilation_context_checksum",
+         lambda *args, **kwargs: asyncio.sleep(0, result=compilation_context),
+     )
++    async def _fake_validation_snapshot(*args, **kwargs):
++        del args
++        captured_snapshot_kwargs.update(kwargs)
++        return validation_snapshot
++
+     monkeypatch.setattr(
+         transformation_cache,
+         "build_validation_snapshot_checksum",
+-        lambda *args, **kwargs: asyncio.sleep(0, result=validation_snapshot),
++        _fake_validation_snapshot,
++    )
++    monkeypatch.setattr(
++        transformation_cache,
++        "collect_job_validation",
++        lambda *args, **kwargs: asyncio.sleep(
++            0,
++            result={
++                "job_contract_violations": job_contract_violations,
++                "diagnostics": {"compiled": True, "origin": "dask-worker"},
++            },
++        ),
+     )
+ 
+     asyncio.run(
+@@ -310,7 +328,14 @@ def test_compiled_dask_record_writes_compilation_context(monkeypatch):
+ 
+     record = fake_database_remote.execution_records[0][2]
+     assert record["compilation_context"] == compilation_context
++    assert record["job_contract_violations"] == job_contract_violations
++    assert record["contract_violations"] == job_contract_violations
+     assert record["validation_snapshot"] == validation_snapshot
++    assert captured_snapshot_kwargs["job_contract_violations"] == job_contract_violations
++    assert captured_snapshot_kwargs["job_validation_diagnostics"] == {
++        "compiled": True,
++        "origin": "dask-worker",
++    }
+     assert record["input_total_bytes"] == 0
+     assert isinstance(record["output_total_bytes"], int)
+     assert record["output_total_bytes"] > 0

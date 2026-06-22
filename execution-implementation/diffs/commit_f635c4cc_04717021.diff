@@ -1,0 +1,38 @@
+commit f635c4cca8e9f93c7332ff3398a3f8aed15bd990
+Author: Sjoerd de Vries <sjdv1982@gmail.com>
+Date:   Mon Apr 27 10:21:27 2026 +0200
+
+    Parse compiled context from jobserver payloads
+
+diff --git a/seamless_remote/jobserver_client.py b/seamless_remote/jobserver_client.py
+index b7a7824..f5c64af 100644
+--- a/seamless_remote/jobserver_client.py
++++ b/seamless_remote/jobserver_client.py
+@@ -65,6 +65,7 @@ class JobserverClient(Client):
+             return {
+                 "result_checksum": Checksum(result_checksum),
+                 "probe_context": payload.get("probe_context"),
++                "compilation_context": payload.get("compilation_context"),
+             }
+         if parse_remote_job_written(result0) is not None:
+             return result0
+diff --git a/tests/test_jobserver_client.py b/tests/test_jobserver_client.py
+index 36ebee4..b8026cf 100644
+--- a/tests/test_jobserver_client.py
++++ b/tests/test_jobserver_client.py
+@@ -79,8 +79,8 @@ class JobserverClientTests(unittest.IsolatedAsyncioTestCase):
+         client.url = "http://jobserver.invalid"
+         client._initialized = True
+         client._get_session = lambda: _FakeSession(
+-            '{"result_checksum": "%s", "probe_context": {"required_bucket_checksums": {"node": "%s"}}}'
+-            % ("2" * 64, "3" * 64)
++            '{"result_checksum": "%s", "probe_context": {"required_bucket_checksums": {"node": "%s"}}, "compilation_context": "%s"}'
++            % ("2" * 64, "3" * 64, "4" * 64)
+         )
+ 
+         result = await client.run_transformation(
+@@ -95,3 +95,4 @@ class JobserverClientTests(unittest.IsolatedAsyncioTestCase):
+             result["probe_context"],
+             {"required_bucket_checksums": {"node": "3" * 64}},
+         )
++        self.assertEqual(result["compilation_context"], "4" * 64)

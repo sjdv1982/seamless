@@ -1,0 +1,153 @@
+commit f80a344636e9d4dfecff0999a5310b895c445f8e
+Author: Sjoerd de Vries <sjdv1982@gmail.com>
+Date:   Mon Apr 27 10:47:54 2026 +0200
+
+    Use jobserver runtime metadata in records
+
+diff --git a/seamless_transformer/transformation_cache.py b/seamless_transformer/transformation_cache.py
+index 366cd2c..b556067 100644
+--- a/seamless_transformer/transformation_cache.py
++++ b/seamless_transformer/transformation_cache.py
+@@ -637,6 +637,7 @@ def build_execution_record(
+     job_contract_violations: list[str] | None = None,
+     compilation_context: str | None = None,
+     validation_snapshot: str | None = None,
++    runtime_metadata: dict[str, Any] | None = None,
+ ) -> dict[str, Any]:
+     meta = transformation_dict.get("__meta__", {}) or {}
+     if not isinstance(meta, dict):
+@@ -677,6 +678,7 @@ def build_execution_record(
+     contract_violations = sorted(
+         set(bucket_contract_violations) | set(job_contract_violations)
+     )
++    runtime_metadata = dict(runtime_metadata or {})
+     required_bucket_checksums = dict(probe_context.get("required_bucket_checksums", {}))
+     freshness = {
+         "required_bucket_labels": dict(
+@@ -720,18 +722,24 @@ def build_execution_record(
+         "wall_time_seconds": wall_time_seconds,
+         "cpu_time_user_seconds": cpu_user_seconds,
+         "cpu_time_system_seconds": cpu_system_seconds,
+-        "memory_peak_bytes": None,
+-        "gpu_memory_peak_bytes": None,
++        "memory_peak_bytes": runtime_metadata.get("memory_peak_bytes"),
++        "gpu_memory_peak_bytes": runtime_metadata.get("gpu_memory_peak_bytes"),
+         "input_total_bytes": None,
+         "output_total_bytes": None,
+-        "compilation_time_seconds": None,
+-        "hostname": socket.gethostname(),
+-        "pid": _os.getpid(),
+-        "process_started_at": _PROCESS_STARTED_AT.replace(microsecond=0)
+-        .isoformat()
+-        .replace("+00:00", "Z"),
+-        "worker_execution_index": next(_EXECUTION_RECORD_COUNTER),
+-        "retry_count": 0,
++        "compilation_time_seconds": runtime_metadata.get("compilation_time_seconds"),
++        "hostname": runtime_metadata.get("hostname", socket.gethostname()),
++        "pid": runtime_metadata.get("pid", _os.getpid()),
++        "process_started_at": runtime_metadata.get(
++            "process_started_at",
++            _PROCESS_STARTED_AT.replace(microsecond=0)
++            .isoformat()
++            .replace("+00:00", "Z"),
++        ),
++        "worker_execution_index": runtime_metadata.get(
++            "worker_execution_index",
++            next(_EXECUTION_RECORD_COUNTER),
++        ),
++        "retry_count": runtime_metadata.get("retry_count", 0),
+     }
+ 
+ 
+@@ -947,6 +955,7 @@ class TransformationCache:
+         probe_context = None
+         compilation_context = None
+         job_validation_payload = None
++        runtime_metadata = None
+         if execution == "remote" and not force_local:
+             # NOTE: this branch is only hit if no seamless Dask client has been defined
+             if jobserver_remote is None:
+@@ -984,6 +993,7 @@ class TransformationCache:
+                 probe_context = result_checksum.get("probe_context")
+                 compilation_context = result_checksum.get("compilation_context")
+                 job_validation_payload = result_checksum.get("job_validation")
++                runtime_metadata = result_checksum.get("record_runtime")
+                 result_checksum = result_checksum.get("result_checksum")
+             if isinstance(result_checksum, str):
+                 remote_job_dir = parse_remote_job_written(result_checksum)
+@@ -1047,6 +1057,18 @@ class TransformationCache:
+         cpu_end = os.times()
+         cpu_user_seconds = round(cpu_end.user - cpu_start.user, 6)
+         cpu_system_seconds = round(cpu_end.system - cpu_start.system, 6)
++        if isinstance(runtime_metadata, dict):
++            started_at = runtime_metadata.get("started_at", started_at)
++            finished_at = runtime_metadata.get("finished_at", finished_at)
++            wall_time_seconds = runtime_metadata.get(
++                "wall_time_seconds", wall_time_seconds
++            )
++            cpu_user_seconds = runtime_metadata.get(
++                "cpu_user_seconds", cpu_user_seconds
++            )
++            cpu_system_seconds = runtime_metadata.get(
++                "cpu_system_seconds", cpu_system_seconds
++            )
+ 
+         if require_value:
+             try:
+@@ -1121,6 +1143,7 @@ class TransformationCache:
+                     job_contract_violations=job_contract_violations,
+                     compilation_context=compilation_context,
+                     validation_snapshot=validation_snapshot,
++                    runtime_metadata=runtime_metadata,
+                 )
+                 record["execution_envelope"]["scratch"] = bool(scratch)
+                 record["input_total_bytes"] = input_total_bytes
+diff --git a/tests/test_execution_records.py b/tests/test_execution_records.py
+index a4a2a5f..0f40531 100644
+--- a/tests/test_execution_records.py
++++ b/tests/test_execution_records.py
+@@ -436,6 +436,19 @@ def test_remote_jobserver_record_uses_returned_probe_context(monkeypatch):
+         "job_contract_violations": ["runpath_outside_conda_prefix"],
+         "diagnostics": {"compiled": True, "origin": "jobserver"},
+     }
++    record_runtime = {
++        "started_at": "2026-04-27T10:00:00Z",
++        "finished_at": "2026-04-27T10:00:03Z",
++        "wall_time_seconds": 3.0,
++        "cpu_user_seconds": 1.2,
++        "cpu_system_seconds": 0.4,
++        "memory_peak_bytes": 123456,
++        "hostname": "jobserver-worker-1",
++        "pid": 4321,
++        "process_started_at": "2026-04-27T09:00:00Z",
++        "worker_execution_index": 17,
++        "retry_count": 0,
++    }
+ 
+     class _FakeJobserverRemote:
+         async def run_transformation(self, *args, **kwargs):
+@@ -445,6 +458,7 @@ def test_remote_jobserver_record_uses_returned_probe_context(monkeypatch):
+                 "probe_context": probe_context,
+                 "compilation_context": compilation_context,
+                 "job_validation": job_validation,
++                "record_runtime": record_runtime,
+             }
+ 
+     async def _unexpected_probe_context(*args, **kwargs):
+@@ -503,6 +517,16 @@ def test_remote_jobserver_record_uses_returned_probe_context(monkeypatch):
+     ]
+     assert record["contract_violations"] == ["runpath_outside_conda_prefix"]
+     assert record["validation_snapshot"] == "7" * 64
++    assert record["started_at"] == record_runtime["started_at"]
++    assert record["finished_at"] == record_runtime["finished_at"]
++    assert record["wall_time_seconds"] == record_runtime["wall_time_seconds"]
++    assert record["cpu_time_user_seconds"] == record_runtime["cpu_user_seconds"]
++    assert record["cpu_time_system_seconds"] == record_runtime["cpu_system_seconds"]
++    assert record["memory_peak_bytes"] == record_runtime["memory_peak_bytes"]
++    assert record["hostname"] == record_runtime["hostname"]
++    assert record["pid"] == record_runtime["pid"]
++    assert record["process_started_at"] == record_runtime["process_started_at"]
++    assert record["worker_execution_index"] == record_runtime["worker_execution_index"]
+     assert record["input_total_bytes"] == 0
+     assert isinstance(record["output_total_bytes"], int)
+     assert record["output_total_bytes"] > 0

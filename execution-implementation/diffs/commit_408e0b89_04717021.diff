@@ -1,0 +1,352 @@
+commit 408e0b89deded8e84cab26db80d25dc3755a4d00
+Author: Sjoerd de Vries <sjdv1982@gmail.com>
+Date:   Sun Apr 26 17:13:50 2026 +0200
+
+    Add record mode and node selection plumbing
+
+diff --git a/seamless_config/config_files.py b/seamless_config/config_files.py
+index 811b1dd..8b8d534 100644
+--- a/seamless_config/config_files.py
++++ b/seamless_config/config_files.py
+@@ -12,7 +12,10 @@ from .cluster import define_clusters as register_clusters
+ from .select import (
+     PROJECT_TOPLEVEL,
+     get_stage,
++    reset_node_before_load,
++    reset_record_before_load,
+     select_nparallel,
++    select_node,
+     get_selected_project,
+     reset_execution_before_load,
+     reset_persistent_before_load,
+@@ -23,6 +26,7 @@ from .select import (
+     select_persistent,
+     select_project,
+     select_queue,
++    select_record,
+     select_remote,
+     select_subproject,
+ )
+@@ -121,6 +125,12 @@ def _handle_persistent(value: Any, source: Path) -> None:
+     select_persistent(value, source="command")
+ 
+ 
++def _handle_record(value: Any, source: Path) -> None:
++    if not isinstance(value, bool):
++        raise ValueError(f"{source}: 'record' command expects a boolean value")
++    select_record(value, source="command")
++
++
+ def _handle_project(value: Any, source: Path) -> None:
+     if not isinstance(value, str):
+         raise ValueError(f"{source}: 'project' command expects a string value")
+@@ -139,6 +149,12 @@ def _handle_nparallel(value: Any, source: Path) -> None:
+     select_nparallel(value)
+ 
+ 
++def _handle_node(value: Any, source: Path) -> None:
++    if value is not None and not isinstance(value, str):
++        raise ValueError(f"{source}: 'node' command expects a string value or null")
++    select_node(value, source="command")
++
++
+ def _handle_clusters(value: Any, source: Path) -> None:
+     if not isinstance(value, dict):
+         raise ValueError(f"{source}: 'clusters' command expects a mapping")
+@@ -151,9 +167,11 @@ COMMAND_SPECS: dict[str, CommandSpec] = {
+     "queue": CommandSpec(handler=_handle_queue),
+     "remote": CommandSpec(handler=_handle_remote),
+     "persistent": CommandSpec(handler=_handle_persistent),
++    "record": CommandSpec(handler=_handle_record),
+     "project": CommandSpec(handler=_handle_project),
+     "subproject": CommandSpec(handler=_handle_subproject),
+     "nparallel": CommandSpec(handler=_handle_nparallel),
++    "node": CommandSpec(handler=_handle_node),
+     "clusters": CommandSpec(handler=_handle_clusters, priority=True),
+ }
+ 
+@@ -192,6 +210,8 @@ def load_config_files() -> None:
+     reset_persistent_before_load()
+     reset_queue_before_load()
+     reset_remote_before_load()
++    reset_record_before_load()
++    reset_node_before_load()
+     load_tools()
+     if _load_seamless_cache_config():
+         return
+diff --git a/seamless_config/select.py b/seamless_config/select.py
+index 156320b..5b9f335 100644
+--- a/seamless_config/select.py
++++ b/seamless_config/select.py
+@@ -11,14 +11,19 @@ _current_execution: str = "process"
+ _current_queue: Optional[str] = None
+ _current_remote: Optional[str] = None
+ _current_persistent: Optional[bool] = None
++_current_record: bool = False
++_current_node: Optional[str] = None
+ _current_nparallel: Optional[int] = None
+ _execution_source: Optional[str] = None  # "command" or "manual"
+ _queue_source: Optional[str] = None  # "command" or "manual"
+ _queue_cluster: Optional[str] = None
+ _remote_source: Optional[str] = None  # "command" or "manual"
+ _persistent_source: Optional[str] = None  # "command" or "manual"
++_record_source: Optional[str] = None  # "command" or "manual"
++_node_source: Optional[str] = None  # "command" or "manual"
+ _execution_command_seen: bool = False
+ _persistent_command_seen: bool = False
++_record_command_seen: bool = False
+ 
+ EXECUTION_MODES = ("process", "spawn", "remote")
+ REMOTE_TARGETS = (None, "daskserver", "jobserver")
+@@ -97,6 +102,16 @@ def select_persistent(persistent: bool, *, source: str = "manual") -> None:
+         _persistent_command_seen = True
+ 
+ 
++def select_record(record: bool, *, source: str = "manual") -> None:
++    global _current_record, _record_source, _record_command_seen
++    if not isinstance(record, bool):
++        raise ValueError("record must be a boolean")
++    _current_record = record
++    _record_source = source
++    if source == "command":
++        _record_command_seen = True
++
++
+ def select_queue(queue: str, *, source: str = "manual") -> None:
+     global _current_queue, _queue_source, _queue_cluster
+     if not isinstance(queue, str):
+@@ -131,6 +146,17 @@ def select_remote(remote: Optional[str], *, source: str = "manual") -> None:
+     _remote_source = source
+ 
+ 
++def select_node(node: Optional[str], *, source: str = "manual") -> None:
++    global _current_node, _node_source
++    if node is not None:
++        if not isinstance(node, str):
++            raise ValueError("node must be a string or null")
++        if not node.strip():
++            raise ValueError("node must not be empty")
++    _current_node = node
++    _node_source = source
++
++
+ def select_nparallel(nparallel: int) -> None:
+     global _current_nparallel
+     if isinstance(nparallel, bool) or not isinstance(nparallel, int) or nparallel < 1:
+@@ -172,6 +198,10 @@ def get_persistent(cluster: Optional[str] = None) -> bool:
+     return bool(cluster)
+ 
+ 
++def get_record() -> bool:
++    return _current_record
++
++
+ def get_queue(cluster: Optional[str] = None) -> Optional[str]:
+     if cluster is None:
+         cluster = _current_cluster
+@@ -197,6 +227,10 @@ def get_remote() -> Optional[str]:
+     return _current_remote
+ 
+ 
++def get_node() -> Optional[str]:
++    return _current_node
++
++
+ def get_nparallel() -> int:
+     if _current_nparallel is None:
+         raise ConfigurationError(
+@@ -269,6 +303,21 @@ def reset_persistent_before_load() -> None:
+         _current_persistent = None
+ 
+ 
++def reset_record_before_load() -> None:
++    global _current_record, _record_source, _record_command_seen
++    _record_command_seen = False
++    if _record_source == "command":
++        _record_source = None
++        _current_record = False
++
++
++def reset_node_before_load() -> None:
++    global _current_node, _node_source
++    if _node_source == "command":
++        _node_source = None
++        _current_node = None
++
++
+ def get_selected_cluster() -> Optional[str]:
+     return _current_cluster
+ 
+diff --git a/seamless_config/tools.py b/seamless_config/tools.py
+index b09a307..587b555 100644
+--- a/seamless_config/tools.py
++++ b/seamless_config/tools.py
+@@ -252,7 +252,7 @@ def configure_daskserver(
+ ):
+     dummy_mode = "rw"  # not used for this tool
+     from . import ConfigurationError
+-    from .select import get_queue
++    from .select import get_node, get_queue
+ 
+     clus, frontend, injected = _prepare_tool(
+         "daskserver",
+@@ -291,6 +291,7 @@ def configure_daskserver(
+     if queue_name not in queues:
+         raise ConfigurationError(f"Cluster '{clus.name}' has no queue '{queue_name}'")
+     queue = queues[queue_name]
++    requested_node = get_node()
+     added["conda"] = queue.conda
+     added["port_start"] = frontend.daskserver.port_start
+     added["port_end"] = frontend.daskserver.port_end
+@@ -327,6 +328,18 @@ def configure_daskserver(
+     params["tmpdir"] = queue.tmpdir
+     params["partition"] = queue.partition
+     job_extra_directives = list(queue.job_extra_directives or [])
++    resource_spec = None
++    if requested_node is not None:
++        if clus.type == "slurm":
++            nodelist_flag = f"--nodelist={requested_node}"
++            if nodelist_flag not in job_extra_directives:
++                job_extra_directives.append(nodelist_flag)
++        elif clus.type == "oar":
++            job_extra_directives.extend(["-p", f"host='{requested_node}'"])
++        else:
++            raise ConfigurationError(
++                f"Node selection is not supported for cluster type '{clus.type}'"
++            )
+     if queue.exclusive:
+         if queue.cores is not None:
+             # Case 1: fixed cores — job_cores equals cores
+@@ -337,7 +350,9 @@ def configure_daskserver(
+                 if "--exclusive" not in job_extra_directives:
+                     job_extra_directives.append("--exclusive")
+             elif clus.type == "oar":
+-                params["resource_spec"] = "/nodes=1"
++                resource_spec = "/nodes=1"
++    if resource_spec is not None:
++        params["resource_spec"] = resource_spec
+     params["job_extra_directives"] = job_extra_directives or None
+     params["project"] = queue.project
+     params["memory_per_core_property_name"] = clus.memory_per_core_property_name
+@@ -394,7 +409,7 @@ def configure_pure_daskserver(
+     frontend_name=None,
+ ):
+     from . import ConfigurationError
+-    from .select import get_queue, get_selected_cluster
++    from .select import get_node, get_queue, get_selected_cluster
+ 
+     if cluster is None:
+         cluster = get_selected_cluster()
+@@ -443,6 +458,7 @@ def configure_pure_daskserver(
+         raise ConfigurationError(f"Cluster '{clus.name}' has no queue '{queue_name}'")
+     queue_def = queues[queue_name]
+     injected["QUEUE"] = queue_name
++    requested_node = get_node()
+     added["conda"] = queue_def.conda
+     added["port_start"] = frontend.daskserver.port_start
+     added["port_end"] = frontend.daskserver.port_end
+@@ -457,7 +473,24 @@ def configure_pure_daskserver(
+     params["memory"] = queue_def.memory
+     params["tmpdir"] = queue_def.tmpdir
+     params["partition"] = queue_def.partition
+-    params["job_extra_directives"] = queue_def.job_extra_directives
++    job_extra_directives = list(queue_def.job_extra_directives or [])
++    resource_spec = None
++    if requested_node is not None:
++        if clus.type == "slurm":
++            nodelist_flag = f"--nodelist={requested_node}"
++            if nodelist_flag not in job_extra_directives:
++                job_extra_directives.append(nodelist_flag)
++        elif clus.type == "oar":
++            job_extra_directives.extend(["-p", f"host='{requested_node}'"])
++        else:
++            raise ConfigurationError(
++                f"Node selection is not supported for cluster type '{clus.type}'"
++            )
++    if queue_def.exclusive and queue_def.cores is None and clus.type == "oar":
++        resource_spec = "/nodes=1"
++    params["job_extra_directives"] = job_extra_directives or None
++    if resource_spec is not None:
++        params["resource_spec"] = resource_spec
+     params["project"] = queue_def.project
+     params["memory_per_core_property_name"] = clus.memory_per_core_property_name
+     params["job_script_prologue"] = queue_def.job_script_prologue
+diff --git a/tests/test_execution_command.py b/tests/test_execution_command.py
+index 1cd186c..53114c8 100644
+--- a/tests/test_execution_command.py
++++ b/tests/test_execution_command.py
+@@ -24,11 +24,16 @@ def _reset_state(monkeypatch):
+     monkeypatch.setattr(select, "_current_persistent", None)
+     monkeypatch.setattr(select, "_persistent_source", None)
+     monkeypatch.setattr(select, "_persistent_command_seen", False)
++    monkeypatch.setattr(select, "_current_record", False)
++    monkeypatch.setattr(select, "_record_source", None)
++    monkeypatch.setattr(select, "_record_command_seen", False)
+     monkeypatch.setattr(select, "_current_queue", None)
+     monkeypatch.setattr(select, "_queue_source", None)
+     monkeypatch.setattr(select, "_queue_cluster", None)
+     monkeypatch.setattr(select, "_current_remote", None)
+     monkeypatch.setattr(select, "_remote_source", None)
++    monkeypatch.setattr(select, "_current_node", None)
++    monkeypatch.setattr(select, "_node_source", None)
+ 
+ 
+ def _write_clusters_yaml(
+@@ -165,6 +170,27 @@ def test_persistent_command_overrides_default(monkeypatch, tmp_path):
+     assert not any("No cluster defined; running without persistence" in msg for msg in messages)
+ 
+ 
++def test_record_defaults_false(monkeypatch):
++    _reset_state(monkeypatch)
++    assert select.get_record() is False
++
++
++def test_record_command_sets_strict_mode(monkeypatch, tmp_path):
++    _reset_state(monkeypatch)
++    workdir = tmp_path / "record-command"
++    workdir.mkdir()
++    monkeypatch.setenv("HOME", str(tmp_path))
++    (workdir / "seamless.yaml").write_text(
++        "- execution: process\n- record: true\n",
++        encoding="utf-8",
++    )
++    seamless_config.set_workdir(workdir)
++    from seamless_config.config_files import load_config_files
++
++    load_config_files()
++    assert select.get_record() is True
++
++
+ def test_explicit_persistent_true_without_cluster_errors(monkeypatch, tmp_path):
+     _reset_state(monkeypatch)
+     workdir = tmp_path / "persistent-without-cluster"
+@@ -254,6 +280,29 @@ def test_configure_daskserver_drops_hostname_for_actual_local_cluster(
+     assert "tunnel" not in config
+ 
+ 
++def test_configure_daskserver_injects_selected_node_for_slurm(monkeypatch, tmp_path):
++    _reset_state(monkeypatch)
++    workdir = tmp_path / "node-slurm"
++    workdir.mkdir()
++    monkeypatch.setenv("HOME", str(tmp_path))
++    queues = {"default": _queue_defaults()}
++    _write_clusters_yaml(tmp_path, queues, default_queue="default")
++    clusters_path = tmp_path / ".seamless" / "clusters.yaml"
++    cluster_def = yaml.safe_load(clusters_path.read_text(encoding="utf-8"))
++    cluster_def["demo"]["type"] = "slurm"
++    clusters_path.write_text(yaml.safe_dump(cluster_def), encoding="utf-8")
++    seamless_config.set_workdir(workdir)
++    from seamless_config.config_files import load_config_files
++
++    load_config_files()
++    select.select_node("node123")
++    import seamless_config.tools as tools
++
++    config = tools.configure_daskserver(cluster="demo", project="demo")
++    directives = config["file_parameters"]["job_extra_directives"]
++    assert "--nodelist=node123" in directives
++
++
+ def test_remote_execution_requires_cluster(monkeypatch, tmp_path):
+     _reset_state(monkeypatch)
+     workdir = tmp_path / "remote-execution"

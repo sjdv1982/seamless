@@ -1,0 +1,42 @@
+commit e4a953c856856acbb2fe1db8ed72c09d86611c4a
+Author: Sjoerd de Vries <sjdv1982@gmail.com>
+Date:   Mon Apr 27 10:38:17 2026 +0200
+
+    Parse job validation from jobserver payloads
+
+diff --git a/seamless_remote/jobserver_client.py b/seamless_remote/jobserver_client.py
+index f5c64af..3be4227 100644
+--- a/seamless_remote/jobserver_client.py
++++ b/seamless_remote/jobserver_client.py
+@@ -66,6 +66,7 @@ class JobserverClient(Client):
+                 "result_checksum": Checksum(result_checksum),
+                 "probe_context": payload.get("probe_context"),
+                 "compilation_context": payload.get("compilation_context"),
++                "job_validation": payload.get("job_validation"),
+             }
+         if parse_remote_job_written(result0) is not None:
+             return result0
+diff --git a/tests/test_jobserver_client.py b/tests/test_jobserver_client.py
+index b8026cf..ed3ed0d 100644
+--- a/tests/test_jobserver_client.py
++++ b/tests/test_jobserver_client.py
+@@ -79,7 +79,7 @@ class JobserverClientTests(unittest.IsolatedAsyncioTestCase):
+         client.url = "http://jobserver.invalid"
+         client._initialized = True
+         client._get_session = lambda: _FakeSession(
+-            '{"result_checksum": "%s", "probe_context": {"required_bucket_checksums": {"node": "%s"}}, "compilation_context": "%s"}'
++            '{"result_checksum": "%s", "probe_context": {"required_bucket_checksums": {"node": "%s"}}, "compilation_context": "%s", "job_validation": {"job_contract_violations": ["runpath_outside_conda_prefix"], "diagnostics": {"compiled": true}}}'
+             % ("2" * 64, "3" * 64, "4" * 64)
+         )
+ 
+@@ -96,3 +96,10 @@ class JobserverClientTests(unittest.IsolatedAsyncioTestCase):
+             {"required_bucket_checksums": {"node": "3" * 64}},
+         )
+         self.assertEqual(result["compilation_context"], "4" * 64)
++        self.assertEqual(
++            result["job_validation"],
++            {
++                "job_contract_violations": ["runpath_outside_conda_prefix"],
++                "diagnostics": {"compiled": True},
++            },
++        )

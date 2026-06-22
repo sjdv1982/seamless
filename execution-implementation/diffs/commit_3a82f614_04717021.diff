@@ -1,0 +1,323 @@
+commit 3a82f61424e4279ab65c0a54b92d2c054ba859b1
+Author: Sjoerd de Vries <sjdv1982@gmail.com>
+Date:   Mon Apr 27 18:05:58 2026 +0200
+
+    Align record tooling with discussion guidance
+
+diff --git a/seamless_transformer/probe_capture.py b/seamless_transformer/probe_capture.py
+index 35bd402..e3f69a5 100644
+--- a/seamless_transformer/probe_capture.py
++++ b/seamless_transformer/probe_capture.py
+@@ -7,6 +7,7 @@ import contextlib
+ import dataclasses
+ import importlib.metadata
+ import io
++import json
+ import locale
+ import os
+ import platform
+@@ -130,8 +131,8 @@ def _resource_limits() -> dict[str, list[int | str]]:
+     return limits
+ 
+ 
+-def _python_packages() -> list[dict[str, str]]:
+-    packages: list[dict[str, str]] = []
++def _python_packages() -> list[dict[str, Any]]:
++    packages: list[dict[str, Any]] = []
+     try:
+         distributions = importlib.metadata.distributions()
+     except Exception:
+@@ -140,16 +141,36 @@ def _python_packages() -> list[dict[str, str]]:
+         name = dist.metadata.get("Name") or dist.metadata.get("Summary")
+         if not name:
+             continue
+-        packages.append({"name": str(name), "version": str(dist.version)})
++        payload: dict[str, Any] = {"name": str(name), "version": str(dist.version)}
++        try:
++            direct_url_path = dist.locate_file("direct_url.json")
++        except Exception:
++            direct_url_path = None
++        if direct_url_path is not None:
++            try:
++                if os.path.exists(direct_url_path):
++                    with open(direct_url_path, "r", encoding="utf-8") as f:
++                        payload["direct_url"] = _json_safe(json.load(f))
++            except Exception:
++                pass
++        packages.append(payload)
+     packages.sort(key=lambda item: item["name"].lower())
+     return packages
+ 
+ 
+-def _numpy_show_config() -> str | None:
++def _numpy_show_config() -> Any | None:
+     try:
+         import numpy as np
+     except Exception:
+         return None
++    try:
++        result = np.show_config(mode="dicts")
++    except TypeError:
++        result = None
++    except Exception:
++        return None
++    if result is not None:
++        return _json_safe(result)
+     stream = io.StringIO()
+     with contextlib.redirect_stdout(stream):
+         try:
+diff --git a/seamless_transformer/transformation_cache.py b/seamless_transformer/transformation_cache.py
+index 61af8ff..77b6682 100644
+--- a/seamless_transformer/transformation_cache.py
++++ b/seamless_transformer/transformation_cache.py
+@@ -117,6 +117,7 @@ class _GpuMemorySampler:
+         thread = self._thread
+         if thread is not None:
+             thread.join(timeout=max(self._interval_seconds * 2.0, 0.2))
++        self._cleanup()
+         return self._peak_bytes
+ 
+     def _run(self) -> None:
+@@ -125,54 +126,99 @@ class _GpuMemorySampler:
+             self._sample_once()
+         self._sample_once()
+ 
++    def _cleanup(self) -> None:
++        return
++
+     def _sample_once(self) -> None:
+-        try:
+-            completed = subprocess.run(
+-                [
+-                    "nvidia-smi",
+-                    "--query-compute-apps=pid,used_gpu_memory",
+-                    "--format=csv,noheader,nounits",
+-                ],
+-                check=True,
+-                capture_output=True,
+-                text=True,
+-                timeout=1,
+-            )
+-        except Exception:
+-            return
++        raise NotImplementedError
+ 
+-        total_mib = 0
+-        matched = False
+-        for line in completed.stdout.splitlines():
+-            parts = [part.strip() for part in line.split(",", 1)]
+-            if len(parts) != 2:
+-                continue
++
++class _PynvmlGpuMemorySampler(_GpuMemorySampler):
++    def __init__(
++        self,
++        *,
++        pid: int,
++        pynvml: Any,
++        interval_seconds: float = 0.1,
++    ):
++        super().__init__(pid=pid, interval_seconds=interval_seconds)
++        self._pynvml = pynvml
++        self._handles: list[Any] = []
++        self._value_not_available = getattr(pynvml, "NVML_VALUE_NOT_AVAILABLE", None)
++        pynvml.nvmlInit()
++        for index in range(int(pynvml.nvmlDeviceGetCount())):
++            self._handles.append(pynvml.nvmlDeviceGetHandleByIndex(index))
++
++    def _cleanup(self) -> None:
++        shutdown = getattr(self._pynvml, "nvmlShutdown", None)
++        if callable(shutdown):
+             try:
+-                pid = int(parts[0])
++                shutdown()
+             except Exception:
++                pass
++
++    def _iter_processes(self, handle: Any) -> list[Any]:
++        processes: list[Any] = []
++        for name in (
++            "nvmlDeviceGetComputeRunningProcesses_v3",
++            "nvmlDeviceGetComputeRunningProcesses_v2",
++            "nvmlDeviceGetComputeRunningProcesses",
++            "nvmlDeviceGetGraphicsRunningProcesses_v3",
++            "nvmlDeviceGetGraphicsRunningProcesses_v2",
++            "nvmlDeviceGetGraphicsRunningProcesses",
++        ):
++            getter = getattr(self._pynvml, name, None)
++            if not callable(getter):
+                 continue
+-            if pid != self._pid:
+-                continue
+-            value = parts[1].split()[0]
+             try:
+-                used_mib = int(value)
++                items = getter(handle)
+             except Exception:
+                 continue
+-            total_mib += max(used_mib, 0)
+-            matched = True
++            if items:
++                processes.extend(items)
++        return processes
++
++    def _sample_once(self) -> None:
++        total_bytes = 0
++        matched = False
++        for handle in self._handles:
++            for process in self._iter_processes(handle):
++                pid = getattr(process, "pid", None)
++                if pid != self._pid:
++                    continue
++                used = getattr(process, "usedGpuMemory", None)
++                if used is None:
++                    continue
++                if (
++                    self._value_not_available is not None
++                    and used == self._value_not_available
++                ):
++                    continue
++                try:
++                    used_bytes = int(used)
++                except Exception:
++                    continue
++                if used_bytes < 0:
++                    continue
++                total_bytes += used_bytes
++                matched = True
+         if not matched:
+             return
+-        total_bytes = total_mib * 1024 * 1024
+         if self._peak_bytes is None or total_bytes > self._peak_bytes:
+             self._peak_bytes = total_bytes
+ 
+ 
+ def start_gpu_memory_sampler(pid: int | None = None) -> _GpuMemorySampler | None:
+-    if shutil.which("nvidia-smi") is None:
++    try:
++        import pynvml
++    except Exception:
+         return None
+     if pid is None:
+         pid = _os.getpid()
+-    sampler = _GpuMemorySampler(pid=pid)
++    try:
++        sampler = _PynvmlGpuMemorySampler(pid=pid, pynvml=pynvml)
++    except Exception:
++        return None
+     sampler.start()
+     return sampler
+ 
+diff --git a/tests/test_execution_records.py b/tests/test_execution_records.py
+index 0c1aced..ae3149c 100644
+--- a/tests/test_execution_records.py
++++ b/tests/test_execution_records.py
+@@ -1,5 +1,7 @@
+ import asyncio
+-from types import SimpleNamespace
++import sys
++import time
++from types import ModuleType, SimpleNamespace
+ 
+ import pytest
+ 
+@@ -688,3 +690,32 @@ def test_collect_job_validation_reports_and_caches_native_linkage(monkeypatch, t
+     assert first["diagnostics"]["readelf"]["resolved_needed"]["libcustom.so"] == str(
+         outside_dir / "libcustom.so"
+     )
++
++
++def test_gpu_memory_sampler_uses_pynvml(monkeypatch):
++    fake_pynvml = ModuleType("pynvml")
++    state = {"init": 0, "shutdown": 0}
++
++    def _init():
++        state["init"] += 1
++
++    def _shutdown():
++        state["shutdown"] += 1
++
++    fake_pynvml.nvmlInit = _init
++    fake_pynvml.nvmlShutdown = _shutdown
++    fake_pynvml.nvmlDeviceGetCount = lambda: 1
++    fake_pynvml.nvmlDeviceGetHandleByIndex = lambda index: index
++    fake_pynvml.nvmlDeviceGetComputeRunningProcesses = lambda handle: [
++        SimpleNamespace(pid=4321, usedGpuMemory=2048),
++        SimpleNamespace(pid=9999, usedGpuMemory=4096),
++    ]
++    monkeypatch.setitem(sys.modules, "pynvml", fake_pynvml)
++
++    sampler = transformation_cache.start_gpu_memory_sampler(pid=4321)
++    assert sampler is not None
++    time.sleep(0.02)
++    peak = transformation_cache.stop_gpu_memory_sampler(sampler)
++
++    assert peak == 2048
++    assert state == {"init": 1, "shutdown": 1}
+diff --git a/tests/test_probe_capture.py b/tests/test_probe_capture.py
+index 52fc5c5..97430ba 100644
+--- a/tests/test_probe_capture.py
++++ b/tests/test_probe_capture.py
+@@ -1,4 +1,7 @@
+ import asyncio
++import json
++import sys
++from types import ModuleType
+ 
+ from seamless import Buffer
+ 
+@@ -138,3 +141,54 @@ def test_refresh_required_buckets_updates_stale_base_and_composite(monkeypatch):
+     ]
+     assert [item["bucket_kind"] for item in result["reused"]] == ["node"]
+ 
++
++def test_numpy_show_config_prefers_structured_mode(monkeypatch):
++    fake_numpy = ModuleType("numpy")
++
++    def _show_config(*, mode=None):
++        assert mode == "dicts"
++        return {"blas": {"name": "openblas"}}
++
++    fake_numpy.show_config = _show_config
++    monkeypatch.setitem(sys.modules, "numpy", fake_numpy)
++
++    result = probe_capture._numpy_show_config()
++
++    assert result == {"blas": {"name": "openblas"}}
++
++
++def test_python_packages_includes_direct_url(monkeypatch, tmp_path):
++    dist_info = tmp_path / "demo.dist-info"
++    dist_info.mkdir()
++    direct_url = {
++        "url": "file:///workspace/demo",
++        "dir_info": {"editable": True},
++    }
++    (dist_info / "direct_url.json").write_text(json.dumps(direct_url), encoding="utf-8")
++
++    class _FakeMetadata(dict):
++        def get(self, key, default=None):
++            return super().get(key, default)
++
++    class _FakeDistribution:
++        metadata = _FakeMetadata({"Name": "demo"})
++        version = "1.2.3"
++
++        def locate_file(self, path):
++            return dist_info / path
++
++    monkeypatch.setattr(
++        probe_capture.importlib.metadata,
++        "distributions",
++        lambda: [_FakeDistribution()],
++    )
++
++    result = probe_capture._python_packages()
++
++    assert result == [
++        {
++            "name": "demo",
++            "version": "1.2.3",
++            "direct_url": direct_url,
++        }
++    ]

@@ -1,0 +1,212 @@
+commit f19f6693bb15c401d54a8d0fed1d9de469b215d2
+Author: Sjoerd de Vries <sjdv1982@gmail.com>
+Date:   Sun Apr 26 18:14:58 2026 +0200
+
+    Expose bucket probe database APIs
+
+diff --git a/seamless_remote/database_client.py b/seamless_remote/database_client.py
+index cafd526..0e76663 100644
+--- a/seamless_remote/database_client.py
++++ b/seamless_remote/database_client.py
+@@ -189,6 +189,41 @@ class DatabaseClient(Client):
+             )
+         return payload
+ 
++    @_retry_operation
++    async def get_bucket_probe(self, bucket_kind: str, label: str) -> dict | None:
++        """Return the current shared probe-index row for a bucket label, if known."""
++        semaphore = self._get_semaphore()
++        if semaphore is None:
++            return await self._get_bucket_probe_unthrottled(bucket_kind, label)
++
++        await semaphore.acquire()
++        try:
++            return await self._get_bucket_probe_unthrottled(bucket_kind, label)
++        finally:
++            semaphore.release()
++
++    async def _get_bucket_probe_unthrottled(
++        self, bucket_kind: str, label: str
++    ) -> dict | None:
++        session_async = self._get_session()
++        request = {"type": "bucket_probe", "bucket_kind": bucket_kind, "label": label}
++        path = self._require_url()
++        async with session_async.get(path, json=request) as response:
++            if int(response.status / 100) in (4, 5):
++                if response.status == 404:
++                    return None
++                text = await response.text()
++                raise ClientConnectionError(f"Error {response.status}: {text}")
++            result0 = await response.text()
++        payload = json.loads(result0)
++        if payload is None:
++            return None
++        if not isinstance(payload, dict):
++            raise ClientConnectionError(
++                f"Malformed response for bucket_probe: {payload!r}"
++            )
++        return payload
++
+     @_retry_operation
+     async def get_irreproducible_records(
+         self, tf_checksum: Checksum, result_checksum: Checksum | None = None
+@@ -278,6 +313,35 @@ class DatabaseClient(Client):
+                 text = await response.text()
+                 raise ClientConnectionError(f"Error {response.status}: {text}")
+ 
++    @_retry_operation
++    async def set_bucket_probe(
++        self,
++        bucket_kind: str,
++        label: str,
++        bucket_checksum: Checksum,
++        freshness_tokens: dict,
++        captured_at: str,
++    ):
++        """Store or refresh the current shared probe-index row for a bucket label."""
++        if self.readonly:
++            raise AttributeError("Read-only database client")
++        session_async = self._get_session()
++        bucket_checksum = Checksum(bucket_checksum)
++
++        request = {
++            "type": "bucket_probe",
++            "bucket_kind": bucket_kind,
++            "label": label,
++            "bucket_checksum": bucket_checksum.hex(),
++            "freshness_tokens": freshness_tokens,
++            "captured_at": captured_at,
++        }
++        path = self._require_url()
++        async with session_async.put(path, json=request) as response:
++            if int(response.status / 100) in (4, 5):
++                text = await response.text()
++                raise ClientConnectionError(f"Error {response.status}: {text}")
++
+     @_retry_operation
+     async def undo_transformation_result(
+         self, tf_checksum: Checksum, result_checksum: Checksum
+diff --git a/seamless_remote/database_remote.py b/seamless_remote/database_remote.py
+index 3ac7490..fe74571 100644
+--- a/seamless_remote/database_remote.py
++++ b/seamless_remote/database_remote.py
+@@ -187,6 +187,16 @@ async def get_execution_record(tf_checksum: Checksum) -> dict | None:
+             return result
+ 
+ 
++async def get_bucket_probe(bucket_kind: str, label: str) -> dict | None:
++    """Return the current shared probe-index row for a bucket label, if known."""
++    for client in _read_database_clients:
++        _debug(f"query {client} for bucket_probe {bucket_kind} {label!r}")
++        result = await client.get_bucket_probe(bucket_kind, label)
++        _debug(f"client {client} returned {result}")
++        if result is not None:
++            return result
++
++
+ async def get_irreproducible_records(
+     tf_checksum: Checksum, result_checksum: Checksum | None = None
+ ) -> list[dict] | None:
+@@ -229,6 +239,25 @@ async def set_execution_record(
+     return written
+ 
+ 
++async def set_bucket_probe(
++    bucket_kind: str,
++    label: str,
++    bucket_checksum: Checksum,
++    freshness_tokens: dict,
++    captured_at: str,
++):
++    """Write or refresh the current shared probe-index row for a bucket label."""
++    bucket_checksum = Checksum(bucket_checksum)
++    written = False
++    for client in _write_database_clients:
++        ok = await client.set_bucket_probe(
++            bucket_kind, label, bucket_checksum, freshness_tokens, captured_at
++        )
++        if ok is not False:
++            written = True
++    return written
++
++
+ async def undo_transformation_result(tf_checksum: Checksum, result_checksum: Checksum):
+     """Contest a transformation result in remote databases."""
+     tf_checksum = Checksum(tf_checksum)
+diff --git a/tests/test_database_client_execution_records.py b/tests/test_database_client_execution_records.py
+index 8758e48..7364d43 100644
+--- a/tests/test_database_client_execution_records.py
++++ b/tests/test_database_client_execution_records.py
+@@ -55,6 +55,7 @@ from seamless_remote.database_client import DatabaseClient  # noqa: E402
+ 
+ TF_CHECKSUM = "1" * 64
+ RESULT_CHECKSUM = "2" * 64
++BUCKET_CHECKSUM = "3" * 64
+ 
+ 
+ def _record():
+@@ -101,13 +102,16 @@ class _FakeRequest:
+         self.request = request
+ 
+     async def __aenter__(self):
++        checksum = self.request.get("checksum")
++        if self.request["type"] == "bucket_probe":
++            checksum = None
+         if self.method == "GET":
+             payload = await self.server._get(
+-                self.request["type"], self.request["checksum"], self.request
++                self.request["type"], checksum, self.request
+             )
+         else:
+             payload = await self.server._put(
+-                self.request["type"], self.request["checksum"], self.request
++                self.request["type"], checksum, self.request
+             )
+         if isinstance(payload, web.Response):
+             text = payload.text
+@@ -176,3 +180,45 @@ class DatabaseClientExecutionRecordTests(unittest.IsolatedAsyncioTestCase):
+             ),
+             records,
+         )
++
++    async def test_bucket_probe_roundtrip_and_overwrite(self):
++        probe = {
++            "bucket_kind": "environment",
++            "label": "conda:/envs/seamless1",
++            "bucket_checksum": BUCKET_CHECKSUM,
++            "captured_at": "2026-04-26T12:00:00Z",
++            "freshness_tokens": {"conda_meta_mtime": 123},
++        }
++        await self.client.set_bucket_probe(
++            probe["bucket_kind"],
++            probe["label"],
++            probe["bucket_checksum"],
++            probe["freshness_tokens"],
++            probe["captured_at"],
++        )
++        self.assertEqual(
++            await self.client.get_bucket_probe(
++                probe["bucket_kind"], probe["label"]
++            ),
++            probe,
++        )
++
++        updated_probe = {
++            **probe,
++            "bucket_checksum": "4" * 64,
++            "captured_at": "2026-04-26T12:05:00Z",
++            "freshness_tokens": {"conda_meta_mtime": 456},
++        }
++        await self.client.set_bucket_probe(
++            updated_probe["bucket_kind"],
++            updated_probe["label"],
++            updated_probe["bucket_checksum"],
++            updated_probe["freshness_tokens"],
++            updated_probe["captured_at"],
++        )
++        self.assertEqual(
++            await self.client.get_bucket_probe(
++                updated_probe["bucket_kind"], updated_probe["label"]
++            ),
++            updated_probe,
++        )

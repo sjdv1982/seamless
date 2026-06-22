@@ -1,0 +1,20 @@
+site_name: Seamless Agent Docs
+docs_dir: docs/agent
+site_dir: docs/agent/_site
+
+theme:
+  name: material
+
+plugins:
+  - search
+
+nav:
+  - Overview: README.md
+  - Contracts:
+      - Identity and Caching: contracts/identity-and-caching.md
+      - direct/delayed/Transformation: contracts/direct-delayed-and-transformation.md
+      - Modules and Closures: contracts/modules-and-closures.md
+      - Scratch/Witness/Audit: contracts/scratch-witness-audit.md
+      - seamless-run/Argtyping: contracts/seamless-run-and-argtyping.md
+  - API (generated): api/
+

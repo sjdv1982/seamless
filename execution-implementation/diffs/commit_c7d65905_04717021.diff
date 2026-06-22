@@ -1,0 +1,157 @@
+commit c7d65905c5c60ac8c3ca8222ecefdf30911536a3
+Author: Sjoerd de Vries <sjdv1982@gmail.com>
+Date:   Mon Apr 27 18:19:55 2026 +0200
+
+    Capture node GPU inventory
+
+diff --git a/seamless_transformer/probe_capture.py b/seamless_transformer/probe_capture.py
+index a9b98f1..0a39741 100644
+--- a/seamless_transformer/probe_capture.py
++++ b/seamless_transformer/probe_capture.py
+@@ -296,6 +296,86 @@ def _visible_gpu_mapping() -> list[dict[str, Any]] | None:
+     return mapping
+ 
+ 
++def _node_gpu_inventory() -> dict[str, Any] | None:
++    try:
++        import pynvml
++    except Exception:
++        return None
++    try:
++        pynvml.nvmlInit()
++        driver_version = pynvml.nvmlSystemGetDriverVersion()
++        if isinstance(driver_version, bytes):
++            driver_version = driver_version.decode("utf-8", errors="replace")
++        gpus = []
++        device_count = int(pynvml.nvmlDeviceGetCount())
++        for index in range(device_count):
++            handle = pynvml.nvmlDeviceGetHandleByIndex(index)
++            name = pynvml.nvmlDeviceGetName(handle)
++            uuid = pynvml.nvmlDeviceGetUUID(handle)
++            if isinstance(name, bytes):
++                name = name.decode("utf-8", errors="replace")
++            if isinstance(uuid, bytes):
++                uuid = uuid.decode("utf-8", errors="replace")
++            memory_info = None
++            try:
++                memory_info = pynvml.nvmlDeviceGetMemoryInfo(handle)
++            except Exception:
++                memory_info = None
++            compute_capability = None
++            get_compute_capability = getattr(
++                pynvml, "nvmlDeviceGetCudaComputeCapability", None
++            )
++            if callable(get_compute_capability):
++                try:
++                    major, minor = get_compute_capability(handle)
++                    compute_capability = f"{major}.{minor}"
++                except Exception:
++                    compute_capability = None
++            ecc_mode = None
++            get_ecc_mode = getattr(pynvml, "nvmlDeviceGetEccMode", None)
++            if callable(get_ecc_mode):
++                try:
++                    current, _pending = get_ecc_mode(handle)
++                    ecc_mode = current
++                except Exception:
++                    ecc_mode = None
++            persistence_mode = None
++            get_persistence_mode = getattr(
++                pynvml, "nvmlDeviceGetPersistenceMode", None
++            )
++            if callable(get_persistence_mode):
++                try:
++                    persistence_mode = get_persistence_mode(handle)
++                except Exception:
++                    persistence_mode = None
++            gpus.append(
++                {
++                    "index": index,
++                    "name": str(name),
++                    "uuid": str(uuid),
++                    "memory_total_bytes": (
++                        int(memory_info.total) if memory_info is not None else None
++                    ),
++                    "compute_capability": compute_capability,
++                    "ecc_mode": ecc_mode,
++                    "persistence_mode": persistence_mode,
++                }
++            )
++    except Exception:
++        return None
++    finally:
++        shutdown = getattr(pynvml, "nvmlShutdown", None)
++        if callable(shutdown):
++            try:
++                shutdown()
++            except Exception:
++                pass
++    return {
++        "driver_version": str(driver_version),
++        "gpus": gpus,
++    }
++
++
+ def _common_payload(bucket_kind: str) -> dict[str, Any]:
+     return {
+         "schema_version": 1,
+@@ -333,6 +413,7 @@ def _build_node_payload(request: dict[str, Any]) -> dict[str, Any]:
+                 "affinity_cores": _affinity_count(),
+             },
+             "memory_total_bytes": _memory_total_bytes(),
++            "gpu_inventory": _node_gpu_inventory(),
+         }
+     )
+     return payload
+diff --git a/tests/test_probe_capture.py b/tests/test_probe_capture.py
+index f51ef06..9c64cb2 100644
+--- a/tests/test_probe_capture.py
++++ b/tests/test_probe_capture.py
+@@ -230,3 +230,47 @@ def test_visible_gpu_mapping_uses_pynvml(monkeypatch):
+         {"visible_token": "0", "device_index": 0, "gpu_uuid": "GPU-0"},
+     ]
+     assert state == {"init": 1, "shutdown": 1}
++
++
++def test_node_gpu_inventory_uses_pynvml(monkeypatch):
++    fake_pynvml = ModuleType("pynvml")
++    state = {"init": 0, "shutdown": 0}
++
++    def _init():
++        state["init"] += 1
++
++    def _shutdown():
++        state["shutdown"] += 1
++
++    fake_pynvml.nvmlInit = _init
++    fake_pynvml.nvmlShutdown = _shutdown
++    fake_pynvml.nvmlSystemGetDriverVersion = lambda: "550.54"
++    fake_pynvml.nvmlDeviceGetCount = lambda: 1
++    fake_pynvml.nvmlDeviceGetHandleByIndex = lambda index: index
++    fake_pynvml.nvmlDeviceGetName = lambda handle: "NVIDIA A100"
++    fake_pynvml.nvmlDeviceGetUUID = lambda handle: "GPU-ABC"
++    fake_pynvml.nvmlDeviceGetMemoryInfo = lambda handle: type(
++        "MemInfo", (), {"total": 80 * 1024 * 1024 * 1024}
++    )()
++    fake_pynvml.nvmlDeviceGetCudaComputeCapability = lambda handle: (8, 0)
++    fake_pynvml.nvmlDeviceGetEccMode = lambda handle: (1, 1)
++    fake_pynvml.nvmlDeviceGetPersistenceMode = lambda handle: 1
++    monkeypatch.setitem(sys.modules, "pynvml", fake_pynvml)
++
++    result = probe_capture._node_gpu_inventory()
++
++    assert result == {
++        "driver_version": "550.54",
++        "gpus": [
++            {
++                "index": 0,
++                "name": "NVIDIA A100",
++                "uuid": "GPU-ABC",
++                "memory_total_bytes": 80 * 1024 * 1024 * 1024,
++                "compute_capability": "8.0",
++                "ecc_mode": 1,
++                "persistence_mode": 1,
++            }
++        ],
++    }
++    assert state == {"init": 1, "shutdown": 1}

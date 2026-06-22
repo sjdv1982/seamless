@@ -1,0 +1,146 @@
+commit 86bc35615cf175ba392ef5b8d8743308bcabf484
+Author: Sjoerd de Vries <sjdv1982@gmail.com>
+Date:   Mon Apr 27 10:54:57 2026 +0200
+
+    Populate compilation times in records
+
+diff --git a/seamless_transformer/compiler/__init__.py b/seamless_transformer/compiler/__init__.py
+index 2b1d7d7..b117325 100644
+--- a/seamless_transformer/compiler/__init__.py
++++ b/seamless_transformer/compiler/__init__.py
+@@ -8,6 +8,7 @@ import importlib.util
+ import json
+ import os
+ import tempfile
++import time
+ from types import ModuleType
+ from typing import Any
+ 
+@@ -64,6 +65,7 @@ def get_compiled_module_info(
+     if cached_info is not None:
+         return cached_info
+ 
++    compile_started = time.perf_counter()
+     if digest not in _BINARY_CACHE:
+         _BINARY_CACHE[digest] = compile(completed)
+     binary_objects = _BINARY_CACHE[digest]
+@@ -85,6 +87,7 @@ def get_compiled_module_info(
+         "module": module,
+         "path": getattr(module, "__file__", None),
+         "module_name": module_name,
++        "compilation_time_seconds": round(time.perf_counter() - compile_started, 6),
+     }
+     _MODULE_INFO_CACHE[digest] = info
+     return info
+diff --git a/seamless_transformer/transformation_cache.py b/seamless_transformer/transformation_cache.py
+index ab31cc2..c07c196 100644
+--- a/seamless_transformer/transformation_cache.py
++++ b/seamless_transformer/transformation_cache.py
+@@ -543,6 +543,44 @@ async def collect_job_validation(
+     }
+ 
+ 
++async def collect_compilation_runtime_metadata(
++    transformation_dict: Dict[str, Any],
++    tf_dunder: Dict[str, Any] | None,
++) -> dict[str, Any]:
++    compiled = bool(
++        transformation_dict.get("__compiled__")
++        or (isinstance(tf_dunder, dict) and tf_dunder.get("__compiled__"))
++    )
++    if not compiled:
++        return {}
++
++    from seamless_transformer.compiler import get_compiled_module_info
++
++    code = await Checksum(transformation_dict.get("code")[2]).resolution("text")
++    header = _resolve_dunder_value(transformation_dict, tf_dunder, "__header__", "text")
++    compilation = _resolve_dunder_value(
++        transformation_dict, tf_dunder, "__compilation__", "plain"
++    )
++    objects = {}
++    objects_value = transformation_dict.get("objects")
++    if objects_value is not None and objects_value[2] is not None:
++        objects = await Checksum(objects_value[2]).resolution("plain")
++        if not isinstance(objects, dict):
++            objects = {}
++    module_definition = _module_definition_from_payload(
++        transformation_dict.get("__language__"),
++        code,
++        header,
++        objects,
++        compilation,
++    )
++    module_info = get_compiled_module_info(module_definition)
++    compilation_time_seconds = module_info.get("compilation_time_seconds")
++    if compilation_time_seconds is None:
++        return {}
++    return {"compilation_time_seconds": compilation_time_seconds}
++
++
+ def _validation_snapshot_key(
+     execution: str,
+     probe_context: dict[str, Any] | None,
+@@ -1145,6 +1183,12 @@ class TransformationCache:
+                 record_runtime_metadata.setdefault(
+                     "memory_peak_bytes", _memory_peak_bytes()
+                 )
++                if "compilation_time_seconds" not in record_runtime_metadata:
++                    record_runtime_metadata.update(
++                        await collect_compilation_runtime_metadata(
++                            transformation_dict, tf_dunder
++                        )
++                    )
+                 record = build_execution_record(
+                     transformation_dict,
+                     tf_checksum=tf_checksum,
+diff --git a/tests/test_execution_records.py b/tests/test_execution_records.py
+index c65470a..60fd49b 100644
+--- a/tests/test_execution_records.py
++++ b/tests/test_execution_records.py
+@@ -304,6 +304,7 @@ def test_compiled_record_writes_compilation_context(monkeypatch):
+     result_checksum = _make_checksum(13, "mixed")
+     tf_checksum = _make_checksum({"kind": "compiled-record-test"})
+     compilation_context = "f" * 64
++    compilation_time_seconds = 2.5
+     validation_snapshot = "8" * 64
+     job_contract_violations = ["native_link_outside_conda_prefix"]
+     captured_snapshot_kwargs = {}
+@@ -366,6 +367,13 @@ def test_compiled_record_writes_compilation_context(monkeypatch):
+             },
+         ),
+     )
++    monkeypatch.setattr(
++        transformation_cache,
++        "collect_compilation_runtime_metadata",
++        lambda *args, **kwargs: asyncio.sleep(
++            0, result={"compilation_time_seconds": compilation_time_seconds}
++        ),
++    )
+     monkeypatch.setattr(
+         transformation_cache, "run_transformation_dict", _fake_run_transformation_dict
+     )
+@@ -391,6 +399,7 @@ def test_compiled_record_writes_compilation_context(monkeypatch):
+     assert record["job_contract_violations"] == job_contract_violations
+     assert record["contract_violations"] == job_contract_violations
+     assert record["validation_snapshot"] == validation_snapshot
++    assert record["compilation_time_seconds"] == compilation_time_seconds
+     assert captured_snapshot_kwargs["job_contract_violations"] == job_contract_violations
+     assert captured_snapshot_kwargs["job_validation_diagnostics"] == {
+         "compiled": True
+@@ -445,6 +454,7 @@ def test_remote_jobserver_record_uses_returned_probe_context(monkeypatch):
+         "cpu_user_seconds": 1.2,
+         "cpu_system_seconds": 0.4,
+         "memory_peak_bytes": 123456,
++        "compilation_time_seconds": 1.75,
+         "hostname": "jobserver-worker-1",
+         "pid": 4321,
+         "process_started_at": "2026-04-27T09:00:00Z",
+@@ -525,6 +535,7 @@ def test_remote_jobserver_record_uses_returned_probe_context(monkeypatch):
+     assert record["cpu_time_user_seconds"] == record_runtime["cpu_user_seconds"]
+     assert record["cpu_time_system_seconds"] == record_runtime["cpu_system_seconds"]
+     assert record["memory_peak_bytes"] == record_runtime["memory_peak_bytes"]
++    assert record["compilation_time_seconds"] == record_runtime["compilation_time_seconds"]
+     assert record["hostname"] == record_runtime["hostname"]
+     assert record["pid"] == record_runtime["pid"]
+     assert record["process_started_at"] == record_runtime["process_started_at"]

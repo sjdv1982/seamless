@@ -1,0 +1,44 @@
+name: Sync main into main-bak
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Configure git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Fetch all branches
+        run: |
+          git fetch --all --prune
+
+      - name: Create main-bak if it does not exist
+        run: |
+          if git ls-remote --exit-code --heads origin main-bak >/dev/null 2>&1; then
+            echo "main-bak already exists"
+          else
+            git checkout -B main-bak origin/main
+            git push origin main-bak
+          fi
+
+      - name: Merge main into main-bak
+        run: |
+          git fetch origin main main-bak
+          git checkout -B main-bak origin/main-bak
+          git merge --no-ff --no-edit origin/main
+          git push origin HEAD:main-bak
