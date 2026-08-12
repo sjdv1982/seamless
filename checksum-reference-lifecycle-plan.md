@@ -24,7 +24,8 @@ which objects contributed to it and identify an invalid decrement.
 This plan covers normal buffer-cache references held by:
 
 - standalone `Cell` objects;
-- immutable `Expression` objects;
+- immutable `Expression` objects where they explicitly retain an observable result (ordinary
+  expression inputs use tempref-backed immediate evaluation, not normal references);
 - standalone `Transformer` builders;
 - concrete `Transformation` objects;
 - workflow `Context` nodes, including cell values, transformer-pin literals, and current
@@ -61,8 +62,8 @@ where shutdown ordering must release their buffer references before the audit.
   lease object and does not replace the integer count.
 
 **Role**
-: The reason a holder retains a checksum, for example `cell.input`, `expression.input`,
-  `transformer.pin:x`, `transformation.result`, or `workflow:sub.tf.result`.
+: The reason a holder retains a checksum, for example `cell.input`, `transformer.pin:x`,
+  `transformation.input:x`, `transformation.result`, or `workflow:sub.tf.result`.
 
 **Underflow / over-decrement**
 : A `decref` for which the named holder has no matching reference. The decrement must be
@@ -212,9 +213,9 @@ audit.
 | Bare `Checksum` | none | n/a |
 | `Buffer` | only explicit manual increments | matching manual decrement or global audit |
 | Standalone `Cell` | concrete checksum input needed by future `build`/`compute` | input replacement, destruction, shutdown collection |
-| `Expression` | concrete input, validator checksum, and explicitly stored result if present | destruction, shutdown collection |
+| `Expression` | no normal input reference; only an explicitly retained observable result, if the API provides one | result replacement, destruction, shutdown collection |
 | Standalone `Transformer` builder | checksum-bound pins and any checksum-only code/module inputs | pin/code replacement or deletion, destruction, shutdown collection |
-| `Transformation` | direct concrete inputs, resolved dependency results, constructed transformation checksum while needed, completed result while exposed | terminal replacement where applicable, destruction, shutdown collection |
+| `Transformation` | direct concrete inputs, resolved dependency results, and constructed transformation checksum while needed; a result only when explicit user interest is represented by this object/API | input no longer needed, destruction, shutdown collection |
 | `CodeManager` | semantic/syntactic code checksums represented by its integer maps | manager decrement and shutdown hook |
 | Workflow `Context` | cell literal producers, transformer-pin literals, current node results, and any retained superseded results | mutation, node deletion, graph replacement, context destruction, shutdown collection |
 | Bound workflow `Cell`/`Transformer` handle | none; it is an ephemeral view | n/a |
@@ -231,17 +232,28 @@ Dependency handoff must have no interval in which a required result has no owner
 
 ### 6.1 Expression input
 
-A concrete `Expression` acquires its checksum input when created. Derived expressions made
-through `.item()`, `.slice()`, `.as_celltype()`, or `dataclasses.replace` acquire their own
-references. Destroying the source expression must not invalidate a derived expression.
+An `Expression` does **not** acquire a normal reference to its checksum input. Expression
+evaluation is cheap and starts immediately once an input becomes concrete. The producer or
+input serialization supplies a tempref whose expiry horizon is on the order of dozens of
+seconds or longer, which is ample for this immediate evaluation and cache handoff.
+
+An Expression deliberately kept dormant beyond that tempref horizon does not create
+indefinite retention merely by existing. It may resolve the input from durable storage,
+fingertip/recompute it when provenance permits, or report a cache miss according to the
+availability policy. `.item()`, `.slice()`, `.as_celltype()`, and `dataclasses.replace` do
+not increment the input checksum.
+
+Validator checksums follow the same rule if validation happens as part of immediate
+evaluation. A separately configured validator object that promises availability while
+dormant must define its own ownership; the Expression should not retain it implicitly.
 
 ### 6.2 Expression result to Transformation input
 
 When a downstream `Transformation` resolves an `Expression` dependency:
 
-1. the `Expression` owns its input through evaluation;
-2. evaluation creates or discovers a result checksum with a temporary producer hold;
-3. before that producer hold can expire, the downstream `Transformation` acquires a normal
+1. the input's existing tempref covers the cheap, immediate Expression evaluation;
+2. evaluation creates or discovers a result checksum with a fresh temporary producer hold;
+3. before that result tempref can expire, the downstream `Transformation` acquires a normal
    reference under `dependency-result:<pin>`;
 4. only then may execution be deferred;
 5. the downstream transformation releases that reference on destruction or after it no
@@ -252,14 +264,30 @@ without adding them to the transformation's normal input refs. Correct that path
 
 ### 6.3 Transformation result
 
-A concrete standalone `Transformation` acquires its completed result checksum before
-publishing `_result_checksum`. It retains that checksum while the object exposes
-`result_checksum`/`run()` semantics.
+A completed Expression or Transformation result receives a tempref with the normal
+dozens-of-seconds-or-longer handoff horizon. It does not automatically receive a normal
+reference merely because its producer stores or returns the checksum.
+
+If only a dependent is interested, the dependent acquires the result atomically as soon as
+the checksum becomes concrete. After that acquisition the producer may let the tempref fade;
+no producer-side normal result reference is needed.
+
+If the user is interested, that interest must be represented by a normal-refholding owner:
+for example a standalone `Cell`, an explicit result-retention API, a workflow Context's
+current result, or a manual `incref`. A bare returned `Checksum` is ref-neutral. `run()` may
+resolve the value immediately within the result tempref window and therefore does not by
+itself imply indefinite result retention.
+
+If `Transformation.result_checksum` is intended to promise indefinite later
+materialization merely while the Transformation object lives, that would make the
+Transformation an explicit user-interest holder. Do not assume that stronger contract in
+the implementation: decide and document it separately. Under the interest-driven contract
+adopted here, storing `_result_checksum` alone is ref-neutral.
 
 In a workflow, the `Context` node independently acquires the current result before
-publishing `node.current_checksum`. The private transformation and Context may briefly both
-hold it; that overlap is correct. Superseding or deleting the node releases the Context's
-current-result reference according to the runtime retention policy.
+publishing `node.current_checksum`, because the workflow exposes that current result as
+observable state. Superseding or deleting the node releases the Context's current-result
+reference according to the runtime retention policy.
 
 ## 7. Core implementation
 
@@ -411,13 +439,17 @@ without decrementing is detected later as an unattributed excess in the cache in
 
 **`Expression`**
 
-- Add hidden holder/counter state excluded from equality, hash, identity keys, repr, and
-  serialization.
-- Acquire concrete input and validator checksums in `__post_init__`.
-- Acquire an explicit `result` checksum when `with_result` constructs a result-bearing
-  expression.
-- Ensure all `replace`-based derivations construct an independent owner.
-- Release idempotently in `__del__` and via shutdown collection.
+- Do not acquire normal references for concrete inputs or validators.
+- Ensure evaluation refreshes or creates suitable temprefs for its result before returning
+  the checksum to a downstream handoff.
+- If `with_result` means that the Expression becomes an observable stored-result owner,
+  acquire that explicit result checksum and add hidden holder/counter state excluded from
+  equality, hash, identity keys, repr, and serialization. If `result` is only provenance
+  metadata, keep it ref-neutral instead; settle and document that API meaning before
+  implementation.
+- `replace`-based derivations remain ref-neutral unless they copy an explicitly owned
+  observable result, in which case the derived object acquires independently.
+- Release any explicit result ownership idempotently in `__del__` and shutdown collection.
 
 **`BufferCache` / `Checksum` / `Buffer`**
 
@@ -445,7 +477,9 @@ without decrementing is detected later as an unattributed excess in the cache in
 - Acquire resolved dependency result checksums before publishing a constructed execution
   dictionary.
 - Acquire `_transformation_checksum` for as long as later execution needs its buffer.
-- Acquire completed `_result_checksum` before publishing it.
+- Give completed `_result_checksum` a suitable tempref before publishing it. Acquire a
+  normal result reference only for an explicit user-interest role; dependency-only results
+  are acquired by their downstream consumers instead.
 - Release all owned inputs/results/code-related refs exactly once on destruction or explicit
   close.
 - Keep `PreTransformation.release()` idempotent. Consolidate ownership so both
@@ -654,7 +688,7 @@ checksum, holder kind/ID, and role. Example:
 [seamless.references] checksum reference lifecycle errors
   leaked normal references: 2 across 1 checksum
   checksum 8f...21: count=2
-    holder Expression#17 (pipeline.input), role=input: 1
+    holder Transformation#17 (pipeline.normalize), role=dependency-result:input: 1
     holder Transformation#24 (normalize), role=dependency-result:data: 1
   over-decrements: 1
   checksum 31...af:
@@ -685,7 +719,7 @@ Implement in stages so each repository remains testable:
    - eviction correction;
    - status/audit snapshot APIs.
 2. **Core object ownership**
-   - standalone `Cell` and `Expression` lifecycle;
+   - standalone `Cell` lifecycle and Expression tempref contract;
    - weak refholder registry;
    - copy/replace/destructor behavior.
 3. **Transformer ownership**
@@ -730,8 +764,10 @@ migration. Missing attribution should use the explicit unattributed holder until
 
 - a checksum-backed Cell survives forced tempref expiry;
 - replacing or deleting its input releases exactly once;
-- derived Cells/Expressions own independent refs;
-- Expression input and validator buffers survive until evaluation;
+- derived Cells own independent refs; derived Expressions do not acquire normal input refs;
+- Expression evaluation succeeds within an artificially shortened but nonzero tempref
+  handoff window;
+- an intentionally dormant Expression does not keep its input normal-refheld;
 - an uncalled Transformer builder retains checksum-bound pins;
 - builder pin replacement/deletion releases old refs;
 - calling a reusable builder gives the Transformation an independent ref;
@@ -740,10 +776,12 @@ migration. Missing attribution should use the explicit unattributed holder until
 
 ### 11.3 Transformation dependency handoff
 
-- Expression result survives an artificial delay between dependency resolution and
-  downstream execution;
+- an Expression result survives an artificial delay between dependency resolution and
+  downstream execution because the downstream Transformation acquires it immediately;
 - upstream Transformation result survives downstream construction/execution;
-- concrete Transformation result survives tempref expiry while the Transformation lives;
+- a concrete Transformation result is tempref-backed by default and does not survive expiry
+  merely because the producer object lives;
+- an explicitly interested user owner retains a Transformation result through expiry;
 - deleting the producer does not invalidate an independently holding downstream consumer;
 - scratch inputs/results obey live-owner guarantees without remote registration;
 - success, exception, cancellation, clear-exception, and destructor paths all balance.
