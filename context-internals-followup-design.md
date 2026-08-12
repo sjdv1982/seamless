@@ -48,6 +48,9 @@ new durable metadata is explicitly required below.
 11. A Transformer pin is one producer slot, not a structured overlay. `.pins` is the
     sole public pin namespace; the reserved `.inp` namespace and Transformer
     pin-subpath targets are removed.
+12. `.pins` is also the sole *access path*: `tf.x` and `tf["x"]` pin sugar is removed in
+    standalone and bound modes, and pin declaration respects the code signature
+    (Appendix A).
 
 ## Why The Experimental Dual Surface Is Rejected
 
@@ -456,11 +459,12 @@ Reactive execution is explicit:
 The implementation must not make `Transformer.__call__` return the reactive value for
 an ordinary delayed transformer.
 
-### Pins and attribute sugar
+### Pins
 
-`Transformer.pins` is the sole public input-pin namespace. It remains the
-prebinding/configuration wrapper analogous to `functools.partial`, with the same public
-shape in standalone and bound modes.
+`Transformer.pins` is the sole public input-pin namespace **and the sole access path**.
+It remains the prebinding/configuration wrapper analogous to `functools.partial`, with
+the same public shape in standalone and bound modes. See Appendix A for the removal of
+the direct attribute and item sugar this section originally specified.
 
 Each pin has exactly one configured producer:
 
@@ -487,29 +491,27 @@ ctx.tf.pins.y = ctx.source
 del ctx.tf.pins.y
 ```
 
-For an existing or declared pin whose name does not collide with Transformer API,
-direct attribute syntax is read/write sugar for `.pins`:
+A Transformer exposes no attribute or item pin sugar. `ctx.tf.x`, `ctx.tf.x = source`,
+`del ctx.tf.x`, and `ctx.tf["x"]` are not pin operations in standalone or bound mode:
+every Transformer attribute name is configuration API, and pins live only in `.pins`.
+There is therefore no API-name arbitration to perform and no colliding pin: a pin named
+`scratch` is `ctx.tf.pins.scratch` while `ctx.tf.scratch` is always the execution
+setting.
 
-```python
-ctx.tf.x              # ctx.tf.pins.x
-ctx.tf.x = source     # ctx.tf.pins.x = source
-```
+`Transformer` defines no `__getattr__` fallback. An unknown attribute raises
+`AttributeError`, and a bound-only property such as `.result` keeps its own deliberate
+error instead of decaying into a pin read. Assigning or deleting an unknown public
+attribute name also raises `AttributeError` rather than creating an instance attribute.
 
-Transformer item syntax is likewise read/write sugar for `.pins` in standalone and
-bound modes:
+Pin declaration is constrained by the code signature in both modes: `.pins` and
+`.celltypes` may assign an already declared pin, and may declare a new one only when
+the code has no fixed signature (text, bash). When the code is a Python callable, a
+name outside its parameters raises `AttributeError` instead of declaring a pin whose
+every later run would fail with an unexpected-keyword `TypeError`. `result` is never an
+input pin name.
 
-```python
-ctx.tf["x"]           # ctx.tf.pins["x"]
-ctx.tf["x"] = source  # ctx.tf.pins["x"] = source
-```
-
-API names win. A colliding pin such as `scratch` must use
-`ctx.tf.pins["scratch"]` or `ctx.tf["scratch"]`. Direct attribute syntax must not
-silently create a new pin from a typo; explicit `.pins` or the pin-declaration API is
-required for creation.
-
-The reserved `.inp` namespace is removed. If a Transformer declares an ordinary pin
-named `inp`, `ctx.tf.inp` is merely direct sugar for `ctx.tf.pins.inp`. A nested
+The reserved `.inp` namespace is removed. A Transformer that declares an ordinary pin
+named `inp` reaches it as `ctx.tf.pins.inp`; `ctx.tf.inp` raises `AttributeError`. A nested
 expression such as `ctx.tf.pins.payload.left = source` does not create a graph target
 below `payload`; Transformer pins are whole-pin targets only.
 
@@ -542,9 +544,9 @@ assumes `node.cell_config` is not sufficient.
 
 Bound transformers explicitly expose `.run()`, `.compute()`, `.task()`, `.prune()`,
 `.clear_exception()`, snapshot helpers, and result through the public class/backend
-contract. Do not use a catch-all backend `__getattr__` for these names. Direct pin
-sugar may use `__getattr__` only after normal API lookup and only for declared
-non-colliding pin names.
+contract. Do not use a catch-all backend `__getattr__` for these names. `Transformer`
+defines no `__getattr__` at all, so no attribute lookup can silently reach the backend
+or a pin.
 
 ## Endpoint Protocol And Dependency Wiring
 
@@ -671,6 +673,11 @@ The following earlier rules are superseded:
   representation;
 - Context wiring discovers bound sources by enumerating concrete view classes.
 
+One rule of this document's own first version is superseded by Appendix A:
+
+- `ctx.tf.x` and `ctx.tf["x"]` are read/write sugar for `ctx.tf.pins.x`, arbitrated
+  against Transformer API names.
+
 ## Required Behavioral Examples
 
 The following examples are normative:
@@ -724,12 +731,18 @@ current_checksum = ctx.add.compute()
 ```
 
 ```python
-# Transformer pins have one producer each
-ctx.add.pins.x = 10             # local checksum producer
-ctx.add.pins.y = ctx.source     # one incoming edge for pin y
-ctx.add.z = ctx.other_source    # declared non-colliding pin sugar
-ctx.add["scratch"] = ctx.flag   # colliding pin via item syntax
-ctx.add.scratch = True          # Transformer execution setting
+# Transformer pins have one producer each, and .pins is the only way in
+ctx.add.pins.x = 10                 # local checksum producer
+ctx.add.pins.y = ctx.source         # one incoming edge for pin y
+ctx.add.pins.scratch = ctx.flag     # pin named like an API name: no collision
+ctx.add.scratch = True              # Transformer execution setting
+
+with pytest.raises(AttributeError):
+    ctx.add.x = 10                  # no attribute pin sugar
+with pytest.raises(TypeError):
+    ctx.add["x"] = 10               # no item pin sugar
+with pytest.raises(AttributeError):
+    ctx.add.pins.typo = 10          # outside the code signature
 ```
 
 ## Design Acceptance Criteria
@@ -754,9 +767,136 @@ This follow-up design is satisfied when:
 9. Delayed Transformer calls return immutable `Transformation` snapshots before and
    after binding; direct-transformer behavior remains direct.
 10. Transformer `.pins`, `.code`, and `.result` have the meanings defined above;
-   no reserved `.inp` namespace or Transformer pin-subpath targets exist.
+   no reserved `.inp` namespace, Transformer pin-subpath targets, or attribute/item
+   pin sugar exist, and pin declaration respects the code signature.
 11. `ctx.tf.result` is a read-only bound Cell.
 12. Context dependency wiring uses normalized endpoint descriptors rather than a
     concrete view-class registry.
 13. Bound behavior never reads abandoned standalone state.
 14. Lower-level packages do not import `seamless_workflow`.
+
+---
+
+# Appendix A — Removal Of Direct Transformer Pin Sugar
+
+Normative. Adopted 2026-08-12, after the body of this document was implemented. Where
+this appendix and the body disagree, the appendix wins; the body has been amended to
+match.
+
+## A.1 Decision
+
+`Transformer.pins` (and its `.args` alias) is the only way to read, write, or delete a
+transformer input pin. The direct attribute and item sugar specified in the original
+*Pins and attribute sugar* section is removed in **both** standalone and bound modes:
+
+```python
+ctx.tf.pins.x = source     # the only spelling
+ctx.tf.x = source          # AttributeError
+ctx.tf.x                   # AttributeError
+del ctx.tf.x               # AttributeError
+ctx.tf["x"] = source       # TypeError: not subscriptable
+```
+
+Item sugar goes with attribute sugar rather than surviving alone: its stated purpose was
+to be the escape hatch for names colliding with Transformer API, and with no attribute
+sugar there is nothing to escape from — `pins["x"]` already covers dynamic and awkward
+names.
+
+`Transformer` consequently defines **no** `__getattr__`. `__setattr__` and `__delattr__`
+keep rejecting unknown public attribute names, so a typo is an error rather than a silent
+instance attribute.
+
+This holds for bound handles too. Context lookup returns a canonical handle as soon as a
+path reaches a node, so `ctx.tf.whatever` is resolved by the `Transformer` class and
+raises `AttributeError`; it never continues as Context namespace navigation and never
+yields a `MissingView`. Only a path whose owning node does not exist — `ctx.nonode.whatever`
+— remains an unresolved namespace view.
+
+## A.2 Why
+
+**1. Collision arbitration was silent and could not be made safe.** "API names win" is a
+rule the writer must know in advance. For `def f(local, x)`:
+
+```python
+ctx.tf.local = "PIN?"      # sets the execution setting, unvalidated
+                           # cfg.local == "PIN?", pins.local is still None
+```
+
+Nothing reports that the intended pin was not written. The colliding surface is large and
+mostly ordinary parameter vocabulary: `local`, `code`, `result`, `meta`, `scratch`,
+`driver`, `language`, `args`, `pins`, `run`, `compute`, `value`. Removing the sugar
+deletes the collision class instead of arbitrating it, and makes the rule statable in one
+line: **a Transformer's attributes are its configuration; its inputs are in `.pins`.**
+
+**2. It restores bound-only error messages.** The sugar required a `__getattr__` that
+first checked for a statically defined API name (the same defensive rule this document
+states for `Cell`) and then raised a bare `AttributeError(name)` — discarding the original
+error. `delayed(f).result` reported `AttributeError: result` instead of *"result is only
+available for bound workflow transformers"*. With no `__getattr__`, the property's own
+error propagates.
+
+**3. It restores static checking.** `Transformer` is `Generic[P, R]`. An untyped
+`__getattr__` makes every misspelled attribute type-check; without it, `tf.xx` is a type
+error.
+
+**4. Cell and Transformer become sharply distinguishable rather than confusingly
+similar.** Cell attributes navigate data (a projection); Transformer attributes never
+navigate anything. The previous surface made `ctx.a.b` and `ctx.tf.b` look like the same
+gesture while one produced a projection handle and the other a producer read.
+
+## A.3 What it costs
+
+Legacy Seamless documented `ctx.tf.x = ctx.c` as *the* pin syntax, so this breaks 0.x
+muscle memory. That break was already partial: legacy sugar **created** pins on
+assignment, which the body of this document forbids. A half-compatible echo of the legacy
+API is worse than a clean one, and `.pins` is five characters.
+
+## A.4 Required companion rule: signature-checked pin declaration
+
+With the sugar gone, `.pins` is the only door — so the guard the sugar happened to
+provide must be moved into `.pins` itself. Before this change, the sugar checked declared
+pin names while `.pins` did not, and on a bound transformer:
+
+```python
+ctx.add.pins.typo = 1      # accepted; pins become {typo, x, y}
+ctx.add.run()              # TypeError: add() got an unexpected keyword argument 'typo'
+```
+
+The node was permanently unrunnable and nothing had objected. Normative rule, in both
+modes and for both `.pins` and `.celltypes`:
+
+- an already declared pin name is always assignable;
+- a new pin name may be declared only when the code has no fixed signature (text, bash);
+- when the code is a Python callable, a name outside its parameters raises
+  `AttributeError`;
+- `result` is never an input pin name.
+
+This restores the standalone/bound parity the body requires of `.pins`, in the direction
+that fails loudly.
+
+## A.5 Residual parity notes
+
+Two `.pins` divergences remain, both predating this change and neither resolved here:
+
+- **Delete means different things.** Standalone `del tf.pins.x` removes the *declaration*
+  and is refused outright when the signature is fixed; bound `del ctx.tf.pins.x` clears
+  the *producer*, leaving the pin declared and the node `unwired`. The bound meaning is
+  the one this document specifies; the standalone meaning predates it.
+- **Reading an undeclared name.** Standalone returns `None`; bound raises
+  `AttributeError`. The bound behavior is the better one.
+
+## A.6 Implementation anchors
+
+- `seamless_transformer/transformer_class.py`: `TransformerCore.__getattr__`,
+  `__getitem__`, `__setitem__`, `__delitem__`, and `_declared_pin_names()` are deleted;
+  `__setattr__`/`__delattr__` keep only the API-name/private-name branch.
+- `seamless_workflow/graph.py`: `TransformerConfig.signature_parameters()` and
+  `TransformerConfig.check_pin_name()` hold the A.4 rule.
+- `seamless_workflow/context.py`: `_set_transformer_pin()` calls `check_pin_name()`.
+- `seamless_workflow/builder_state.py`: `WorkflowCelltypes.__setitem__` calls
+  `check_pin_name(allow_result=True)`; the now-unused `pin_names` backend property is
+  deleted.
+- Incidental fix in the same surface: `CompiledMixin.__init_compiled__` assigned the
+  public attribute `self.compilation`, which the strict `__setattr__` introduced by this
+  document already rejected — `CompiledTransformer(...)` could not be constructed at all.
+  `compilation` is now a property backed by `_compilation`.
