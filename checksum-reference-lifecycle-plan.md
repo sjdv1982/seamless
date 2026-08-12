@@ -2,167 +2,77 @@
 
 ## 1. Purpose
 
-Seamless uses integer reference counts to keep checksum-addressed buffers locally
-available for as long as a live object promises that it can use or expose them.
-Reference counting has two distinct layers:
+Seamless uses two parallel integer reference-count systems to keep checksum-addressed
+buffers available while live objects still need them: a logical count for Seamless
+refholder classes and the existing cache count used by explicit manual
+`incref`/`decref` calls. Correctness comes from per-object lifecycle management. A small
+global audit at `seamless.close()` checks that both systems balanced.
 
-1. **Per-object lifecycle management** acquires and releases references during normal
-   operation.
-2. **Global lifecycle collection and audit** runs during `seamless.close()` and at
-   interpreter shutdown. It releases all still-live Seamless refholders, verifies that
-   every `incref` was matched by exactly one `decref`, and reports lifecycle bugs.
+The design has three deliberately simple pieces:
 
-The global collector is a safety net and auditor. It is not a substitute for correct
-per-object ownership.
+1. a refholder multiplicity count whose zero-crossings toggle one aggregate eviction
+   bridge in the cache entry;
+2. a weak registry containing every live Seamless refholding object;
+3. a shutdown audit that derives `checksum -> live holders` from those objects and compares
+   it with the cache counts.
 
-This plan deliberately retains **integer refcounts**. Holder bookkeeping is additional
-diagnostic information: the integer is the retention count, while holder records explain
-which objects contributed to it and identify an invalid decrement.
+There are no lease objects, holder IDs, holder-history records, generic per-object checksum
+counters, or structured audit-report object.
 
-## 2. Scope
+## 2. Terminology
 
-This plan covers normal buffer-cache references held by:
+**Refholder**
+: A live Seamless object whose class contract says it owns one or more checksum references.
 
-- standalone `Cell` objects;
-- immutable `Expression` objects where they explicitly retain an observable result (ordinary
-  expression inputs use tempref-backed immediate evaluation, not normal references);
-- standalone `Transformer` builders;
-- concrete `Transformation` objects;
-- workflow `Context` nodes, including cell values, transformer-pin literals, and current
-  cell/transformer results;
-- process-global managers such as `CodeManager`;
-- explicit user calls to `Buffer.incref()` or `Checksum.incref()`.
+**Refholder reference**
+: A cache reference acquired and released by a refholder as part of its lifecycle.
 
-It also covers dependency-result handoff between an `Expression` or `Transformation` and
-a downstream `Transformation`.
+**Manual reference**
+: A reference acquired by a direct public `Buffer.incref()` or `Checksum.incref()` call.
 
-Temporary references remain a separate, decaying cache-interest mechanism. They are not
-included in the normal-reference balance report. Remote durability is also orthogonal:
-the existence of a remote copy does not satisfy a live object's local reference contract.
+**Tempref**
+: Decaying cache interest. It supports short handoffs and cheap Expression evaluation but
+  is not part of normal reference-count auditing.
 
-Running-transformation awaiter sets and cancellation ownership are out of scope except
-where shutdown ordering must release their buffer references before the audit.
+## 3. Refcounts and cache bridge
 
-## 3. Terminology
-
-**Checksum**
-: A content address. A bare `Checksum` is not itself a reference holder.
-
-**Normal reference**
-: One unit in an integer refcount. While the count is positive, the buffer-cache entry and
-  its local buffer must not be discarded by normal eviction.
-
-**Temporary reference**
-: Decaying interest used for cache convergence, completed results that nobody promises to
-  retain, and other best-effort availability. Expiry is valid and is not a lifecycle bug.
-
-**Holder**
-: An object or subsystem responsible for one or more normal-reference units. A holder is
-  represented diagnostically by a stable token and descriptive metadata; it is not a
-  lease object and does not replace the integer count.
-
-**Role**
-: The reason a holder retains a checksum, for example `cell.input`, `transformer.pin:x`,
-  `transformation.input:x`, `transformation.result`, or `workflow:sub.tf.result`.
-
-**Underflow / over-decrement**
-: A `decref` for which the named holder has no matching reference. The decrement must be
-  rejected and recorded; it must never consume another holder's reference.
-
-**Leak / undecremented reference**
-: A positive normal reference remaining after global lifecycle collection.
-
-## 4. Contract
-
-### 4.1 Fundamental invariant
-
-Every live object that promises future local materialization of a checksum owns one normal
-reference for the duration of that promise.
-
-For every checksum `C`:
-
-```text
-normal_refcount[C] == sum(
-    holder.references[C, role]
-    for every registered holder and role
-) >= 0
-```
-
-The equality must hold after every atomic `incref` or `decref`. Holder-registry counters
-explain the integer; they do not replace it.
-
-### 4.2 Acquisition and release
-
-- Acquisition is explicit and atomic with publishing the new object state.
-- Replacement acquires the new checksum before releasing the old checksum. This keeps
-  same-checksum replacement safe and gives exception-safe mutation.
-- Deletion, explicit `close()`/`destroy()`, replacement, and `__del__` all converge on one
-  idempotent release method.
-- Copying or snapshotting creates an independent owner and therefore increments again.
-  Ownership is never transferred implicitly.
-- Serialization stores checksums but owns no process-local references. Deserialization
-  into a live object acquires fresh references.
-- Repeated destruction is a no-op at the object layer. It must not issue a second
-  `decref`.
-- A failed acquisition must not be entered into object state or holder bookkeeping.
-- A failed release is a lifecycle error and must be recorded without changing the global
-  integer count.
-
-### 4.3 Holder attribution
-
-Each refholding object receives a monotonically allocated holder ID. Do not use `id(obj)`
-as the sole identity because Python may reuse it. Holder metadata contains only immutable
-diagnostics and must not keep the object alive:
+Rename the existing cache-entry `normal_refs` integer to `manual_refs`, preserving its
+current behavior for explicit public `incref`/`decref`. Add a boolean eviction bridge:
 
 ```python
-@dataclass(frozen=True)
-class ReferenceHolder:
-    holder_id: int
-    kind: str             # e.g. "Expression", "Transformation", "Context"
-    label: str | None     # path/name when known
+@dataclass
+class StrongEntry:
+    buffer: Buffer | None
+    size: int | None
+    manual_refs: int = 0
+    has_refholder_bridge: bool = False
+    tempref: TempRef | None = None
 ```
 
-Every registered holder contains a `Counter[tuple[Checksum, str]]`. A holder may own
-multiple units for distinct roles or repeated manual increments:
+Maintain the logical refholder multiplicity outside the cache entry:
 
 ```text
-holder.references[checksum, role] -> positive integer
+refholder_count[checksum] -> non-negative integer
 ```
 
-The weak registry can aggregate these counters by checksum for the final report. This
-permits reports to name both the object and the field/pin/result responsible for a leak
-without duplicating a holder map inside every buffer-cache entry.
+The refholder count controls the boolean bridge:
 
-If a holder dies incorrectly without decrementing, it disappears from the weak registry and
-cannot be named later. This is acceptable. At shutdown, its leaked count appears as the
-difference between the cache's integer count and the sum attributed to holders that are
-still alive. The report lists those live holders, if any, and labels the excess count as
-unattributed; it must not retain dead-holder tombstones merely to improve diagnostics.
+- on `refholder_count` transition `0 -> 1`, set `has_refholder_bridge = True`;
+- transitions `N -> N + 1`, for `N > 0`, do not change it;
+- transitions `N -> N - 1`, for `N > 1`, do not change it;
+- on transition `1 -> 0`, set `has_refholder_bridge = False`.
 
-### 4.4 Decrement validation
+The bridge is an implementation detail, not a holder object or a manual reference. Its
+only purpose is to prevent eviction while at least one refholder exists. Refholder-count
+zero-crossings and bridge updates must be atomic under the appropriate lifecycle/cache
+lock. The `0 -> 1` path creates or promotes the strong cache entry just as an ordinary
+cache increment currently does; the `1 -> 0` path demotes it only if neither manual refs
+nor a tempref remain. Remote registration and scratch policy remain orthogonal to this
+eviction bridge.
 
-`decref(checksum, holder, role)` performs these checks under the same lifecycle lock:
+### 3.1 Manual API
 
-1. Does the live holder's local counter own a positive count for `(checksum, role)`?
-2. Is the checksum's total integer count positive?
-3. Would decrementing preserve the cache-integer/registry-sum invariant?
-
-If any check fails:
-
-- do not decrement or clamp the integer;
-- record an `OverDecrefEvent` with the checksum, attempted holder and role, current count,
-  and current holders;
-- return `False`;
-- optionally print immediately in debug mode, but always include it in the final audit.
-
-This is stricter than merely testing whether the checksum has *some* reference: one holder
-must never consume a sibling holder's reference.
-
-### 4.5 Raw public `incref` compatibility
-
-Internal Seamless calls must always pass an attributed holder and role.
-
-Existing public calls remain source-compatible:
+Existing public calls keep their meaning:
 
 ```python
 checksum.incref()
@@ -171,761 +81,400 @@ buffer.incref()
 buffer.decref()
 ```
 
-Unattributed calls use a distinguished `manual/unattributed` holder. They still participate
-in integer accounting and final leak reporting. Add optional keyword-only attribution for
-advanced callers:
+They modify `manual_refs` only. A manual `decref` when `manual_refs == 0` does nothing and
+emits a warning through the logger. It cannot consume the boolean refholder bridge.
+
+### 3.2 Refholder API
+
+Internal lifecycle code uses a separate API:
 
 ```python
-checksum.incref(holder=holder, role="application-cache")
-checksum.decref(holder=holder, role="application-cache")
+checksum.incref_refholder()
+checksum.decref_refholder()
+buffer.incref_refholder()
+buffer.decref_refholder()
 ```
 
-`Buffer` may lazily create a per-instance manual holder so `buffer.incref()` and
-`buffer.decref()` can be attributed to that buffer. A bare `Checksum` remains a value
-object and does not silently become a holder merely by being constructed.
+These modify `refholder_count` and toggle the cache bridge only on the zero-crossing
+transitions described above. `decref_refholder()` when that count is already zero does
+nothing and emits a warning. No event history is stored.
 
-### 4.6 Scratch data
+This API does not receive the holder object. Holder attribution is reconstructed when
+needed by traversing the weak registry and inspecting each live object's known ownership
+fields.
 
-Scratch controls persistence/remote registration, not object ownership. A live holder that
-promises scratch data remains locally available must take a normal reference with
-`scratch=True`. It must not substitute a decaying tempref for a required lifetime.
+### 3.3 Eviction
 
-The current `PreTransformation._to_checksum` path mixes these concepts: scratch inputs can
-receive only a tempref but are still appended to `_value_refs`, whose cleanup calls
-`decref`. Replace that with explicit normal scratch references or keep tempref-only entries
-out of the normal-reference list.
+An entry can be demoted or evicted only when all three conditions hold:
 
-### 4.7 Eviction
+```text
+manual_refs == 0
+and has_refholder_bridge is False
+and no live tempref exists
+```
 
-A positive normal refcount is a non-eviction guarantee. Cache eviction may expire temprefs
-and remove zero-normal-ref entries, but it must not delete the accounting or buffer for an
-entry with `normal_refcount > 0`.
+Thus any nonzero `refholder_count` gives exactly the required eviction protection.
+Temprefs may expire normally. If memory limits cannot be met because all remaining buffers
+have references, report memory pressure rather than deleting referenced data or its
+accounting.
 
-The eviction candidate set must therefore exclude normal-refheld entries. If the hard cap
-cannot be met because all remaining buffers have normal references, report memory pressure;
-do not erase the refcount. This is required for both correctness and a trustworthy final
-audit.
+## 4. Weak refholder registry
 
-## 5. Ownership matrix
+Maintain a process-global identity-based weak collection of every live refholding object.
+A `weakref.WeakSet` is sufficient. Classes using slots must support weak references.
 
-| Object/subsystem | Checksums it owns | Release point |
-|---|---|---|
-| Bare `Checksum` | none | n/a |
-| `Buffer` | only explicit manual increments | matching manual decrement or global audit |
-| Standalone `Cell` builder | concrete checksum input needed by future `build`/`compute`; no result ownership | input replacement, destruction, shutdown collection |
-| `Expression` | no normal input reference; only an explicitly retained observable result, if the API provides one | result replacement, destruction, shutdown collection |
-| Standalone `Transformer` builder | checksum-bound pins and any checksum-only code/module inputs; no result ownership | pin/code replacement or deletion, destruction, shutdown collection |
-| `Transformation` | direct concrete inputs, resolved dependency results, and constructed transformation checksum while needed; a result only when explicit user interest is represented by this object/API | input no longer needed, destruction, shutdown collection |
-| `CodeManager` | semantic/syntactic code checksums represented by its integer maps | manager decrement and shutdown hook |
-| Workflow `Context` | cell literal producers, transformer-pin literals, current node results, and any retained superseded results | mutation, node deletion, graph replacement, context destruction, shutdown collection |
-| Bound workflow `Cell`/`Transformer` handle | none; it is an ephemeral view | n/a |
+Register an object when it becomes capable of holding its first reference. It may remain in
+the weak set after its current held-checksum list becomes empty; this is harmless. Object
+destruction removes it automatically.
 
-Two live owners of the same checksum contribute two references. Deduplication across owners
-is incorrect; independent owners must be independently releasable.
+No explicit holder key is needed. `id(obj)` is sufficient for formatting diagnostics while
+the object is alive. We do not preserve information about dead holders.
 
-Within one object, count ownership by semantic role. If the same checksum is both an input
-and a result, two role entries are acceptable and make mutation logic auditable.
+Each refholding class implements a small audit protocol:
 
-### 5.1 Standalone builders have no result state
+```python
+def _refheld_checksums(self) -> Iterable[tuple[Checksum, str]]:
+    """Yield one item per currently held reference.
 
-A standalone `Cell` or `Transformer` is a mutable, reusable definition builder. It retains
-configured checksum inputs because it promises that a future build remains possible. A
-built Expression or Transformation independently adopts whatever input lifetime its own
-contract requires; ownership is not transferred away from the reusable builder.
+    The string describes the owning field or pin for warning output.
+    Repeated checksums are yielded repeatedly when the object owns multiple refs.
+    """
+```
 
-The builder itself has no result checksum attribute and never refholds a result. Repeated
-builds may create distinct computation objects and results, so attaching one result to the
-mutable builder would be ambiguous.
+There is no generic `_checksum_refs` counter. The method derives ownership directly from
+the object's real state. For example:
 
-Builder convenience calls have deliberately weaker result retention:
+- a standalone Cell yields its checksum input;
+- a standalone Transformer yields each checksum-bound pin;
+- a Transformation yields its concrete inputs and, when applicable, its held result;
+- a Context yields each literal producer and current/retained result it owns.
 
-- `builder.compute()` creates a temporary Expression/Transformation, evaluates it, and
-  returns a checksum covered by the normal result tempref. The temporary computation's
-  `refhold_result` ends when that temporary object dies; the builder does not adopt it.
-- `builder.run()` creates a temporary computation and resolves the value immediately; no
-  persistent result reference is required.
-- A caller requiring persistent result ownership must retain the built
-  Expression/Transformation and explicitly call its public compute/run method, place the
-  checksum in another refholding owner such as a standalone Cell, or manually `incref` it.
+Because the registry is weak, a holder that dies incorrectly without decrementing cannot
+be named at shutdown. Its effect is still detected as an excess `refholder_count` not
+explained by any live holder. Other live holders of the same checksum can still be listed.
 
-Context-bound Cell/Transformer handles also have no independent result ownership. Any
-visible current result belongs to the Context node.
+## 5. General lifecycle contract
 
-## 6. Dependency handoff contract
+- Every object that promises later use of a checksum calls `incref_refholder()`.
+- It calls `decref_refholder()` on replacement, deletion, explicit destruction, or normal
+  object destruction.
+- Cleanup is idempotent.
+- Replacement acquires the new checksum before releasing the old one.
+- Copying a refholding object creates an independent reference.
+- Serialization stores checksums but owns no local references. Deserialization into a live
+  object acquires new references.
+- A bare `Checksum` is not a refholder.
+- Two objects holding the same checksum contribute two to `refholder_count`, while setting
+  only one boolean cache bridge.
+- One object holding the same checksum through two independent fields contributes two
+  references and yields it twice from `_refheld_checksums()`.
 
-Dependency handoff must have no interval in which a required result has no owner.
+## 6. Ownership by object type
 
-### 6.1 Expression input
+### 6.1 Standalone Cell builder
 
-An `Expression` does **not** acquire a normal reference to its checksum input. Expression
-evaluation is cheap and starts immediately once an input becomes concrete. The producer or
-input serialization supplies a tempref whose expiry horizon is on the order of dozens of
-seconds or longer, which is ample for this immediate evaluation and cache handoff.
+A standalone Cell refholds a concrete checksum input because it promises a future
+`build()`, `compute()`, or `run()` remains possible. It releases the old checksum when the
+input changes and releases its current checksum on destruction.
 
-An Expression deliberately kept dormant beyond that tempref horizon does not create
-indefinite retention merely by existing. It may resolve the input from durable storage,
-fingertip/recompute it when provenance permits, or report a cache miss according to the
-availability policy. `.item()`, `.slice()`, `.as_celltype()`, and `dataclasses.replace` do
-not increment the input checksum.
+The standalone Cell builder has no result-checksum state and no `.value` API. An explicitly
+built Expression owns its own result state; standalone `Cell.compute()` and `Cell.run()`
+delegate through a temporary Expression.
 
-Validator checksums follow the same rule if validation happens as part of immediate
-evaluation. A separately configured validator object that promises availability while
-dormant must define its own ownership; the Expression should not retain it implicitly.
+A bound Cell's `.value` does not build an Expression. It asks the Context to materialize
+the Context-owned current checksum (or projection) directly. The result ownership in that
+case therefore remains with the Context.
 
-### 6.2 Dependency handoff by dependent type
+`Cell.compute()` creates a temporary Expression and returns a tempref-backed checksum. The
+temporary Expression's explicit-result hold ends when that temporary object dies; the Cell
+does not adopt the result. `Cell.run()` resolves the value immediately.
 
-When a downstream `Transformation` resolves an `Expression` dependency:
+### 6.2 Expression
 
-1. the input's existing tempref covers the cheap, immediate Expression evaluation;
-2. evaluation creates or discovers a result checksum with a fresh temporary producer hold;
-3. before that result tempref can expire, the downstream `Transformation` acquires a normal
-   reference under `dependency-result:<pin>`;
-4. only then may execution be deferred;
-5. the downstream transformation releases that reference on destruction or after it no
-   longer promises it can execute/re-execute.
+An Expression does not normal-refhold its input. Expression evaluation is cheap and occurs
+immediately once the input is concrete. A fresh or refreshed tempref, with an ordinary
+expiry of dozens of seconds or longer, covers evaluation and handoff.
 
-The current `_prepared_dict_with_dependencies` logic injects dependency result checksums
-without adding them to the transformation's normal input refs. Correct that path explicitly.
+An Expression deliberately left dormant beyond that horizon does not retain its input
+indefinitely merely by existing. It may resolve from durable storage, fingertip/recompute,
+or report a cache miss according to the normal availability policy.
 
-When the dependent is another `Expression`, it does not acquire a normal input reference.
-Instead, make or refresh the input checksum's tempref and immediately evaluate the dependent
-Expression. Every Expression in a chain produces/refreshed a tempref for its own result, so
-the cheap chain remains covered without normal references.
-
-Thus “the dependent holds its input” has two concrete meanings:
-
-- dependent `Transformation`: normal `incref`, because it may wait for other inputs;
-- dependent `Expression`: fresh/refreshed tempref followed by immediate evaluation.
-
-### 6.3 Explicit result interest
-
-A completed Expression or Transformation result receives a tempref with the normal
-dozens-of-seconds-or-longer handoff horizon. It does not automatically receive a normal
-reference merely because its producer stores or returns the checksum.
-
-If only a dependent is interested, apply §6.2 as soon as the checksum becomes concrete. No
-producer-side normal result reference is needed.
-
-An Expression or Transformation has one boolean lifecycle property:
+An Expression has:
 
 ```python
 refhold_result: bool = False
 ```
 
-An explicit public `compute()` / `compute_async()` or `run()` / `task()` call does exactly
-one ownership operation before proceeding:
+An explicit public `compute()`, `compute_async()`, or `run()` call performs the ownership
+operation:
 
 ```python
-callee.refhold_result = True
+expression.refhold_result = True
 ```
 
-The `False -> True` transition is responsible for result ownership. If a result checksum is
-already present, it increfs it immediately. Otherwise, later result publication notices
-`refhold_result` and increfs the result as soon as it is present. Reassigning `True`, as on
-repeated explicit calls, is a no-op. If evaluation fails or is cancelled, no special case is
-needed: no checksum is present to incref, while the mode remains enabled for any later
-successful result.
+On the `False -> True` transition, the Expression increfs its result if already present. If
+the result is not present, later successful result publication sees the flag and increfs it.
+Repeated assignment of `True` does nothing. Transition to `False` during explicit release
+or destruction decrefs a held result.
 
-An internal `True -> False` transition, used by explicit result release or destruction,
-decrefs the held result if present. Public evaluation calls never turn the mode off.
+Dependency evaluation uses an internal method that does not enable `refhold_result`.
 
-Evaluation initiated solely by a dependent uses an internal origin-aware call and does not
-set explicit result interest. Current internal code that calls public `compute()` must be
-changed so it cannot accidentally make a dependency-only result user-held.
+### 6.3 Standalone Transformer builder
 
-This `refhold_result` behavior primarily applies to user-facing Expressions and
-Transformations constructed directly or through standalone Cell/Transformer builders.
+A standalone Transformer refholds every concrete checksum-bound pin, code input, or module
+input that it promises to use on a later call. Pin replacement/deletion and builder
+destruction release the corresponding references.
 
-Expressions and Transformations constructed privately by a workflow Context are scheduler
-evaluation objects, not user-facing result owners. They normally live only through active
-evaluation:
+Calling the reusable builder does not transfer its references away. The resulting
+Transformation independently acquires the concrete inputs it needs.
 
-- they normal-refhold concrete inputs for as long as evaluation may still need them;
-- on completion they publish the output under a tempref;
-- before that tempref can expire, the Context acquires any current or retained result it
-  promises to expose;
-- the private evaluation object does not set `refhold_result` and may release its inputs and
-  die after completion.
+The Transformer builder has no result or result-checksum state. `Transformer.compute()`
+returns a tempref-backed checksum from a temporary Transformation, and
+`Transformer.run()` resolves the value immediately. Persistent result interest requires
+retaining an explicitly built Transformation or adopting its checksum into another holder.
 
-If the Context deliberately keeps a private evaluation object beyond completion for a
-specific retry/reuse contract, that policy must name and retain its required inputs, but it
-still does not refhold the output merely by surviving.
+### 6.4 Transformation
 
-A public `compute()`/`run()` invoked through a context-bound Cell or Transformer is a Context
-demand operation. It must update Context-owned result interest/activation, not set
-`refhold_result` on the current private Expression or Transformation.
+A Transformation normal-refholds each concrete input as soon as that input becomes
+available. This includes dependency results that arrive while other dependencies are still
+pending. It releases those inputs when it can no longer execute/re-execute or when it is
+destroyed.
 
-A standalone `Cell`, workflow Context result, explicit manual `incref`, or another holder
-may independently express interest in the same result. Each owner contributes its own
-integer reference.
+A Transformation also has `refhold_result = False`, with the same transition semantics as
+Expression. Explicit public `compute()`, `computation()`, `run()`, or `task()` only enables
+this mode. Internal dependency evaluation does not.
 
-In a workflow, the `Context` node independently acquires the current result before
-publishing `node.current_checksum`, because the workflow exposes that current result as
-observable state. Superseding or deleting the node releases the Context's current-result
-reference according to the runtime retention policy.
+Every result receives a fresh/refreshed tempref on publication. When
+`refhold_result is True`, result publication additionally calls `incref_refholder()`.
 
-## 7. Core implementation
+### 6.5 Context and context-bound handles
 
-### 7.1 Buffer-cache state
+`Context` is a refholder class and registers itself in the weak refholder registry. Bound
+Cell and Transformer handles are ephemeral views and hold no references themselves. The
+Context owns:
 
-Keep normal-reference state under `BufferCache.lock` and add a weak holder registry guarded
-by the same lock (or by one outer lifecycle lock that always encloses cache mutation):
+- cell literal producers;
+- Transformer-pin literals;
+- current cell and Transformer results exposed as workflow state;
+- any deliberately retained superseded results.
 
-```python
-@dataclass
-class StrongEntry:
-    buffer: Buffer | None
-    size: int | None
-    normal_refs: int = 0
-    tempref: TempRef | None = None
-    ...
+The Context acquires a result before publishing it as current/retained state and releases
+the old result on replacement, node deletion, graph replacement, or Context destruction.
 
-@dataclass(frozen=True)
-class OverDecrefEvent:
-    checksum: str
-    holder: ReferenceHolder
-    role: str
-    normal_refs: int
-    current_holders: tuple[HolderCount, ...]
-```
+Context-private Expressions and Transformations are scheduler evaluation objects. They:
 
-Each live holder stores its own checksum/role counter. During normal mutation, assert that
-the cache integer is not lower than the aggregate count from currently live holders:
+- hold concrete inputs only while evaluation may need them;
+- publish outputs under a tempref;
+- keep `refhold_result = False`;
+- release inputs and normally die after completion, once the Context has adopted any result
+  it retains.
 
-```python
-assert entry.normal_refs >= sum(
-    holder._checksum_refs[checksum, role]
-    for holder in reference_holders
-    for role in holder._roles_for(checksum)
-)
-```
+Calling `compute()` or `run()` through a bound handle changes Context demand/result
+ownership. It does not enable `refhold_result` on a private E/T.
 
-Equality is checked by the final audit. A greater cache integer is possible only after a
-holder has died without decrementing or through unattributed/manual ownership; preserve
-that discrepancy for the shutdown audit.
-For zero-ref entries removed from `strong_cache`, no live holder should retain that
-checksum. Preserve over-decrement events in a bounded process-level list until the final
-audit. Do not preserve successful zeroed histories by default.
+### 6.6 Process-global managers
 
-### 7.2 Atomic API
+Managers such as `CodeManager` that own checksum refs register as refholders and implement
+the same `_refheld_checksums()` protocol. Existing manager-specific integer maps may remain
+their source of ownership state.
 
-The conceptual implementation atomically updates the cache integer and the live holder's
-local counter:
+## 7. Dependency handoff
 
-```python
-def incref(self, checksum, *, buffer=None, scratch=False, holder, role):
-    with self.lock:
-        entry = self._ensure_strong_entry(checksum, buffer, scratch=scratch)
-        self.reference_holders.require(holder)
-        entry.normal_refs += 1
-        holder._checksum_refs[checksum, role] += 1
-        self._assert_ref_invariant(checksum, entry)
+Handoff must occur before the producer's tempref may expire.
 
-def decref(self, checksum, *, holder, role) -> bool:
-    with self.lock:
-        entry = self.strong_cache.get(checksum)
-        registered = holder in self.reference_holders
-        key = (checksum, role)
-        if (
-            not registered
-            or holder._checksum_refs[key] == 0
-            or entry is None
-            or entry.normal_refs == 0
-        ):
-            self._record_over_decref(checksum, holder, role, entry)
-            return False
-        holder._checksum_refs[key] -= 1
-        if holder._checksum_refs[key] == 0:
-            del holder._checksum_refs[key]
-        entry.normal_refs -= 1
-        self._assert_ref_invariant(checksum, entry)
-        if entry.normal_refs == 0 and entry.tempref is None:
-            self._demote(checksum, entry)
-        return True
-```
+### 7.1 Dependent Transformation
 
-Production code should retain backward-compatible defaults for public manual calls, while
-internal helper functions require explicit attribution.
+When an Expression or Transformation result becomes a concrete input of a downstream
+Transformation, the downstream Transformation immediately calls `incref_refholder()` for
+that input. It can then safely wait for other inputs. The producer needs no normal result
+reference on behalf of this dependent.
 
-### 7.3 Per-object integer bookkeeping
+The current Transformation dependency-preparation path must be audited so every resolved
+dependency checksum becomes a held concrete input.
 
-Each refholder stores its stable metadata/token and its integer checksum/role counter. No
-lease objects are introduced:
+### 7.2 Dependent Expression
 
-```python
-self._refholder = new_reference_holder("Expression", label)
-self._checksum_refs: Counter[tuple[Checksum, str]] = Counter()
-```
+When the dependent is another Expression, make or refresh a tempref on the input checksum
+and evaluate the dependent immediately. The dependent Expression does not increment the
+refholder count. Its result receives another fresh/refreshed tempref.
 
-Shared helpers update cache and holder counters atomically. The release-all operation is
-idempotent at the object layer:
+## 8. Global collection and audit
 
-```python
-def _release_checksum_refs(self):
-    if self._checksum_refs_releasing or self._checksum_refs_released:
-        return
-    self._checksum_refs_releasing = True
-    try:
-        refs = tuple(self._checksum_refs.items())
-        for (checksum, role), count in refs:
-            for _ in range(count):
-                checksum.decref(holder=self, role=role)
-    finally:
-        self._checksum_refs_releasing = False
-        self._checksum_refs_released = not self._checksum_refs
-```
+The audit is intentionally procedural and logger-based. No `ReferenceAuditReport` class or
+public report object is required.
 
-The re-entry flag prevents double release while leaving the live counter available for
-`decref` validation. Cleanup catches individual failures and continues so the final report
-sees the complete state. A fully emptied counter marks the object released.
+### 8.1 Shutdown sequence
 
-### 7.4 Refholder registry
+Integrate the following into `seamless.close()` after new work is prohibited but before
+buffer-cache teardown:
 
-Maintain a process-global weak registry of live refholding objects. It exists to invoke
-idempotent release during `seamless.close()` and attribute counts held by objects that are
-still alive. It must not prolong object lifetime.
-
-A `WeakValueDictionary[holder_id, object]` is preferable to relying on object equality and
-hashing in `WeakSet`, but either is valid if membership is identity-based. Traversing its
-live values is the only operation required for attribution and global collection.
-
-Registry entries contain:
-
-- the weakly held object, which exposes its immutable holder metadata;
-- its checksum/role integer counter;
-- optional creation traceback only when `SEAMLESS_REF_DEBUG=1`.
-
-Classes using `slots` must support weak references (`__weakref__` or
-`weakref_slot=True`). Ordinary weak-registry removal is silent. A holder that disappears
-without decrementing is detected later as an unattributed excess in the cache integer.
-
-## 8. Class-by-class changes
-
-### 8.1 `seamless-core`
-
-**`Cell`**
-
-- Acquire concrete checksum inputs in `__init__`, `input_ref` assignment, and derived-copy
-  construction.
-- Release on input replacement and destruction.
-- Do not treat ordinary literal inputs as checksum holds unless the existing API already
-  classifies them as checksums.
-- Do not add standalone result-checksum state. `Cell.compute()` remains a tempref-backed
-  convenience call through a temporary Expression; persistent ownership requires retaining
-  the built Expression or adopting its checksum elsewhere.
-- A bound workflow Cell delegates ownership to the Context and acquires nothing itself.
-
-**`Expression`**
-
-- Do not acquire normal references for concrete inputs or validators.
-- Ensure evaluation refreshes or creates suitable temprefs for its result before returning
-  the checksum to a downstream handoff.
-- Add hidden execution/interest and holder/counter state excluded from equality, hash,
-  identity keys, repr, and serialization.
-- Public `compute`/`compute_async`/`run` performs only `refhold_result = True`; internal
-  dependency evaluation does not touch the property. The property's transition/result-
-  publication logic owns all incref/decref consequences.
-- An explicit `result` passed through `with_result` is ref-neutral unless the API separately
-  documents it as observable user interest; the public-call flag remains authoritative.
-- `replace`-based derivations remain ref-neutral unless they copy an explicitly owned
-  result-interest state, which they should not do by default.
-- Release explicit result ownership idempotently in `__del__` and shutdown collection.
-
-**`BufferCache` / `Checksum` / `Buffer`**
-
-- Add holder-aware integer accounting and audit APIs.
-- Fix eviction so positive normal refs cannot disappear.
-- Keep public manual APIs compatible while migrating every internal call to attributed
-  ownership.
-
-### 8.2 `seamless-transformer`
-
-**Standalone `Transformer` builder**
-
-- Add one holder token and a local counter.
-- Acquire checksum-bound pin values when configured.
-- Release on pin replacement/deletion and object destruction.
-- A builder snapshot/concrete `Transformation` independently acquires the checksums it
-  needs; calling a builder does not transfer or reduce the builder's ownership because the
-  reusable builder still promises it can be called again.
-- Do not add result/result-checksum state to a standalone builder. Builder `compute()`
-  returns a tempref-backed checksum from a temporary Transformation; builder `run()` resolves
-  the value immediately. Persistent result ownership requires retaining an explicitly built
-  Transformation or adopting the checksum into another holder.
-- A Context-bound builder handle owns nothing; its backend routes mutation to Context.
-
-**`PreTransformation` and `Transformation`**
-
-- Replace `_value_refs: list[Checksum]` with role-aware integer bookkeeping.
-- Attribute direct inputs by pin.
-- Acquire resolved dependency result checksums before publishing a constructed execution
-  dictionary.
-- Acquire `_transformation_checksum` for as long as later execution needs its buffer.
-- Give completed `_result_checksum` a suitable tempref before publishing it. Implement
-  `refhold_result` so its `False -> True` transition increfs an existing result and result
-  publication increfs when the mode is already true. Its release/destruction transition
-  decrefs exactly once.
-- Split public evaluation from internal dependency evaluation with an origin/interest flag;
-  public evaluation only enables `refhold_result`, while internal code must not signal user
-  interest by calling the public `compute()` method.
-- Release all owned inputs/results/code-related refs exactly once on destruction or explicit
-  close.
-- Keep `PreTransformation.release()` idempotent. Consolidate ownership so both
-  `Transformation.__del__` and `PreTransformation.__del__` cannot race or obscure which
-  object owns a count.
-- Preserve separate `CodeManager` integer counts, but register its holder identity and roles
-  in the same global audit.
-- For Context-private Transformations, keep `refhold_result=False`; release active-evaluation
-  input refs on completion after the Context has adopted any output it retains.
-
-### 8.3 `seamless-workflow`
-
-Refactor the Context's current `_checksum_holds` integer map to holder-attributed cache
-calls while preserving one Context-owned integer per producer/result role.
-
-- Literal cell producer: `cell:<path>:literal`.
-- Literal transformer pin: `transformer:<path>:pin:<name>`.
-- Current cell result: `cell:<path>:result`.
-- Current transformer result: `transformer:<path>:result`.
-- Retained superseded result: include generation and hold kind.
-
-Mutation rules:
-
-- acquire new producer/result before publishing it;
-- release replaced producer/result immediately;
-- connections release displaced literal producers;
-- node deletion releases all node-owned roles;
-- `set_graph` releases old graph ownership, then newly loaded nodes acquire their own refs;
-- subcontext copy independently increments copied producers/results as appropriate;
-- Context destruction releases everything idempotently;
-- bound handles never increment or decrement.
-- Public compute/run on a bound handle changes Context demand/result ownership and never
-  propagates standalone `refhold_result` mode into a private evaluation object.
-
-Do not serialize holder IDs or runtime refcounts in `get_graph()`.
-
-## 9. Global collection and audit
-
-### 9.1 Shutdown ordering
-
-Integrate reference collection into `seamless.close()` after new work is prohibited but
-before buffer-cache teardown:
-
-1. Mark Seamless closed to new operations.
-2. Cancel/settle running local and remote work.
-3. Traverse the weak holder registry and build an immutable pre-cleanup reverse index:
+1. Cancel or settle running local and remote work.
+2. Snapshot the weak registry and build a reverse index from live holders:
 
    ```text
-   checksum -> {(holder, role): count}
+   checksum -> [(holder_object, description), ...]
    ```
 
-   Include live object holders, process-global holders, and the manual/unattributed holder.
-   This snapshot preserves attribution even when subsequent cleanup clears live holder
-   counters.
-4. Snapshot the cache's integer normal refcounts and compare them with the reverse index
-   before cleanup:
+   Iterate `_refheld_checksums()` and include one entry per held reference. Use `id(obj)`,
+   class name, repr/path where useful, and the yielded description only for formatting.
+3. Snapshot each checksum's logical `refholder_count`, `manual_refs`, and
+   `has_refholder_bridge`.
+4. For each checksum, compare:
 
-   - `actual == known`: all current references are attributed;
-   - `actual > known`: record `actual - known` leaked/unattributed references, potentially
-     from holders that died incorrectly, and list the holders still alive for that checksum;
-   - `actual < known`: record missing references/over-decrement or accounting corruption and
-     list the live holders that still believe they own references.
+   ```text
+   len(reverse_index[checksum]) == refholder_count[checksum]
+   ```
 
-   Any positive `manual/unattributed` holder count is also a lifecycle leak: unlike a
-   registered object owner, it has no automatic destruction contract that legitimately
-   defers its matching decrement to global collection.
-5. Flush required buffers while their owners still retain them.
-6. Invoke shutdown hooks for transformation caches, `CodeManager`, workflow runtimes, and
-   other process-global holders.
-7. Ask every live weak-registered object refholder to run its idempotent release method.
-   Do not silently release manual/unattributed counts; preserve them for the report and the
-   final forced-cleanup phase.
-8. Run `gc.collect()` at least twice, allowing cycles and finalizers exposed by the first
-   pass to settle.
-9. Snapshot the post-cleanup buffer-cache integer counts, remaining holder counters, and accumulated
-   over-decrement events.
-10. Validate all integer/live-holder-sum invariants. Use the pre-cleanup reverse index to name the
-   likely responsible holders if cleanup erased or corrupted the post-cleanup attribution.
-11. Emit and store the final audit report. It includes both pre-cleanup attribution errors
-    and post-cleanup residuals; successful automatic cleanup does not erase earlier evidence.
-12. After reporting, force-clear any residual cache refs so process shutdown cannot hang or
-    retain memory. Mark the tracker finalized so later Python destructors no-op rather than
-    generating secondary underflow noise.
+   A mismatch emits a warning. If the integer is larger, report the unexplained excess and
+   note that a holder may have died without decrementing. If the reverse index is larger,
+   report missing refholder refs/over-decrement. List all still-live holders for the
+   checksum.
+5. Verify `has_refholder_bridge == (refholder_count > 0)` and warn on a mismatch. Warn for
+   every positive `manual_refs` count.
+6. Flush required buffers while references still retain them.
+7. Invoke cleanup hooks and call the idempotent cleanup method of every live registered
+   refholder.
+8. Run `gc.collect()` twice.
+9. Inspect the cache again:
+   - `refholder_count` must be zero; otherwise warn that lifecycle cleanup/general Python GC
+     did not release all refholder references;
+   - `has_refholder_bridge` must be false;
+   - `manual_refs` must be zero; any positive count consists entirely of unmatched manual
+     refs.
+10. Force-clear residual counts after warnings so shutdown finishes deterministically.
 
-Explicit `seamless.close()` and atexit use the same collector. Atexit remains best-effort,
-but reference bugs are not suppressed merely because collection was initiated by atexit.
+The pre-cleanup mismatch warnings are not erased by successful forced cleanup. Explicit
+`seamless.close()` and atexit use the same audit.
 
-### 9.2 Report model
+### 8.2 Warning format
 
-Provide a programmatic immutable report:
+Use a dedicated logger, for example `seamless.references`. Balanced shutdown emits no
+warning.
 
-```python
-@dataclass(frozen=True)
-class ReferenceAuditReport:
-    balanced: bool
-    pre_cleanup_normal_ref_total: int
-    pre_cleanup_mismatches: tuple[CountMismatch, ...]
-    manual_leaks: tuple[LeakedChecksum, ...]
-    post_cleanup_residuals: tuple[LeakedChecksum, ...]
-    over_decrefs: tuple[OverDecrefEvent, ...]
-    cleanup_failures: tuple[CleanupFailure, ...]
-
-@dataclass(frozen=True)
-class LeakedChecksum:
-    checksum: str
-    count: int
-    holders: tuple[HolderCount, ...]
-
-@dataclass(frozen=True)
-class CountMismatch:
-    checksum: str
-    actual_count: int
-    live_holder_count: int
-    unattributed_count: int
-    live_holders: tuple[HolderCount, ...]
-```
-
-The report is balanced only when:
-
-- the pre-cleanup cache integers match the live-holder sums;
-- no manual/unattributed reference is still open;
-- no positive normal refs remain after registered-holder collection;
-- no over-decrement event occurred;
-- no refholder cleanup failed.
-
-Store the last report for tests and applications:
-
-```python
-seamless.get_last_reference_audit() -> ReferenceAuditReport | None
-```
-
-Optionally expose a non-destructive diagnostic snapshot before shutdown:
-
-```python
-seamless.reference_status() -> ReferenceStatus
-```
-
-It must be clearly named as a status snapshot, not a leak audit, because positive refs are
-expected while objects are alive.
-
-The audit core should remain small and deterministic. Conceptually:
-
-```python
-def collect_reference_audit() -> ReferenceAuditReport:
-    live_holders = tuple(reference_holders.values())
-
-    checksum_to_holders = defaultdict(Counter)
-    for holder in live_holders:
-        for (checksum, role), count in holder._checksum_refs.items():
-            checksum_to_holders[checksum][holder._refholder, role] += count
-
-    actual_before = buffer_cache.normal_refcounts()
-    mismatches = []
-    for checksum in actual_before.keys() | checksum_to_holders.keys():
-        actual = actual_before.get(checksum, 0)
-        known = sum(checksum_to_holders[checksum].values())
-        if actual != known:
-            mismatches.append(
-                CountMismatch(
-                    checksum=checksum.hex(),
-                    actual_count=actual,
-                    live_holder_count=known,
-                    unattributed_count=actual - known,
-                    live_holders=freeze(checksum_to_holders[checksum]),
-                )
-            )
-
-    manual_leaks = snapshot_manual_refs(checksum_to_holders)
-
-    cleanup_failures = []
-    for holder in live_holders:
-        if holder is MANUAL_HOLDER:
-            continue
-        try:
-            holder._release_checksum_refs()
-        except BaseException as exc:
-            cleanup_failures.append(describe_cleanup_failure(holder, exc))
-
-    gc.collect()
-    gc.collect()
-    residuals = snapshot_positive_normal_refs(buffer_cache, checksum_to_holders)
-
-    return ReferenceAuditReport(
-        balanced=not (
-            mismatches
-            or manual_leaks
-            or residuals
-            or over_decref_events
-            or cleanup_failures
-        ),
-        pre_cleanup_normal_ref_total=sum(actual_before.values()),
-        pre_cleanup_mismatches=tuple(sorted(mismatches, key=mismatch_key)),
-        manual_leaks=tuple(sorted(manual_leaks, key=leak_key)),
-        post_cleanup_residuals=tuple(sorted(residuals, key=leak_key)),
-        over_decrefs=tuple(over_decref_events),
-        cleanup_failures=tuple(cleanup_failures),
-    )
-```
-
-The production function must take snapshots and mutate counts under the lifecycle/cache
-lock, but it must not hold that lock while invoking arbitrary holder cleanup methods or
-`gc.collect()`.
-
-### 9.3 Human-readable final report
-
-Print nothing when balanced. On failure, print one deterministic stderr report, sorted by
-checksum, holder kind/ID, and role. Example:
+Warnings should be deterministic and concise:
 
 ```text
-[seamless.references] checksum reference lifecycle errors
-  leaked normal references: 2 across 1 checksum
-  checksum 8f...21: count=2
-    holder Transformation#17 (pipeline.normalize), role=dependency-result:input: 1
-    holder Transformation#24 (normalize), role=dependency-result:data: 1
-  over-decrements: 1
-  checksum 31...af:
-    attempted by Context#9 (ctx), role=transformer:tf:pin:x
-    available count=0; holders=none
+Checksum <hex> has refholder count 3, but 2 live holders were found
+  Transformation 0x... input:x
+  Context 0x... transformer:tf:result
+  1 reference is unattributed; its holder may have died without decref
+
+Checksum <hex> has 2 unmatched manual references at shutdown
+
+Checksum <hex> has refholder count 1 but its eviction bridge is absent
+
+Manual decref ignored for checksum <hex>: manual refcount is already zero
 ```
 
-If holder counters and the integer disagree, print both values prominently; this is an
-internal accounting corruption, not an ordinary leak.
+No creation traceback, dead-holder tombstone, or stored event history is required.
 
-Creation tracebacks are appended only in reference-debug mode to avoid routine memory and
-runtime cost.
+## 9. Implementation order
 
-### 9.4 Forced cleanup semantics
+1. **Refholder counter and cache bridge**
+   - add the checksum-indexed `refholder_count`;
+   - rename the cache-entry count to `manual_refs` and add `has_refholder_bridge`;
+   - add refholder APIs;
+   - toggle the bridge only on `0 -> 1` and `1 -> 0` refholder transitions;
+   - warn on zero-count decrefs;
+   - evict only when the manual count, bridge, and tempref all permit it.
+2. **Weak registry and audit protocol**
+   - add the identity-based weak set;
+   - add registry helpers;
+   - implement reverse-index construction and logger warnings.
+3. **Standalone core lifecycle**
+   - Cell input refholding;
+   - Expression tempref input behavior and `refhold_result`.
+4. **Transformer lifecycle**
+   - standalone builder input refs;
+   - Transformation concrete-input refs;
+   - dependency handoff;
+   - Transformation `refhold_result`;
+   - CodeManager registration.
+5. **Workflow lifecycle**
+   - migrate literal producer refs to `incref_refholder`;
+   - add current/retained result refs;
+   - cover mutation, copy/load, deletion, and destruction;
+   - keep private E/T result-ref-neutral.
+6. **Shutdown integration**
+   - settle work;
+   - audit before cleanup;
+   - clean live holders and run Python GC;
+   - audit residual counts and warn;
+   - force-clear.
+7. **Call-site audit**
+   - inspect every `incref`/`decref` in all repositories;
+   - classify each as manual or refholder-owned;
+   - migrate internal lifecycle calls to the refholder API.
 
-Forced cleanup happens only after the immutable report has been created. It must not mutate
-the report or turn a failed audit into a passing one. Its purpose is deterministic process
-cleanup, not concealment.
+## 10. Tests
 
-## 10. Migration strategy
+### Cache and registry
 
-Implement in stages so each repository remains testable:
+- multiple logical refholders set exactly one boolean cache bridge;
+- the first logical refholder creates the bridge and the last removes it;
+- manual refcounts remain unchanged alongside zero, one, and many logical refholders;
+- neither decrement API consumes the other system's count or bridge;
+- zero-count decrements warn and leave counts unchanged;
+- a positive refholder count prevents eviction through the bridge;
+- weak registration does not keep objects alive;
+- reverse-index multiplicity matches independently held fields.
 
-1. **Core accounting foundation**
-   - holder IDs/metadata;
-   - integer plus holder counters;
-   - over-decrement event recording;
-   - eviction correction;
-   - status/audit snapshot APIs.
-2. **Core object ownership**
-   - standalone `Cell` lifecycle and Expression tempref contract;
-   - weak refholder registry;
-   - copy/replace/destructor behavior.
-3. **Transformer ownership**
-   - standalone builder pins;
-   - direct inputs and scratch semantics;
-   - dependency-result handoff;
-   - transformation result and transformation-checksum ownership;
-   - `CodeManager` attribution.
-4. **Workflow ownership**
-   - migrate existing producer holds;
-   - add current and retained-result holds;
-   - mutation/load/copy/destruction paths.
-5. **Global collector and report**
-   - shutdown ordering;
-   - weak-registry collection;
-   - immutable report and deterministic formatting;
-   - forced post-report cleanup.
-6. **Audit all call sites**
-   - search every repository for `incref`, `decref`, and direct normal-ref mutation;
-   - require an explicit holder/role for internal calls;
-   - document any intentional unattributed public/manual use.
+### Standalone objects
 
-Do not temporarily make `decref` clamp or silently steal another holder's count during the
-migration. Missing attribution should use the explicit unattributed holder until migrated.
+- Cell checksum inputs survive forced tempref expiry;
+- Cell input replacement/destruction balances refs;
+- Transformer checksum-bound pins survive forced expiry;
+- pin replacement/deletion/destruction balances refs;
+- builders have no result-checksum state;
+- builder `compute()` returns a tempref-backed result without builder result ownership;
+- explicitly built E/T public compute/run enables `refhold_result` once;
+- repeated public calls do not add refs;
+- implicit completion followed by public compute/run refs the existing result;
+- implicit dependency evaluation does not enable `refhold_result`;
+- dormant Expressions do not normal-refhold inputs;
+- Expression-to-Expression handoff refreshes temprefs;
+- Transformation dependencies are normal-refheld as soon as concrete.
 
-## 11. Tests
+### Workflows
 
-### 11.1 Buffer-cache accounting
+- Context registers weakly as a refholder and reports all workflow-owned checksums;
+- literal cell and pin producers balance;
+- current results remain available after tempref expiry;
+- result replacement, node deletion, graph replacement, copy/load, and Context destruction
+  balance refs;
+- bound handles add no refs;
+- private E/T outputs remain normal-ref-neutral;
+- bound compute/run changes Context ownership only.
 
-- integer count equals holder-counter sum after every operation;
-- two holders of one checksum increment to two and release independently;
-- a holder cannot decrement another holder's reference;
-- over-decrement returns `False`, records one event, and leaves the count unchanged;
-- repeated valid increments from one holder are counted correctly;
-- zero-ref demotion preserves buffer weak caching;
-- eviction never removes an entry with positive normal refs;
-- mixed scratch/non-scratch holders preserve correct retention and remote-registration
-  policy;
-- concurrent increments/decrements remain atomic.
+### Shutdown audit
 
-### 11.2 Standalone objects
+- a balanced run emits no reference warnings;
+- an intentionally leaked refholder count produces a mismatch warning with live holders;
+- a holder that dies incorrectly produces an unattributed excess warning;
+- a refholder undercount reports the live holders that still claim the checksum;
+- positive manual refs warn;
+- manual decref at zero warns immediately;
+- cleanup plus two GC passes leaves the refholder count and manual count zero and the bridge
+  false in a balanced run;
+- residual counts warn and are force-cleared;
+- explicit close and atexit are idempotent.
 
-- a checksum-backed Cell survives forced tempref expiry;
-- replacing or deleting its input releases exactly once;
-- derived Cells own independent refs; derived Expressions do not acquire normal input refs;
-- Expression evaluation succeeds within an artificially shortened but nonzero tempref
-  handoff window;
-- an intentionally dormant Expression does not keep its input normal-refheld;
-- an uncalled Transformer builder retains checksum-bound pins;
-- builder pin replacement/deletion releases old refs;
-- calling a reusable builder gives the Transformation an independent ref;
-- standalone Cell/Transformer builders expose no result checksum state;
-- builder `compute()` leaves its returned checksum tempref-backed after its temporary E/T
-  dies, while retaining an explicitly built E/T preserves explicit result ownership;
-- builder `run()` resolves the result value without creating persistent builder ownership;
-- destroying builder and Transformation in either order is balanced;
-- cycles are collected and released.
+## 11. Acceptance criteria
 
-### 11.3 Transformation dependency handoff
-
-- an Expression result survives an artificial delay before downstream Transformation
-  execution because the Transformation normal-refholds it immediately;
-- an Expression-to-Expression handoff refreshes the tempref and evaluates immediately,
-  without changing the normal count;
-- upstream Transformation result survives downstream construction/execution;
-- a concrete Transformation result is tempref-backed by default and does not survive expiry
-  merely because the producer object lives after implicit dependency evaluation;
-- explicit public compute/run transitions `refhold_result` from false to true;
-- repeated explicit calls reassign true and do not multiply the result reference;
-- implicit completion followed by explicit compute/run is handled by the same transition,
-  which sees and increfs the already concrete result;
-- deleting the producer does not invalidate an independently holding downstream consumer;
-- scratch inputs/results obey live-owner guarantees without remote registration;
-- success, exception, cancellation, clear-exception, and destructor paths all balance.
-
-### 11.4 Workflows
-
-- literal cells and transformer pins retain and release as already tested;
-- current cell and transformer results remain available after forced tempref expiry;
-- result replacement/supersession releases according to policy;
-- node deletion, graph replacement, subcontext copy, and Context destruction balance;
-- bound handle creation/destruction does not change counts;
-- same checksum in multiple nodes produces matching independent counts;
-- externally induced underflow names the Context path and role.
-
-### 11.5 Final audit
-
-- a balanced script prints no reference warning and returns `balanced=True`;
-- a deliberately leaked manual incref reports checksum, count, and manual holder;
-- an undeleted standalone owner is released by global collection and does not report as a
-  leak if cleanup succeeds;
-- a holder that dies without decrementing produces an unattributed positive difference;
-  any other live holders of that checksum are still listed;
-- the weak registry itself never keeps a holder alive;
-- a deliberately broken owner that fails cleanup is reported;
-- an over-decrement is reported even if all final counts are zero;
-- an integer/holder mismatch is reported as accounting corruption;
-- report ordering and formatting are deterministic;
-- forced cleanup occurs after snapshot and does not alter the stored report;
-- explicit `seamless.close()` and atexit exercise the same audit logic;
-- shutdown remains idempotent.
-
-## 12. Acceptance criteria
-
-The work is complete when:
-
-- every internal normal `incref` and `decref` is attributed to a holder and role;
-- standalone and workflow objects retain every checksum they promise to materialize later;
-- dependency handoff has no unowned interval;
-- positive normal refs prevent eviction;
-- all object cleanup paths are idempotent and balanced;
-- shutdown produces no output for a balanced run;
-- leaks, over-decrements, cleanup failures, and count mismatches produce a deterministic
-  report naming the responsible holders;
-- the final report is available programmatically;
-- all component suites pass in the `seamless1` conda environment, including forced
-  tempref-expiry and cyclic-GC tests.
+- Seamless maintains a logical integer refholder count, a cache-entry integer manual count,
+  and exactly one boolean cache bridge while the logical count is positive.
+- All refholding classes register weakly and expose their currently held checksums directly
+  from real object state.
+- A workflow `Context` is the refholder for its literals and current/retained results;
+  context-bound Cell and Transformer handles are not refholders.
+- Standalone builders retain configured inputs but never own results.
+- Transformations retain concrete inputs while waiting; Expressions use temprefs and
+  immediate evaluation.
+- Explicit public E/T evaluation controls result ownership solely through
+  `refhold_result`.
+- Context-private E/T outputs remain unheld by their producer and are adopted by Context
+  when needed.
+- Shutdown compares live-holder multiplicity with `refholder_count`, checks that the bridge
+  matches whether that count is positive, cleans live holders, runs Python GC, and verifies
+  the refholder and manual counts reach zero and the bridge becomes false.
+- Balanced execution emits no reference-lifecycle warning.
