@@ -308,6 +308,28 @@ Evaluation initiated solely by a dependent uses an internal origin-aware call an
 set explicit result interest. Current internal code that calls public `compute()` must be
 changed so it cannot accidentally make a dependency-only result user-held.
 
+This `refhold_result` behavior primarily applies to user-facing Expressions and
+Transformations constructed directly or through standalone Cell/Transformer builders.
+
+Expressions and Transformations constructed privately by a workflow Context are scheduler
+evaluation objects, not user-facing result owners. They normally live only through active
+evaluation:
+
+- they normal-refhold concrete inputs for as long as evaluation may still need them;
+- on completion they publish the output under a tempref;
+- before that tempref can expire, the Context acquires any current or retained result it
+  promises to expose;
+- the private evaluation object does not set `refhold_result` and may release its inputs and
+  die after completion.
+
+If the Context deliberately keeps a private evaluation object beyond completion for a
+specific retry/reuse contract, that policy must name and retain its required inputs, but it
+still does not refhold the output merely by surviving.
+
+A public `compute()`/`run()` invoked through a context-bound Cell or Transformer is a Context
+demand operation. It must update Context-owned result interest/activation, not set
+`refhold_result` on the current private Expression or Transformation.
+
 A standalone `Cell`, workflow Context result, explicit manual `incref`, or another holder
 may independently express interest in the same result. Each owner contributes its own
 integer reference.
@@ -521,6 +543,8 @@ without decrementing is detected later as an unattributed excess in the cache in
   object owns a count.
 - Preserve separate `CodeManager` integer counts, but register its holder identity and roles
   in the same global audit.
+- For Context-private Transformations, keep `refhold_result=False`; release active-evaluation
+  input refs on completion after the Context has adopted any output it retains.
 
 ### 8.3 `seamless-workflow`
 
@@ -543,6 +567,8 @@ Mutation rules:
 - subcontext copy independently increments copied producers/results as appropriate;
 - Context destruction releases everything idempotently;
 - bound handles never increment or decrement.
+- Public compute/run on a bound handle changes Context demand/result ownership and never
+  propagates standalone `refhold_result` mode into a private evaluation object.
 
 Do not serialize holder IDs or runtime refcounts in `get_graph()`.
 
