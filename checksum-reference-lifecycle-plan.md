@@ -247,7 +247,7 @@ Validator checksums follow the same rule if validation happens as part of immedi
 evaluation. A separately configured validator object that promises availability while
 dormant must define its own ownership; the Expression should not retain it implicitly.
 
-### 6.2 Expression result to Transformation input
+### 6.2 Dependency handoff by dependent type
 
 When a downstream `Transformation` resolves an `Expression` dependency:
 
@@ -262,27 +262,49 @@ When a downstream `Transformation` resolves an `Expression` dependency:
 The current `_prepared_dict_with_dependencies` logic injects dependency result checksums
 without adding them to the transformation's normal input refs. Correct that path explicitly.
 
-### 6.3 Transformation result
+When the dependent is another `Expression`, it does not acquire a normal input reference.
+Instead, make or refresh the input checksum's tempref and immediately evaluate the dependent
+Expression. Every Expression in a chain produces/refreshed a tempref for its own result, so
+the cheap chain remains covered without normal references.
+
+Thus “the dependent holds its input” has two concrete meanings:
+
+- dependent `Transformation`: normal `incref`, because it may wait for other inputs;
+- dependent `Expression`: fresh/refreshed tempref followed by immediate evaluation.
+
+### 6.3 Explicit result interest
 
 A completed Expression or Transformation result receives a tempref with the normal
 dozens-of-seconds-or-longer handoff horizon. It does not automatically receive a normal
 reference merely because its producer stores or returns the checksum.
 
-If only a dependent is interested, the dependent acquires the result atomically as soon as
-the checksum becomes concrete. After that acquisition the producer may let the tempref fade;
-no producer-side normal result reference is needed.
+If only a dependent is interested, apply §6.2 as soon as the checksum becomes concrete. No
+producer-side normal result reference is needed.
 
-If the user is interested, that interest must be represented by a normal-refholding owner:
-for example a standalone `Cell`, an explicit result-retention API, a workflow Context's
-current result, or a manual `incref`. A bare returned `Checksum` is ref-neutral. `run()` may
-resolve the value immediately within the result tempref window and therefore does not by
-itself imply indefinite result retention.
+An explicit public call to an Expression or Transformation's `compute()` / `compute_async()`
+or `run()` / `task()` marks that producer's result as user-interesting. The object takes one
+normal result reference when the result checksum is concrete and keeps it until destruction
+or explicit result release. Repeated explicit calls do not increment repeatedly: result
+interest is a boolean lifecycle state per producing object.
 
-If `Transformation.result_checksum` is intended to promise indefinite later
-materialization merely while the Transformation object lives, that would make the
-Transformation an explicit user-interest holder. Do not assume that stronger contract in
-the implementation: decide and document it separately. Under the interest-driven contract
-adopted here, storing `_result_checksum` alone is ref-neutral.
+Set explicit interest immediately upon entry to the public call:
+
+- if no result exists yet, eventual successful completion notices the flag and increfs once;
+- if an implicit dependency evaluation completed earlier, the explicit call finds the
+  existing checksum and increfs it immediately;
+- if no checksum exists because evaluation failed or was cancelled, there is nothing to
+  hold. The interest flag may remain set so a later successful retry acquires its result.
+
+These are the same rule applied at different object states; the already-complete case does
+not contradict marking interest at public-call entry.
+
+Evaluation initiated solely by a dependent uses an internal origin-aware call and does not
+set explicit result interest. Current internal code that calls public `compute()` must be
+changed so it cannot accidentally make a dependency-only result user-held.
+
+A standalone `Cell`, workflow Context result, explicit manual `incref`, or another holder
+may independently express interest in the same result. Each owner contributes its own
+integer reference.
 
 In a workflow, the `Context` node independently acquires the current result before
 publishing `node.current_checksum`, because the workflow exposes that current result as
@@ -442,14 +464,15 @@ without decrementing is detected later as an unattributed excess in the cache in
 - Do not acquire normal references for concrete inputs or validators.
 - Ensure evaluation refreshes or creates suitable temprefs for its result before returning
   the checksum to a downstream handoff.
-- If `with_result` means that the Expression becomes an observable stored-result owner,
-  acquire that explicit result checksum and add hidden holder/counter state excluded from
-  equality, hash, identity keys, repr, and serialization. If `result` is only provenance
-  metadata, keep it ref-neutral instead; settle and document that API meaning before
-  implementation.
+- Add hidden execution/interest and holder/counter state excluded from equality, hash,
+  identity keys, repr, and serialization.
+- Public `compute`/`compute_async`/`run` sets result interest; internal dependency evaluation
+  does not. Acquire the result once it is concrete when that flag is set.
+- An explicit `result` passed through `with_result` is ref-neutral unless the API separately
+  documents it as observable user interest; the public-call flag remains authoritative.
 - `replace`-based derivations remain ref-neutral unless they copy an explicitly owned
-  observable result, in which case the derived object acquires independently.
-- Release any explicit result ownership idempotently in `__del__` and shutdown collection.
+  result-interest state, which they should not do by default.
+- Release explicit result ownership idempotently in `__del__` and shutdown collection.
 
 **`BufferCache` / `Checksum` / `Buffer`**
 
@@ -478,8 +501,10 @@ without decrementing is detected later as an unattributed excess in the cache in
   dictionary.
 - Acquire `_transformation_checksum` for as long as later execution needs its buffer.
 - Give completed `_result_checksum` a suitable tempref before publishing it. Acquire a
-  normal result reference only for an explicit user-interest role; dependency-only results
-  are acquired by their downstream consumers instead.
+  normal result reference exactly once when the public-call result-interest flag is set;
+  dependency-only results are handled according to the downstream type instead.
+- Split public evaluation from internal dependency evaluation with an origin/interest flag;
+  internal code must not signal user interest by calling the public `compute()` method.
 - Release all owned inputs/results/code-related refs exactly once on destruction or explicit
   close.
 - Keep `PreTransformation.release()` idempotent. Consolidate ownership so both
@@ -776,12 +801,16 @@ migration. Missing attribution should use the explicit unattributed holder until
 
 ### 11.3 Transformation dependency handoff
 
-- an Expression result survives an artificial delay between dependency resolution and
-  downstream execution because the downstream Transformation acquires it immediately;
+- an Expression result survives an artificial delay before downstream Transformation
+  execution because the Transformation normal-refholds it immediately;
+- an Expression-to-Expression handoff refreshes the tempref and evaluates immediately,
+  without changing the normal count;
 - upstream Transformation result survives downstream construction/execution;
 - a concrete Transformation result is tempref-backed by default and does not survive expiry
-  merely because the producer object lives;
-- an explicitly interested user owner retains a Transformation result through expiry;
+  merely because the producer object lives after implicit dependency evaluation;
+- explicit public compute/run makes an Expression or Transformation retain its result once;
+- repeated explicit calls do not multiply the result reference;
+- implicit completion followed by explicit compute/run acquires the already concrete result;
 - deleting the producer does not invalidate an independently holding downstream consumer;
 - scratch inputs/results obey live-owner guarantees without remote registration;
 - success, exception, cancellation, clear-exception, and destructor paths all balance.
