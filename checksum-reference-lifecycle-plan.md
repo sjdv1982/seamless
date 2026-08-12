@@ -212,9 +212,9 @@ audit.
 |---|---|---|
 | Bare `Checksum` | none | n/a |
 | `Buffer` | only explicit manual increments | matching manual decrement or global audit |
-| Standalone `Cell` | concrete checksum input needed by future `build`/`compute` | input replacement, destruction, shutdown collection |
+| Standalone `Cell` builder | concrete checksum input needed by future `build`/`compute`; no result ownership | input replacement, destruction, shutdown collection |
 | `Expression` | no normal input reference; only an explicitly retained observable result, if the API provides one | result replacement, destruction, shutdown collection |
-| Standalone `Transformer` builder | checksum-bound pins and any checksum-only code/module inputs | pin/code replacement or deletion, destruction, shutdown collection |
+| Standalone `Transformer` builder | checksum-bound pins and any checksum-only code/module inputs; no result ownership | pin/code replacement or deletion, destruction, shutdown collection |
 | `Transformation` | direct concrete inputs, resolved dependency results, and constructed transformation checksum while needed; a result only when explicit user interest is represented by this object/API | input no longer needed, destruction, shutdown collection |
 | `CodeManager` | semantic/syntactic code checksums represented by its integer maps | manager decrement and shutdown hook |
 | Workflow `Context` | cell literal producers, transformer-pin literals, current node results, and any retained superseded results | mutation, node deletion, graph replacement, context destruction, shutdown collection |
@@ -225,6 +225,31 @@ is incorrect; independent owners must be independently releasable.
 
 Within one object, count ownership by semantic role. If the same checksum is both an input
 and a result, two role entries are acceptable and make mutation logic auditable.
+
+### 5.1 Standalone builders have no result state
+
+A standalone `Cell` or `Transformer` is a mutable, reusable definition builder. It retains
+configured checksum inputs because it promises that a future build remains possible. A
+built Expression or Transformation independently adopts whatever input lifetime its own
+contract requires; ownership is not transferred away from the reusable builder.
+
+The builder itself has no result checksum attribute and never refholds a result. Repeated
+builds may create distinct computation objects and results, so attaching one result to the
+mutable builder would be ambiguous.
+
+Builder convenience calls have deliberately weaker result retention:
+
+- `builder.compute()` creates a temporary Expression/Transformation, evaluates it, and
+  returns a checksum covered by the normal result tempref. The temporary computation's
+  `refhold_result` ends when that temporary object dies; the builder does not adopt it.
+- `builder.run()` creates a temporary computation and resolves the value immediately; no
+  persistent result reference is required.
+- A caller requiring persistent result ownership must retain the built
+  Expression/Transformation and explicitly call its public compute/run method, place the
+  checksum in another refholding owner such as a standalone Cell, or manually `incref` it.
+
+Context-bound Cell/Transformer handles also have no independent result ownership. Any
+visible current result belongs to the Context node.
 
 ## 6. Dependency handoff contract
 
@@ -485,6 +510,9 @@ without decrementing is detected later as an unattributed excess in the cache in
 - Release on input replacement and destruction.
 - Do not treat ordinary literal inputs as checksum holds unless the existing API already
   classifies them as checksums.
+- Do not add standalone result-checksum state. `Cell.compute()` remains a tempref-backed
+  convenience call through a temporary Expression; persistent ownership requires retaining
+  the built Expression or adopting its checksum elsewhere.
 - A bound workflow Cell delegates ownership to the Context and acquires nothing itself.
 
 **`Expression`**
@@ -520,6 +548,10 @@ without decrementing is detected later as an unattributed excess in the cache in
 - A builder snapshot/concrete `Transformation` independently acquires the checksums it
   needs; calling a builder does not transfer or reduce the builder's ownership because the
   reusable builder still promises it can be called again.
+- Do not add result/result-checksum state to a standalone builder. Builder `compute()`
+  returns a tempref-backed checksum from a temporary Transformation; builder `run()` resolves
+  the value immediately. Persistent result ownership requires retaining an explicitly built
+  Transformation or adopting the checksum into another holder.
 - A Context-bound builder handle owns nothing; its backend routes mutation to Context.
 
 **`PreTransformation` and `Transformation`**
@@ -831,6 +863,10 @@ migration. Missing attribution should use the explicit unattributed holder until
 - an uncalled Transformer builder retains checksum-bound pins;
 - builder pin replacement/deletion releases old refs;
 - calling a reusable builder gives the Transformation an independent ref;
+- standalone Cell/Transformer builders expose no result checksum state;
+- builder `compute()` leaves its returned checksum tempref-backed after its temporary E/T
+  dies, while retaining an explicitly built E/T preserves explicit result ownership;
+- builder `run()` resolves the result value without creating persistent builder ownership;
 - destroying builder and Transformation in either order is balanced;
 - cycles are collected and released.
 
