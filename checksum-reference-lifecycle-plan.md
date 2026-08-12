@@ -281,22 +281,28 @@ reference merely because its producer stores or returns the checksum.
 If only a dependent is interested, apply §6.2 as soon as the checksum becomes concrete. No
 producer-side normal result reference is needed.
 
-An explicit public call to an Expression or Transformation's `compute()` / `compute_async()`
-or `run()` / `task()` marks that producer's result as user-interesting. The object takes one
-normal result reference when the result checksum is concrete and keeps it until destruction
-or explicit result release. Repeated explicit calls do not increment repeatedly: result
-interest is a boolean lifecycle state per producing object.
+An Expression or Transformation has one boolean lifecycle property:
 
-Set explicit interest immediately upon entry to the public call:
+```python
+refhold_result: bool = False
+```
 
-- if no result exists yet, eventual successful completion notices the flag and increfs once;
-- if an implicit dependency evaluation completed earlier, the explicit call finds the
-  existing checksum and increfs it immediately;
-- if no checksum exists because evaluation failed or was cancelled, there is nothing to
-  hold. The interest flag may remain set so a later successful retry acquires its result.
+An explicit public `compute()` / `compute_async()` or `run()` / `task()` call does exactly
+one ownership operation before proceeding:
 
-These are the same rule applied at different object states; the already-complete case does
-not contradict marking interest at public-call entry.
+```python
+callee.refhold_result = True
+```
+
+The `False -> True` transition is responsible for result ownership. If a result checksum is
+already present, it increfs it immediately. Otherwise, later result publication notices
+`refhold_result` and increfs the result as soon as it is present. Reassigning `True`, as on
+repeated explicit calls, is a no-op. If evaluation fails or is cancelled, no special case is
+needed: no checksum is present to incref, while the mode remains enabled for any later
+successful result.
+
+An internal `True -> False` transition, used by explicit result release or destruction,
+decrefs the held result if present. Public evaluation calls never turn the mode off.
 
 Evaluation initiated solely by a dependent uses an internal origin-aware call and does not
 set explicit result interest. Current internal code that calls public `compute()` must be
@@ -466,8 +472,9 @@ without decrementing is detected later as an unattributed excess in the cache in
   the checksum to a downstream handoff.
 - Add hidden execution/interest and holder/counter state excluded from equality, hash,
   identity keys, repr, and serialization.
-- Public `compute`/`compute_async`/`run` sets result interest; internal dependency evaluation
-  does not. Acquire the result once it is concrete when that flag is set.
+- Public `compute`/`compute_async`/`run` performs only `refhold_result = True`; internal
+  dependency evaluation does not touch the property. The property's transition/result-
+  publication logic owns all incref/decref consequences.
 - An explicit `result` passed through `with_result` is ref-neutral unless the API separately
   documents it as observable user interest; the public-call flag remains authoritative.
 - `replace`-based derivations remain ref-neutral unless they copy an explicitly owned
@@ -500,11 +507,13 @@ without decrementing is detected later as an unattributed excess in the cache in
 - Acquire resolved dependency result checksums before publishing a constructed execution
   dictionary.
 - Acquire `_transformation_checksum` for as long as later execution needs its buffer.
-- Give completed `_result_checksum` a suitable tempref before publishing it. Acquire a
-  normal result reference exactly once when the public-call result-interest flag is set;
-  dependency-only results are handled according to the downstream type instead.
+- Give completed `_result_checksum` a suitable tempref before publishing it. Implement
+  `refhold_result` so its `False -> True` transition increfs an existing result and result
+  publication increfs when the mode is already true. Its release/destruction transition
+  decrefs exactly once.
 - Split public evaluation from internal dependency evaluation with an origin/interest flag;
-  internal code must not signal user interest by calling the public `compute()` method.
+  public evaluation only enables `refhold_result`, while internal code must not signal user
+  interest by calling the public `compute()` method.
 - Release all owned inputs/results/code-related refs exactly once on destruction or explicit
   close.
 - Keep `PreTransformation.release()` idempotent. Consolidate ownership so both
@@ -808,9 +817,10 @@ migration. Missing attribution should use the explicit unattributed holder until
 - upstream Transformation result survives downstream construction/execution;
 - a concrete Transformation result is tempref-backed by default and does not survive expiry
   merely because the producer object lives after implicit dependency evaluation;
-- explicit public compute/run makes an Expression or Transformation retain its result once;
-- repeated explicit calls do not multiply the result reference;
-- implicit completion followed by explicit compute/run acquires the already concrete result;
+- explicit public compute/run transitions `refhold_result` from false to true;
+- repeated explicit calls reassign true and do not multiply the result reference;
+- implicit completion followed by explicit compute/run is handled by the same transition,
+  which sees and increfs the already concrete result;
 - deleting the producer does not invalidate an independently holding downstream consumer;
 - scratch inputs/results obey live-owner guarantees without remote registration;
 - success, exception, cancellation, clear-exception, and destructor paths all balance.
