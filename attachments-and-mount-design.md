@@ -29,6 +29,29 @@ polling loops, and echo suppressors. The common architectural problem is real: a
 event can arrive while Python user code is idle or while a transformation is running, and it
 must eventually become an ordinary workflow perturbation.
 
+The divergence is concrete, and it is the empirical case for a single mutation authority:
+
+| | inbound (external → cell) | outbound (cell → external) | echo suppression | scheduler coupling |
+|---|---|---|---|---|
+| **mount** | OS thread polling `stat` @ 0.2 s | `add_cell_update` deque, drained by that thread | `MountItem._renounce` | `must_run_mount`, `mm.last_run` |
+| **traitlet** | `loop.call_later(0.1, …)` debounce | **synchronous** `cell._observer(cs)` fired inside checksum assignment | `_updating`, `Link.updating` | `livegraph._flush_observations()` |
+| **share** | aiohttp handler → `cell_updates` dict | asyncio task loop @ 0.2 s | init/fallback logic | `sharemanager.busy` |
+
+Legacy anchors: `seamless/workflow/core/mount.py` (`MountItem.conditional_read` L445,
+`conditional_write` L403, `_renounce` L80, `run` L751); `core/manager/manager.py:211` and
+`:403-411`; `highlevel/SeamlessTraitlet.py:198`; `core/share.py:343`;
+`core/manager/taskmanager.py:426-475`.
+
+Two entries in that table are load-bearing for the design below. The **traitlet outbound cell**
+fires an observer *inside* `_set_cell_checksum`, mid-mutation; legacy then had to add
+`livegraph._hold_observations`, an `_observing` deferral list, and `_flush_observations()` at
+safe points, because re-entering user code mid-cascade is not survivable. Post-cascade
+actuation (§13) is that lesson, promoted from exception path to the only path. The **scheduler
+coupling column** is the cost of not having one mutation authority: because foreign threads
+could mutate cells at any time, "no pending tasks" stopped meaning "settled", and
+`taskmanager.compute()` had to consult three subsystems before declaring quiescence. Keeping
+`quiescent` graph-only (§8, §15) is the direct response.
+
 That observation does **not** make the Context controller part of an attachment abstraction.
 It exposes a more general requirement:
 
@@ -142,6 +165,15 @@ Asyncio is an implementation tool, not the essential idea. The essential idea is
 owner and sequenced mailbox. A loop is useful for timers, reply futures, cancellation, and
 parking, while all graph-touching code remains ordinary `def` code.
 
+Retry-based parking (§7.2) carries no continuation state, so it does not by itself force a
+loop; a thread with a park registry could implement it. What does weigh for a loop is that
+**timer ownership is already required, not speculative**: pass 3 commits the reactive layer to
+the ≤5-minute supersession grace-hold (§I.5) and to *"cancelling should be ~10 seconds after
+the checksum-wired E/T was submitted, in order to allow Dask latch-on to happen."* Delivery
+timeouts, parking deadlines, and barrier timeouts (§15) add more. A thread-based actor needs a
+timer heap for these; a loop has `call_later`, and `run_coroutine_threadsafe` supplies the
+reply channel §7.1 needs. These are the reasons to prefer a loop — not parking.
+
 Job execution remains off-controller. The actor submits work and later accepts immutable job
 result messages. It never awaits transformation execution, remote transfer, buffer resolution,
 or user transformer code on its own loop.
@@ -219,6 +251,42 @@ Therefore:
 The simplest first implementation is no actor-side coalescing. Add bounded, adjacency-
 preserving compaction only after realistic event-rate measurements.
 
+### 5.4 What the mailbox can and cannot do to a valid-looking edit
+
+The ordering contract says which message wins. It does not say which *failures* a user can
+encounter because something else was queued — a question that matters directly for interactive
+use, since "my assignment raised, and it would not have a second earlier" is the least
+acceptable class of error. Two invariants bound it, and both should be assertable in tests:
+
+> **I1 — At most one public operation is in flight at any instant, and none is ever partially
+> applied while another runs.** An attempt is a non-yielding synchronous function, and parking
+> re-enqueues whole attempts (§7.2) rather than suspending one mid-mutation. A parked operation
+> is not in flight.
+>
+> **I2 — A single-threaded user has none of its own public messages pending when its call is
+> attempted.** Every public call blocks its caller (§7.1), so one user thread can have at most
+> one outstanding. With *N* user threads the bound is *N*.
+
+Together these settle the specific case:
+
+- **An inbox-induced `AuthorityError` is impossible for a single-threaded user.** Authority
+  depends only on topology; topology changes only through public calls; by I2 none of the
+  user's own are pending, and attachment observations and job results carry values and
+  checksums, never edges. By I1 no other public operation is half-applied. With concurrent user
+  threads it becomes possible, and it is then a genuine race in user code — serializing it and
+  failing the loser is correct.
+- **Value-dependent checks are a different matter, and are inbox-sensitive even
+  single-threaded.** An integer-indexed connection target validates against the node's current
+  value, so a sensed observation that shrinks a list turns `ctx.a[3] = ctx.b` into an
+  `IndexError`; and a subcell update on a node that is momentarily `waiting` because something
+  upstream is recomputing would fail for no user-visible reason. **This second case is what
+  parking exists to remove** (§7.2). Without I1, parking would not be sound, because a
+  half-applied operation could be observed across the wait.
+
+I1 is therefore not an ergonomic nicety. It is the precondition that makes parking safe, and
+parking is what keeps background computation from leaking into the failure surface of ordinary
+edits.
+
 ## 6. Turns and effects
 
 A turn is one non-yielding message attempt:
@@ -281,7 +349,11 @@ registers the request as parked. When the condition changes, the entire operatio
 again and validated from scratch. If the awaited node becomes `failed`/`blocked`, shutdown
 starts, or the deadline expires, the reply future is failed promptly.
 
-Parking is not a continuation and carries no mutable graph references across the wait.
+Parking is not a continuation and carries no mutable graph references across the wait. That is
+what preserves **I1** (§5.4): re-validation on retry is automatic rather than remembered, and
+no partially applied operation can be observed across the wait. An `await` placed *inside* an
+attempt would read as ordinary sequential code while quietly reintroducing
+time-of-check/time-of-use inside the actor.
 
 ### 7.3 Failure routing
 
@@ -589,11 +661,38 @@ acknowledgements, and checksums. It must tolerate atomic replace and identical-c
 rewrites. A generic attachment layer should provide state storage and message correlation but
 not prescribe filesystem causality for future traitlet/share drivers.
 
-Cross-process write fights deserve detection, but a ping-pong breaker is a hardening feature,
-not part of the minimal actor or mount contract. First establish deterministic single-writer
-behavior, in-process overlap refusal, and observable errors. Then add and test an oscillation
-detector if experience shows it useful; do not claim it can detect two `rw` workflows that
-silently converge through a shared file.
+**Cross-process write fights need a detector, because the in-process registry cannot see them
+and legacy actively causes them.** `conditional_read` prints *"write-only file %s (%s) has
+changed on disk, overruling"* and rewrites (`mount.py:492-499`), so two legacy contexts sharing
+a path fight at the poll rate indefinitely. Two notebooks or two script runs on one file is the
+*common* accident, not an exotic one.
+
+A foreign write is not itself the signal — under a file-authority mount it is the entire point,
+i.e. the user editing in vim. The signal is narrower: *our actuation restoring a value a foreign
+writer had just replaced.*
+
+```text
+we deliver C1  →  we observe foreign C2 ≠ C1  →  we deliver C1 again
+```
+
+Count these alternations per session; **trip at three within a rolling 10–30 s window (default
+20 s)**. The window matters: a human doing a slow edit-and-revert cycle over hours produces the
+same signature with no conflict present, whereas a genuine two-writer fight runs at the poll
+rate and crosses the threshold in under a second. On trip: stop actuating, record a
+`ConflictError` in the session error slot, log once with the path and the alternating
+checksums, and keep sensing if the mode contains `r` — tracking the other writer beats
+diverging silently. A `w`-only attachment stops both directions, since an actuator that cannot
+own its resource is useless and must be loud. Recovery is manual via `clear_error()`.
+
+**Scope, stated so it is not overread.** The detector finds *oscillation*. It does not fire on
+two `rw` mounts over independent nodes, which converge on last-writer with no error at all —
+that regime silently couples two workflows through the filesystem, so that B's results depend
+on whether A was running. It is refused in-process; across processes it is invisible to any
+mechanism here and must be a documented warning to users, not a promise of detection.
+
+The detector is a counter and a timestamp over state the session already keeps for echo
+suppression, so it is scheduled in M4 with the rest of echo correlation rather than deferred to
+hardening.
 
 Legacy remount garbage delays, translation-time graph scans, `must_run_mount`, and symlink
 `LinkItem`s are not ported. Stable node identity and explicit sessions remove their original
@@ -682,10 +781,13 @@ atomic replacement, write failure, timeout, unregister races, and stale generati
 
 - Apply the legacy policy table at attachment creation.
 - Implement file-specific echo correlation and latest-delivery supersession.
+- Implement the oscillation detector (§14.3) on the same session state as echo correlation.
 - Test both orders of user edit versus observation and job result versus observation.
 - Test foreign modification of `w` and `rw` modes according to the characterized contract.
 
-**Exit evidence:** deterministic integration tests use barriers rather than polling sleeps.
+**Exit evidence:** deterministic integration tests use barriers rather than polling sleeps; a
+simulated foreign writer trips the detector within its window, and a slow human edit-and-revert
+across the window does not.
 
 ### M5. Add sync barriers and directory mounts
 
@@ -700,7 +802,8 @@ from temporarily empty queues.
 
 - Measure watcher load, thread count, actor round-trip latency, and buffer retention.
 - Add optional native filesystem notifications only behind the same broker contract.
-- Consider cross-process oscillation detection.
+- Tune the oscillation detector's threshold and window against observed behavior; the M4
+  implementation ships with defaults, not with evidence.
 - Validate the narrow attachment contract with one later driver (traitlet or share) before
   declaring it fully generic.
 
