@@ -854,3 +854,440 @@ mount-specific questions must not delay routing job results through the actor.
 
 These are genuine contract choices. Details such as concrete queue classes, executor
 libraries, polling intervals, and exception names can wait for the handoff plans.
+
+---
+
+# Appendix A — Inbox hierarchy, checksum timing, and side work
+
+## A.1 Status and scope
+
+This appendix refines the timing model in Part I. In particular, it replaces parking and
+controller-side waiting as the normal answer to unavailable values. The Context controller
+orders and applies **checksum transitions**. Materialisation and dematerialisation surround
+those transitions as concurrent side work.
+
+The refinement is independent of mounts. A mount observation is one producer of an
+authoritative checksum message; the REPL and other external producers follow the same timing
+rules. Likewise, file delivery is one consumer that dematerialises a checksum outside the
+controller.
+
+Where this appendix conflicts with the strict first-attempt ordering in §5.2 or the parking
+discussion in §7.2, the model here is the intended refinement. A finite external cut such as
+`mount.sync()`, if retained, remains an explicit API contract. It is not an inbox barrier
+required for ordinary Context correctness.
+
+## A.2 The inbox hierarchy
+
+The inbox has five semantic classes:
+
+```text
+1. procedural messages
+2. topology and authority messages
+3. authoritative value-write messages
+4. value-read messages
+5. E/T cache and checksum notifications
+```
+
+This is more than a taxonomy, and it is not a priority queue that may arbitrarily reorder
+accepted messages. It is a hierarchy of **permission and interpretation**. Higher classes
+establish the state in which lower classes may be decided. Proven-independent reads and
+node-quiescence barriers may nevertheless be promoted past lower-class messages as specified
+in §A.6:
+
+| class | direct meaning | what must already be stable |
+|---|---|---|
+| 1. procedure | change how the Context progresses | prior actor state and admission policy |
+| 2. topology | change authority and dependency structure | any enclosing procedure |
+| 3. value write | install an authoritative checksum | preceding topology |
+| 4. value read | snapshot or await a checksum | preceding topology and writes that may affect its target |
+| 5. E/T notification | report a cache/checksum fact | current demand derived from classes 2–3 |
+
+A class-1 message can gate ordinary progression. A class-2 message forms an authority
+frontier for class 3. Classes 3–5 then operate on the checksum state defined by the prefix
+above them.
+
+### Class 1 — procedural messages
+
+Shutdown and any explicitly requested finite-cut procedure belong here. A procedure may
+deliberately stall normal Context progression while establishing a lifecycle or
+synchronisation boundary. Such a stall is acceptable because procedures are infrequent and
+because their purpose is precisely to create a strong before/after boundary.
+
+### Class 2 — topology and authority messages
+
+These messages create, remove, or replace graph structure and external attachment structure.
+Examples include:
+
+- creating or deleting nodes and dependency edges;
+- changing transformer or expression wiring;
+- attaching, removing, or replacing a mount or other attachment; and
+- changing a producer direction, authority rule, or attachment generation.
+
+They determine which nodes are authoritative and which producers may subsequently write
+them. A topology operation is applied atomically. Lower-class messages must not observe
+partially installed topology.
+
+### Class 3 — authoritative value-write messages
+
+A class-3 message proposes a checksum for a node that has direct-write authority: in the
+ordinary graph case, a node with no incoming dependency edge. User assignment and an
+attachment observation are both instances, with different source policy and error routing.
+
+The authority of a value message at Context sequence *S* can be decided once every topology
+message preceding *S* has been resolved. Earlier value messages may affect value-dependent
+validation, but they cannot change authority. A later topology message cannot retrospectively
+change the authority decision.
+
+This is the central permission rule:
+
+```text
+class-3 message V at sequence S is authority-decidable
+    iff there is no unresolved class-2 message T with T.sequence < S
+```
+
+Once that condition holds, let `Topology(S)` be the topology produced by the class-2 prefix
+before *S*. Direct-write authority is a pure decision against that topology:
+
+```text
+no incoming dependency in Topology(S)  -> V may install its checksum
+incoming dependency in Topology(S)     -> AuthorityError
+```
+
+For example:
+
+```text
+10  remove incoming dependency from A
+11  write checksum to A
+```
+
+The write is tested against the topology after removal. Reversing the two messages tests the
+write against the old topology. Similarly:
+
+```text
+10  add incoming dependency to A
+11  write checksum to A
+```
+
+must reject message 11 with `AuthorityError`. A topology message after the write is
+irrelevant to that write's authority, even if it has already been accepted into the tail of
+the inbox.
+
+This rule is testable without materialising any values. Class-3 messages cannot create or
+remove dependency edges, and class-5 notifications cannot do so either. Therefore, after the
+class-2 prefix has been applied, no concurrent value preparation, cache result, or E/T
+completion can change the authority verdict.
+
+### Class 4 — value-read messages
+
+A read asks for a checksum; it does not ask the actor to materialise a Python value. If a
+current checksum exists, the actor can snapshot it immediately together with the reference
+needed to keep it resolvable. Dematerialisation then runs as side work.
+
+If no checksum is currently available, the actor returns or installs a checksum-availability
+subscription and finishes the turn. A synchronous wrapper may continue waiting outside the
+actor and retry the checksum read when notified. The inbox message itself is not parked. Such
+a retry normally snapshots the then-current checksum and may therefore observe state later
+than the original request. An API that promises a revision-pinned read must name and retain
+that checksum or revision explicitly; it still does not preserve an inbox position while
+dematerialisation runs.
+
+An ordinary class-4 read does **not** imply that its node must first become quiescent. If some
+checksum is already available for the node, that checksum can be a valid read result even
+while newer derived work is running. A separate, currently non-existing quiescent-read API is
+described in §A.6.
+
+### Class 5 — E/T cache and checksum notifications
+
+Expressions and transformations are content-addressed, cached work. Their callbacks never
+call into graph state. They submit immutable notifications such as:
+
+```text
+InputChecksumAvailable(checksum)
+CacheEntryAvailable(cache_key)
+CacheEntryFailed(cache_key, error)
+CachePollResult(cache_key, state)
+CancellationResult(cache_key, state)
+```
+
+A class-5 message does not carry independent authority to write a node. It wakes the
+controller, which re-evaluates current checksum demand under the topology and authoritative
+values that exist when the message is processed.
+
+By construction, class-5 messages do not semantically change downstream checksums. They make
+already determined checksum/cache facts available, report failure or progress, or wake
+reactive reconciliation. They may change availability and runtime status, but they do not
+introduce a new authoritative input or a new dependency relation. Semantic checksum changes
+come from class 2 or class 3 and the deterministic checksum propagation they induce.
+
+Protocol-support events do not need a sixth semantic level. They are classified by the state
+transition they can enable. A shutdown timeout or procedure completion belongs to class 1; a
+topology-generation transition belongs to class 2; an attachment observation that proposes
+a node checksum belongs to class 3; and an E/T grace timer or cache-poll result belongs to
+class 5. A delivery acknowledgement that changes only attachment diagnostics is runtime
+bookkeeping and cannot acquire graph authority by being called a result message.
+
+## A.3 What a stall means
+
+Classes 1 and 2 are naturally slow relative to an ordinary checksum transition. This is
+acceptable and can be desirable: later values and reads should not pass through a lifecycle
+boundary or observe intermediate topology.
+
+During such a stall:
+
+```text
+Context actor       holds its processed frontier
+Context ingress     continues accepting and sequencing immutable messages
+E/T workers         continue executing and populating content-addressed caches
+side-work pools     continue materialising and dematerialising values
+```
+
+No worker, callback, cache notification, or attachment transport may read or mutate graph
+state. A notification produced during the stall is accepted into the inbox and waits. When
+the atomic operation finishes, queued messages are interpreted against the completed state.
+
+Ingress, E/T execution, and side work already belong to different threads or processes. The
+controller therefore gains nothing by yielding in the middle of a topology transition merely
+to keep those systems alive. Atomic synchronous controller execution is the natural default;
+only the controller's processed frontier stalls.
+
+The ingress lock is therefore independent of the controller and is never held for the
+duration of a procedural or topology operation. Shutdown is the exception only in admission
+policy: ingress remains responsive but may reject new ordinary work after the Context has
+stopped accepting it.
+
+## A.4 The checksum data plane
+
+Classes 3 through 5 are instantaneous at the controller boundary, or can be made so, because
+the controller operates on checksums:
+
+```text
+write
+    Python or external value
+        -> side-work materialisation and hashing
+        -> checksum plus Buffer/refholder lease
+        -> instantaneous authoritative checksum transition
+
+read
+    instantaneous checksum snapshot plus lease
+        -> side-work buffer resolution and dematerialisation
+        -> Python or external value
+
+E/T
+    cache/checksum notification
+        -> instantaneous demand reconciliation
+        -> non-blocking launch, poll, subscription, or cancellation effects
+```
+
+“Instantaneous” means that the controller attempt has no inherent wall-clock wait. It may do
+bounded in-memory propagation over an affected graph region, but it does not perform file or
+network I/O, execute user transformations, resolve remote buffers, hash large values, or
+invoke external callbacks.
+
+A semantic inbound write is therefore checksum-ready when it reaches the actor. It carries a
+live `Buffer` or a checksum protected by an explicit reference lease when later resolution
+may be required. Preparing that payload is producer-side work and does not occupy the actor.
+
+A read snapshots immutable content. Later Context messages cannot change the meaning of that
+checksum, so its dematerialisation can overlap both later reads and later writes. Reference
+ownership must keep the snapshot resolvable until dematerialisation finishes.
+
+## A.5 Concurrent and optimistic side work
+
+Side work belonging to several messages may execute concurrently. Completion order need not
+match start order because no side worker commits graph state directly.
+
+Some side work is unconditional: dematerialising a captured checksum always yields the value
+represented by that checksum. Other side work is optimistic. For example, updating a subpath
+may require resolving and modifying a parent buffer. The side-work result must then carry the
+base checksum on which it depended:
+
+```text
+MaterialisedUpdate(
+    message,
+    base_checksum,
+    resulting_checksum
+)
+```
+
+The actor commits the resulting checksum only if those preconditions still hold. Otherwise
+the side-work result is discarded or recomputed from a fresh checksum. This is optimistic
+side work, not a parked or partially applied graph operation.
+
+The same principle applies to a read whose surrounding API promises something stronger than
+a checksum snapshot. Work may start optimistically, but publication of its result is subject
+to whatever explicit checksum or generation precondition that API defines.
+
+Side work that is started before a semantic message is accepted has no Context ordering of
+its own. Normally its checksum-ready result linearises when ingress accepts it. If an accepted
+operation starts side work for a later conditional commit, the returned result is a new
+immutable inbox message carrying its preconditions. The actor never reserves a half-applied
+turn while waiting for it.
+
+## A.6 Safe promotion of reads and node-quiescence barriers
+
+Acceptance sequence remains the default processing order, but it is stronger than necessary
+for messages that provably commute with the pending prefix. In particular, a class-4 read of
+node *X* may be promoted ahead of preceding lower-class messages when both conditions hold:
+
+1. some checksum is currently available for *X*; and
+2. the controller can prove that no preceding inbox message can change the checksum that the
+   read would return.
+
+The purpose of promotion is latency reduction. Once the controller has exposed and leased
+the checksum, potentially slow buffer resolution and dematerialisation can start immediately
+as side work. That work then overlaps the processing of the harmless preceding messages
+instead of starting only after the actor has drained them. Promotion changes neither the
+checksum returned nor the semantic history; it starts the checksum's surrounding side work
+earlier.
+
+The conservative proof is:
+
+```text
+no active or preceding class-1 gate
+and no preceding class-2 message
+and every preceding class-3 message is proven not to affect X
+```
+
+Class 2 is a blanket blocker because a topology change can alter both authority and the
+dependency path used by the proof. In the absence of such a message, topology is stable and
+the controller can inspect each preceding class-3 write. A write cannot affect the outcome
+for *X* when its target is not *X* and is not upstream of *X* under that topology. A stronger
+implementation may also prove harmlessness from equal checksums or other checksum identities,
+but dependency reachability is the safe initial rule.
+
+Preceding class-4 messages do not change graph state. Preceding class-5 messages do not block
+promotion because they do not semantically change downstream checksums. Consequently:
+
+```text
+W(Y), N(cache_key), R(X)
+```
+
+may process `R(X)` before `W(Y)` and `N(cache_key)` when `Y` is not upstream of `X` and a
+checksum for `X` is already available. The read snapshots that checksum and acquires its
+lease atomically; dematerialisation continues as concurrent side work.
+
+This is a proven commuting reorder, not priority scheduling. It preserves the observable
+result of the accepted history. If any preceding class-3 message can affect *X*, or any
+class-2 message precedes the read, the proof fails and the read remains behind that prefix.
+
+An API that means “read *X* after *X* is quiescent” has different semantics and should not be
+folded into an ordinary class-4 read. It is represented as:
+
+```text
+NodeQuiescenceBarrier(X)
+ReadChecksum(X)
+```
+
+The two operations must be correlated so that the read observes the state established by the
+barrier. This may be an atomically accepted pair or a barrier completion that submits its
+linked read before unrelated work can intervene.
+
+The node-local barrier itself can be promoted when:
+
+1. *X* is quiescent now;
+2. there is no active or preceding class-1 gate and no preceding class-2 message; and
+3. every preceding class-3 message is proven not to change *X* or its quiescence.
+
+Class-5 messages again do not prevent this proof: they do not change the semantic downstream
+checksum. If the conditions do not hold, the barrier stays ordered behind the potentially
+relevant prefix and completes only when *X* is quiescent there. This node-local construct is
+distinct from a Context-wide or attachment finite-cut barrier.
+
+Promoting the node-local barrier reduces latency for the same reason. It allows the linked
+class-4 message to snapshot its checksum and start dematerialisation immediately, overlapping
+the pending messages that have been proven unable to change either *X*'s quiescence or the
+read outcome.
+
+The promotion test requires only current topology, pending message metadata, dependency
+reachability, checksums, and current node status. It performs no materialisation and is itself
+an instantaneous controller operation.
+
+## A.7 Autonomous controller reaction
+
+Launching E/T work and updating derived graph state are not additional inbox classes. They
+are autonomous controller reactions to an inbox message. A normal class-3, class-4, or
+class-5 turn is:
+
+```text
+1. apply or inspect the message's direct checksum-level meaning;
+2. propagate currently known checksum state synchronously;
+3. determine the E/T cache keys currently demanded by the graph;
+4. consume immediately available cache hits;
+5. update derived node state and continue the in-memory cascade;
+6. collect non-blocking launch, poll, subscription, and cancellation effects; and
+7. finish the turn or its immediate reply.
+```
+
+Effects run off-controller. Their callbacks only submit new class-5 messages. In particular,
+`CacheEntryAvailable` may not inspect interested nodes, install a checksum, complete a cell,
+or initiate a cascade from its callback thread.
+
+E/T execution has content-addressed identity rather than Context-specific result authority.
+The controller maintains current interest in cache keys and tries to ensure that demanded
+work is launched when possible. If work is already running, it polls or subscribes; if an
+input checksum is not yet available, it arranges a checksum callback.
+
+When graph state changes, an E/T may cease to be demanded by this Context. That makes the
+Context's interest stale, not the cached computation invalid. The work may still populate a
+valid cache entry, may be useful to another Context, and may become useful again if the same
+checksum demand returns. Delayed cancellation after a grace period is therefore resource
+management rather than a correctness mechanism.
+
+## A.8 Consequences for parking, barriers, and the public API
+
+This model does not require parking an inbox attempt. An operation that needs materialisation
+or an unavailable checksum ends its actor turn and continues through side work, a
+subscription, and a later immutable message. No mutable graph reference or partial mutation
+survives across that wait.
+
+It also does not require an inbox barrier for reads, writes, or E/T completion. Reads snapshot
+checksums; writes atomically install checksums; cache notifications are reconsidered against
+current checksum demand. Later side work may run concurrently without weakening these
+transitions.
+
+The public API consequently needs no scheduling privilege or separate mutation path. It is a
+producer and consumer around the same checksum protocol:
+
+- a synchronous public write may wait for materialisation and for the actor's immediate
+  authority decision, while the actor remains free;
+- a synchronous public read may wait for dematerialisation or checksum availability, while
+  the actor remains free; and
+- exceptions are correlated back to the caller without changing message ordering.
+
+An explicitly requested external barrier may still be useful to define a finite observation
+cut, as in §15. If retained, it is application-visible synchronisation, not infrastructure
+needed to stop ordinary actor races. Its waiting and external I/O should use side work and
+completion futures. Whether it deliberately gates later checksum messages is then part of
+that API's finite-cut contract, rather than a requirement imposed by reads, writes, or E/T.
+
+## A.9 Revised timing and ordering contract
+
+The resulting timing contract is:
+
+1. Context sequence defines the default order of immutable, checksum-ready semantic messages
+   accepted by ingress; a class-4 read or node-quiescence barrier may be promoted only after a
+   proof that it commutes with the pending prefix, so that its side work can start earlier.
+2. Classes 1 and 2 may deliberately hold the actor's processed frontier while ingress and
+   off-controller work continue.
+3. A class-3 message is authority-decidable exactly when it has no unresolved preceding
+   class-2 message; its verdict is then stable against all class-3 through class-5 activity.
+4. Classes 3 through 5 never wait inside the actor for materialisation, cache retrieval, E/T
+   execution, or another checksum.
+5. Side-work completion is either outside Context ordering or returns as a new immutable
+   message. Conditional results carry checksum and generation preconditions.
+6. E/T and transport callbacks enqueue facts; they never touch graph state.
+7. Class-5 messages do not semantically change downstream checksums and therefore do not by
+   themselves block read or node-quiescence promotion.
+8. The actor reactively restores checksum-level graph consistency before beginning the next
+   non-promoted ordinary message.
+
+This separates three notions that the earlier design partly combined:
+
+```text
+acceptance order       immutable Context message sequence
+graph interpretation   actor-owned checksum transitions and propagation
+wall-clock completion  concurrent materialisation, cache, E/T, and transport work
+```
+
+Only the middle layer owns workflow state. The first orders facts presented to it; the third
+produces and consumes immutable checksum facts without entering the graph directly.
