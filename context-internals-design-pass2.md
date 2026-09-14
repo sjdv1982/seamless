@@ -1,3 +1,5 @@
+> Superseded API names: Cell/Expression output is `celltype`, input interpretation is `input_celltype`; public `input_ref` is split into `source` and `checksum`. See the [implemented rename and Pin plan](../seamless-workflow/validation/celltype-rename/plan.md).
+
 # Reactive `Context` Internals — Design (Pass 2)
 
 > **What this document is.** A second-pass synthesis of

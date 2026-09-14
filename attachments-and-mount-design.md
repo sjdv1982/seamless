@@ -1,5 +1,26 @@
 # Context Controller, External Attachments, and File Mounts — Design
 
+## Current Cell, Pin, and null contract
+
+`celltype` is the produced value type. CellConfig keeps only that type; read-only
+`input_celltype` comes from the source or stored producer. Retypes convert the
+original input. Public `input_ref` is retired: `.source` reports the configured
+upstream handle, while `.checksum` reads output and writes a literal input.
+Root value/buffer/checksum assignments detach; `set*` methods check ownership.
+`None` stores canonical null; checksum/buffer None clears, and mounted clearing
+is refused. A Pin is a whole input handle sharing CellBase with Cell, cannot be a
+source, and converts before the Transformer is constructed. Its failed conversion
+blocks the Transformer on that pin.
+
+Every supported celltype accepts stored null (`b"null\n"`). Missing, zero-byte,
+and canonical-null files read as the same null checksum. A read does not rewrite
+those representations. Null delivery writes a physically empty file, including
+compressed paths. Missing directories mean null; empty directories mean `{}`.
+Directory null delivery represents absence. Explicit nonpersistent unmount cleanup
+is a separate policy. Historical audit excerpts below retain original identifiers
+and observations; they do not override this implemented contract.
+
+
 > **Status.** Design-level plan, not an implementation handoff.
 >
 > It covers two separable concerns:

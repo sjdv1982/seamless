@@ -43,8 +43,8 @@ new durable metadata is explicitly required below.
 9. Calling a delayed bound `Transformer` builds an immutable `Transformation`
    snapshot. It does not execute the stored Python callable directly and does not mean
    "return the current reactive result."
-10. Focused namespace wrappers remain only where no canonical builder counterpart
-    exists; no Cell subvalue or Transformer-input target wrapper is public.
+10. Cell subvalues use Cell projections. Transformer inputs use public Pin handles,
+    sister classes of Cell through CellBase; focused configuration namespaces remain.
 11. A Transformer pin is one producer slot, not a structured overlay. `.pins` is the
     sole public pin namespace; the reserved `.inp` namespace and Transformer
     pin-subpath targets are removed.
@@ -324,9 +324,9 @@ graph target. `del ctx.a` deletes the Cell node itself.
 
 Thus standalone and bound Cells retain the same method surface, while their active
 state model determines what is mutated. For example, a standalone derived Cell may
-retain path `a` while its `input_ref` is changed by `.set()`, explicit assignment, or
+retain path `a` while its private `_input_ref` recipe is changed by `.set()`, explicit assignment, or
 `.with_input(...)`. A writable bound projection instead addresses its owning Context
-Cell and cannot change `input_ref`: its base is the Context node by definition.
+Cell and cannot replace its owning root input recipe: its base is the Context node by definition.
 
 `.set_checksum(checksum)` follows the same capability and path rules. At the root it
 can install the checksum directly. At a bound non-root path the controller resolves
@@ -341,12 +341,16 @@ abandoned private slot:
 - `.path` and `.path_python` report the complete accumulated projection path;
 - assigning `.path` is permitted for a standalone builder and rejected for a bound
   builder, whose path is derived by navigation;
-- `.celltype`, `.target_celltype`, `.validator`, and `.validator_language` read and
-  update the active standalone or Context-owned configuration as applicable;
-- a bound root `.input_ref` represents its configured root producer when that producer
-  can be represented unambiguously as a checksum or reconstructed bound source;
-- a bound projection's `.input_ref` is its owning root endpoint and is read-only;
-- a root combined with one-level incoming edges may report no single `.input_ref`.
+- `.celltype`, `.validator`, and `.validator_language` update the active configuration;
+- read-only `.input_celltype` follows the typed input, or records the input's original
+  serialization/declared checksum type; with no input it is None;
+- `.source` reports the configured upstream handle, or None for a literal. A projection
+  reports its own incoming edge, then the nearest enclosing source, then None;
+- `.checksum`, `.buffer`, and `.value` read the produced output. Their root setters
+  declare an input and detach sources; `set*` methods check ownership;
+- `_input_ref` remains a private Expression recipe. When merged inputs have no single
+  recipe, building falls back to the current checksum interpreted in `celltype`;
+- `target_celltype` and public `input_ref` are retired, including projection fallback.
 
 The implementation may use a normalized producer descriptor internally instead of
 returning private graph objects. Public reads must never expose `Edge`, `Overlay`, or
@@ -476,19 +480,24 @@ There is no pin-subpath producer tree and no join/overlay step within a Transfor
 pin. When the reactive node is ready, its inputs reduce to a dictionary from pin name
 to concrete checksum. A whole-pin assignment replaces the previous whole-pin producer.
 
-Reading a pin through `.pins` returns its configured producer/value/dependency form,
-not a target endpoint wrapper merely because the Transformer is bound. For a bound
-Transformer, an incoming edge is reconstructed as a bound source handle or another
-stable public producer representation; raw graph `Edge` objects are never returned.
-`.args` remains the documented alias of `.pins`, not a second endpoint namespace, and
-may not diverge merely because the Transformer is bound.
+Reading `.pins.x` returns a fresh `Pin(CellBase)` in both modes, even if unwired.
+Pins hold checksums or typed input references, never literal Python values. Read
+`.value`, `.buffer`, or `.checksum` for the converted output and `.source` for the
+configured connection. `.input_celltype` is read-only; `.celltype` delegates to
+`Transformer.celltypes.x` in both directions. Pins have no projection, validators,
+mounts, or source protocol. Using a Pin as a source raises and points to `pin.source`.
+
+Retyping converts the original input before transformation construction. A failed
+conversion sets `pin.state = "failed"` and `pin.exception`, and blocks the Transformer
+with `blocked-by-error` and the pin name. Reactive runs and snapshot calls agree.
+`.args` is an alias for `.pins` with the same handle semantics.
 
 Assignment through `.pins` accepts a literal, checksum form, or legal bound source:
 
 ```python
 ctx.tf.pins.x = 10
 ctx.tf.pins.y = ctx.source
-del ctx.tf.pins.y
+ctx.tf.pins.y.checksum = None  # clear input, keep declaration
 ```
 
 A Transformer exposes no attribute or item pin sugar. `ctx.tf.x`, `ctx.tf.x = source`,
@@ -819,7 +828,7 @@ rule the writer must know in advance. For `def f(local, x)`:
 
 ```python
 ctx.tf.local = "PIN?"      # sets the execution setting, unvalidated
-                           # cfg.local == "PIN?", pins.local is still None
+                           # cfg.local == "PIN?", pins.local is still an unwired Pin
 ```
 
 Nothing reports that the intended pin was not written. The colliding surface is large and
@@ -874,16 +883,20 @@ modes and for both `.pins` and `.celltypes`:
 This restores the standalone/bound parity the body requires of `.pins`, in the direction
 that fails loudly.
 
-## A.5 Residual parity notes
+## A.5 Pin reads, clearing, and declaration deletion
 
-Two `.pins` divergences remain, both predating this change and neither resolved here:
+Standalone and bound behavior is identical:
 
-- **Delete means different things.** Standalone `del tf.pins.x` removes the *declaration*
-  and is refused outright when the signature is fixed; bound `del ctx.tf.pins.x` clears
-  the *producer*, leaving the pin declared and the node `unwired`. The bound meaning is
-  the one this document specifies; the standalone meaning predates it.
-- **Reading an undeclared name.** Standalone returns `None`; bound raises
-  `AttributeError`. The bound behavior is the better one.
+- Reading a declared input returns a fresh Pin; an unset input has state `unwired`.
+  An undeclared name raises `AttributeError`.
+- `del tf.pins.x` deletes a declaration only for signatureless code. A fixed
+  Python/compiled signature owns its declarations and refuses deletion.
+- `.checksum = None` or `.buffer = None` clears input, keeping the declaration.
+  `.value = None` and `.set(None)` store canonical null when the pin boundary allows it.
+- `.pins.x = value/source` and value/buffer/checksum attribute writes declare input
+  and detach a previous source; `set`, `set_buffer`, and `set_checksum` check ownership.
+- Optional pins of any type drop canonical null before conversion; connected inputs
+  without a checksum block. Required pins accept null only for plain/mixed/bytes.
 
 ## A.6 Implementation anchors
 
