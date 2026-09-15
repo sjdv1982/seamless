@@ -1,5 +1,26 @@
 # Context Controller, External Attachments, and File Mounts — Design
 
+## Current Cell, Pin, and null contract
+
+`celltype` is the produced value type. CellConfig keeps only that type; read-only
+`input_celltype` comes from the source or stored producer. Retypes convert the
+original input. Public `input_ref` is retired: `.source` reports the configured
+upstream handle, while `.checksum` reads output and writes a literal input.
+Root value/buffer/checksum assignments detach; `set*` methods check ownership.
+`None` stores canonical null; checksum/buffer None clears, and mounted clearing
+is refused. A Pin is a whole input handle sharing CellBase with Cell, cannot be a
+source, and converts before the Transformer is constructed. Its failed conversion
+blocks the Transformer on that pin.
+
+Every supported celltype accepts stored null (`b"null\n"`). Missing, zero-byte,
+and canonical-null files read as the same null checksum. A read does not rewrite
+those representations. Null delivery writes a physically empty file, including
+compressed paths. Missing directories mean null; empty directories mean `{}`.
+Directory null delivery represents absence. Explicit nonpersistent unmount cleanup
+is a separate policy. Historical audit excerpts below retain original identifiers
+and observations; they do not override this implemented contract.
+
+
 > **Status.** Design-level plan, not an implementation handoff.
 >
 > It covers two separable concerns:
@@ -1048,9 +1069,11 @@ await ctx.a.computation()
 The async form is not a convenience. A blocking barrier is unusable in Jupyter and in any
 caller that already owns a running loop, which is where interactive workflow use actually
 happens; and the mid-computation tests of §15 A0 need to observe state without occupying the
-thread that would otherwise be inspecting it. Neither form takes a timeout: a stuck E/T is a
+thread that would otherwise be inspecting it. ~~Neither form takes a timeout: a stuck E/T is a
 hang to be caught by the caller's own timeout mechanism, not something a barrier should paper
-over by returning as if quiescent.
+over by returning as if quiescent.~~ **Superseded by §27:** all four forms take an optional
+`timeout`, which defaults to `None`, bounds only the caller's wait, and **raises** on expiry —
+so the second half of that sentence survives as the reason expiry raises rather than returns.
 
 `ctx.a.compute()` is the correlated `NodeQuiescenceBarrier(a)` + `ReadChecksum(a)` pair of §10.
 For a Transformer node it additionally implies that the node's submission has delivered — which
@@ -1066,8 +1089,10 @@ yields a `Transformation` with its own `compute()`; the two must agree on identi
 > notifications a stall would defer. A barrier therefore installs a **completion predicate**,
 > ends its turn immediately, and has its reply future resolved by whichever later turn first
 > satisfies the predicate. The controller re-evaluates outstanding predicates at the end of every
-> turn; only the *caller* blocks. Barriers need timeouts, and a barrier installed when its
-> predicate already holds resolves in its own turn.
+> turn; only the *caller* blocks. Barriers need timeouts (§27), and a barrier installed when its
+> predicate already holds resolves in its own turn. A barrier whose timeout expires must
+> **withdraw** its predicate as it raises, or short-timeout polling accumulates predicates the
+> controller re-evaluates forever (§27.1.5).
 
 ### 14.3 Lifecycle and shutdown
 
@@ -1110,7 +1135,11 @@ would have to satisfy differently.
 Everything here is independent of concurrency and can proceed immediately and in parallel.
 
 - Build the materialisation recording mode and pin the **exact expected log** for each public
-  operation, starting from current behaviour (**[MOD-14]**).
+  operation, starting from current behaviour (**[MOD-14]**). Its sibling,
+  `seamless_transformer.observation`, exists: off by default, one line per transformation
+  reaching an execution decision — checksum, owner, `cache-hit`/`cache-miss` — recorded both in
+  the transformation cache and at the workflow layer's direct callable call, which never reaches
+  that cache (§26.5). It is the instrument behind the re-execution measurement below.
 - Write the **node-transition tests** against §14.1: setting the last missing pin leaves the
   transformer and its downstream cone `waiting`, with no result checksum; leaving `complete`
   revokes the whole downstream cone in one pass; a failure yields `failed` + `blocked-by-error` downstream; a
@@ -1158,6 +1187,9 @@ Everything here is independent of concurrency and can proceed immediately and in
   the caller **2.0 s** and returns `complete`; then connecting one downstream transformer blocks
   **6.0 s** and re-executes the body **four more times**. At five seconds those become 5 s and
   15 s. The absence of this test is why every other gap in this list stayed invisible.
+  Counted rather than timed (§26.1), the same graph writes **eight `cache-miss` lines** to the
+  observation log for one transformation checksum, under two node labels, so the convergence
+  passes can be read off it directly.
 
 > **Note: mine the legacy test suite first.** `/home/agent/legacy-seamless/tests` holds ~296
 > integration tests, and they are **nearly all of the two shapes above**: **271 call
@@ -1324,8 +1356,10 @@ refholding are all preserved. Only the engine underneath them is swapped.
 
 - Write the **supersession tests**, which cannot exist before this phase. Using sleeping bodies
   and an **execution counter as the primary observable** — wall-clock is flaky under load and
-  infers what you want rather than measuring it; the built-in instrument is the per-`tf_checksum`
-  execution record in `seamless.db`:
+  infers what you want rather than measuring it; the built-in instruments are the
+  per-`tf_checksum` execution record in `seamless.db` and `seamless_transformer.observation`
+  (§26.5), which by this phase sees every execution, because A4 is the phase in which they all
+  go through the transformation cache:
 
   | scenario | construction | assertion |
   |---|---|---|
@@ -1828,4 +1862,389 @@ Each is a constraint imposed by the current implementation; derivation and evide
 | **MOD-14** | make materialisation observable before removing it | test instrument, do first | §3, §15 A0 |
 | **MOD-15** | non-Python transformers need correctness tests; stop reporting `complete` | test gap + one-branch fix | §13, §15 A0/A4 |
 | **MOD-16** | `Expression` must claim its `input_ref`; leases acquired in-turn | lifetime defect | §7, §15 A0/A3 |
-| **MOD-17** | a barrier installs a predicate; it never stalls the frontier | design correction | §14.2 |
+| **MOD-17** | a barrier installs a predicate; it never stalls the frontier; all four forms take a `timeout` that raises | design correction | §14.2, §27 |
+
+---
+
+## 26. Appendix — what building the A0 suite found
+
+The A0 test suite exists: `seamless-workflow/tests/`, 103 tests across
+`node-transition/`, `quiescence-barrier/`, `latency/` and `correctness/`, with
+29 green and 74 red against the current implementation. Nothing is `xfail`-marked
+— that arrives at A1, per §15 — so every test instead carries the phase at which
+it is expected to turn green, as a selectable marker (`now` 25, `a1` 24, `a2` 6,
+`a3` 5, `a4` 43). Its `README.md` carries the file-by-file table, the legacy
+mining record and the open questions.
+
+It is a **fold of two independently written suites.** Two were produced against
+this section, `tests/codex/` and `tests/claude/`, and three arbitrations compared
+them (`tests/consensus-{gemini,gpt-5.5,sonnet}.md`, kept as the record). All
+three converged on the same recommendation, on the merits rather than on this
+appendix — one of them says so explicitly, and is right to: §26 was written by
+the run that produced `tests/claude/`, so it is that suite documenting itself and
+is not evidence about it. Take `claude/` as the base, because it reads node state
+through one helper rather than through `ctx._graph` in every file, carries the
+phase markers, and counts executions through a file rather than by wall clock;
+take `codex/`'s [MOD-16] lifetime test, which `claude/` had recorded as owed
+rather than written, and its Context-cleanup fixture; keep `claude/`'s in-place
+cache reset rather than `codex/`'s singleton replacement. Both source
+directories are retired: one contract, one suite.
+
+The fold departed from the arbitrations in one place, on the project's
+instruction, and §27 is the result — see §26.5.
+
+This appendix records only what the body of this document does not already say:
+two corrections to the plan, two decisions the tests could not be written without
+settling, defects found on the way, and what the fold itself found.
+
+### 26.1 Two corrections to §15
+
+**The failure-propagation transition test cannot be green at A1.** §15 A0 groups
+"a failure yields `failed` + `blocked-by-error` downstream" with the other
+node-transition tests, and §15 A1 says those pass at A1. They cannot: A1 removes
+in-cascade execution, and execution is the *only* producer of `failed` in a
+Context. Cell validators are not applied, an alias edge does not enforce the
+target celltype, and the two remaining cell-level failure paths
+(deeper-than-one-component targets, merges that cannot serialise) raise out of the
+public call rather than recording a node failure. During the A1–A3 limbo no node
+reaches `failed` at all. The affected tests are therefore marked `a4`. The
+`unwired` half of the same bullet is unaffected and is A1 work as written.
+
+**Adding a node to a settled graph is quadratic in bodies run.** §15 A0 records
+that connecting one downstream transformer blocks 6.0 s and re-executes a
+two-second body "four more times". Measured by counting transformations rather
+than wall-clock — through `seamless_transformer.observation`, which records
+outside the transformation and therefore keeps working when execution moves to a
+worker at A4 (§26.5) — a settled single-transformer graph runs its body **eight
+times** where one is correct — seven re-executions across the three public calls that
+attach a downstream transformer and its result cell. `_derive_all`
+(`context.py:857`) makes up to one convergence pass per node and re-derives every
+node in each pass, and derivation is execution, so the multiple grows with graph
+size rather than being a fixed penalty per public call. This does not change the
+plan; it changes how bad the A1 excision looks from the outside, and it is the
+number worth quoting when justifying the phase.
+
+### 26.2 Decisions the tests had to settle
+
+**§24.5 — `waiting` is reading (a).** As §24.5 requires, this was settled before
+the first transition test rather than encoded by accident: `waiting` means the
+node's inputs are not all concrete checksums; `computing` means they are and the
+work has been submitted, queued or running. The visible consequence, asserted
+directly, is that a transformer whose pins are all literals goes straight to
+`computing` and never shows `waiting` — only its downstream does. The §15 A0
+latency script assumes the same thing ("set the last pin -> state is computing").
+If the project later chooses reading (b), the assertions to flip are the
+`computing` ones in `test_transition_eligibility.py` and
+`test_latency_delay_port.py`; every other test is stated as "pending, and no
+result checksum", which holds under both readings.
+
+**§14.2 and [MOD-17] disagree about timeouts.** §14.2 said neither barrier form
+takes a timeout; [MOD-17] said "barriers need timeouts". The first suite read
+them as being about different objects — graph quiescence, versus the §21 external
+finite cut and its delivery deadlines — and constrained only the first. Legacy
+`ctx.compute(0.5)` conflated three roles: a pump (the loop ran in the caller's
+thread, so the barrier was what advanced the graph), an observation window, and a
+hang guard. A controller thread deletes the first and a plain `sleep` replaces the
+second; the disagreement was only ever about the third.
+
+Whichever way it resolved, one invariant had to hold, and the suite asserts it in
+the form that survives either answer: **a barrier never returns a non-quiescent
+graph.** A `timeout=` that raises on expiry passes that; one that returns early as
+if settled is the pump, and makes "did my computation finish?" unanswerable from
+the return value.
+
+**It has since resolved, against §14.2: the parameter is in the API.** §27 has
+the decision and the argument — in short, the hang guard turns out not to be
+expressible outside the barrier, because the sync form has no caller-side
+mechanism at all and `asyncio.wait_for` abandons the async form's [MOD-17]
+predicate rather than withdrawing it. `quiescence-barrier/test_barrier_timeout.py`
+pins §27.1's four rules; the invariant above is unchanged and is now one of them.
+
+### 26.3 Defects the document does not list
+
+Found while writing the tests, each with a test attached. They are defects in the
+current implementation rather than constraints on the design, so they are recorded
+here rather than as `[MOD-n]` entries — but the first two are on A0/A2's path.
+
+1. **The cycle check is inverted.** `_add_edge` refuses an edge when
+   `_would_cycle(source, target)` (`context.py:712`), and `_would_cycle`
+   (`context.py:724`) walks forward *from the source*, returning true if it
+   reaches the target. Adding `source -> target` closes a cycle exactly when the
+   target already reaches the *source*. Both failure modes follow: a second edge
+   from one node into another is refused as a "Dependency cycle" — which is what
+   every diamond is, and what `tf.pins.x = ctx.a; tf.pins.y = ctx.a` is — and a
+   genuine two-node cycle is accepted, since after `ctx.b = ctx.a` the write
+   `ctx.a = ctx.b` installs the back edge without complaint. This is why the
+   "diamonds" of §15 A0's expression-correctness bullet are **not** among the
+   tests that pass now.
+2. **The block reason degrades in both directions.** `_apply_pending`
+   (`context.py:995-997`) folds every non-pending upstream state that is not
+   `failed`/`blocked` into `blocked-by-error`, so a transformer under an `unwired`
+   transformer reports an error that does not exist. `_apply_upstream_state`
+   (`context.py:1014-1016`) folds `blocked` and `unwired` into
+   `blocked-by-unwired`, so a cell under a *failing* node reports a missing
+   connection. A failing transformer therefore reports *error* one hop down and
+   *missing connection* two hops down; a disconnected pin reports the opposite.
+3. **[MOD-15] is reachable without leaving Python.** The
+   `if cfg.callable is None` branch (`context.py:971`) is not only a non-Python
+   problem: `ctx.tf.code = None` on a fully wired Python transformer turns
+   `Status: OK` with the value 3 into `Status: OK` with `None`, and nothing
+   reports that the code is gone. The one-branch fix covers both.
+4. **A compiled builder is captured as if it were a Python function.**
+   `_assign` tests `isinstance(value, Transformer)` (`context.py:142`) — the
+   *Python* subclass — and `CompiledTransformer` is a `TransformerCore` but not a
+   `Transformer`, so it falls through to `elif callable(value)`
+   (`context.py:144`) and is stored by `_transformer_config_from_code`
+   (`context.py:278`) with `language="python"` and the builder object as
+   `callable`. So a compiled transformer loses its **language** as well as its
+   schema, and configuration fails before execution is ever reached:
+   `ctx.tf.pins.a = 2` raises `AttributeError: Unknown transformer pin 'a'`,
+   checked against the builder's `(*args, **kwargs)` signature. This strengthens
+   [MOD-15]'s sequencing point — compiled is a representation gap first — and adds
+   a dispatch fix to it.
+5. **A missing key produces a node that is `complete` with no checksum.**
+   *Corrected during the fold; the first statement of this finding was wrong.*
+   The two cases are not indistinguishable: the projection of a key holding
+   `null` carries the checksum of `null`, the projection of an absent key carries
+   no checksum at all. What is identical is `state` and `.value` — both
+   `complete` and `None` — so a reader who checks either sees a well-formed null.
+   The original test appeared to prove indistinguishability, but was failing for
+   its own reason (finding 7). The real defect is on the other side of the
+   comparison: a node reporting `complete` while holding no checksum, reached
+   here without any transformer at all, and its consequence one hop down is worse
+   than its cause — a transformer whose pin is fed by the typo'd projection
+   reports `unwired`, *a pin is not connected*, when the pin is connected and it
+   is the key behind it that does not exist. [MOD-3] moves sub-path reads onto
+   `evaluate_expression`, which is where the distinction can be made; the tests
+   now pin the surviving distinction as a regression net and require only that a
+   node with no checksum stop calling itself `complete`.
+6. **`ctx.tf.celltypes` neither normalises nor validates.** The standalone
+   `CelltypesWrapper` maps `int -> "int"` and rejects unknown celltypes;
+   `WorkflowCelltypes.__setitem__` (`builder_state.py:359-363`) stores
+   `str(value)`, so `celltypes.lines = int` records `"<class 'int'>"` and
+   `celltypes.other = "not-a-celltype"` is accepted. This is one more entry for
+   [MOD-6]'s per-field validator table.
+
+7. **`Checksum.__eq__(None)` raises.** `Checksum(None)` is a `TypeError`, and
+   `__eq__` constructs before comparing, so any assertion comparing a checksum
+   against a possibly-absent one errors instead of answering. This is a
+   test-writing hazard rather than an implementation defect, but a sharp one: it
+   turns a *passing* contract into a red test that looks on-topic, which is how
+   finding 5 came to be mis-stated. The suite now compares checksums as
+   hex-or-`None` through one helper.
+
+### 26.4 What A0 still owes
+
+The suite is the test-writing half. Outstanding from §15 A0: the materialisation
+recording mode of **[MOD-14]** and its pinned expected logs — the green half of
+A0's exit evidence. Its sibling instrument now exists:
+`seamless_transformer.observation` (§26.5) records transformations the same way
+[MOD-14] is to record materialisations, off by default, with the same
+justification — pin the behaviour before removing it.
+
+Also outstanding: the one-branch fix of **[MOD-15]** (its acceptance test is
+written and red); the **[MOD-16]** `Expression.input_ref` fix — its lifetime test
+now exists, folded in from the second suite, and is red for the right reason (the
+Expression claims nothing at all on its input); and the decisions **[MOD-2]**,
+**[MOD-4]**, **[MOD-7]**. **[MOD-17]** versus §14.2 is no longer among them: §27
+settles it.
+
+The per-test cache and refholder-registry reset that §15 A1 requires is in place
+and has been **lifted to `tests/conftest.py`**, so it covers the pre-existing
+top-level suite as well as the contract directories; all 74 of those tests stay
+green under it. The pollution it prevents is an A1 phenomenon — it needs a
+failing derivation to leave unattributed refholder counts — so today it is
+prophylactic.
+
+### 26.5 What the fold found
+
+Three things surfaced only when the two suites were merged and §27 was applied,
+each of which changed the suite rather than the design.
+
+**Finding 7 above is why finding 5 was wrong.** A red test that fails inside its
+own assertion machinery looks exactly like a red test that fails on its subject.
+This is the failure mode a red-by-design suite is most exposed to, since nobody
+is surprised when one of its tests fails, and it argues for the same discipline
+the arbitrations applied to `codex/`'s missing-barrier crashes: a red test earns
+its place by failing for the reason it names.
+
+**The suite's own waiting instrument contradicted §27.** `settle()` — a bounded
+poll for quiescence — returned `False` on expiry, which is precisely what §27.1.2
+forbids the barrier to do, and it was spelled `settle(ctx, timeout=30)`, which is
+what `compute(timeout=30)` will be spelled. Six of its 43 call sites discarded
+that `False` deliberately, because they are limbo preconditions that do not
+expect quiescence, and nothing at the call site distinguished them from a typo.
+It is now three named helpers: `compute_or_settle` (the ordinary wait, 17 tests),
+`settle` (raises on expiry, 7 tests), `try_settle` (returns a bool, 6 tests).
+
+**The execution counter was measuring from inside the transformation.** The
+downstream re-execution finding of §26.1 was originally counted by having the
+transformer body append to a file whose path travelled as an ordinary pin. That
+works, and the file was chosen deliberately so the count would survive execution
+moving to a worker — but it puts the instrument *inside* the transformation
+identity, and its failure mode is asymmetric in the wrong direction. An identity
+that accidentally **differs** produces a spurious re-execution: the count rises,
+the test fails loudly, someone looks. An identity that accidentally **collides**
+produces a spurious cache hit: the count stays low, which reads as "nothing
+re-executed" — a *pass*. An instrument whose failure looks like success, sharing
+a failure mode with the property under test, is the wrong instrument however
+elegant, and it costs more than it saves: it also made the cache-hit tests
+express themselves in wall-clock, which §15 A4 warns against.
+
+It is replaced by **`seamless_transformer.observation`**, off-by-default product
+machinery recording one line per transformation reaching an execution decision —
+transformation checksum, whose it was, and whether a cache answered. This is
+[MOD-14]'s category rather than a new one: observability added to the product so
+that behaviour can be pinned before it is removed, in A0, alongside the
+materialisation recorder that phase already owes. Two consequences worth
+recording:
+
+* **It needs two recording sites, and that is the finding.** The transformation
+  cache is the obvious home, and a cache-side instrument alone reports *zero* for
+  everything A0 measures — because `_derive_transformer` calls the Python
+  callable directly (`context.py:979`) and never consults the cache. The second
+  site is that call, in the workflow layer, and every line it writes is a
+  `cache-miss` by construction. A1 deletes the call and the recording together,
+  which is the correct lifetime for an instrument attached to a defect.
+* **It makes the finding legible rather than scalar.** The eight executions are
+  now eight lines carrying one transformation checksum under two node labels,
+  `tf` and `tail` interleaving, so `_derive_all`'s convergence passes can be read
+  off the log. The same instrument states the A4 contract as *one miss and zero
+  hits* per settled node — separating "it re-ran", which is a correctness defect,
+  from "it re-asked and the cache absorbed it", which is only waste.
+* **It is the only instrument that can see over-invalidation.** §8's "its entire
+  downstream cone" is two claims, and the suite originally tested one: that
+  everything *in* the cone is revoked. The complement — that nothing *outside* it
+  is — cannot be settled by states and checksums when bodies are deterministic,
+  because an over-eagerly revoked node is recomputed and lands on exactly the
+  checksum it had, so a before/after comparison passes while the work was thrown
+  away. Counting separates "never invalidated" from "invalidated and rebuilt".
+  Measured: editing one literal pin re-executes a node sharing *no ancestor* with
+  anything in the graph **three more times**. The cheap before/after comparison
+  is still worth keeping alongside it, as a phase-robust regression net — stated
+  as *unchanged across the edit* rather than as *still complete*, it is
+  discriminating today and vacuously true through the limbo — but on its own it
+  would have declared the negative half of §8 satisfied.
+* **The cache-hit test keeps its clock as well.** The two mechanisms answer
+  different questions and can disagree, which is the point of running both: a hit
+  that still costs a body duration to deliver — a defect in the delivery path
+  rather than the cache — passes the count and fails the clock, while a second
+  execution that happens to be cheap passes the clock and fails the count. The
+  count is primary, for the reason §15 A4 gives against wall-clock; the clock
+  corroborates. It also sharpens the current diagnosis: the two Contexts agree on
+  the transformation checksum and record two `cache-miss` lines, so the defect is
+  precisely that nothing consults the cache, not that identity is unstable.
+
+**An instrument must not be the thing under test — but neither should it hide
+it.** `settle()` is an oracle for exactly one of the barrier's postconditions,
+not a reference implementation of it: it never enters the controller, so it
+cannot stand in for [MOD-17]'s frontier property; it returns nothing, so it
+cannot stand in for §10's correlated barrier-plus-read; and polling can report a
+quiescence that was never a stable state. It is therefore kept for three reasons
+only — the barrier does not exist yet (`now`/`a1`/`a2` preconditions), the
+barrier is the subject, or the barrier would contaminate the measurement (the
+execution-counting tests, where a derivation pass inside the barrier would add to
+the number being reported). Everything else waits through `ctx.compute()`, which
+makes 17 tests across three directories into barrier coverage by construction.
+Until A3 that call falls back to polling, deliberately: barrier *existence* is a
+separate contract, asserted once and legibly in `test_barrier_context.py`, and
+re-asserting it in 17 result tests would replace 17 on-target failures with 17
+copies of one missing-attribute message. Existence in one place, behaviour
+everywhere.
+
+---
+
+## 27. Appendix — barrier timeouts are part of the API
+
+**This appendix overrules §14.2's "Neither form takes a timeout" and closes the
+§14.2 / [MOD-17] disagreement recorded in §26.2.** All four barrier forms take an
+optional `timeout`:
+
+```python
+ctx.compute(timeout=None)               # Context-wide, blocking
+await ctx.computation(timeout=None)     # Context-wide, async
+ctx.a.compute(timeout=None)             # node-local, blocking; still returns a checksum
+await ctx.a.computation(timeout=None)   # node-local, async
+```
+
+### 27.1 The contract
+
+1. **`timeout=None` is the default and means "wait".** With no timeout the
+   behaviour is exactly what §14.2 specifies, so nothing that already relied on
+   the barrier changes.
+2. **On expiry the barrier raises `TimeoutError`. It never returns.** This is
+   the whole safety property, and it is what separates a deadline from the
+   legacy pump: a barrier that returns early *as if quiescent* makes "did my
+   computation finish?" unanswerable from the return value, and silently
+   converts every downstream read into a possible stale read. Raising leaves the
+   §26.2 invariant intact — **a barrier never returns a non-quiescent graph** —
+   because on the timeout path it returns nothing at all.
+3. **The timeout bounds the caller's wait and nothing else.** It does not
+   cancel, pause, deprioritise or otherwise touch the computation. The graph
+   keeps advancing across the expiry, and a second barrier on the same graph
+   afterwards returns normally with the result the first one did not wait for.
+   A timeout is an observation deadline, never a control operation — control
+   operations on running work are `prune()` and cancellation, which are
+   different messages with different consequences.
+4. **Expiry is still not a pump.** Waiting on a barrier advances nothing, with
+   or without a timeout, because the controller thread (§4) — not the caller —
+   is what advances the graph. `ctx.compute(0.5)` in legacy *was* the pump; here
+   the same call is a bounded look at something that is happening anyway.
+   `compute(timeout=X)` and `sleep(X)` differ only in that the first stops early
+   when the graph settles and raises when it does not.
+5. **Expiry withdraws the predicate.** [MOD-17] has a barrier install a
+   completion predicate, end its turn, and let a later turn resolve its reply
+   future; the controller re-evaluates outstanding predicates at the end of
+   every turn. A timed-out barrier must therefore *withdraw* its predicate as
+   part of raising, or a caller that polls with a short timeout accumulates
+   predicates the controller re-evaluates forever. This is the one place where
+   the timeout is not purely caller-side machinery, and it is the reason the
+   parameter belongs in the API at all — see §27.2.
+
+### 27.2 Why the parameter has to exist, rather than being left to the caller
+
+§14.2 argued that a stuck E/T is "a hang to be caught by the caller's own
+timeout mechanism". Two things are wrong with leaving it there.
+
+**The synchronous form has no caller-side mechanism.** `asyncio.wait_for` bounds
+`await ctx.computation()`; nothing bounds a blocking `ctx.compute()` from
+outside except a second thread built for the purpose. The sync form is the one
+used from scripts and from Jupyter cells — precisely the callers least equipped
+to build that thread, and most likely to meet a graph that never settles.
+Offering the deadline only to the async caller makes the safe API the harder one
+to reach.
+
+**Even the async form needs the barrier's cooperation.** `asyncio.wait_for`
+cancels the awaiting task; under [MOD-17] that cancellation is local to the
+caller and says nothing to the controller, so the predicate installed by the
+abandoned barrier stays installed and stays re-evaluated. Withdrawal (27.1.5) is
+only expressible from inside the barrier. So the choice is not "timeout in the
+API or timeout outside it" — it is "timeout in the API, or a predicate leak on
+every abandoned wait".
+
+The §26.2 reading of legacy `ctx.compute(0.5)` stands as written; only its
+conclusion changes. Of the three roles legacy conflated, the controller thread
+still deletes the **pump**, and a plain `sleep` still replaces the **observation
+window**. The third — the **hang guard** — is the one this appendix keeps, and
+keeps *in the API*, because it turns out not to be expressible outside it.
+
+### 27.3 Consequences elsewhere in this document
+
+* **§14.2** — the sentence "Neither form takes a timeout: a stuck E/T is a hang
+  to be caught by the caller's own timeout mechanism, not something a barrier
+  should paper over by returning as if quiescent" is superseded by this
+  appendix. Its *second* clause survives and is 27.1.2: a barrier must not paper
+  over a hang by returning as if quiescent. That is why expiry raises.
+* **[MOD-17]** — "Barriers need timeouts" now means what it says, for the
+  graph-quiescence barrier as well as for the §21 external finite cut. §26.2
+  separated the two objects correctly, but the separation is no longer needed to
+  keep the document consistent: both take deadlines, for different reasons — the
+  finite cut because external I/O cannot be left unbounded, the quiescence
+  barrier because the caller cannot bound it from outside.
+* **§21** — unchanged. The external finite cut's delivery deadlines are a
+  different mechanism with a different failure semantics (a cut *completes* with
+  a recorded shortfall); nothing here merges them.
+* **§24** — this is not an open decision any more; it is decided as above.
+* **§15 A0** — "**Do not port the timeout**" still holds *as a statement about
+  the legacy pump*: what is not ported is a barrier that advances the graph and
+  returns early. The parameter name is reused; the semantics are not.

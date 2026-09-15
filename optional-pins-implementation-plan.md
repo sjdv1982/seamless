@@ -126,27 +126,21 @@ placeholder `None` in a pin tuple is never treated as absence.
 
 ## JSON-Null Celltype Rule
 
-When an optional pin resolves to the canonical JSON-null checksum, construction must first
-verify that the pin's declared celltype is `plain` or `mixed`.
-
-In implementation terms:
+Null is a celltype-independent storage value. Optional pins of every type compare
+its checksum and drop it before conversion or decoding. A missing checksum is
+unresolved and must not be dropped. No second absence sentinel is introduced.
 
 ```python
 if pinname in optional_pins and checksum == json_null_checksum():
-    if celltype not in ("plain", "mixed"):
-        raise TypeError(...)
     drop_pin()
 ```
 
-Use a targeted exception rather than a raw `assert`, because this is user-facing
-construction behavior and Python assertions can be disabled. A good error message is:
-
-```text
-Optional pin 'x' with celltype 'binary' cannot use JSON null as absence
-```
-
-Non-null values for optional pins with other celltypes are allowed and are included in the
-transformation identity normally.
+The restricted boundary applies to function **results**: None is accepted for
+plain/mixed/bytes and rejected for other declared result types. Required pins
+also accept null only for plain/mixed/bytes; rejection names the pin and its type.
+Cells of every type can hold null. Bytes null resolves as `b""`, and empty bytes
+canonicalize to null, so optional bytes inputs cannot distinguish empty from absent.
+Non-null optional inputs convert normally and participate in transformation identity.
 
 ## Implementation Steps
 

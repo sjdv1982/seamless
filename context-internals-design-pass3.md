@@ -1,3 +1,5 @@
+> Superseded API names: Cell/Expression output is `celltype`, input interpretation is `input_celltype`; public `input_ref` is split into `source` and `checksum`. See the [implemented rename and Pin plan](../seamless-workflow/validation/celltype-rename/plan.md).
+
 # Reactive `Context` Internals — Design (Pass 3)
 
 > **What this document is.** A third-pass *synthesis* of
@@ -473,7 +475,7 @@ concurrent with one another — only with compute, and a compute result re-enter
   transformation — it does not gate the node.
 - A **connected optional** pin is treated as **required** (it gates), with one escape
   valve: a transformer may now **return no result**, provided its result celltype can
-  encode JSON `null` (`plain` or `mixed`). An optional pin that receives that "no result"
+  return null (`plain`, `mixed`, or `bytes`). An optional pin that receives that "no result"
   value is **dropped from the transformation**.
   - **The "no result" value is the canonical checksum of JSON `null`** — a real
     content-addressed value — **not** `result_checksum is None`, which already means "not
@@ -485,26 +487,17 @@ concurrent with one another — only with compute, and a compute result re-enter
 So **"sufficiently connected"** = every required pin wired + every connected-optional pin
 wired; unconnected optional pins are absent.
 
-### Admitted restrictions — optional pins are genuinely awkward
+### Optional-pin null restriction
 
-Two deliberate restrictions, both stated plainly because together they make optional pins
-**difficult to use**:
+A connected optional pin cannot carry an intentional null distinct from absence:
+null is the absence encoding. This includes empty bytes, which canonicalize to null.
+There is no restriction on the optional pin's declared celltype: int, binary, deep,
+and other input types all drop null by checksum before conversion. Cells of every
+type can provide that value. Function results remain restricted to plain/mixed/bytes
+when returning None. A missing result checksum means not computed and still blocks.
 
-1. A connected optional pin cannot also carry an *intentional* `null` value distinct from
-   "absent," because `null` is spoken-for as the absence encoding. The only alternative (pass
-   `null` through as a value) would contradict the chosen semantics.
-2. **The drop-on-`null` escape valve covers only `null`-encodable result celltypes
-   (`plain`/`mixed`).** A connected optional pin whose result celltype is `binary`, a deep
-   structure, or any other non-`null`-encodable type has **no in-band way to signal "no
-   result"** — it can be absent only while *unconnected*, never conditionally dropped once
-   computed. For such celltypes "connected optional" collapses back to plain "required." (An
-   out-of-band absence sentinel — a distinguished "absent" checksum independent of celltype —
-   would restore conditional absence for all celltypes, at the cost of a second magic value
-   threaded through tf-construction; it is deliberately **not** adopted in v1.)
-
-Net: optional pins can be difficult to use, and that difficulty is accepted, not hidden.
-*(Part V.7's further consequence — the transformation's shape becoming input-value-dependent —
-is real but not a defect; it is handled by the ordinary future-wired mechanism. See Part V.7.)*
+The transformation's shape can depend on optional input values; Part V.7 describes
+the future-wired mechanism and its remaining scope.
 
 ---
 
@@ -876,7 +869,7 @@ unwritten, and the `RLock` is concrete evidence the boundary is real.
 ## V.6 Substrate A: drop-on-`null` only covers null-encodable result types
 
 Part II's escape valve — "a transformer may return no result, provided its result celltype
-can encode JSON `null` (`plain` or `mixed`)" — silently restricts conditional absence to
+can return null (`plain`, `mixed`, or `bytes`)" — silently restricts conditional absence to
 **null-encodable** pins. A connected optional pin whose result celltype is `binary`, a deep
 structure, or any non-`null`-encodable type has **no in-band way** to signal "no result" at
 all: it cannot be absent-when-computed, only absent-when-unconnected. So the cheerful reading

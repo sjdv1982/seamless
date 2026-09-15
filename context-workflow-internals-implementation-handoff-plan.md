@@ -1,3 +1,5 @@
+> Superseded API names: Cell/Expression output is `celltype`, input interpretation is `input_celltype`; public `input_ref` is split into `source` and `checksum`. See the [implemented rename and Pin plan](../seamless-workflow/validation/celltype-rename/plan.md).
+
 # Context Workflow Internals - Handoff Implementation Plan
 
 This document is the implementation handoff for the reactive workflow `Context`.
@@ -611,6 +613,8 @@ edges at that pin subpath and its
 descendants.
 
 `del ctx.tf.x` removes pin `x`.
+
+> **Superseded:** the deletion-sugar paragraph below is historical. `None` stores a literal null; clearing uses `.checksum = None`. See [followup design, value writes](context-internals-followup-design.md#projection-value-update-and-connection-assignment) (the original decision at lines 270–271).
 
 `ctx.a = None`, `ctx.a.pins.b = None`, `ctx.a["b"] = None`, and `ctx.tf.x = None` are
 equivalent deletion sugar for the cases above. To store a `null` value, use
