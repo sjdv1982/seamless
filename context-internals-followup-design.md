@@ -257,14 +257,14 @@ ctx.a.items[0].name = "x"
 ```
 
 Attribute and item assignment have the same rules after API-name arbitration. Item
-reads remain projections. On a writable bound Cell, `.set(rhs)` at a projection is
-equivalent to assignment at that path, including RHS classification and connection
-depth:
+reads remain projections. On a writable bound Cell, `.set(value)` at a projection
+performs the same value update as assignment of that value at that path. `.set()` takes
+values only, so a connection is made by assignment:
 
 ```python
 ctx.a["b"].set(12)             # equivalent to ctx.a["b"] = 12
-ctx.a["b"].set(ctx.source)     # legal one-level connection
-ctx.a.b.c.set(ctx.source)      # PathError: deep connection target
+ctx.a["b"] = ctx.source        # one-level connection
+ctx.a["b"].set(ctx.source)     # TypeError: .set() takes values only
 ```
 
 `None` is an ordinary literal value in both forms. Deletion uses `del`; assignment of
@@ -313,20 +313,26 @@ graph target. `del ctx.a` deletes the Cell node itself.
 
 ### `Cell.set()` and standalone builder reconfiguration
 
-`.set(value)` uses the active Cell state model:
+`.set(value)` takes values only, in every state model. A reference raises `TypeError`
+naming the right spelling: `.set_checksum()` for a Checksum; assignment, or
+`Cell(source=...)`, for a Cell, Expression or Transformation; `pin.source` for a Pin.
+`.value = v` follows the same rule. What `.set()` mutates depends on the active Cell
+state model:
 
 - standalone `Cell`, root or projected: preserve existing builder semantics by
-  replacing that builder object's base input while retaining its structural path;
-- writable bound root `Cell`: classify the RHS exactly as Context root assignment;
-- writable bound projected `Cell`: classify the RHS and apply the same value-update or
-  legal connection operation as assignment at its accumulated path;
+  replacing that builder object's base input with the value, while retaining its
+  structural path;
+- writable bound root `Cell`: store the value, as Context root assignment of a value
+  does;
+- writable bound projected `Cell`: apply the same atomic value update as assignment of
+  a value at its accumulated path;
 - Transformer-result Cell, root or projected: reject with `ReadOnlyEndpointError`.
 
 Thus standalone and bound Cells retain the same method surface, while their active
-state model determines what is mutated. For example, a standalone derived Cell may
-retain path `a` while its private `_input_ref` recipe is changed by `.set()`, explicit assignment, or
-`.with_input(...)`. A writable bound projection instead addresses its owning Context
-Cell and cannot replace its owning root input recipe: its base is the Context node by definition.
+state model determines what is mutated. A standalone Cell can't be rewired to a source
+in place: `Cell(source=...)` and `.with_input(...)` create a new Cell. A writable bound
+projection addresses its owning Context Cell and cannot replace its owning root input
+recipe: its base is the Context node by definition.
 
 `.set_checksum(checksum)` follows the same capability and path rules. At the root it
 can install the checksum directly. At a bound non-root path the controller resolves
