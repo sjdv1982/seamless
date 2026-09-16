@@ -864,7 +864,8 @@ Two concerns stay separate throughout: **retrieving** `.checksum`, and
 - `clear_exception()` retries, for example once more caches are configured or the
   network is better. There is no automatic retry, following the pass3 ruling on
   transient failures ([pass3:835-840](context-internals-design-pass3.md#L835-L840)).
-- An expression that is itself invalid (an impossible path or conversion) also sets
+- An expression that is itself invalid (definition: its result checksum cannot be computed; 
+examples of causes: an impossible path or forbidden conversion) also sets
   `.exception`, with state `failed`.
 - The same applies to bound and standalone Cells.
 
@@ -908,12 +909,15 @@ misleading for a Cell that simply hasn't been computed. This is to be changed to
   (§5).
 - **Deserialization errors don't invalidate expressions.** The steps are:
   1. retrieve the result checksum, without questioning its validity;
-  2. validate it against the celltype using the result's HashType, and for python,
-     ipython and yaml also the text validation at parse time, which HashType doesn't
-     cover (§3.2 items 3 and 7). Where HashTypes are stored, and validation with a
+  2. validate it against the celltype using the result's HashType.
+     Where HashTypes are stored, and validation with a
      HashType that only the database knows, are in §10.6.
+  3. Obtain the buffer (if it can be obtained; see above for CacheMissError). In case of `.value`, deserialize it.
+  Deserialization may fail: HashType does not cover all cases of future deserialization. In particular, celltypes such as python,
+     ipython and yaml requir text validation at parse time, which HashType doesn't
+     cover (§3.2 items 3 and 7).
 
-  A validation failure is raised to the caller and sets the Cell's `.exception`. That
+  A validation or deserialization failure is raised to the caller and also sets the Cell's `.exception`. That
   failure is deterministic: the expression result stays stored, and `clear_exception()`
   produces the same failure again (§3.2 item 7).
 - The HashType work this relies on is in §3.2 and §10.6, and the "42" case in §3.3.
@@ -1097,53 +1101,46 @@ of §8.1, and the jobserver tests of §5, §8.3 and §8.4, wait for this part.
 #### 10.1 The rule — Decided (formerly §8.2)
 
 Expressions are evaluated where the data is. With `execution="auto"`, evaluation goes to
-the jobserver when the input buffer isn't local. The bound Context defaults to `"auto"`
+the jobserver when the input buffer isn't local and a jobserver is configured; otherwise
+it uses normal local resolution. The bound Context defaults to `"auto"`
 ([context.py:45](../seamless-workflow/seamless_workflow/context.py#L45)).
 
-#### 10.2 Current code — Not yet discussed
+#### 10.2 Current code — Implemented
 
-[`evaluate_expression_remote`](../seamless-core/seamless/checksum/expression.py#L171)
-checks the expression cache, then the database, then picks a location. With `"auto"`,
-[`choose_expression_evaluation_location`](../seamless-core/seamless/checksum/expression.py#L54)
-evaluates locally when no buffer is needed or the input buffer is local, and on the
-jobserver otherwise. The jobserver fetches the input from the hashserver and evaluates
-it inline. Only bound projections and dask workers use `"auto"`.
+`evaluate_expression_remote` checks the expression cache and database before choosing
+where to evaluate. `choose_expression_evaluation_location` checks only buffer locality;
+`jobserver_remote.has_jobserver()` checks configured clients without launching or
+contacting them. Auto requests without a jobserver use the asynchronous local evaluator
+and normal checksum resolution. Missing input raises `CacheMissError`; errors from a
+configured jobserver propagate without a local retry.
 
-Findings, from probes without a jobserver configured:
+Standalone `Expression.compute()`, `compute_async()`, and internal evaluation default
+to `"auto"`. Synchronous memory-local evaluation remains usable inside a running event
+loop; synchronous evaluation requiring the async bridge retains its running-loop error.
+Transformation dependencies and both preparation paths explicitly request `"auto"`.
+Bound Context projections and Dask workers already use `"auto"`.
 
-1. **"Local" means "in this process's memory".** `_get_local_buffer` never asks the
-   hashserver. It also finds buffers in `checksum_cache`, the last 10 buffers whose
-   checksum was computed
-   ([cached_calculate_checksum.py:17](../seamless-core/seamless/checksum/cached_calculate_checksum.py#L17)),
-   which `Checksum.resolve()` doesn't consult. So a dropped buffer that `resolve()`
-   can't find may still be evaluated locally.
-2. **No fallback.** `"auto"` with an input buffer that isn't in memory, and no
-   jobserver, raises `RuntimeError: No jobserver clients are available`, even if the
-   hashserver has the buffer.
-3. **"Local" differs by path.** The asynchronous local path fetches the input from the
-   hashserver; the synchronous one raises "not available locally".
-4. **Paths that ignore the rule.** Standalone `Expression.compute()` and `Cell.compute()`
-   default to `"local"`, on the synchronous path. The Expression inputs of a
-   transformation are evaluated locally (`dep._evaluate_internal()` in
-   `transformation_class.py`, and `PreTransformation._prepare_pin_value`): they
-   download the input or fail, and are never dispatched.
-5. **A bound failure is silent.** A projection over a buffer that exists nowhere ends
-   `blocked`, with `exception None`. §8.3 decides `failed` with `CacheMissError`.
+There is no `Cell.compute()` method: standalone cells construct Expressions, and bound
+cells use the Context path. Explicit `"local"` and `"remote"` remain supported.
+The synchronous local path still requires memory-local input; asynchronous local
+resolution may fetch it from the hashserver. The separate §8.3 decision to expose
+a bound missing-buffer failure on the cell remains outside this routing change.
 
-Test coverage: `"auto"` is tested only on its local branch, with fake remotes, and that
-test's input buffer is found through the 10-entry cache of finding 1. `"auto"`
-dispatching to the jobserver, and `"auto"` without a jobserver, are untested. No
-workflow test configures a jobserver or sets `expression_execution`, and no dask test
-uses Expressions.
+#### 10.3 Evaluation policy — Decided
 
-#### 10.3 Decisions needed — Open
+“Local” means available in this process's memory, including the checksum buffer cache.
+After expression-cache and database lookup, the three-branch `"auto"` algorithm is:
 
-- **What counts as local:** in memory, or resolvable through `Checksum.resolve()`,
-  which includes the hashserver.
-- **The fallback without a jobserver:** evaluate locally and fetch the input, or fail
-  with `CacheMissError`.
-- **Who follows the rule:** whether standalone `compute()` and the Expression inputs of
-  transformations use `"auto"`, as bound projections and dask workers do.
+1. If no input buffer is needed or the input buffer is in process memory, evaluate locally.
+2. Otherwise, if a jobserver is configured, evaluate on the jobserver.
+3. Otherwise, evaluate locally using normal checksum resolution, which may fetch the input from the hashserver.
+
+If normal resolution cannot find the input, propagate `CacheMissError`. A configured
+jobserver's connection, restart, or evaluation failure must propagate; it does not
+trigger fallback. Explicit `"remote"` with no jobserver still raises.
+
+All Expression evaluation paths use auto by default: standalone Expressions,
+transformation inputs, bound Context projections, and Dask workers.
 
 #### 10.4 Remote steps of standalone reads — Decided (formerly §8.1)
 
@@ -1157,7 +1154,27 @@ uses Expressions.
   Without the jupyter-sync driver-loop fix, it returns `None` there. Local evaluation
   is unaffected.
 
-#### 10.5 Errors across the jobserver (formerly §5)
+**Decided (2026-09-16): a running-loop refusal is not a failure.** The getter swallows
+the bridge `RuntimeError` into `_standalone_exception`
+([cell_class.py:119-124](../seamless-core/seamless/cell_class.py#L119-L124)), so `.state`
+reads `failed` and `clear_exception()` becomes necessary for a condition that is not an
+error and that resolves itself outside the loop. Nothing is known here, so the state is
+`waiting` (§8.3) and `.exception` stays `None`. Only evaluation failures set
+`.exception`.
+
+**Decided (2026-09-16): the merge happens in core, not in the handler.**
+`evaluate_expression_async` does not deduplicate
+([expression.py:123-142](../seamless-core/seamless/checksum/expression.py#L123-L142)):
+only `_execute_remote_expression` does, through `_active_expressions`. Two processes
+asking one jobserver for the same expression therefore evaluate it twice today, and the
+merge claimed above does not happen. `evaluate_expression_async` takes the same
+`_active_expressions` deduplication, keyed by the same `cache_key`. The jobserver then
+merges by calling that function, as does every other process, and `_run_expression`
+needs no state of its own — unlike `_run_transformation`, whose entry also carries
+cancellation membership. For a test to prove the merge, the jobserver counts expression
+evaluations and reports the count on its status endpoint (§10.7).
+
+#### 10.5 Errors across the jobserver — Decided (formerly §5)
 
 **Required changes: errors keep their type.**
 
@@ -1176,7 +1193,93 @@ back as strings, so a `CacheMissError` on a worker probably loses its type too. 
 transformation endpoints of the jobserver also return plain 500 text; a shared error
 format would keep the two paths aligned.
 
-#### 10.6 HashTypes in the database (formerly §3.2, items 5 and 6)
+**Decided (2026-09-16): HTTP status describes the request, the body describes the job.**
+The two are different subjects and the current code conflates them.
+
+- **4xx or 5xx: no job answered.** The request never became a job, or the server itself
+  failed: malformed JSON, an invalid payload, a record-mode mismatch, a crash in the
+  handler. These become `ClientConnectionError` and these alone are retried. HTTP status
+  is specific to remote execution and says nothing about the evaluation.
+- **200: the jobserver has an answer about the job.** The answer is a result or a
+  failure, and both are JSON bodies. A failure body is
+  `{"error": {"kind": …, "message": …, "checksum": …}}`; the presence of the `"error"`
+  key decides. Cancellation is such a body too (`kind` `canceled`), which retires the
+  `"Transformation was canceled"` string match in the client
+  ([jobserver_client.py:59-64](../seamless-remote/seamless_remote/jobserver_client.py#L59-L64)).
+
+The cost of the current conflation is concrete: `ClientConnectionError` is in
+`RETRYABLE_EXCEPTIONS` ([client.py:18-23](../seamless-remote/seamless_remote/client.py#L18-L23)),
+so a job that fails deterministically — a missing buffer, an impossible path, a user
+exception — makes `_retry_operation` restart the client and re-send the job five times.
+A transformation is then executed five times for nothing. The split also removes the
+jobserver's own text sniffing (`_is_restartable_remote_client_error_text`,
+[jobserver.py:16-20](../seamless-jobserver/jobserver.py#L16-L20)), which exists only
+because a worker's failure arrives as a string.
+
+**Decided: the body is the exception, in the form `Transformation.exception` already
+takes.** The three fields:
+
+- `message` is what the exception prints. For the substrate classes that §5 keeps, it is
+  `str(exc)` with no traceback, as §5 requires: traceback frames keep the worker's leases
+  alive. For everything else it is the frame-filtered text `_format_exception` builds
+  today ([transformation_class.py:43-79](../seamless-transformer/seamless_transformer/transformation_class.py#L43-L79)),
+  which is exactly what `Transformation.exception` holds. Nothing new is invented on
+  either side; the envelope only carries it across a process boundary.
+- `kind` names the class. The vocabulary is §5's keep-list, so the same five outcomes
+  exist locally and remotely:
+
+  | `kind` | class | `checksum` |
+  |---|---|---|
+  | `cache_miss` | `CacheMissError` | always |
+  | `hash_type_validation` | `HashTypeValidationError` | always |
+  | `expression_evaluation` | `ExpressionEvaluationError` | when it names one |
+  | `conversion` | `SeamlessConversionError` | when it names one |
+  | `execution` | anything else; `WorkflowExecutionError` on arrival | never |
+  | `canceled` | cancellation, not an exception | never |
+
+- `checksum` is the checksum whose buffer was missing, which in a chain of expressions
+  can be an inner input rather than the one requested (§8.3). It travels verbatim from
+  the innermost raiser, as `.hex()`.
+
+  It looks redundant with `message`, and for `CacheMissError(checksum)` the message is
+  indeed that checksum printed. It is not redundant, for the reason §2 already gave when
+  it required "structured jobserver errors" to use `.hex()`: the printed form is a
+  display form and deliberately does not round-trip. `str(CacheMissError(NULL_CHECKSUM))`
+  is `NULL`, not a digest. A consumer recovering a checksum by parsing a message would
+  therefore break on exactly the checksum §2 singled out, and would break again for
+  `HashTypeValidationError`, whose message embeds the checksum in prose among other
+  fields. `message` is for a person and `checksum` is for code — the same split as
+  `Checksum.__str__` against `Checksum.hex()`.
+
+  Its consumers today are `.exception` display (§8.3) and the tests. No production
+  handler reads a `CacheMissError`'s checksum: every `except CacheMissError` in the
+  substrate either ignores the object or re-raises it. The field exists so that the
+  boundary does not destroy information the class holds, not because a caller is waiting
+  for it.
+
+**Decided: `CacheMissError` gets a `checksum` attribute.** It is raised with a
+`Checksum` ([expression.py:553](../seamless-core/seamless/checksum/expression.py#L553)),
+with a hex string ([mount_directory.py:66](../seamless-core/seamless/util/mount_directory.py#L66))
+and with prose ([transformation_namespace.py:213](../seamless-transformer/seamless_transformer/transformation_namespace.py#L213)),
+so no consumer can rely on `args[0]`. `__init__` coerces its argument to a `Checksum`
+when it parses as one and leaves `.checksum` as `None` otherwise. The envelope's
+`checksum` field is written from that attribute, never from the message.
+
+**Decided: one module owns the mapping.** `seamless/error_envelope.py` in seamless-core,
+with `error_to_envelope(exc)` and `envelope_to_error(body)`. Its consumers are the
+jobserver's `_run_expression` and `_run_transformation`, `JobserverClient`, the dask
+worker's third tuple element, and `execution_error`
+([errors.py:73-97](../seamless-workflow/seamless_workflow/errors.py#L73-L97)), whose
+substrate tuple becomes the registry's keys. This is the argument of §10.6's single
+`_hash_type_implies`: a second copy of the rule drifts from the first.
+
+**Decided: an unknown kind is not a connection error.** A body that is not JSON, or that
+carries no `kind`, is a protocol violation, so `ClientConnectionError`. A well-formed
+body whose `kind` this client does not know is a newer server reporting a real failure:
+it becomes `WorkflowExecutionError` carrying the message and the unrecognized kind. The
+alternative would retry a deterministic failure and name the wrong cause.
+
+#### 10.6 HashTypes in the database — Decided (formerly §3.2, items 5 and 6)
 
 **Decided: a stored HashType can only be tightened, in the database too.** Today the
 database rejects every differing word as a conflict
@@ -1202,6 +1305,82 @@ Two gaps in the current code:
   database. Called from a getter inside a running event loop, that lookup has the
   same constraint as §10.4.
 
+**Decided (2026-09-16): the local HashType cache is a write-through cache over the
+database.** The two gaps above are the two halves of one rule, and neither is about
+expressions:
+
+- **Reading.** Every instance keeps a local HashType cache. Deserializing a checksum
+  queries that cache first and, on a miss, the database. The synchronous
+  `ensure_hash_type` stops at the cache today
+  ([hash_type_validation.py:50-64](../seamless-core/seamless/checksum/hash_type_validation.py#L50-L64)),
+  which is the second gap.
+- **Writing.** Whenever an instance creates or tightens a HashType, it sends the word to
+  the database. Nothing else has to decide who is responsible for which checksum: an
+  instance uploads what it learns.
+
+The result of an expression then needs no rule of its own. The instance holding the
+result buffer classifies it, which creates a HashType, so it uploads it — locally or on
+the jobserver, whichever ran the evaluation. An instance that only receives a result
+checksum learns nothing and uploads nothing. A checksum whose word two instances compute
+independently gets the same word, since a HashType is a function of the bytes, and an
+equal write changes nothing (§3.2 item 5).
+
+The database accepts the word only if it holds nothing tighter. A conflicting word — say
+`NUMPY` against `JSON_UNTESTED` — is logged in the database and raised in the caller.
+
+**Decided: the synchronous cache uploads fire-and-forget, through the background writer
+thread.**
+`set_hash_type` ([hash_type.py:281](../seamless-core/seamless/checksum/hash_type.py#L281))
+cannot await, and its callers are ordinary synchronous code. At the point where it
+actually changes `_hash_type_cache`, and only there, it hands the pair to the writer
+thread that `buffer_writer` already runs
+([buffer_writer.py:197-270](../seamless-core/seamless/caching/buffer_writer.py#L197-L270)),
+which performs `database_remote.set_hash_type`. Consequences:
+
+- an equal or looser write returns early, so it uploads nothing, and no traffic is
+  redundant;
+- a contradiction with what this instance already knows raises in the caller, before
+  anything is queued;
+- the caller never blocks and never sees a network error. Because reads are
+  write-through, the local cache normally already holds the database's word, so a
+  conflict is raised locally and never reaches the queue. The residual case — the
+  database holds a word this instance never read — is discovered after the caller is
+  gone, so the queue logs it;
+- in a worker process remote clients are unavailable
+  ([client.py:91-94](../seamless-remote/seamless_remote/client.py#L91-L94)), so the
+  enqueue is skipped;
+- the enqueue must not import `seamless_remote` while holding a cache lock, which is the
+  deadlock §5 records.
+
+Order does not matter, so the queue needs no sequencing and no acknowledgement. A
+HashType is a function of the buffer, and the database applies the tightening rule to
+each write independently (§3.2 item 5), so any arrival order of correct words converges
+on the tightest one: a looser word arriving after a tighter one is ignored, and a tighter
+one arriving late replaces. Only a wrong word — a bug in classification — behaves
+differently, and it conflicts in either order. `set_hash_type_remote` keeps its awaited
+upload; if the queue uploads the same word as well, nothing happens on the second write,
+so deduplicating on (checksum, word) is traffic reduction, not correctness.
+
+**Decided: the database applies the same three-way rule as the local cache.** A tighter
+word replaces the stored one; an equal or a looser word is accepted and changes nothing;
+only a contradiction is a 409. Today every differing word is a 409
+([database.py:797-801](../seamless-database/database.py#L797-L801),
+[database_models.py:67-79](../seamless-database/database_models.py#L67-L79)), which
+contradicts §3.2 item 5. The server imports `_hash_type_implies` from seamless-core, as
+it already imports `_valid_hash_type_word`
+([database.py:58-65](../seamless-database/database.py#L58-L65)), rather than growing a
+second copy of the rule. The comparison and the write are one transaction, or a
+concurrent tightening is lost. All three accepted outcomes answer `"OK"`: a client that
+needs the stored word does a GET, and a client that branched on "stored" versus "ignored"
+would be acting on information it cannot use.
+
+Because a 409 now means a genuine contradiction — a bug, or a change in the
+classification rules — the client stops swallowing it. `database_client.set_hash_type`
+returns `False` on 409 today
+([database_client.py:486-491](../seamless-remote/seamless_remote/database_client.py#L486-L491));
+it raises `ValueError`, matching local `set_hash_type`. Background callers, the writer
+queue above among them, catch and log it.
+
 #### 10.7 Tests
 
 Moved here:
@@ -1219,13 +1398,15 @@ Moved here:
   state is `failed`, and `clear_exception()` recovers once the buffer is available.
   (From §8.3.)
 
-New, for the gaps of §10.2:
+Implemented coverage for §10.2 and §10.3:
 
-- `"auto"` dispatches to the jobserver when the input buffer isn't local, and
-  evaluates locally when it is, with buffers held explicitly rather than found in
-  `checksum_cache`.
-- `"auto"` without a jobserver behaves as decided in §10.3.
-- A bound Context with a jobserver: a projection over a buffer that is only on the
-  hashserver.
-- The Expression input of a transformation, and an Expression through dask, follow the
-  decision on who follows the rule.
+- Core scheduling tests retain input buffers explicitly for local evaluation, dispatch
+  hashserver-only inputs, and resolve locally without a jobserver. They cover missing
+  input, unavailable remote support, explicit remote errors, configured-jobserver
+  failures, both public compute defaults, and memory-local compute in a running loop.
+- Remote client tests cover the side-effect-free jobserver availability query.
+- Transformer tests cover synchronous and asynchronous Expression dependency policy,
+  plus real hashserver/jobserver dispatch and database reuse.
+- The workflow integration test uploads a buffer, evicts client caches, and verifies a
+  default Context projection performs exactly one jobserver dispatch.
+- Dask tests verify Expression workers explicitly request auto evaluation.
