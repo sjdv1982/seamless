@@ -16,6 +16,8 @@ Looking for legacy Seamless (0.x)? Use the legacy docs at `/legacy/`.
 |----------|----------------|
 | `contracts/execution-backends.md` | `process`, `spawn`, `remote: jobserver/daskserver` semantics |
 | `contracts/identity-and-caching.md` | Content-addressing, checksum stability, cache invalidation |
+| `contracts/celltypes-and-conversion.md` | The 13 celltypes; celltype hierarchy as a checksum hierarchy; canonical null and virtual values; reference parser; conversion rule table and `convert_checksum` |
+| `contracts/hashtype.md` | `HashType` checksum classification (replaces `BufferInfo`); false-negative property; tightening; `hash_type` database table; `deserializable_as`/`capabilities`/`conversion_feasible` |
 | `contracts/service-management.md` | `seamless-service-resolve`, `rhl-*` helpers, false-pass protocol |
 | `contracts/execution-records.md` | Per-transformation records in `seamless.db`; minimal vs full mode, write-once semantics |
 | `contracts/direct-delayed-and-transformation.md` | Transformation model, `direct`/`delayed` decorators |
