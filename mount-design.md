@@ -12,13 +12,15 @@ is refused. A Pin is a whole input handle sharing CellBase with Cell, cannot be 
 source, and converts before the Transformer is constructed. Its failed conversion
 blocks the Transformer on that pin.
 
-Every supported celltype accepts stored null (`b"null\n"`). Missing, zero-byte,
-and canonical-null files read as the same null checksum. A read does not rewrite
-those representations. Null delivery writes a physically empty file, including
-compressed paths. Missing directories mean null; empty directories mean `{}`.
-Directory null delivery represents absence. Explicit nonpersistent unmount cleanup
-is a separate policy. Historical audit excerpts below retain original identifiers
-and observations; they do not override this implemented contract.
+Every supported celltype accepts stored null (`b"null\n"`). A missing path holds
+no value; a zero-byte file and `null\n` hold null. At initial reconciliation a
+missing path, zero-byte file, or empty directory never overrides an existing cell
+value. A sensing mount supplies null to a cell that has no value, except that
+`file-strict` fails on a missing path. Later deletion preserves the stored value
+(`file-strict` masks it with a sense error), while later truncation supplies null.
+Null delivery writes a physically empty file, including compressed paths, but does
+not create a missing file or remove a directory tree. Explicit nonpersistent
+unmount cleanup is a separate policy.
 
 
 > **Status.** Implementation design. It builds on the Context controller in
@@ -306,7 +308,7 @@ MountSession(
   pending and in-flight deliveries (§9.3).
 - Problems are reported where they belong, and none of them stops monitoring:
   - **Sense errors.** The file that sources the cell is unreadable or cannot be
-    canonicalised. Missing files are valid null observations, even under `file-strict`. The error becomes the
+    canonicalised. A missing path is also a sense error under `file-strict`. The error becomes the
     *cell's* exception (§8.2). It is cleared by the next valid observation, or by
     any later value write to the node.
   - **Delivery errors.** A write, or the resolution of its payload, failed. The
@@ -417,17 +419,16 @@ Three points need stating:
 
 ### 7.2 The initial decision table
 
-Inputs: the effective mode and authority; the file state (absent, present with
-canonical checksum *F*, or rejected); the node state (no value, value *N*, or —
-for `w` only — not yet complete). *F* and *N* are compared as canonical
-checksums. "No value" means the node has no checksum.
+Inputs are the effective mode and authority, the file state, and whether the node
+has a complete value. *F* and *N* are compared as canonical checksums. "No
+value" means the node has no checksum; it is distinct from a null value.
 
 | # | mode | authority | file | node | action | legacy |
 |---|---|---|---|---|---|---|
-| 1 | r, rw | file, file-strict | absent/empty/null | any | node ← canonical null; preserve file representation | changed |
-| 2 | r, rw | cell | absent/empty/null | no value | node ← canonical null | changed |
-| 3 | r | cell | absent/empty/null | *N* | preserve initial node value; record null baseline | same authority rule |
-| 4 | rw, w | cell | absent/empty/null | *N* | write *N* only when different from null baseline | canonical comparison |
+| 1 | r, rw | any | absent | no value | node ← null; `file-strict`: sense error | changed |
+| 2 | r, rw | any | zero-byte/empty directory | no value | node ← null | changed |
+| 3 | r, rw | file/file-strict | absent/empty | *N* | `r`: nothing; `rw`: write *N* unless null; strict absent: sense error | changed |
+| 4 | r, rw | file/file-strict | explicit null | *N* | node ← null | canonical comparison |
 | 5 | r, rw | file, file-strict | *F* | no value | node ← *F* | same |
 | 6 | r, rw | file, file-strict | *F* | *N* = *F* | nothing | same |
 | 7 | r, rw | file, file-strict | *F* | *N* ≠ *F* | node ← *F*; log once | same (printed a warning) |
@@ -435,7 +436,7 @@ checksums. "No value" means the node has no checksum.
 | 9 | r | cell | *F* | *N* | nothing; *F* becomes the baseline, later file changes flow in | **differs**: the first poll overwrote the node with *F* |
 | 10 | rw, w | cell | *F* | *N* = *F* | nothing | rewrote identical bytes |
 | 11 | rw, w | cell | *F* | *N* ≠ *F* | write *N*; log once for `rw` | same effect, silent |
-| 12 | w | cell | *F* | no value / not complete | nothing now; write when complete | same |
+| 12 | w | any | any | no value / not complete | nothing now; write when complete | same |
 
 **Rejected files.** A file may be unreadable, or impossible to canonicalise as
 the celltype (§10). Where the table would install *F* into the node (rows 5, 7
@@ -513,7 +514,7 @@ In the `_mount_observed` turn:
    | `unchanged` | checksum = `disk.checksum` | update `disk.fingerprint` only; identical-content rewrites and `touch` end here |
    | `echo` | checksum = the in-flight delivery's checksum | our own write, seen before its ack: `disk := (checksum, fingerprint)` |
    | `rejected` | unreadable, or not canonicalisable | `disk := (INVALID, fingerprint)`; modes with `r`: sense error; `w`: reassert |
-   | `absent` | file missing | normalize to canonical null, then use unchanged/echo/foreign classification |
+   | `absent` | file missing | keep the node unchanged; `file-strict`: sense error; `w`: reassert a non-null complete value |
    | `foreign` | anything else | see below |
 
 4. **Foreign, mode contains `r`:** install the checksum as a non-detaching value
@@ -521,7 +522,7 @@ In the `_mount_observed` turn:
    `_set_cell_root_with_edges(..., clear_edges=False)`, then the cascade. Set
    `disk := (checksum, fingerprint)` and `last_synced := checksum`, so that
    actuation does not write the value back. The value write clears any sense
-   error.
+   error. A zero-byte file maps to null; an emptied directory maps to `{}`.
 5. **Foreign, mode `w`:** reassert (§9.4).
 6. Release the observation lease at the end of the turn. The node's producer
    claim now holds the checksum.
@@ -705,11 +706,12 @@ producer's input type is stored separately. Retyping while mounted is refused.
 | `deepfolder`, `folder` | directory only | §13 | |
 | `checksum`, `deepcell`, `module` | no | — | `mount()` raises (an invalid request) |
 
-**Null files.** Missing, zero-byte, and `b"null\n"` files read as canonical null
-before celltype-specific parsing. This applies to int, plain, binary, and every
-supported mounted type. A newline-only file is not a zero-byte file and still
-undergoes normal parsing. A null read preserves the physical representation;
-null delivery truncates to an empty file. Bytes null reads as `b""`.
+**Null files.** A missing path is an absent observation. A zero-byte file and
+`b"null\n"` read as canonical null before celltype-specific parsing. At mount
+time an absent or zero-byte source cannot override an existing value; explicit
+`null\n` can. A newline-only file undergoes normal parsing. Null delivery
+truncates an existing file to zero bytes (also for compressed paths), but never
+creates a missing file. Bytes null reads as `b""`.
 
 **Compression.** A `.gz` or `.zst` suffix means: decompress before `canon_T` on
 read, and compress the canonical bytes on write — deterministically (gzip with
@@ -875,8 +877,9 @@ processes. It is a documented warning, not a promise of detection.
 - **Starting point.** `seamless.util.mount_directory.write_to_directory` is where
   to start, but it is neither atomic nor does it do buffer bookkeeping — its own
   docstring says so.
-- **Empty directories** are not representable in the index; they are neither
-  sensed nor created.
+- **Empty directories** are represented by the empty index `{}` after mounting.
+  At initial reconciliation they count as supplying no value and therefore do
+  not override an existing cell value.
 
 ---
 
@@ -1079,7 +1082,7 @@ Legacy anchors are in `seamless/workflow/core/mount.py`: `MountItem.init`,
 |---|---|---|---|
 | `r` + `authority="cell"`, differing file at mount | file overwrites the cell at the first poll | cell kept; the file is the baseline | the legacy result is an unrecorded-mtime accident, not a policy |
 | "no value" | no checksum, or an empty string, object or array | no checksum | the extra rule compensated for auto-initialised structured cells |
-| `file-strict` with a missing file, at mount | raised | canonical null, with monitoring active | missing is an ordinary null observation |
+| `file-strict` with a missing file, at mount | raised | cell sense error, with monitoring active | the required path is absent, but recovery remains automatic |
 | identical content at mount | rewritten | skipped | pointless write; bumps mtime for editors |
 | cell edit and file edit within one poll | outbound wins silently | acceptance order decides; a conditional write refuses to overwrite an unseen change | a silent lost update |
 | `w` + foreign change | rewrite forever | reassert; the detector trips after three reasserts in 20 s | endless fights |
@@ -1211,8 +1214,8 @@ checksums.
   - `mount()` on an invalid or unreadable file
     returns with the cell failed and the mount active, and fixing the file —
     content or permissions — clears the exception without user action;
-  - missing (`file-strict` included), zero-byte, and canonical-null files read
-    as null without a cell error or a physical rewrite;
+  - missing, zero-byte, and canonical-null initial states follow §7.2, including
+    the `file-strict` missing-path sense error and the non-overriding empty state;
   - `mount()` on an unwritable path returns with a mount error, and the file
     appears once the path becomes writable;
   - the post-initialisation behaviour of each mode;
