@@ -1,6 +1,6 @@
 # Celltypes, Null, and Conversion (Contract)
 
-This page defines what a celltype means, how the canonical null works, and how the checksum-level conversion engine converts a checksum from one celltype to another. The companion page `contracts/hashtype.md` defines the `HashType` classification that the engine and the parser use to reject impossible work without touching buffers.
+This page defines what a celltype means, how the canonical null works, and how the checksum-level conversion engine converts a checksum from one celltype to another. The companion page `contracts/hashtype.md` defines the `HashType` classification that the engine and the parser use to reject impossible work without touching buffers. The deep celltypes (`deepcell`, `deepfolder`, `folder`), which are outside the rule table below, are defined in `contracts/deep-celltypes.md`.
 
 Code locations (all in `seamless-core`):
 
@@ -28,7 +28,7 @@ These are the only celltypes that the parser, serializer and conversion engine a
 - **Text celltypes**: `text` (UTF-8), with the code/markup subtypes `python`, `ipython` and `yaml`.
 - **Scalar celltypes**: `str`, `int`, `float` and `bool` are *readings* of JSON-compatible buffers, not separate storage formats.
 - **`checksum`**: the value is a `Checksum`. The buffer is the bare 64-character lowercase hex digest, with no trailing newline.
-- **Deep and structural celltypes** (`deepcell`, `deepfolder`, `folder`, `module`) are not in this list. They are distinct celltypes whose buffers are plain JSON: `Buffer._map_celltype` serializes and parses them as `plain`. Conversion between them and the 13 celltypes is not part of the rule table.
+- **Deep and structural celltypes** (`deepcell`, `deepfolder`, `folder`, `module`) are not in this list. They are distinct celltypes whose buffers are plain JSON: `Buffer._map_celltype` serializes and parses them as `plain`. Conversion between them and the 13 celltypes is not part of the rule table. The deep celltypes are `deepcell`, `deepfolder` and `folder`; `module` is not one of them. Their own conversion and path rules are in `contracts/deep-celltypes.md`.
 
 ## The celltype hierarchy is a checksum hierarchy
 
@@ -66,6 +66,10 @@ Consequences:
 - **Canonicalization of empty bytes.** `canonicalize_checksum(checksum, celltype)` maps `sha256(b"")` to `NULL_CHECKSUM` **only when `celltype == "bytes"`**. Expression keys apply it to their input checksum and input celltype. A raw `Buffer(b"")` made without a celltype still has checksum `sha256(b"")`: canonicalization is not applied to raw buffers.
 - **Reading.** A null checksum reads as `b""` for `bytes` and as `None` for every other celltype, including `str` and `checksum`. `virtual_value` treats both `sha256(b"null")` and `sha256(b"null\n")` as null. Only `b"null\n"` is canonical, and the two remain distinct identities.
 - **Predicates.** `is_null(cs)` is true only for `NULL_CHECKSUM`. `is_null_value(cs)` is true for either null checksum.
+- **Collisions with real content.** Null is decided by checksum, so some non-null content is indistinguishable from null:
+  - Under `bytes`, content that is exactly `b"null\n"` has `NULL_CHECKSUM`, the same checksum and buffer as empty bytes, and reads as `b""`. Content `b"null"` has the non-canonical null checksum and also reads as `b""`, although serializing empty bytes never produces it.
+  - Under the text celltypes (`text`, `python`, `ipython`, `yaml`), the string `"null"` serializes to `b"null\n"` and reads back as `None`. The empty string is not affected: it is stored as `b"\n"` and reads as `""`.
+  - `str` and `plain` are not affected: the string `"null"` is written as the JSON string `"null"`.
 - **Display.** `str(Checksum(NULL_CHECKSUM))` is `"NULL"`, and nothing else is displayed that way. `repr()` and `.hex()` give the hex digest. Machine-readable output (JSON, wire, database, filenames) must use `.hex()`, never `str()`.
 
 ## Virtual values (null, true, false)
@@ -91,7 +95,7 @@ Order of operations: (1) `virtual_value`; (2) `validate_deserializable_as(checks
 | `text`, `python`, `ipython`, `yaml` | UTF-8 decode, then strip all trailing `\n`; returns the text. `python` must pass `ast.parse`, `ipython` must pass `ipython2python`, `yaml` must pass `yaml.safe_load` (the value is still the text). Failure raises `HashTypeValidationError`. |
 | `plain` | Decode, strip trailing `\n`, then `orjson.loads` |
 | `binary` | Seamless-mixed deserializer; storage must be `pure-binary` (an `.npy` buffer) |
-| `mixed` | Seamless-mixed deserializer (`.npy`, Seamless-mixed format, or JSON) |
+| `mixed` | Seamless-mixed deserializer (`.npy`, Seamless-mixed format, or JSON). A zero-dimensional NumPy leaf reads back as a NumPy scalar, at the top level and nested in a dict or list alike. |
 | `bytes` | Returns the `Buffer` object itself (the null reading is `b""`) |
 | `str` | `orjson` parse; a JSON string, number or boolean gives `str(value)` (so `4.5` → `"4.5"`, `1e3` → `"1000.0"`); objects and arrays are rejected |
 | `int`, `float` | Buffers over 1000 bytes are rejected. `orjson` parse; accepts a finite JSON number, or a JSON string that parses as a finite float. `float` → `float(v)`. `int` → `int(v)`, falling back to `int(float(v))`. |
@@ -107,23 +111,27 @@ Order of operations: (1) `virtual_value`; (2) `validate_deserializable_as(checks
 | Celltype | Buffer |
 |---|---|
 | any, value `None` | `b"null\n"` |
-| `plain` | `orjson` with 2-space indent and sorted keys, plus `\n` |
+| `plain` | `orjson` with 2-space indent and sorted keys, plus `\n`. NaN and infinity raise. |
 | `str` | JSON of `str(value)` plus `\n`, except that a `bool` stays a JSON boolean (`True` → `b"true\n"`) |
-| `int`, `float`, `bool` | JSON of `int(v)` / `float(v)` / `bool(v)`, plus `\n` |
-| `text`, `python`, `ipython`, `yaml` | `str(value)` with trailing `\n` stripped, plus exactly one `\n` (no syntax check) |
-| `bytes` | Raw bytes (or `.tobytes()`, or the encoded `str()`); `b""` becomes `b"null\n"` |
-| `mixed` | Seamless-mixed serializer (pure JSON values serialize the same way as `plain`; NumPy arrays, zero-dimensional ones included, serialize the same way as `binary`; finite NumPy integer and floating-point scalars serialize as JSON numbers, see below) |
-| `binary` | `.npy` of `np.array(value)` |
+| `int`, `float`, `bool` | JSON of `int(v)` / `float(v)` / `bool(v)`, plus `\n`. A `bytes` value is decoded first. Under `float`, NaN and infinity raise. |
+| `text`, `python`, `ipython`, `yaml` | `str(value)` with trailing `\n` stripped, plus exactly one `\n` (no syntax check). A `bytes` value is decoded first. |
+| `bytes` | A `bytes` value unchanged; otherwise `.tobytes()`; otherwise `str(value)` with trailing `\n` stripped, UTF-8 encoded. `b""` becomes `b"null\n"` |
+| `mixed` | Seamless-mixed serializer (pure JSON values serialize the same way as `plain`; NumPy arrays, zero-dimensional ones included, serialize the same way as `binary`; NumPy scalars, complex values, NaN and infinity: see below) |
+| `binary` | A `bytes` value is taken as an already-serialized buffer and stored unchanged (it is readable as `binary` only if it is an `.npy` buffer). Anything else: `.npy` of `np.array(value)`, complex dtypes included |
 | `checksum` | Bare hex digest, no newline; the value must be a `Checksum` or a hex `str` |
 
-**NumPy scalars.** Under `mixed`, a finite NumPy integer or floating-point scalar is written as a JSON number, so its dtype is not kept: `np.float32(1.5)` reads back as the Python float `1.5`. Under `binary`, a NumPy scalar is written as a `.npy` of its own dtype. That buffer reads back as the same NumPy scalar under both `binary` and `mixed`, and `binary → mixed` keeps its checksum.
+**NumPy scalars and arrays.**
 
-Known defects in the current code (a planned fix is described in `compiled-transformer-celltypes-design-plan.md`, section "Prerequisites In seamless-core"):
+- Under `mixed`, a finite NumPy integer or floating-point scalar is written as a JSON number, and an `np.bool_` as a JSON boolean, so the dtype is not kept: `np.float32(1.5)` reads back as the Python float `1.5`.
+- Under `binary`, a NumPy scalar is written as a `.npy` of its own dtype. That buffer reads back as the same NumPy scalar under both `binary` and `mixed`, and `binary → mixed` keeps its checksum.
+- A NumPy array keeps its dtype under both `binary` and `mixed`, zero-dimensional arrays included.
+- **Complex values** have no JSON form. A complex scalar or array is written as the `.npy` of its own dtype, under `binary` and under `mixed`.
 
-- NaN and infinity under `mixed` are written as `NaN` / `Infinity`, which cannot be read back as `mixed`.
-- NaN and infinity under `plain` and `float` are written as `b"null\n"` and read back as None.
-- `np.bool_` under `mixed` raises `TypeError`.
-- Complex scalars and arrays raise `TypeError` under both `mixed` and `binary`.
+**NaN and infinity are NumPy values.** JSON cannot hold them.
+
+- Under `mixed`, a top-level NaN or ±infinity (a Python `float`, or a NumPy floating-point scalar of any precision) is written as a zero-dimensional `float64` `.npy`. Inside a dict or list, it is written as a NumPy value inside the Seamless-mixed format. In both positions it reads back as `np.float64(nan)` / `np.float64(inf)`.
+- Under `plain` and `float`, serializing NaN or infinity raises; it is never written as `null`. A value containing NaN or infinity therefore has no `plain` or `float` checksum. `int` already raises through `int(v)`.
+- Under `binary`, NaN and infinity are ordinary elements of a floating-point array or scalar of its own dtype.
 
 ## Conversion engine
 
@@ -160,7 +168,7 @@ Every ordered pair of distinct celltypes is in exactly one category. `check_conv
 | `yaml→plain` | `yaml.safe_load`, then canonical `plain` |
 | `ipython→python` | `ipython2python` |
 
-`conversion_possible` parses the source value, rejects `dict`/`list`/non-scalar arrays, and serializes `builtins.<target>(value)`. A `float` target must produce a finite result; a non-finite result raises `SeamlessConversionError` instead of being serialized as JSON `null`. Value rules: `binary→plain` goes through `orjson` numpy encoding and then canonical `plain`; `plain→binary` requires an int, float, bool or list whose `np.array` is not dtype `object`; `bool↔int/float` apply the builtin.
+`conversion_possible` parses the source value, rejects `dict`/`list`/non-scalar arrays, and serializes `builtins.<target>(value)`. A `float` target must produce a finite result; a non-finite result raises `SeamlessConversionError` instead of being serialized as JSON `null`. Value rules: `binary→plain` goes through `orjson` numpy encoding and then canonical `plain` (it rejects non-finite floats first, so NaN and infinity raise here as they do in direct `plain` serialization, instead of being written as JSON `null` by `orjson`); `plain→binary` requires an int, float, bool or list whose `np.array` is not dtype `object`; `bool↔int/float` apply the builtin.
 
 **Conversions involving `checksum`** (current behaviour):
 

@@ -14,6 +14,8 @@ nav:
       - Identity and Caching: contracts/identity-and-caching.md
       - Celltypes, Null, and Conversion: contracts/celltypes-and-conversion.md
       - HashType: contracts/hashtype.md
+      - Deep Celltypes: contracts/deep-celltypes.md
+      - Expressions: contracts/expressions.md
       - direct/delayed/Transformation: contracts/direct-delayed-and-transformation.md
       - Modules and Closures: contracts/modules-and-closures.md
       - Scratch/Witness/Audit: contracts/scratch-witness-audit.md
