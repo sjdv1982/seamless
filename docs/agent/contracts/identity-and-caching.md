@@ -26,6 +26,12 @@ computation runs (`__meta__` including local-vs-remote placement, `__env__`,
 result. If the platform allows environment-dependent semantics, it should record
 an **environment signature** as provenance (see `contracts/scratch-witness-audit.md`).
 
+## Checksums, values, and celltypes
+
+- The checksum is the identity; a deserialized value is not. One value may have several checksums (e.g. `b"true"` vs `b"true\n"`, compact vs indented JSON), and Seamless does not re-canonicalize a checksum by re-serializing its value — the only canonicalization is empty `bytes` → the canonical null `b"null\n"`.
+- A celltype is an interpretation of a checksum. The celltype hierarchy is a hierarchy of valid checksums: a checksum valid as a subtype is valid, unchanged, as its supertype, so such a conversion keeps the checksum (and hence cache identity).
+- See `contracts/celltypes-and-conversion.md` (celltypes, null, parser, conversion engine) and `contracts/hashtype.md` (checksum-level classification used to reject impossible deserializations/conversions without buffers).
+
 ## Caching
 
 Caching is valid only to the extent that the step is referentially transparent under the identity definition above.

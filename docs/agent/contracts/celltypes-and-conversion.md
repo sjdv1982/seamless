@@ -112,9 +112,18 @@ Order of operations: (1) `virtual_value`; (2) `validate_deserializable_as(checks
 | `int`, `float`, `bool` | JSON of `int(v)` / `float(v)` / `bool(v)`, plus `\n` |
 | `text`, `python`, `ipython`, `yaml` | `str(value)` with trailing `\n` stripped, plus exactly one `\n` (no syntax check) |
 | `bytes` | Raw bytes (or `.tobytes()`, or the encoded `str()`); `b""` becomes `b"null\n"` |
-| `mixed` | Seamless-mixed serializer (pure JSON values serialize the same way as `plain`; Numpy arrays/scalars serialize the same way as `binary`) |
+| `mixed` | Seamless-mixed serializer (pure JSON values serialize the same way as `plain`; NumPy arrays, zero-dimensional ones included, serialize the same way as `binary`; finite NumPy integer and floating-point scalars serialize as JSON numbers, see below) |
 | `binary` | `.npy` of `np.array(value)` |
 | `checksum` | Bare hex digest, no newline; the value must be a `Checksum` or a hex `str` |
+
+**NumPy scalars.** Under `mixed`, a finite NumPy integer or floating-point scalar is written as a JSON number, so its dtype is not kept: `np.float32(1.5)` reads back as the Python float `1.5`. Under `binary`, a NumPy scalar is written as a `.npy` of its own dtype. That buffer reads back as the same NumPy scalar under both `binary` and `mixed`, and `binary → mixed` keeps its checksum.
+
+Known defects in the current code (a planned fix is described in `compiled-transformer-celltypes-design-plan.md`, section "Prerequisites In seamless-core"):
+
+- NaN and infinity under `mixed` are written as `NaN` / `Infinity`, which cannot be read back as `mixed`.
+- NaN and infinity under `plain` and `float` are written as `b"null\n"` and read back as None.
+- `np.bool_` under `mixed` raises `TypeError`.
+- Complex scalars and arrays raise `TypeError` under both `mixed` and `binary`.
 
 ## Conversion engine
 
