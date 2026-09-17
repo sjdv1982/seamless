@@ -2,7 +2,7 @@
 
 `HashType` classifies a **checksum** by the structure of its buffer. It lets Seamless make deserialization, conversion and path decisions at the checksum level, rejecting impossible work without fetching or parsing a buffer. It replaces the old `BufferInfo` decision layer: no seamless-core, seamless-transformer, seamless-remote or seamless-dask code reads or writes `BufferInfo`.
 
-Celltypes, the reference parser and the conversion engine are defined in `contracts/celltypes-and-conversion.md`.
+Celltypes, the reference parser and the conversion engine are defined in `contracts/celltypes-and-conversion.md`. HashType classifies only the 13 celltypes; the deep celltypes (`deepcell`, `deepfolder`, `folder`) are outside its vocabulary, and `contracts/deep-celltypes.md` records what that currently means for them.
 
 Code locations:
 
@@ -151,6 +151,7 @@ This is the checksum-level conversion query used before any conversion work. Rul
     - Unflagged `JSON_STRING` → `None`.
     - `LONG` does not decide this category; the length limit remains in deserialization/reinterpretation checks.
   - `mixed→str`: `False` for `JSON_OBJECT`/`JSON_ARRAY`, otherwise `True`.
+  - Everything else, including `bool` targets: `None`.
 - `conversion_values`: untested → `None` (except for the earlier `checksum` target rule). Concrete:
   - `checksum→X`: `None`.
   - `plain→binary`: `False` for `JSON_OBJECT`.
@@ -167,7 +168,7 @@ This is the checksum-level conversion query used before any conversion work. Rul
 ## Current limitations
 
 - **Remote lookup from synchronous validation inside a running event loop**: when no buffer is supplied, `ensure_hash_type` skips the database and returns `None` if the checksum is not in the local cache. A supplied buffer is classified locally and its upload is queued. Although async `parse_buffer` calls the synchronous `_parse_buffer`, it passes the buffer, so parse-time validation can classify it without a database request. Use `ensure_hash_type_async` when remote-only metadata is needed before a buffer is available.
-- **JSON `true`/`false`/`null` are classified `JSON_STRING`.** For `plain` and `mixed`, path validation sees `{"SEQ"}` and can allow positional access to a scalar; parsing/evaluation still decides whether that access is valid. The same classification formerly caused false rejections for `int`/`float` conversions; unflagged `JSON_STRING` now yields `None` under `conversion_possible`.
+- **JSON `true`/`false`/`null` are classified `JSON_STRING`.** For `plain` and `mixed`, path validation sees `{"SEQ"}` and can allow positional access to a scalar; parsing/evaluation still decides whether that access is valid. The classification is therefore not a proof of a JSON string: `conversion_possible` answers `None` for an unflagged `JSON_STRING` word with an `int`/`float` target, because JSON `true`/`false` convert there.
 - **Untested kinds remain supported** and can arrive through `set_hash_type` or from the database, although `from_buffer` does not currently produce them. The `SEMANTIC` bit is reserved and rejected by `is_valid_word`.
 
 ## Non-goals

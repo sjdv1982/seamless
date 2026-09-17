@@ -8,17 +8,24 @@ continuing that work. Contents:
 2. Open decisions
 3. Celltypes, conversion, HashType: bugs, inaccuracies, stale text (features 1–3)
 4. Compiled-transformer pins bypass the required-pin null check (feature 7)
-5. To verify against code: Expression placement (feature 4)
-6. Expression cancellation (feature 4)
+5. Expression placement (feature 4); settled by `expression-where-the-data-is.md`
+6. Expression cancellation (feature 4); its conclusions are in Appendix A
 7. Cell-level joins (feature 10)
 8. Documentation gap: checksum reference lifecycle (feature 9)
 9. BufferInfo removal: follow-ups
 10. Design-doc limitations not yet verified against code (features 4, 8, 10, 11)
 11. Question log (Q1–Q12) and gap-analysis notes
 12. Source list: design docs changed during the cells-and-expressions work
+13. The jupyter-sync branch is to be merged
+14. Review of `hashtype.md` "Current limitations" (L1–L7, plus the new finding L4b); since implemented
+15. Notes: loose ends (compiled-transformer overhaul, the `.set_checksum` contract, green test set,
+    `seamless.workflow` API, documentation still to write)
+- Appendix A: remote materialization — a waiting set with latch-on and delayed cancel (the design
+  discussion behind section 6; not verified against code)
 
-The celltype/conversion/HashType bugs (section 3) are not being worked on; the agentic docs
-describe the current behaviour and list them as limitations. For the other sections, nothing has
+Part of the celltype/conversion/HashType bugs (section 3) has since been fixed, as section 14
+records; the rest is not being worked on, and the agentic docs describe the current behaviour
+and list them as limitations. For the other sections, nothing has
 been decided about fixing them yet (cell-level joins have a follow-up design by the author).
 
 ## 1. Where we are
@@ -63,7 +70,21 @@ been decided about fixing them yet (cell-level joins have a follow-up design by 
   null reads as `b""` for `bytes` and `None` otherwise, `str()` = `"NULL"`, `convert_checksum`
   does not special-case null → `checksum` while empty-path Expression evaluation short-circuits
   null.
-- Features 4–11: not started.
+- Feature 4 (Expressions): agentic docs written and checked against code (2026-09-18):
+  - new `docs/agent/contracts/expressions.md` — definition and path syntax, identity (with the dummy
+    Expression and the `.set_checksum` contract), cost class, results and caching, placement, the
+    error envelope, "failures are not cached", deduplication, cancellation, deep checksums, current
+    limitations, non-goals;
+  - new `docs/agent/contracts/deep-celltypes.md` — `deepcell`, `deepfolder`, `folder` (and why
+    `module` is not one of them): the flat index, member typing, the conversion table and its cost
+    semantics, the one-string-item path rule, the `folder` note, the pin layer, and the fact that
+    none of it is enforced by the code yet;
+  - both linked from `docs/agent/README.md`, `docs/agent/index.md`, `docs/agent/index.json`,
+    `docs/agent/config/mkdocs.yml` and `seamless/mkdocs.yml`, with cross-links added in
+    `celltypes-and-conversion.md`, `hashtype.md` and `content-addressed-files-and-dirs.md`.
+  - Both pages mark what is contract but not yet implemented, in the style of `hashtype.md`'s
+    "Current limitations". Open items: section 2, items 7–9.
+- Features 5–11: not started.
 
 ### Work status
 
@@ -88,8 +109,9 @@ Status keys: **delivered**, **delivered (gaps)**, **deferred**, **open**, **reje
 2. **HashType** — on top of 1: a total, packed classification of a checksum, replacing
    BufferInfo (now removed everywhere, section 9). Two purposes: (a) detect impossible
    deserialization at checksum level; (b) expression capability: which path steps
-   (SEQ/MAP, rank) the root structure admits. One-sided error: never rejects valid work
-   (but see bug 1), may answer "maybe" (`None`). Stored words only tighten; stored locally and in
+   (SEQ/MAP, rank) the root structure admits. One-sided error: never rejects valid work,
+   may answer "maybe" (`None`). The false-rejection bugs (section 3, bug 1; section 14, L4b)
+   were fixed by "address HashType limitations". Stored words only tighten; stored locally and in
    the seamless-database `hash_type` table. Query: `conversion_feasible` (True/False/None).
    Status: delivered (gaps: section 3). Docs done.
 3. **Conversion engine** — on top of 1, using 2: ported from legacy Seamless. Defining
@@ -113,6 +135,9 @@ Status keys: **delivered**, **delivered (gaps)**, **deferred**, **open**, **reje
    - Contract: seamless-database protocol 2.2 (column renames + migration) *(design docs)*.
    - Deferred: validators (reject-only semantics settled). Open: forensic
      "irreproducible expression" analogue *(design docs)*.
+   - Status: contract settled; agent-contract docs done (`docs/agent/contracts/expressions.md`, and
+     `docs/agent/contracts/deep-celltypes.md` for the deep celltypes). Parts of the contract are
+     ahead of the code — both pages say which. Items still needing a ruling: section 2, items 7–9.
 5. **Cells as delayed Expressions** — on top of 4: a Cell is the mutable builder; it holds an
    input (literal/checksum) or builds an Expression over a `.source`, as a Transformer builds a
    Transformation. Navigation returns projection Cells *(design docs)*.
@@ -220,9 +245,41 @@ legacy-mining of ~296 characterization scripts.
 6. **Evidence tests**: the Q7/Q8 test scripts were not kept in any repo; decide whether
    repo tests should be written for Expression cancellation and cell-level joins.
 
+### The Expression contract (feature 4): three items needing a ruling
+
+Raised while writing the agentic contract pages for feature 4 (2026-09-18) and verified against the
+code. Everything else in the Expression contract is settled; these three are not.
+
+7. **Fingertip chains run in the wrong place** (detail in section 5). An Expression that fingertips
+   its input walks the reverse index in
+   `seamless-core/seamless/checksum/checksum_class.py` and re-evaluates through
+   `evaluate_expression_async` *locally, in the requesting process*. That contradicts the placement
+   contract ("evaluated where the data is", with a jobserver/daskserver counted as closer to the
+   hashserver than the client), and it does so precisely in the case whose cost is unbounded, since
+   the chain may contain Transformations. Decide: does the chain follow the dispatch, or is local
+   evaluation of a fingertip chain the intended exception?
+8. **The linger will contradict a green test** (detail in section 6, gap 4).
+   `seamless-core/tests/test_expression_remote_evaluation.py` asserts that the last member leaving
+   aborts the jobserver request *synchronously* — true today, because no linger exists, and
+   forbidden by the settled contract, under which a softcancel never means the work stopped and the
+   abort follows the linger. The test's intent survives; it needs a tolerance for the linger rather
+   than a new intent. Nothing to decide unless the abort should in fact stay immediate for the
+   last-waiter case.
+9. **A daskserver is a second client-side dispatch target**, not only a jobserver mode (detail in
+   section 5). `_execute_remote_expression` falls through to `daskserver_remote.run_expression` when
+   no jobserver is configured. The checksum, error, caching and HashType contracts are identical
+   either way, so this is a wording question: `expression-where-the-data-is.md`'s "a daskserver is a
+   jobserver mode" is true for the server side only, and the contract docs now say so.
+
 ## 3. Celltypes, conversion, HashType (features 1–3)
 
 Repo: seamless-core.
+
+**Status after "address HashType limitations" (seamless-core `0d3ccfb`) and
+`827bd5b`.** Fixed: bugs 1 and 2, items 5, 6 and 11, the `SEMANTIC` half of item 10, and
+section 14's L4b, including the non-finite float results of `conversion_possible` and of
+`binary → plain`. Still open, and documented as current behaviour: bug 3, items 4, 7, 8, 9,
+the untested kinds of item 10, and items 12 and 13.
 
 ### Bugs
 
@@ -324,10 +381,24 @@ layer, but it rests on the same celltype rules.
 
 ## 5. To verify against code: Expression placement (`execution="auto"`, feature 4)
 
+> **Settled by [`expression-where-the-data-is.md`](expression-where-the-data-is.md).** That plan is
+> the normative source for placement, and placement *is* contract: an Expression is evaluated where
+> the data is, with a jobserver/daskserver counted as closer to the hashserver than the client. It
+> fixes the resolution order (§8.2: process-local Expression cache → database result → local when no
+> buffer is needed or the input is in memory → jobserver/daskserver dispatch when it is not and a
+> server is configured → local materialization when none is → result resolution when a value is
+> wanted), defines `"local"` as *in this process's memory* and `"remote"` as *not in this process's
+> memory, independently of backend availability*, forbids a silent fallback once a configured server
+> fails, and records that a daskserver is a jobserver *mode* rather than a competing backend, with
+> both modes exposing the same checksum, error, caching and HashType contracts. Two consequences
+> belong in the contract docs as derived rules: the result *including the exception type* must not
+> depend on where it ran (§9's structured error envelope, down to `CacheMissError` keeping its
+> checksum in `args[0]`), and HashType classification is owned by whichever process holds the buffer
+> (§10.4). This section is kept for the claim-by-claim history below.
+
 Feature 4 (Expressions) is documented as "evaluated where the data is": with `execution="auto"`,
 an Expression is evaluated locally or through the jobserver's `run_expression`. A doc summary
-made the claims below. They are probably inaccuracies in that summary, but nobody has checked
-them against the code yet.
+made the claims below.
 
 - The sync and async evaluation paths mean different things by "local".
 - With no jobserver configured, `"auto"` has no fallback (e.g. to the hashserver).
@@ -335,11 +406,44 @@ them against the code yet.
 - Expression inputs to transformations bypass `"auto"`.
 - Expression errors lose their exception type when they come back from the jobserver.
 
+They were not summary inaccuracies. The placement plan addresses them: the no-jobserver fallback
+(§2), standalone `compute()` / `compute_async()` / `run()` defaulting to `"auto"` (§3), transformation
+dependencies and pin preparation using `"auto"` (§4), and the exception types (§9). What remains is
+to confirm each against the code as implemented, not to decide anything.
+
 Note: seamless-core has recent commits that may already address some of these:
 `108a1f1` "Keep expression error types, resolve run() results, test undone results" (2026-09-15)
 and `8e00718` "Expressions execute where the data is" (2026-09-17).
 
+Two placement questions the plan does not answer:
+
+- **Local read buffer directories.** Locality is decided by process memory alone, so a buffer in a
+  locally mounted read buffer folder counts as remote and is dispatched to a jobserver, although the
+  client could read it from local disk. Does "where the data is" include local buffer directories?
+- **Fingertip chains.** An Expression can fingertip as a step in a chain (Appendix A, 1a). Where such
+  a chain runs — on the client, or on the server that took the dispatch — is unstated, and it is the
+  case whose cost is unbounded. **As implemented** (2026-09-18), the reverse-index walk in
+  `seamless-core/seamless/checksum/checksum_class.py` re-evaluates through
+  `evaluate_expression_async` *locally, in the requesting process*. That is the opposite of "where
+  the data is", and it is exactly the case whose cost is unbounded, so it needs a ruling rather than
+  a note.
+
+The rest of the plan **is** implemented and was verified against the code (2026-09-18): the §8.2
+resolution order and the `"auto"` downgrade in `evaluate_expression_remote`; `has_jobserver` /
+`has_daskserver`; `"auto"` as the default on standalone `compute`/`compute_async`/`run`, on
+transformation dependencies and pin preparation, and in the Context; the §9 error envelope
+(`seamless/error_envelope.py`, HTTP 200 for answered jobs) ; §10.4 HashType ownership in the
+buffer-holding process; §8.3 dedup with a shared future and a deterministic Dask key; and §8.4
+daskserver delegation. One refinement to the plan's wording: client-side, a **daskserver is a second
+dispatch target, not only a jobserver mode** — `_execute_remote_expression` falls through to
+`daskserver_remote.run_expression` when no jobserver is configured. The contracts are the same
+either way; the sentence "a daskserver is a jobserver mode" holds for the server side only.
+
 ## 6. Expression cancellation (feature 4): implemented, with gaps
+
+**Read Appendix A first**: the 2026-09-17 discussion of this section concluded that the only
+cancellable work is remote materialization, which is not Expression-specific, and it re-rates the
+gaps listed below.
 
 Verified by code inspection (2026-09-17), plus evidence tests (4 passing) that were not kept
 in any repo (see open decision 6).
@@ -367,7 +471,72 @@ Gaps:
    (`seamless-transformer/seamless_transformer/worker.py`) awaits
    `asyncio.to_thread(thin.result)` and never cancels the Dask future. Found by inspection only;
    testing it needs a live Dask cluster.
-4. No repo test covers Expression cancellation.
+4. ~~No repo test covers Expression cancellation.~~ Stale (2026-09-18):
+   `seamless-core/tests/test_expression_remote_evaluation.py` covers the remote path — an idle
+   `cancel()` returns `False`; one of two members leaving keeps the shared request alive and both
+   callers get the result; the last member leaving aborts the request. Local in-flight cancellation
+   is still untested. Note that the third assertion encodes *today's* linger-free behaviour: under
+   the settled contract the abort follows the linger, so that test needs a tolerance, not a new
+   intent.
+5. **Deep checksums — settled (2026-09-18); the code and docs must be adapted.** An Expression over
+   a deep checksum is restricted, because its cost class must be a function of its identity tuple
+   `(input_celltype, path shape, celltype)` and never of the data behind the checksum. A deep index
+   is a **flat** dict: string keys, 64-hex values. The nesting that `unpack_deep_structure` /
+   `pack_deep_structure` recurse through is legacy Seamless generality that never had producers or
+   consumers; it must be rejected at the Expression layer *and* at pin unpacking, through one shared
+   validator, or the two layers disagree about what a deep value is.
+
+   Zero path:
+   - identity (the dummy Expression): always legal;
+   - `deepcell → plain`, `deepfolder → plain`, `folder → deepfolder`: the index, free and
+     checksum-preserving;
+   - `deepfolder → folder` and `deepcell → deepfolder`: free. `deepfolder → deepcell` is forbidden,
+     because deepcell members are buffers deserializable as `mixed` while deepfolder members are
+     arbitrary bytes (the feature-1 checksum hierarchy, applied one level down to members);
+   - `folder → mixed`: the only conversion that materializes children. All-or-nothing; resolution
+     order and concurrency are unspecified (an optimization, not contract);
+   - everything else rejected, including `folder → plain`, which would put a free index read and an
+     N-child fan-out under one identity tuple.
+
+   Exactly one string-item step: the step yields either the child's checksum or the child's value at
+   its member celltype — `→ checksum` for every deep celltype, `→ mixed` for `deepcell`, `→ bytes`
+   for `deepfolder` and `folder`. Longer paths are rejected: a further step would continue into the
+   child, which is a different checksum and therefore a different Expression. Keys are opaque strings
+   with no path semantics, and deepfolder keys routinely contain `/`, so the step usually has to be
+   written in bracket form.
+
+   `module` is **not** a deep celltype (`DEEP_CELLTYPES = ("deepcell", "deepfolder", "folder")` in
+   `seamless-transformer/seamless_transformer/transformation_utils.py`): a module buffer is a plain
+   JSON module definition holding literal code strings, not checksums, and it travels as celltype
+   `plain` with subcelltype `module`. None of the rules above apply to it.
+
+   **Note on the `folder` celltype.** Conversion stops at `folder → mixed`: the children arrive as
+   S1 NumPy arrays of raw bytes, and no conversion yields a dict of decoded strings. `mixed → plain`
+   stays a pure reinterpretation — giving it a value-level route would make every S-array in every
+   mixed buffer decode to text, and would make the pair only sometimes checksum-preserving; that is
+   too much global semantics to buy one convenience. Consumers that want text decode it themselves:
+   per file, through an ordinary `bytes → text` Expression on the child checksum, or for a whole
+   folder in a transformer, which is the idiomatic route, since decoding N files is content
+   transformation rather than celltype reinterpretation. One cosmetic consequence: an *empty* folder
+   still converts to `plain` (its mixed buffer is literally `b"{}\n"`), so `{}` succeeds where every
+   non-empty folder is rejected.
+
+   Both open points for `folder` are now settled by evidence (2026-09-18):
+
+   - A folder index buffer **is** byte-identical to a deepfolder index. The mount layer builds one
+     index for both celltypes (`seamless-workflow/seamless_workflow/attachments/fs/service.py`,
+     `{relative path: checksum hex}` serialized as `plain`), and `Buffer(idx, "folder")` and
+     `Buffer(idx, "deepfolder")` give the same bytes and the same checksum. `folder → deepfolder` is
+     checksum-preserving, unqualified.
+   - `folder → mixed` must present each child as a **1-D `S1` array with one element per byte**
+     (`np.frombuffer(content, dtype="S1")`), not as a 0-d `S<N>` scalar. Only the 1-D form is
+     faithful: it round-trips `b""`, `b"\x00"` and content with trailing NULs exactly. Serializing a
+     dict of Python `bytes` into `mixed` instead produces 0-d `S<N>` scalars, and neither extraction
+     is faithful — `tobytes()` turns an empty child into `b"\x00"`, while `.item()` strips trailing
+     NULs (`b"ab\x00\x00"` reads back as `b"ab"`), because NumPy's `S` dtype strips trailing NULs.
+     The pin-level fan-out (`unpack_deep_structure`) hands the transformer Python `bytes`, which is
+     fine as an in-process presentation, but a dict of `bytes` must never be the route by which a
+     folder value is *serialized* as `mixed`.
 
 ## 7. Cell-level joins (feature 10): not (yet) ordinary transformations
 
@@ -517,6 +686,7 @@ Where they disagree with the code, the code wins.
     `attachments-and-mount-partI-implementation.md`, `cancellation-improvement-plan.md`,
     `cells-and-expression-handoff-ready-implementation-plan.md`,
     `cells-and-expressions-implementation-plan.md`, `celltype-rename-review-decisions.md`,
+    `expression-where-the-data-is.md` (normative for Expression placement; see section 5),
     `checksum-reference-lifecycle-plan.md` (+ `-handoff-plan.md`,
     `-finalization-handoff-plan.md`, `-verification-handoff-plan.md`; the verification handoff is
     normative), `context-internals-design.md` (superseded by `-pass2.md`, in turn superseded by
@@ -737,6 +907,9 @@ Two exceptions:
 (as a Checksum) immediately.
 2. The Cell is unbound. This doesn't change the semantics, but `.checksum` is now no longer an attribute but a computed property that does a sync evaluation of the underlying expression.
 
+### Deepcell contract
+The agentic contract now describe deepcells and their conversion rules, but these rules need to be implemented, and unpack_deep_structure is legacy code that needs to be flat-dict-only.
+
 ### The jupyter-sync branch is to be merged. (repeat)
 
 ### The test set must go green
@@ -747,9 +920,146 @@ Two exceptions:
 
 Needs to provide Context, Cell, and Transformer (which does not exist?)
 
-### Features 4-11 need to be agent-documented
-As of 17 sept
+### Features 5-11 need to be agent-documented
+As of 18 sept. Feature 4 is done: `docs/agent/contracts/expressions.md` and
+`docs/agent/contracts/deep-celltypes.md` (see the progress list in section 1).
 
 ### All features require human documentation
 
 We now have reactivity. Soon we will have interactivity, and collaborative webservers.
+
+## Appendix A. Remote materialization: a waiting set with latch-on and delayed cancel
+
+Design discussion of 2026-09-17 (author + Opus), starting from section 6. No code was read and no
+tests were run: nothing below is verified against the code. The discussion settles what Expression
+cancellation is *for*, and concludes that the mechanism does not belong to Expressions at all. It is
+used by any remote materialization — Expressions, transformation input resolution, `.buffer` reads,
+mounts.
+
+### A.1 Premise: what can take time
+
+Expression evaluation proper — deserialize, walk the path, convert, serialize, hash — is cheap, and
+it is CPU-bound inside a single thread, so it could not usefully be interrupted anyway. (The worst
+case measured in section 14 is 0.4 s to classify 71 MB of JSON.) The only part that can take real
+time is resolving a checksum to a buffer from a remote source: a read buffer server or a read buffer
+directory.
+
+Three cases were raised against that premise; author's rulings:
+
+- **Fingertipping (1a).** An Expression normally does not fingertip its input checksum, but it can,
+  as a step in a fingertip chain. The cost of a materialization is therefore unbounded: the chain
+  may contain Transformations. This is what makes the machinery below worth building.
+- **Deep fan-out (1b).** Materializing a deep checksum into a value (`deepcell → plain`, N child
+  buffers) is to be banned from Expressions, except for `folder`. Recorded separately by the author;
+  the consequence here is that every Expression waits on exactly one buffer, `folder` excepted, and
+  `folder` is the only case needing a multi-checksum waiter.
+- **After the buffer arrives (1c).** Evaluation is near-instantaneous, so there is no cancel point
+  once the data is present: the evaluation runs to completion and its result is recorded.
+
+### A.2 What cancellation is for
+
+Never for correctness. Results are content-addressed, so a late result is unwanted, never wrong; and
+since cancellation is best-effort, the Context must ignore late results from superseded runs in any
+case. The value of a cancel is therefore: remaining resource cost × the chance that nobody else
+wants the output.
+
+For materializations the second factor is low, lower than for a Transformation result: the same
+buffer is wanted by sibling projections of one parent (`ctx.a.x`, `ctx.a.y`), by the Transformation
+that takes the same checksum as an input, and by a revert. Hence latch-on plus a delay before the
+abort, rather than an eager abort.
+
+### A.3 The mechanism
+
+- **A waiting set per in-flight materialization, keyed by checksum**, held at the materialization
+  site in the buffer layer — not by `Expression`. `Expression.cancel()` becomes "leave the set".
+- **Latch-on**: a second requester for the same checksum joins the in-flight materialization instead
+  of starting a second one.
+- **Softcancel = deregister.** The fetch is aborted only when the set is empty, and then only after
+  a linger of a few seconds; a requester arriving during the linger simply re-registers. One knob,
+  one default; no progress-awareness and no per-source tuning until something measured asks for it.
+- **No hard cancel** (settled). The only leaf a hard cancel could kill is a shared fetch, so it would
+  merely make the other waiters fail and re-fetch. A single waiter pressing Ctrl-C is already covered:
+  with one member, softcancel aborts the fetch.
+- **Failure must not be sticky** (settled). A Transformation caches its exception; a materialization
+  that fails (unreachable server, buffer absent) must not poison the checksum for the next requester.
+  "Not found anywhere" is a real terminal answer, but it is the trigger for fingertipping, not a
+  cached failure.
+- **Vocabulary: "waiting set", not "refcount".** Keep it separate from the checksum reference
+  lifecycle (feature 9: refholder claims vs. manual incref/decref). Different things, different
+  lifetimes: one keeps a buffer alive once it exists, the other tracks who still wants a fetch that
+  has not finished. The two do meet in one place: the site itself must hold a lifecycle claim for the
+  duration of the linger and release it when the timer fires. That is what the balance audit at
+  `seamless.close()` should catch.
+
+### A.4 Fingertip chains
+
+With 1a, the chain is the real unit: a requester asks for one buffer, and the machinery may start a
+tree of Expressions and Transformations that nobody named.
+
+- Abandoning the root must cascade soft deregistration down every step, or an abandoned chain runs to
+  completion. Each step keeps its own waiting set, so a step shared with a live chain survives — the
+  membership model of feature 8, applied one layer down.
+- Convergence is normal: two chains often need the same intermediate, and one may arrive seconds
+  after the other gives up. A second, independent argument for the linger.
+- Abandoning mid-chain discards every intermediate; where intermediates are scratch, no trace of the
+  work remains. A third argument for the linger.
+- The leaf Transformation needs no special case: the linger keeps its member registered for those few
+  seconds, and it is killed only when its own set empties (softness cascades, feature 8).
+
+### A.5 What asyncio task cancellation does and does not give
+
+Task cancellation is the right propagation mechanism for *abandonment* — cancelling the requester's
+task unwinds its awaits down the chain and runs each step's cleanup — but it is not the mechanism for
+deregistration. Four things it does not do:
+
+1. **Deregister.** It knows nothing about the waiting set; each site must leave the set in its own
+   cleanup path, synchronously or under a shield (an `await` inside a cancelled task raises at once).
+2. **Protect shared work.** If the requester's task *owns* the fetch, cancelling that task kills the
+   fetch for every latched waiter — a hard cancel in disguise. Shared work must be owned by a task
+   belonging to the site, with each waiter awaiting a derived or shielded future. See the worry in
+   A.6 about the "local path works" evidence.
+3. **Stop what is not an await**: a thread (`asyncio.to_thread`), a subprocess, a jobserver request, a
+   Dask future. There, cancellation abandons the waiter while the work continues and keeps holding
+   its resource (section 6, gap 3).
+4. **Delay.** A linger is by definition not "cancel the child when the parent is cancelled": the
+   site's task must outlive every waiter.
+
+### A.6 Section 6's gaps, re-rated
+
+1. **Key mismatch (local `cancel()` is a no-op).** Low resource impact, since task cancellation
+   already interrupts local resolution; the real defect is that the API silently returns `False`.
+   Moving membership to the materialization site removes the expression-level set altogether, and
+   with it this class of bug. Minimum fix if the structure stays: align the two keys.
+2. **No hard cancel.** Not a gap: a non-feature, to be documented. `Expression.cancel()` should be
+   documented as soft, and the `cancel_expression` alias dropped or renamed, since "cancel" means
+   hard for Transformations.
+3. **Dask-dispatched Expressions.** The remote work is cheap, so failing to interrupt it hardly
+   matters. What may matter, inferred from section 6's description of `asyncio.to_thread(thin.result)`
+   and unverified: cancelling the awaiting task does not free the thread, which stays blocked until
+   the remote side finishes, so a burst of superseded Expressions could starve the default executor
+   (the failure family of the jupyter-sync hang). Separate question: should Expressions go through
+   Dask at all? A scheduler round trip costs far more than the evaluation, and queueing behind
+   Transformations is worse.
+4. **No repo test.** Test the contract rather than "it stopped": (a) softcancel by the only waiter
+   aborts a slow materialization, after the linger; (b) with two waiters on the same *checksum* (not
+   the same Expression), softcancel of one keeps it alive; (c) a result arriving after supersession
+   does not reach the node; (d) the reference-balance audit at `seamless.close()` stays clean when a
+   fetch completes after its last waiter left. (d) is a likelier bug than a fetch that will not stop.
+
+**Worry about the "local path works" evidence.** Section 6 records that cancelling the awaiting
+asyncio task interrupts a blocked buffer resolution. That is only correct if the resolution is not
+shared; if two waiters await one fetch and one waiter's cancellation propagates into it, the other
+gets a `CancelledError` (A.5, point 2). The throwaway evidence test most likely had a single waiter.
+First thing to check in code.
+
+### A.7 Open questions
+
+1. Is buffer resolution already deduplicated by checksum across consumers, and does one waiter's
+   asyncio cancellation propagate into the shared fetch? Decides whether the worry above is a real
+   bug.
+2. Do materializations hold bounded resources — a jobserver worker slot (section 10 records that a
+   jobserver cancel does not free the slot), a Dask worker, a default-executor thread? Head-of-line
+   blocking is the main resource argument for cancelling at all.
+3. Linger default, and whether it is per-site configurable.
+4. Does the site's lifecycle claim during the linger show up cleanly in the `seamless.close()`
+   balance audit?

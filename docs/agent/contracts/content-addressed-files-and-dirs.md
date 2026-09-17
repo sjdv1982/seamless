@@ -13,6 +13,7 @@ This page defines what an agent may assume about how Seamless treats **files** a
 - A directory can be represented by a *structured* identity: a mapping from relative paths to file checksums.
 - This acts like a “directory index” that commits to the directory’s contents.
 - Treat it as a deep checksum / Merkle-ish identity: you can refer to the whole directory without materializing every file immediately (depending on how execution/materialization is implemented).
+- The celltypes that carry this identity are `deepfolder` (the index) and `folder` (the contents), alongside `deepcell` for a keyed collection of Seamless values. Their buffer format, legal conversions and path rules are in `contracts/deep-celltypes.md`.
 
 ## Practical limitations to keep in mind
 

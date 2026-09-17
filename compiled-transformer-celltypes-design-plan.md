@@ -946,9 +946,10 @@ Boolean scalars, and for zero-dimensional arrays. The following changes must lan
    written as the `.npy` of its own dtype. Under `mixed` a complex scalar, which has no JSON
    form, is written the same way. Until this lands, a complex schema parameter can only be
    fed a hand-made `.npy`.
-4. **Documentation.**
+4. **Documentation. (Done, 2026-09-17.)**
    [`docs/agent/contracts/celltypes-and-conversion.md`](docs/agent/contracts/celltypes-and-conversion.md)
-   states the four properties above and the NaN rule once they hold.
+   states the four properties above and the NaN rule once they hold. Written ahead of the
+   code, assuming items 1–3 land as specified; the "Known defects" list was removed.
 5. **Classifier, if needed.** Expose a stable, checksum-aware classifier for the mixed
    storage taxonomy if existing HashType and parser APIs cannot distinguish pure JSON, pure
    binary, and proper mixed without duplicating format knowledge.
