@@ -2,11 +2,12 @@
 
 ## version 1.4
 
-- Transformation model slightly reworked: a `Transformation` is now
-explicitly an **immutable computation definition plus a mutable execution promise**, the
-dunder set has been reclassified along a load-bearing/orthogonal boundary, and
-there is a public **checksum-addressed cancellation** API. This **breaks cache
-compatibility** for affected transformations (see below). 
+- A `Transformation` is now explicitly an **immutable computation definition
+plus a mutable execution promise**, with a public **checksum-addressed
+cancellation** API. For Python and bash transformations, the identity contract is
+unchanged; v1.4 fixes the checksum implementation to honor the
+load-bearing/orthogonal split. Compiled-transformer `__schema__` is now part of
+identity. Some pre-1.4 cache entries will be re-keyed and recomputed (see below).
 
 - seamless-core ships an
 independent fix for checksumming compressed files.
@@ -18,15 +19,6 @@ checksum-defining payload, the orthogonal dunder envelope, scratch policy, resul
 celltype, and the dependency graph edges are all copy-owned and read-only.
 Execution state (transformation/result checksums, futures, status, exception)
 stays mutable.
-
-**Cache break (intentional).** Moving `__meta__` and `__env__` *out* of the
-checksum and moving `__schema__` *into* it changes transformation identity. This
-is the only checksum algorithm — there are no legacy aliases. Existing cache
-entries under the old boundary may not be found and will be recomputed; results
-that must be preserved need external/manual migration. Note this supersedes the
-v1.3 compiled-transformer statement that the schema was execution-only metadata:
-as of 1.4, **`__schema__` is part of the cache key**, while compiler flags,
-`__compilation__`, `__env__`, and metavars remain orthogonal.
 
 ### Checksum-addressed cancellation
 
@@ -49,7 +41,7 @@ active envelope authoritative. Pass `--strict` (`seamless-run-transformation`) o
 `strict_dunder=True` (Python / Dask / jobserver) to require your own envelope
 instead — it is rejected while another submission is active and may proceed only
 once that one is done, failed, or canceled. CLI flags like `--direct-print`,
-`--fingertip`, and `--scratch` spice the envelope only, never the checksum.
+`--fingertip`, and `--scratch` affect the envelope only, never the checksum.
 
 ### seamless-core: transparent checksumming of compressed files
 
@@ -58,6 +50,40 @@ treat `.zst` and `.gz` files transparently — they decompress before checksummi
 so a buffer and its compressed form yield the **same** checksum, and the
 compression suffix is stripped from written `.CHECKSUM`/index names. Fixes a bug
 where compressed files were checksummed by their compressed bytes.
+
+### Details: transformation checksum changes
+
+The transformation cache key now follows the load-bearing/orthogonal dunder
+split:
+
+- `__meta__` and `__env__` are no longer part of transformation identity.
+- `__schema__` is now part of identity for compiled transformers.
+- `__compilation__`, compiler flags, headers, environment declarations, and
+  metavars remain execution/provenance metadata.
+
+There are no legacy aliases. Affected pre-1.4 cache entries will be recomputed;
+results that must be preserved need external/manual migration. Most Python
+`direct`/`delayed` transformer entries are affected because they carry `__meta__`
+by default. Bash/manual transformations are affected only if their transformation
+dict contains one of the changed fields.
+
+The `__schema__` change supersedes the v1.3 compiled-transformer statement that
+the schema was execution-only metadata. As of 1.4, compiled-transformer schema is
+part of the cache key because it contributes to call-time marshalling and
+pin-to-argument binding, not only to compilation.
+
+Environment declarations remain outside identity. A fresh `Environment()`
+contributes nothing, and the ambient conda/shell environment is not
+auto-captured. `__env__` is written only for a non-empty explicit environment: a
+conda spec, a conda env name, a Docker image, a required-binaries `which` list, or
+`powers` (`tf.environment.set_*`, or CLI `--conda` / `--docker-image`).
+
+If a result truly depends on the runtime environment, declare that dependency
+explicitly as an input. With `__env__` outside the cache key, identical code and
+inputs can share a `tf_checksum` across environments; an environment-dependent
+result can therefore be reused unless the transformation is recomputed. Full
+execution records (`record: true`, or `seamless.config.select_record(True)`) can
+capture environment fingerprints for audit; default records do not.
 
 ## version 1.3
 

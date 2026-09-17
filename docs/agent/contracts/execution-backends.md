@@ -27,6 +27,16 @@ This page defines the minimum operational model an agent may rely on when discus
    - Intended for HPC/distributed throughput; can integrate with schedulers (commonly via `dask-jobqueue` on SLURM/OAR).
    - Operationally: typically long-lived/bundled workers execute many tasks (not one scheduler submission per Seamless step).
 
+## Storage prerequisite (by-checksum submission, shared hashserver)
+
+Remote execution — `jobserver` **and** `daskserver` alike — submits work **by checksum, not by value**. A remote target receives input *checksums*; it **materializes the input buffers server-side from a shared hashserver**, writes produced (non-`scratch`) results back to that hashserver, and records `tf_checksum → result_checksum` in the shared database. So a **shared hashserver and database, reachable by the remote workers, are a hard prerequisite for any remote backend** — they are what make server-side input materialization and result persistence possible. (A minimal local cluster that defines a hashserver/database but no jobserver/daskserver therefore cannot run `execution: remote`; it must use `execution: process` — see `../main/cluster.md`.)
+
+Consequences an agent may rely on:
+
+- **Inputs are not necessarily uploaded at submission.** They may be **pre-present** — staged by a prior upload, or **by design**, when the client already holds the checksum of a large server-side dataset. Only buffers actually missing on the server are staged (e.g. `--upload`, or `--write-remote-job` which implies it).
+- **Results are durable out-of-process.** A remote run's non-`scratch` results live in the shared hashserver/database independently of the submitting client, so tearing the client down does not lose them. (A `scratch` result is the exception: not stored, recomputed at a consumer via input fingertipping — see `contracts/scratch-witness-audit.md`.)
+- **Materialization is content-addressed, not a side effect.** A worker resolving an input checksum is performing materialization, not "reading whatever is on disk" (see `contracts/identity-and-caching.md`).
+
 ## Testing surface
 
 Agents should not assume HPC or scheduler-backed testing lives only in `seamless-dask`.
