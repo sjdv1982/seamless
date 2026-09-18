@@ -20,6 +20,8 @@ continuing that work. Contents:
 14. Review of `hashtype.md` "Current limitations" (L1–L7, plus the new finding L4b); since implemented
 15. Notes: loose ends (compiled-transformer overhaul, the `.set_checksum` contract, green test set,
     `seamless.workflow` API, documentation still to write)
+16. Bound vs standalone Cell reads, and bound sub-path writes (feature 5): findings from writing the
+    contract page
 - Appendix A: remote materialization — a waiting set with latch-on and delayed cancel (the design
   discussion behind section 6; not verified against code)
 
@@ -84,7 +86,25 @@ been decided about fixing them yet (cell-level joins have a follow-up design by 
     `celltypes-and-conversion.md`, `hashtype.md` and `content-addressed-files-and-dirs.md`.
   - Both pages mark what is contract but not yet implemented, in the style of `hashtype.md`'s
     "Current limitations". Open items: section 2, items 7–9.
-- Features 5–11: not started.
+- Feature 5 (Cells): agentic doc written and checked against code (2026-09-18):
+  - new `docs/agent/contracts/cells.md` — a Cell as a deferred Expression, bound or standalone: the
+    definition and binding, `celltype` versus read-only `input_celltype`, `.source` / `.checksum`,
+    the two write families and the 3×2 matrix, authority, null and `None` (including `bytes`),
+    celltype `checksum`, the reads (`.checksum` resolution order, `.buffer` / `.value`, never
+    fingertipping), failures, which calls do work and which never do, projections, cell-level joins,
+    deep celltypes, implementation status and non-goals;
+  - linked from `docs/agent/README.md`, `docs/agent/index.md`, `docs/agent/config/mkdocs.yml` and
+    `seamless/mkdocs.yml`, with cross-links added in `expressions.md`, `celltypes-and-conversion.md`
+    and `deep-celltypes.md`. `docs/agent/index.json` is generated and git-ignored, so its new entry
+    exists on disk only.
+  - Out of scope by ruling (section 2, item 10): `.state` and `.block_reason` (feature 10's node
+    state lifecycle), pins (features 6 and 7), mounts (feature 11), the reference lifecycle
+    (feature 9).
+  - Marked as contract ahead of code: `.exception` as a string, Cell validators, the provisional
+    join implementation, the unenforced deep-celltype rules.
+  - Committed as seamless `3c2a3f2`. Code findings from writing it: section 16. Open items:
+    section 2, items 15–17.
+- Features 6–11: not started.
 
 ### Work status
 
@@ -141,17 +161,23 @@ Status keys: **delivered**, **delivered (gaps)**, **deferred**, **open**, **reje
 5. **Cells as delayed Expressions** — on top of 4: a Cell is the mutable builder; it holds an
    input (literal/checksum) or builds an Expression over a `.source`, as a Transformer builds a
    Transformation. Navigation returns projection Cells *(design docs)*.
-   - Shared CellBase read API: `.source`, `.checksum`, `.buffer`, `.value`, `.state` (6 values)
-     + `.block_reason`, `.exception` / `clear_exception()` *(design docs)*.
+   - Shared CellBase read API: `.source`, `.checksum`, `.buffer`, `.value`, `.exception` /
+     `clear_exception()`, plus `.compute()` / `.computation()` and `.set()` / `.set_buffer()` /
+     `.set_checksum()`. `.state` and `.block_reason` are node-lifecycle members shared with bound
+     Transformers (feature 10), not part of this feature's page; standalone `.state` reports only
+     `unwired`/`waiting`/`complete`/`failed`, and `.block_reason` is bound-only.
    - Standalone reads: a getter evaluates its own cheap expression but never runs a source;
      `.value` never fingertips; `.compute()` does the work.
-   - Contract (renames): `celltype` = output type; read-only `input_celltype`;
-     `target_celltype`, `input_ref` retired; `.status` → `.state`; `.set()` takes values only; a
-     Checksum is a value only for celltype `checksum`; None is a value and `del` is the only
-     deletion; retired names raise with a pointer to the replacement. The docs should contain
-     one consolidated old → new table.
+   - Contract: `celltype` = output type; read-only `input_celltype`; `target_celltype` and
+     `input_ref` retired (they raise with a pointer to the replacement); `.set()` takes values only;
+     a Checksum is a value only for celltype `checksum`; None is a value and `del` is the only
+     deletion. **No old → new table**: Cells reach main unreleased, so the contract is stated once,
+     not as a migration (section 2, item 11).
    - Deferred: Cell validators *(design docs)*.
-   - Status: Cell API just finalized; document from the final code.
+   - Status: contract settled (section 2, items 10–14); agent-contract doc done
+     (`docs/agent/contracts/cells.md`), framing a Cell as a *deferred Expression* that is bound or
+     standalone and describing what the two modes have in common. Code findings from writing it:
+     section 16. Items still needing a ruling: section 2, items 15–17.
 6. **Optional pins** — transformer-construction substrate, below the Context.
    `Transformer.optional_pins` is a settable set of pin names. Canonical null on an optional
    pin = absence, for any celltype: unconnected and connected-then-null give the same
@@ -236,10 +262,14 @@ legacy-mining of ~296 characterization scripts.
 2. **Orphaned `buffer_info` table** (section 9): add a one-off `DROP TABLE IF EXISTS buffer_info`
    step for existing database files, or leave the empty table?
 3. **`public-api.json`**: it does not list `seamless.checksum.*`, so the new contract pages have
-   no generated API reference. Add those modules or not?
+   no generated API reference. Add those modules or not? The same holds for `seamless.cell_class`
+   and `seamless.expression_class`: `cells.md` and `expressions.md` have no generated API companion
+   either.
 4. **Cell-level joins** (section 7): how to document them now — suggestion: document observable
    behaviour (node states, no transformation checksum) and not the implementation, since the
    follow-up design will change it.
+   **Resolved (2026-09-18):** yes, observable behaviour only, marked provisional. See item 12 and
+   section 7.
 5. **Section 10 limitations**: verify each against code now, or record them as limitations while
    writing the docs for each feature?
 6. **Evidence tests**: the Q7/Q8 test scripts were not kept in any repo; decide whether
@@ -270,6 +300,56 @@ code. Everything else in the Expression contract is settled; these three are not
    no jobserver is configured. The checksum, error, caching and HashType contracts are identical
    either way, so this is a wording question: `expression-where-the-data-is.md`'s "a daskserver is a
    jobserver mode" is true for the server side only, and the contract docs now say so.
+
+### The Cell contract (feature 5): five rulings that settle it
+
+Raised while assessing whether the agentic contract page for feature 5 can be written, and ruled by
+the author on the same day (2026-09-18). With these, the Cell contract is settled. Write the page
+from the final code, marking what is contract but not yet code, as `expressions.md` does.
+
+10. **Framing and scope.** A Cell is a **deferred Expression**, bound or standalone; the page
+    describes what the two modes have in common. **Out of scope:** `.state` and `.block_reason`,
+    which are node-lifecycle members shared with bound Transformers and belong to feature 10's node
+    state lifecycle. **Explicitly in scope:** `.compute()` / `.computation()`, `.checksum`, and
+    `.set()` / `.set_buffer()` / `.set_checksum()`. Pins are documented with features 6 and 7, not
+    here.
+11. **No old → new table.** Cells reach main unreleased, so there is no "old": the contract is
+    settled for the first (and hopefully last) time and the page states it as a contract, not as a
+    migration. This retires the "one consolidated old → new table" requirement from the feature list.
+12. **Cell-level joins are plain local Python.** A join is assembled directly in the Context,
+    in-process: there is no Transformation and no Expression behind it, which is why no
+    transformation is observed and the node never passes through `computing`. This settles the open
+    question in section 7 and open decision 4. It is **provisional**: a future re-implementation is
+    to cache joins and evaluate them where the data is. So document the observable behaviour only,
+    marked as subject to change, and promise no join identity.
+    `context-internals-followup-design.md`:392-396 ("may require a join `Transformation` followed by
+    a projected `Expression`") is superseded.
+13. **`Cell.exception` holds a string**, as `Transformation.exception` does; the code is to be
+    changed to match. This settles the unconfirmed "one convention for `.exception` across Cell, Pin
+    and Transformation" of `celltype-rename-review-decisions.md` §8.3. Consequence to record in the
+    page: a `CacheMissError`'s checksum then reaches the Cell as prose only, so §10.5's split
+    ("`message` is for a person, `checksum` is for code") has no machine-readable arm on the Cell.
+14. **A failure is remembered on the handle, never in the substrate** (confirms the §8.3
+    recommendation): standalone on the Cell, reset when its input, path or celltype changes; bound on
+    the Context node, with `clear_exception()` dropping the stored result. A new Cell built on the
+    same recipe never inherits an old failure. This agrees with "Expression failures are not cached".
+
+### Feature 5 findings that need a ruling
+
+Found while writing `docs/agent/contracts/cells.md` (2026-09-18), by code inspection plus probe
+scripts. Detail in section 16. The page documents all of them as current behaviour; none is fixed.
+
+15. **Bound sub-path checksum and buffer writes raise `TypeError`** (section 16, item 1). A one-line
+    signature fix on either side would close it. Fix, or keep as a documented limitation?
+16. **Bound and standalone reads diverge** (section 16, items 2–4): a bound public read neither
+    validates nor records an exception, a bound read of a non-existent projection raises instead of
+    reporting, and `.buffer` answers `None` where `.value` raises. The page states the *standalone*
+    behaviour as the contract, following `celltype-rename-review-decisions.md` §8.4 ("the same
+    applies to bound and standalone Cells"). Confirm that direction, rather than making standalone
+    match bound.
+17. **A refholder-balance warning at `seamless.close()`** (section 16), on a Cell/SubCell derivation
+    path with shared input checksums. Feature 9, internal, so it is in no contract page — but it
+    looks like a real imbalance.
 
 ## 3. Celltypes, conversion, HashType (features 1–3)
 
@@ -553,17 +633,10 @@ Behaves as expected:
 - reverting an upstream gives the same checksum again;
 - a failed upstream leaves the join `blocked` / `blocked-by-error`, not `failed`.
 
-Understood design (author): provisionally implemented as ordinary transformations, with a
-follow-up design pending. Observed behaviour, compared with a control Transformer in the same
-Context:
-- 0 entries in the transformation observation log, vs. 1 for the Transformer;
-- the transformation cache doesn't grow, vs. +1 for the Transformer;
-- state goes straight from `waiting` to `complete`, never `computing`, while a slow control
-  Transformer is observed in `computing`.
-
-Open: the test can't distinguish "assembled directly in the Context, no Transformation" from
-"an internally built Transformation that bypasses Transformer instrumentation and the
-transformation cache". A short look at the join code path would settle it.
+Joins are currently assembled directly in the Context, but this is subject to future re-implementation (do caching of joins and evaluate them where the data is).
+They are plain local Python: no Transformation and no Expression, which is why no transformation is
+observed and the node never passes through `computing`. The docs describe the observable behaviour
+only, marked provisional (section 2, item 12; open decision 4).
 
 ## 8. Documentation gap: checksum reference lifecycle (feature 9)
 
@@ -896,6 +969,10 @@ contract allows. Proposed: move it to a "Non-goals" note in `hashtype.md`.
 
 ### Section 14. has been implemented as "address HashType limitations"
 
+### What .exception hold
+
+Use one convention across Cell, Pin and Transformation . Today a Cell holds an exception object and Transformation.exception is a string. The code is to be changed.
+
 ### Compiled transformer overhaul
 See home/agent/seamless1/seamless/compiled-transformer-celltypes-design-plan.md.
 
@@ -920,13 +997,91 @@ The agentic contract now describe deepcells and their conversion rules, but thes
 
 Needs to provide Context, Cell, and Transformer (which does not exist?)
 
-### Features 5-11 need to be agent-documented
-As of 18 sept. Feature 4 is done: `docs/agent/contracts/expressions.md` and
-`docs/agent/contracts/deep-celltypes.md` (see the progress list in section 1).
+### Features 6-11 need to be agent-documented
+As of 18 sept., features 4 and 5 are done: `docs/agent/contracts/expressions.md`,
+`docs/agent/contracts/deep-celltypes.md` and `docs/agent/contracts/cells.md` (see the progress list
+in section 1).
 
 ### All features require human documentation
 
 We now have reactivity. Soon we will have interactivity, and collaborative webservers.
+
+## 16. Bound vs standalone Cell reads, and bound sub-path writes (feature 5)
+
+Found by code inspection plus ten probe scripts while writing `docs/agent/contracts/cells.md`
+(2026-09-18; probes run in conda env `seamless1`, not kept in any repo). All of it is documented in
+that page as current behaviour; nothing is fixed. Items 1–3 are divergences between the bound and
+the standalone path, where `celltype-rename-review-decisions.md` §8.4 says "the same applies to
+bound and standalone Cells". Rulings needed: section 2, items 15–17.
+
+1. **Bound sub-path checksum and buffer writes raise `TypeError`.** `ctx.a.b.checksum = cs`,
+   `ctx.a.b.set_checksum(cs)`, `ctx.a.b.buffer = buf` and `ctx.a.b.set_buffer(buf)` all fail with
+   `TypeError: _edit() got an unexpected keyword argument 'input_celltype'`.
+   `BoundCellBackend.write_checksum` (`seamless-workflow/seamless_workflow/builder_state.py`) always
+   passes `input_celltype=`, and the `_cell_operation` branch of `ingress.controller_method`
+   forwards `**kwargs` into `ingress._edit`, which has no such parameter. Root writes and the whole
+   standalone path are unaffected. This contradicts the 3×2 matrix of the rename plan, under which
+   all six writes exist at a projection and keep their ownership check.
+2. **A bound public read neither validates nor records.** `Context._get_buffer` and `_get_value`
+   validate the checksum against the celltype and set `node.state = "failed"` with
+   `node.exception`, but `ingress.controller_method` intercepts `_get_checksum` / `_get_buffer` /
+   `_get_value` for every non-controller caller and resolves the checksum directly, so those bodies
+   are dead for public reads. Observed: a bound `.buffer` returns unvalidated bytes, and a bound
+   `.value` whose deserialization fails raises without setting `.exception`. Standalone does both.
+3. **A bound read of a non-existent projection raises instead of reporting.** `ctx.p.nope.checksum`,
+   `.value` and `.compute()` raise `ExpressionEvaluationError`, because the ingress read path
+   catches only `KeyError` / `IndexError` while `expression._apply_step` wraps those in
+   `ExpressionEvaluationError`. Standalone, the same projection returns `None` and records
+   `.exception`.
+4. **`.buffer` returns `None` where `.value` raises.** After a recorded evaluation failure,
+   `CellBase.checksum` short-circuits on `_standalone_exception` and returns `None`, so `.buffer`
+   answers `None` while `.value` re-raises the failure.
+
+### `.exception` as a string: the code sites that must change
+
+Ruling 13 (section 2) makes `Cell.exception` a string. Today `error_envelope.execution_error`
+returns an *exception object* with its traceback stripped, `__cause__` / `__context__` cleared and a
+`failure_id` attached, and both `CellBase.exception` and the bound `node.exception` hand that object
+out. The two sites that change with it: standalone `.value` and `run()` do
+`raise self._standalone_exception`, which requires an exception object.
+
+### Superseded design-doc statements, confirmed against code
+
+Recorded so that a later reader does not trust them:
+
+- `context-internals-followup-design.md`, "Bound-only observations and control": `.checksum`,
+  `.buffer` and `.value` raise a deliberate bound-only error when standalone. Superseded by the
+  standalone reads of `celltype-rename-review-decisions.md` §8; the code implements the new rule.
+- `context-internals-followup-design.md`:348: a projection's `input_ref` is its owning root
+  endpoint. Superseded — that meaning is the private `_input_ref`, and the public split is
+  `.source` / `.checksum` (`Context._public_cell_source`).
+- `context-internals-followup-design.md`:392-396: a join "may require a join `Transformation`
+  followed by a projected `Expression`". Superseded by section 2, item 12, and confirmed from code:
+  `Context._derive_cell` hands `sidework.evaluate_cell` to `_demand` under a `("merge", …)` fact
+  key, and `evaluate_cell` is `Checksum.resolve` + `_assign_path` + `checksum_for_value`, nothing
+  else. `_demand` reports `waiting` while in flight, so a join node can never be seen `computing`.
+
+### Smaller findings
+
+- A Cell validator must be a `Checksum` or a hex string; source text fails with an opaque `fromhex`
+  error. Validators are deferred, so this only matters once they are implemented.
+- Supplying a validator makes every evaluation entry point raise
+  `NotImplementedError("Expression validators are not implemented yet")`, which a Cell records as
+  `.exception`, wrapped in `WorkflowExecutionError`.
+- `docs/agent/index.json` is generated by `docs/agent/scripts/gen_agent_docs.py` and git-ignored
+  (`.gitignore:6`), so it is not part of any docs commit. Its `cells.md` entry was added on disk in
+  the generator's sort position, which makes a regeneration a no-op.
+
+### Not verified
+
+- **The running-loop refusal path** (`CellBase.checksum` turning `RunningLoopRefusal` into `None`
+  with no exception recorded) was established by code inspection only: provoking a genuine refusal
+  needs a configured jobserver, which was not set up.
+- **"No transformation is observed in the observation log"** for a join follows from there being no
+  Transformation anywhere in the join code path; the log was not read through its API.
+- **Bound `.exception` for a projection failure at derivation time** was not constructed separately;
+  the node-level conversion failure (`text → int`) was, and records an object that reproduces after
+  `clear_exception()`.
 
 ## Appendix A. Remote materialization: a waiting set with latch-on and delayed cancel
 

@@ -22,6 +22,7 @@ nav:
       - HashType: contracts/hashtype.md
       - Deep Celltypes: contracts/deep-celltypes.md
       - Expressions: contracts/expressions.md
+      - Cells: contracts/cells.md
       - direct/delayed/Transformation: contracts/direct-delayed-and-transformation.md
       - Modules and Closures: contracts/modules-and-closures.md
       - Scratch/Witness/Audit: contracts/scratch-witness-audit.md
