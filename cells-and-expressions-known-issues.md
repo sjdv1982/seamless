@@ -1006,6 +1006,10 @@ in section 1).
 
 We now have reactivity. Soon we will have interactivity, and collaborative webservers.
 
+### Cell bug (contract error)
+
+Standalone projection writes go to a temporary. cell.b returns a fresh derived Cell, and SubCell inherits the setters unchanged — it overrides only __eq__/__bool__/__len__/__iter__ (cell_class.py:688-750). So standalone cell.b.checksum = cs mutates a throwaway handle and is silently lost. Line 309 blocks cell.b = v and cell["b"] = v, but not this. Same for cell.b.value = and cell.b.buffer =. That should raise. Related: a standalone Cell constructed with path= has .checksum = cs set the pre-path input, so the round-trip genuinely fails — that one is coherent (the path is recipe, not value) but deserves a sentence.
+
 ## 16. Bound vs standalone Cell reads, and bound sub-path writes (feature 5)
 
 Found by code inspection plus ten probe scripts while writing `docs/agent/contracts/cells.md`
