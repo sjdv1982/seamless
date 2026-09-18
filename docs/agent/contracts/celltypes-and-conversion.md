@@ -14,7 +14,7 @@ Code locations (all in `seamless-core`):
 | Rule table | `seamless.checksum.conversion` (`conversion_*` sets/dicts, `SeamlessConversionError`) |
 | Executor | `seamless.checksum.convert` (`convert_checksum`, `conversion_needs_buffer`) |
 
-Out of scope here: Expressions, Cells, pins, mounts, and the workflow Context. The engine's only caller is empty-path Expression evaluation (`seamless.checksum.expression`), which has its own docs.
+Out of scope here: Expressions, Cells, pins, mounts, and the workflow Context. The engine's only caller is empty-path Expression evaluation (`seamless.checksum.expression`), which has its own docs. How a celltype is chosen, declared and converted on a handle — `celltype` as the output type, the read-only `input_celltype`, retyping, and where null and empty `bytes` show up in writes and reads — is in `contracts/cells.md`.
 
 ## Celltypes
 

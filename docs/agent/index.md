@@ -20,6 +20,7 @@ Looking for legacy Seamless (0.x)? Use the legacy docs at `/legacy/`.
 | `contracts/hashtype.md` | `HashType` checksum classification (replaces `BufferInfo`); false-negative property; tightening; `hash_type` database table; `deserializable_as`/`capabilities`/`conversion_feasible` |
 | `contracts/deep-celltypes.md` | `deepcell`/`deepfolder`/`folder`: the flat index buffer, member typing, legal conversions and the one-step path rule (`module` is not deep) |
 | `contracts/expressions.md` | Expressions: the 4-tuple identity, the dummy Expression, path syntax, placement (`execution="auto"`), the error envelope, uncached failures, dedup and softcancel |
+| `contracts/cells.md` | Cells as deferred Expressions, bound or standalone: `celltype` vs read-only `input_celltype`, `.source`/`.checksum`, the two write families and the 3×2 matrix, null and `None`, standalone reads, failures on the handle, projections and connection targets, cell-level joins |
 | `contracts/service-management.md` | `seamless-service-resolve`, `rhl-*` helpers, false-pass protocol |
 | `contracts/execution-records.md` | Per-transformation records in `seamless.db`; minimal vs full mode, write-once semantics |
 | `contracts/direct-delayed-and-transformation.md` | Transformation model, `direct`/`delayed` decorators |

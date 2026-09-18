@@ -23,6 +23,7 @@ Contract pages (hand-maintained, normative):
 - `contracts/hashtype.md`
 - `contracts/deep-celltypes.md`
 - `contracts/expressions.md`
+- `contracts/cells.md`
 - `contracts/scratch-witness-audit.md`
 - `contracts/direct-delayed-and-transformation.md`
 - `contracts/seamless-run-and-argtyping.md`
