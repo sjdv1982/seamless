@@ -1120,8 +1120,11 @@ loop; synchronous evaluation requiring the async bridge retains its running-loop
 Transformation dependencies and both preparation paths explicitly request `"auto"`.
 Bound Context projections and Dask workers already use `"auto"`.
 
-There is no `Cell.compute()` method: standalone cells construct Expressions, and bound
-cells use the Context path. Explicit `"local"` and `"remote"` remain supported.
+**Correction (2026-09-18): "there is no `Cell.compute()` method" was wrong.** `CellBase`
+provides `compute`, `compute_async`, `run` and `computation`, and both §8.1 and
+[followup-design:386](context-internals-followup-design.md#L386) rely on `cell.compute()`.
+What holds is only that standalone cells construct Expressions and bound cells use the
+Context path. Explicit `"local"` and `"remote"` remain supported.
 The synchronous local path still requires memory-local input; asynchronous local
 resolution may fetch it from the hashserver. The separate §8.3 decision to expose
 a bound missing-buffer failure on the cell remains outside this routing change.
