@@ -186,7 +186,7 @@ The linger is an internal constant — "a few seconds, not contractual" — at m
 
 ### API
 
-`softcancel` means **deregister** everywhere in Seamless; `cancel` means **hard kill** everywhere. Expressions have only the first.
+**The rule is about the checksum-addressed substrate verbs**: `softcancel` means **deregister** everywhere in Seamless, and `cancel` means **hard kill** everywhere. A verb on a *handle* means something narrower — "this handle gives up": terminal for the handle, soft at the substrate, which is why `Transformation.cancel()` keeps its name (`contracts/cancellation.md`). An Expression handle has nothing terminal to mark and no hard operation to offer, so it carries only `softcancel()`.
 
 | Name | Status |
 |---|---|

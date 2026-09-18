@@ -23,6 +23,10 @@ nav:
       - Deep Celltypes: contracts/deep-celltypes.md
       - Expressions: contracts/expressions.md
       - Cells: contracts/cells.md
+      - Pins: contracts/pins.md
+      - Workflow Context: contracts/workflow-context.md
+      - Node State Lifecycle: contracts/node-state-lifecycle.md
+      - Cancellation: contracts/cancellation.md
       - direct/delayed/Transformation: contracts/direct-delayed-and-transformation.md
       - Modules and Closures: contracts/modules-and-closures.md
       - Scratch/Witness/Audit: contracts/scratch-witness-audit.md
@@ -34,6 +38,7 @@ nav:
       - Service Management: contracts/service-management.md
       - Compression: contracts/compression.md
       - Compiled Transformers: contracts/compiled-transformers.md
+      - Compiled Pins: contracts/compiled-pins.md
       - seamless-signature Schema: contracts/seamless-signature-schema.md
   - API:
       - seamless: api/python/seamless.md

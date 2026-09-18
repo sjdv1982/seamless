@@ -9,7 +9,7 @@ A Cell exists in one of two modes:
 
 The two modes share one class, one read API and one write API. They differ in exactly three places: who owns the state, whether a read waits, and which operations exist at all (projection writes, mounts, `prune()` and `block_reason` are bound-only). Those differences are marked throughout.
 
-Pins are the **sister class**, not a subclass: `Pin` and `Cell` share `CellBase`, which carries the value, type, evaluation and ownership API. Everything Pin-specific — routing to a Transformer, the pin null rules, the absence of projection, validators and mounts — belongs to features 6 and 7 and is documented with them. A Pin is never a valid Cell input; passing one raises `TypeError` pointing at `pin.source`.
+Pins are the **sister class**, not a subclass: `Pin` and `Cell` share `CellBase`, which carries the value, type, evaluation and ownership API. Everything Pin-specific — routing to a Transformer, the pin null rules, the absence of projection, validators and mounts — is specified in `contracts/pins.md`. A Pin is never a valid Cell input; passing one raises `TypeError` pointing at `pin.source`.
 
 Code locations:
 
@@ -134,6 +134,16 @@ Everything reduces to setting a checksum; the rows differ in what they do first 
 - **value** — serialize with the node's `celltype`, which **validates**: `Cell("int").set("abc")` raises `ValueError`. This is where an invalid literal is rejected. The buffer is deposited (with a tempref until the Cell's refhold adopts it) and `input_celltype = celltype` is recorded.
 - **buffer** — the bytes are in hand, so nothing is serialized, but they are still checked against the celltype: `_checksum_for_buffer` runs `validate_deserializable_as(checksum, celltype, buffer=buffer)` *and* `buffer.get_value(celltype)`, so a buffer that does not parse as the celltype is rejected at write time. A `Buffer` carries no celltype of its own, so `input_celltype = celltype`.
 - **checksum** — an id only. Nothing is deposited, so the buffer must already be resolvable or the read fails later with `CacheMissError`; validation is limited to the hash-type bits; `input_celltype` defaults to `celltype` and is declarable.
+
+**Both sides of a property write speak `celltype`.** Every spelling in the declare family is expressed in the Cell's `celltype` *and records `input_celltype = celltype`*: `.value =` serializes with it, `.buffer =` is validated against it, `.checksum =` declares it. None of the three can name a different input celltype — there is no argument to pass one. So at the root a property write is its own inverse at the moment it happens: `ctx.a.checksum = cs` leaves `ctx.a.checksum == cs`, exactly as `ctx.a.value = v` leaves `ctx.a.value == v`. The conversion a Cell can perform is the identity right after the write; it becomes non-trivial only later. *Verified:* the `CellBase.checksum` setter calls `_write_checksum(value, detach=True)` with `input_celltype=None`, and `_replace_input_ref` resolves that through `_typed_input_celltype(input_ref) or input_celltype or self.celltype` to `self.celltype`.
+
+Exactly three acts make `input_celltype` differ from `celltype`, and each of them names the other celltype **explicitly**:
+
+- the method form, `set_checksum(cs, input_celltype=…)`;
+- the constructor, `Cell(ct, checksum=cs, input_celltype=…)`;
+- a later `cell.celltype = …`, which retypes and therefore converts (above).
+
+Reading `.checksum` after one of those reports the converted output rather than the checksum that was declared. That is retyping doing what retyping is specified to do, not an asymmetry between the getter and the setter. Two further cases break the round-trip without any of the three, and both are stated elsewhere: a handle that carries a `path` declares the input *before* the path, so the read is the projection of what was written; and on a `bytes` cell the empty-buffer checksum canonicalizes to null on the way out (*Null and `None`*).
 
 **`set_checksum` does not set `.checksum`.** It is the Checksum variant of the three setters and sets the *input*. It is instantaneous, so `.checksum` is normally `None` immediately afterwards — except in the two cases the `.set_checksum` contract carves out (the dummy Expression and the unbound computed property), which are stated under *Reads* below and derived in `contracts/expressions.md`.
 

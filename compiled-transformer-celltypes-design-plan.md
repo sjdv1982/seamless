@@ -206,7 +206,7 @@ Rules:
   checksum when its invalidity cannot be decided without its data.
 - Whether an error surfaces before hashing or in the executor may depend on local state,
   such as whether a HashType word is cached. Its type and message do not; how the type
-  crosses the executor boundary is open decision D5. In a bound
+  crosses the executor boundary is set by D5. In a bound
   workflow, the transformer's exception names the offending pin in either case.
 
 ## Contract Summary
@@ -623,7 +623,7 @@ conversion raises an error that names the pin, the input celltype, and the pin c
 (for example, `ValueError` in pin `'doc'`). Today it surfaces as
 `RuntimeError: Dependency 'doc' has an exception: Cannot convert expression source to
 target celltype ...`, which names the pin but not the celltypes. How the error class
-crosses the executor boundary is open decision D5.
+crosses the executor boundary is set by D5.
 
 `set_checksum(checksum, input_celltype=...)` sets the input checksum of the pin's
 underlying Expression, and converts the same way (see the worked example above).
@@ -689,7 +689,7 @@ further semantic coercion:
 | Schema scalar | JSON scalar | Zero-dimensional `binary` scalar |
 |---|---|---|
 | Signed/unsigned integer | Python `int`, excluding `bool` | any signed or unsigned integer dtype |
-| Floating point | Python `float`; Python `int` is open decision D1 | any floating-point dtype; integer dtypes are open decision D1 |
+| Floating point | Python `float`; a Python `int` only when the target type represents it exactly (D1) | any floating-point dtype; an integer dtype only when the target type represents it exactly (D1) |
 | Boolean | Python `bool` only | `bool` dtype only |
 | Complex | No JSON representation | any complex dtype |
 | `char` | No JSON representation; a JSON string is rejected. A scalar `char` does not allow `mixed` (see [Character Rules](#character-rules)) | exact dtype `S1` |
@@ -699,7 +699,7 @@ After admission, the range of the schema type is enforced:
 - integers must lie within the native range;
 - for floating-point values, and for each part of a complex value, NaN and ±infinity pass
   through (C ABI rule 5), rounding within the finite range is accepted, and a finite value
-  outside that range is open decision D2.
+  outside that range is rejected (D2).
 
 The dtype of an admitted zero-dimensional value is not compared with the schema dtype, and
 its byte order plays no part. Exact dtype and native byte order still apply to structured
@@ -956,11 +956,11 @@ Boolean scalars, and for zero-dimensional arrays. The following changes must lan
 
 ## Open Decisions Before Implementation
 
-These rules are still undecided in the plan text, except D3, which is decided and keeps its
-number because other sections refer to it. Each open decision must be decided, and the plan
-text at the listed places updated, before Phase 0 starts. Each comes with a recommendation.
+All five are decided: D3 earlier, and D1, D2, D4 and D5 by the author on 2026-09-18. Each
+keeps its number because other sections refer to it. The plan text at the listed places has
+been updated; the recommendations are retained below as the rationale for each decision.
 
-### D1. Integers on floating-point schemas
+### D1. Integers on floating-point schemas (decided)
 
 - **Where:** [Native Scalar Rules](#native-scalar-rules), floating-point row.
 - **Question:** does a `mixed` or `binary` pin on a `float32` or `float64` parameter accept
@@ -972,7 +972,10 @@ text at the listed places updated, before Phase 0 starts. Each comes with a reco
   represents it exactly, and reject it otherwise. JSON has a single number type, so `5`
   versus `5.0` is a serialization accident; silent precision loss is not.
 
-### D2. Finite floating-point values outside the target range
+- **Decision (2026-09-18):** follow the recommendation. An integer, JSON or `binary`, is accepted on a
+  floating-point parameter only when the target type represents it exactly.
+
+### D2. Finite floating-point values outside the target range (decided)
 
 - **Where:** [Native Scalar Rules](#native-scalar-rules), range rules.
 - **Question:** what happens to a finite value outside the finite range of `float32`, such
@@ -983,6 +986,10 @@ text at the listed places updated, before Phase 0 starts. Each comes with a reco
 - **Recommendation:** reject a finite value outside the finite range of the target type,
   for every declared celltype. Accept ordinary rounding within that range, such as JSON
   `0.1` on a `float32` parameter.
+
+- **Decision (2026-09-18):** follow the recommendation. A finite value outside the finite range of
+  the target type is rejected, under every declared celltype; rounding within range is
+  accepted; NaN and ±infinity pass through.
 
 ### D3. Zero-dimensional `binary` scalars (decided)
 
@@ -995,7 +1002,7 @@ text at the listed places updated, before Phase 0 starts. Each comes with a reco
   arrays, shape `(1,)` included, keep exact dtype and native byte order. See
   [Native Scalar Rules](#native-scalar-rules).
 
-### D4. Legacy graphs
+### D4. Legacy graphs (decided)
 
 - **Where:** [Phase 6](#phase-6-workflow-persistence-and-migration): "reject legacy graphs
   ... or apply one documented compatibility default".
@@ -1012,7 +1019,9 @@ text at the listed places updated, before Phase 0 starts. Each comes with a reco
   [Checksum And Compatibility Consequences](#checksum-and-compatibility-consequences)).
   Everything else goes through Stage 1.
 
-### D5. Error classes, and errors raised in the executor
+- **Decision (2026-09-18):** follow the recommendation. No separate legacy rule.
+
+### D5. Error classes, and errors raised in the executor (decided)
 
 - **Where:** [Error Taxonomy](#error-taxonomy), and the rule in
   [Validation Placement](#validation-placement-identity-without-input-data) that an error's
@@ -1033,6 +1042,11 @@ text at the listed places updated, before Phase 0 starts. Each comes with a reco
   without changing the classes.
 
 ## Implementation Phases
+
+- **Decision (2026-09-18):** option (b), with the recommended classes: public exception classes
+  subclassing `TypeError`, and an executor failure arrives as a `TransformationError` whose
+  message contains the same class name and message. Note that `.exception` is a string, not
+  an `Exception` instance, so the class name and message reach the user as text.
 
 ### Phase 0: Freeze the compatibility and mixed-admission tables
 
@@ -1192,9 +1206,10 @@ Acceptance:
 - Reject compiled transformer nodes with optional input pins on graph import.
 - Reconstruct the derived schema-celltype map rather than serializing it as independent
   authority.
-- Reject legacy graphs whose compiled builder state cannot be reconstructed safely, or
-  apply one documented compatibility default (`mixed` for undeclared legacy inputs). This
-  is open decision D4.
+- Import an undeclared legacy compiled input as `mixed`, the same rule as for a pin newly
+  introduced by a schema change (D4). There is no separate legacy rule: declared celltypes
+  import as declared, and a scalar `char` or one-dimensional `char` input imports blocked,
+  reported as a missing declaration.
 
 Acceptance:
 
@@ -1419,9 +1434,9 @@ Use stable, targeted failures:
   recorded on the pin and block the transformer (`blocked-by-error`; see
   `seamless_workflow/reactive.py`, `Reactive._derive_transformer`).
 
-Whether these are public exception classes or targeted `TypeError` messages, and how the
-category survives an error raised in the executor, is open decision D5. Preserve the
-category distinction in messages and tests either way.
+These are public exception classes subclassing `TypeError`, and an error raised in the
+executor arrives as a `TransformationError` whose message contains the same class name and
+message (D5). Preserve the category distinction in messages and tests.
 
 ## Out Of Scope
 

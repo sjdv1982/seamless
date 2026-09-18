@@ -48,12 +48,18 @@ A scalar dtype is a plain string. The supported names and their C / numpy / Fort
 | `float32`    | `float`           | `np.float32`   | `real(c_float)`              | `f32`                  |
 | `float64`    | `double`          | `np.float64`   | `real(c_double)`             | `f64`                  |
 | `bool`       | `bool`            | `np.bool_`     | `logical(c_bool)`            | `bool`                 |
-| `char`       | `char`            | `np.bytes_`    | `character(kind=c_char)`     | `c_char` (libc)        |
+| `char`       | `unsigned char` ‡ | `np.bytes_`    | `character(kind=c_char)`     | `u8` ‡                 |
 | `complex64`  | `_Complex float`  | `np.complex64` | `complex(c_float_complex)`   | —                      |
 | `complex128` | `_Complex double` | `np.complex128`| `complex(c_double_complex)`  | —                      |
 
 † Fortran's `iso_c_binding` does not define unsigned integer kinds. Use the
 same bit-width signed kind and treat the bits as unsigned in your implementation.
+
+‡ The schema dtype `char` is **not** the C type `char`. Plain C `char` has
+implementation-defined signedness (signed on x86-64, unsigned on AArch64 Linux)
+while the transformation checksum would be identical, so the generated header
+always declares `unsigned char` (Rust `u8`) — for scalars, array element types
+and struct fields alike.
 
 ### Struct dtypes
 
