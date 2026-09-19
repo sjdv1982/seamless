@@ -90,7 +90,7 @@ An `Expression` handle has nothing terminal to mark, which is why its only verb 
 
 ## Materialization is the same pattern, one layer down
 
-Buffer materialization — a remote fetch of a buffer, which Expression evaluation, transformation input resolution, `.buffer` reads and mounts all share — has its **own waiting set, keyed by checksum, at the materialization site in the buffer layer**. `contracts/expressions.md` specifies it, including latch-on and the linger; this page does not repeat it. Three consequences matter here:
+Buffer materialization — a remote fetch of a buffer, which Expression evaluation, transformation input resolution, `.buffer` reads and attachment deliveries all share (`contracts/attachments.md`: a delivery resolves through `Checksum.resolution()` and never fingertips) — has its **own waiting set, keyed by checksum, at the materialization site in the buffer layer**. `contracts/expressions.md` specifies it, including latch-on and the linger; this page does not repeat it. Three consequences matter here:
 
 - the same membership model applies, so a fetch shared with a live requester survives another requester's departure;
 - there is **no hard cancel at that layer at all**, by design, so a hard `cancel_by_checksum` has no materialization counterpart;

@@ -27,6 +27,8 @@ Contract pages (hand-maintained, normative):
 - `contracts/pins.md`
 - `contracts/workflow-context.md`
 - `contracts/node-state-lifecycle.md`
+- `contracts/attachments.md`
+- `contracts/mounts.md`
 - `contracts/cancellation.md`
 - `contracts/scratch-witness-audit.md`
 - `contracts/direct-delayed-and-transformation.md`

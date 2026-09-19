@@ -9,7 +9,7 @@ Four consequences are contract in their own right:
 - **Handle identity carries no meaning.** `ctx.a is not ctx.a`. Dependencies are captured by content — a node path on an edge — never by view identity, so `id()`-keyed caches over handles must not be used. A handle whose node is gone raises `StaleWorkflowHandleError` on its next use.
 - **Re-building is cheap.** The per-tick materialization cost is bounded to the invalidated cone, and is a small hash over checksum-sized inputs — never a re-hash of buffers.
 
-This page is the Context as a **runtime and an API**. The **node state lifecycle** — the six node states (`unwired`, `blocked`, `waiting`, `computing`, `complete`, `failed`), the glitch-free cascade, block reasons, speculative supersession and grace holds — is `contracts/node-state-lifecycle.md` and is deliberately not specified here; this page names states only where a rule depends on them. Cells are `contracts/cells.md`, pins are `contracts/pins.md`, and mounts and attachments are feature 11 (see the mounts page, when it exists).
+This page is the Context as a **runtime and an API**. The **node state lifecycle** — the six node states (`unwired`, `blocked`, `waiting`, `computing`, `complete`, `failed`), the glitch-free cascade, block reasons, speculative supersession and grace holds — is `contracts/node-state-lifecycle.md` and is deliberately not specified here; this page names states only where a rule depends on them. Cells are `contracts/cells.md`, pins are `contracts/pins.md`, the attachment framework — sensing external state into a node, actuating a node's value out of it — is `contracts/attachments.md`, and the file driver is `contracts/mounts.md`.
 
 Code locations:
 
@@ -47,7 +47,7 @@ with Context() as ctx:
 - **A node is created by assignment to a name that does not exist yet.** `ctx.a` afterwards returns a fresh handle for that node.
 - **A name that is not a node is a namespace placeholder, not an error.** `ctx.foo` for an unknown path returns a *view* whose attribute and item access extend the path, so `ctx.foo.bar = 1` creates the node at path `("foo", "bar")`. Item access stringifies its key: `ctx["a"]` and `ctx.a` are the same node.
 - **`ctx.sub = Context()` declares a namespace**, not a nested runtime: it marks the path as a namespace of *this* Context. Assigning a namespace view copies that subtree. A genuine sub-Context — one with its own controller and its own equilibrium — is out of scope (see *Non-goals*).
-- **`mounts` is reserved.** `ctx.mounts` is the Context's mount API, and assigning to it raises `AttributeError`. Mounts are feature 11.
+- **`mounts` is reserved.** `ctx.mounts` is the Context's mount API — the external synchronization barrier and the per-mount error map — and assigning to it raises `AttributeError("mounts is reserved for the Context mount API")`. A graph node at that path is refused with `PathError`. See `contracts/mounts.md`.
 - `del ctx.a` deletes the node, and deleting a namespace path deletes its whole subtree. Deleting a node cancels its remaining run memberships (softly — see *Speculation control*).
 
 ## What an assignment means
@@ -88,12 +88,14 @@ Two rules are worth stating separately:
 |---|---|
 | `ctx.compute(timeout=None)` / `await ctx.computation(timeout=None)` | **no node in the Context** is `waiting` or `computing` |
 | `node.compute(timeout=None)` / `await node.computation(timeout=None)` (a Cell, Pin or Transformer handle) | **that node and its upstream cone** are no longer `waiting` or `computing` |
+| `ctx.mounts.sync(timeout=None)` / `await ctx.mounts.synchronization(timeout=None)` | the **external** cut is settled: every file change before the final cut has been sensed and propagated, the graph is quiescent, and every complete node value is on disk or its mount reports why not. Returns a `SyncReport` (`contracts/attachments.md`, `contracts/mounts.md`) |
 
 - A barrier is a **predicate installed in a turn** and satisfied in the turn that makes it true; the caller is released then.
 - **A barrier timeout raises `TimeoutError`.** Both a timeout and an async cancellation **withdraw the predicate without cancelling any graph work**: a barrier is a wait, never a control operation.
 - A barrier on a path whose node has been deleted raises `StaleWorkflowHandleError`.
 - A **reading** barrier — the form behind a bound `compute()` that returns a checksum — additionally reports the outcome. If the node settles in `unwired` or `blocked` it raises a `NodeError` naming the state and the block reason; if it settles in `failed` it raises the node's own recorded exception.
 - **Quiescence is a property of node states only.** A `complete` node may still have a superseded run in flight; see *Speculation control* below, and `contracts/node-state-lifecycle.md` for what the states mean.
+- **`compute()` stays graph-only and never waits for files.** External settlement is a separate barrier, `ctx.mounts.sync()`, and it is stateful: it cuts, waits for quiescence, waits for deliveries, and starts another round if anything moved. `contracts/attachments.md` specifies it; there is deliberately no `settled()` predicate.
 
 ## Writes through the Context
 
@@ -124,6 +126,7 @@ The Context **launches replacement work immediately and delays only the cancella
 
 - **`ctx.get_graph()` returns the durable graph**: nodes, configurations, edges and literal producers — never runtime state.
 - **`ctx.set_graph(graph)` replaces it wholesale.** It is ordered so that the new graph's claims are acquired **before** any live role is released. It cancels every current and superseded run, detaches mount sessions, and resets the runtime.
+- **`ctx.set_graph(graph, mounts=True)` — the default — also attaches every mount spec in the new graph, and therefore blocks and can write files.** Reservations and initial reads are prepared in parallel on the caller's side, one message replaces the graph and all sessions atomically, and the call waits for every initial acknowledgement. `mounts=False` strips the specs; **graphs of unknown origin must be loaded that way** (`contracts/mounts.md`).
 - **Run generations are never reused across a replacement**, and node revisions are bumped for the same reason: a late completion from the old graph can never be mistaken for a run at the same path in the new one.
 - **Graph loading never executes code to reconstruct callables.**
 
@@ -137,9 +140,12 @@ Only the operations this page specifies are listed; handle-level calls are in `c
 | `ctx.a`, `ctx.foo.bar` (unknown path) | no | a fresh handle, or a namespace view |
 | `ctx.compute()` / `await ctx.computation()` | **yes** — graph-wide barrier | `None`, or raises `TimeoutError` |
 | `node.compute()` / `await node.computation()` | **yes** — that node's upstream cone | the node's checksum for a reading barrier; raises on `unwired`, `blocked` or `failed` |
+| `ctx.mounts.sync()` / `await ctx.mounts.synchronization()` | **yes** — the external cut barrier | a `SyncReport`; raises `TimeoutError` |
+| `ctx.mounts.errors` | no | `{node path: error}`, computed without a cut |
 | `ctx.prune()`, `ctx.a.prune()` | no | `{"cancelled": <count>}` |
 | `ctx.get_graph()` | no | the durable graph |
-| `ctx.set_graph(graph)` | no — but it cancels every run | `None` |
+| `ctx.set_graph(graph, mounts=False)` | no — but it cancels every run | `None` |
+| `ctx.set_graph(graph)` (i.e. `mounts=True`) | **yes** — it blocks through every mount's initial read and first delivery acknowledgement, **and it can write files** | `None` |
 | `ctx.close()` | **yes** — one ordered shutdown turn, joining both threads | `None`; idempotent |
 
 | Error | Raised when |
@@ -155,7 +161,9 @@ Only the operations this page specifies are listed; handle-level calls are in `c
 | `ValueUnavailableError` | a sub-path write finds no root checksum and the node is not `waiting` or `computing` |
 | `ConcurrentUpdateError` | a sub-path commit loses eight times |
 | `TimeoutError` | a barrier times out; the predicate is withdrawn and no graph work is cancelled |
-| `AuthorityError`, `PathError` | the handle-level rules of `contracts/cells.md` |
+| `AuthorityError`, `PathError` | the handle-level rules of `contracts/cells.md`; also the attachment topology rules (`contracts/attachments.md`) |
+| `MountError` | never raised — *reported*, as an object on `ctx.a.mount.error` and as a string on `ctx.a.exception` (`contracts/attachments.md`) |
+| `ConflictError` | a `MountError` subclass; also never raised, and latched on the mount when the oscillation detector trips |
 
 ## Implementation status and current limitations
 

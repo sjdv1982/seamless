@@ -167,7 +167,7 @@ Handoff must happen **before the producer's tempref may expire**.
 
 **Scratch.** Scratch acquisition does not register a buffer remotely, and later non-scratch interest upgrades registration monotonically. **Explicit public interest in a scratch result refholds and protects it**; an unrequested scratch result stays purgeable. See `contracts/scratch-witness-audit.md` for what scratch means.
 
-**Deep checksums.** Only the **top-level** checksum of a `deepcell` / `deepfolder` is owned. Members rely on ordinary deep-buffer resolution and remote durability; there is no recursive deep ownership.
+**Deep checksums.** Only the **top-level** checksum of a `deepcell` / `deepfolder` / `folder` is owned. Members rely on ordinary deep-buffer resolution and remote durability; there is no recursive deep ownership. The one permanent exception is on the mount sense path: leaves that a mount *sensed* keep a claim for as long as the node holds that index, including after unmounting (`contracts/attachments.md`, *Leaf retention*).
 
 **Execution workers.** Workers use no-op registry/refholder wrappers and run no lifecycle audit. Parent-side objects retain ownership across IPC.
 

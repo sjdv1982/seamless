@@ -21,6 +21,8 @@ nav:
       - Compiled Pins: contracts/compiled-pins.md
       - Workflow Context: contracts/workflow-context.md
       - Node State Lifecycle: contracts/node-state-lifecycle.md
+      - Attachments: contracts/attachments.md
+      - File Mounts: contracts/mounts.md
       - Cancellation: contracts/cancellation.md
       - direct/delayed/Transformation: contracts/direct-delayed-and-transformation.md
       - Modules and Closures: contracts/modules-and-closures.md
