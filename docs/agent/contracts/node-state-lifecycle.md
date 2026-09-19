@@ -95,7 +95,7 @@ The winning label among several pending inputs is decided by the precedence in *
 | an upstream that is not `complete` | **`blocked`** (or `waiting`), by the same mapping as for transformers |
 
 - **A cell's own conversion failure is `failed`, not `blocked`.** This is the cell-level counterpart of a transformer's own failure: the work that failed was the cell's, so the exception is the cell's. Contrast the transformer *pin* case above, where the conversion failure belongs to the pin and the transformer node is merely `blocked`.
-- **A mount that cannot sense its file fails the cell** (`failed`) with the sense error, and `clear_exception()` on such a node **re-polls the mount** rather than re-deriving (see the mounts contract, when it exists).
+- **A mount that cannot sense its file fails the cell** (`failed`) with the sense error, and `clear_exception()` on such a node **re-polls the mount** rather than re-deriving (`contracts/attachments.md`, *Sense errors fail the cell*). The stored value is kept but masked, and unmounting unmasks it.
 
 ## Block reasons
 

@@ -79,7 +79,7 @@ Three rules follow:
 - **Copy once, at creation.** A *new* cell built from a typed source copies that source's `celltype` once: `ctx.a = ctx.b` creates `a` with `b.celltype`. An *existing* cell keeps its own output type when rewired — `ctx.existing = ctx.typed` leaves `existing.celltype` alone and converts into it.
 - **To correct a wrong declaration, declare the input again.** There is no setter; `set_checksum(cs, input_celltype=…)` is the spelling.
 
-Retyping is refused on a mounted cell: `ValueError("Mounted celltype cannot change; unmount first")` (feature 11; see the mounts doc when it exists).
+Retyping is refused on a mounted cell: `ValueError("Mounted celltype cannot change; unmount first")`. The celltype decides how the attached file's bytes are read and written, so it is frozen for as long as the attachment lives (`contracts/attachments.md`).
 
 ## The input: `.source` versus `.checksum`
 
@@ -170,7 +170,7 @@ So with an edge at `ctx.a.b`: `ctx.a.b.c.set(2)` raises, `ctx.a.set({...})` rais
 
 **Sub-path writes never detach.** `BoundCellBackend.write_value` / `write_checksum` pass `detach=detach and not self.local_path`, so the declare family collapses into the checking family below the root: `ctx.a.b.value = 3` checks authority exactly as `ctx.a.b.set(3)` does. Detaching is a root-level act.
 
-A mounted cell refuses to be cleared: `AuthorityError("Cannot clear a mounted cell; unmount first")`, and a sensing mount refuses an incoming edge (`"Sensing mount is the producer; unmount first"`). Mounts are feature 11.
+A mounted cell refuses to be cleared: `AuthorityError("Cannot clear a mounted cell; unmount first")`, and a sensing mount refuses an incoming edge, at the root or at any sub-path (`"Sensing mount is the producer; unmount first"`) — a sensing attachment *is* the node's producer. Both refusals, and the sense that writes through this same path, are in `contracts/attachments.md`.
 
 ## Null and `None`
 

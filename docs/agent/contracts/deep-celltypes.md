@@ -14,7 +14,7 @@ Code locations:
 | The deep celltype set | `seamless_transformer.transformation_utils.DEEP_CELLTYPES`, `is_deep_celltype` |
 | Pin-level fan-out / fan-in | `seamless_transformer.transformation_utils.unpack_deep_structure`, `pack_deep_structure` |
 | Pin presentation to a transformer | `seamless_transformer.transformation_namespace.build_transformation_namespace_sync`, `_to_checksum_dict` |
-| Directory celltypes (mounts) | `seamless.checksum.canonical.DIRECTORY_CELLTYPES` (seamless-core) |
+| Directory celltypes (mounts) | `seamless.checksum.canonical.DIRECTORY_CELLTYPES` (seamless-core); the mount rules are `contracts/mounts.md` |
 | Mount read/write of an index | `seamless_workflow.attachments.fs.service.FileSystemService._read`, `._write_directory` |
 | Index construction from files | `seamless_transformer.cmd.file_load` |
 | Module definition buffers | `seamless_transformer.module_builder.pypackage_to_moduledict` |
@@ -41,6 +41,8 @@ The three celltypes share this buffer shape exactly. They differ only in **what 
 | `folder` | an arbitrary raw byte buffer | the **contents** of a directory; consumers want the bytes |
 
 `deepfolder` and `folder` therefore have the same member type and differ only in intent. `deepcell` is the strict one: its member type is a subtype of the other two.
+
+**The intent is load-bearing at exactly one place today: `deepfolder` is sense-only on a mount.** `folder` mounts in `r`, `w` and `rw`; `deepfolder` may only be mounted with `mode="r"`, because a write mount materializes every leaf onto disk — which is precisely what "the contents stay by reference" declares it does not do. The restriction costs one retype, since the conversion between the two is free in both directions, and a transformer cannot produce a `deepfolder` at all. See `contracts/mounts.md`.
 
 ## `module` is not a deep celltype
 
@@ -158,6 +160,7 @@ The rules above are the settled contract. **The code does not implement them.** 
 ### What *is* settled by the code
 
 - **A `folder` index buffer is byte-identical to a `deepfolder` index buffer.** There is no extra field and no per-celltype marker: the mount layer builds one index for both celltypes (`FileSystemService._read` treats `reg.directory`, i.e. either celltype, identically and emits `Buffer(index, 'plain')` with `{relative path: checksum hex}`), `_write_directory` consumes that same shape, and `Buffer(index, "folder")` and `Buffer(index, "deepfolder")` produce the same bytes and the same checksum. `folder → deepfolder` and `deepfolder → folder` are therefore genuinely checksum-preserving.
+- **Directory mounts work**, and they are the one deep surface that is fully implemented: index construction from a tree, per-leaf atomic writes, the `deepfolder` sense-only rule, and leaf retention on the sense path. `contracts/mounts.md` specifies them; `contracts/attachments.md` specifies the retention exception to the no-recursive-deep-ownership rule.
 
 ## Agent guidance
 
