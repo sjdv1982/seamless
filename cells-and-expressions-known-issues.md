@@ -11,9 +11,9 @@ continuing that work. Contents:
 5. Expression placement (feature 4); settled by `expression-where-the-data-is.md`
 6. Expression cancellation (feature 4); its conclusions are in Appendix A
 7. Cell-level joins (feature 10)
-8. Documentation gap: checksum reference lifecycle (feature 9)
+8. Checksum reference lifecycle (feature 9): its doc, and what feature 11 takes from it
 9. BufferInfo removal: follow-ups
-10. Design-doc limitations not yet verified against code (features 4, 8, 10, 11)
+10. Design-doc limitations: still open (features 4, 8, 10), closed for mounts (feature 11)
 11. Question log (Q1–Q12) and gap-analysis notes
 12. Source list: design docs changed during the cells-and-expressions work
 13. The jupyter-sync branch is to be merged
@@ -29,6 +29,11 @@ Part of the celltype/conversion/HashType bugs (section 3) has since been fixed, 
 records; the rest is not being worked on, and the agentic docs describe the current behaviour
 and list them as limitations. For the other sections, nothing has
 been decided about fixing them yet (cell-level joins have a follow-up design by the author).
+
+**Status, 2026-09-20: the agentic contract docs are complete.** All eleven features are documented in
+`docs/agent/contracts/`; feature 11 was the last, settled by seven rulings (section 2, items 18–24)
+and written as two pages. What remains from this file is the code work nobody has decided on
+(sections 3, 4, 6, 14), the human documentation and the main docs, and the loose ends in section 15.
 
 ## 1. Where we are
 
@@ -104,7 +109,21 @@ been decided about fixing them yet (cell-level joins have a follow-up design by 
     join implementation, the unenforced deep-celltype rules.
   - Committed as seamless `3c2a3f2`. Code findings from writing it: section 16. Open items:
     section 2, items 15–17.
-- Features 6–11: not started.
+- Features 6–10: agentic docs written (2026-09-18), with the author rulings recorded in
+  `/home/agent/seamless1/answers.md` (Q1–Q10): `docs/agent/contracts/pins.md` (features 6+7),
+  `contracts/compiled-pins.md` (feature 7, compiled input pins), `contracts/cancellation.md`
+  (feature 8), `contracts/node-state-lifecycle.md` and `contracts/workflow-context.md` (feature 10),
+  plus the internal `contracts/internal/checksum-reference-lifecycle.md` (feature 9). Governing
+  rulings: document the **contract, not the implementation**, with divergences in one
+  "implementation status" section; `.exception` is a string; grace holds follow pass3's three-case
+  taxonomy; `block_reason` precedence is `unwired` → `blocked-by-unwired` → `blocked-by-error` →
+  `waiting`.
+- Feature 11: contract settled by seven rulings (section 2, items 18–24) and agentic docs written
+  (2026-09-20), as **two** pages: `docs/agent/contracts/attachments.md` (the framework) and
+  `contracts/mounts.md` (the file driver), committed in seamless as `3d0b0080`. One ruling required
+  code: `deepfolder` is sense-only (seamless-workflow `4bb2fdb`, `f8575bd`). Three design-doc
+  statements were found false against code while writing the pages; they are recorded in section 10.
+  **All eleven features now have their agentic contract docs.**
 
 ### Work status
 
@@ -183,7 +202,8 @@ Status keys: **delivered**, **delivered (gaps)**, **deferred**, **open**, **reje
    pin = absence, for any celltype: unconnected and connected-then-null give the same
    transformation checksum (the pin is dropped before the checksum is computed). Connected
    optional pins still compute, and a failing optional upstream still fails.
-   Contract: transformation-checksum identity rule. Status: delivered. Settled.
+   Contract: transformation-checksum identity rule. Status: delivered. Settled. Docs done
+   (`docs/agent/contracts/pins.md`).
 7. **Transformer and pins sharpened** — mostly a consequence of 3, 5, 6; the pin-sugar removal
    was driven by the Context's name-collision problem.
    - Pin: sister class of Cell (shared CellBase); a Pin can't be a source.
@@ -195,7 +215,8 @@ Status keys: **delivered**, **delivered (gaps)**, **deferred**, **open**, **reje
      Transformation is built.
    - Null: on a required pin, null raises `TypeError`, except for celltypes `plain`, `mixed`,
      `bytes` (verified in code). Compiled transformers bypass this (section 4).
-   - Status: delivered (gap: compiled pins recorded as `mixed`).
+   - Status: delivered (gap: compiled pins recorded as `mixed`). Docs done
+     (`docs/agent/contracts/pins.md`, `docs/agent/contracts/compiled-pins.md`).
 8. **Cancellation substrate** — base layer for 4, 7, 10 *(design docs)*.
    - One membership set per dedup site (in-process / jobserver / Dask).
    - `softcancel` = deregister; the run is cancelled only when the set is empty. `cancel` = hard
@@ -203,14 +224,15 @@ Status keys: **delivered**, **delivered (gaps)**, **deferred**, **open**, **reje
    - Cross-process liveness deliberately not built. The reactive scheduler uses softcancel only;
      CLI/SIGINT stays hard.
    - Contract: replaces first-caller-owns-execution; jobserver multi-tenant footgun fixed.
-   - Status: delivered (gaps to verify, section 10). Expression cancellation: section 6.
+   - Status: delivered (gaps to verify, section 10). Expression cancellation: section 6. Docs done
+     (`docs/agent/contracts/cancellation.md`).
 9. **Checksum reference lifecycle** — internal. Refholders (Cell, Expression,
    Transformer/Transformation, Context current/superseded runs) keep checksum buffers alive;
    refholder claims counted separately from manual incref/decref; public vs internal interest
    is a hard rule; scratch and deep checksums have own rules; balance audit at
    `seamless.close()` (user-visible only as `seamless.references` warnings). The Context's
    `current` / `superseded:<generation>` roles back feature 10's grace holds.
-   Needs its own doc in seamless-workflow (section 8).
+   Own doc written: `docs/agent/contracts/internal/checksum-reference-lifecycle.md` (section 8).
 10. **Reactive workflow (seamless-workflow Context)** — rests on 4 and Transformations, with
     Cells (5) and Transformers/Pins (7) as its handles, using 2, 6, 8, 9. The Context holds a
     DAG of nodes and builds private Expression/Transformation snapshots each tick; `ctx.a` /
@@ -227,16 +249,26 @@ Status keys: **delivered**, **delivered (gaps)**, **deferred**, **open**, **reje
       root; legacy `ctx.tf.x` sugar gone.
     - Checksum writes are HashType-validated.
     - Cell-level joins: section 7.
-    - Status: Part I (A0–A5) delivered. Deferred / open / unratified / rejected items: section 10
-      *(design docs)*.
+    - Status: Part I (A0–A5) delivered; agentic docs done
+      (`docs/agent/contracts/node-state-lifecycle.md` for the node state lifecycle,
+      `docs/agent/contracts/workflow-context.md` for the runtime and API). Deferred / open /
+      unratified / rejected items: section 10 *(design docs)*.
 11. **Attachments and mounts** — on top of 10. Attachment framework: sense = authoritative
     write; actuate = delivery after a turn; durable spec plus ephemeral session; a manual test
     driver. File mounts are the only production driver: global watch broker + I/O pool; atomic,
     conditional writes; null files read as null and deliver as truncation; mounts never give up;
     oscillation detector; `ctx.mounts.sync()` *(design docs)*. Use "attachment" and "mount"
     precisely in the docs.
-    Status: implemented and tested (confirmed by author); last implementation work was on
-    mounts, so document from the final code. Open items / v1 exclusions: section 10.
+    Status: implemented and tested; **contract settled** by the seven rulings of section 2,
+    items 18–24, and documented (2026-09-20) as two pages — `docs/agent/contracts/attachments.md`
+    (framework) and `docs/agent/contracts/mounts.md` (file driver), committed as seamless
+    `3d0b0080`. The seam: *direction and discipline* on the attachments page, *bytes and filesystem*
+    on the mounts page; the mounts page never restates a generic rule, only where the file driver
+    specializes it. The attachments page specifies the behaviour of the attachments that exist, not
+    a plugin API: file is the only production driver, `ManualDriver` is test-only, `WidgetDriver`
+    experimental. Code change required by ruling 24: `deepfolder` is sense-only
+    (seamless-workflow `4bb2fdb`, `f8575bd`). v1 exclusions and the now-closed open items:
+    section 10.
 
 **Also in scope** (if they reflect current code; not part of the dependency chain):
 
@@ -350,6 +382,65 @@ scripts. Detail in section 16. The page documents all of them as current behavio
 17. **A refholder-balance warning at `seamless.close()`** (section 16), on a Cell/SubCell derivation
     path with shared input checksums. Feature 9, internal, so it is in no contract page — but it
     looks like a real imbalance.
+
+### The attachment and mount contract (feature 11): seven rulings that settle it
+
+Raised by an assessment of whether feature 11's contract was settled enough to document, and ruled by
+the author on 2026-09-19/20. With these, the feature-11 contract is settled and both pages are
+written. `mount-design.md` §1–§17 remains the normative design; where it and the code disagree, the
+code wins, and the stale passages are listed at the end of section 12.
+
+18. **Two pages, not one.** `docs/agent/contracts/attachments.md` (framework) and
+    `contracts/mounts.md` (file driver). The seam is *direction and discipline* versus *bytes and
+    filesystem*; `mounts.md` never restates a generic rule, only says where the file driver
+    specializes one. `mode` / `authority` / `persistent` go on the mounts page although they live on
+    the generic spec class. The oscillation detector is split deliberately: mechanism on attachments,
+    thresholds and rationale on mounts; likewise `sync()` semantics on attachments, spelling and the
+    `SyncReport` fields on mounts. The attachments page is **not** a plugin API: file is the only
+    production driver, `ManualDriver` is test-only, `WidgetDriver` experimental.
+19. **Error typing follows the remote boundary.** `Cell.exception` is a string (item 13), but
+    `ctx.a.mount.error` and `status['sense_error']` are **Exception objects** (`MountError`,
+    `ConflictError`). The reason, and the rule for any future error surface: Expressions and
+    Transformations can execute remotely and exception objects do not transfer well, whereas mounts
+    are fundamentally local. Consequences: `isinstance(err, ConflictError)` stays the machine-readable
+    way to tell a tripped detector from a failed write, and on the cell the `"<path>: <reason>"`
+    prefix is contract, being the only thing that identifies a mount sense error.
+20. **Null on a `w`/`rw` directory mount is terminal.** The delivery is suppressed, the tree is left
+    in place, and the mount reports `in_sync: False` permanently with **no error**, because nothing
+    failed. Files always converge instead (null truncates to zero bytes; a null value with an absent
+    file counts as in sync). The sharp edge is documented: the only signal is `in_sync: False` with an
+    empty `ctx.mounts.errors`, so "sync until in_sync" never terminates.
+21. **Limits are defaults, not contract.** Contract is the *shape* — a cap exists, exceeding it makes
+    the observation `REJECTED`, and the checksum (never the fingerprint) is the correctness guard.
+    The numbers (4 workers, 0.2 s poll, 2 s racy window, 60 s delivery, 1 GiB file, 100 000 files /
+    10 GiB / 60 s scan, detector 3-in-20 s) are current defaults. Network filesystems are a
+    documented limitation; the `rehash_interval` knob of `mount-design.md` §20.4 was never built and
+    is not planned.
+22. **Write failures stay on the mount, never on the cell** (confirms `mount-design.md` §20.11): a
+    read problem is the cell's exception because the file *is* its value source, while a write problem
+    leaves a valid value and only a stale file, so failing the cell would block every downstream
+    consumer of a correct result.
+23. **A delivery resolves; it never computes.** The payload goes through `Checksum.resolution()`
+    (local cache → remote buffer server → `CacheMissError`) and never fingertips, so a delivery has
+    exactly the powers of `.buffer`. Mounting is therefore **not** a materialisation mechanism for a
+    scratch result: it usually works because the delivery follows the completing turn while the buffer
+    is still cached, and fails visibly when the checksum arrived without bytes. This **supersedes**
+    `mount-design.md` §20.3, which assumed the ordinary path recomputes.
+24. **Leaf retention, narrowly; and `deepfolder` is sense-only.** Promise only that leaves a mount
+    *sensed* stay resolvable while the node holds that index, including after unmount — the lease
+    mechanism stays internal. The general rule is already ruled the other way
+    (`contracts/internal/checksum-reference-lifecycle.md`: only the top-level checksum of a deep value
+    is owned, no recursive deep ownership), so the mount's per-leaf claims are a permanent
+    mount-specific exception on the sense path; a *computed* directory gets none, and a missing leaf
+    is a delivery error. Separately: `folder` mounts in `r`/`w`/`rw`, `deepfolder` may only be
+    sensed (`mode="r"`), `deepcell` / `module` / `checksum` stay unmountable. A write mount
+    materialises every leaf, which is what `deepfolder` declares it does not do; `folder ↔ deepfolder`
+    is free and checksum-preserving, and a transformer cannot produce a `deepfolder` at all, so
+    `folder` is the only celltype a computed directory can arrive in. Since the default mode is `rw`,
+    `ctx.a.mount(path)` on a deepfolder cell raises, deliberately. Implemented in seamless-workflow
+    `4bb2fdb` + `f8575bd`: `validate_celltype(celltype, mode)` with `mode` required, enforced at all
+    three call sites; an invalid **request** raises `TypeError`, an invalid mount spec in a **graph**
+    raises `PathError` (including under `mounts=False`).
 
 ## 3. Celltypes, conversion, HashType (features 1–3)
 
@@ -638,12 +729,16 @@ They are plain local Python: no Transformation and no Expression, which is why n
 observed and the node never passes through `computing`. The docs describe the observable behaviour
 only, marked provisional (section 2, item 12; open decision 4).
 
-## 8. Documentation gap: checksum reference lifecycle (feature 9)
+## 8. Checksum reference lifecycle (feature 9): its doc, and what feature 11 takes from it
 
 The checksum reference lifecycle (refholders that keep checksum buffers alive; refholder claims
 vs. manual incref/decref; scratch and deep-checksum rules; balance audit at `seamless.close()`)
-is internal and stays out of the public agentic contracts in `seamless/docs/agent/`. It still
-needs its own doc, and that doc belongs in the seamless-workflow repo.
+is internal and stays out of the public agentic contracts in `seamless/docs/agent/`. **Its own doc is
+written** (2026-09-18): `docs/agent/contracts/internal/checksum-reference-lifecycle.md`, kept separate
+from the public contract pages rather than in the seamless-workflow repo as first planned. One rule
+from it that feature 11 depends on: only the *top-level* checksum of a deep value is owned, with no
+recursive deep ownership — hence the narrow leaf-retention promise of section 2, item 24. The rule now
+names `folder` as well as `deepcell` / `deepfolder`.
 
 Do not confuse it with the workflow node state lifecycle (node state machine, cascade,
 supersession, grace holds). That lifecycle is user-visible and must be documented extensively in
@@ -671,7 +766,7 @@ Follow-ups:
   likely cause. Not confirmed; re-run in the `seamless1` conda env.
 - Historical design records in `seamless/` still mention BufferInfo; leave as history.
 
-## 10. Design-doc limitations not yet verified against code
+## 10. Design-doc limitations: still open (features 4, 8, 10), closed for mounts (feature 11)
 
 These come from the design docs (via the doc summary). They were not discussed or checked. Each
 must be verified before it goes into the docs as a limitation (open decision 5).
@@ -694,10 +789,27 @@ Workflow Context (feature 10):
 - Rejected (document as non-features if useful): transient-failure state, mandatory preemption,
   epoch-stamping.
 
-Mounts (feature 11):
-- Open: w-mode reassert timing, network-filesystem fingerprints, resource limits, directory leaf
-  retention.
-- Not in v1: standalone, sub-path, and pin mounts; `edit_policy="external-owned"`.
+Mounts (feature 11) — **all closed** (section 2, items 18–24), and documented in
+`contracts/attachments.md` / `contracts/mounts.md`:
+- w-mode reassert timing: settled by the code — a `w` mount reasserts on a foreign, rejected or
+  absent observation when the node is complete, capped by the detector (3 reasserts in 20 s).
+- Network-filesystem fingerprints: documented as a limitation; no `rehash_interval` (item 21).
+- Resource limits: shipped with the design's values, documented as defaults, not contract (item 21).
+- Directory leaf retention: the narrow sensed-leaves promise (item 24).
+- Not in v1, documented as non-goals: standalone, sub-path, pin and code mounts;
+  `edit_policy="external-owned"`; cross-process locking; context mounts with automatic child paths.
+
+**Three design-doc statements found false against the code** while writing the pages (2026-09-20);
+the pages document the code, and these are the corrections:
+- A failed delivery's backoff retry does **not** need an external turn. `_mount_tick` is a no-op
+  handler, but `FileSystemService._broker` sends one tick per active registration per poll interval,
+  and every turn runs the post-turn pass — measured recovery 1.5 s after the fault was fixed, with no
+  Context call. Only a driver with no tick (`ManualDriver`) needs an external turn.
+- The celltype freeze and the clearing refusal fire on `node.mount` **regardless of mode**; only "the
+  sensing mount is the producer, so no incoming edge" is sensing-only.
+- `Context.set_graph` detaches every session with `delete=False`, so it **never** deletes a
+  `persistent=False` file — wider than `mount-design.md` §7.3, which promises this only when the new
+  graph re-attaches the same path.
 
 ## 11. Question log and gap-analysis notes
 
@@ -773,6 +885,27 @@ Where they disagree with the code, the code wins.
 - **seamless-core:** M `README.md`; A `type_bits_design.md` (partly stale, bug 13)
 - **seamless-transformer:** M `README.md`; A `tests/cancellation/README.md`
 - **seamless-dask, seamless-database, seamless-jobserver:** M `README.md`
+
+### Stale passages in the feature-11 design docs (2026-09-20)
+
+`mount-design.md` §1–§17 is the normative design and is decision-complete, but these passages are
+dead and must not be copied into any later document:
+
+- §17.3's row "clearing an `r`/`rw` cell's value stays cleared; the file is untouched". The code
+  refuses: `AuthorityError("Cannot clear a mounted cell; unmount first")`, which is also what the
+  doc's own preamble says. The refusal is the contract.
+- §20.3 ("resolve it through the ordinary path, which may recompute it") — superseded by section 2,
+  item 23: the ordinary path is `Checksum.resolution()`, which never fingertips.
+- §16's "Naming is provisional" — the names are fixed by code.
+- §20.4's proposed per-mount `rehash_interval` — never built (item 21).
+- `mount-implementation.md` gives graph format `0.3`; the code and the seamless-workflow README say
+  `0.4`.
+- `attachments-and-mount-design.md` Part II is the earlier umbrella: its §21 still discusses a
+  `settled()` predicate and spells the API `ctx.mount.sync()` (singular). Both are dead; where it and
+  `mount-design.md` differ, `mount-design.md` plus the code wins.
+- **Every "legacy Seamless" claim** in §7.2's legacy column and in §17.2. `mount-implementation.md`
+  records that legacy could not be imported in either conda environment, so the M1 characterization
+  never ran. The agentic pages therefore carry no legacy comparison at all.
 
 ## 13. The jupyter-sync branch is to be merged.
 
@@ -973,6 +1106,11 @@ contract allows. Proposed: move it to a "Non-goals" note in `hashtype.md`.
 
 Use one convention across Cell, Pin and Transformation . Today a Cell holds an exception object and Transformation.exception is a string. The code is to be changed.
 
+**Ruled 2026-09-19 (section 2, item 19), with the reason that makes it extensible:** the string
+convention follows the **remote boundary** — Expressions and Transformations can execute remotely and
+exception objects do not transfer well. A purely local error surface is therefore exempt, which is why
+`Cell.mount.error` and `status['sense_error']` hold `MountError` / `ConflictError` objects.
+
 ### Compiled transformer overhaul
 See home/agent/seamless1/seamless/compiled-transformer-celltypes-design-plan.md.
 
@@ -997,10 +1135,15 @@ The agentic contract now describe deepcells and their conversion rules, but thes
 
 Needs to provide Context, Cell, and Transformer (which does not exist?)
 
-### Features 6-11 need to be agent-documented
-As of 18 sept., features 4 and 5 are done: `docs/agent/contracts/expressions.md`,
-`docs/agent/contracts/deep-celltypes.md` and `docs/agent/contracts/cells.md` (see the progress list
-in section 1).
+### Features 6-11 need to be agent-documented — DONE
+
+All eleven features now have their agentic contract docs. Features 4–5 on 18 sept.
+(`contracts/expressions.md`, `contracts/deep-celltypes.md`, `contracts/cells.md`), features 6–10 on
+18 sept. (`contracts/pins.md`, `contracts/compiled-pins.md`, `contracts/cancellation.md`,
+`contracts/node-state-lifecycle.md`, `contracts/workflow-context.md`, plus the internal
+`contracts/internal/checksum-reference-lifecycle.md`), feature 11 on 20 sept.
+(`contracts/attachments.md`, `contracts/mounts.md`). See the progress list in section 1. What remains
+is the **human** documentation (next note but one) and the main docs in `docs/main/`.
 
 ### All features require human documentation
 
