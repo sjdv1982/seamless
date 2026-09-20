@@ -27,6 +27,10 @@ outputs:
 (use an empty list if a side is absent). The compiled entry-point name is
 always `transform`.
 
+**`inputs` and `outputs` are the only accepted top-level keys.** Any other one
+raises `TypeError("Unknown signature keys: …")`; in particular there is no
+`function_name` key.
+
 ---
 
 ## Parameter dtype
@@ -48,12 +52,18 @@ A scalar dtype is a plain string. The supported names and their C / numpy / Fort
 | `float32`    | `float`           | `np.float32`   | `real(c_float)`              | `f32`                  |
 | `float64`    | `double`          | `np.float64`   | `real(c_double)`             | `f64`                  |
 | `bool`       | `bool`            | `np.bool_`     | `logical(c_bool)`            | `bool`                 |
-| `char`       | `char`            | `np.bytes_`    | `character(kind=c_char)`     | `c_char` (libc)        |
+| `char`       | `unsigned char` ‡ | `np.bytes_`    | `character(kind=c_char)`     | `u8` ‡                 |
 | `complex64`  | `_Complex float`  | `np.complex64` | `complex(c_float_complex)`   | —                      |
 | `complex128` | `_Complex double` | `np.complex128`| `complex(c_double_complex)`  | —                      |
 
 † Fortran's `iso_c_binding` does not define unsigned integer kinds. Use the
 same bit-width signed kind and treat the bits as unsigned in your implementation.
+
+‡ The schema dtype `char` is **not** the C type `char`. Plain C `char` has
+implementation-defined signedness (signed on x86-64, unsigned on AArch64 Linux)
+while the transformation checksum would be identical, so the generated header
+always declares `unsigned char` (Rust `u8`) — for scalars, array element types
+and struct fields alike.
 
 ### Struct dtypes
 
@@ -179,7 +189,6 @@ A concrete example with one input wildcard (`N`), one output-only wildcard
 (`K`), one scalar input, one array input, and one array output:
 
 ```yaml
-function_name: filter
 inputs:
   - name: threshold
     dtype: float32
@@ -195,7 +204,6 @@ outputs:
 Generated header:
 
 ```c
-/* Auto-generated from filter.yaml; do not edit. */
 #include <stdint.h>
 #include <stdbool.h>
 

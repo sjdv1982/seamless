@@ -66,7 +66,7 @@ This means each language must opt in to the C ABI explicitly:
 - **Fortran**: add `bind(C, name="transform")` to the function declaration and use `iso_c_binding` types
 - **Rust**: declare the function as `#[no_mangle] pub unsafe extern "C" fn transform(...)`
 
-`seamless-signature` currently only generates C headers. For non-C languages, derive the function declaration from the schema or from the generated C header — in practice, a human may pase the schema YAML or `tf.header` and ask you for the equivalent declaration in their language.
+`seamless-signature` currently only generates C headers. For non-C languages, derive the function declaration from the schema or from the generated C header — in practice, a human may paste the schema YAML or `tf.header` and ask you for the equivalent declaration in their language.
 
 For the full schema YAML format, dtype-to-language type mappings, and worked examples of deriving Fortran and Rust signatures, load `contracts/seamless-signature-schema.md`.
 
@@ -126,11 +126,12 @@ Implication: two runs with the same code, schema, and inputs but different optim
 
 ## Input type rules
 
-- Plain Python scalars (`int`, `float`, `bool`) are accepted for scalar parameters.
-- NumPy scalars are accepted if they have the correct dtype and native byte order.
-- NumPy arrays must be native-endian, C-contiguous, and aligned.
-- Non-native-endian inputs are rejected with an explicit `TypeError` (not silently reinterpreted).
+- **Numeric scalar parameters** admit values by **kind and range, not by exact dtype**: a JSON scalar (Python `int`, `float`, `bool`) or a zero-dimensional `binary` scalar of the matching kind, within the native range of the schema type. A zero-dimensional scalar's dtype is not compared with the schema dtype and its byte order plays no part.
+- **Arrays, structured values and character data** keep **exact dtype**: an array is passed as a pointer to its buffer, so its dtype is its memory layout. NumPy arrays must be native-endian, C-contiguous, and aligned.
+- Non-native-endian array inputs are rejected with an explicit `TypeError` (not silently reinterpreted).
 - **Struct parameters** (scalar or array) must be supplied as NumPy structured arrays or scalars with a compatible dtype.
+
+Which pin celltypes may be declared for a given schema parameter, which values each declaration admits (including the exact scalar admission and range rules, character data and nulls), and where validation runs are the compiled-pin contract: `contracts/compiled-pins.md`. The general pin layer — how pins are reached, which pins exist, pin celltypes, optional pins and the null rules — is documented in `contracts/pins.md`; a compiled pin's celltype is governed by the schema, so that page's celltype and null rules do not carry over unchanged.
 
 ## Struct type rules
 
@@ -213,3 +214,5 @@ These settings propagate to the worker as part of the transformation's `__env__`
 
 - `contracts/seamless-signature-schema.md` — full schema YAML format, dtype tables, wildcard rules, shape constraints, and language-native derivation examples
 - `contracts/identity-and-caching.md` — load-bearing vs orthogonal key split, caching model, referential transparency
+- `contracts/pins.md` — the pin layer: reaching pins, the pin set, pin celltypes, optional pins and the null rules, and conversion at the pin boundary
+- `contracts/compiled-pins.md` — the compiled-pin contract: declarable pin celltypes per schema parameter, schema-bound `mixed`, scalar and character admission rules, validation stages and errors

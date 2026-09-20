@@ -8,6 +8,8 @@ This page defines the minimum operational model an agent may rely on when discus
 - **Remote target** (only relevant when `execution: remote`): `jobserver` or `daskserver`.
 - **Mutual exclusivity**: a single configured cluster/frontend should not expose both jobserver and daskserver without explicitly selecting one.
 
+**This page is about Transformations.** Expressions also run on a jobserver or daskserver, but they are placed by a different rule and on a different axis — see *Expressions are placed, not configured* below. Do not read the `execution:` configuration key and an Expression's `execution=` argument as the same setting.
+
 ## Backend semantics (agent assumptions)
 
 1) **`process`**
@@ -26,6 +28,26 @@ This page defines the minimum operational model an agent may rely on when discus
    - Uses Dask as the execution/scheduling substrate.
    - Intended for HPC/distributed throughput; can integrate with schedulers (commonly via `dask-jobqueue` on SLURM/OAR).
    - Operationally: typically long-lived/bundled workers execute many tasks (not one scheduler submission per Seamless step).
+
+## Expressions are placed, not configured
+
+A jobserver or daskserver also evaluates **Expressions** (the jobserver endpoint is `GET /run-expression`). Three differences from the transformation backends above matter:
+
+- **It is not a backend choice but a placement rule.** An Expression is evaluated *where the data is*: local when no buffer is needed or the input buffer is already in this process's memory, otherwise dispatched. Selecting a backend does not turn this on or off.
+- **`execution="auto" | "local" | "remote"` is a per-Expression argument, not the `execution:` config key.** Here `"local"` means *in this process's memory* and `"remote"` means *not in this process's memory* — independently of which transformation backend is configured. A Context fixes the policy for its own Expression jobs with `Context(expression_execution=…)`.
+- **A daskserver is a jobserver *mode* for Expressions**, not a competing backend: both expose the same checksum, error, caching and HashType contracts.
+
+The full rule, the resolution order, the no-silent-fallback rules and the two open placement questions are `contracts/expressions.md`, *Placement*.
+
+## Storage prerequisite (by-checksum submission, shared hashserver)
+
+Remote execution — `jobserver` **and** `daskserver` alike — submits work **by checksum, not by value**. A remote target receives input *checksums*; it **materializes the input buffers server-side from a shared hashserver**, writes produced (non-`scratch`) results back to that hashserver, and records `tf_checksum → result_checksum` in the shared database. So a **shared hashserver and database, reachable by the remote workers, are a hard prerequisite for any remote backend** — they are what make server-side input materialization and result persistence possible. (A minimal local cluster that defines a hashserver/database but no jobserver/daskserver therefore cannot run `execution: remote`; it must use `execution: process` — see `../main/cluster.md`.)
+
+Consequences an agent may rely on:
+
+- **Inputs are not necessarily uploaded at submission.** They may be **pre-present** — staged by a prior upload, or **by design**, when the client already holds the checksum of a large server-side dataset. Only buffers actually missing on the server are staged (e.g. `--upload`, or `--write-remote-job` which implies it).
+- **Results are durable out-of-process.** A remote run's non-`scratch` results live in the shared hashserver/database independently of the submitting client, so tearing the client down does not lose them. (A `scratch` result is the exception: not stored, recomputed at a consumer via input fingertipping — see `contracts/scratch-witness-audit.md`.)
+- **Materialization is content-addressed, not a side effect.** A worker resolving an input checksum is performing materialization, not "reading whatever is on disk" (see `contracts/identity-and-caching.md`).
 
 ## Testing surface
 

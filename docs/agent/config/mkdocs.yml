@@ -12,9 +12,29 @@ nav:
   - Overview: README.md
   - Contracts:
       - Identity and Caching: contracts/identity-and-caching.md
+      - Celltypes, Null, and Conversion: contracts/celltypes-and-conversion.md
+      - HashType: contracts/hashtype.md
+      - Deep Celltypes: contracts/deep-celltypes.md
+      - Expressions: contracts/expressions.md
+      - Cells: contracts/cells.md
+      - Pins: contracts/pins.md
+      - Compiled Pins: contracts/compiled-pins.md
+      - Workflow Context: contracts/workflow-context.md
+      - Node State Lifecycle: contracts/node-state-lifecycle.md
+      - Attachments: contracts/attachments.md
+      - File Mounts: contracts/mounts.md
+      - Cancellation: contracts/cancellation.md
       - direct/delayed/Transformation: contracts/direct-delayed-and-transformation.md
       - Modules and Closures: contracts/modules-and-closures.md
       - Scratch/Witness/Audit: contracts/scratch-witness-audit.md
       - seamless-run/Argtyping: contracts/seamless-run-and-argtyping.md
+      - Cache Storage and Limits: contracts/cache-storage-and-limits.md
+      - Content-addressed Files and Dirs: contracts/content-addressed-files-and-dirs.md
+      - Execution Backends: contracts/execution-backends.md
+      - Execution Records: contracts/execution-records.md
+      - Service Management: contracts/service-management.md
+      - Compression: contracts/compression.md
+      - Compiled Transformers: contracts/compiled-transformers.md
+      - seamless-signature Schema: contracts/seamless-signature-schema.md
   - API (generated): api/
 
