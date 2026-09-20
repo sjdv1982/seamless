@@ -43,6 +43,16 @@ Practical rules:
 - Content-addressed reads are not semantic side effects: resolving a pre-declared checksum is materialization, not “reading whatever is on disk”.
 - Compression (`.zst`, `.gz`) is a materialization detail — it does not affect identity or caching. A compressed and uncompressed form of the same buffer have the same checksum and are cache-equivalent. See `contracts/compression.md`.
 
+### Transformations are not the only thing cached
+
+This page defines the *Transformation* identity and its cache. Three other kinds of entry are keyed and stored by their own identity, and none of them is a transformation-cache entry:
+
+- **Expression results.** An Expression's identity is the 4-tuple `(input_checksum, path, input_celltype, celltype)`, and a successful result is recorded under it — in a process-global cache and in the database `expression` table, with `rev_expression` as its reverse index. Failures are **not** cached, deliberately, unlike a Transformation's exception. See `contracts/expressions.md`.
+- **Conversion results.** A buffer-level celltype conversion that produces a new buffer is recorded as an **empty-path Expression**, so a later conversion between the same two celltypes for the same checksum is an Expression cache hit, not a second conversion. See `contracts/celltypes-and-conversion.md`.
+- **HashType words.** The checksum-level classification of a buffer is cached per checksum, locally and in the database `hash_type` table, and only ever tightens. It is metadata about a checksum, never a result. See `contracts/hashtype.md`.
+
+The local buffer cache, its strong/weak strategy and its eviction pressure are `contracts/cache-storage-and-limits.md`; which buffers may not be evicted at all is the checksum reference lifecycle (`contracts/internal/checksum-reference-lifecycle.md`).
+
 ### Caching masks accidental nondeterminism
 
 A direct consequence of “same `tf_checksum` ⇒ reuse the cached result”: Seamless **does not, by default, observe** accidental nondeterminism (wall-clock reads, unordered-set iteration, non-associative parallel reductions, data races). A transformation is computed **once**, its result is cached under its `tf_checksum`, and every later request is a **cache hit** — the code is never re-run, so a divergent result is never seen.
@@ -56,7 +66,7 @@ A `result_checksum` that differs for the same `tf_checksum` is a **referential-t
 
 ### Concurrent submissions of the same checksum
 
-Because orthogonal-only differences are cache-equivalent, a second submission of an already-running `tf_checksum` under a different orthogonal envelope does not start a second execution. By default it **latches on**: it attaches to the running submission, adopts that submission's envelope, and returns its result *value* (not the latcher's envelope side-effects, e.g. its own direct-print, placement, or record request). A caller that requires its own envelope to execute can opt into `strict` mode (e.g. `--strict` for the CLI), which instead fails while a differently-dundered submission is active — the prior submission must finish or be canceled (`seamless-cancel <tf_checksum>`) first. This reflects a backend limitation — the same `tf_checksum` cannot execute concurrently under two different envelopes — not a property of the identity model.
+Because orthogonal-only differences are cache-equivalent, a second submission of an already-running `tf_checksum` under a different orthogonal envelope does not start a second execution. By default it **latches on**: it attaches to the running submission, adopts that submission's envelope, and returns its result *value* (not the latcher's envelope side-effects, e.g. its own direct-print, placement, or record request). A caller that requires its own envelope to execute can opt into `strict` mode (`strict_dunder=True` in Python; `--strict` on `seamless-run-transformation`, which is the only CLI that offers it), which instead fails while a differently-dundered submission is active — the prior submission must finish or be canceled (`seamless-cancel <tf_checksum>`) first. This reflects a backend limitation — the same `tf_checksum` cannot execute concurrently under two different envelopes — not a property of the identity model.
 
 ## Load-bearing vs orthogonal keys in a transformation dict
 

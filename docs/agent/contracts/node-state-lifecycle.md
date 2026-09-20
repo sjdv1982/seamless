@@ -14,7 +14,7 @@ Code locations:
 | Derivation pass and cell derivation | `seamless_workflow.context.Context` (`_derive_graph`, `_derive_node`, `_derive_cell`, `_apply_pending`, `_apply_upstream_state`, `_source_state`, `_demand`, `_clear_exception`) |
 | Transformer derivation and dispatch | `seamless_workflow.reactive.Reactive` (`_derive_transformer`, `_publish_run`, `_suspend`, `_expire_run`) |
 | Supersession, holds and the run ledger | `seamless_workflow.scheduler` (`Scheduler`, `ContextRuntime.supersede`, `ContextRuntime.prune`, `RunRecord`) |
-| Handle-side reporting | `seamless_workflow.builder_state` (`BoundCellBackend.state` / `.block_reason`, `BoundTransformerBackend.state` / `.block_reason` / `.clear_exception`) |
+| Handle-side reporting | `seamless_workflow.builder_state` (`BoundCellBackend.state` / `.block_reason`, `BoundTransformerBackend.state` / `.block_reason` / `.clear_exception`, `BoundPinBackend.state` reading `Node.pin_states`) |
 | Barriers over states | `seamless_workflow.runtime_api.RuntimeAPI._check_barriers` |
 
 ## The six states
@@ -96,17 +96,18 @@ The winning label among several pending inputs is decided by the precedence in *
 
 - **A cell's own conversion failure is `failed`, not `blocked`.** This is the cell-level counterpart of a transformer's own failure: the work that failed was the cell's, so the exception is the cell's. Contrast the transformer *pin* case above, where the conversion failure belongs to the pin and the transformer node is merely `blocked`.
 - **A mount that cannot sense its file fails the cell** (`failed`) with the sense error, and `clear_exception()` on such a node **re-polls the mount** rather than re-deriving (`contracts/attachments.md`, *Sense errors fail the cell*). The stored value is kept but masked, and unmounting unmasks it.
+- **A cell-level join is plain local Python — no Transformation and no Expression behind it** — assembled in-process from its root value and connected sub-path sources, which is why it is never observed `computing`, only `waiting` then `complete`. This is **provisional**: a future re-implementation is to cache joins and evaluate them where the data is, and **no join identity is promised**. The full observable contract is `contracts/cells.md`, *Cell-level joins*; this table states only where a join sits in the state machine.
 
 ## Block reasons
 
-**The block reason is a first-class, queryable enum**, with exactly two members:
+**The block reason is a first-class, queryable enumeration**, with exactly two members:
 
 | reason | means | the user action it implies |
 |---|---|---|
 | `blocked-by-unwired` | something upstream is not connected | wire something |
 | `blocked-by-error` | something upstream failed | fix code or data |
 
-Both are the one state `blocked` — both need an external change to leave — but they imply different user actions, so the reason must be inspectable by UIs and tests rather than recoverable only from prose.
+The two members are those **literal strings**; `BlockReason` (and `NodeState` above) is a `Literal` type alias, not an `enum.Enum`, so compare against the string and do not expect member attributes. Both reasons are the one state `blocked` — both need an external change to leave — but they imply different user actions, so the reason must be inspectable by UIs and tests rather than recoverable only from prose.
 
 ### Precedence
 

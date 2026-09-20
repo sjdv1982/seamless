@@ -2,7 +2,7 @@
 
 **A buffer survives because a live object makes a semantic claim on its checksum.** The claim is registered, attributable, acquired once per role and released once per role, and it is audited at shutdown. Nothing else keeps data from being demoted: not a `Checksum` object, not a tempref, not a remote registration.
 
-This mechanism is **internal**. It is deliberately not a page of `seamless/docs/agent/contracts/`, because it is not user-visible behaviour — the only trace a user ever sees is a `seamless.references` warning at shutdown. It nevertheless needs a precise written contract, and this repository is where that contract lives.
+This mechanism is **internal**. It is deliberately not one of the main pages of `seamless/docs/agent/contracts/` — it lives one level down, in `contracts/internal/`, apart from the user-visible contract pages — because it is not user-visible behaviour: the only trace a user ever sees is a `seamless.references` warning at shutdown. It nevertheless needs a precise written contract, and this repository is where that contract lives.
 
 > **Do not confuse this with the workflow node state lifecycle.** That is the `Context`'s six-state node machine, its cascade and its speculative supersession — user-visible behaviour, documented in the agentic contracts. This document is about who keeps a checksum's buffer alive.
 
@@ -236,6 +236,8 @@ The core architecture and the production migrations exist. Two defects were fixe
 **Until those land, existing green tests are not completion evidence.** The forced-cap helper leaves remote resolution and recomputation controls to callers; the named forced-cap coverage proves only a Cell case; existing shutdown coverage does not prove the full atexit / cleanup-exception / corrupted-bridge matrix; helper-dispatch Dask tests do not exercise the real cached/thin/fat branches; partial happy paths do not prove every role multiplicity; and a delayed-dependency test that expires data only after all dependencies finish does not prove per-result adoption before the next wait.
 
 **One open imbalance**: a refholder-balance warning at `seamless.close()` on a `Cell` / `SubCell` derivation path with shared input checksums. Observed, not yet diagnosed; it looks like a real imbalance rather than an audit artefact.
+
+**Design intent, not yet built: where the cancellation waiting set will meet this lifecycle.** The materialization-layer linger before a softcancel's abort (`contracts/cancellation.md`, *Materialization is the same pattern, one layer down*) does not exist in code yet. Once it does, the waiting-set site itself is expected to hold a lifecycle claim on the checksum for the duration of the linger and release it when the abort fires — an unreleased claim there is exactly what the shutdown audit above should catch. This is recorded from a 2026-09-17 design discussion, not yet verified against code.
 
 Tests are run **one process per file**: process-global cache and refholder state carries between files, and combining Seamless test files in one pytest run produces spurious failures.
 
