@@ -1,6 +1,6 @@
 # The node state lifecycle (Contract)
 
-**A workflow node is always in exactly one of six states, and every one of them is *derived*, never assigned.** The Context is a DAG of nodes plus a runtime that keeps it in equilibrium (`contracts/workflow-context.md`); this page is the state machine that runtime implements — what the six states mean, how each is derived from a node's own configuration and its upstreams, how a change cascades through the downstream cone without ever producing an inconsistent intermediate result, how superseded work is speculatively retained, and how a user reclaims it.
+**A workflow node is always in exactly one of seven states, and every one of them is *derived*, never assigned.** The Context is a DAG of nodes plus a runtime that keeps it in equilibrium (`contracts/workflow-context.md`); this page is the state machine that runtime implements — what the seven states mean, how each is derived from a node's own configuration and its upstreams, how a change cascades through the downstream cone without ever producing an inconsistent intermediate result, how superseded work is speculatively retained, and how a user reclaims it.
 
 A **node** is a Context-bound builder — `ctx.a`, `ctx.tf` — and `Cell`, `Pin` and `Transformer` handles are *views* onto one (`contracts/workflow-context.md`, `contracts/cells.md`, `contracts/pins.md`). State is a property of the node, so two handles onto one node always report the same state, and a handle carries none of it.
 
@@ -17,16 +17,19 @@ Code locations:
 | Handle-side reporting | `seamless_workflow.builder_state` (`BoundCellBackend.state` / `.block_reason`, `BoundTransformerBackend.state` / `.block_reason` / `.clear_exception`, `BoundPinBackend.state` reading `Node.pin_states`) |
 | Barriers over states | `seamless_workflow.runtime_api.RuntimeAPI._check_barriers` |
 
-## The six states
+## The seven states
 
 | state | meaning |
 |---|---|
 | `unwired` | not yet sufficiently connected |
+| `miswired` | connected, but an incoming edge carries **both a path and a conversion** — statically ill-formed, no work attempted |
 | `blocked` | sufficiently connected, but some upstream is unwired, blocked or failed — **not itself errored** |
 | `waiting` | the node's inputs are not all concrete checksums yet |
 | `computing` | the node's inputs are concrete and its own work has been **submitted** — queued behind backend concurrency, or already running |
 | `complete` | a result checksum is available |
 | `failed` | this node's **own** evaluation failed |
+
+**`miswired` is a static defect, not a failure.** A node is `miswired` when an incoming edge carries **both a path and a conversion** — the edge projects into its source *and* that source's celltype differs from this node's `celltype`. No work is attempted, so there is no exception; the node carries a repair description naming the edge, the two celltypes and the two disambiguating spellings (`contracts/cells.md`). Writing such an edge **directly raises** instead: an invalid request raises, and only a *valid* request that invalidates someone else's wiring — retyping a source that has projecting consumers — leaves a node `miswired`. `Context.set_graph` **derives** the state rather than rejecting the graph, so a graph can be saved and handed on mid-repair.
 
 Three rules fix the vocabulary. They are the places where a plausible reading is wrong.
 
@@ -43,14 +46,14 @@ Three rules fix the vocabulary. They are the places where a plausible reading is
 
 | kind | states | leaves only via |
 |---|---|---|
-| equilibrium | `complete`, `failed`, `blocked`, `unwired` | an **external change** |
+| equilibrium | `complete`, `failed`, `blocked`, `unwired`, `miswired` | an **external change** |
 | out of equilibrium | `waiting`, `computing` | **autonomously** |
 
 An external change perturbs; the Context relaxes. Nothing else moves a node.
 
 - **Quiescence ⇔ no node is `waiting` or `computing`.** Within scope — a DAG of reproducible transformations — quiescence is guaranteed reachable in finite steps after a finite burst of edits.
 - **Quiescence is a property of node states only.** A `complete` node may still have a **superseded run in flight** — work that is obsolete by construction and whose result nothing will consume. It does not count against quiescence. So **quiescent ≠ cluster-idle**; `prune` is what makes the two coincide (below, and `contracts/workflow-context.md`).
-- **Quiescence ≠ success.** Equilibrium includes `failed`, `blocked` and `unwired`. Success is the strictly stronger condition that every witness or otherwise observable node is `complete`. A graph-wide barrier returning is a statement about motion, not about outcomes.
+- **Quiescence ≠ success.** Equilibrium includes `failed`, `blocked`, `unwired` and `miswired`. Success is the strictly stronger condition that every witness or otherwise observable node is `complete`. A graph-wide barrier returning is a statement about motion, not about outcomes.
 
 ## Connectivity: when is a node sufficiently connected
 
@@ -100,46 +103,47 @@ The winning label among several pending inputs is decided by the precedence in *
 
 ## Block reasons
 
-**The block reason is a first-class, queryable enumeration**, with exactly two members:
+**The block reason is a first-class, queryable enumeration**, with exactly three members:
 
 | reason | means | the user action it implies |
 |---|---|---|
 | `blocked-by-unwired` | something upstream is not connected | wire something |
 | `blocked-by-error` | something upstream failed | fix code or data |
+| `blocked-by-miswiring` | something upstream is `miswired` | re-wire it with an explicit conversion |
 
-The two members are those **literal strings**; `BlockReason` (and `NodeState` above) is a `Literal` type alias, not an `enum.Enum`, so compare against the string and do not expect member attributes. Both reasons are the one state `blocked` — both need an external change to leave — but they imply different user actions, so the reason must be inspectable by UIs and tests rather than recoverable only from prose.
+The three members are those **literal strings**; `BlockReason` (and `NodeState` above) is a `Literal` type alias, not an `enum.Enum`, so compare against the string and do not expect member attributes. All three are the one state `blocked` — each needs an external change to leave — but they imply different user actions, so the reason must be inspectable by UIs and tests rather than recoverable only from prose.
 
 ### Precedence
 
 When several inputs are pending at once (author's ruling, 2026-09-18):
 
 ```
-unwired  >  blocked-by-unwired  >  blocked-by-error  >  waiting
+miswired  >  unwired  >  blocked-by-miswiring  >  blocked-by-unwired  >  blocked-by-error  >  waiting
 ```
 
+- **A local defect wins over routine incompleteness.** `unwired` is a state every node passes through while a graph is built; `miswired` is always a defect, and no amount of further wiring dissolves it. If `unwired` won, a miswired edge on a join would hide behind an unwired sibling edge until the wiring was finished — exactly when it should already have been visible. The same tiebreak carries over to the upstream reasons, which is why `blocked-by-miswiring` beats `blocked-by-unwired`.
 - **A *locally* missing input wins outright**: the node is `unwired`, not `blocked`. A node that is not sufficiently connected is never described in terms of its upstreams.
 - **Among upstreams, `blocked-by-unwired` beats `blocked-by-error`.** The rationale: **having all inputs wired — the correct topology — has priority over errors, which are about correct values**; and an errored upstream is quite often errored *only* because something below *it* is still unwired. Report the missing wiring first, because fixing it may dissolve the error.
 - **`waiting` loses to every blocking reason.** A node with one progressing input and one blocked input is `blocked`, not `waiting`: the progressing input will settle on its own, the blocked one will not, so the honest report is that the node is stuck.
 
 ### Where each form is visible
 
-Note the deliberate asymmetry: a cell has one input, a transformer has many, so **a transformer names its inputs** while a cell reports the category.
+**Both forms are the same shape: a dict from input to reason.** A node with one input reports the bare enum, because there is nothing to name; a node with several — a transformer, or a cell that is a join — reports `{input: reason}`, keyed by pin name or by edge. There is no separate field for “which category won”: it is the maximum of the dict's values under the precedence below.
 
 | Read | Reports |
 |---|---|
-| a bound Cell's `.block_reason` (including `tf.result`) | the **enum**, or `None` |
-| a bound Transformer's `.block_reason` | the **sorted list of input pin names** responsible, including `"code"`; a **detached copy** (mutating it changes nothing); `None` unless the node is `unwired`, `blocked` or `waiting` |
+| a bound Cell's `.block_reason` (including `tf.result`) | the **enum**, or `None` — except on a cell carrying edges **beyond the root edge**, where it is a **dict** keyed by edge, values the enum; a **detached copy** |
+| a bound Transformer's `.block_reason` | a **dict** `{pin name: reason}` covering every responsible input, including `"code"`; a **detached copy** (mutating it changes nothing); `None` unless the node is `unwired`, `miswired`, `blocked` or `waiting` |
 
-Which pins the transformer's list names:
+**Every responsible input appears, in every state, with its own reason.** The dict is the complete report, so there is no mode in which it is filtered to the winning category and no second surface to disagree with it — `tf.result.block_reason` is simply the ordinary cell reading of the result endpoint, not the authority on which category won. **The precedence decides the label, never the completeness of the dict.** `contracts/pins.md` states the same from the handle side.
 
-- in **`unwired`** and **`waiting`**: the pins in the **winning category** only;
-- in **`blocked`**: **every** pin blocked for either reason, so the list is the full set of inputs needing attention while the enum (on `tf.result.block_reason`) says which category won.
+**A join names its edges.** A cell with any one-level sub-path edge reports a **dict** in place of a bare enum: keys are the edge paths, with the literal `"<root>"` standing for the root edge — whose path string is `""` and would otherwise be an invisible key — and values the enum. Only blocking edges appear. The **shape is decided by topology, not by state**, so a consumer knows which form to expect from the graph alone, and the winning category is the maximum by the precedence above rather than a second field: unlike a transformer, a cell has no `.result` handle to carry one.
 
-**The precedence decides the label, never the completeness of the list.** `contracts/pins.md` states the same split from the handle side.
+**`.state` says whether the defect is local; the dict says where to look.** A `blocked-by-miswiring` entry means a miswiring *at or above* that edge, exactly as `blocked-by-unwired` already names a missing wire any distance upstream. When the node's own state is **`miswired`** the walk terminates at the named edge; when it is `blocked`, follow that edge upstream. No fourth enum member is needed for "this edge itself".
 
 ### Transitivity
 
-**Both reasons propagate.** A consumer of an error-blocked node is itself `blocked-by-error`; a consumer of an unwired or unwired-blocked node is `blocked-by-unwired`; where both apply, the precedence above decides. A downstream node therefore reports **why the graph is stuck**, not merely that its immediate input is not ready — a node ten edges below a missing wire still says `blocked-by-unwired`.
+**All three reasons propagate.** A consumer of an error-blocked node is itself `blocked-by-error`; a consumer of an unwired or unwired-blocked node is `blocked-by-unwired`; a consumer of a `miswired` node — or of one already `blocked-by-miswiring` — is `blocked-by-miswiring`; where several apply, the precedence above decides. A downstream node therefore reports **why the graph is stuck**, not merely that its immediate input is not ready — a node ten edges below a missing wire still says `blocked-by-unwired`.
 
 ## Leaving a state
 
@@ -266,8 +270,8 @@ The barrier API itself is `contracts/workflow-context.md`; only what depends on 
 
 | Barrier | Waits until | Then |
 |---|---|---|
-| **node barrier** — `ctx.a.compute()` | the node **and its upstream cone** are out of `waiting`/`computing` | `failed` → **re-raises the node's recorded exception**; `unwired` or `blocked` → raises `NodeError` naming the state **and the block reason**; otherwise returns the checksum |
-| **graph-wide barrier** — `ctx.compute()` | **no node** is `waiting` or `computing` | returns; it does **not** raise for nodes that settled into `blocked`, `unwired` or `failed` |
+| **node barrier** — `ctx.a.compute()` | the node **and its upstream cone** are out of `waiting`/`computing` | `failed` → **re-raises the node's recorded exception**; `unwired`, `miswired` or `blocked` → raises `NodeError` naming the state **and** the block reason or repair description; otherwise returns the checksum |
+| **graph-wide barrier** — `ctx.compute()` | **no node** is `waiting` or `computing` | returns; it does **not** raise for nodes that settled into `blocked`, `unwired`, `miswired` or `failed` |
 
 - **The graph-wide barrier is a statement about motion, not about outcomes.** Quiescence is not success; check states afterwards.
 - A handle whose node no longer exists raises `StaleWorkflowHandleError`.
@@ -296,5 +300,5 @@ The barrier API itself is `contracts/workflow-context.md`; only what depends on 
 - **Mandatory preemption** of a superseded run's slot in favour of a current run elsewhere; `prune` is the supported control.
 - **Epoch-stamping of the invalidation cone.** The cone is marked **eagerly**; a generation/epoch scheme was considered and rejected.
 - **A "constructing" state**, and any state whose derivation depends on a backend reporting start-of-execution.
-- **A single `status` string** folding `waiting` and `computing` into one "pending": removed in favour of the six-state vocabulary plus `block_reason`.
+- **A single `status` string** folding `waiting` and `computing` into one "pending": removed in favour of the seven-state vocabulary plus `block_reason`.
 - **Cycles**, and **automatic retry** of any kind.
