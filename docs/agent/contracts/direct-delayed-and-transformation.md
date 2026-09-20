@@ -25,6 +25,17 @@ v2 = tf.run()          # resolves checksum into the value
 
 If you call the same transformer again with the same explicit inputs, Seamless may reuse cached results (when available) rather than recomputing.
 
+## What the decorators return
+
+**`delayed(...)` and `direct(...)` return a *Transformer*, not a Transformation.** The Transformation is what *calling* it produces. That matters because the returned object is exactly the builder the rest of the corpus talks about:
+
+- its inputs are pins — `tf.pins.x`, `tf.celltypes.x`, `tf.celltypes.result`, `tf.optional_pins` — specified in `contracts/pins.md`, which is where the two write families, the null rules and conversion at the pin boundary live. A pin may be pre-bound (`tf.pins.x = v`) instead of passed at the call;
+- it carries the orthogonal execution envelope: `scratch`, `direct_print`, `local`, `environment`, `meta` (`contracts/identity-and-caching.md`);
+- `delayed(code, language)` takes a **code string with a language** as well as a callable. A callable fixes the pin set from its signature and makes each defaulted parameter an optional pin; signature-less code (`"bash"` and friends) has the user declare the pins. Both cases are `contracts/pins.md`, *Which pins exist*;
+- a compiled transformer is the same shape under a schema: `contracts/compiled-transformers.md`, `contracts/compiled-pins.md`.
+
+In a workflow Context the same builder is bound to a node rather than held by hand — `ctx.tf = f` — and the handle is then a view (`contracts/workflow-context.md`).
+
 ## `direct`
 
 - Treat `direct(f)` as “call returns the value now”.
@@ -33,7 +44,7 @@ If you call the same transformer again with the same explicit inputs, Seamless m
 
 ## `delayed`
 
-- Treat `delayed(f)` as “call returns a `Transformation` handle”.
+- Treat `delayed(f)` as “**calling the returned Transformer** returns a `Transformation` handle”.
 - `delayed` is the default for pipelines: you can build a graph of handles and decide when/how to run them.
 - Constructing a delayed `Transformation` snapshots its concrete (non-dependency) inputs to checksums at construction time. A malformed concrete input can therefore raise when the handle is **built**, not only when it is run — building a handle you never intend to run is not guaranteed to be error-free. Transformation-valued inputs remain unresolved dependency edges and are not snapshotted.
 

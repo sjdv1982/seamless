@@ -27,6 +27,10 @@ outputs:
 (use an empty list if a side is absent). The compiled entry-point name is
 always `transform`.
 
+**`inputs` and `outputs` are the only accepted top-level keys.** Any other one
+raises `TypeError("Unknown signature keys: …")`; in particular there is no
+`function_name` key.
+
 ---
 
 ## Parameter dtype
@@ -185,7 +189,6 @@ A concrete example with one input wildcard (`N`), one output-only wildcard
 (`K`), one scalar input, one array input, and one array output:
 
 ```yaml
-function_name: filter
 inputs:
   - name: threshold
     dtype: float32
@@ -201,7 +204,6 @@ outputs:
 Generated header:
 
 ```c
-/* Auto-generated from filter.yaml; do not edit. */
 #include <stdint.h>
 #include <stdbool.h>
 

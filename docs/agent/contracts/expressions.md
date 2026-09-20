@@ -76,7 +76,7 @@ The dummy case is a required special case, not an optimization: `.set_checksum` 
 
 ## Cost class
 
-**An Expression's cost class is a function of its identity tuple `(input_celltype, path shape, celltype)`, and never of the data behind the checksum.** An agent can decide from the definition alone whether an Expression is free, one-buffer, or a fan-out; that is why deep fan-out is restricted (below) and why placement can be decided before any buffer is touched.
+**An Expression's cost class is decided from checksum-level facts alone, never from the buffer content behind the checksum.** A non-empty path always costs one buffer, regardless of which checksum is at the root — shape alone decides. An empty path is not always free, though: whether it needs a buffer also turns on the specific checksum's nullity and on what its cached `HashType` already proves, so two Expressions with the same `(input_celltype, path shape, celltype)` shape are not guaranteed the same cost (contrast the deep celltypes, `contracts/deep-celltypes.md`, where no conversion branches on anything but the declared celltypes, so shape alone does decide). An agent can always decide cost class without touching a buffer; that is why deep fan-out is restricted (below) and why placement can be decided before any buffer is touched.
 
 Concretely, an Expression needs a buffer if and only if:
 
@@ -89,14 +89,14 @@ Before evaluation, `validate_expression[_async]` checks the source celltype, the
 
 - Successful results are recorded in a process-global dict `get_expression_cache()`, keyed by the 4-tuple, value = result checksum; and, when `seamless_remote` is importable, in the database `expression` table.
 - A newly produced result buffer is kept in a weak-valued map, given a buffer-cache tempref, and **classified**: `register_hash_type_for_buffer` runs in the process that produced the buffer.
-- `Expression.checksum` is an alias of `Expression.result`: the published result checksum or `None`. Reading it also expresses user result interest (a refholder claim on the result; see the checksum reference lifecycle).
+- `Expression.checksum` is an alias of `Expression.result`: the published result checksum or `None`. Reading it also expresses user result interest (a refholder claim on the result; `contracts/internal/checksum-reference-lifecycle.md`).
 - `Expression.compute(execution="auto")` / `compute_async(execution="auto")` return the result checksum. `Expression.run()` (also `expr()`) computes and then materializes the value: local buffers first, then `Checksum.resolve()`, which asks the hashserver and raises `CacheMissError` when no buffer is found. `run()` does not fingertip.
 
 ## Placement: an Expression is evaluated where the data is
 
-Placement **is** contract. A jobserver/daskserver counts as closer to the hashserver than the client, so an input the client does not hold is evaluated there rather than downloaded.
+Placement **is** contract. A jobserver/daskserver counts as closer to the hashserver than the client, so an input the client does not hold is evaluated there rather than downloaded. What is contract is the *rule for choosing* where to evaluate; placement is no more part of an Expression's identity than it is part of a Transformation's — the identity is the 4-tuple above, and the result must not depend on where the Expression ran (below).
 
-`execution` takes `"auto"`, `"local"` or `"remote"`. `"auto"` is the default on every path that evaluates an Expression: `Expression.compute` / `compute_async` / `run`, transformation dependencies, pin preparation, and workflow Context projections (`Context(expression_execution=...)` overrides it for one Context).
+`execution` takes `"auto"`, `"local"` or `"remote"`. **These three values are an argument on an Expression, not the `execution:` configuration key that selects a transformation backend** (`contracts/execution-backends.md`); the words `local` and `remote` mean something narrower here. `"auto"` is the default on every path that evaluates an Expression: `Expression.compute` / `compute_async` / `run`, transformation dependencies, pin preparation, and workflow Context projections (`Context(expression_execution=...)` overrides it for one Context).
 
 - **`"local"` means *in this process's memory*.** **`"remote"` means *not in this process's memory*, independently of backend availability.** `choose_expression_evaluation_location` answers only that question: local if no buffer is needed, or if the input buffer is already resolvable from process-local caches; remote otherwise.
 
@@ -183,6 +183,15 @@ The linger is an internal constant — "a few seconds, not contractual" — at m
 - after the last waiter leaves, a fetch may run on for a few seconds;
 - it may still complete, and its result is then recorded and usable;
 - the site holds a lifecycle claim meanwhile, so a `seamless.close()` landing in that window can block briefly or report an outstanding claim.
+
+### Why deregistration, not task cancellation
+
+Cancelling the caller's `asyncio` task is the right way to make it abandon an Expression — it unwinds the caller's own awaits — but task cancellation is not itself the deregistration mechanism, for four reasons:
+
+- **it does not deregister**: cancellation knows nothing about the waiting set, so each site must leave the set in its own cleanup path, synchronously or under a shield, since an `await` inside an already-cancelled task raises at once;
+- **it does not protect shared work**: if the caller's task *owns* the fetch rather than merely awaiting it, cancelling that task kills the fetch for every latched waiter too — a hard cancel in disguise. Shared work must instead be owned by a task belonging to the materialization site, with each waiter awaiting a derived or shielded future;
+- **it does not stop what is not an `await`**: a thread (`asyncio.to_thread`), a subprocess, a jobserver request or a Dask future all keep running and keep holding their resource once the awaiting task is abandoned — the Dask case in *Implementation status* below is one instance of this;
+- **it gives no delay**: a linger is by definition not "cancel the child the moment the parent is cancelled", so the site's task must outlive every individual waiter.
 
 ### API
 

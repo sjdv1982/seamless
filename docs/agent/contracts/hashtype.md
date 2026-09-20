@@ -113,6 +113,8 @@ Evaluated in order:
 | `mixed` | kind not `RAW_BYTES`/`RAW_TEXT` |
 | `checksum` | kind `RAW_TEXT` or `JSON_NUMBER` (an all-digit digest is a JSON number) and `EQ64` (hex validity is left to the parser) |
 
+**A `celltype` outside the 13 above** — a deep celltype (`deepcell`, `deepfolder`, `folder`) or `module` — matches none of the branches above, and the function's final fallthrough is `return False`. This is why every deep-celltype or `module` Expression currently raises `HashTypeValidationError` before evaluation: see `contracts/deep-celltypes.md`, "Current status: none of this is enforced yet".
+
 ### `capabilities(source_celltype) -> set` (expression capability)
 
 Records which path steps the **root** structure admits: `"SEQ"` (positional item/slice) and `"MAP"` (string key).

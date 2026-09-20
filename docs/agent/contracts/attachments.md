@@ -31,13 +31,13 @@ An attachment attaches to a **whole cell node of a workflow Context**, and to no
 |---|---|
 | a bound whole cell node | the only legal target |
 | a standalone `Cell` | `AttributeError("mount is only available for bound workflow cells")` — the bound-only error `Cell` already uses for Context-only members |
-| a sub-path projection (`ctx.a.b`), or a read-only handle | `AttributeError("Only whole Context cell nodes can be mounted")` |
+| a sub-path projection (`ctx.a.b`), or a read-only handle — **including a transformer's result, `ctx.tf.result`** | `AttributeError("Only whole Context cell nodes can be mounted")` |
 | a transformer pin | no `mount` member exists at all (`AttributeError`); see `contracts/pins.md` |
 | transformer code | not a cell handle; there is no `mount` on it |
 | a missing node, or a transformer node | `NodeError("Mounts require an existing whole cell node")` |
 | a node that already has one | `ValueError("Cell is already mounted; unmount first")` |
 
-**The remedy for every exclusion is the same: attach a cell and connect it.** `ctx.code = Cell(celltype="python"); ctx.code.mount("code.py"); ctx.tf.code = ctx.code` is the supported way to edit transformer code externally. This is not a temporary limitation: only nodes carry checksums, only a Context has a controller and an update stream, and an attachment's whole discipline is built on the node being the unit of change.
+**The remedy for every exclusion is the same: attach a cell and connect it**, in whichever direction the value flows. `ctx.code = Cell(celltype="python"); ctx.code.mount("code.py"); ctx.tf.code = ctx.code` is the supported way to edit transformer code externally; `ctx.out = ctx.tf.result; ctx.out.mount("outdir", mode="w")` is the supported way to write a transformer's result out. This is not a temporary limitation: only nodes carry checksums, only a Context has a controller and an update stream, and an attachment's whole discipline is built on the node being the unit of change.
 
 **Only the whole node value is attached.** There are no sub-path attachments: a sub-path write is a read-modify-set transaction on the root (`contracts/cells.md`), and an attachment that owned part of a root value would have no checksum of its own to compare against.
 
@@ -295,11 +295,12 @@ Smaller divergences and rough edges:
 - **Delivery retries are dispatched by the post-turn pass, and `_mount_tick` is an explicit no-op.** The attachment layer owns no timer. In practice the file driver's broker enqueues one `_mount_tick` message per registration per poll interval, and since the post-turn pass runs after **every** turn, a due backoff fires within about one poll interval even on an otherwise idle Context (measured: ~1.5 s for the first, 1 s retry). A driver that sends no tick — `ManualDriver` — fires a due retry only when something else causes a turn; `ctx.mounts.sync()` is one.
 - **A failure inside the observation handler becomes `session.error` as a bare `MountError(str(exc))`**, without the `"<path>: "` prefix that every other `MountError` carries. It is a can't-happen path (the authority check cannot fail while the edge rule holds), but the prefix contract does not hold for it.
 - **Malformed internal messages are dropped silently.** `_mount_delivered` and `_mount_cut` validate their payload shape and return without effect on anything unexpected, because they run as class-5 messages and raising would poison ingress.
-- **Deferred, and not in this version:** attaching a standalone `Cell`, sub-path attachments, attaching a transformer pin or code handle, attaching a whole sub-Context to a directory with automatic child paths, and continuous external ownership (an `edit_policy="external-owned"` that would forbid later user assignment). The last is deferred with a named condition: if it is added it gets its own name and specification, and must **not** be expressed by redefining `authority="file"`.
 
 ## Non-goals
 
 - **A plugin API.** See the top of this page. The contract describes the attachments that exist.
+- **Standalone, sub-path, pin and code mounts.** Only a bound whole cell node can be mounted (see *Scope*, above) — this is architectural, not a version gap: a standalone `Cell` has no controller, a sub-path write is a read-modify-set transaction on the root with nothing of its own to compare against, and a pin or code handle is not a cell. The remedy is always the same: attach a cell and connect it.
+- **Continuous external ownership** (an `edit_policy="external-owned"` that would forbid later user assignment). Deferred with a named condition: if it is added it gets its own name and specification. `contracts/mounts.md` has the file driver's constraint on how it must **not** be expressed (not by redefining `authority="file"`).
 - **Cross-process locking or exclusivity.** The registry is a safety net within one process (`contracts/mounts.md`); two processes sharing a resource are handled by conditional writes and the detector, not prevented.
 - **A settledness predicate without a cut.** `settled()` was considered and rejected.
 - **Hard cancellation of an in-flight delivery.** It is never cancelled, by design: the write is either done or not, and cancelling it would leave the belief about the resource undefined.

@@ -30,7 +30,11 @@ Looking for legacy Seamless (0.x)? Use the legacy docs at `/legacy/`.
 | `contracts/service-management.md` | `seamless-service-resolve`, `rhl-*` helpers, false-pass protocol |
 | `contracts/execution-records.md` | Per-transformation records in `seamless.db`; minimal vs full mode, write-once semantics |
 | `contracts/direct-delayed-and-transformation.md` | Transformation model, `direct`/`delayed` decorators |
-| `contracts/scratch-witness-audit.md` | Scratch, witness, and audit trail semantics |
+| `contracts/scratch-witness-audit.md` | Scratch, witness, and audit trail semantics; fingertipping as recompute-on-absence |
+| `contracts/seamless-run-and-argtyping.md` | The `seamless-run` CLI: argtyping, `--var` vs `--metavar`, canonicalization, manual remote deployment |
+| `contracts/cache-storage-and-limits.md` | What is cached at a high level; the local buffer cache and its memory pressure |
+| `contracts/content-addressed-files-and-dirs.md` | Files and directories as checksums; the deep index as a directory identity |
+| `contracts/modules-and-closures.md` | Content-bound code: embedding modules, environment envelopes, closures as implicit inputs |
 | `contracts/compiled-transformers.md` | C/C++/Fortran/Rust + open language set; identity model and pure-function constraint |
 | `contracts/compiled-pins.md` | Compiled transformer input pins: the C ABI rules, schema-derived celltypes and the declaration whitelist, `mixed` as auto, the two validation stages and where they run, scalar and character admission, null, errors |
 | `contracts/seamless-signature-schema.md` | Schema YAML format used by compiled transformers; dtype/shape/wildcard rules |

@@ -87,15 +87,15 @@ Two rules are worth stating separately:
 | Call | Waits until |
 |---|---|
 | `ctx.compute(timeout=None)` / `await ctx.computation(timeout=None)` | **no node in the Context** is `waiting` or `computing` |
-| `node.compute(timeout=None)` / `await node.computation(timeout=None)` (a Cell, Pin or Transformer handle) | **that node and its upstream cone** are no longer `waiting` or `computing` |
-| `ctx.mounts.sync(timeout=None)` / `await ctx.mounts.synchronization(timeout=None)` | the **external** cut is settled: every file change before the final cut has been sensed and propagated, the graph is quiescent, and every complete node value is on disk or its mount reports why not. Returns a `SyncReport` (`contracts/attachments.md`, `contracts/mounts.md`) |
+| `node.compute(timeout=None)` / `await node.computation(timeout=None)` (a Cell, Pin or Transformer handle) | **that node and its upstream cone** are no longer `waiting` or `computing` — for a Pin, which has no node of its own, this is its **owning Transformer's** barrier (`contracts/pins.md`) |
+| `ctx.mounts.sync(timeout=None)` / `await ctx.mounts.synchronization(timeout=None)` | the **external** cut is settled: every external change before the final cut has been sensed and propagated, the graph is quiescent, and every complete node value has been delivered to its resource or its attachment reports why not. Returns a `SyncReport`. The barrier is driver-generic (`contracts/attachments.md`); it is spelled `mounts` because the file driver is the only production one (`contracts/mounts.md`) |
 
 - A barrier is a **predicate installed in a turn** and satisfied in the turn that makes it true; the caller is released then.
 - **A barrier timeout raises `TimeoutError`.** Both a timeout and an async cancellation **withdraw the predicate without cancelling any graph work**: a barrier is a wait, never a control operation.
 - A barrier on a path whose node has been deleted raises `StaleWorkflowHandleError`.
 - A **reading** barrier — the form behind a bound `compute()` that returns a checksum — additionally reports the outcome. If the node settles in `unwired` or `blocked` it raises a `NodeError` naming the state and the block reason; if it settles in `failed` it raises the node's own recorded exception.
 - **Quiescence is a property of node states only.** A `complete` node may still have a superseded run in flight; see *Speculation control* below, and `contracts/node-state-lifecycle.md` for what the states mean.
-- **`compute()` stays graph-only and never waits for files.** External settlement is a separate barrier, `ctx.mounts.sync()`, and it is stateful: it cuts, waits for quiescence, waits for deliveries, and starts another round if anything moved. `contracts/attachments.md` specifies it; there is deliberately no `settled()` predicate.
+- **`compute()` stays graph-only and never waits for external state.** External settlement is a separate barrier, `ctx.mounts.sync()`, and it is stateful: it cuts, waits for quiescence, waits for deliveries, and starts another round if anything moved. `contracts/attachments.md` specifies it; there is deliberately no `settled()` predicate.
 
 ## Writes through the Context
 
@@ -103,7 +103,7 @@ The write families and the authority rule that separates them are in `contracts/
 
 - **Serialization happens before ingress.** A value is serialized, and transformer code and builders are prepared, on the caller's side; the controller receives checksums.
 - **A whole-checksum write is validated against the node celltype using HashType metadata, and then installed without resolving it.** The buffer need not be present. The consequences of an unresolvable checksum appear later, at a read (`contracts/hashtype.md`, `contracts/cells.md`).
-- **A sub-path write is one optimistic transaction.** Lease the current root checksum in a turn, resolve and modify it off the controller, then commit conditionally against the base checksum and the node revision. A losing commit retries, **at most eight times**, and then raises `ConcurrentUpdateError`. If the root has no checksum and the node is `waiting` or `computing`, the write waits on a barrier and retries; otherwise it raises `ValueUnavailableError` — except that a string/attribute path into an *unwired* cell starts from an empty mapping. This is the read-modify-set model of `contracts/cells.md`, and the Context is what serializes it.
+- **A sub-path write is one optimistic transaction.** Lease the current root checksum in a turn, resolve and modify it off the controller, then commit conditionally against the base checksum and the node revision. A losing commit retries, **at most eight times**, and then raises `ConcurrentUpdateError`. If the root has no checksum and the node is `waiting`, the write waits on a barrier and retries; otherwise it raises `ValueUnavailableError` — except that a string/attribute path into an *unwired* cell starts from an empty mapping. This is the read-modify-set model of `contracts/cells.md`, and the Context is what serializes it. (A sub-path write always targets a cell node, which is never `computing` — `contracts/node-state-lifecycle.md`.)
 - **Assignment detaches edges covered by the write; an explicit `set` does not** — again `contracts/cells.md`, and again a root-level act only.
 
 ## Speculation control: `prune`
@@ -158,7 +158,7 @@ Only the operations this page specifies are listed; handle-level calls are in `c
 | `NodeError` | an assignment mismatches the node kind, or a reading barrier settles in `unwired` or `blocked` |
 | `ReadOnlyEndpointError` | a producer operation targets a transformer's result |
 | `DependencyError` | a new edge would close a cycle |
-| `ValueUnavailableError` | a sub-path write finds no root checksum and the node is not `waiting` or `computing` |
+| `ValueUnavailableError` | a sub-path write finds no root checksum and the node is not `waiting` |
 | `ConcurrentUpdateError` | a sub-path commit loses eight times |
 | `TimeoutError` | a barrier times out; the predicate is withdrawn and no graph work is cancelled |
 | `AuthorityError`, `PathError` | the handle-level rules of `contracts/cells.md`; also the attachment topology rules (`contracts/attachments.md`) |
@@ -172,7 +172,6 @@ Settled contract that the code does not yet implement, or implements differently
 - **Future-wiring is not implemented; the runtime is checksum-wired only.** A node leaves `waiting` for `computing` exactly when all of its inputs are concrete checksums. The design's future-wired Expressions and Transformations — a registered continuation keyed by its upstream's identity, which would let a `waiting` cone advance before the checksums exist — is deferred to the fire-and-forget milestone, together with the delayed cancellation that would let a checksum-wired submission latch onto it.
 - **Fire-and-forget is deferred.** Detaching the Context process while a cluster advances the workflow headlessly needs future-wiring and is not available. `prune()` — the first half of it — is.
 - **There is no dependency-declaration contract.** How a declared dependency edge is picked up, and how it transitions between the future-wired and checksum-wired regimes, is an open design question; nothing may depend on an answer.
-- **Cycles are out of scope**, not merely rejected as an implementation limit: the cascade assumes a DAG.
 - **A bound public read does not validate and does not record**, and a bound read of a non-existent projection raises rather than reporting. `contracts/cells.md` states both; in each case the standalone behaviour is the intended contract.
 - **Buffer arrival has no subscription primitive.** A missing buffer becomes a visible `failed` node, and the retry is `clear_exception()` after the caller has made the buffer available. The Context deliberately does not invent a buffer-availability event, and deliberately does not treat cancellation as an authoritative result.
 - **Individual graph construction reconciles the whole graph.** Building a large graph node by node is much slower than one `set_graph`.
@@ -182,6 +181,7 @@ Settled contract that the code does not yet implement, or implements differently
 
 - **Sub-contexts.** A namespace is a path prefix inside one Context, with one controller and one equilibrium. A nested Context with its own runtime is not a feature.
 - **Non-eager mode and activation leases.** Unratified; nothing may depend on them.
+- **Cycles.** Out of scope, not merely rejected as an implementation limit: the cascade assumes a DAG, and a new edge that would close one is refused at declaration time (`DependencyError`).
 - **A transient-failure state.** `failed` is one state, and the block-reason vocabulary has exactly two members. Classifying a failure as transient and retrying it is a Transformation/backend concern, not Context logic.
 - **Mandatory preemption.** Reclaiming a slot from a superseded run in favour of a current run elsewhere is, at most, an optional nicety; `prune()` is the supported control.
 - **Epoch-stamping of the invalidation cone.** The cone is marked eagerly; a generation/epoch scheme was considered and rejected.
