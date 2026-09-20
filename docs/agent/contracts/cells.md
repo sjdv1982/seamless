@@ -2,6 +2,8 @@
 
 **A Cell is a deferred Expression.** Where an `Expression` is a frozen recipe that has already been closed over its input, a `Cell` is the mutable builder for the same recipe — `(input, input_celltype, celltype)` plus a path and an optional validator — that can be re-aimed, retyped and re-read, and that snapshots into an immutable `Expression` on demand. Everything an Expression means (identity, cost class, placement, the error envelope, uncached failures) is in `contracts/expressions.md` and is not repeated here.
 
+**A Cell is a deferred recipe; a recipe is not necessarily one Expression.** A standalone Cell is itself a **chain**: every projection and every `as_celltype` returns a **child** Cell edged to its parent, so a standalone builder has the same shape as the graph — each link carries *either* a path *or* a conversion, never both. A **bound** Cell wraps its incoming edge — several edges, for a join — whose source may be a concrete checksum, a named node or an anonymous one, and **one edge is no longer one Expression**: at build time a run of edges is walked and fused, so an Expression corresponds to a *maximal fusible run*, bounded by conversions and joins. The rules, and what falls inside a run, are in `contracts/expressions.md`, *Fusion*.
+
 A Cell exists in one of two modes:
 
 - **standalone** — the builder state is private to the Python object;
@@ -17,7 +19,6 @@ Code locations:
 |---|---|
 | Shared value/type/evaluation/ownership API | `seamless.cell_class.CellBase` |
 | Builder, navigation, snapshots | `seamless.cell_class.Cell`; re-exported as `seamless.Cell` |
-| Sub-path projection handle | `seamless.cell_class.SubCell` |
 | Module helpers | `seamless.cell_class` (`_is_input_ref`, `_check_input_ref`, `_serialize_value`, `_checksum_for_buffer`, `_available_input_checksum`, `_typed_input_celltype`, `_capture_workflow_source`, `_class_attribute`) |
 | Errors | `seamless.cell_errors` (`AuthorityError`, `ProjectionError`, `BoundStateError`, `WorkflowError`); `seamless.CacheMissError`; `seamless.error_envelope` (`RunningLoopRefusal`, `execution_error`, `WorkflowExecutionError`); `seamless_workflow.errors`, which re-exports `WorkflowError` / `AuthorityError` and adds `PathError`, `ValueUnavailableError`, `StaleWorkflowHandleError`, `ConcurrentUpdateError` |
 | Retired names | `seamless.retired_names` (`RETIRED_NAMES`, `check_retired_name`) |
@@ -54,13 +55,15 @@ Assigning a Cell into a Context binds it: `ctx.a = Cell("int")` moves the builde
 
 ### Retired names
 
-`target_celltype` and `input_ref` are retired and raise `AttributeError` naming the replacement (`celltype`, and `source` or `checksum`). Because attribute access on a Cell falls through to *projection*, `check_retired_name` runs first in `__getattr__`, `__setattr__` and `__delattr__`, so a retired name can never silently become a sub-path. Item navigation is unaffected: `ctx.a["input_ref"]` is an ordinary projection of a data field with that name.
+`target_celltype`, `input_ref` and `SubCell` are retired and raise `AttributeError` naming the replacement (`celltype`; `source` or `checksum`; and, for `SubCell`, `Cell` — there is no separate projection class, see *Projections*). Because attribute access on a Cell falls through to *projection*, `check_retired_name` runs first in `__getattr__`, `__setattr__` and `__delattr__`, so a retired name can never silently become a sub-path. Item navigation is unaffected: `ctx.a["input_ref"]` is an ordinary projection of a data field with that name.
 
 **There is no old → new migration.** Cells reach `main` unreleased; the contract below is the contract, not a translation of an earlier one.
 
 ## Celltypes: `celltype` is the output
 
 **`celltype` is the type of what the Cell produces** — its checksum, its `.buffer`, its `.value`, its `run()`. **`input_celltype` says how the input is read, and is read-only** (assigning it raises `AttributeError`; there is no setter in either mode).
+
+On a Cell that carries a `path` — a projection — `contracts/expressions.md`'s **project, then convert** rule applies unchanged: `input_celltype` describes how the value at the Cell's *root* is read, the path is walked against that reading, and `celltype` converts only the value the path selected. Conversion never runs before the path; see *Projections*, below, for the worked example.
 
 `input_celltype` comes from the input, and from nowhere else:
 
@@ -107,6 +110,82 @@ Connecting is always assignment (`ctx.a = ctx.b`, `Cell(source=…)`, `with_inpu
 So **`.source is None` means "nothing upstream feeds this"** and **`.checksum is None` means "not complete"** — the blocker rule, read off the handle.
 
 **On a projection, `.source` answers for that path.** It is the one-level edge targeting that path if there is one, otherwise the nearest enclosing source, otherwise `None`; deeper paths, which can never carry an edge, walk up the same way. A cell with a literal root and a connection at `b` therefore reports `ctx.a.source is None` and `ctx.a.b.source` as the upstream — otherwise sub-path edges would be visible only through `get_graph()`. *Verified:* `Context._public_cell_source` walks `local[:length]` downwards from the full path to the root; the standalone equivalent falls back to the root builder's own input.
+
+### Connecting: a path and a conversion may not share an edge
+
+**A cell whose input arrives through a path has `celltype == input_celltype`.** An edge that both projects into its source *and* converts is statically ill-formed: a reader cannot tell which side of the path the conversion falls on, and the two readings differ (`contracts/expressions.md`, *Application order*). The wiring rule that keeps the invariant:
+
+> Defining or redefining a cell's input with `=` is legal iff the new source carries **no path**, or the new source's celltype equals the cell's **`celltype`**.
+
+- **"Path" means the *input* path** — the projection on the source side. A one-level **connection target** (`ctx.j["left"] = …`) is where the value lands, not how it is read, so it never makes an edge projecting. A heterogeneous join is therefore legal: `ctx.j["left"] = ctx.t` connects a `text` source into a `plain` join. `ctx.j["left"] = ctx.t[3]` is not, for exactly the reason `ctx.a = ctx.t[3]` is not.
+- **The comparison is against `celltype`, never `input_celltype`.** A rewire discards the old `input_celltype`, so it has no standing — and wherever a path is involved the invariant makes the two coincide anyway. `S == celltype` is what lets a divergence *end*; nothing lets one *start* behind a projection.
+- **A raw checksum / buffer / value write sets `input_celltype := celltype`**, so it carries neither a path nor a conversion and always satisfies the rule.
+- **Retyping obeys the same invariant.** `ctx.a.celltype = …` is refused on a cell fed through a path; put the conversion on the source instead.
+
+**Writing such an edge raises; having one imposed on you does not.** The refusal names both readings, because the whole problem is that the spelling does not choose between them:
+
+```
+ctx.a = ctx.b[3]
+TypeError: would convert text -> plain behind a projection.
+  ctx.a = ctx.b[3].as_celltype("plain")   # item 3 of the text (a character), as plain
+  ctx.a = ctx.b.as_celltype("plain")[3]   # item 3 of the parsed list
+```
+
+Retyping a **source** that has projecting consumers is a valid request and is *not* refused. Each affected consumer becomes **`miswired`**, and its own dependents are `blocked` with reason `blocked-by-miswiring` (`contracts/node-state-lifecycle.md`). Only invalid requests raise; a valid request that invalidates someone else's wiring leaves a node condition.
+
+*Contract ahead of code.* None of this is enforced today: `ctx.a = Cell("plain"); ctx.a = ctx.b[3]` with `b` of celltype `text` is accepted and answers `','`.
+
+**A deep source is governed by the deep celltype's own rules, not by these.** Where the edge's source celltype is deep — `deepcell`, `deepfolder` or `folder` — the path-and-conversion rule above does not apply. A deep step is an **index lookup, not a structural projection**, and it necessarily changes the celltype, so a path and a conversion always travel together there. What is legal is the table in `contracts/deep-celltypes.md`: the zero-path conversions, and the exactly-one-string-item step whose result is `checksum` or the member's own celltype, and nothing else.
+
+The **state is the same** — an edge outside that table is statically ill-formed and leaves the node `miswired`; only the criterion differs. And the carve-out is scoped to the edge whose *source* is deep: everything downstream of the resulting child checksum is ordinary wiring again.
+
+**Elidable and elided.** A cell is **elidable** when its checksum is not needed — nothing wants it as a value, only as a step in a recipe. An **anonymous** cell, one produced mid-chain by `as_celltype` or by a projection and never bound to a name, is *always* elidable: there is no handle through which its checksum could ever be demanded. It is marked **elided**, and its checksum is never produced. A **named** cell is never elided — `ctx.mid.checksum` and `ctx.mid.value` can be asked for, so the node produces them and reaches `complete` like any other.
+
+**Anonymous nodes are symbols.** An elided cell is a node in the durable graph — it must be, or the edges naming it would dangle and a saved graph would not round-trip — but it has no user-visible name: it is addressed only as the **source of an edge**, never as `ctx.<name>`, and it never appears in the Context's attribute namespace. Its symbol is **five hex characters derived from `(source, celltype, path)`**; on a collision the contenders are suffixed `-1`, `-2`, … in the order they were added, which is why the scheme is *mostly*, not purely, content-addressed.
+
+Three consequences, all load-bearing:
+
+- **The hash is over the recipe's shape, never over data.** `source` is the source *endpoint* — a node symbol or name plus a local path — not its checksum. A value change must never rename a node.
+- **Symbols are stored, not recomputed on load.** The suffix depends on which contender arrived first, so recomputing symbols while reading a graph could hand `abcde` to a different node and silently re-point every edge that names it.
+- **Only the suffix is order-dependent, and that is the right trade.** Suffixing by arrival keeps existing symbols stable when a node is added; ordering the contenders by their full hash instead would be construction-order-independent but would renumber live nodes on insertion. The price is that two isomorphic graphs built in different orders can differ in their symbols, so graph equality is not canonical.
+
+Five hex characters is twenty bits, so a graph on the order of a thousand anonymous nodes is more likely than not to contain a collision. The suffixed form is an ordinary case that needs a test, not a defensive branch.
+
+**The graph carries a symbol table.** Alongside its nodes and edges, a graph holds `symbol → (source, celltype, path)`, where `source` is a named node's name or another symbol. That table **is** the anonymous cell's definition — an entry says *take `source`, apply `path`, at `celltype`* — and an edge referring to a symbol resolves through it:
+
+```
+ctx.a = ctx.b[3].as_celltype("plain")     sym → (b, text, "[3]")   edge (sym, no path) → a(plain)
+ctx.a = ctx.b.as_celltype("plain")[3]     sym → (b, plain, "")    edge (sym, path [3]) → a(plain)
+```
+
+The two spellings are the same recipe after fusion and differ only here, which is the whole reason the table is durable: without it, the first spelling would reload indistinguishable from `ctx.a = ctx.b[3]` and come back **`miswired`**.
+
+- **The wiring invariant holds on table entries too**, and `set_graph` checks them exactly as it checks edges — an entry carrying both a path and a conversion is ill-formed. Chains alternate by construction, so a legal builder never writes one.
+- **An entry is garbage when no edge and no other entry names its symbol**, and is removed then. Nothing else can reach it.
+- **The table resolves the namespace question.** An edge's source is *either* a node path *or* a symbol, and which one is part of the reference, so a user cell named `abcde` and the symbol `abcde` never collide and no sigil has to leak into anything user-visible.
+
+This is a **graph format change**: the format is at `0.4`, and a graph written with a symbol table cannot be read by a loader that does not know about one.
+
+**Fusion is independent of elision, and is always done.** Chains of Expressions collapse as far as the codebook allows — path into path, and a checksum-preserving conversion into a following path — under the rules in `contracts/expressions.md`, *Fusion*. It applies to named and anonymous intermediates alike, so these two build the same fused recipe:
+
+```python
+ctx.a = ctx.b.as_celltype("plain")[3]                                    # anonymous, elided
+ctx.mid = Cell("plain"); ctx.mid = ctx.b; ctx.a = ctx.mid[3]             # named, not elided
+```
+
+— which is the point of the ordering rule one level up: where the conversion is written, and whether the intermediate was given a name, must not change what the recipe computes.
+
+What fusion does **not** do is remove a named intermediate's own work: `ctx.mid` still produces its checksum, because something may read it. What it removes is the *consumer's* dependency on that intermediate's **buffer** — the fused chain is evaluated where the root's data is and yields only what the path selected, and where the intermediate is `scratch` its buffer need never exist at all.
+
+**Elidability and miswiring are re-detected together**, whenever a celltype changes or an edge is added or removed — exactly the events that can create or destroy a conversion. Same trigger set, same local comparison of a source's `celltype` against the cell's, so one pass over the affected cone.
+
+*Contract ahead of code.* Neither elision nor fusion exists today: a bound projection is built as `Expression(expression, path=…)` and nothing collapses, and an anonymous cell has no representation at all — binding one raises `TypeError: Cannot bind a Cell whose input_ref is Expression`.
+
+**`input_celltype` uses the same resolution.** It reports the celltype of whatever `.source` resolves to at that path — the one-level edge targeting the path if there is one, otherwise the nearest enclosing source. The two members are **one lookup**: `.source` returns the endpoint, `input_celltype` returns its celltype. So on a `plain` join fed at `left` by a `text` cell, `ctx.join.left.source` is `ctx.left` and `ctx.join.left.input_celltype` is `text`; on a read projection with no edge of its own, both fall back to the enclosing source, and `input_celltype` is the root's — which is what that projection needs, since its path is applied to the root's value at the root's celltype.
+
+*Contract ahead of code.* `BoundCellBackend.input_celltype` drops `local_path` today (`builder_state.py:64-69`), so a connection target reports the root's celltype where it should report its producer's. Read projections are unaffected.
+
+**A projection's own `celltype` is its parent's.** A child carries the parent's `celltype` forward unless `as_celltype` changes it, so `ctx.join.left.celltype` is the join's. This is what the wiring rule above compares a source against at a one-level target: `ctx.j["left"] = ctx.t[3]` with a `text` source and a `plain` join is `text` against `plain`, hence refused.
 
 ## Writes: two verb families
 
@@ -297,9 +376,23 @@ cell.foo   cell["foo"]   cell[0]   cell[1:4]
 ctx.a.foo  ctx.a["foo"]  ctx.a[0]  ctx.a[1:4]
 ```
 
+**A projection selects within the value read at `input_celltype`; `celltype` then converts only what the projection selected — never the whole value before the path is walked.** This is the Cell-side statement of Expression evaluation order; `contracts/expressions.md`'s *Application order* is the rule's owner, together with the reason the order is not cosmetic and a worked example in Expression terms.
+
+For example, a `Cell("text")` holding `[10, 20, 30, 40]` as text. `cell[3].as_celltype("plain")` selects item `3` of the **text** — the character `','` — and renders that as `plain`. `cell.as_celltype("plain")[3]` converts the text to `plain` **first**, closing that Expression, and then selects item `3` of the resulting **list** — the integer `40`. The two spellings are different recipes, and each means what it reads as: `as_celltype` fixes the celltype from that point in the chain onward, so a path written after it walks the converted value, and a Cell is therefore a *chain* of Expressions wherever a conversion is followed by a projection.
+
+*Contract ahead of code.* Today both spellings build a single Expression at `input_celltype='text'`, so both answer `','`. Standalone, `Cell._derive` updates the independent `path` and `celltype` fields and never touches `input_celltype`; bound, `BoundCellBackend.derive` detaches by building the root as a source and overwriting only the output celltype. The rule above is the contract: appending a path step to a Cell whose `input_celltype` and `celltype` differ must **close** that Expression and re-base the step on its result; appending to a Cell with no pending conversion extends the path as it does today.
+
+**Projection and `as_celltype` both return a child cell edged to the parent.** `cell[3]` is a child Cell whose *source* is `cell`, carrying the path; `cell.as_celltype(ct)` is a child Cell whose source is `cell`, carrying the conversion. `Cell.__init__` takes **no `path` argument** — a path is only ever added by projecting. Three things follow:
+
+- **A path is only ever added by projecting**, so the builder stays a chain. The constructor was the one route that produced a path-carrying Cell without a parent link, and its `.checksum` round-trip could not work: `set_checksum` sets the *pre-path* input, so what went in never came back out.
+- **The wiring invariant holds standalone too.** `cell[3].as_celltype("plain")` is two cells and two links, not one cell carrying both; so **binding is a move, not a decomposition** — the chain that goes into the Context already has the shape the graph requires, one symbol-table entry per anonymous link.
+- **`.source` on a standalone projection answers the parent handle**, where today `Cell._derive` copies the parent's own input and so reports the *grand*parent. The new reading is the one the name promises.
+
+This costs nothing at evaluation time: a run of path links fuses back into one Expression (`contracts/expressions.md`, *Fusion*), which is why fusion has to be unconditional rather than an optimization.
+
 **API-name arbitration: normal Python lookup wins.** `__getattr__` projects only for a name that is not statically defined on `Cell` or its bases. A bound-only member whose getter raises `AttributeError` on a standalone Cell (`mount`, `block_reason`) must *not* fall through to a same-named projection, so `Cell.__getattr__` consults `_class_attribute` and re-raises rather than projecting. Names starting with `_` never project. Item access is the escape hatch: `ctx.a["value"]` and `ctx.a["run"]` are ordinary projections of data fields with those names. Cells have no `.pins` API, and `pins` is not reserved, so `ctx.a.pins` is an ordinary projection.
 
-A projection of a plain `Cell` is a **`SubCell`**, a handle that is deliberately loud about being used as a value: `==`, ordering, `bool()`, `len()` and iteration all raise `ProjectionError` (which subclasses both `TypeError` and `AttributeError`). This catches the two mistakes that projection makes silent — a typo (`ctx.a.vlaue`) and a name that used to be API. One gap has no fix: `is None` compiles to a pointer comparison with no protocol to intercept, so `assert ctx.a.vlaue is not None` still passes.
+**A Cell is a handle, and says so.** `==`, ordering, `bool()`, `len()` and iteration raise `ProjectionError` — which subclasses both `TypeError` and `AttributeError` — on **every** Cell, and on every Pin, which shares `CellBase`. Handle identity carries no meaning, so comparing a Cell to a value, or to another Cell, is always a mistake whether or not a path is involved. **There is no separate projection class**: the guard lives on `CellBase`, and the message adapts to the object — on a Cell carrying a path it names the path and suggests the misspelling that attribute projection makes silent (`ctx.a.vlaue`), and on one without a path it says to read `.value`. One gap has no fix: `is None` compiles to a pointer comparison with no protocol to intercept, so `assert ctx.a.vlaue is not None` still passes.
 
 **Projection depth is unlimited; connection targets are not.** A projection path may be arbitrarily deep wherever the underlying Expression path and source celltype support it. A **connection target** — a graph location that may receive a bound source — is the **root or one level below it, and nothing deeper**. A one-level target is a single point selection: a mapping key, an attribute name, or an integer sequence index. A slice may be read or value-updated but is never a connection target, because it denotes several positions. `ctx.a.b.c = ctx.x` raises `PathError: Cell connection targets are limited to one point component`.
 
@@ -367,7 +460,7 @@ Settled contract that the code does not yet implement, or implements differently
 - **Standalone `clear_exception()` does not clear the memoized result.** It clears only `_standalone_exception`; the next read re-evaluates. This is correct for a deterministic failure (it reproduces) and is why `.exception` appears unchanged immediately after `clear_exception()` — the getter has already re-derived it.
 - **`context-internals-followup-design.md` is stale on two points**: it makes `.checksum`, `.buffer` and `.value` bound-only (superseded by the standalone-read contract above), and it makes a projection's `input_ref` its owning root endpoint (that meaning belongs to the private `_input_ref`; the public split is `.source` / `.checksum`).
 - **On a bound projection, `input_celltype` does not follow the path while `.source` does.** `BoundCellBackend.input_celltype` (`seamless-workflow/seamless_workflow/builder_state.py:64-69`) calls `Context._effective_input_celltype(self.node_path)` and drops `self.local_path`, whereas `BoundCellBackend.source` passes `local_path` into `_public_cell_source`. So for a join `ctx.join.left = ctx.left`, `ctx.join.left.source` reports `ctx.left` but `ctx.join.left.input_celltype` reports the **root's** input celltype. Which of the two readings is intended is not yet ruled; until it is, do not rely on `input_celltype` at a bound projection.
-- **A standalone projection's property writes are silently lost.** `cell.b.checksum = cs`, `cell.b.set_checksum(cs)`, `cell.b.value = v` and `cell.b.buffer = buf` do not raise, unlike `cell.b = v` (`AttributeError`) and `cell["b"] = v` (`TypeError`). `cell.b` returns a fresh, throwaway `SubCell` (`Cell.item`); `SubCell` overrides only the comparison, truthiness and iteration dunders (`cell_class.py:688-750`) and inherits `CellBase`'s ordinary setters unchanged, so the write mutates that handle's own private state and the handle is then discarded. *Verified against code (2026-09-20):* `Cell.item` builds the projection through `_derive`, which for a standalone Cell constructs a brand-new instance rather than returning a view; `CellBase.checksum`'s setter (`_write_checksum` → `_replace_input_ref`) runs against that instance. The contract is that these four spellings raise the same way item/attribute assignment already does.
+- **A standalone projection's property writes are silently lost.** `cell.b.checksum = cs`, `cell.b.set_checksum(cs)`, `cell.b.value = v` and `cell.b.buffer = buf` do not raise, unlike `cell.b = v` (`AttributeError`) and `cell["b"] = v` (`TypeError`). `cell.b` returns a fresh, throwaway handle (`Cell.item`) whose setters are `CellBase`'s ordinary ones, so the write mutates that handle's own private state and the handle is then discarded. (In the code today that handle is a `SubCell`, which overrides only the comparison, truthiness and iteration dunders at `cell_class.py:688-750`; the contract retires the class and puts those dunders on `CellBase`, which does not by itself fix this.) *Verified against code (2026-09-20):* `Cell.item` builds the projection through `_derive`, which for a standalone Cell constructs a brand-new instance rather than returning a view; `CellBase.checksum`'s setter (`_write_checksum` → `_replace_input_ref`) runs against that instance. The contract is that these four spellings raise the same way item/attribute assignment already does.
 
 ## Non-goals
 

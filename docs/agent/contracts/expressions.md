@@ -48,16 +48,30 @@ The path is stored as a string and parsed at evaluation time (`parse_path`):
 
 Applying a step (`_apply_step`): a string item key indexes a `dict` or a structured NumPy array, and otherwise falls back to `getattr`; any other key indexes. A step that raises becomes `ExpressionEvaluationError`.
 
+### Application order
+
+**Project, then convert.** Evaluation reads the input buffer *as `input_celltype`*, applies every path step (`_apply_step`) to that value in order, and only afterwards serializes whatever the path selected *as `celltype`*. `celltype` is therefore never applied to the unprojected input; it applies only to what the path already picked out. This is a property of evaluation, not of the identity tuple below — see *Identity*.
+
+**An Expression never converts its input.** `input_celltype` is the celltype the input buffer is *read* at, not a conversion applied to it: the source must already be legally readable at `input_celltype`, and a typed source that disagrees is refused at construction (`ValueError`). An Expression therefore performs **at most one conversion, and it is always the last step**. Convert-then-project is not unavailable — it is simply not one Expression. It is the composition of `(input_checksum, "", X, Y)` with `(result, path, Y, Y)`, in which the converted parent is a distinct Expression with its own identity and its own cache entry, and — for every conversion outside the checksum-preserving trivial and reinterpret classes of `contracts/celltypes-and-conversion.md` — its own new buffer, parent-sized.
+
+Get the order backwards and a path means something else entirely. With `input_celltype="plain"`, `celltype="str"` and path `[3]` over the JSON list `[10, 20, 30, 40]`: project-then-convert reads the list as `plain`, selects element `3` (the integer `40`), and renders *that* as `str` (`"40"`). Convert-then-project would instead render the whole list as its `str` form (`"[10, 20, 30, 40]"`) and take character `3` of that string (`"0"`). The two conventions agree only when the path is empty or the celltypes coincide; everywhere else a path written for one gives a silently different — and differently typed — answer under the other.
+
+The order is not arbitrary. Under convert-then-project the **output** celltype would decide the structure the path walks, so a downstream declaration — a consumer pin's celltype, a cell's celltype — would silently redefine what an upstream path selects, and the path would have to be written against an intermediate value that exists nowhere and is named nothing. Project-then-convert keeps a path's meaning a property of the input side alone: `input_celltype` decides what the path sees, `celltype` decides only how the selected value is rendered. It is also the only order under which a path over a deep checksum selects a child without materializing the parent (`contracts/deep-celltypes.md`), and the only one that converts the selected value rather than the whole parent.
+
+The order has nothing to sequence, and is therefore vacuous, in exactly two cases: an **empty path**, where there is no projection step to order against the conversion (the conversion itself is the empty-path engine of `contracts/celltypes-and-conversion.md`), and the **dummy Expression** (empty path, `input_celltype == celltype`, below), where neither step runs at all.
+
+*Verified:* `_evaluate_expression_after_validation` (`seamless-core/seamless/checksum/expression.py:478-533`) deserializes the input buffer at `key.input_celltype` (`_deserialize_for_expression`), applies every parsed step in `steps` (`_apply_step`), and only then serializes the projected value at `key.celltype` (`_serialize_expression_result`). Nothing on the remote path reorders this: `evaluate_expression_remote`, the jobserver `GET /run-expression` endpoint and `dispatch_expression` all pass `path`, `input_celltype` and `celltype` as three separate fields to the same evaluator, wherever it runs.
+
 ## Identity
 
-**The identity of an Expression is the 4-tuple `(input_checksum, path, input_celltype, celltype)`.**
+**The identity of an Expression is the 4-tuple `(input_checksum, path, input_celltype, celltype)`.** The tuple names a recipe's ingredients, not the order they are combined in: that order — project, then convert — is fixed by evaluation (above) and is not recoverable from the tuple alone.
 
 - `Expression.identity_key` is the in-process form; `__eq__` and `__hash__` use it. Its first element is `("checksum", hex)` for a concrete input, `("expression", …)` for an Expression input, and `("object", id(...))` for an unresolved source, so an Expression over an uncomputed source is identical only to itself.
 - `Expression.database_key` is the wire form `(input_checksum.hex(), path, input_celltype, celltype)`. It raises `ValueError` when the input is not yet a concrete checksum.
 - `ExpressionKey` canonicalizes the input checksum against the input celltype on construction, so `sha256(b"")` as `bytes` and the canonical null are one identity (see `contracts/celltypes-and-conversion.md`).
 - The seamless-database `Expression` row has exactly this 4-tuple as its **composite primary key**, with `result` as the payload. A second write of the same key is accepted only when the stored `result` agrees; otherwise the row is kept and the request answered with a conflict.
 - The same 4-tuple is the **reverse index** that fingertipping walks: `rev_expression` (database) plus the process-local expression cache. Given a wanted result checksum, Seamless finds Expressions that produce it, fingertips their inputs and re-evaluates them (see `contracts/scratch-witness-audit.md`).
-- Wire/storage limits: the database stores `path` JSON-encoded in a 100-character column and each celltype in a 20-character column; longer values are refused as a malformed expression request.
+- **Wire and storage form.** `path` is serialized as **Seamless-`plain`** — canonical bytes, so one path has exactly one stored form. **There is no limit on path length, and no Expression is ever refused for it**; how seamless-database stores a path too long for its key column is internal to that service. Each celltype is stored in a 20-character column. **Identity is over the path itself**, never over any encoding of it.
 
 **Validators are excluded from identity.** `validator` / `validator_language` are fields of the container and columns of the database row, but they are **not** part of the primary key, and `evaluate_expression*` carries an explicit TODO recording that exclusion. Validators are **deferred**: the reject-only contract is settled, and every evaluation entry point raises `NotImplementedError` when a validator is supplied. Nothing currently writes the two columns.
 
@@ -91,6 +105,36 @@ Before evaluation, `validate_expression[_async]` checks the source celltype, the
 - A newly produced result buffer is kept in a weak-valued map, given a buffer-cache tempref, and **classified**: `register_hash_type_for_buffer` runs in the process that produced the buffer.
 - `Expression.checksum` is an alias of `Expression.result`: the published result checksum or `None`. Reading it also expresses user result interest (a refholder claim on the result; `contracts/internal/checksum-reference-lifecycle.md`).
 - `Expression.compute(execution="auto")` / `compute_async(execution="auto")` return the result checksum. `Expression.run()` (also `expr()`) computes and then materializes the value: local buffers first, then `Checksum.resolve()`, which asks the hashserver and raises `CacheMissError` when no buffer is found. `run()` does not fingertip.
+
+## Fusion
+
+An Expression's input may be another Expression, so a recipe is in general a **chain**. **Chains are fused as far as the codebook allows, always, and the fused form is the definition** — what a recipe computes must not depend on how its intermediates happened to be split or named. That is the *Application order* principle applied one level up.
+
+Three adjacent pairs are possible, because an Expression is *read, project, convert* in that order:
+
+| adjacent pair | fuses to | when |
+|---|---|---|
+| **path + path** | one Expression, paths concatenated | always |
+| **conversion + path** | one Expression over the *source's* checksum, `input_celltype` set to the converted celltype | only when the conversion is **checksum-preserving** — the trivial and reinterpret classes of `contracts/celltypes-and-conversion.md` |
+| **path + conversion** | already one Expression | — |
+
+A conversion that produces a **new buffer** cannot be fused into a following path: the path has to be applied to the converted bytes, so that conversion's result is a genuine input and the chain keeps two members, the outer one taking the inner's result checksum. This is the practical edge of the rule that conversion is not the same thing as reinterpretation.
+
+**Fusion can widen what is defined.** A chain additionally requires each intermediate to be *serializable at its own celltype*; the fused form never serializes it. So a fused Expression succeeds wherever the chain does, and sometimes where the chain does not, and where both succeed they agree. Fusing **always** is what makes that difference unobservable — which is the reason to do it unconditionally rather than as an optimization.
+
+**A deep step is a fusion barrier.** A one-step path over a deep checksum yields a **child checksum**, so a following path would project into the checksum rather than into what it names. The run ends there, and the child's own conversion is a separate Expression. That is not only a correctness point: `contracts/deep-celltypes.md` restricts the one-step result precisely so that the child's conversion is keyed at the **child's** checksum and is therefore shared by every parent index that references that child. Fusing it into the parent's Expression would re-key that shared work under each parent. A deep edge is thus a third edge kind, outside the four pairs above.
+
+**What an Expression corresponds to.** Not a cell, and not an edge: a **maximal fusible run** of edges. Building a bound Cell's recipe walks its incoming edge backwards, accumulating projecting edges, and closes the run at the first of
+
+- a **conversion** — absorbed into the run's `input_celltype` when it is checksum-preserving, left outside the run otherwise. At most one can ever be absorbed, because an Expression has exactly one `input_celltype`;
+- a **join**, which is not an Expression at all but plain local Python (`contracts/cells.md`);
+- the end of the chain — a concrete checksum.
+
+The run becomes one Expression — `(the run's root checksum, the concatenated path, input_celltype, the cell's own celltype)` — and is evaluated where that root's data is. Intermediates **inside** a run get no Expression, no identity and no cache entry. A *named* intermediate still gets its own Expression, because its checksum is demanded on its own account; that is a second, separate recipe, not a member of this run.
+
+A fused Expression's failure belongs to the node whose recipe it is — the downstream end of the run. Anonymous intermediates inside the run have no node to carry it, which is why the error names the failing path step: that is what locates it.
+
+**Identity.** A collapsed chain has a genuinely different identity: `(root, "[3][1]", X, X)` is not the 4-tuple `(intermediate, "[1]", X, X)`, so it is a different database row and a different cache entry, arriving at the same result checksum. That is not a conflict — the reverse index simply gains a second route to that result (`contracts/scratch-witness-audit.md`). Where a chain does *not* collapse, the outer member's input resolves to the intermediate's checksum, and the key is exactly the one an unfused evaluation would have used.
 
 ## Placement: an Expression is evaluated where the data is
 

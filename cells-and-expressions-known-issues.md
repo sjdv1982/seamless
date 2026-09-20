@@ -274,6 +274,63 @@ The hang was executor starvation on a shared loop; the scoped driver-loop fix wo
 (worktree `jupyter-final`). Do **not** add a `start()` wakeup — the construct would then compute
 eagerly.
 
+### 9. Cells, Expressions and wiring: the 2026-09-21 ruling set
+
+**No plan document. Spans seamless-core, seamless-workflow and seamless-database. Every item below is
+already written into the contract pages and marked *contract ahead of code*; none of it is implemented,
+and none of it has a test.**
+
+The author ruled a connected set of changes on 2026-09-20/21. They lean on each other, so they are one
+change, not nine:
+
+| Rule | Page |
+|---|---|
+| **Project-then-convert**, and an Expression never converts its input (at most one conversion, always last) | `expressions.md` §Application order |
+| **Syntax order = application order**: `as_celltype` mid-chain closes the Expression and re-bases the next step | `cells.md` §Projections |
+| **The wiring rule**: an edge may carry a path *or* a conversion, never both; redefining an input needs a pathless source or a celltype match | `cells.md` §Connecting |
+| **`miswired`**, a seventh node state, plus `blocked-by-miswiring`; precedence `miswired > unwired > blocked-by-miswiring > blocked-by-unwired > blocked-by-error > waiting` | `node-state-lifecycle.md`, `workflow-context.md` |
+| `block_reason` becomes a **dict from input to reason** wherever a node has several inputs — keyed by edge for a cell (`"<root>"` for the root edge), by pin name for a transformer; every responsible input appears in every state, and the winning category is the maximum of the values, not a separate field. Retires `Node.block_pins` and `tf.result.block_reason`'s category role | `node-state-lifecycle.md`, `pins.md` |
+| **Pins follow the cell rules**; a miswired pin makes the transformer `miswired`, not `blocked` | `pins.md` |
+| **Fusion**, always, over four edge pairs; a deep step is a barrier | `expressions.md` §Fusion |
+| **Elidable / elided** cells; anonymous nodes; the graph **symbol table** `symbol → (source, celltype, path)` | `cells.md` |
+| `path` removed from `Cell.__init__`; projection and `as_celltype` return **children** edged to the parent | `cells.md` §Projections |
+| **`SubCell` retired**; its four dunders move to `CellBase`, covering Pins too | `cells.md` |
+| **Deep sources are carved out** — governed by `deep-celltypes.md`'s table, not by the wiring rule | `cells.md`, `expressions.md` |
+
+Code touchpoints known so far:
+
+- `seamless_workflow/graph.py`: `NodeState` and `BlockReason` are `Literal` aliases and need the two new
+  members; `Node.block_reason` is typed as the scalar and becomes the dict form for a cell; `Edge` and the
+  graph gain the symbol table. **This is a graph format change** — the format is at `0.4`.
+- `seamless_workflow/ingress.py:37-50`: `_prepare_assignment` refuses an unbound Cell whose `_input_ref` is
+  an `Expression`, and `PreparedCell` carries no path. Anonymous cells cannot be bound at all today.
+- `seamless_workflow/builder_state.py`: `BoundCellBackend.derive` detaches by building the root as a source
+  and overwriting only the output celltype, which is why `as_celltype` before a projection currently has no
+  effect on what the path sees.
+- `seamless-core/seamless/cell_class.py`: `_derive` copies the parent's own input rather than pointing at the
+  parent (so `cell[3].source` reports the grandparent); `SubCell` at `:689`; `item`/`slice` at `:545`/`:551`;
+  `SubCell` is in `seamless.__all__` and must be retired, not deleted.
+- **Raising from `CellBase.__eq__` breaks membership tests** (`x in [cells]`, dict keys, sets). An internal
+  identity helper has to land first; this is the likeliest thing to break during the change.
+
+Ordering constraints: the symbol table and the `miswired` state are both graph-format changes and should land
+together. Fusion must land **with** the ordering rule, not after it — fusion is what makes the anonymous and
+named spellings agree, which is the whole justification for the ordering rule at the Cell level.
+
+Two rulings landed after this item was first written, and belong to it:
+
+- **Appendix A, item 6 is decided: (b).** `input_celltype` uses the *same resolution* as `.source` — the
+  one-level edge targeting the path if there is one, otherwise the nearest enclosing source — and reports that
+  endpoint's celltype. One lookup, two members, so they cannot drift apart again; read projections are
+  unaffected, because both fall back to the root. `BoundCellBackend.input_celltype` still drops `local_path`
+  (`builder_state.py:64-69`). Stated in `cells.md` §"The input", together with the fact that a projection's own
+  `celltype` is its parent's — which the wiring rule compares a source against at a one-level target, and which
+  the page had never stated (Appendix D.1, item 4).
+- **Path storage is a seamless-database matter** (Appendix A, item 7, closed): the contract says only that
+  there is no limit on path length. Nothing in this item depends on it, but the two land in the same area.
+
+Nothing in this set is still open.
+
 ---
 
 ## 3. Test set gaps
@@ -463,6 +520,10 @@ Most of what this section used to list was closed on 2026-09-20 (see 3.3). What 
   four of them raise `TypeError: _edit() got an unexpected keyword argument 'input_celltype'` today
   (section 4, feature 5, bug 1). A test that walked the matrix would have caught that, and no test
   does.
+- **The 2026-09-21 ruling set has no tests at all.** Section 2, item 9 — the ordering rule, the wiring
+  invariant, `miswired`, fusion, anonymous nodes and the symbol table. Every rule there is contract ahead of
+  code, so the tests land with the implementation; until then the doc-vs-test pass of 3.6 will report the
+  whole set as uncovered, which is correct and should not be “fixed” by writing tests against today's code.
 - **`seamless-dask` is unswept.** Its 33 recorded failures need a live Dask cluster to interpret, as
   does the new `test_expression_cancellation.py`. Separate exercise.
 
@@ -791,6 +852,9 @@ consistent. **Recommendation: (b)**, because the page presents `.source` and `in
 readings of the same input, and a reader has no way to guess that one walks the path and the other does
 not. Whichever is chosen, `contracts/cells.md` must say so explicitly.
 
+**Unblocked, still open (2026-09-21).** The wiring rule of section 2, item 9 is defined in terms of the **input** path — the projection on the *source* side — so a one-level connection target never makes an edge projecting and the rule never consults a bound projection's `input_celltype`. Heterogeneous joins stay legal. Nothing now waits on this item; it remains a genuine inconsistency between two members the page presents as two readings of the same input.
+**Decision**: (b), known bug.
+
 ### 7. The database `path` column is `CharField(max_length=100)`
 
 `seamless-database/database_models.py:118`. Deepfolder keys are routinely full relative file paths, and
@@ -804,6 +868,33 @@ than after, since the alternative is discovering it as a runtime failure on some
 Note that neither `contracts/expressions.md` (which owns the identity tuple and its storage) nor
 `contracts/deep-celltypes.md` (which owns the path rule producing long keys) cross-references the other
 on this, so the collision is invisible from either page.
+
+**Materially worse after 2026-09-21.** Unconditional Expression **fusion** (section 2, item 9) concatenates the paths of a whole run of projecting edges into one stored path, so long path strings stop being a deep-only concern and become ordinary: `ctx.data.results.samples.s1.measurements.values[3]` is one Expression with one ~55-character path where it used to be six Expressions with short ones. The column is therefore reachable by plain nested-dict work, not only by deepfolder keys.
+
+**CLOSED (2026-09-21), and it is a seamless-database matter.** None of (a), (b) or (c) as written, and
+nothing about it reaches the Expression contract: `contracts/expressions.md` now says only that there is **no
+limit on path length** and that no Expression is refused for it. Everything below happens **internally, at the
+database level**. The author's decision: serialize the path as
+**Seamless-`plain`** rather than as bare JSON — canonical bytes, so one path has one stored form — and when
+that serialization exceeds the column, store the **checksum** of the path buffer instead, JSON-encoded, with
+the buffer itself in the hashserver. No column migration, no length limit, and it covers the case splitting
+could not: a single deepfolder key longer than the column. The earlier ruling that fusion is *bounded by
+storage* is withdrawn with it — fusion is unconditional again. Stated in `contracts/expressions.md`
+§Identity.
+
+Three things this needs, all inside seamless-database rather than in any contract page:
+
+- **A discriminator.** The column may now hold either a serialized path or a checksum, and length does not
+  separate them: a checksum JSON-encodes to 66 characters, well inside the column, and a path whose text is
+  64 hex characters is a legal identifier step, so both forms can be a 66-character JSON string. Store the
+  indirect form self-describingly — an object such as `{"checksum": "…"}`, which can never be the
+  serialization of a path string — rather than inferring it.
+- **A refholder claim from the database.** A stored Expression row is a *durable* claim on its path buffer.
+  `contracts/internal/checksum-reference-lifecycle.md` lists only in-process refholders, so it has to gain
+  this one, or a path buffer can be evicted out from under a row that fingertipping still needs.
+- **A protocol bump and a decision on the existing rows.** `plain` serialization is JSON plus a trailing
+  newline, so whether the stored text keeps that newline decides whether every existing key changes. Protocol
+  is `("seamless", "database", "2.2")`.
 
 ### 8. Is an execution record written for a run that was cancelled after it completed?
 
