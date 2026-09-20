@@ -658,20 +658,10 @@ it that way with the bound behaviour listed as a divergence. Only the code fixes
 - **`compiled-pins.md` writes a fixed-size char array as `shape: [k]`.** In the signature-schema grammar
   a string entry in `shape` is a **wildcard**, so that spelling literally says the opposite of what is
   meant. Decide the right notation and correct every occurrence.
-- **Three one-directional cross-reference gaps found on 2026-09-20**, none a contradiction:
-  `identity-and-caching.md` describes only Transformation caching and never mentions that Expression
-  and conversion results are cached too, although it reads as the single "what gets cached" reference;
-  `scratch-witness-audit.md` has no pointer to the rule that a refholder protects an explicitly
-  requested scratch result; and `content-addressed-files-and-dirs.md` still describes the deep index in
-  hedged language ("mapping from relative paths", "Merkle-ish", "depending on how execution is
-  implemented") that `contracts/deep-celltypes.md` has since made precise. Tighten all three.
 - **`DirectCompiledTransformer.__call__` resolves a `deepcell` transformer *result* through
   `unpack_deep_structure`** (`compiled_transformer.py:775-777`). That is an output-side deep path;
   `contracts/deep-celltypes.md`'s table covers the input side only, and is correct for it. Document the
   output side wherever direct-call sugar is specified.
-- **`workflow-context.md` describes the `ctx.mounts.sync()` cut barrier in file-specific words**
-  ("file change", "on disk") although `attachments.md` specifies the mechanism as driver-generic.
-  Reword to match.
 - **`contracts/internal/checksum-reference-lifecycle.md` is linked from nothing.** It appears in
   neither `docs/agent/README.md`, `docs/agent/index.md`, `docs/agent/config/mkdocs.yml` nor
   `seamless/mkdocs.yml` — the only contract page in that state. It is deliberately internal, but an
@@ -1021,3 +1011,86 @@ Found while writing `contracts/attachments.md` and `contracts/mounts.md`; the pa
 - `Context.set_graph` detaches every session with `delete=False` (`context.py:1543`), so it **never**
   deletes a `persistent=False` file — wider than `mount-design.md` §7.3, which promises this only when the
   new graph re-attaches the same path.
+
+---
+
+## Appendix D. Residue from the 2026-09-20 review passes
+
+Everything below was found by the three review passes of 2026-09-20 (design decisions against the
+contract docs; each feature's page for consistency and completeness, plus the pairs; and a final pass
+over the whole corpus) and is **not** recorded anywhere else in this file. None of it is urgent. Each
+item is here because it was deliberately *not* fixed — usually because the fix is a wording call that
+belongs to the author, or because it needs a code check nobody has done.
+
+**Fixed in flight, recorded here so the history is not lost.** These were real defects in the contract
+docs and are already corrected: the cost class was described in `expressions.md` and
+`deep-celltypes.md` as a function of `(input_celltype, path shape, celltype)` "never of the data behind
+the checksum", while the next paragraph conditioned on checksum nullity and
+`conversion_needs_buffer(checksum, …)` — it now reads "decided from checksum-level facts, not shape
+alone"; `seamless-run-and-argtyping.md` documented `--strict` as a `seamless-run` flag when it exists
+only on `seamless-run-transformation`; `identity-and-caching.md`, `scratch-witness-audit.md` and
+`content-addressed-files-and-dirs.md` each gained the cross-reference they were missing; and
+`workflow-context.md`'s cut-barrier entry was made driver-generic.
+
+### D.1 Wording calls left to the author
+
+1. **`expressions.md` calls one code object by two names.** §Deduplication presents
+   `_active_expressions` as the membership set (contractual, present); §"Implementation status" says
+   "the waiting set lives at the **Expression** layer (`_active_expressions`), not at the
+   materialization site". Both sentences are true — today one object serves both roles — but a reader
+   can conclude the two sets are one thing *by design*, which is exactly what section 2, item 4 exists
+   to undo.
+2. **`attachments.md` §Actuate lists `computing` among the non-delivering states.** An attachment only
+   ever attaches to a **cell** node, and a cell node is never `computing`. A harmless superset, and the
+   same shape as the defect corrected in `workflow-context.md` and `cells.md` — but whether the
+   belt-and-braces is deliberate is the author's call.
+3. **`attachments.md` uses "authority" in two unrelated senses**: the topology legitimacy check that
+   raises `AuthorityError`, and the `AttachmentSpec.authority` field (`file` / `cell` / `file-strict`)
+   that resolves the initial file-versus-cell conflict. Both faithfully mirror the code's own naming, so
+   this is not a doc-invented ambiguity and was left alone; a one-line disambiguation where the second
+   sense first appears would close it.
+4. **`cells.md` never states what a projected Cell's `celltype` is.** `Cell._derive` carries the
+   parent's `celltype` forward unchanged unless `.as_celltype()` is called. Inferable, never stated.
+5. **`cells.md` states the celltype freeze on a mounted cell without saying it applies regardless of
+   mode**, which `attachments.md` is explicit about.
+6. **`celltypes-and-conversion.md` never names the false-negative property.** By design — `hashtype.md`
+   owns it — but a reader of that page alone could take a `False` answer to be as trustworthy as a
+   `True` or `None` one, which is precisely backwards.
+7. **The sync/async naming convention is used across four pages and explained on none**:
+   `compute`/`computation`, `resolve`/`resolution`, `sync`/`synchronization`. Both spellings of each
+   pair really exist in code. One line somewhere central would pay for itself.
+8. **Which page owns the *output* side of deep celltypes is undecided.** `deep-celltypes.md`'s
+   "How deep values reach a transformer" is explicitly input-side and correct;
+   `compiled-transformers.md` §"Result types" says a `deepcell` result is "individually
+   checksum-addressed" without saying what the *caller* receives. That is a structural call, not a
+   wording one — see the `DirectCompiledTransformer` item in section 5.
+9. **Two residual frictions on the "optional input, mounted result directory" path.** Nothing states
+   that `ctx.out = ctx.tf.result` makes `ctx.out` a `folder` cell — the reader must combine
+   `workflow-context.md`'s assignment table with `cells.md`'s "copy once, at creation". And
+   `mounts.md`'s "null on a directory mount is terminal" never mentions that a null `folder` result is
+   impossible in the first place (`RuntimeError: Null result is not allowed for celltype 'folder'`),
+   so the reader is left guarding against an unreachable trap.
+
+### D.2 Code questions nobody has checked
+
+10. **Does graph import reject a compiled node with a declared-optional input pin?** That is the second
+    half of `compiled-pins.md` rule 3. The builder-level guard is confirmed **absent** (section 4,
+    feature 7, bug 2), which makes it likely the import-time guard is absent too — but the
+    seamless-workflow graph-import path was never read. Worth ten minutes.
+11. **`session.leaf_leases` looks dead.** `attachments/session.py:89` is always empty in practice and is
+    released in `runtime.py:293`'s `_mount_detach`, which makes that release a no-op. The real leaf
+    retention lives in `Context._mount_node_leaves`, keyed by node path, and is correct. Either the
+    field is vestigial and should go, or something was meant to populate it.
+
+### D.3 One more `.buffer` / `.value` asymmetry
+
+12. **A deep *dummy* read splits `.buffer` and `.value`.** On a `Cell("deepcell")` holding an index with
+    no path, `.value` **succeeds** and returns the raw index dict — `Buffer.get_value` calls
+    `Buffer._map_celltype` first, which maps the deep celltypes to `plain`, and a flat index parses
+    fine as `plain`. `.buffer` instead **raises** `HashTypeValidationError`, because `CellBase.buffer`
+    validates against the *un-mapped* celltype (`validate_deserializable_as(checksum, "deepcell")`),
+    and `deserializable_as` returns `False` for anything outside the 13 celltypes. This is a second,
+    distinct split from the one in section 4, feature 5, bug 4 (which is `None` versus a re-raised
+    stored failure, after a recorded evaluation failure; this one is silent success versus a fresh
+    raise, on an untouched read). It is documented in `contracts/cells.md` as current behaviour, and it
+    is currently the **only** working route to a deep folder's child checksum — see section 5.
