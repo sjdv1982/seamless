@@ -21,7 +21,7 @@ Code locations:
 
 ## The organising principle
 
-**An Expression's cost class is a function of its identity tuple `(input_celltype, path shape, celltype)`, never of the data behind the checksum.**
+**Within the deep celltypes, an Expression's cost class is a function of its identity tuple `(input_celltype, path shape, celltype)` alone, never of the data behind the checksum.** (Over the 13 ordinary celltypes this is weaker — cost can also turn on the checksum's own nullity and its cached `HashType`, see `contracts/expressions.md`, "Cost class" — but no deep conversion below branches on anything but the declared celltypes, so here shape alone decides.)
 
 Every restriction below follows from that one rule. It is what makes the rules decidable at validation time, before any buffer is materialized: two Expressions with the same shape must cost the same, so a shape may not sometimes be a free index read and sometimes an N-child fan-out. It is also why the legal set is small: each admitted shape has exactly one cost — free (checksum-preserving), one child, or all children.
 
@@ -91,10 +91,11 @@ Rejections worth spelling out:
 - **All-or-nothing.** The result is the complete dict of children, or an error. There is no partial result.
 - **Per-child failure is not sticky.** A child that could not be resolved does not poison the deep checksum; a later attempt may succeed (for example once the buffer is reachable again).
 - **Resolution order and concurrency are unspecified.** Children may be resolved in any order, sequentially or in parallel. Concurrency here is an optimization, not contract. Do not depend on an observed order, and do not treat parallelism as guaranteed.
+- **Child representation is settled: a 1-D NumPy `S1` array, one element per byte** (`np.frombuffer(content, dtype="S1")`), **never a 0-dimensional `S<N>` scalar.** Only the 1-D form round-trips faithfully — a 0-d scalar's `.tobytes()` turns an empty child into `b"\x00"`, and `.item()` strips trailing NULs (`b"ab\x00\x00"` reads back as `b"ab"`), because NumPy's `S` dtype strips trailing NULs on scalar extraction. Serializing a dict of Python `bytes` into `mixed` produces 0-d scalars and must never be the route by which a `folder` value is serialized as `mixed`. The pin-level fan-out (`unpack_deep_structure`) handing the transformer Python `bytes` is a fine in-process presentation; it is not this serialization route.
 
 ### The `folder` note: conversion stops at `mixed`
 
-**Conversion stops at `folder → mixed`.** The children arrive as raw byte arrays (NumPy 0-dimensional `S`-dtype values, the standard `mixed` representation of Python `bytes`). **There is no conversion that yields a dict of decoded strings.**
+**Conversion stops at `folder → mixed`.** The children arrive as raw byte arrays — a 1-D NumPy `S1` array per child, one element per byte, not the 0-dimensional `S`-dtype scalar that serializing a Python `bytes` dict would give (see the representation rule above). **There is no conversion that yields a dict of decoded strings.**
 
 A value-level route for `mixed → plain` was considered and rejected. `mixed → plain` is a pure *reinterpretation* (`conversion_reinterpret`: the same bytes must parse as JSON, and the checksum is preserved). Giving it a value-level route would make every `S`-array in every `mixed` buffer decode to text, everywhere in the system, and would make the pair only *sometimes* checksum-preserving. That is too much global semantics to buy one convenience.
 
@@ -153,12 +154,9 @@ The rules above are the settled contract. **The code does not implement them.** 
 - **Nesting is still accepted at the pin layer.** `unpack_deep_structure` and `pack_deep_structure` recurse through nested dicts and lists. The shared flatness validator does not exist.
 - **The only fan-out that exists is the pin-level one**, and it is not the conversion described above: it resolves each child and returns `buffer.content`, i.e. Python `bytes`.
 
-### Points not settled by the code
+### What *is* settled
 
-- **`folder → mixed` child representation.** The contract says children arrive as NumPy `S`-dtype byte values; the only implemented fan-out (`unpack_deep_structure`) returns Python `bytes`. The conversion itself does not exist, so the code does not settle which is normative. Note that the two are not interchangeable at the edges: serializing a dict of Python `bytes` as `mixed` and reading it back gives 0-dimensional `S`-dtype arrays whose width is the child's length, so a child of `b""` comes back as dtype `S1` and `.tobytes()` yields `b"\x00"`, and the byte identity of an empty child is lost. A `bytes`-valued dict has no such problem.
-
-### What *is* settled by the code
-
+- **`folder → mixed` child representation, settled by ruling (2026-09-18), not yet by code.** The contract requires the 1-D `S1` array form above (see "`folder → mixed`"). The conversion itself does not exist yet, so nothing in the code implements this; the only existing fan-out (`unpack_deep_structure`, at the pin layer) returns Python `bytes`, which is a different, in-process-only presentation and must not be read as evidence for the `mixed`-serialization format.
 - **A `folder` index buffer is byte-identical to a `deepfolder` index buffer.** There is no extra field and no per-celltype marker: the mount layer builds one index for both celltypes (`FileSystemService._read` treats `reg.directory`, i.e. either celltype, identically and emits `Buffer(index, 'plain')` with `{relative path: checksum hex}`), `_write_directory` consumes that same shape, and `Buffer(index, "folder")` and `Buffer(index, "deepfolder")` produce the same bytes and the same checksum. `folder → deepfolder` and `deepfolder → folder` are therefore genuinely checksum-preserving.
 - **Directory mounts work**, and they are the one deep surface that is fully implemented: index construction from a tree, per-leaf atomic writes, the `deepfolder` sense-only rule, and leaf retention on the sense path. `contracts/mounts.md` specifies them; `contracts/attachments.md` specifies the retention exception to the no-recursive-deep-ownership rule.
 

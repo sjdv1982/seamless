@@ -143,7 +143,7 @@ Exactly three acts make `input_celltype` differ from `celltype`, and each of the
 - the constructor, `Cell(ct, checksum=cs, input_celltype=…)`;
 - a later `cell.celltype = …`, which retypes and therefore converts (above).
 
-Reading `.checksum` after one of those reports the converted output rather than the checksum that was declared. That is retyping doing what retyping is specified to do, not an asymmetry between the getter and the setter. Two further cases break the round-trip without any of the three, and both are stated elsewhere: a handle that carries a `path` declares the input *before* the path, so the read is the projection of what was written; and on a `bytes` cell the empty-buffer checksum canonicalizes to null on the way out (*Null and `None`*).
+Reading `.checksum` after one of those reports the converted output rather than the checksum that was declared. That is retyping doing what retyping is specified to do, not an asymmetry between the getter and the setter. Two further cases break the round-trip without any of the three, and both are stated elsewhere: a handle that carries a `path` declares the input *before* the path, so the read is the projection of what was written — coherent, not a bug, because the path is recipe, not value; and on a `bytes` cell the empty-buffer checksum canonicalizes to null on the way out (*Null and `None`*).
 
 **`set_checksum` does not set `.checksum`.** It is the Checksum variant of the three setters and sets the *input*. It is instantaneous, so `.checksum` is normally `None` immediately afterwards — except in the two cases the `.set_checksum` contract carves out (the dummy Expression and the unbound computed property), which are stated under *Reads* below and derived in `contracts/expressions.md`.
 
@@ -228,7 +228,7 @@ The second `.set_checksum` exception is that **on an unbound Cell `.checksum` is
 
 **A running-loop refusal is not a failure.** Inside a running event loop a synchronous evaluation that would need the async bridge is refused (`RunningLoopRefusal`, see `contracts/expressions.md`). The standalone getter turns that into `None`, leaves `.exception` as `None` and the state as `waiting`, and dispatches nothing. It is a condition that resolves itself outside the loop, not an error to be cleared.
 
-Reading `.checksum` expresses **user result interest** — `Expression.compute()` enables result holding, so the result checksum acquires a refholder claim for the lifetime of the reading handle. That is the checksum reference lifecycle (internal; see feature 9's own document, not these contracts).
+Reading `.checksum` expresses **user result interest** — `Expression.compute()` enables result holding, so the result checksum acquires a refholder claim for the lifetime of the reading handle. That is the checksum reference lifecycle, an internal contract: `contracts/internal/checksum-reference-lifecycle.md`.
 
 ### `.buffer` and `.value`
 
@@ -284,7 +284,7 @@ Notes:
 
 - `compute()` is the explicit operation that starts missing upstream work; `.checksum` is not. `computation()` is `compute_async()` under its Context-facing name, and `await cell.computation()` is the asynchronous demand equivalent.
 - A **standalone** `compute()` / `compute_async()` records a failure in `.exception` and returns `None` rather than raising; `run()` re-raises the stored failure. A **bound** `compute()` / `compute_async()` waits on a Context barrier, and `timeout=` is meaningful there (a barrier timeout raises `TimeoutError`; that is feature 10).
-- `compute(input_ref)` / `run(input_ref)` / `build(input_ref)` accept a one-shot input override, type-checked like a constructor input, that does not mutate the Cell.
+- `compute(input_ref)` / `run(input_ref)` / `build(input_ref)` accept a one-shot input override, type-checked like a constructor input, that does not mutate the Cell. The **parameter** is still spelled `input_ref` (as it is on `Expression`); only the retired *attribute* of that name raises.
 - All of these default to `execution="auto"`; placement is in `contracts/expressions.md`.
 - The builder methods return **new** Cells and never mutate. On a **bound** Cell, `as_celltype()`, `with_validator()` and `with_input()` return a *standalone* Cell built on the bound cell's current Expression snapshot (`BoundCellBackend.derive`), whereas `item()` and `slice()` stay bound. Re-aiming a bound cell in place is a Context write, not a derivation.
 
@@ -312,11 +312,13 @@ A mapping-key connection can bootstrap an unwired cell as a mapping. An integer-
 3. apply ordinary Python container mutation along the path;
 4. re-serialize and commit the changed aggregate as the root, preserving every unrelated one-level incoming edge.
 
-It therefore **needs the current value to be materializable**. When the node is `waiting` or `computing` the write waits on a barrier and retries; otherwise a root with no checksum raises `ValueUnavailableError` — except that for a string/attribute path an *unwired* cell is treated as an empty mapping and missing intermediate keys are created as `{}`, so `ctx.a = Cell(); ctx.a.b.c = 12` yields `{"b": {"c": 12}}`. An explicitly stored `null` is not unwired and fails. The commit is optimistically concurrent (base checksum plus node revision) and retries up to 8 times before raising `ConcurrentUpdateError`.
+It therefore **needs the current value to be materializable**. When the node is `waiting` the write waits on a barrier and retries (a sub-path write only ever targets a cell node, and a cell node is never `computing`); otherwise a root with no checksum raises `ValueUnavailableError` — except that for a string/attribute path an *unwired* cell is treated as an empty mapping and missing intermediate keys are created as `{}`, so `ctx.a = Cell(); ctx.a.b.c = 12` yields `{"b": {"c": 12}}`. An explicitly stored `null` is not unwired and fails. The commit is optimistically concurrent (base checksum plus node revision) and retries up to 8 times before raising `ConcurrentUpdateError`.
 
 Augmented assignment (`+=`, `-=`, `*=`, `/=`) reads the current resolved value and commits through the same single transaction. Because Python writes the result of `__iadd__` back to its owner, the returned handle must be treated as an inert same-endpoint reassignment and must not create a self-edge; a separately retained projection (`p = ctx.a.b.c; p += 1`) performs the same single transaction. `del ctx.a["b"]` deletes the key and, being a detaching delete, also removes any edge targeting that exact path.
 
 Sub-path writes and augmented assignment are **bound-only**. Standalone, `cell["b"] = v` and `cell += 1` raise `TypeError`, and `cell.b = v` raises `AttributeError`: a standalone Cell has no controller to serialize the transaction.
+
+The same absence of a controller means a standalone projection's *property* writes — `cell.b.checksum = cs`, `cell.b.set_checksum(cs)`, `cell.b.value = v`, `cell.b.buffer = buf` — are contractually errors for the identical reason, but today they do not raise; see *Implementation status*.
 
 ## Cell-level joins
 
@@ -348,6 +350,8 @@ A Cell whose `celltype` or `input_celltype` is `deepcell`, `deepfolder` or `fold
 
 **Status: settled contract, not yet enforced.** Today a deep celltype on either side of an Expression is rejected by `HashTypeValidationError` before evaluation, so on a Cell only the dummy case works: `Cell("deepcell")` holding an index reads back its own checksum (the fast path does no evaluation), while `as_celltype("plain")` or any path step records a `HashTypeValidationError` in `.exception`.
 
+In that dummy case, `.value` and `.buffer` disagree, for a reason specific to how each is read. `.value` succeeds and returns the raw index dict: it resolves through `Checksum.resolve(celltype)` → `Buffer.get_value(celltype)`, which maps `deepcell`/`deepfolder`/`folder` to `plain` (`Buffer._map_celltype`) before parsing, and a flat index is valid `plain` JSON. `.buffer` instead raises `HashTypeValidationError` (recorded in `.exception`), because `CellBase.buffer` validates the checksum against the **unmapped** celltype before resolving. This is a second, distinct `.buffer`/`.value` asymmetry from the one in *Implementation status* — that one is `None` versus a re-raised stored failure after an evaluation failure; this one is a raise versus a silent success on an otherwise-untouched dummy read.
+
 ## Implementation status and current limitations
 
 Settled contract that the code does not yet implement, or implements differently. Where a design document and the code disagree, **the code wins** and the disagreement is listed here.
@@ -362,6 +366,8 @@ Settled contract that the code does not yet implement, or implements differently
 - **A bound read of a non-existent projection raises instead of reporting.** `ctx.p.nope.checksum`, `.value` and `.compute()` raise `ExpressionEvaluationError`, because the ingress read path catches only `KeyError` and `IndexError` while `_apply_step` wraps those in `ExpressionEvaluationError`. Standalone, the same projection returns `None` and records the failure in `.exception`. The standalone behaviour is the intended one.
 - **Standalone `clear_exception()` does not clear the memoized result.** It clears only `_standalone_exception`; the next read re-evaluates. This is correct for a deterministic failure (it reproduces) and is why `.exception` appears unchanged immediately after `clear_exception()` — the getter has already re-derived it.
 - **`context-internals-followup-design.md` is stale on two points**: it makes `.checksum`, `.buffer` and `.value` bound-only (superseded by the standalone-read contract above), and it makes a projection's `input_ref` its owning root endpoint (that meaning belongs to the private `_input_ref`; the public split is `.source` / `.checksum`).
+- **On a bound projection, `input_celltype` does not follow the path while `.source` does.** `BoundCellBackend.input_celltype` (`seamless-workflow/seamless_workflow/builder_state.py:64-69`) calls `Context._effective_input_celltype(self.node_path)` and drops `self.local_path`, whereas `BoundCellBackend.source` passes `local_path` into `_public_cell_source`. So for a join `ctx.join.left = ctx.left`, `ctx.join.left.source` reports `ctx.left` but `ctx.join.left.input_celltype` reports the **root's** input celltype. Which of the two readings is intended is not yet ruled; until it is, do not rely on `input_celltype` at a bound projection.
+- **A standalone projection's property writes are silently lost.** `cell.b.checksum = cs`, `cell.b.set_checksum(cs)`, `cell.b.value = v` and `cell.b.buffer = buf` do not raise, unlike `cell.b = v` (`AttributeError`) and `cell["b"] = v` (`TypeError`). `cell.b` returns a fresh, throwaway `SubCell` (`Cell.item`); `SubCell` overrides only the comparison, truthiness and iteration dunders (`cell_class.py:688-750`) and inherits `CellBase`'s ordinary setters unchanged, so the write mutates that handle's own private state and the handle is then discarded. *Verified against code (2026-09-20):* `Cell.item` builds the projection through `_derive`, which for a standalone Cell constructs a brand-new instance rather than returning a view; `CellBase.checksum`'s setter (`_write_checksum` → `_replace_input_ref`) runs against that instance. The contract is that these four spellings raise the same way item/attribute assignment already does.
 
 ## Non-goals
 

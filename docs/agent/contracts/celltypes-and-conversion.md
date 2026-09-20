@@ -186,8 +186,20 @@ Every ordered pair of distinct celltypes is in exactly one category. `check_conv
 - Resolving a source value (`_value_of`) tries `virtual_value` first, then `validate_deserializable_as(checksum, celltype)` without a buffer (fails early on a HashType disproof from the local cache, or from the database when no event loop is running), and only then calls `get_buffer()` and `_parse_buffer`.
 - Errors: `CacheMissError` from `get_buffer` propagates unchanged, because a missing buffer is not a failed conversion. `SeamlessConversionError` (a `ValueError` subclass) propagates. Any other exception, including `HashTypeValidationError`, is wrapped in `SeamlessConversionError("<hex> cannot be converted from <source> to <target>", …)`.
 - The executor does not special-case null for `checksum`: `convert_checksum(NULL_CHECKSUM, "plain", "checksum", …)` produces a checksum buffer. Empty-path Expression evaluation short-circuits a null input to a null result for every celltype pair before it calls the executor.
+- **The engine's only caller is empty-path Expression evaluation**, and a new buffer it produces is not a private side effect: it is recorded as the result of that empty-path Expression — `(checksum, "", source, target)` — in the process-local Expression cache and, when configured, the database `expression` table. A later conversion between the same two celltypes for the same checksum is therefore an Expression-identity cache hit, not a second value-level conversion. See `contracts/expressions.md`.
 
 `conversion_needs_buffer(checksum, source, target) -> bool` is a dry run. It returns `True` only if the conversion would call `get_buffer`. A conversion that succeeds or fails from the checksum alone (trivial rule, virtual value, or cached HashType disproof) returns `False`. Expression evaluation uses it to decide whether an empty-path expression can be evaluated locally or must run where the data is.
+
+## Implementation status and current limitations
+
+These are current behaviour, not scheduled fixes — each is described in full where it first comes up above; this section only collects them:
+
+- **`checksum → X` is not validated against `X`.** See "Conversions involving `checksum`" above.
+- **Large integers lose precision.** `orjson` turns an integer outside the unsigned 64-bit range into a float, so `int` and `plain` readings of it are imprecise. See "Large integers" above.
+- **`bytes` reads return inconsistent types.** A non-null reading returns a `Buffer` object; the null reading returns `b""`. See the reference-parser table above.
+- **The `str` spelling of a boolean is not symmetric.** Reading the `true` buffer as `str` gives `"True"` (the virtual-values table), while serializing `True` as `str` writes `b"true\n"` (the serialization table), so a `bool` does not round-trip through `str`.
+
+The false-rejection family that HashType used to cause (`X → checksum`, the `int`/`float` targets, the never-disproved chains, `deserializable_as("bool")`, the broken `SEMANTIC` flag) is fixed; see `contracts/hashtype.md`, "Current limitations", for what is left there.
 
 ## Agent guidance
 

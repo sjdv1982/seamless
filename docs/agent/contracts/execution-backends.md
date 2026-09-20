@@ -8,6 +8,8 @@ This page defines the minimum operational model an agent may rely on when discus
 - **Remote target** (only relevant when `execution: remote`): `jobserver` or `daskserver`.
 - **Mutual exclusivity**: a single configured cluster/frontend should not expose both jobserver and daskserver without explicitly selecting one.
 
+**This page is about Transformations.** Expressions also run on a jobserver or daskserver, but they are placed by a different rule and on a different axis — see *Expressions are placed, not configured* below. Do not read the `execution:` configuration key and an Expression's `execution=` argument as the same setting.
+
 ## Backend semantics (agent assumptions)
 
 1) **`process`**
@@ -26,6 +28,16 @@ This page defines the minimum operational model an agent may rely on when discus
    - Uses Dask as the execution/scheduling substrate.
    - Intended for HPC/distributed throughput; can integrate with schedulers (commonly via `dask-jobqueue` on SLURM/OAR).
    - Operationally: typically long-lived/bundled workers execute many tasks (not one scheduler submission per Seamless step).
+
+## Expressions are placed, not configured
+
+A jobserver or daskserver also evaluates **Expressions** (the jobserver endpoint is `GET /run-expression`). Three differences from the transformation backends above matter:
+
+- **It is not a backend choice but a placement rule.** An Expression is evaluated *where the data is*: local when no buffer is needed or the input buffer is already in this process's memory, otherwise dispatched. Selecting a backend does not turn this on or off.
+- **`execution="auto" | "local" | "remote"` is a per-Expression argument, not the `execution:` config key.** Here `"local"` means *in this process's memory* and `"remote"` means *not in this process's memory* — independently of which transformation backend is configured. A Context fixes the policy for its own Expression jobs with `Context(expression_execution=…)`.
+- **A daskserver is a jobserver *mode* for Expressions**, not a competing backend: both expose the same checksum, error, caching and HashType contracts.
+
+The full rule, the resolution order, the no-silent-fallback rules and the two open placement questions are `contracts/expressions.md`, *Placement*.
 
 ## Storage prerequisite (by-checksum submission, shared hashserver)
 

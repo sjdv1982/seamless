@@ -4,7 +4,7 @@
 
 This page is the cancellation substrate **for transformations**. Materialization cancellation — the per-checksum waiting set in the buffer layer, latch-on, the linger, and the fact that there is no hard cancel there at all — belongs to `contracts/expressions.md`; it is pointed at, not restated, in the "one layer down" section below.
 
-**The set's membership *is* the count.** There is no separately maintained integer refcount and no `refholding` flag. This is deliberately a different mechanism, with a different lifetime and a different vocabulary, from the checksum reference lifecycle (internal; `contracts/cells.md` mentions it in passing). One tracks who still wants work that has not finished; the other keeps a buffer alive once it exists. Do not conflate them, and do not call a membership set a refcount.
+**The set's membership *is* the count.** There is no separately maintained integer refcount and no `refholding` flag. This is deliberately a different mechanism, with a different lifetime and a different vocabulary, from the checksum reference lifecycle (`contracts/internal/checksum-reference-lifecycle.md`). One tracks who still wants work that has not finished; the other keeps a buffer alive once it exists. Do not conflate them, and do not call a membership set a refcount.
 
 Code locations:
 
@@ -34,6 +34,8 @@ The three sites:
 | **Dask** | a first-runner → set-of-latch-on-runners map | a latch-on runner; the first runner is itself a counted **quasi-member** — counted for cancellation and for result delivery, but **not** the lifecycle owner, because the cache/set owns the future reference |
 
 The jobserver having a set of its own is what stops one client's cancel from deleting a sibling client's job.
+
+These three are the **transformation** sites. The same pattern appears twice more outside this page's scope, and both are `contracts/expressions.md`'s: a set per **Expression identity**, whose members are the callers sharing one in-flight evaluation (a standalone `Expression` joins as `id(self)`, the workflow Context as its demand key); and, one layer further down, the per-checksum **waiting set** at a buffer materialization (below). Neither is a `tf_checksum` site, and neither takes a hard cancel.
 
 ## The two operations
 
@@ -102,7 +104,7 @@ Vocabulary: that set is a **waiting set**, never a refcount.
 
 Settled contract that the code does not yet implement, or implements differently. Where a design document and the code disagree, **the code wins**, and the disagreement is listed here.
 
-The in-process substrate is **delivered and verified** by a contract-driven suite at `seamless-transformer/tests/cancellation` (a README charter, a shared harness, in-process files, and remote multi-tenant jobserver and Dask files; the two gaps below are tracked as xfail). Verified in process: deduplication; softcancel as deregistration with peer survival; softcancel at zero cancelling the underlying run; a cache hit never becoming a member; hard cancel as kill-all; `strict_dunder` envelope rejection; and per-set atomicity. Verified across processes: jobserver deduplication, jobserver softcancel with peer survival, hard cross-tenant cancel, and the benign crashed-member case; Dask deduplication, latch-on-runner softcancel leaving the first runner alive, and hard cross-tenant cancel.
+The in-process substrate is **delivered and verified** by a contract-driven suite at `seamless-transformer/tests/cancellation` (a README charter, a shared harness, in-process files, and remote multi-tenant jobserver and Dask files). The suite's README describes the two gaps below as `xfail(strict=False)`, but that is a description, not a fact about the test files: `test_jobserver_both_softcancel_leaf_kill` and `test_dask_first_runner_softcancel_latcher_survives` carry no `@pytest.mark.xfail` decorator and no dynamic xfail marking anywhere in `seamless-transformer/tests/cancellation/`, so running the suite today surfaces them as plain failures, not xfails. Verified in process: deduplication; softcancel as deregistration with peer survival; softcancel at zero cancelling the underlying run; a cache hit never becoming a member; hard cancel as kill-all; `strict_dunder` envelope rejection; and per-set atomicity. Verified across processes: jobserver deduplication, jobserver softcancel with peer survival, hard cross-tenant cancel, and the benign crashed-member case; Dask deduplication, latch-on-runner softcancel leaving the first runner alive, and hard cross-tenant cancel.
 
 Two gaps remain, both at the server boundary; their in-process equivalents pass.
 
