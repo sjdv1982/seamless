@@ -19,6 +19,17 @@ Scaffolds:
 Contract pages (hand-maintained, normative):
 
 - `contracts/identity-and-caching.md`
+- `contracts/celltypes-and-conversion.md`
+- `contracts/hashtype.md`
+- `contracts/deep-celltypes.md`
+- `contracts/expressions.md`
+- `contracts/cells.md`
+- `contracts/pins.md`
+- `contracts/workflow-context.md`
+- `contracts/node-state-lifecycle.md`
+- `contracts/attachments.md`
+- `contracts/mounts.md`
+- `contracts/cancellation.md`
 - `contracts/scratch-witness-audit.md`
 - `contracts/direct-delayed-and-transformation.md`
 - `contracts/seamless-run-and-argtyping.md`
@@ -30,6 +41,7 @@ Contract pages (hand-maintained, normative):
 - `contracts/cache-storage-and-limits.md`
 - `contracts/compression.md`
 - `contracts/compiled-transformers.md`
+- `contracts/compiled-pins.md`
 - `contracts/seamless-signature-schema.md`
 
 Repo docs (source snapshots and implementation notes):
