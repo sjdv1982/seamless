@@ -16,11 +16,11 @@ Looking for legacy Seamless (0.x)? Use the legacy docs at `/legacy/`.
 |----------|----------------|
 | `contracts/execution-backends.md` | `process`, `spawn`, `remote: jobserver/daskserver` semantics |
 | `contracts/identity-and-caching.md` | Content-addressing, checksum stability, cache invalidation |
-| `contracts/celltypes-and-conversion.md` | The 13 celltypes; celltype hierarchy as a checksum hierarchy; canonical null and virtual values; reference parser; conversion rule table and `convert_checksum` |
-| `contracts/hashtype.md` | `HashType` checksum classification (replaces `BufferInfo`); false-negative property; tightening; `hash_type` database table; `deserializable_as`/`capabilities`/`conversion_feasible` |
-| `contracts/deep-celltypes.md` | `deepcell`/`deepfolder`/`folder`: the flat index buffer, member typing, legal conversions and the one-step path rule (`module` is not deep) |
-| `contracts/expressions.md` | Expressions: the 4-tuple identity, the dummy Expression, path syntax, placement (`execution="auto"`), the error envelope, uncached failures, dedup and softcancel |
-| `contracts/cells.md` | Cells as deferred Expressions, bound or standalone: `celltype` vs read-only `input_celltype`, `.source`/`.checksum`, the two write families and the 3×2 matrix, null and `None`, standalone reads, failures on the handle, projections and connection targets, cell-level joins |
+| `contracts/celltypes-and-conversion.md` | Layer 1+3 of the stack. The 13 celltypes; celltype hierarchy as a **checksum** hierarchy; canonical null and virtual values; reference parser; the conversion rule table **built on the hierarchy** (`conversion_trivial` *is* the set of hierarchy edges) and `convert_checksum`. The engine is exactly the empty-path case of an Expression |
+| `contracts/hashtype.md` | Layer 2. `HashType` checksum classification (replaces `BufferInfo`); the false-negative property — **only a `False` is a proof**; tightening; `hash_type` database table; `deserializable_as`/`capabilities`/`conversion_feasible`; no deep-celltype vocabulary |
+| `contracts/deep-celltypes.md` | A **carve-out at layer 4**, not a layer. `deepcell`/`deepfolder`/`folder`: the flat index buffer, member typing, the legal conversion table, the one-step string-item path rule and the fusion barrier (`module` is not deep) |
+| `contracts/expressions.md` | Layer 4. Expressions: **project, then convert** (at most one conversion, always last), the 4-tuple identity, the dummy Expression, path syntax, fusion, placement (`execution="auto"`) and the fingertip exemption from it, publishing vs recording identity, the error envelope, uncached failures, dedup and softcancel |
+| `contracts/cells.md` | Layer 5. Cells as deferred Expressions, bound or standalone: `celltype` vs read-only `input_celltype`, `.source`/`.checksum`, the two write families and the 3×2 matrix, null and `None`, standalone reads, failures on the handle, projections (project-then-convert on a handle) and connection targets, cell-level joins |
 | `contracts/pins.md` | Transformer pins: `tf.pins.x`, the `pin.celltype`/`tf.celltypes.x` link, pins hold checksums, conversion at the pin, optional pins and the null rules, a Pin is not a source |
 | `contracts/workflow-context.md` | The reactive workflow `Context`: a DAG of nodes with Cells/Transformers as views, assignment and edges, the controller thread and sequenced ingress, barriers and timeouts, optimistic sub-path commits, `prune()`, `get_graph`/`set_graph` |
 | `contracts/node-state-lifecycle.md` | The six node states and how each is derived, connectivity, block reasons and their precedence, the glitch-free cascade, speculative supersession and the three grace holds, `prune`, and states through barriers |
@@ -30,7 +30,7 @@ Looking for legacy Seamless (0.x)? Use the legacy docs at `/legacy/`.
 | `contracts/service-management.md` | `seamless-service-resolve`, `rhl-*` helpers, false-pass protocol |
 | `contracts/execution-records.md` | Per-transformation records in `seamless.db`; minimal vs full mode, write-once semantics |
 | `contracts/direct-delayed-and-transformation.md` | Transformation model, `direct`/`delayed` decorators |
-| `contracts/scratch-witness-audit.md` | Scratch, witness, and audit trail semantics; fingertipping as recompute-on-absence |
+| `contracts/scratch-witness-audit.md` | Scratch, witness, and audit trail semantics; fingertipping as recompute-on-absence, where the chain runs, and why neither evaluation nor fingertipping publishes |
 | `contracts/seamless-run-and-argtyping.md` | The `seamless-run` CLI: argtyping, `--var` vs `--metavar`, canonicalization, manual remote deployment |
 | `contracts/cache-storage-and-limits.md` | What is cached at a high level; the local buffer cache and its memory pressure |
 | `contracts/content-addressed-files-and-dirs.md` | Files and directories as checksums; the deep index as a directory identity |

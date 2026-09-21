@@ -8,6 +8,22 @@ A **Cell is a deferred Expression**: the mutable builder for the same recipe, ei
 
 Expressions and the conversion engine are entangled: buffer-level conversion results are cached as **empty-path Expressions**, so every conversion that produces a new buffer is recorded under an Expression identity (see `contracts/celltypes-and-conversion.md`).
 
+**The one rule to read before anything else on this page: an Expression projects, and only then converts.** The path is applied to the input read at `input_celltype`; `celltype` converts *what the path selected*, never the input as a whole. An Expression never converts its input, so it performs at most one conversion and it is always last. Get this backwards and a path silently means something else — see *Application order*.
+
+## Where this page sits: the stack
+
+Each layer is defined **on top of** the one before it, and no page re-derives the one below it.
+
+| Layer | Page | What it adds |
+|---|---|---|
+| 1. **Celltypes and the type hierarchy** | `contracts/celltypes-and-conversion.md` | which checksums are valid as which celltype, and the subtype→supertype edges |
+| 2. **HashType** | `contracts/hashtype.md` | a checksum-level classification that **disproves** readings and conversions without fetching a buffer. Only a `False` is a proof |
+| 3. **Conversion** | `contracts/celltypes-and-conversion.md`, *Conversion engine* | the rule table, built on top of the hierarchy, using layer 2 to refuse or skip work before any buffer is fetched |
+| 4. **Expressions** | **this page** | path steps plus at most one conversion, in that order. Layer 3 is exactly the **empty-path** case of an Expression, and its results are stored under empty-path Expression identities |
+| 5. **Cells** | `contracts/cells.md` | a Cell is a *deferred* Expression: the mutable builder for the same recipe, standalone or bound |
+
+**Deep checksums are a carve-out at layer 4, not a layer of their own.** An Expression over `deepcell`, `deepfolder` or `folder` obeys a separate, much smaller conversion and path table, owned by `contracts/deep-celltypes.md`; see *Deep checksums* below for how the two tables meet.
+
 Code locations:
 
 | Concern | Module / symbol |
@@ -19,6 +35,8 @@ Code locations:
 | Remote dispatch | `seamless_remote.jobserver_remote.run_expression` / `has_jobserver`, `seamless_remote.daskserver_remote.run_expression` / `has_daskserver`, `seamless_transformer.worker.dispatch_expression` |
 | Server endpoint | seamless-jobserver `GET /run-expression` |
 | Database | seamless-database `Expression` model → table `expression`; request types `expression` (GET/PUT) and `rev_expression` (GET only); protocol `("seamless", "database", "2.2")` |
+
+> **Read the names in that second row with care.** `evaluate_expression` and `evaluate_expression_async` are **local-only** despite not saying so, and `evaluate_expression_remote` is the **dispatching** entry point — the only one that can decide *local*. `_publish_expression_result` does not mean "publish" in the sense used on this page, and is to be renamed `_tempref_expression_result`. The full table, and the wrong model these names produce, is in *Fingertipping is exempt from "where the data is"*.
 
 ## The definition
 
@@ -48,7 +66,7 @@ The path is stored as a string and parsed at evaluation time (`parse_path`):
 
 Applying a step (`_apply_step`): a string item key indexes a `dict` or a structured NumPy array, and otherwise falls back to `getattr`; any other key indexes. A step that raises becomes `ExpressionEvaluationError`.
 
-### Application order
+## Application order: project, then convert
 
 **Project, then convert.** Evaluation reads the input buffer *as `input_celltype`*, applies every path step (`_apply_step`) to that value in order, and only afterwards serializes whatever the path selected *as `celltype`*. `celltype` is therefore never applied to the unprojected input; it applies only to what the path already picked out. This is a property of evaluation, not of the identity tuple below — see *Identity*.
 
@@ -61,6 +79,17 @@ The order is not arbitrary. Under convert-then-project the **output** celltype w
 The order has nothing to sequence, and is therefore vacuous, in exactly two cases: an **empty path**, where there is no projection step to order against the conversion (the conversion itself is the empty-path engine of `contracts/celltypes-and-conversion.md`), and the **dummy Expression** (empty path, `input_celltype == celltype`, below), where neither step runs at all.
 
 *Verified:* `_evaluate_expression_after_validation` (`seamless-core/seamless/checksum/expression.py:478-533`) deserializes the input buffer at `key.input_celltype` (`_deserialize_for_expression`), applies every parsed step in `steps` (`_apply_step`), and only then serializes the projected value at `key.celltype` (`_serialize_expression_result`). Nothing on the remote path reorders this: `evaluate_expression_remote`, the jobserver `GET /run-expression` endpoint and `dispatch_expression` all pass `path`, `input_celltype` and `celltype` as three separate fields to the same evaluator, wherever it runs.
+
+**Where the rule shows up on the other pages.** It is one rule with four consequences, each owned elsewhere:
+
+| Consequence | Page |
+|---|---|
+| Checksum-level validation asks `capabilities` of the **input** celltype, and `conversion_feasible` only where the path is empty | `contracts/hashtype.md`, *Where HashType is consulted* |
+| The conversion engine is only ever the **empty-path** case, so the ordering is vacuous there | `contracts/celltypes-and-conversion.md`, *Conversion engine* |
+| A one-step path over a deep checksum selects a **child checksum** without materializing the parent — impossible under the opposite order | `contracts/deep-celltypes.md`, *Paths* |
+| On a Cell, `cell[3].as_celltype("plain")` and `cell.as_celltype("plain")[3]` are **different recipes**, and `as_celltype` mid-chain closes the Expression | `contracts/cells.md`, *Projections* |
+
+**Convert-then-project is spellable; it is just not one Expression.** `(input, "", X, Y)` composed with `(that result, path, Y, Y)` is the convert-first recipe, and the composition is what a Cell writes when you spell `as_celltype` before a projection. Its cost is the point: unless `X → Y` is trivial or reinterpret (`contracts/celltypes-and-conversion.md`), the inner Expression produces a **new, parent-sized buffer** that the path then walks — which is also why that pair does not fuse (*Fusion*, below).
 
 ## Identity
 
@@ -90,21 +119,59 @@ The dummy case is a required special case, not an optimization: `.set_checksum` 
 
 ## Cost class
 
-**An Expression's cost class is decided from checksum-level facts alone, never from the buffer content behind the checksum.** A non-empty path always costs one buffer, regardless of which checksum is at the root — shape alone decides. An empty path is not always free, though: whether it needs a buffer also turns on the specific checksum's nullity and on what its cached `HashType` already proves, so two Expressions with the same `(input_celltype, path shape, celltype)` shape are not guaranteed the same cost (contrast the deep celltypes, `contracts/deep-celltypes.md`, where no conversion branches on anything but the declared celltypes, so shape alone does decide). An agent can always decide cost class without touching a buffer; that is why deep fan-out is restricted (below) and why placement can be decided before any buffer is touched.
+**An Expression's cost class is decided from checksum-level facts alone, never from the buffer content behind the checksum.** There are three classes — **free**, **one child** (here simply *one buffer*: an Expression over an ordinary celltype has no members) and **all children** — and they are named once, in `contracts/deep-celltypes.md`, *The organising principle*. A non-empty path always costs one buffer, regardless of which checksum is at the root — shape alone decides. An empty path is not always free, though: whether it needs a buffer also turns on the specific checksum's nullity and on what its cached `HashType` already proves, so two Expressions with the same `(input_celltype, path shape, celltype)` shape are not guaranteed the same cost (contrast the deep celltypes, `contracts/deep-celltypes.md`, where no conversion branches on anything but the declared celltypes, so shape alone does decide). An agent can always decide cost class without touching a buffer; that is why deep fan-out is restricted (below) and why placement can be decided before any buffer is touched.
 
 Concretely, an Expression needs a buffer if and only if:
 
 - the path is non-empty; or
 - the path is empty, the celltypes differ, the input is not null, and `conversion_needs_buffer(checksum, input_celltype, celltype)` is `True` — that is, the conversion is not decidable from the checksum, the rule table and the cached HashType alone.
 
-Before evaluation, `validate_expression[_async]` checks the source celltype, then the path capability, then (for an empty path) `conversion_feasible`, rejecting impossible work at checksum level with `HashTypeValidationError` (see `contracts/hashtype.md`).
+## When an Expression is vetted, and by what
+
+Validation happens **twice**, and the two phases ask different oracles.
+
+**At construction** nothing about the input checksum's content is known, so only structural facts can be checked — which is enough to refuse a shape that could never be legal:
+
+| Shape at construction | Vetted by |
+|---|---|
+| **pathless** (a conversion, deep or not) | the **conversion engine**'s rule table, which owns the few legal deep-to-deep conversions as well (`contracts/celltypes-and-conversion.md`, `contracts/deep-celltypes.md`) |
+| **pathed**, with a deep celltype on either side | the **deep table** of `contracts/deep-celltypes.md` — exactly one string-item step, and the member-celltype rules |
+| **pathed**, over the 13 ordinary celltypes only | common-sense path rules: a path cannot be applied to an `int`, and so on |
+
+**At evaluation** the input checksum's `HashType` is available and a sharper pass runs: for a **pathed** Expression the same path / `input_celltype` rules are re-applied against what the word now proves (`capabilities`); for a **pathless** Expression over the 13, `deserializable_as` and `conversion_feasible` do that vetting instead. Either rejection is a `HashTypeValidationError` at checksum level, before any buffer is fetched (`contracts/hashtype.md`).
+
+**HashType is never asked about a deep celltype.** Deep feasibility is structural — it turns on the declared celltypes and the path shape, never on the data — so it is settled at construction by the deep table. `deserializable_as` accepts only the 13 and **raises `ValueError`** on anything else: that is a caller error, not an answer (`contracts/hashtype.md`). This is what keeps HashType's false-negative property intact, rather than widening it to cover deep names.
+
+*Contract ahead of code:* today there is one pass, not two. `validate_expression[_async]` runs before evaluation — source celltype, then path capability, then (for an empty path) `conversion_feasible` — and nothing is checked at construction. Deep celltypes have no rules anywhere: they reach `deserializable_as`, which answers `False`, which is why every deep Expression currently raises.
 
 ## Results and caching
 
 - Successful results are recorded in a process-global dict `get_expression_cache()`, keyed by the 4-tuple, value = result checksum; and, when `seamless_remote` is importable, in the database `expression` table.
 - A newly produced result buffer is kept in a weak-valued map, given a buffer-cache tempref, and **classified**: `register_hash_type_for_buffer` runs in the process that produced the buffer.
-- `Expression.checksum` is an alias of `Expression.result`: the published result checksum or `None`. Reading it also expresses user result interest (a refholder claim on the result; `contracts/internal/checksum-reference-lifecycle.md`).
+- `Expression.checksum` is an alias of `Expression.result`: the recorded result checksum or `None`. Reading it also expresses user result interest — a refholder claim on the result. **That claim is scratch-neutral**: it protects the result from eviction for as long as it is held, and it neither writes the buffer to the hashserver nor overturns any scratch status. Publishing needs an owner with a scratch policy — a Cell, a Transformation, a Context node — and an Expression is not one (`contracts/internal/checksum-reference-lifecycle.md`). Reading a property can therefore never defeat a scratch decision.
 - `Expression.compute(execution="auto")` / `compute_async(execution="auto")` return the result checksum. `Expression.run()` (also `expr()`) computes and then materializes the value: local buffers first, then `Checksum.resolve()`, which asks the hashserver and raises `CacheMissError` when no buffer is found. `run()` does not fingertip.
+
+**A result checksum does not imply a result buffer.** Evaluation temprefs the buffer it produced, but producing a buffer here is only one of the ways a result checksum is obtained: it may come from the process cache, from the database `expression` table, or from a checksum-preserving conversion that produced no new buffer at all — and a tempref is bounded and decays. So `.checksum` answering does not mean `.run()` or `.value` will find bytes; both resolve, and both may raise `CacheMissError`. **Assuming its input buffer is available, the only guaranteed way to obtain an Expression's result buffer is to fingertip the result checksum** — `Checksum.fingertip()`, or `Cell.fingertip()` / `Pin.fingertip()` where the result has an owner.
+
+### Evaluating, recording identity and publishing are three different things
+
+These are easy to conflate, and the code's own naming conflates two of them. They are separate acts with separate rules:
+
+| Act | What it does | Who does it |
+|---|---|---|
+| **Evaluating** | produces a buffer in the evaluating process's memory. That is *all* it does | whichever process ran the Expression |
+| **Recording identity** | stores the mapping Expression → result checksum, in `get_expression_cache()` and the database `expression` table. It is what the reverse index that fingertipping walks is made of, it must keep happening, and it says nothing about where any buffer is | the evaluating process |
+| **Publishing** | writes the *buffer* to the hashserver. It is an assertion that somebody holds the result and will want it later | the **refholder**, never the evaluator |
+
+**The vocabulary is ruled, and it is the same on every page.** *Publishing* is the buffer write; *recording* is what happens to a result **checksum**. `contracts/internal/checksum-reference-lifecycle.md` uses "recording" in that second sense throughout, and reserves "publishing" for the write. The code's `_publish_expression_result` means neither — it registers a tempref — and is to be renamed `_tempref_expression_result`.
+
+**The rule: neither evaluation nor fingertipping publishes.** An Expression that writes its result buffer to the hashserver is a bug, whether or not a fingertip drove it — it makes persistence a property of *who evaluated* rather than of *who holds*. Publication is the act of increfing the buffer for non-ephemeral interest (for example through a non-scratch Cell), and that single act both writes the buffer and overturns any scratch status; see `contracts/internal/checksum-reference-lifecycle.md`. So a bare `Checksum.fingertip()` leaves nothing behind but a buffer in local memory, while a `Cell.fingertip()` on a non-scratch Cell persists the result because the Cell increfs it (`Pin.fingertip()` is the same verb on a pin). The fingertip site itself never decides: it holds a bare checksum, with no owner and no scratch intent.
+
+**No site is exempt, and no intermediate is ever written.** A fingertip chain writes nothing to the hashserver — not on a client, not in a jobserver, not on a Dask worker. A worker that fingertips a missing `scratch` input wants the buffer *for itself*, so it is the ordinary case, not an exception: persistence stays the holder's act, and making it depend on *where* a recovery happened is exactly what this rule exists to prevent. The one genuine exception is a fingertip performed **on somebody else's behalf** — a remote fingertip *request* — which must write the buffer of the fingertipped checksum, because there is no other channel by which the requester can receive it. Even then it writes **only the end result of the chain**, never an intermediate.
+
+**Across a dispatch, the interest travels with the request.** If the evaluating side never publishes, a remotely evaluated result stays in the worker's memory and the client receives a checksum it cannot resolve — and the client's own later incref cannot repair that, because there is no buffer in *that* process to write. The transformation path already solves this by making `scratch` a parameter of the request: the executing side's non-scratch tempref writes the result buffer, and the jobserver asserts it can resolve the result before answering. The same shape is the contract for Expressions — the executing side publishes **on the requester's behalf, under the requester's scratch decision**, so the rule above is preserved across the process boundary rather than broken by it.
+
+*Contract ahead of code, on both halves.* Today every terminal branch of local evaluation calls `_publish_expression_result(…, buffer=…)`, which temprefs **non-scratch** and therefore queues a background hashserver write whenever one is configured — for every evaluation, fingertip-driven or not. And the expression dispatch carries no `scratch` flag at all. See *Status: publication and fingertipping*.
 
 ## Fusion
 
@@ -142,7 +209,7 @@ Placement **is** contract. A jobserver/daskserver counts as closer to the hashse
 
 `execution` takes `"auto"`, `"local"` or `"remote"`. **These three values are an argument on an Expression, not the `execution:` configuration key that selects a transformation backend** (`contracts/execution-backends.md`); the words `local` and `remote` mean something narrower here. `"auto"` is the default on every path that evaluates an Expression: `Expression.compute` / `compute_async` / `run`, transformation dependencies, pin preparation, and workflow Context projections (`Context(expression_execution=...)` overrides it for one Context).
 
-- **`"local"` means *in this process's memory*.** **`"remote"` means *not in this process's memory*, independently of backend availability.** `choose_expression_evaluation_location` answers only that question: local if no buffer is needed, or if the input buffer is already resolvable from process-local caches; remote otherwise.
+- **`"local"` means *the input buffer is already here*** — in this process's memory, or in an explicitly configured read-buffer directory (below). **`"remote"` means *it is not here*, independently of backend availability.** `choose_expression_evaluation_location` answers only that question: local if no buffer is needed, or if the input buffer is already resolvable without a server; remote otherwise.
 
 Resolution order (`evaluate_expression_remote`):
 
@@ -166,10 +233,47 @@ Two derived rules:
 - **The result, including the exception type, must not depend on where the Expression ran.** That is what the structured error envelope buys (below).
 - **HashType classification is owned by whichever process holds the buffer**: the client for local evaluation, the jobserver for direct evaluation, the Dask worker for daskserver evaluation. A process that receives only a checksum classifies nothing and uploads nothing. Jobserver/daskserver responses are checksum-only; HashTypes travel through the database.
 
-**Open placement questions** (documented as open; do not assume an answer):
+**Locality includes an explicitly configured read-buffer directory.** A buffer sitting in a configured local read-buffer directory counts as **local**, and the Expression is evaluated here rather than dispatched: the client could read those bytes for free, and paying a server round trip for them is waste. Read-buffer directories are consulted **before** any hashserver query, and a hit means local placement. The gate is deliberately narrow — an *explicitly configured* read-buffer-directory path, never a generic filesystem scan — so that placement stays a **cheap and deterministic** check: a filesystem check against a configured path is allowed, which is a deliberate relaxation of the earlier "side-effect-free" phrasing, and the index-only alternative is not required.
 
-1. Whether "where the data is" includes a locally mounted read buffer directory. Today locality is decided by process memory alone, so a buffer available on local disk still counts as remote and is dispatched.
-2. Where a fingertip chain triggered by an Expression runs. It is the case whose cost is unbounded, because the chain may contain Transformations. Today the reverse-index walk re-evaluates the chain locally in the requesting process, but this is code behaviour, not a ratified contract.
+The rule is about the **input** buffer, which is what placement is about. **Resolution already behaves correctly and needs no change**: `Checksum.resolution()` goes through `buffer_remote.get_buffer`, which queries every configured read *folder* before any read *server* (`seamless-remote/seamless_remote/buffer_remote.py:171-186`), so steps 5 and 6 of the resolution order above already prefer a local directory. *Contract ahead of code:* only the placement half is missing — `choose_expression_evaluation_location` today defines locality as this process's **memory** alone, so a buffer on local disk is currently treated as remote and dispatched.
+
+### Fingertipping is exempt from "where the data is"
+
+**A fingertip chain runs entirely in the requesting process, and that is contract, not a placement compromise.** Nothing in the chain is dispatched: not the Expressions in it, and not the Transformations in it.
+
+The reason is that **there is no buffer-return channel.** A remote evaluation answers with a *checksum* and nothing else — the jobserver's `run-expression` handler returns `{"result_checksum": …}` — so a remotely evaluated result can reach the client only by being written to the hashserver. Dispatching a fingertip is therefore not a placement choice with a transfer cost; it is a placement choice that **must publish**. And a fingertip exists precisely because a buffer is absent, which is always the consequence of a decision — a `scratch` policy or an eviction. Remote evaluation would re-add exactly the entry that decision kept out or removed. Local evaluation materializes the buffer in process memory only, and so is the only placement that respects the decision which made the fingertip necessary.
+
+Three things follow, and they are contract:
+
+- **The cost is bounded by the frontier, not by the ancestry.** `fingertip` resolves at every level before recursing, so the walk stops at the first checksum that ordinary resolution can serve (local buffer cache, then hashserver). What is recomputed locally is the frontier of the absent region, not the whole history. For a direct request the target reaches the client either way, so local recompute transfers the frontier *instead of* the target — normally less, since the archetypal scratch shape is a large output derived from smaller stored inputs. **This bounds how far back the walk goes; it does not bound the work.** The frontier may itself be a Transformation costing hours, which is why a materialization's cost is unbounded and why the cancellation machinery of *Cancellation* is worth building.
+- **Fingertipping assumes the requester can execute the chain's transformations.** This is a restriction the contract states rather than hides: a thin client with no conda environment, no compiler and no declared binaries cannot fingertip through a Transformation. *Contract ahead of code:* today it cannot even find out that it could not — see *Implementation status*.
+- **Two modelling rules keep a graph out of the expensive shape.** Fingertipping a large parent in order to keep one small item is real, and there local evaluation is the costly choice. It is reachable only by opting into it: **do not scratch a small derived cell** (if it is stored, resolution serves it and no chain is built at all), and **make an item-addressed large parent deep** (a path step over a deep checksum selects a sub-checksum without materializing the parent — `contracts/deep-celltypes.md`). Both are in `contracts/scratch-witness-audit.md`.
+
+The optimization that remains available and is **not** recommended: remote evaluation followed by immediate hashserver eviction. It buys the projection case at the price of a write that scratch or eviction had excluded, and anything expensive enough to justify it should not have been scratched.
+
+**A naming hazard, stated because two readers have already got it backwards.** The wrong model is: *"a fingertip chain is only orchestrated locally; each Expression in it is dispatched to where the data is, and each Transformation runs on the server."* Every clause of that is false, and the function names encourage it:
+
+| Name | What it actually does |
+|---|---|
+| `evaluate_expression_async` | **local only**, despite having no "local" in its name. It registers its dedup members under a key beginning with `"local"` and calls the local evaluator directly |
+| `evaluate_expression` | local only too (the synchronous form) |
+| `evaluate_expression_remote` | **the dispatching entry point** — the one function whose name says "remote" is the only one that can decide *local*, because it is the one that takes `execution="auto"` and consults `choose_expression_evaluation_location` |
+| `Checksum.fingertip` | calls the **local** evaluator, so no placement decision is taken anywhere in a fingertip chain |
+| `_publish_expression_result` | does **not** mean "publish" in the sense of *Evaluating, recording identity and publishing*, above; its docstring is "Publish bounded cache interest" and it registers a tempref. It is to be renamed **`_tempref_expression_result`** |
+
+What *is* remote-aware in a fingertip is **candidate discovery**: the reverse index is read from the local caches *and* from the database (`get_rev_transformations`, `get_rev_expressions`), so a client with no local cache can still find the chain. And a fingertip that happens *inside* a job runs on that job's host. Those are not counter-examples: they are the same rule — the work happens at the site that wants the buffer — applied at a different site.
+
+### Status: publication and fingertipping
+
+The rules of *Evaluating, recording identity and publishing* and of *Fingertipping is exempt from "where the data is"* are contract ahead of code on every point below.
+
+- **Expression evaluation publishes its result buffer.** Every terminal branch of `_evaluate_expression_after_validation` calls `_publish_expression_result(…, buffer=…)`, which has no scratch parameter and so temprefs non-scratch; that sets `write_remote` and ends in a background hashserver write. Its sharpest form is the fingertip case: recovering a scratch or evicted buffer **re-adds it to the hashserver**, locally, with no dispatch involved, silently repopulating the store with exactly the buffers someone decided to keep out. The transformation branch of a fingertip does *not* have this defect (it temprefs `scratch=True`); the two branches of the same walk disagree, and the Expression branch is the wrong one.
+- **The fix is not a scratch flag on `_publish_expression_result`.** Passing scratch down from the fingertip call site would leave *ordinary* evaluation publishing, which is equally wrong. The fix is to remove the publication and leave the refholder as the only publisher — while **keeping** the identity recording (`_expression_cache`, `set_expression_result`) and the HashType registration, which are a different act.
+- **The expression dispatch carries no `scratch` flag.** The client sends only the four identity fields; the handler accepts those plus an optional validator pair and answers `{"result_checksum": …}` alone. So the executing side cannot learn whether the requester will hold the result, and cannot be told to publish on its behalf. The remedy is the parameter the transformation path already has, not new machinery.
+- **`Cell.fingertip()` does not exist.** The only entry point is `Checksum.fingertip()`. A bare checksum has no owner and no scratch intent, which is plausibly why the publication above defaults to non-scratch; a Cell-level entry point is what makes the ownership rule expressible at all (`contracts/cells.md`).
+- **A fingertip discards every failure reason.** Both candidate loops are `except Exception: continue`, so a missing binary, an unavailable conda environment, a resource error and a genuine absence all collapse into a bare `CacheMissError`. Under the local-evaluation ruling this is the difference between a livable restriction and an undiagnosable one.
+- **A local recompute can silently produce nothing.** `__env__` is not enforced for Python — only declared binaries are checked — so a mismatched client environment yields a *different* result, fails the `result == wanted` check, and the candidate is silently skipped, which then surfaces as a cache miss.
+- **There is no "materialize" mode, only a cache-popping workaround.** `evaluate_expression_remote` short-circuits on the process cache and on the database result, both returning the result *checksum* without producing its buffer — the wrong answer for a fingertip, whose target checksum is already known and whose database mapping is how the candidate was found. Today's code works around this by evicting the memo first, a global side effect standing in for a missing flag. Any change there must preserve the distinction between "tell me the checksum" and "produce the buffer".
 
 ## Errors
 
@@ -203,11 +307,21 @@ One in-flight evaluation per Expression identity, with a membership set of inter
 - in daskserver mode the same ownership is preserved by giving equivalent submissions a deterministic Dask task identity, so duplicate requests resolve to one Dask evaluation;
 - active work is process-local/scheduler-local and is never recorded in the database.
 
+**This membership set is not the waiting set of *Cancellation*, below.** Today one code object (`_active_expressions`) serves both roles, which is exactly the conflation the settled model exists to undo: deduplication belongs to the **Expression identity**, while the waiting set belongs to the **checksum being materialized**, one layer down and shared with transformation input resolution, `.buffer` reads and mounts. They are keyed differently and they will be two objects.
+
 A caller identifies itself to the set by a member id: a standalone `Expression` uses `id(self)`, and the workflow Context uses its demand key, which it deregisters when its own job is cancelled (node supersession, `Context.close()`). Two `Expression` objects with the same identity are therefore two members of one evaluation.
 
 ## Cancellation
 
-**The cancellation mechanism does not belong to Expressions.** The only cancellable work is remote materialization of a buffer, which Expressions share with transformation input resolution, `.buffer` reads and mounts. Expression evaluation proper — deserialize, walk the path, convert, serialize, hash — is cheap and CPU-bound.
+**The cancellation mechanism does not belong to Expressions.** The only cancellable work is remote materialization of a buffer, which Expressions share with transformation input resolution, `.buffer` reads and mounts. Expression evaluation proper — deserialize, walk the path, convert, serialize, hash — is cheap and CPU-bound inside a single thread, so it could not usefully be interrupted even if there were a way to.
+
+Three premises decide the shape of the mechanism, and each is a consequence of a rule stated elsewhere on this page:
+
+- **A materialization's cost is unbounded**, which is what makes the machinery worth building at all. An Expression does not normally fingertip its input checksum, but it can, as a step in a fingertip chain — and **a chain may contain Transformations**. Do not read *Fingertipping is exempt from "where the data is"* as saying otherwise: the **frontier** bound there is about how much of the *ancestry* is walked, not about how much work the frontier itself is. Recomputing one frontier Transformation can cost hours.
+- **Every Expression waits on exactly one buffer — `folder` excepted.** Materializing a deep checksum into a value is banned from Expressions except for `folder → mixed` (`contracts/deep-celltypes.md`), so the waiting set can be keyed by a single checksum in every other case. **`folder` is the only shape in the system that needs a multi-checksum waiter**, and it is the only reason that case has to exist.
+- **There is no cancel point once the data is present.** Evaluation is then near-instantaneous, so the buffer's arrival is the end of the cancellable window.
+
+**Why latch-on and a delay rather than an eager abort.** The value of a cancel is *remaining resource cost × the chance that nobody else wants the output* (`contracts/cancellation.md`, *What cancellation is not for*). For a materialization the second factor is **low — lower than for a Transformation result** — because the same buffer is routinely wanted by somebody else: by **sibling projections of one parent** (`ctx.a.x` and `ctx.a.y` resolve the same root), by the **Transformation that takes the same checksum as an input**, and by a **revert**. An eager abort would therefore throw away work that another requester is about to ask for, which is exactly what latch-on and the linger exist to prevent.
 
 The settled model:
 
@@ -217,12 +331,18 @@ The settled model:
 - **No hard cancel at all** — a documented non-feature. The only leaf a hard cancel could kill is a shared fetch, which would merely make the other waiters fail and re-fetch. A single waiter pressing Ctrl-C is already covered: with one member, softcancel aborts the fetch.
 - **No cancel point once the buffer is present.** Evaluation then runs to completion and its result is recorded.
 - **Failure is not sticky** (above).
-- **Soft deregistration cascades down fingertip chains**; a step shared with a live chain survives, because it still has a member of its own.
+- **Soft deregistration cascades down fingertip chains**; a step shared with a live chain survives, because it still has a member of its own. **The leaf Transformation needs no special case**: the linger keeps its member registered for those few seconds, and it is killed only when its own set empties — softness cascading to the leaf, exactly as in `contracts/cancellation.md`.
 - Vocabulary: **waiting set**, not refcount. It tracks who still wants a fetch that has not finished, which is a different thing with a different lifetime from the checksum reference lifecycle. The two meet in one place: the site holds a lifecycle claim for the duration of the linger.
 
 ### The linger
 
-The linger is an internal constant — "a few seconds, not contractual" — at most a test hook, and is **not user-visible**. Its observable consequences are contract:
+**Three independent arguments produce the linger**, which is why it is not an optimization to be tuned away:
+
+1. **Somebody else usually wants the same buffer** — sibling projections, a Transformation over the same checksum, a revert (above).
+2. **Convergence is normal in a fingertip chain.** Two chains often need the same intermediate, and one may arrive seconds after the other gave up.
+3. **Abandoning mid-chain discards every intermediate**, and where those intermediates are `scratch` no trace of the work remains — so the next requester starts from nothing.
+
+The linger is an internal constant — "a few seconds, not contractual" — at most a test hook, and is **not user-visible**. **It is a knob of its own.** The node-state-lifecycle self-edit revert hold (`contracts/node-state-lifecycle.md`, *Self-edit revert hold*) is a human-timescale window of the same order, but the two are **two knobs, not one shared constant**: they answer different events — a person reverting an edit, versus a second requester arriving for the same buffer — so tuning one must never retune the other, and each may be measured and moved alone. The linger is a few seconds, pending measurement; the revert hold's own figure is on that page. Its observable consequences are contract:
 
 - after the last waiter leaves, a fetch may run on for a few seconds;
 - it may still complete, and its result is then recorded and usable;
@@ -256,29 +376,44 @@ Cancelling the caller's `asyncio` task is the right way to make it abandon an Ex
 
 There is no "cancelled" state to clear. Results are content-addressed and failures are not cached, so a caller that changes its mind simply asks again.
 
-### Implementation status
+### Implementation status: cancellation
 
-The settled model above is **ahead of the code**. What exists today:
+The settled cancellation model above is **ahead of the code**. What exists today:
 
 - The waiting set lives at the **Expression** layer (`_active_expressions` in `seamless.checksum.expression`), not at the materialization site in the buffer layer, and buffer resolution itself is **not** deduplicated by checksum.
 - There is **no linger**: when the last member deregisters, the in-flight remote request is aborted at once and the awaiting task receives `CancelledError`.
 - `Expression.cancel()` exists and is soft; `Expression.softcancel()` does not exist yet, `cancel` is not retired, and `cancel_expression` is still an alias of `softcancel_expression`.
 - `Expression.cancel()` is a **silent no-op for local in-flight evaluations**: `evaluate_expression_async` registers members under a 7-tuple key `("local", hex, path, input_celltype, celltype, str(validator), validator_language)`, while `cancel_expression` looks up the 4-tuple identity key. The call returns `False` while the evaluation keeps running. Only the remote path (`evaluate_expression_remote`, which registers under the 4-tuple with `member_id=id(self)`) can be deregistered.
-- **Dask-dispatched Expressions cannot be interrupted mid-flight**: `dispatch_expression` awaits `asyncio.to_thread(thin.result)`, so cancelling the awaiting task neither cancels the Dask future nor frees the thread, which stays blocked until the remote side finishes.
+- **Dask-dispatched Expressions cannot be interrupted mid-flight**: `dispatch_expression` awaits `asyncio.to_thread(thin.result)`, so cancelling the awaiting task neither cancels the Dask future nor frees the thread, which stays blocked until the remote side finishes. This is the confirmed half of "an abandoned waiter keeps holding a bounded resource", and it is the head-of-line blocking that justifies the mechanism.
+- **The jobserver half of that is unconfirmed.** Whether an abandoned Expression materialization keeps holding a jobserver worker slot has not been read out of the dispatch/cancel path; it is recorded for *Transformations* that a jobserver cancel does not free the slot. It should be settled before the waiting set is built, because it materially changes how much the mechanism is worth.
 - No soft-deregistration cascade down fingertip chains exists.
 - Repo tests cover the remote path only: one member leaving keeps a shared request alive and both callers get the result; the last member leaving aborts the request; `cancel()` on an idle Expression returns `False`. There is no test for local in-flight cancellation.
 
 ## Deep checksums
 
-An Expression over a deep checksum (`deepcell`, `deepfolder`, `folder`) is **restricted**, by the cost-class rule above: exactly **one string-item step** is allowed, yielding either the child's checksum or the child's value at its member celltype, and longer paths are rejected (a further step continues into the child, which is a different checksum and therefore a different Expression). The zero-path conversions are index-level and free, with **`folder → mixed` the only conversion that materializes children**. The conversion table, the member-celltype rules, the flatness requirement and the reasons are in `contracts/deep-celltypes.md`; do not re-derive them here. **Status: settled contract, not yet enforced** — the Expression path contains no deep-celltype rules at all, and a deep celltype on either side of an Expression currently raises `HashTypeValidationError` before evaluation.
+An Expression whose `input_celltype` or `celltype` is `deepcell`, `deepfolder` or `folder` leaves the rule table of `contracts/celltypes-and-conversion.md` entirely and is governed by the much smaller table in **`contracts/deep-celltypes.md`**, which owns it. That page has the conversion table, the member-celltype rules, the flatness requirement and the reasons; do not re-derive them here. What belongs on *this* page is how the carve-out meets the Expression machinery:
+
+| Expression concept | How a deep checksum behaves |
+|---|---|
+| **Path** | **exactly one step, and it is a string item** — an index lookup, selecting one member. A longer path is rejected, because a further step would continue into the **child**, which is a different checksum and therefore a different Expression |
+| **Result of that one step** | the child's **checksum**, or the child's value at its member celltype (`mixed` for `deepcell`, `bytes` for `deepfolder`/`folder`). Nothing else, so that the child's own conversion is keyed at the *child's* checksum and shared by every parent index referencing it |
+| **Zero-path conversions** | index-level and free (checksum-preserving), with exactly one exception: **`folder → mixed`**, the only conversion in the system that materializes children |
+| **Application order** | this is the shape *project-then-convert* exists for: the step selects a child without materializing the parent, which the opposite order could not express |
+| **Cost class** | decided by the identity tuple alone, as everywhere — but *strictly* so here: no deep conversion branches on nullity or on a cached `HashType`, so shape alone decides (*Cost class*, above) |
+| **Fusion** | a deep step is a **barrier**. The run ends at it, and the child's own conversion is a separate Expression (*Fusion*, above) |
+| **Connecting a deep source on a Cell** | the path-and-conversion wiring rule does **not** apply; a deep step necessarily changes the celltype, so path and conversion always travel together (`contracts/cells.md`, *Connecting*) |
+
+**Status: settled contract, not yet enforced.** The Expression path contains no deep-celltype rules at all — no deep conversion table, no deep path rule, no flatness validator — and a deep celltype on either side of an Expression currently raises `HashTypeValidationError` before evaluation, because `deserializable_as` returns `False` for any celltype outside the 13 (`contracts/hashtype.md`). That `False` is retired by the ruling: under the contract `deserializable_as` raises `ValueError` when asked about a deep celltype, and the shape is admitted or refused at construction by the deep table instead (*When an Expression is vetted*). Enforcing it requires the Expression layer and pin unpacking (`unpack_deep_structure` / `pack_deep_structure`) to change **together, under one shared validator**, or the two layers will disagree about what a deep value is.
 
 ## Current limitations
 
 - **Validators are not implemented.** Supplying `validator` or `validator_language` raises `NotImplementedError` from every evaluation entry point. The reject-only semantics are settled; the identity exclusion is already decided and marked in the code.
 - **No forensic "irreproducible expression" analogue exists.** There is no Expression counterpart of `IrreproducibleTransformation` (see `contracts/execution-records.md`); an Expression that yields a different result for the same identity tuple is not recorded anywhere.
-- **Cancellation** — see the implementation-status list above.
+- **Cancellation** — see *Implementation status: cancellation*.
 - **Deep-checksum restrictions are unenforced** — see above.
 - **The process-local Expression cache is unbounded** and result-only; it is cleared only by process exit or an explicit `get_expression_cache().clear()`.
+- **Locality is process memory only** — *placement* does not yet consult a configured read-buffer directory (resolution already does); see *Placement*.
+- **Evaluation publishes its result buffer**, and the dispatch carries no `scratch` flag; `Cell.fingertip()` does not exist. See *Status: publication and fingertipping*.
 
 ## Non-goals
 
@@ -286,3 +421,5 @@ An Expression over a deep checksum (`deepcell`, `deepfolder`, `folder`) is **res
 - **Hard cancellation.** See above; it is a deliberate non-feature.
 - **Failure caching.** See above; it is deliberate, not a missing optimization.
 - **Value-level canonicalization.** An Expression produces whatever checksum its steps and target celltype produce; it does not re-serialize a result to normalize it (see `contracts/identity-and-caching.md`).
+- **Publication.** Evaluating an Expression is not an assertion that anyone wants its buffer kept. Persistence is the refholder's act, never the evaluator's (*Evaluating, recording identity and publishing*).
+- **Deep-celltype semantics.** Owned by `contracts/deep-celltypes.md`; this page states only how the carve-out meets Expression identity, cost, fusion and placement.

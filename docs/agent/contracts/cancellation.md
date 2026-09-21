@@ -96,7 +96,9 @@ Buffer materialization — a remote fetch of a buffer, which Expression evaluati
 
 - the same membership model applies, so a fetch shared with a live requester survives another requester's departure;
 - there is **no hard cancel at that layer at all**, by design, so a hard `cancel_by_checksum` has no materialization counterpart;
-- an abandoned **fingertip chain** deregisters softly down every step, and a step shared with a live chain survives — the membership model of this page, applied one layer down.
+- an abandoned **fingertip chain** deregisters softly down every step, and a step shared with a live chain survives — the membership model of this page, applied one layer down. The leaf Transformation needs no special case: the linger keeps its member registered, and it is killed only when its own set empties, which is this page's softness-cascades rule reaching the leaf.
+
+Two premises of that layer are worth carrying back here, because they are what make it a *different* mechanism rather than a copy of this one: a materialization's cost is **unbounded** (a fingertip chain may contain Transformations), and a materialization's chance that **nobody else wants the output is low** — sibling projections, a Transformation over the same checksum, and a revert all want the same buffer. That is why the buffer layer adds latch-on and a linger, which this page's transformation sites do not have.
 
 Vocabulary: that set is a **waiting set**, never a refcount.
 

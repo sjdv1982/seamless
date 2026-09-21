@@ -53,6 +53,16 @@ This page defines the *Transformation* identity and its cache. Three other kinds
 
 The local buffer cache, its strong/weak strategy and its eviction pressure are `contracts/cache-storage-and-limits.md`; which buffers may not be evicted at all is the checksum reference lifecycle (`contracts/internal/checksum-reference-lifecycle.md`).
 
+### Recording identity is not publishing
+
+The caches above record **identity**: producer → result checksum. That is a separate act from **publishing** — writing the result *buffer* to the hashserver — and the two must not be conflated. The two words are ruled to mean exactly that, everywhere, including `contracts/internal/checksum-reference-lifecycle.md`, which owns the reference side:
+
+- **Evaluating** a transformation or an Expression, or recovering a buffer by fingertipping, produces a buffer in the evaluating process's memory. That is all it does.
+- **Recording identity** stores the mapping. It must keep happening — it is what the reverse index that fingertipping walks is made of — and it says nothing about where any buffer is.
+- **Publishing** is an assertion that somebody holds the result and will want it later. It is the act of **increfing** the buffer for non-ephemeral interest, and that single act both writes the buffer to the hashserver and overturns any scratch status.
+
+**Neither evaluation nor fingertipping publishes**, at any site, so an evaluated result's persistence is a property of *who holds it*, never of *who computed it* or *where*. (The one exception is a fingertip run on a remote requester's behalf, which writes the end result of the chain and nothing else.) A corollary worth keeping in mind when reading a cache: a recorded result checksum does not imply that its buffer exists anywhere. Across a dispatch the interest travels with the request (`scratch` is a request parameter, and the executing side publishes on the requester's behalf under the requester's decision), which preserves the rule across a process boundary rather than breaking it. See `contracts/scratch-witness-audit.md` and `contracts/internal/checksum-reference-lifecycle.md`; Expression evaluation does not yet obey this (`contracts/expressions.md`, *Status: publication and fingertipping*).
+
 ### Caching masks accidental nondeterminism
 
 A direct consequence of “same `tf_checksum` ⇒ reuse the cached result”: Seamless **does not, by default, observe** accidental nondeterminism (wall-clock reads, unordered-set iteration, non-associative parallel reductions, data races). A transformation is computed **once**, its result is cached under its `tf_checksum`, and every later request is a **cache hit** — the code is never re-run, so a divergent result is never seen.
@@ -60,7 +70,7 @@ A direct consequence of “same `tf_checksum` ⇒ reuse the cached result”: Se
 Accidental nondeterminism therefore surfaces **only when a result is recomputed**:
 
 - **deliberately**, by forcing a recomputation for an audit (see “Forcing recomputation / auditing” below), or
-- **incidentally**, by **fingertipping** — when a requested buffer is *absent* (evicted from the store, **or** `scratch` and so never stored), Seamless regenerates it by recomputing its producer (recomputation-using-provenance). A non-reproducible producer then yields a *different* checksum on regeneration, breaking the consuming step's input identity. Note this is a property of fingertipping (the recompute), not of scratch as such — an evicted non-`scratch` buffer is exposed the same way (see `contracts/scratch-witness-audit.md`).
+- **incidentally**, by **fingertipping** — when a requested buffer is *absent* (evicted from the store, **or** `scratch` and so never stored), Seamless regenerates it by recomputing its producer (recomputation-using-provenance). A non-reproducible producer then yields a *different* checksum on regeneration, breaking the consuming step's input identity. Note this is a property of fingertipping (the recompute), not of scratch as such — an evicted non-`scratch` buffer is exposed the same way (see `contracts/scratch-witness-audit.md`). A fingertip chain runs **entirely in the requesting process**, so the recomputation — and any divergence it exposes — happens in the client's own environment, not on a server.
 
 A `result_checksum` that differs for the same `tf_checksum` is a **referential-transparency violation**, not a Seamless feature; that is what `IrreproducibleTransformation` records (see `contracts/execution-records.md`). Determinism is a contract the user must uphold; Seamless's silence on a cache hit is not evidence of it.
 
