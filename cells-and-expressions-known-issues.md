@@ -286,7 +286,7 @@ change, not nine:
 | Rule | Page |
 |---|---|
 | **Project-then-convert**, and an Expression never converts its input (at most one conversion, always last) | `expressions.md` §Application order |
-| **Syntax order = application order**: `as_celltype` mid-chain closes the Expression and re-bases the next step | `cells.md` §Projections |
+| **Syntax order = application order**: `Cell.as_celltype` mid-chain closes the Expression and re-bases the next step | `cells.md` §Projections |
 | **The wiring rule**: an edge may carry a path *or* a conversion, never both; redefining an input needs a pathless source or a celltype match | `cells.md` §Connecting |
 | **`miswired`**, a seventh node state, plus `blocked-by-miswiring`; precedence `miswired > unwired > blocked-by-miswiring > blocked-by-unwired > blocked-by-error > waiting` | `node-state-lifecycle.md`, `workflow-context.md` |
 | `block_reason` becomes a **dict from input to reason** wherever a node has several inputs — keyed by edge for a cell (`"<root>"` for the root edge), by pin name for a transformer; every responsible input appears in every state, and the winning category is the maximum of the values, not a separate field. Retires `Node.block_pins` and `tf.result.block_reason`'s category role | `node-state-lifecycle.md`, `pins.md` |
@@ -382,6 +382,49 @@ The report should be regenerated per-file in the `seamless1` environment, or del
 | `seamless-database` | 3 | 28 | 0 | 0 |
 | `seamless-remote` | 5 | 26 | 0 | 0 |
 | **total** | **167** | **3426** | **6** | **0** |
+
+**Additional suites, measured 2026-09-21** — one pytest process per file, `seamless1`
+environment:
+
+| Repo | Files | Passed | Failed | Collection errors |
+|---|---:|---:|---:|---:|
+| `hashserver` | 14 | 13 | 10 | 0 |
+| `remote-http-launcher` | 5 | 82 | 0 | 0 |
+| `seamless-config` | 6 | 46 | 0 | 0 |
+| `seamless-signature` | 2 | 31 | 0 | 0 |
+| `seamless-share` | 9 | 24 | 0 | 0 |
+| `seamless-jobserver` | 2 | 16 | 0 | 0 |
+| `seamless-dask` | 14 | 48 | 2 | 0 |
+
+`hashserver` failures:
+
+- `tests/test_basic_uvicorn.py::test_basic_uvicorn`
+- `tests/test_compression.py::test_put_zstd_stores_compressed_and_sidecar`
+- `tests/test_compression.py::test_put_compressed_checksum_mismatch_returns_400`
+- `tests/test_compression.py::test_put_compressed_and_uncompressed_can_coexist`
+- `tests/test_compression.py::test_get_prefers_compressed_when_only_compressed_exists`
+- `tests/test_compression.py::test_get_prefers_uncompressed_when_identity_is_requested`
+- `tests/test_compression.py::test_get_prefers_requested_encoding_when_available`
+- `tests/test_compression.py::test_has_and_buffer_length_recognize_compressed_form`
+- `tests/test_lock_uvicorn.py::test_lock_uvicorn`
+- `tests/test_put_read_big.py::test_put_read_big`
+
+`remote-http-launcher` failures: none (6 integration tests skipped because `localhost_guard` is not configured).
+
+`seamless-config` failures: none. Its `test.py`, `test2.py`, `test3.py`, `test4.py`, and
+`test-daskserver.py` files are profile-dependent configuration scripts, not pytest files in its
+`run-tests.sh` harness.
+
+`seamless-signature` failures: none.
+
+`seamless-share` failures: none.
+
+`seamless-jobserver` failures: none.
+
+`seamless-dask` failures:
+
+- `tests/test_expression_cancellation.py::test_cancelled_expression_dispatch_retains_default_executor_thread`
+- `tests/test_nested_transformations_multi.py::test_nested_transformations_multi`
 
 **Every collection error in the old report is gone** — they were the whole-directory artefact. The six
 remaining failures are real and fall into two groups.
@@ -590,6 +633,9 @@ The false-rejection family is **fixed** (`0d3ccfb`, `827bd5b`). What is left:
    data is" — and it does so precisely in the case whose cost is unbounded, since the chain may contain
    Transformations. This is listed here as a defect **and** in Appendix A, item 4, because the fix
    direction has never been ruled.
+   **Ruled 2026-09-21 (Appendix A, item 4; Appendix E): local evaluation is correct**, so this is not a
+   placement defect after all. What survives as a defect is the *publication*: the same branch writes the
+   recovered buffer back to the hashserver (Appendix E, §E.4, item 1).
 
 **Not a bug, listed to stop it being refiled as one:** there is no hard cancel for Expressions. That is
 a ruled non-feature — the only leaf a hard cancel could kill is a shared fetch, so it would merely make
@@ -778,6 +824,7 @@ reminder. **Recommendation: (a)**, and apply it retroactively to
 `seamless-transformer/tests/cancellation/`, whose README already *claims* this convention while the
 code carries no markers at all (section 3.4, item 1). Whatever is chosen, write it down once — the
 inconsistency is what caused a contract page to cite a suite that proves nothing.
+**Decision**: (a)
 
 ### 2. Compiled-pin celltype recording: when, not whether
 
@@ -789,6 +836,7 @@ whose stored pin celltype changes; (b) leave it a documented limitation indefini
 null bypass produces unclear failures in compiled pipelines until fixed. **Recommendation: (a)**, scoped
 narrowly to recording the schema-derived celltype rather than a broader compiled-pin rework: the
 checksum invalidation is one-time and the contract already treats it as the intended end state.
+**Decision**: (a)
 
 ### 3. Does "where the data is" include a locally mounted read-buffer directory?
 
@@ -801,6 +849,7 @@ currently side-effect-free and fast, and needs a definition of "local read buffe
 generalizes across deployments. **Recommendation: (b), gated behind an explicitly configured
 read-buffer-directory path** rather than a generic filesystem scan, so placement stays a cheap
 deterministic check.
+**Decision**: (b)
 
 ### 4. Where does a fingertip chain run — client, or the server that took the dispatch?
 
@@ -811,6 +860,15 @@ contract, which needs a new server-side code path because a fingertip chain is n
 with its own error-envelope and cancellation implications. **Recommendation: rule this explicitly and
 soon.** The unbounded cost of a fingertip chain is the whole reason the Appendix B machinery is worth
 building, so this is not a wording fix; it deserves the same priority as that work.
+
+**CLOSED (2026-09-21): (a), local — and the question was the wrong one.** Remote evaluation cannot
+deliver a buffer to the client except through the hashserver (the jobserver returns a checksum only), so
+dispatching a fingertip necessarily re-adds the entry that scratch or eviction had excluded. Local is
+therefore not a placement compromise but the only placement that respects the decision which made the
+fingertip necessary. **Appendix E** carries the ruling, the reasoning an agent needs in order not to
+re-derive the wrong model, and nine defects found while checking it — chief among them that expression
+evaluation publishes its result buffer at all, so a fingertip re-adds what it recovers, locally, with no
+dispatch involved.
 
 ### 5. Do remote materializations hold bounded resources while a waiter is abandoned?
 
@@ -838,6 +896,8 @@ Two sub-questions that only matter once the answer is in:
   knob, one default, no per-source tuning until something measured asks for it. Only the number is
   open. **Recommendation:** reuse the few-seconds figure of the node-state-lifecycle self-edit-revert
   hold rather than inventing a second constant, pending measurement.
+
+ **Decision: (a)**. Deduplicate fetches. Follow recommendation on the linger. 
 
 ### 6. Does a bound projection's `input_celltype` follow the path, or report the root's?
 
@@ -911,6 +971,7 @@ the record's purpose is forensic and suppressing it loses the evidence that the 
 the page must say that a record can name a `result_checksum` the Transformation cache does not hold, so
 nobody treats a record as proof of a cached result. This is the one place where the cancellation and
 execution-record contracts contradict each other.
+**Decision: (a)**
 
 ### 9. Is a Python parameter default *intended* to declare an optional pin?
 
@@ -927,7 +988,7 @@ with the documentation already written; (b) rule that optionality must be declar
 augment rather than replace. **Recommendation: (a) or (c)** — the signature-derived default is
 genuinely convenient and matches Python's own reading, but replace-semantics on top of it is a trap.
 This is the kind of rule that should be ruled rather than inherited from an implementation detail.
-
+**Decision: (a)** . Optionality is considered almost syntactic sugar: it can always be faked as making a pin required and setting its value to the Python function argument's default value. (It is not exactly syntactic sugar because it changes the transformation checksum for caching purposes, but that doesn't apply to API-of-least-surprise questions such as this one). 
 ---
 
 ## Appendix B. Remote materialization: a waiting set with latch-on and delayed cancel
@@ -1185,3 +1246,212 @@ only on `seamless-run-transformation`; `identity-and-caching.md`, `scratch-witne
     stored failure, after a recorded evaluation failure; this one is silent success versus a fresh
     raise, on an untouched read). It is documented in `contracts/cells.md` as current behaviour, and it
     is currently the **only** working route to a deep folder's child checksum — see section 5.
+
+---
+
+## Appendix E. Fingertipping: placement, scratch and persistence
+
+Design discussion of 2026-09-21 (author + Opus), prompted by Appendix A, item 4. **Unlike Appendix B,
+every code statement below was checked against the code**, and the line references are from that check.
+
+Two readers — one agent, one author — reached the same wrong conclusion about where a fingertip chain
+runs, starting from the contract pages as they stand. §E.1–E.3 are therefore written to be *moved into
+the agentic contract docs* (§E.5 says where), not merely recorded here. §E.4 is what makes them untrue
+today.
+
+### E.1 The misunderstanding to prevent
+
+The wrong model, stated so that it can be recognized: *"a fingertip chain is only orchestrated locally;
+each Expression in it is dispatched to where the data is, and each Transformation runs on the server.
+Only cell-level joins are forced local."*
+
+Every clause of it is false, and the naming actively encourages it:
+
+- **`evaluate_expression_async` is local-only**, despite having no "local" in its name. It registers its
+  dedup members under a key that literally begins with `"local"`
+  (`seamless-core/seamless/checksum/expression.py:144-161`) and calls `_evaluate_expression_async`
+  directly; the sync `evaluate_expression` (`:104`) is local-only too. **The dispatching entry point is
+  `evaluate_expression_remote` (`:271`)** — the one function whose name says "remote" is the only one
+  that can decide *local*, because it is the one that takes `execution="auto"` and consults
+  `choose_expression_evaluation_location`. Anyone reasoning from the names will get this backwards.
+- **`Checksum.fingertip` calls the local evaluator** (`seamless-core/seamless/checksum_class.py:398`),
+  so no placement decision is taken anywhere in a fingertip chain.
+- **The decision would come out "local" regardless.** The loop materializes the input into this process
+  first (`checksum_class.py:388`), and `choose_expression_evaluation_location` defines locality as "in
+  this process's memory" (`expression.py:75-100`).
+- **Transformations are forced local.** `recompute_from_transformation_checksum` passes
+  `force_local=True` (`seamless-transformer/seamless_transformer/transformation_cache.py:1160`), which
+  `_run_uncached` turns into `execution = "process"` (`:630`); the jobserver (`:654`), worker-pool
+  (`:713`) and forward-to-parent (`:733`) branches are each guarded by `not force_local`, as is the
+  remote result lookup (`:235`).
+
+So: **a fingertip chain executes entirely in the requesting process.** "Evaluated where the data is"
+(`expression-where-the-data-is.md`, `contracts/expressions.md`) governs ordinary Expression evaluation
+and does **not** govern fingertipping. Cell-level joins (section 2, item 6) are a separate local-only
+case, not the only one.
+
+What *is* remote-aware is candidate discovery: the reverse index is read from the local caches and from
+the database (`get_rev_transformations`, `get_rev_expressions`), so a client needs no local cache to find
+the chain. And a fingertip that happens *inside* a job runs on that job's host —
+`transformation_namespace.py:226-228` fingertips a missing input where the transformation executes, gated
+on `allow_input_fingertip`, and seamless-dask submits `_fat_finger_checksum_task` to a worker for the same
+purpose (`seamless-dask/seamless_dask/client.py:817-829`). Those are not counter-examples to the rule
+below; they are the same rule applied at the site that wants the buffer.
+
+### E.2 Why local evaluation is correct, and not merely current
+
+1. **There is no buffer-return channel.** The jobserver's `run-expression` handler returns
+   `{"result_checksum": …}` and nothing else (`seamless-jobserver/jobserver.py:809-812`). A remotely
+   evaluated result reaches the client only through the hashserver. Remote evaluation of a fingertip is
+   therefore not a placement choice with a transfer cost — it is a placement choice that **must write to
+   the hashserver**.
+2. **That would undo the decision that made the fingertip necessary.** Every Expression result could have
+   been stored in the hashserver; a seamless-database deployment implies one. When a buffer is missing it
+   is missing because of a scratch decision or an eviction decision. Remote evaluation re-adds exactly the
+   entry that was deliberately kept out or removed. Local evaluation materializes it in process memory
+   only. (The exception proves the rule: a manual Expression whose result is never increfed signals
+   ephemeral interest, which contradicts wanting it back later.)
+3. **The cost is bounded by the frontier, not by the ancestry.** `fingertip` resolves first at every level
+   — `checksum_class.py:299-302`, and the nested call at `:388` is itself a `fingertip()` — so the walk
+   stops at the first checksum `resolution()` can serve: local buffer cache, then hashserver (see also
+   Appendix A, item 3 for the read-buffer-directory case). What travels to the client is the frontier of
+   the absent region. For a direct request the target reaches the client either way, so local recompute
+   transfers the frontier *instead of* the target — normally less, because the archetypal scratch shape is
+   a large output derived from smaller stored inputs.
+4. **Capability is the requester's own business.** The client holds the graph. Under this ruling that is a
+   restriction the contract must **state**, not an argument against it: fingertipping assumes the
+   requester can execute its own transformations. Today it cannot even find out that it could not — see
+   §E.4, items 5 and 6.
+
+**The projection counter-case, and why it does not overturn the rule.** Fingertipping a large parent in
+order to keep one small item is real, and there local evaluation is the expensive choice. It is a
+modelling error, and two rules keep a graph out of it:
+
+- **Do not scratch a small derived cell.** If it is stored, `resolution()` serves it and no chain is built
+  at all.
+- **Make an item-addressed large parent deep.** A path step over a deep checksum selects a sub-checksum
+  without materializing the parent.
+
+That shape is reachable only by opting into it. Neither rule is stated in the scratch guidance today.
+
+**The optimization that stays available and is not recommended:** remote evaluation followed by immediate
+hashserver eviction. It buys the projection case at the price of a write that scratch or eviction had
+excluded, and anything expensive enough to justify it should not have been scratched in the first place.
+
+### E.3 Publication is an act of interest, not a side effect of evaluation
+
+Three things are easy to conflate, and the code's own naming conflates two of them:
+
+- **Evaluating** an Expression, or recovering a buffer by fingertipping, produces a buffer in the
+  evaluating process's memory. That is all it does.
+- **Recording identity** — `_expression_cache` and `database_remote.set_expression_result` — stores the
+  mapping from an Expression to its result checksum. It is what the reverse index that fingertipping
+  walks is made of, it must keep happening, and it says nothing about where the buffer is.
+- **Publishing** — writing the buffer to the hashserver — is an assertion that somebody holds the result
+  and will want it later.
+
+The rule: **neither evaluation nor fingertipping publishes.** An Expression that publishes its result is
+a bug, whether or not a fingertip drove it. Publication is the act of increfing the buffer — indicating
+non-ephemeral interest, for example through a non-scratch Cell — and that single act both writes the
+buffer to the hashserver and overturns any scratch status, because `incref` and `incref_refholder`
+`discard` the checksum from `_scratch_refs` and queue its buffer
+(`seamless-core/seamless/caching/buffer_cache.py:260-270`, `:295-308`).
+
+So a bare `Checksum.fingertip()` leaves nothing behind but a buffer in local memory. `Cell.fingertip()`
+on a non-scratch Cell persists the result, because the Cell increfs it; on a scratch Cell it does not.
+The fingertip site itself never decides: it holds a bare checksum, with no owner and no scratch intent.
+Nor is any promotion machinery needed — the buffer is already in the local cache, so the later
+non-scratch incref finds `entry.buffer` and writes it (`_ensure_entry_locked`,
+`buffer_cache.py:215-218`). The one caveat is `purge_scratch()` running in between.
+
+**Terminology warning.** `_publish_expression_result` (`expression.py:537`) does not mean "publish" in
+the sense above. Its docstring is "Publish bounded cache interest" — it registers a tempref, and the
+hashserver write is a *side effect* of that tempref being non-scratch. The name will mislead whoever
+fixes §E.4, item 1.
+
+**Remote evaluation therefore needs the interest to travel with the dispatch — which is exactly how
+transformations already work.** If the evaluating side never publishes, a remotely evaluated result stays
+in the worker's memory and the client receives a checksum it cannot resolve; the client's own later
+incref cannot repair that, because a non-scratch incref on a checksum with no local buffer marks the
+entry `remote_registered` and writes nothing (`buffer_cache.py:195-218`) — there is no buffer in that
+process to write. The transformation path solves this by making `scratch` a parameter of the request:
+`run_transformation` carries it (`seamless-remote/seamless_remote/jobserver_remote.py:115`, `:130`;
+`seamless-jobserver/jobserver.py:536`, `:565`, `:613`, `:647`), the executing side's non-scratch tempref
+writes the result buffer to the hashserver, and the jobserver asserts it can resolve the result before
+answering (`jobserver.py:698-700`). So the executing side publishes **on the requester's behalf, under
+the requester's scratch decision** — the rule above is preserved across the process boundary rather than
+broken by it. The expression dispatch simply lacks that parameter today (§E.4, item 3).
+
+### E.4 Why none of this is true today
+
+Bugs and missing features found while checking §E.1–E.3 against the code on 2026-09-21. None is recorded
+elsewhere in this file, and none is scheduled.
+
+1. **Expression evaluation publishes its result buffer.** Every terminal branch of
+   `_evaluate_expression_after_validation` calls `_publish_expression_result(…, buffer=…)`
+   (`expression.py:492`, `:498`, `:512`, `:533`), which temprefs non-scratch — it has no scratch
+   parameter — so `_ensure_entry_locked` sets `write_remote` and `tempref` ends in
+   `buffer_writer.register(write_buffer)` (`buffer_cache.py:405`), a background write to the hashserver
+   whenever one is configured (`buffer_writer.py:59-68`). By §E.3 this is a bug for **every** expression
+   evaluation, not only a fingertip-driven one: it makes persistence a property of who evaluated rather
+   than of who holds. Its sharpest form is the fingertip case — recovering a scratch or evicted buffer
+   *re-adds it to the hashserver*, locally, with no dispatch involved, silently repopulating the store
+   with exactly the buffers someone decided to keep out. That is the more consequential half of
+   Appendix A, item 4. **The transformation branch of a fingertip does not have this defect**:
+   `scratch=True` gives `result_checksum.tempref(scratch=True)` (`transformation_cache.py:819`),
+   documented as "no remote registration" (`buffer_cache.py:375`). The two branches of the same function
+   disagree, and the expression branch is the wrong one.
+2. **The fix is not a scratch flag on Expressions.** Recorded because the obvious-looking fix — give
+   `_publish_expression_result` a scratch parameter and pass it from the fingertip call site — would
+   leave ordinary expression evaluation publishing, which §E.3 says is equally wrong. The fix is to
+   remove the publication and let the refholder be the only publisher, which means the identity
+   recording (`_expression_cache`, `set_expression_result`) and the HashType registration must be kept
+   while the buffer write goes. It pairs with item 3, which is what lets the rule survive a dispatch.
+3. **The expression dispatch carries no `scratch` flag.** The client sends only the four identity fields
+   (`seamless-remote/seamless_remote/jobserver_remote.py:148-153`, `daskserver_remote.py:181`); the
+   handler accepts those plus an optional validator pair
+   (`seamless-jobserver/jobserver.py:774-812`), and answers `{"result_checksum": …}` alone. So the
+   executing side has no way to learn whether the requester will hold the result, and no way to be told
+   to publish on its behalf — the gap that §E.2,
+   item 1 sees as a missing return channel and §E.3 sees as interest that cannot travel. The remedy is
+   the parameter the transformation path already has, not new machinery: `scratch` on the request,
+   publication on the executing side when it is false, and the same resolvability assertion the
+   jobserver already makes for transformations.
+4. **`Cell.fingertip()` does not exist.** There is no `fingertip` anywhere in
+   `seamless-core/seamless/cell_class.py` or `expression_class.py`; the only entry point is
+   `Checksum.fingertip()`. A bare checksum has no owner and no scratch intent, which is plausibly why the
+   publication of item 1 defaults to non-scratch. A Cell-level entry point is what makes §E.3's rule
+   expressible at all.
+5. **A fingertip discards every failure reason.** Both candidate loops are `except Exception: continue`
+   (`checksum_class.py:419`, `:437`), so a missing binary, an unavailable conda environment, a resource
+   error and a genuine absence all collapse into a bare `CacheMissError(self)`. Under a local-evaluation
+   ruling this is the difference between a livable restriction and an undiagnosable one.
+6. **A local recompute can silently produce nothing.** `__env__` is not enforced for Python; only declared
+   binaries are checked (`run.py:131-142`, `shutil.which` → `RuntimeError`), and bash activates the
+   declared conda environment. A mismatched client environment therefore yields a *different* result,
+   fails `if Checksum(result) != self`, and the candidate is skipped — which item 4 then reports as a
+   cache miss.
+7. **There is no "materialize" mode, only a cache-popping workaround.** `evaluate_expression_remote`
+   short-circuits on `_expression_cache` (`expression.py:290-293`) and on
+   `database_remote.get_expression_result` (`:299-309`), both returning the result *checksum* without
+   producing its buffer — the wrong answer for a fingertip, whose target checksum is already known and
+   whose database mapping is how the candidate was found. Today's code works around this by evicting the
+   memo first (`checksum_class.py:397`), a global side effect standing in for a missing flag. Any change
+   to that call site must preserve the distinction between "tell me the checksum" and "produce the
+   buffer".
+
+### E.5 Where this has to land in the contract docs
+
+(The list below is not necessarily exhaustive)
+
+- **`contracts/expressions.md`** — fingertipping is exempt from "evaluated where the data is", with the
+  no-buffer-return-channel reason (§E.2, item 1), and the naming hazard of §E.1 stated where the API is
+  listed.
+- **The scratch pages** (`scratch-witness-audit.md`, `identity-and-caching.md`) — the two modelling rules
+  of §E.2, and §E.3's separation of evaluating, recording identity and publishing.
+- **`contracts/internal/checksum-reference-lifecycle.md`** — that a non-scratch incref is the *only*
+  publisher: it writes the buffer to the hashserver and overturns any scratch status. It is the
+  load-bearing mechanism of §E.3 and is currently stated nowhere.
+- **`contracts/cells.md`** — `Cell.fingertip()`, once it exists (§E.4, item 4).
+
+Until §E.4 is addressed, each of those passages is contract ahead of code, and should say so.
