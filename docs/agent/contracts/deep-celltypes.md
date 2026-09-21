@@ -4,6 +4,21 @@ This page defines the three **deep celltypes** — `deepcell`, `deepfolder` and 
 
 The 13 ordinary celltypes, the reference parser and the conversion rule table are defined in `contracts/celltypes-and-conversion.md`; checksum-level classification in `contracts/hashtype.md`; the directory-identity idea in `contracts/content-addressed-files-and-dirs.md`.
 
+## Where this page sits: a carve-out, not a layer
+
+The ordinary stack is celltypes and the type hierarchy → HashType → conversion → Expressions → Cells (`contracts/celltypes-and-conversion.md`, *Where this page sits*). **The deep celltypes are not a sixth layer; they are a carve-out at the Expression level**, and everything below is about which Expression shapes over a deep checksum are legal.
+
+| Ordinary stack | For a deep checksum |
+|---|---|
+| 13 celltypes, the subtype→supertype edges, and the rule table | **none of it applies.** The legal conversions are the table in *Zero-path conversions* below, and nothing else |
+| HashType classifies the checksum | **no deep vocabulary, and it is never asked.** `deserializable_as` **raises `ValueError`** for a celltype outside the 13, `capabilities` is not the oracle for a deep step, and `conversion_feasible` never reaches a deep pair. Deep feasibility is structural and is settled here instead (`contracts/hashtype.md`; *Where deep validation happens*, below) |
+| An Expression is a path plus at most one conversion, applied **project-then-convert** | **unchanged, and load-bearing.** Project-then-convert is what lets one step select a child checksum without materializing the parent; this shape could not exist under the opposite order (`contracts/expressions.md`, *Application order*) |
+| Path length is unlimited | **exactly one step**, and it is a string item. A deep step is also a **fusion barrier** (`contracts/expressions.md`, *Fusion*) |
+| An edge may carry a path **or** a conversion, never both | **carved out.** A deep step necessarily changes the celltype, so path and conversion always travel together; the criterion is this page's table instead (`contracts/cells.md`, *Connecting*) |
+| Cost class can turn on the checksum's nullity and cached `HashType` | **shape alone decides** — see *The organising principle* |
+
+One thing *is* ordinary: a deep buffer is plain JSON with an ordinary checksum, and everything downstream of a child checksum is ordinary wiring again.
+
 **Implementation status: the rules on this page are contract, not current behaviour.** Nothing in the Expression or conversion path implements deep celltypes today. See [Current status](#current-status-none-of-this-is-enforced-yet) before relying on any of it.
 
 Code locations:
@@ -23,7 +38,30 @@ Code locations:
 
 **Within the deep celltypes, an Expression's cost class is a function of its identity tuple `(input_celltype, path shape, celltype)` alone, never of the data behind the checksum.** (Over the 13 ordinary celltypes this is weaker — cost can also turn on the checksum's own nullity and its cached `HashType`, see `contracts/expressions.md`, "Cost class" — but no deep conversion below branches on anything but the declared celltypes, so here shape alone decides.)
 
-Every restriction below follows from that one rule. It is what makes the rules decidable at validation time, before any buffer is materialized: two Expressions with the same shape must cost the same, so a shape may not sometimes be a free index read and sometimes an N-child fan-out. It is also why the legal set is small: each admitted shape has exactly one cost — free (checksum-preserving), one child, or all children.
+Every restriction below follows from that one rule. It is what makes the rules decidable at validation time, before any buffer is materialized: two Expressions with the same shape must cost the same, so a shape may not sometimes be a free index read and sometimes an N-child fan-out. It is also why the legal set is small: each admitted shape has exactly one cost.
+
+**The three cost classes, named once — this page is where they are named, and other pages use these words:**
+
+| Class | Meaning | Deep shapes in it |
+|---|---|---|
+| **free** | checksum-preserving: no buffer is fetched at all | the identity conversion, and every index conversion in *Zero-path conversions* |
+| **one child** | the index buffer, plus at most one member buffer | the one-step path — `→ checksum` stops at the index, `→ member celltype` resolves that one child |
+| **all children** | the index buffer, plus every member buffer — the fan-out | `folder → mixed`, and nothing else |
+
+`contracts/expressions.md`, *Cost class*, uses the same three classes for the ordinary celltypes, where *one child* is simply *one buffer* (there are no members) and the class can additionally turn on the checksum's nullity and its cached `HashType`. Here shape alone decides.
+
+## Where deep validation happens
+
+**Deep feasibility is structural**: it turns on the declared celltypes and the shape of the path, never on the data behind the checksum. That is why it is decided **at Expression construction**, by this page's tables, and never by a checksum-level classification:
+
+| Expression | Vetted by |
+|---|---|
+| **pathless**, deep on either side | the **conversion engine**, whose rule table carries the deep-to-deep conversions of *Zero-path conversions* |
+| **pathed**, deep on either side | the **deep table** of *Paths*, below: exactly one string-item step, and the member-celltype rules |
+
+**HashType is not consulted, and must not be asked.** `deserializable_as` accepts only the 13 ordinary celltypes and raises `ValueError` on anything else; it does not answer `False` for a deep name, and it does not learn the four names (`contracts/hashtype.md`). The division is: **this page validates structure, ahead of any data; HashType validates what the input checksum's own word proves, once the value is known** — which for a deep index is the ordinary `JSON_OBJECT` classification of a `plain` buffer, nothing deep. The same one shared validator serves the Expression layer and pin unpacking (*Nesting is not contract*); it lives on this side of the line, not inside HashType.
+
+`contracts/expressions.md`, *When an Expression is vetted*, states the same split from the Expression side.
 
 ## What a deep buffer is
 
@@ -31,6 +69,26 @@ Every restriction below follows from that one rule. It is what makes the rules d
 - **A deep buffer is an index**: a **flat** dict with string keys and 64-character lowercase hex checksum strings as values. Nothing else. Flatness is contract (see [Nesting is not contract](#nesting-is-not-contract)).
 - **Keys are opaque strings.** They carry no path semantics at this layer. Only the mount layer reads `/` as a directory separator. `deepfolder` and `folder` keys routinely contain `/`.
 - The members are *referenced*, not contained: the index commits to the child checksums, and a deep checksum can be held, compared and passed around without any child buffer being present.
+
+**Requesting the *value* of a deep checksum yields the index.** This is general, and it holds at every
+layer that can be asked for a value — `Checksum.resolution(celltype)`, `Buffer.get_value`, `Cell.value`,
+a `Pin`, a direct-called transformer result. There is no deep format below the index to unpack:
+`_map_celltype` sends the deep celltypes to `plain`, and the index is simply what a `plain` parse of that
+buffer gives. So:
+
+- the value is that index, **with each member presented as a `Checksum` object**: `{key: Checksum}`
+  (ruled 2026-09-21). The 64-hex strings are the **buffer's** form; `Checksum` is the **API's** form, and
+  they are the same index. Serializing such a dict back at a deep celltype writes the same hex JSON, so
+  the round trip preserves the checksum;
+- **nothing is resolved.** No member buffer is touched, and the cost class is *free*. A `Checksum` object
+  is not a buffer: wrapping is typing, not resolution;
+- the dict of `Checksum` objects that a `deepcell` / `deepfolder` **pin** hands a transformer
+  (`_to_checksum_dict`, *How deep values reach a transformer*) is therefore not a pin-layer special
+  case — it is this rule, at the pin layer;
+- the `folder` pin's dict of child *contents* **is** a pin-layer presentation, and it is the one place
+  that resolves children on the input side, because the pin also carries `{"filesystem": {"mode":
+  "directory"}}`. The value-level equivalent is the explicit `folder → mixed` conversion, which is
+  *all children* and is priced as such.
 
 The three celltypes share this buffer shape exactly. They differ only in **what their members are**, and in what a consumer is declaring it wants:
 
@@ -91,6 +149,7 @@ Rejections worth spelling out:
 - **All-or-nothing.** The result is the complete dict of children, or an error. There is no partial result.
 - **Per-child failure is not sticky.** A child that could not be resolved does not poison the deep checksum; a later attempt may succeed (for example once the buffer is reachable again).
 - **Resolution order and concurrency are unspecified.** Children may be resolved in any order, sequentially or in parallel. Concurrency here is an optimization, not contract. Do not depend on an observed order, and do not treat parallelism as guaranteed.
+- **This is the only shape in the system that waits on more than one buffer.** Every other Expression materializes exactly one checksum, so the buffer layer's waiting set is keyed by a single checksum; `folder → mixed` is the sole reason a **multi-checksum waiter** has to exist at all (`contracts/expressions.md`, *Cancellation*). It is a further reason the fan-out is confined to this one conversion.
 - **Child representation is settled: a 1-D NumPy `S1` array, one element per byte** (`np.frombuffer(content, dtype="S1")`), **never a 0-dimensional `S<N>` scalar.** Only the 1-D form round-trips faithfully — a 0-d scalar's `.tobytes()` turns an empty child into `b"\x00"`, and `.item()` strips trailing NULs (`b"ab\x00\x00"` reads back as `b"ab"`), because NumPy's `S` dtype strips trailing NULs on scalar extraction. Serializing a dict of Python `bytes` into `mixed` produces 0-d scalars and must never be the route by which a `folder` value is serialized as `mixed`. The pin-level fan-out (`unpack_deep_structure`) handing the transformer Python `bytes` is a fine in-process presentation; it is not this serialization route.
 
 ### The `folder` note: conversion stops at `mixed`
@@ -126,7 +185,36 @@ Why:
 
 **Write the step in bracket form.** Keys are opaque and routinely contain `/`, `.` and other characters that attribute access cannot express: use `expr["path/to/file.txt"]`, not `expr.file`.
 
+- **The step is only expressible because Expressions project before they convert.** `input_celltype` decides what the path walks — here, the index — and `celltype` renders only what the step selected. Under the opposite order the output celltype would decide the structure being walked, and "select a child of this index without materializing the parent" would have nowhere to live (`contracts/expressions.md`, *Application order*).
+- **The step is a fusion barrier.** A run of projecting edges collapses into one Expression everywhere else; it stops at a deep step, because the step's result is a *checksum*, and a following path would project into the checksum rather than into what it names. Fusing past it would also re-key the child's shared work under each parent (`contracts/expressions.md`, *Fusion*).
+
 No new HashType capability is needed for the step itself: a flat index is a JSON object, and `capabilities` already yields `{"MAP"}` for a `JSON_OBJECT` word under `plain`/`mixed` (`contracts/hashtype.md`). Only the source-celltype dispatch would have to learn the deep celltypes, which currently fall through to the empty set.
+
+### Reading a deep child before the rules are enforced
+
+The contract route to a child — the one-step path above — raises `HashTypeValidationError` right now
+(*Current status*). Until it works, the only way to reach a child checksum is to read the parent's value
+and index it yourself:
+
+> On a `Cell("deepfolder")` (or `deepcell`, or `folder`) holding an index, with **no path and no
+> retyping**, read `.value` and index the resulting dict. `.value` resolves through `Buffer.get_value`,
+> which maps the deep celltypes to `plain` before parsing, so you get the `{key: hex}` index.
+
+**The read itself is not the anomaly.** Requesting the value of a deep checksum *is* the index (*What a
+deep buffer is*), so this returns what the contract says it should — except in its member typing: the
+contract presents each member as a `Checksum`, and the code hands back the raw hex strings. What is
+anomalous is everything around it: the read succeeds only because the dummy-Expression fast path skips
+validation altogether, `.buffer` on the same Cell **raises** where `.value` succeeds (`CellBase.buffer`
+validates against the un-mapped celltype), and every typed route — a path step, a retype — raises as
+well. So the member typing that the value rule promises is left to the reader for now.
+
+**Ruled (2026-09-21): the anomaly is to be fixed in the code first, and this passage removed from the
+page afterwards.** What goes in the code is the anomaly and not the value rule — the unvalidated fast
+path and the `.buffer` / `.value` split — which §4 item 3 of `cells-and-expressions-feature-1-4.md`
+addresses anyway. This passage goes with it, because the one-step path then makes it unnecessary, not
+because reading an index becomes illegal. The order matters: deleting the passage while the typed routes
+still raise would leave agents concluding that Seamless cannot reach a deep child at all. Both halves are
+tracked in `cells-and-expressions-feature-1-4.md`.
 
 ## How deep values reach a transformer
 
@@ -144,13 +232,26 @@ A transformer **result** may be declared `deepcell` or `folder`, but not `deepfo
 
 In the workflow layer, `PIN_CELLTYPES = {"plain", "mixed", "deepcell", "deepfolder", "folder"}` is the set of Cell celltypes that admit a one-component subvalue connection (`seamless_workflow.context`) — the same "exactly one step" rule, expressed for graph edges.
 
+### The output side: a deep result is an index
+
+The table above is the **input** side. The output side is not a second contract: **a deep result is an index, exactly like a deep input.**
+
+A result may be declared `deepcell` or `folder`, **not** `deepfolder` and not `module`. A result names what the transformer produced, and producing an index of buffers the transformer never wrote is not a claim it can make. `pack_deep_structure` turns the produced dict into an index, and the transformation's result checksum is that index's checksum — so a `Transformation` handle, a Cell fed by it, a pin fed by it **and a direct call** all end up with that index. A transformation returns a checksum, as it always does; for a deep celltype the corresponding value is the index — the general rule of *What a deep buffer is*, with nothing added for results.
+
+Two consequences follow, and both are contract:
+
+- **No fan-out on the way out.** Reading a deep result never resolves its children. `folder` is not a special case here: a caller that wants the bytes asks for them, through the one conversion that materializes children (`folder → mixed`, above), and pays that cost explicitly. Sugar that resolves N children behind a property read would hide an *all children* cost inside a shape that looks free, which is what *The organising principle* exists to prevent.
+- **No claim on the leaves.** A transformation that produces a deep result holds a reference on the **index checksum only**, never on the members — the general no-recursive-deep-ownership rule, of which this is one instance (`contracts/internal/checksum-reference-lifecycle.md`, §8). Members rely on ordinary deep-buffer resolution and remote durability.
+
+**Current behaviour, and it is ruled a defect.** `DirectCompiledTransformer.__call__` (`seamless-transformer/seamless_transformer/compiled_transformer.py:771-778`) checks `tf.celltype == "deepcell"` and returns `unpack_deep_structure(value, "deepcell")`, which resolves **every** child and returns a dict of deserialized `mixed` values — the opposite of the input side, where a `deepcell` pin hands over unresolved `Checksum` objects. The branch tests `deepcell` only, so a `folder` result already returns the raw index; that is the *correct* behaviour reached by accident, not a second bug. `unpack_deep_structure` was wrongly ported from legacy Seamless and **is to be replaced** — the same replacement that *Nesting is not contract* requires, since that function is also where the legacy nesting generality lives. Nothing may depend on its present behaviour.
+
 ## Current status: none of this is enforced yet
 
 The rules above are the settled contract. **The code does not implement them.** Verified by inspection and by probing:
 
 - **Deep celltypes are absent from the Expression path.** `seamless.checksum.expression`, `seamless.expression_class` and `seamless.checksum.hash_type_validation` contain no mention of `deepcell`, `deepfolder`, `folder` or `module`. There is no deep conversion table, no deep path rule and no flatness validator anywhere.
-- **Every deep Expression currently fails.** `HashType.deserializable_as` returns `False` for any celltype outside the 13 (its final `return False`), so `validate_deserializable_as` raises `HashTypeValidationError` for a deep `input_celltype` *or* a deep target celltype. Probing confirms this for all of `deepfolder → plain`, `deepfolder → folder`, `deepcell → plain`, `folder → mixed`, the identity conversion, and any one-step path: all raise `HashTypeValidationError`, none of the legal shapes above works.
-- **A deep `Cell` behaves like `plain` today.** With no path and the same input celltype, `Cell.checksum` short-circuits before building an Expression, so `.value` returns the raw index dict for celltype `deepcell`, `deepfolder`, `folder` and `module` alike — no member typing, no fan-out. `.buffer` raises `HashTypeValidationError` (it calls `validate_deserializable_as` explicitly), and any projection or celltype change raises as well. A projected Cell inherits the parent's deep celltype rather than the member celltype. That short-circuit is the dummy-Expression fast path; see `contracts/cells.md` for the Cell read contract it belongs to.
+- **Every deep Expression currently fails, and for the wrong reason.** `HashType.deserializable_as` returns `False` for any celltype outside the 13 (its final `return False`), so `validate_deserializable_as` raises `HashTypeValidationError` for a deep `input_celltype` *or* a deep target celltype. Under the contract that fallthrough raises `ValueError` instead, and a deep Expression is admitted or refused at construction (*Where deep validation happens*). Probing confirms this for all of `deepfolder → plain`, `deepfolder → folder`, `deepcell → plain`, `folder → mixed`, the identity conversion, and any one-step path: all raise `HashTypeValidationError`, none of the legal shapes above works.
+- **A deep `Cell` behaves like `plain` today.** With no path and the same input celltype, `Cell.checksum` short-circuits before building an Expression, so `.value` returns the raw index dict — **hex strings, where the contract presents `Checksum` objects** — for celltype `deepcell`, `deepfolder`, `folder` and `module` alike; no member typing, no fan-out. `.buffer` raises `HashTypeValidationError` (it calls `validate_deserializable_as` explicitly), and any projection or celltype change raises as well. A projected Cell inherits the parent's deep celltype rather than the member celltype. That short-circuit is the dummy-Expression fast path; see `contracts/cells.md` for the Cell read contract it belongs to.
 - **Nesting is still accepted at the pin layer.** `unpack_deep_structure` and `pack_deep_structure` recurse through nested dicts and lists. The shared flatness validator does not exist.
 - **The only fan-out that exists is the pin-level one**, and it is not the conversion described above: it resolves each child and returns `buffer.content`, i.e. Python `bytes`.
 
@@ -162,10 +263,12 @@ The rules above are the settled contract. **The code does not implement them.** 
 
 ## Agent guidance
 
-- Treat a deep checksum as an index you may pass around freely. Holding it costs nothing and materializes nothing.
+- Treat a deep checksum as an index you may pass around freely. Holding it costs nothing and materializes nothing; reading its value gives `{key: Checksum}`, which is still nothing materialized.
 - Use `deepfolder` when you want to refer to a directory, `folder` only when the consumer needs the bytes. The conversion between them is free, so declare the cheap one and widen late.
 - Never write a nested deep structure. Flat, string keys, 64-hex values.
 - Address a member in bracket form, and take `→ checksum` when you intend further work on it: the follow-up Expression is then keyed at the child and shared.
 - Do not expect a decoded-text view of a `folder`. Decode per file with `bytes → text`, or decode the whole folder inside a transformer.
 - Do not depend on the order in which `folder → mixed` resolves children, nor on it being parallel.
 - Until the rules are implemented, do not put deep celltypes on Expressions or on any Cell that is projected or retyped: it raises `HashTypeValidationError`. The working surfaces today are transformer pins and mounts.
+- If you need a child checksum before the rules land, read the parent's value and index it yourself (*Reading a deep child before the rules are enforced*) — the value of a deep checksum is the index, so this is sound; what is missing is the typed one-step route.
+- A deep **result** is an index, like a deep input: reading it resolves no children, and nothing holds a claim on the leaves. Do not build on what the code does today — a direct-called `deepcell` result is materialized through a function that is ruled a mis-port and is to be replaced. See *The output side*.

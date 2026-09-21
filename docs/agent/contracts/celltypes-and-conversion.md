@@ -2,6 +2,25 @@
 
 This page defines what a celltype means, how the canonical null works, and how the checksum-level conversion engine converts a checksum from one celltype to another. The companion page `contracts/hashtype.md` defines the `HashType` classification that the engine and the parser use to reject impossible work without touching buffers. The deep celltypes (`deepcell`, `deepfolder`, `folder`), which are outside the rule table below, are defined in `contracts/deep-celltypes.md`.
 
+## Where this page sits: the stack
+
+Each layer is defined **on top of** the one before it, and no page re-derives the one below it. Read them in this order.
+
+| Layer | Page | What it adds |
+|---|---|---|
+| 1. **Celltypes and the type hierarchy** | **this page**, *Celltypes* … *Canonical serialization* | which checksums are valid as which celltype, and the subtype→supertype edges |
+| 2. **HashType** | `contracts/hashtype.md` | a checksum-level classification that **disproves** readings and conversions without fetching a buffer |
+| 3. **Conversion** | **this page**, *Conversion engine* | the rule table, built **on top of the hierarchy** — `conversion_trivial` *is* the set of hierarchy edges — and using layer 2 to refuse or skip work before any buffer is fetched |
+| 4. **Expressions** | `contracts/expressions.md` | path steps plus **at most one** conversion, in that order (**project, then convert**). Layer 3 is exactly the **empty-path** case of an Expression |
+| 5. **Cells** | `contracts/cells.md` | a Cell is a *deferred* Expression: the mutable builder for the same recipe, standalone or bound to a workflow Context node |
+
+Two things sit beside the stack rather than in it:
+
+- the **deep celltypes** `deepcell`, `deepfolder` and `folder` — not in the 13 celltypes below, not in the rule table below, and governed by their own conversion and path table in `contracts/deep-celltypes.md`;
+- **`module`**, which is not a deep celltype either (`contracts/deep-celltypes.md`, *`module` is not a deep celltype*).
+
+Both are mapped to `plain` at the buffer layer by `Buffer._map_celltype`, which is the only thing this page's machinery knows about them.
+
 Code locations (all in `seamless-core`):
 
 | Concern | Module / symbol |
@@ -28,7 +47,11 @@ These are the only celltypes that the parser, serializer and conversion engine a
 - **Text celltypes**: `text` (UTF-8), with the code/markup subtypes `python`, `ipython` and `yaml`.
 - **Scalar celltypes**: `str`, `int`, `float` and `bool` are *readings* of JSON-compatible buffers, not separate storage formats.
 - **`checksum`**: the value is a `Checksum`. The buffer is the bare 64-character lowercase hex digest, with no trailing newline.
-- **Deep and structural celltypes** (`deepcell`, `deepfolder`, `folder`, `module`) are not in this list. They are distinct celltypes whose buffers are plain JSON: `Buffer._map_celltype` serializes and parses them as `plain`. Conversion between them and the 13 celltypes is not part of the rule table. The deep celltypes are `deepcell`, `deepfolder` and `folder`; `module` is not one of them. Their own conversion and path rules are in `contracts/deep-celltypes.md`.
+- **Deep and structural celltypes** (`deepcell`, `deepfolder`, `folder`, `module`) are not in this list. They are distinct celltypes whose buffers are plain JSON: `Buffer._map_celltype` serializes and parses them as `plain`. **Conversion between them and the 13 celltypes is not part of the rule table on this page**, and neither is conversion among themselves: their own conversion table, member-celltype rules and one-step path rule are in `contracts/deep-celltypes.md`. The deep celltypes are `deepcell`, `deepfolder` and `folder`; `module` is not one of them.
+
+**The *engine* nevertheless gains the deep zero-path conversions, while the *table* stays on that page.** The handful of legal deep conversions (`deepcell → plain`, `folder ↔ deepfolder`, `deepcell → deepfolder`, `folder → mixed`) are conversions like any other, so a **pathless** Expression — deep or not — is vetted by the conversion engine, and a *pathed* deep Expression by the deep path table instead (`contracts/expressions.md`, *When an Expression is vetted*). This is a division of labour, not a second rule table: the rules are defined once, in `contracts/deep-celltypes.md`.
+
+*Contract ahead of code:* today `convert_checksum` raises `TypeError` for all four names, and an Expression naming any of them on either side raises `HashTypeValidationError` before evaluation, because `deserializable_as` answers `False` outside the 13 — an answer the ruling replaces with a `ValueError`, since a deep celltype is never a question for HashType (`contracts/hashtype.md`, `deserializable_as`; `contracts/deep-celltypes.md`, *Where deep validation happens*).
 
 ## The celltype hierarchy is a checksum hierarchy
 
@@ -44,6 +67,8 @@ A subtype→supertype edge means: **every checksum that is valid as the subtype 
 | `str`, `int`, `float`, `bool` | `plain` |
 | `int`, `float`, `bool` | `str` |
 | `int` ↔ `float` | each other (both directions are trivial) |
+
+**The conversion rule table is built on this table.** `conversion_trivial` is *exactly* the set of edges above — that is what "trivial" means: the checksum is kept, nothing is validated and no buffer is fetched. Every other category in the rule table below is defined by how far it departs from a hierarchy edge: `conversion_reinterpret` is a hierarchy edge walked *backwards* (same checksum, but the target reading must be validated), and `conversion_reformat`, `conversion_possible` and `conversion_values` are the pairs with no edge at all.
 
 Consequences:
 
@@ -139,6 +164,10 @@ Order of operations: (1) `virtual_value`; (2) `validate_deserializable_as(checks
 
 Conversion avoids value-level work unless it is necessary. Preference order: **checksum** (answer from the checksum alone: trivial rule, virtual value, or a HashType disproof) → **buffer** (read or classify bytes) → **value** (deserialize, convert and re-serialize).
 
+**Only a HashType `False` is a proof.** The engine consults HashType at the checksum level, and that layer is deliberately one-sided: a `False` from `deserializable_as` or `conversion_feasible` is a proof of impossibility and is the *only* answer the engine acts on to refuse work. `True` and `None` are **not** guarantees — they mean "not disproved", and the parser or the value-level rule still decides. Reading this page alone, it would be easy to take the three answers as equally trustworthy; they are not, and the asymmetry is owned by `contracts/hashtype.md`, *The false-negative property*.
+
+**This engine is only ever the empty-path case.** A conversion has nothing to order it against: there is no path step, so *project, then convert* (`contracts/expressions.md`, *Application order*) is vacuous here. The moment a path is involved, the ordering is load-bearing and is that page's rule — the conversion is applied to **what the path selected**, never to the whole input. A convert-then-project recipe is therefore not one call to this engine followed by a path; it is two Expressions, the first of which is an empty-path conversion whose new buffer is parent-sized.
+
 ### Rule table (`seamless.checksum.conversion`)
 
 Every ordered pair of distinct celltypes is in exactly one category. `check_conversions()` runs at import and raises `SeamlessConversionError` on a missing pair, a duplicate, or a circular mapping.
@@ -186,7 +215,7 @@ Every ordered pair of distinct celltypes is in exactly one category. `check_conv
 - Resolving a source value (`_value_of`) tries `virtual_value` first, then `validate_deserializable_as(checksum, celltype)` without a buffer (fails early on a HashType disproof from the local cache, or from the database when no event loop is running), and only then calls `get_buffer()` and `_parse_buffer`.
 - Errors: `CacheMissError` from `get_buffer` propagates unchanged, because a missing buffer is not a failed conversion. `SeamlessConversionError` (a `ValueError` subclass) propagates. Any other exception, including `HashTypeValidationError`, is wrapped in `SeamlessConversionError("<hex> cannot be converted from <source> to <target>", …)`.
 - The executor does not special-case null for `checksum`: `convert_checksum(NULL_CHECKSUM, "plain", "checksum", …)` produces a checksum buffer. Empty-path Expression evaluation short-circuits a null input to a null result for every celltype pair before it calls the executor.
-- **The engine's only caller is empty-path Expression evaluation**, and a new buffer it produces is not a private side effect: it is recorded as the result of that empty-path Expression — `(checksum, "", source, target)` — in the process-local Expression cache and, when configured, the database `expression` table. A later conversion between the same two celltypes for the same checksum is therefore an Expression-identity cache hit, not a second value-level conversion. See `contracts/expressions.md`.
+- **The engine's only caller is empty-path Expression evaluation** (which is why the ordering note above is vacuous here), and a new buffer it produces is not a private side effect: it is recorded as the result of that empty-path Expression — `(checksum, "", source, target)` — in the process-local Expression cache and, when configured, the database `expression` table. A later conversion between the same two celltypes for the same checksum is therefore an Expression-identity cache hit, not a second value-level conversion. See `contracts/expressions.md`.
 
 `conversion_needs_buffer(checksum, source, target) -> bool` is a dry run. It returns `True` only if the conversion would call `get_buffer`. A conversion that succeeds or fails from the checksum alone (trivial rule, virtual value, or cached HashType disproof) returns `False`. Expression evaluation uses it to decide whether an empty-path expression can be evaluated locally or must run where the data is.
 
@@ -199,7 +228,7 @@ These are current behaviour, not scheduled fixes — each is described in full w
 - **`bytes` reads return inconsistent types.** A non-null reading returns a `Buffer` object; the null reading returns `b""`. See the reference-parser table above.
 - **The `str` spelling of a boolean is not symmetric.** Reading the `true` buffer as `str` gives `"True"` (the virtual-values table), while serializing `True` as `str` writes `b"true\n"` (the serialization table), so a `bool` does not round-trip through `str`.
 
-The false-rejection family that HashType used to cause (`X → checksum`, the `int`/`float` targets, the never-disproved chains, `deserializable_as("bool")`, the broken `SEMANTIC` flag) is fixed; see `contracts/hashtype.md`, "Current limitations", for what is left there.
+The false-rejection family that HashType used to cause (`X → checksum`, the `int`/`float` targets, the never-disproved chains, `deserializable_as("bool")`, the broken `SEMANTIC` flag) is fixed; see `contracts/hashtype.md`, "Current limitations", for what is left there. Those were *false rejections* — breaches of the false-negative property, not conservatism — which is why they were bugs rather than accepted imprecision.
 
 ## Agent guidance
 
@@ -208,3 +237,6 @@ The false-rejection family that HashType used to cause (`X → checksum`, the `i
 - Prefer conversions along hierarchy edges (trivial) when you want to avoid buffer I/O; reinterpretations need a parse unless a virtual value or HashType settles them.
 - Do not print `str(checksum)` into machine-readable output; use `.hex()`.
 - Expect `int` readings to truncate, and `bool` readings to accept only canonical boolean checksums.
+- Act on a HashType `False`, never on a `True` or a `None` (`contracts/hashtype.md`).
+- A conversion you want applied *after* a path selection is the ordinary case and needs nothing special (`contracts/expressions.md`, *Application order*). A conversion you want applied *before* a path is a second Expression, and costs a parent-sized buffer unless the conversion is trivial or reinterpret.
+- None of this page applies to `deepcell`, `deepfolder`, `folder` or `module`: use `contracts/deep-celltypes.md`.

@@ -2,7 +2,23 @@
 
 `HashType` classifies a **checksum** by the structure of its buffer. It lets Seamless make deserialization, conversion and path decisions at the checksum level, rejecting impossible work without fetching or parsing a buffer. It replaces the old `BufferInfo` decision layer: no seamless-core, seamless-transformer, seamless-remote or seamless-dask code reads or writes `BufferInfo`.
 
-Celltypes, the reference parser and the conversion engine are defined in `contracts/celltypes-and-conversion.md`. HashType classifies only the 13 celltypes; the deep celltypes (`deepcell`, `deepfolder`, `folder`) are outside its vocabulary, and `contracts/deep-celltypes.md` records what that currently means for them.
+Celltypes, the reference parser and the conversion engine are defined in `contracts/celltypes-and-conversion.md`. HashType classifies only the 13 celltypes; the deep celltypes (`deepcell`, `deepfolder`, `folder`) are outside its vocabulary, and **asking it about one is a caller error, not a question with an answer** — see *Queries* below. `contracts/deep-celltypes.md` owns deep feasibility and records what the current code does instead.
+
+## Where this page sits: the stack
+
+Each layer is defined **on top of** the one before it, and no page re-derives the one below it.
+
+| Layer | Page | What it adds |
+|---|---|---|
+| 1. **Celltypes and the type hierarchy** | `contracts/celltypes-and-conversion.md` | which checksums are valid as which celltype, and the subtype→supertype edges |
+| 2. **HashType** | **this page** | a checksum-level classification that **disproves** readings and conversions without fetching a buffer |
+| 3. **Conversion** | `contracts/celltypes-and-conversion.md`, *Conversion engine* | the rule table, built on top of the hierarchy, using layer 2 to refuse or skip work before any buffer is fetched |
+| 4. **Expressions** | `contracts/expressions.md` | path steps plus at most one conversion, in that order (**project, then convert**); layer 3 is exactly the empty-path case |
+| 5. **Cells** | `contracts/cells.md` | a Cell is a *deferred* Expression |
+
+HashType is the only layer that both of its neighbours consult directly: the reference parser and the conversion engine of layer 1/3 call it before touching bytes, and layer 4 calls it (`validate_expression`) before evaluating anything. **HashType never decides that work is possible** — see the next section.
+
+**The deep celltypes are outside HashType's vocabulary, by ruling and not by omission.** `deepcell`, `deepfolder`, `folder` and `module` classify nothing here, and a query about one **raises**; their feasibility is structural and is settled at Expression construction by `contracts/deep-celltypes.md`. Today the code answers `False` instead, which is what makes every deep Expression fail.
 
 Code locations:
 
@@ -18,8 +34,18 @@ Code locations:
 
 **HashType may answer "unknown", but it must never reject a valid deserialization or conversion.** A `False` from a query is a proof of impossibility. `True` and `None` are not guarantees: the reference parser or the conversion engine still makes the final decision. Callers act only on `False`, by raising `HashTypeValidationError` (a `ValueError` subclass; error-envelope kind `"hash_type_validation"`).
 
+The property is kept by **narrowing the domain rather than widening the vocabulary**: a query is asked only about the 13 celltypes it classifies, and anything else raises (*Queries*). Deep feasibility is decided before HashType is ever consulted (`contracts/deep-celltypes.md`).
+
 The rules below preserve this property; current limitations are conservative (`None` or an
-over-permissive capability), not false rejections.
+over-permissive capability), not false rejections. A *false rejection* is therefore a bug of a
+different class from imprecision, which is why the false-rejection family fixed in `0d3ccfb` /
+`827bd5b` was treated as a defect rather than as accepted conservatism
+(`contracts/celltypes-and-conversion.md`, *Implementation status*).
+
+**Every consumer acts on `False` alone.** The reference parser, the conversion engine and Expression
+pre-validation all use HashType only to refuse; none of them uses a `True` to skip a check that would
+otherwise run. An agent reading a `True` or a `None` out of any query on this page has learned
+"not disproved", and nothing more.
 
 ## The word
 
@@ -60,7 +86,7 @@ The untested kinds are placeholders that record less knowledge. The only produce
 - a checksum is calculated from a buffer (`Buffer.get_checksum`, `cached_calculate_checksum[_sync]`);
 - a `Buffer` is constructed with an explicit `checksum=`;
 - `ensure_hash_type[_async]` is given a buffer for an unclassified checksum;
-- an Expression publishes a result that has a buffer. This covers both local evaluation and remote evaluation, where the worker's `evaluate_expression_async` publishes.
+- an Expression evaluation produces a result buffer. This covers both local evaluation and remote evaluation, where the classification is done by the worker that holds the buffer. (Registering a HashType is neither *recording* a result checksum nor *publishing* a buffer; it is metadata about a checksum, and it travels through the database — `contracts/expressions.md`, *Evaluating, recording identity and publishing*.)
 
 ## Storage and tightening
 
@@ -113,7 +139,11 @@ Evaluated in order:
 | `mixed` | kind not `RAW_BYTES`/`RAW_TEXT` |
 | `checksum` | kind `RAW_TEXT` or `JSON_NUMBER` (an all-digit digest is a JSON number) and `EQ64` (hex validity is left to the parser) |
 
-**A `celltype` outside the 13 above** — a deep celltype (`deepcell`, `deepfolder`, `folder`) or `module` — matches none of the branches above, and the function's final fallthrough is `return False`. This is why every deep-celltype or `module` Expression currently raises `HashTypeValidationError` before evaluation: see `contracts/deep-celltypes.md`, "Current status: none of this is enforced yet".
+**A `celltype` outside the 13 above** — a deep celltype (`deepcell`, `deepfolder`, `folder`) or `module` — is **a caller error: `deserializable_as` raises `ValueError`.** It does not answer `False`, and it does not learn the deep names. Deep shapes are decided elsewhere, before any HashType query: a pathless deep Expression by the conversion engine's table, a pathed one by the deep table of `contracts/deep-celltypes.md` — both structural, both settled at Expression construction, because deep feasibility never turns on the data behind the checksum (`contracts/expressions.md`, *When an Expression is vetted*).
+
+**Why raise rather than widen.** Teaching `deserializable_as` the four names would make HashType the owner of deep feasibility, and the legal deep set is *smaller* than "anything goes", not larger — so the widened function would have to carry the whole deep table, and its `False` answers would then be structural refusals dressed as classification. Raising keeps one rule per layer and keeps the false-negative property a property of the 13.
+
+*Contract ahead of code:* today the function's final fallthrough is `return False`, which is what makes every deep-celltype or `module` Expression raise `HashTypeValidationError` before evaluation, and it is the one place where a HashType answer is not conservative in the harmless direction. See `contracts/deep-celltypes.md`, "Current status: none of this is enforced yet".
 
 ### `capabilities(source_celltype) -> set` (expression capability)
 
@@ -125,6 +155,14 @@ Records which path steps the **root** structure admits: `"SEQ"` (positional item
 | `binary` | `"SEQ"` if `Rank != SCALAR`; `"MAP"` if `STRUCTURED` |
 | `plain`, `mixed` | `JSON_OBJECT`/`MIXED_OBJECT` → `{"MAP"}`; `JSON_ARRAY`/`MIXED_ARRAY`/`JSON_STRING` → `{"SEQ"}`; else empty |
 | other | empty |
+
+**A deep source celltype is never routed here.** A deep path — exactly one string-item step — is a
+structural rule, settled by the deep table at construction time (`contracts/deep-celltypes.md`,
+*Paths*), so `capabilities` is not the oracle that admits or refuses it. It needs no new capability
+word either way: a flat index is a `JSON_OBJECT`, and `plain`/`mixed` already yield `{"MAP"}` for
+that word, so a deep index that does reach this query classifies like the ordinary JSON object it
+is. *Contract ahead of code:* today `deepcell`, `deepfolder` and `folder` are absent from the
+dispatch above and fall into `other`, yielding the empty set.
 
 `has_numeric_items` and `has_string_items` return `True`/`False`/`None` item-type hints for the same sources. Path validation (`_validate_path_capability`) skips untested words and checks a step only while the root word still types the value: a slice keeps the capabilities; an item step stops checking, except that any further step after a `bytes` item is rejected (the item is an int) and a `NUMERIC` NumPy array with rank below `D3PLUS` admits as many positional item steps as its rank.
 
@@ -164,7 +202,7 @@ This is the checksum-level conversion query used before any conversion work. Rul
 
 - **Reference parser** (`_parse_buffer`): after virtual values, `validate_deserializable_as(checksum, celltype, buffer=buffer)` runs before any parsing.
 - **Conversion engine** (`seamless.checksum.convert`): before a source buffer is fetched, via `validate_deserializable_as` without a buffer. `bytes→mixed` also keeps the checksum when the cached word says `mixed`.
-- **Expression validation** (`validate_expression[_async]`): checks the source celltype, then path capability, then `conversion_feasible` for an empty path, before evaluation.
+- **Expression validation** (`validate_expression[_async]`): checks the source celltype, then path capability, then `conversion_feasible` for an empty path, before evaluation. This is the **evaluation-time** half of Expression vetting, and it is asked only about the 13; the structural half runs at construction and never consults HashType (`contracts/expressions.md`, *When an Expression is vetted*). **That order is *project, then convert* read at the checksum level** (`contracts/expressions.md`, *Application order*): the capability check is asked of the **input** celltype, because the path walks the input's structure, and `conversion_feasible` is asked only where there is no path to walk. There is deliberately no query on this page that classifies "the value a path would select" — that is data behind the checksum, and HashType never looks there.
 - **Retrieval validation** of a declared checksum/celltype (`validate_deserializable_as`) in `seamless.cell_class`, `seamless_transformer` (`pin_class`, `pretransformation`, `transformation_class`), `seamless_dask` and `seamless_workflow.context`.
 
 ## Current limitations
@@ -175,4 +213,5 @@ This is the checksum-level conversion query used before any conversion work. Rul
 
 ## Non-goals
 
+- **Deep celltypes.** HashType classifies buffers, and a deep buffer is an ordinary `plain` buffer, so a deep index *does* get a `JSON_OBJECT` word like any other. What HashType does not do is know the four names: they are outside `deserializable_as` (which raises for them), outside `capabilities` and outside `conversion_feasible`. `contracts/deep-celltypes.md` owns deep feasibility, and decides it structurally, before any query on this page is reached.
 - **Value-level syntax and hex validation.** HashType classifies buffer bytes without parsing them for the requested celltype. It does not check `python`/`ipython`/`yaml` syntax or whether `checksum` text contains valid hexadecimal characters. Those checks belong to the parser or conversion engine. A permissive HashType answer is allowed; only `False` is used to reject work.

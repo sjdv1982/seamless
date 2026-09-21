@@ -124,6 +124,8 @@ Implication: two runs with the same code, schema, and inputs but different optim
   - `result celltype = "deepcell"`: each dict value is individually checksum-addressed for independent caching. Use `tf.celltypes.result = "deepcell"` before calling.
   - Any other celltype is rejected for multi-output schemas.
 
+**A deep result is an index, and reading it resolves nothing.** The transformation's result *checksum* is the index's checksum, exactly as on the input side, and that is what a `Transformation` handle, a Cell, a pin and a direct call all receive; a caller that wants the bytes of a `folder` asks for them through `folder → mixed` and pays that cost explicitly. The transformer holds a reference on the index checksum only, never on the members. *Contract ahead of code:* `DirectCompiledTransformer.__call__` additionally resolves a `deepcell` result through `unpack_deep_structure`, so direct-call sugar currently returns a dict of fully materialized values; that function was wrongly ported from legacy Seamless and is to be replaced. See `contracts/deep-celltypes.md`, *The output side: a deep result is an index*.
+
 ## Input type rules
 
 - **Numeric scalar parameters** admit values by **kind and range, not by exact dtype**: a JSON scalar (Python `int`, `float`, `bool`) or a zero-dimensional `binary` scalar of the matching kind, within the native range of the schema type. A zero-dimensional scalar's dtype is not compared with the schema dtype and its byte order plays no part.
