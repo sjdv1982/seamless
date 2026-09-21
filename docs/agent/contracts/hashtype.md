@@ -116,6 +116,21 @@ The untested kinds are placeholders that record less knowledge. The only produce
 
 ## Queries
 
+### The domain of every query on this page
+
+Each query below takes its celltypes from **the 13, and only the 13**. A name outside them — a deep celltype or `module` — is a **caller error and raises `ValueError`**. It is never answered `False`, never `None` and never the empty set, because none of those is a classification of anything: the question was not HashType's to answer (`contracts/deep-celltypes.md`, *Where deep validation happens*).
+
+| Query | Domain | Outside it |
+|---|---|---|
+| `deserializable_as(celltype, *, checksum)` | `celltype` ∈ the 13 | `ValueError` |
+| `capabilities(source_celltype)` | `source_celltype` ∈ the 13 | `ValueError` |
+| `conversion_feasible(hash_type, source, target, *, checksum)` | `source` **and** `target` ∈ the 13 | `ValueError` |
+| `has_numeric_items` / `has_string_items` | as `capabilities` | `ValueError` |
+
+**Inside the domain, an empty answer is a real answer.** `capabilities` returns the empty set for `int`, `float`, `bool` and `checksum` because those admit no path step at all — that is a classification, not a shrug. Likewise a `False` from `deserializable_as` is a proof, while `None` is "not disproved".
+
+*Contract ahead of code:* today each query falls through to a default for any name it does not recognize — `False` for `deserializable_as`, the empty set for `capabilities`, `None` for the item-type hints — so a deep name gets an answer instead of an error, and `deserializable_as`'s `False` is what makes every deep Expression raise.
+
 ### `deserializable_as(celltype, *, checksum) -> True | False | None`
 
 `checksum` is a required keyword because null and boolean deserialization depend on the exact
@@ -154,7 +169,7 @@ Records which path steps the **root** structure admits: `"SEQ"` (positional item
 | `bytes`, `text`, `str`, `python`, `ipython`, `yaml` | `{"SEQ"}` |
 | `binary` | `"SEQ"` if `Rank != SCALAR`; `"MAP"` if `STRUCTURED` |
 | `plain`, `mixed` | `JSON_OBJECT`/`MIXED_OBJECT` → `{"MAP"}`; `JSON_ARRAY`/`MIXED_ARRAY`/`JSON_STRING` → `{"SEQ"}`; else empty |
-| other | empty |
+| `int`, `float`, `bool`, `checksum` | empty — **no path step is ever admitted** over a scalar or a reference |
 
 **A deep source celltype is never routed here.** A deep path — exactly one string-item step — is a
 structural rule, settled by the deep table at construction time (`contracts/deep-celltypes.md`,

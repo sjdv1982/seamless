@@ -102,7 +102,17 @@ The order has nothing to sequence, and is therefore vacuous, in exactly two case
 - The same 4-tuple is the **reverse index** that fingertipping walks: `rev_expression` (database) plus the process-local expression cache. Given a wanted result checksum, Seamless finds Expressions that produce it, fingertips their inputs and re-evaluates them (see `contracts/scratch-witness-audit.md`).
 - **Wire and storage form.** `path` is serialized as **Seamless-`plain`** — canonical bytes, so one path has exactly one stored form. **There is no limit on path length, and no Expression is ever refused for it**; how seamless-database stores a path too long for its key column is internal to that service. Each celltype is stored in a 20-character column. **Identity is over the path itself**, never over any encoding of it.
 
-**Validators are excluded from identity.** `validator` / `validator_language` are fields of the container and columns of the database row, but they are **not** part of the primary key, and `evaluate_expression*` carries an explicit TODO recording that exclusion. Validators are **deferred**: the reject-only contract is settled, and every evaluation entry point raises `NotImplementedError` when a validator is supplied. Nothing currently writes the two columns.
+**Validators are deferred, and their semantics are deliberately unspecified.** What is settled is small and is listed here in full; everything else about them is **not contract yet and must not be tested against**:
+
+| Settled | |
+|---|---|
+| **Deferred** | every evaluation entry point raises `NotImplementedError` when `validator` or `validator_language` is supplied. A Cell records that as `.exception` (`contracts/cells.md`) |
+| **Reject-only** | a validator may refuse a result; it can never transform one. A validator is not a conversion |
+| **Excluded from identity** | `validator` / `validator_language` are fields of the container and columns of the database row, but **not** part of the primary key, and `evaluate_expression*` carries an explicit TODO recording that exclusion |
+| **Columns unwritten** | nothing currently writes the two database columns |
+| **Type** | a validator must be a `Checksum` (or hex); source text is not accepted |
+
+**Open, and known to be open:** whether a validator runs on a **cache hit** (process cache or database) or only on a fresh evaluation; how two Expressions with the same identity tuple but **different validators** coexist in one cache entry and one database row; and what the database does when a second write carries a different validator for a key whose `result` agrees. Exclusion-from-identity is what creates all three questions, and answering them is part of implementing validators, not a wording fix. Until then, the only behaviour a test may pin is the `NotImplementedError`.
 
 ### The dummy Expression
 
@@ -119,7 +129,7 @@ The dummy case is a required special case, not an optimization: `.set_checksum` 
 
 ## Cost class
 
-**An Expression's cost class is decided from checksum-level facts alone, never from the buffer content behind the checksum.** There are three classes — **free**, **one child** (here simply *one buffer*: an Expression over an ordinary celltype has no members) and **all children** — and they are named once, in `contracts/deep-celltypes.md`, *The organising principle*. A non-empty path always costs one buffer, regardless of which checksum is at the root — shape alone decides. An empty path is not always free, though: whether it needs a buffer also turns on the specific checksum's nullity and on what its cached `HashType` already proves, so two Expressions with the same `(input_celltype, path shape, celltype)` shape are not guaranteed the same cost (contrast the deep celltypes, `contracts/deep-celltypes.md`, where no conversion branches on anything but the declared celltypes, so shape alone does decide). An agent can always decide cost class without touching a buffer; that is why deep fan-out is restricted (below) and why placement can be decided before any buffer is touched.
+**An Expression's cost class is decided from checksum-level facts alone, never from the buffer content behind the checksum.** There are three classes — **free**, **one child** (here simply *one buffer*: an Expression over an ordinary celltype has no members) and **all children** — and they are named once, in `contracts/deep-celltypes.md`, *The organising principle*. A non-empty path always costs **one buffer — the input buffer** — regardless of which checksum is at the root; shape alone decides. (Over a deep checksum this still holds for evaluation: the one buffer is the *index*, and no member buffer is fetched to produce the result checksum. See `contracts/deep-celltypes.md`, *Paths*, for what each one-step target yields.) An empty path is not always free, though: whether it needs a buffer also turns on the specific checksum's nullity and on what its cached `HashType` already proves, so two Expressions with the same `(input_celltype, path shape, celltype)` shape are not guaranteed the same cost (contrast the deep celltypes, `contracts/deep-celltypes.md`, where no conversion branches on anything but the declared celltypes, so shape alone does decide). An agent can always decide cost class without touching a buffer; that is why deep fan-out is restricted (below) and why placement can be decided before any buffer is touched.
 
 Concretely, an Expression needs a buffer if and only if:
 
@@ -136,7 +146,35 @@ Validation happens **twice**, and the two phases ask different oracles.
 |---|---|
 | **pathless** (a conversion, deep or not) | the **conversion engine**'s rule table, which owns the few legal deep-to-deep conversions as well (`contracts/celltypes-and-conversion.md`, `contracts/deep-celltypes.md`) |
 | **pathed**, with a deep celltype on either side | the **deep table** of `contracts/deep-celltypes.md` — exactly one string-item step, and the member-celltype rules |
-| **pathed**, over the 13 ordinary celltypes only | common-sense path rules: a path cannot be applied to an `int`, and so on |
+| **pathed**, over the 13 ordinary celltypes only | the **structural path rules** below: a path cannot be applied to an `int`, a string key cannot index a string, and so on |
+
+#### The structural path rules
+
+These are decidable from `input_celltype` and the path **shape** alone, so they are checked at construction. A step is one of three kinds (`contracts/expressions.md`, *Path syntax*): a **string item** (`.name`, `["name"]`), a **positional item** (`[3]`, or any non-string literal), or a **slice** (`[1:4]`).
+
+| `input_celltype` | string item | positional item | slice | after a step |
+|---|---|---|---|---|
+| `plain`, `mixed` | allowed | allowed | allowed | **unknown** — the element's type is data; checking passes to evaluation |
+| `binary` | allowed (a structured array's field) | allowed | allowed | **unknown** — as above |
+| `text`, `str`, `python`, `ipython`, `yaml` | **refused** | allowed | allowed | still a string, so **the same row applies** to every further step |
+| `bytes` | **refused** | allowed | allowed | a positional item yields an `int`, so **the path must end there**; a slice is still `bytes` and the row continues |
+| `int`, `float`, `bool` | **refused** | **refused** | **refused** | — a scalar has no members |
+| `checksum` | **refused** | **refused** | **refused** | — a `checksum` is a reference, not a container (`contracts/celltypes-and-conversion.md`: every pair with `checksum` on either side is value-level) |
+| `deepcell`, `deepfolder`, `folder` | **exactly one, as the whole path** | **refused** | **refused** | — the deep table owns this row (`contracts/deep-celltypes.md`, *Paths*) |
+
+A string item over a text-like celltype is refused rather than left to evaluation because `_apply_step` would fall back to `getattr` on a `str` object, which is not addressing a value at all.
+
+#### Which refusal happens where
+
+The line is exact, and it is what a test should assert against:
+
+| The refusal follows from | When | Raised as |
+|---|---|---|
+| the declared celltypes and the path shape alone | **construction** | `ValueError` — the Expression constructor's class for a statically ill-formed Expression, naming the offending step. No checksum is involved, so no `HashType` is consulted |
+| the input checksum's `HashType` word | **evaluation**, before any buffer is fetched | `HashTypeValidationError` (a `ValueError` subclass; error-envelope kind `hash_type_validation`) |
+| the value behind the checksum | **evaluation**, after the buffer is deserialized | `ExpressionEvaluationError`, naming the failing path step |
+
+A **Cell** builds its Expression lazily, so a construction refusal surfaces at the first `build()`, read or `compute()` — and a standalone Cell **records** it as `.exception` rather than raising, exactly as it does for an evaluation failure (`contracts/cells.md`, *Failures*). The refusal is the same refusal; only its delivery differs.
 
 **At evaluation** the input checksum's `HashType` is available and a sharper pass runs: for a **pathed** Expression the same path / `input_celltype` rules are re-applied against what the word now proves (`capabilities`); for a **pathless** Expression over the 13, `deserializable_as` and `conversion_feasible` do that vetting instead. Either rejection is a `HashTypeValidationError` at checksum level, before any buffer is fetched (`contracts/hashtype.md`).
 
@@ -177,15 +215,23 @@ These are easy to conflate, and the code's own naming conflates two of them. The
 
 An Expression's input may be another Expression, so a recipe is in general a **chain**. **Chains are fused as far as the codebook allows, always, and the fused form is the definition** — what a recipe computes must not depend on how its intermediates happened to be split or named. That is the *Application order* principle applied one level up.
 
-Three adjacent pairs are possible, because an Expression is *read, project, convert* in that order:
+**Four adjacent pairs are possible**, because an Expression is *read, project, convert* in that order and there are two kinds of step to pair up:
 
 | adjacent pair | fuses to | when |
 |---|---|---|
 | **path + path** | one Expression, paths concatenated | always |
 | **conversion + path** | one Expression over the *source's* checksum, `input_celltype` set to the converted celltype | only when the conversion is **checksum-preserving** — the trivial and reinterpret classes of `contracts/celltypes-and-conversion.md` |
 | **path + conversion** | already one Expression | — |
+| **conversion + conversion** | **never fuses — it stays two Expressions** | — |
 
 A conversion that produces a **new buffer** cannot be fused into a following path: the path has to be applied to the converted bytes, so that conversion's result is a genuine input and the chain keeps two members, the outer one taking the inner's result checksum. This is the practical edge of the rule that conversion is not the same thing as reinterpretation.
+
+**Why two conversions never collapse into one.** Two reasons, and the first alone settles it:
+
+- **An Expression has exactly one `input_celltype` and one `celltype`**, so it can express **at most one conversion**. `A→B` followed by `B→C` has no single-Expression spelling; the question is not whether to fuse it but what it is, and it is two Expressions.
+- **Composition is not associative in the conversion table.** `A→C` may be a *different rule* from `A→B→C`, and sometimes deliberately so: `text→mixed` is defined as `text→str`, explicitly not as `text→plain`, and `yaml→mixed` likewise (`contracts/celltypes-and-conversion.md`, *The complete matrix*). Collapsing a chain would silently change what it computes. Fusing conversions would also mean fusing **across** a `conversion_chain` entry, whose own intermediate is chosen by the table rather than by the user.
+
+So each conversion keeps its own identity 4-tuple and its own cache entry, and the outer one takes the inner's **result checksum** as its input — the ordinary two-member chain. Consecutive conversions arise readily: `cell.as_celltype("text").as_celltype("str")` is two, because `as_celltype` mid-chain closes the Expression (`contracts/cells.md`, *Projections*). Nothing is lost by not fusing them: the intermediate is a real, nameable result, and if it is checksum-preserving it costs no buffer anyway.
 
 **Fusion can widen what is defined.** A chain additionally requires each intermediate to be *serializable at its own celltype*; the fused form never serializes it. So a fused Expression succeeds wherever the chain does, and sometimes where the chain does not, and where both succeed they agree. Fusing **always** is what makes that difference unobservable — which is the reason to do it unconditionally rather than as an optimization.
 
@@ -407,7 +453,7 @@ An Expression whose `input_celltype` or `celltype` is `deepcell`, `deepfolder` o
 
 ## Current limitations
 
-- **Validators are not implemented.** Supplying `validator` or `validator_language` raises `NotImplementedError` from every evaluation entry point. The reject-only semantics are settled; the identity exclusion is already decided and marked in the code.
+- **Validators are not implemented, and their interaction with the caches is not specified.** Supplying `validator` or `validator_language` raises `NotImplementedError` from every evaluation entry point. Reject-only semantics and the identity exclusion are settled; cache-hit behaviour, two validators under one identity, and the database column conflict rule are open. See *Identity*, "Validators are deferred".
 - **No forensic "irreproducible expression" analogue exists.** There is no Expression counterpart of `IrreproducibleTransformation` (see `contracts/execution-records.md`); an Expression that yields a different result for the same identity tuple is not recorded anywhere.
 - **Cancellation** — see *Implementation status: cancellation*.
 - **Deep-checksum restrictions are unenforced** — see above.

@@ -40,15 +40,20 @@ Code locations:
 
 Every restriction below follows from that one rule. It is what makes the rules decidable at validation time, before any buffer is materialized: two Expressions with the same shape must cost the same, so a shape may not sometimes be a free index read and sometimes an N-child fan-out. It is also why the legal set is small: each admitted shape has exactly one cost.
 
-**The three cost classes, named once — this page is where they are named, and other pages use these words:**
+**The three cost classes, named once — this page is where they are named, and other pages use these words.** They classify **how many members a shape involves**, which is the thing that must not vary with the data:
 
-| Class | Meaning | Deep shapes in it |
-|---|---|---|
-| **free** | checksum-preserving: no buffer is fetched at all | the identity conversion, and every index conversion in *Zero-path conversions* |
-| **one child** | the index buffer, plus at most one member buffer | the one-step path — `→ checksum` stops at the index, `→ member celltype` resolves that one child |
-| **all children** | the index buffer, plus every member buffer — the fan-out | `folder → mixed`, and nothing else |
+| Class | Members involved | Buffers fetched to **evaluate** | Deep shapes in it |
+|---|---|---|---|
+| **free** | none | **none** — the result checksum comes from the rule alone | the identity conversion, and every index conversion in *Zero-path conversions* |
+| **one child** | exactly one | **one: the index** | the one-step path, either target (*What the one step yields*) |
+| **all children** | all of them | the index, **plus every member** | `folder → mixed`, and nothing else |
 
-`contracts/expressions.md`, *Cost class*, uses the same three classes for the ordinary celltypes, where *one child* is simply *one buffer* (there are no members) and the class can additionally turn on the checksum's nullity and its cached `HashType`. Here shape alone decides.
+Two distinctions this table exists to keep straight:
+
+- **Evaluating is not materializing.** A cost class is the cost of producing the **result checksum**. Reading the *value* of any result — deep or ordinary — needs that result's buffer, and that is a separate act with its own cost. So a *free* conversion is free to evaluate even though `.value` on its result still fetches the index buffer; and the *one child* class fetches the index to evaluate, and the member only if someone then asks for the member's value.
+- **"One child" is about fan-out, not about buffers.** Only `folder → mixed` fetches members during evaluation.
+
+`contracts/expressions.md`, *Cost class*, uses the same three names for the ordinary celltypes, where *one child* is simply *one buffer* — the input — because an ordinary value has no members, and where the class can additionally turn on the checksum's nullity and its cached `HashType`. Here shape alone decides.
 
 ## Where deep validation happens
 
@@ -121,11 +126,30 @@ It travels as celltype `plain` with subcelltype `module` (`pretransformation` bu
 
 Nested structures must be rejected at the Expression layer *and* at pin unpacking, through one shared validator. Two independent checks would drift, and pins would then accept values that Expressions refuse — which would mean the two layers disagree about what a deep value is.
 
+### When flatness is checked, and what a false deep claim does
+
+**Flatness is a property of the buffer, so it can only be checked with the buffer in hand.** That fixes the phase exactly:
+
+| Operation | Is the index parsed? | Flatness checked? |
+|---|---|---|
+| declaring a celltype, or constructing a deep Expression | no | no — construction checks celltypes and path *shape* only (`contracts/expressions.md`, *When an Expression is vetted*) |
+| a checksum-preserving zero-path conversion (`deepcell→deepfolder`, `deepcell→plain`, …) | **no** | **no** |
+| a one-step path | yes | **yes** |
+| reading `.value` / `.buffer` at a deep celltype | yes | **yes** |
+| `folder → mixed` | yes | **yes** |
+| pin unpacking or packing (`unpack_deep_structure` / `pack_deep_structure`) | yes | **yes** |
+
+So **a checksum falsely declared deep is not detected by a free conversion, and that is by design.** `deepcell → deepfolder` on a checksum whose buffer is not an index at all succeeds silently and yields the same checksum, exactly as `plain → mixed` succeeds on a checksum whose buffer is not valid `plain`. A declared celltype is a *claim* about a checksum; a conversion that never looks at the bytes never tests the claim. The claim is tested at the first operation that parses the index, and it fails there.
+
+**The one checksum-level check that is available** is the *mapped* one: a deep buffer is a `plain` buffer, so `deserializable_as(checksum, "plain")` is a legitimate cheap disproof — a non-JSON buffer declared `deepcell` can be refused without a fetch. That is also the only way HashType ever participates in a deep decision: it sees `plain`, never a deep name (`contracts/hashtype.md`).
+
+**The failure.** The shared validator raises `ValueError`, naming the offending key or shape — nesting, a non-string key, or a value that is not a 64-character lowercase hex string. Inside an Expression it surfaces as `ExpressionEvaluationError` (error-envelope kind `expression_evaluation`), like any other failure of a path step; at the pin layer it becomes the pin's failure, reported on the pin before any transformation is built (`contracts/pins.md`). It is **not** a `HashTypeValidationError`: no checksum-level classification was consulted and none could have answered.
+
 ## Conversions
 
 ### Zero-path conversions
 
-Only these are legal. Every one of them is free (checksum-level, no child touched), except `folder → mixed`.
+Only these are legal. Every one of them is **free** — decided at checksum level, no buffer fetched to evaluate and no child touched — except `folder → mixed`. (Free to *evaluate*: reading the resulting index's value still fetches the index buffer, as reading any value does.)
 
 | Conversion | Cost | Checksum | Notes |
 |---|---|---|---|
@@ -176,6 +200,22 @@ Decode it yourself instead:
 | `folder` | the child's checksum | `→ bytes` |
 
 No other target celltype is legal for the one-step result.
+
+#### What the one step yields
+
+Both targets are evaluated from **the index buffer alone**: the child's checksum is read out of the index, and **no member buffer is fetched to produce the result**. They differ in what the result *is*.
+
+| One-step Expression | Result checksum | New buffer? | To evaluate | To read `.value` |
+|---|---|---|---|---|
+| `(index, "['k']", deep, member celltype)` — `mixed` for `deepcell`, `bytes` for `deepfolder`/`folder` | **the child's own checksum** | no | the index | the **child's** buffer |
+| `(index, "['k']", deep, "checksum")` | the checksum of a **new** `checksum`-celltype buffer holding the child's digest | yes — 64 bytes | the index | that 64-byte buffer, giving a `Checksum` |
+
+Consequences, all of them ordinary machinery rather than deep special cases:
+
+- **`→ member celltype` is the cheap handle on a child.** Its result checksum *is* the child's, so `compute()` answers the child's checksum, and every later Expression over that result is keyed at the **child** — shared by every parent index that references it. The reverse index gains a route from the child checksum back to `(parent index, key)`, which is exactly what makes a child recoverable by fingertipping the parent.
+- **`→ checksum` is the *reference* form**, and it obeys the ordinary `checksum` celltype rules (`contracts/celltypes-and-conversion.md`): a `checksum`-celltype buffer is the 64-character hex digest, classified `EQ64`. Converting it onwards is `checksum→X`, which **dereferences** — it returns the referenced checksum as its result with no new buffer — so the child's own conversions end up keyed at the child there too. The two targets therefore converge; `→ checksum` simply costs one extra tiny buffer and one extra Expression on the way.
+- **Validation of the member stays at checksum level.** Whether the child is really deserializable at the member celltype is a question for the child's own `HashType`, asked without fetching it, and answerable `None`. The step never fetches a member to check one.
+- **`run()` differs accordingly**: on `→ member celltype` it materializes the child's value; on `→ checksum` it returns a `Checksum`.
 
 Why:
 

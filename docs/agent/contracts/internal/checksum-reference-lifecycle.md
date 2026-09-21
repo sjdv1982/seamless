@@ -4,7 +4,7 @@
 
 This mechanism is **internal**. It is deliberately not one of the main pages of `seamless/docs/agent/contracts/` — it lives one level down, in `contracts/internal/`, apart from the user-visible contract pages — because it is not user-visible behaviour: the only trace a user ever sees is a `seamless.references` warning at shutdown. It nevertheless needs a precise written contract, and this repository is where that contract lives.
 
-> **Do not confuse this with the workflow node state lifecycle.** That is the `Context`'s six-state node machine, its cascade and its speculative supersession — user-visible behaviour, documented in the agentic contracts. This document is about who keeps a checksum's buffer alive.
+> **Do not confuse this with the workflow node state lifecycle.** That is the `Context`'s seven-state node machine, its cascade and its speculative supersession — user-visible behaviour, documented in the agentic contracts. This document is about who keeps a checksum's buffer alive.
 
 It is also not the **cancellation waiting set**, the per-checksum set of requesters of an in-flight materialization: different thing, different lifetime — a reference keeps a buffer alive once it exists, the waiting set tracks who still wants a fetch that has not finished. The vocabulary is kept apart on purpose; the waiting set is a "waiting set", never a "refcount".
 
