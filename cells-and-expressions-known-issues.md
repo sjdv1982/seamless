@@ -463,6 +463,14 @@ the old report suggests** — 3426 passing, six failures, three of which are pro
 services. What remains is to re-run the service-dependent three properly, fix the three real ones, settle
 `seamless-dask`, and add a `run-tests.sh` to the repos that lack one.
 
+#### Additional test failures right after jupyter-sync merging:
+
+test_optional_pin_dask_dependency_failure_is_not_absence
+- test_scratch_persistent_roundtrip
+- test_jobserver_evaluation_stores_result_hash_type[daskserver]
+- test_fingertip_recompute_scratch
+- test_spawn_persistent
+
 ### 3.3 The characterization tests added on 2026-09-20, and what they cost
 
 Eight test files were added or extended on 2026-09-20, closing almost every coverage gap this file
