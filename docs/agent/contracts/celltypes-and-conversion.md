@@ -170,18 +170,52 @@ Conversion avoids value-level work unless it is necessary. Preference order: **c
 
 ### Rule table (`seamless.checksum.conversion`)
 
-Every ordered pair of distinct celltypes is in exactly one category. `check_conversions()` runs at import and raises `SeamlessConversionError` on a missing pair, a duplicate, or a circular mapping.
+Every ordered pair of distinct celltypes is in exactly one category. `check_conversions()` runs at import and raises `SeamlessConversionError` on a missing pair, a duplicate, or a circular mapping — so the matrix below is **exhaustive by construction**: all 13 × 12 = **156** ordered pairs are classified.
 
-| Category | Checksum | Guaranteed for valid input? | Pairs |
-|---|---|---|---|
-| `conversion_trivial` | same | yes, no validation and no buffer | the hierarchy edges above (18 pairs) |
-| `conversion_reinterpret` | same | no; the target reading is validated | reverse of each trivial edge whose reverse is not itself trivial, minus `ipython→python` and `yaml→plain`: `bytes→text`, `bytes→plain`, `text→python`, `text→ipython`, `text→yaml`, `mixed→binary`, `mixed→plain`, `plain→str`, `plain→int`, `plain→float`, `plain→bool`, `str→int`, `str→float`, `str→bool` |
-| `conversion_reformat` | may change | yes | `bytes→binary`, `bytes→mixed`, `binary→bytes`, `mixed→bytes`, `plain→text`, `text→plain`, `text→str`, `str→text`, `yaml→plain`, `ipython→python` |
-| `conversion_possible` | new buffer | no | `binary→int/float/bool`, `mixed→str/int/float/bool` |
-| `conversion_values` | new buffer (or dereference) | no | `binary↔plain`; `bool↔int`, `bool↔float`; every `X→checksum` and `checksum→X` |
-| `conversion_equivalent` | — | mapped to another pair | e.g. `text/python/ipython/yaml→mixed` and `python/ipython/yaml→str` → `text→str` (not via `plain`); `python/ipython→plain` → `text→str`; `str/int/float/bool→mixed` → `…→plain`; `int/float/bool→text` → `plain→text` |
-| `conversion_chain` | — | `A→B→C` | e.g. `mixed→text` via `plain`; `binary→str` via `bytes`; `bytes→str/int/float/bool` via `plain`; `text→binary` via `mixed`; `text/yaml→int/float/bool` via `plain` |
-| `conversion_forbidden` | — | always fails | `python/ipython↔yaml`, `python/ipython→int/float/bool`, `int/float/bool→python/ipython` |
+Six categories are **terminal** — they say what happens. Two are **indirections** — they say which other pair to evaluate instead:
+
+| Category | Code | Checksum | Guaranteed for valid input? | Members |
+|---|---|---|---|---|
+| `conversion_trivial` | **T** | same | **yes** — no validation, no buffer | 18 pairs: `binary→mixed`, `bool→plain`, `bool→str`, `float→int`, `float→plain`, `float→str`, `int→float`, `int→plain`, `int→str`, `ipython→text`, `plain→bytes`, `plain→mixed`, `plain→yaml`, `python→ipython`, `python→text`, `str→plain`, `text→bytes`, `yaml→text` |
+| `conversion_reinterpret` | **RI** | same | no — the target reading is validated and may raise | 14 pairs: `bytes→plain`, `bytes→text`, `mixed→binary`, `mixed→plain`, `plain→bool`, `plain→float`, `plain→int`, `plain→str`, `str→bool`, `str→float`, `str→int`, `text→ipython`, `text→python`, `text→yaml` |
+| `conversion_reformat` | **RF** | may change | **yes** | 10 pairs: `binary→bytes`, `bytes→binary`, `bytes→mixed`, `ipython→python`, `mixed→bytes`, `plain→text`, `str→text`, `text→plain`, `text→str`, `yaml→plain` |
+| `conversion_possible` | **P** | new buffer | no | 7 pairs: `binary→bool`, `binary→float`, `binary→int`, `mixed→bool`, `mixed→float`, `mixed→int`, `mixed→str` |
+| `conversion_values` | **V** | new buffer, or a dereference for `checksum` | no | 30 pairs: `binary→plain`, `plain→binary`; `bool→float`, `bool→int`, `float→bool`, `int→bool`; and every `X→checksum` and `checksum→X` (12 each) |
+| `conversion_forbidden` | **X** | — | **never** — always raises | 16 pairs: `python/ipython↔yaml`, `python/ipython→int/float/bool`, `int/float/bool→python/ipython` |
+| `conversion_equivalent` | **=a→b** | — | — | 32 pairs, each mapped to a different pair to evaluate instead |
+| `conversion_chain` | **»m** | — | — | 29 pairs, each evaluated as `source→m` followed by `m→target` |
+
+**Resolving an indirection.** `=a→b` means: discard this pair and evaluate `(a, b)`. `»m` means: convert `source→m`, then `m→target`. Either may resolve again — `binary→str` is `»bytes`, and `bytes→str` is in turn `»plain` — and `check_conversions()` proves that every chain of resolutions terminates in a terminal category without a cycle.
+
+#### The complete matrix
+
+Read a row as the **source** celltype and a column as the **target**. Generated from `seamless-core/seamless/checksum/conversion.py`; regenerate it from that module rather than editing cells by hand.
+
+| source ↓ / target → | `binary` | `mixed` | `text` | `python` | `ipython` | `plain` | `yaml` | `str` | `bytes` | `int` | `float` | `bool` | `checksum` |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| **`binary`** | id | T | »plain | »text | »text | V | »text | »bytes | RF | P | P | P | V |
+| **`mixed`** | RI | id | »plain | »text | »text | RI | »text | P | RF | P | P | P | V |
+| **`text`** | »mixed | =text→str | id | RI | RI | RF | RI | RF | T | »plain | »plain | »plain | V |
+| **`python`** | =text→binary | =text→str | T | id | T | =text→str | X | =text→str | =python→text | X | X | X | V |
+| **`ipython`** | =text→binary | =text→str | T | RF | id | =text→str | X | =text→str | =ipython→text | X | X | X | V |
+| **`plain`** | V | T | RF | »text | »text | id | T | RI | T | RI | RI | RI | V |
+| **`yaml`** | »plain | =text→str | T | X | X | RF | id | =text→str | =text→bytes | »plain | »plain | »plain | V |
+| **`str`** | =plain→binary | =str→plain | RF | =str→text | =str→text | T | =str→text | id | =plain→bytes | RI | RI | RI | V |
+| **`bytes`** | RF | RF | RI | »text | »text | RI | »text | »plain | id | »plain | »plain | »plain | V |
+| **`int`** | =plain→binary | =int→plain | =plain→text | X | X | T | »plain | T | =plain→bytes | id | T | V | V |
+| **`float`** | =plain→binary | =float→plain | =plain→text | X | X | T | »plain | T | =plain→bytes | T | id | V | V |
+| **`bool`** | =plain→binary | =bool→plain | =plain→text | X | X | T | »plain | T | =plain→bytes | V | V | id | V |
+| **`checksum`** | V | V | V | V | V | V | V | V | V | V | V | V | id |
+
+**id** is the diagonal: `source == target` returns the checksum unchanged, without validation and without a buffer. It is not a member of any category, and it is the dummy Expression of `contracts/expressions.md`.
+
+Three readings worth taking from the matrix, because each surprises people:
+
+- **`checksum` is a wall.** Every pair with `checksum` on either side is **V**, in both directions, and no chain or equivalence routes through it. A `checksum` celltype is a reference, not a scalar that happens to look like hex.
+- **Composition is not associative, so the matrix cannot be derived from a smaller one.** `text→mixed` is `=text→str`, explicitly *not* `text→plain`; `yaml→mixed` likewise. Converting in two steps by hand can therefore give a different result from asking for the pair directly — which is also why two consecutive conversions never fuse (`contracts/expressions.md`, *Fusion*).
+- **The scalar block is not uniform.** `int→float`, `float→int` and `…→str` are **T** (the bytes are unchanged and only the reading differs), while `bool↔int` and `bool↔float` are **V** (the serialized form genuinely differs: `true` versus `1`).
+
+**Deep celltypes are not in this matrix.** `deepcell`, `deepfolder`, `folder` and `module` are not among the 13, and `convert_checksum` raises `TypeError` for them. Their own (much smaller) conversion table is `contracts/deep-celltypes.md`, *Zero-path conversions*; the engine is what evaluates it for a pathless deep Expression (see above).
 
 ### Reformat rules (as executed)
 
