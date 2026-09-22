@@ -64,6 +64,8 @@ Its cost is bounded by the **frontier**, not by the ancestry: retrieval is tried
 
 **The consequence for a reader:** a result checksum never implies a result buffer, and a fingertip is the only guaranteed way to get one (`contracts/expressions.md`, *Results and caching*).
 
+**When the walk comes back empty it says only that.** A fingertip is a search over candidate producers, and the order it tries them in is not contract — so no candidate's failure is reported: it raises `CacheMissError` on the wanted checksum, and nothing else, whether it found no candidate at all or tried ten and lost all ten. A candidate's failure is a fact about that candidate, not about the request. **The investigation route is the reverse index**, which is where the material for one already is: the `rev_transformation` / `rev_expression` records name the producers that claim the checksum, and `contracts/execution-records.md` holds the execution metadata for the transformations among them — a caller re-runs the candidate it cares about itself. Tools for that walk may follow; the exception will not become one. See `contracts/expressions.md`, *When a fingertip fails, and the materialize mode it needs*.
+
 *Contract ahead of code:* Expression evaluation publishes its result buffer today, for **every** evaluation — so a fingertip currently re-adds to the hashserver exactly what it recovered. The transformation branch of the same walk does not have this defect. See `contracts/expressions.md`, *Status: publication and fingertipping*.
 
 ### Two modelling rules that keep a graph out of the expensive shape
