@@ -18,9 +18,12 @@ How to read it:
 | 3. Test set gaps | Harness problems, missing coverage, tests that encode the wrong contract |
 | 4. Known bugs | Defects with a known cause, in code or in a design doc, none of them scheduled |
 | 5. Misc things to do | Everything else: merges, API surface, documentation, chores |
-| Appendix A | The design decisions that are genuinely still open |
+| Appendix A | The design decision log: every item now carries a ruling |
 | Appendix B | The remote-materialization design discussion that Appendix A rests on |
 | Appendix C | Provenance: the design docs of this work, and which of their passages are dead |
+| Appendix D | Residue from the 2026-09-20 review passes: wording calls and unchecked code questions |
+| Appendix E | Fingertipping: placement, scratch and persistence — the reasoning behind Appendix A, item 4 |
+| Appendix F | Feature 5 contract-doc review (2026-09-22): what blocks the test-alignment pass |
 
 **What was removed on 2026-09-20.** Every design decision that had been ruled *and* is stated in
 the contract docs was deleted from this file: the five Cell rulings, the seven attachment/mount
@@ -77,7 +80,7 @@ Dependency-ordered: each item builds on the earlier ones. Status keys: **deliver
    `checksum`; `None` is a value and `del` is the only deletion. Standalone reads evaluate their own
    cheap expression but never run a source; `.value` never fingertips; `.compute()` does the work.
    **Delivered (gaps).** Bound/standalone divergences and the projection-write bug: section 4.
-   Deferred: Cell validators. Contract: `contracts/cells.md`.
+   Deferred: Cell validators. Contract: `contracts/cells.md`; contract-doc review: **Appendix F**.
 6. **Optional pins** — transformer-construction substrate, below the Context.
    `Transformer.optional_pins` is a settable set of pin names. Canonical null on an optional pin =
    absence, for any celltype: unconnected and connected-then-null give the same transformation
@@ -292,7 +295,7 @@ change, not nine:
 | `block_reason` becomes a **dict from input to reason** wherever a node has several inputs — keyed by edge for a cell (`"<root>"` for the root edge), by pin name for a transformer; every responsible input appears in every state, and the winning category is the maximum of the values, not a separate field. Retires `Node.block_pins` and `tf.result.block_reason`'s category role | `node-state-lifecycle.md`, `pins.md` |
 | **Pins follow the cell rules**; a miswired pin makes the transformer `miswired`, not `blocked` | `pins.md` |
 | **Fusion**, always, over four edge pairs; a deep step is a barrier | `expressions.md` §Fusion |
-| **Elidable / elided** cells; anonymous nodes; the graph **symbol table** `symbol → (source, celltype, path)` | `cells.md` |
+| **Elidable / elided** cells; anonymous nodes; the graph **symbol table** `symbol → (source, celltype, path)`. All three are **bound-only** concepts: a Context evaluates cell expressions eagerly and elision is what spares the ones nobody can name, while an unbound chain is lazy and its intermediates are input references, not nodes | `cells.md` |
 | `path` removed from `Cell.__init__`; projection and `as_celltype` return **children** edged to the parent | `cells.md` §Projections |
 | **`SubCell` retired**; its four dunders move to `CellBase`, covering Pins too | `cells.md` |
 | **Deep sources are carved out** — governed by `deep-celltypes.md`'s table, not by the wiring rule | `cells.md`, `expressions.md` |
@@ -583,7 +586,10 @@ Most of what this section used to list was closed on 2026-09-20 (see 3.3). What 
 Sections 3.4 and 3.5 come from a targeted pass over the highest-risk rules, not an exhaustive one. The
 full exercise — walk every rule in all thirteen contract pages, name the test that pins it, and report
 every rule with no test — was attempted on 2026-09-20 and did not complete. Features **1–3, 4, 6–7, 10
-and 11** have had no systematic doc-vs-test comparison. This section is where that output belongs.
+and 11** have had no systematic doc-vs-test comparison. Features **5, 8 and 9** have had a *targeted*
+one — 3.4 and 3.5 are its output — which is not the same thing and left holes of its own, the unwalked
+3×2 write matrix among them (3.5). Feature 5's contract page was re-read against the code on 2026-09-22
+with the alignment pass in view: **Appendix F**. This section is where the full output belongs.
 
 ## 4. Known bugs
 
@@ -690,6 +696,22 @@ still an alias.
    Related but *not* a bug: a standalone Cell constructed with `path=` has `.checksum = cs` set the
    pre-path input, so the round-trip genuinely fails. That one is coherent — the path is recipe, not
    value — and is documented as such.
+
+6. **A standalone read does not evaluate an upstream Expression: the chain is too lazy.** A standalone Cell
+   is pull-only — it has no scheduler, so a read is the only thing that ever makes it compute — and a read
+   should walk the whole cheap chain, upstream Cells and Expressions alike, stopping only at a
+   Transformation, which a property read must never start. `_available_input_checksum`
+   (`seamless-core/seamless/cell_class.py`) gets three of the four cases right: a bare `Checksum` passes
+   through, a source `Cell` is recursed into through its own getter, and a Transformation contributes only
+   its already-recorded result. But a source **`Expression`** is handed to `Expression._available_result()`,
+   which returns an already-published result, or joins work that is *already active*
+   (`wait_for_active_expression`), and otherwise answers `None` — it never starts the evaluation. So a
+   standalone chain can read as `None` although every link in it is evaluable. It bites exactly where the
+   chain is built by projecting or by `as_celltype`: there the intermediate is an Expression that survives
+   only as the next link's input reference, and nothing else will ever run it — unlike a bound chain, where
+   the Context is eager and the intermediate is an anonymous node. **Ruled 2026-09-22: a defect, to be fixed
+   in code**; the Transformation boundary is correct and stays. Documented in `contracts/cells.md`,
+   *Reads* → *Laziness* and in its implementation-status list.
 
 Items 1–4 are divergences between the bound and the standalone path, where
 `celltype-rename-review-decisions.md` §8.4 rules that "the same applies to bound and standalone Cells".
@@ -812,11 +834,29 @@ it that way with the bound behaviour listed as a divergence. Only the code fixes
 
 ---
 
-## Appendix A. Open design decisions
+## Appendix A. Design decisions and their rulings
 
-These are the decisions that are genuinely still open. Everything else that used to be in this file's
-"open decisions" section was either already ruled and already in the contract docs, or turned out to be
-a bug (section 4). Nothing here is stated as contract anywhere, and nothing here should be.
+**This is a decision log, not an open-questions list: every one of the nine items now carries a ruling.**
+It was written as the list of what was genuinely still open, and each item keeps its question, its options
+and its reasoning, because the reasoning is what stops a later reader from re-deriving a worse answer.
+What varies between items is only the follow-through: whether the ruling has reached the contract docs,
+and whether the code has caught up.
+
+**The preamble this section used to carry — "nothing here is stated as contract anywhere, and nothing here
+should be" — is dead.** Most of these rulings are now normative contract text. Where they are,
+`docs/agent/contracts/` is the normative statement and this appendix is only the reasoning behind it.
+
+| Item | Ruling | In the contract docs | Follow-through still owed |
+|---|---|---|---|
+| 1. Known-gap test marking | (a) `xfail(strict=False)` | n/a — a test-suite convention | apply it everywhere, `seamless-transformer/tests/cancellation/` included (3.3, 3.4 item 1) |
+| 2. Compiled-pin celltype recording | (a) fix now | yes — `compiled-pins.md` §10 | the code change (section 2, item 1) |
+| 3. Locality and read-buffer directories | (b), gated on an explicitly configured path | yes — `expressions.md` §Placement, with its own contract-ahead-of-code note | the placement change |
+| 4. Where a fingertip chain runs | (a) local | yes — `expressions.md`, `scratch-witness-audit.md`; reasoning in Appendix E | the seven defects of §E.4 |
+| 5. Resources held while a waiter is abandoned | (a) read the jobserver path first; deduplicate fetches; linger per recommendation | yes — `expressions.md` §Cancellation and §The linger | the jobserver read, then the waiting set (section 2, item 4). **One discrepancy to settle:** this item recommends reusing the self-edit-revert figure rather than inventing a second constant, and the contract page rules the opposite — "two knobs, not one shared constant". The pages were written after the decision; if the page is right, amend this item |
+| 6. A bound projection's `input_celltype` | (b) — it is a bug | yes — `cells.md` §*The input*, and its implementation-status list | pass `local_path` through in `BoundCellBackend.input_celltype` |
+| 7. The database `path` column | closed; internal to seamless-database | yes, in the only form that reaches a contract — `expressions.md` §Identity: no limit on path length | the three seamless-database items below |
+| 8. A record for a run cancelled after completion | (a) the record is correct, the page is wrong | **no, and this is a live doc defect** | `execution-records.md` still carries both halves — the "Canceled execution → No" row of its record table, and "a canceled submission also writes no `result_checksum`, even if its dropped work later completes". Under the ruling it must say the opposite: a record is written, and it can name a `result_checksum` the Transformation cache does not hold |
+| 9. Python parameter defaults and optional pins | (a) intended | yes — `pins.md` | none |
 
 ### 1. How is a known-gap test marked?
 
@@ -920,8 +960,12 @@ consistent. **Recommendation: (b)**, because the page presents `.source` and `in
 readings of the same input, and a reader has no way to guess that one walks the path and the other does
 not. Whichever is chosen, `contracts/cells.md` must say so explicitly.
 
-**Unblocked, still open (2026-09-21).** The wiring rule of section 2, item 9 is defined in terms of the **input** path — the projection on the *source* side — so a one-level connection target never makes an edge projecting and the rule never consults a bound projection's `input_celltype`. Heterogeneous joins stay legal. Nothing now waits on this item; it remains a genuine inconsistency between two members the page presents as two readings of the same input.
+**Unblocked (2026-09-21).** The wiring rule of section 2, item 9 is defined in terms of the **input** path — the projection on the *source* side — so a one-level connection target never makes an edge projecting and the rule never consults a bound projection's `input_celltype`. Heterogeneous joins stay legal. Nothing now waits on this item; it remains a genuine inconsistency between two members the page presents as two readings of the same input.
 **Decision**: (b), known bug.
+**Closed** — `contracts/cells.md` §*The input* states the single resolution shared by `.source` and
+`input_celltype`, and the page's implementation-status list records the divergence as a known bug, with
+"do not rely on `input_celltype` at a bound projection" until the code catches up. What is owed is the
+one-line `local_path` pass-through.
 
 ### 7. The database `path` column is `CharField(max_length=100)`
 
@@ -1463,3 +1507,108 @@ elsewhere in this file, and none is scheduled.
 - **`contracts/cells.md`** — `Cell.fingertip()`, once it exists (§E.4, item 4).
 
 Until §E.4 is addressed, each of those passages is contract ahead of code, and should say so.
+
+---
+
+## Appendix F. Feature 5 contract-doc review (2026-09-22)
+
+`contracts/cells.md` re-read against the code with one question in view: **is it explicit enough to align
+feature 5's test suite?** The answer is **yes overall, and no in seven specific places**. The page's spine
+is testable as written — the two write families and the 3×2 matrix, null versus clear versus delete, the
+`bytes`/empty aliasing, celltype `checksum`, the Work table, failure stickiness and `clear_exception()`,
+the join's observable list, and every feature 5 bug of section 4 in its implementation-status list, with
+"the standalone behaviour is the contract" as the stated direction. Its cross-references all resolve, and
+`contracts/pins.md` agrees with it. Nothing below overturns any of that.
+
+What follows is what a test author cannot decide from the page. **F.1 is blocking**: three passages state
+the 2026-09-21 ruling set (section 2, item 9) in the present tense, in sections that otherwise describe
+current behaviour, with no *contract ahead of code* marker — so a test written from them encodes a
+contract the code contradicts *and* cannot be marked under Appendix A, item 1's convention, because
+nothing says it is ahead of code. The page marks that status scrupulously everywhere else, so this is a
+mechanical omission, not a disagreement. **F.2 is four rulings** the author owes before the corresponding
+tests can be written at all.
+
+**Fixed in flight (2026-09-22), recorded so the history is not lost.** Three minor findings of the same
+review are already corrected and are not listed below: `cells.md` never documented `.path_python`
+(an exact alias of `.path` in both modes, kept because the bound backend protocol requires the name) or
+the standalone `.path` **setter**, and its *Elidable and elided* paragraph defined "elidable" twice, loosely,
+and left the elidable-but-not-elided case — the ordinary consequence of a fusion barrier, where the
+Expression *is* built and a checksum *is* produced — implicit.
+
+### F.1 Blocking: three unmarked contract-ahead-of-code statements
+
+1. **`path=` in the constructor contradicts itself.** §*The definition* documents `path=` as a live
+   parameter with semantics ("starts the builder at a projection; it is normalized by `normalize_path`"),
+   and the round-trip note under *The 3×2 matrix* treats a path-carrying handle's failed `.checksum`
+   round-trip as "coherent, not a bug" — both present tense, no marker. §*Projections* says
+   "`Cell.__init__` takes **no `path` argument**". The code still accepts it
+   (`seamless-core/seamless/cell_class.py:376-411`, `self._path = normalize_path(path)`). A test cannot
+   tell whether `Cell("plain", checksum=cs, path="[3]")` must work, must raise `TypeError`, or must raise
+   eventually. **Related and unruled:** `Cell.path` also has a *setter* (`cell_class.py:440-446`,
+   standalone only; bound raises `BoundStateError`), which is a second route by which a path reaches a
+   Cell without projecting. The ruling set retires the constructor argument and says nothing about the
+   setter. Both are now documented as current behaviour in `cells.md`; which of them survives the rule is
+   the open half.
+
+2. **`SubCell`'s retirement is stated as done.** §*Retired names* lists `target_celltype`, `input_ref` and
+   `SubCell` together as names that "are retired and raise `AttributeError` naming the replacement". Only
+   the first two are in `RETIRED_NAMES` (`seamless-core/seamless/retired_names.py:7`). `SubCell` is live,
+   exported (`seamless-core/seamless/__init__.py:74`, `:87`, `:97`) and still the class every standalone
+   projection returns — which the page's own implementation-status list says. The **mechanism** is
+   unspecified too: `check_retired_name` guards attribute access *on a Cell*, which is not how anyone
+   reaches `seamless.SubCell`, so a test cannot tell whether to assert on the attribute, on the import, or
+   on `__all__`. Section 2, item 9 already says the class must be *retired, not deleted*; the page needs to
+   say that it is not retired yet, and by what mechanism it will be.
+
+3. **The handle-guard dunders are scoped wider than the code implements.** §*Projections* states that `==`,
+   ordering, `bool()`, `len()` and iteration raise `ProjectionError` "on **every** Cell, and on every Pin,
+   which shares `CellBase`", with the guard living on `CellBase` and "no separate projection class" — all
+   present tense. In the code the guard exists **only on `SubCell`** (`cell_class.py:716-746`); neither
+   `CellBase` nor `Cell` defines any of those dunders, and there is no `ProjectionError` on the Pin side at
+   all. So today `Cell("int") == 3` is `False`, `bool(ctx.a)` is `True`, and `ctx.a in [cells]` does not
+   raise. The section invites tests — it discusses the unclosable `is None` gap — and half of what it
+   invites currently fails. Note the ordering constraint already recorded in section 2, item 9: raising
+   from `CellBase.__eq__` breaks membership tests, so the internal identity helper lands first.
+
+### F.2 Rulings owed before the tests can be written
+
+4. **Heterogeneous join member semantics are unstated — and a red test file is waiting on them.**
+   §*Connecting* legalizes `ctx.j["left"] = ctx.t` (a `text` source into a `plain` join), and §*The input*
+   gives that member handle `input_celltype == "text"` against `celltype == "plain"` (its parent's), which
+   reads exactly like a conversion. The code converts nothing: `sidework.evaluate_cell:78-87` resolves each
+   member at the **source's own** celltype and assigns the resulting Python value into the aggregate. For a
+   `text` cell holding `"[1,2]"` that is `{"left": "[1,2]"}` against `{"left": [1,2]}` — two different join
+   checksums. Unstated as well: what happens when the member's value has **no representation at the join's
+   celltype** (a `binary` or `bytes` source into a `plain` join) — an assembly-time serialization failure
+   leaving the node `failed`, or a refusal at wiring time? Every test in
+   `seamless-workflow/tests/test_cell_joins.py` is heterogeneous (`mixed` → `plain`), where embedding and
+   converting happen to agree, so respelling that file per 3.4, item 2 without this ruling would freeze
+   today's behaviour as contract by accident.
+
+5. **Which steps of the `.checksum` ladder a *bound* read may take.** §*Reads* gives a six-step resolution
+   order that includes "the same evaluation already running in this process — wait for it" and "the input
+   buffer is elsewhere — dispatch the evaluation and wait"; two paragraphs later, "a bound `.checksum` never
+   waits". The page never says which of the six a bound read may take — whether `ctx.a.b.checksum` on an
+   underived projection may evaluate in process, or must report `None` with state `waiting`. That is
+   precisely the surface where section 4, feature 5, bugs 2 and 3 live (ingress intercepting
+   `_get_checksum`/`_get_buffer`/`_get_value` and resolving directly), so the tests that pin those bugs
+   need the rule stated before they can be written.
+
+6. **Standalone miswiring has no answer.** §*Projections* says the wiring invariant holds standalone too;
+   §*Connecting* says retyping a source that has projecting consumers is a valid request that leaves each
+   consumer **`miswired`** rather than raising. But §*Non-goals* and `contracts/node-state-lifecycle.md`
+   both restrict a standalone Cell's states to `unwired`, `waiting`, `complete` and `failed` — no
+   `miswired`. So what does a standalone child report after its parent is retyped: a raise at read time,
+   `failed`, or nothing at all? (`cells.md` §*Connecting* now states the hole inline — the bound half is a
+   node condition, the standalone half "is not yet ruled" — so the page no longer reads as if it were
+   settled, but the ruling is still owed.) This matters more than it used to: the child-edge model makes standalone
+   chains the normal shape, and it is the one place where the state vocabulary and the wiring rule meet
+   without an answer.
+
+7. **Anonymous cells: a node, or a symbol-table entry — and at which graph format?** §*Connecting* says an
+   anonymous cell "is a node in the durable graph — it must be, or the edges naming it would dangle", and
+   four paragraphs later that the symbol table "**is** the anonymous cell's definition". A round-trip test
+   needs to know whether `get_graph()["nodes"]` carries anonymous entries or whether the table is their only
+   representation. The same passage calls the symbol table "a graph format change" while giving the format
+   as `0.4` — the number the format already carries — so a version assertion has nothing to check. Decide
+   both, and state the new number.
