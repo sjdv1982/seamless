@@ -25,6 +25,7 @@ Contract pages (hand-maintained, normative):
 - `contracts/expressions.md`
 - `contracts/cells.md`
 - `contracts/pins.md`
+- `contracts/transformers.md`
 - `contracts/workflow-context.md`
 - `contracts/node-state-lifecycle.md`
 - `contracts/attachments.md`

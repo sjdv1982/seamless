@@ -535,7 +535,7 @@ These have paired regression cases in `tests/test_cells_contract_alignment.py` i
 
 ## Non-goals
 
-- **Execution.** A Cell has no code, no environment, no pins and no dunders. Anything that needs one is a Transformer; see `contracts/direct-delayed-and-transformation.md`.
+- **Execution.** A Cell has no code, no environment, no pins and no dunders. Anything that needs one is a Transformer; see `contracts/transformers.md`.
 - **Handle identity.** Handles are views. Two handles for one node are equal in effect and identical in nothing; nothing may be keyed on a handle's identity.
 - **Deep connection targets.** One level below the root, by design: a deeper target would be a producer of a sub-value, which the read-modify-set model exists to avoid.
 - **Persistent sub-path overlays.** A sub-path write is a transaction on the root value, not a stored per-path input.
