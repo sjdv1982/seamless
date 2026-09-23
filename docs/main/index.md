@@ -26,7 +26,8 @@ This installs all standard Seamless components. For a minimal install, the core 
 | Package | Import | Provides |
 | --- | --- | --- |
 | `seamless-core` | `import seamless` | `Checksum`, `Buffer`, cell types, buffer cache |
-| `seamless-transformer` | `from seamless.transformer import direct, delayed, parallel` | `direct`, `delayed`, `parallel`, `parallel_async`, `TransformationList`, `seamless-run`, `seamless-upload`, `seamless-download` |
+| `seamless-transformer` | `from seamless.transformer import Transformer, direct, delayed` | `Transformer`, `direct`, `delayed`, `parallel`, `parallel_async`, `TransformationList`, `seamless-run`, `seamless-upload`, `seamless-download` |
+| `seamless-workflow` | `from seamless.workflow import Context, Cell, Transformer` | reactive workflow Contexts and their canonical Cell/Transformer handles |
 | `seamless-config` | `import seamless.config` | `seamless.config.init()`, `seamless.config.set_nparallel()`, `seamless-init` |
 
 ---

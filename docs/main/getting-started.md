@@ -1,5 +1,22 @@
 # Wrapping Python and bash
 
+## Canonical Transformer constructors
+
+Use `direct` or `delayed` for standalone Python functions, assign a Python function directly to a workflow Context, and use the `Transformer` factory for every language/call-mode combination:
+
+```python
+from seamless.transformer import Transformer
+
+bash = Transformer("bash", direct=True)
+bash.code = "cat input > RESULT"
+
+c = Transformer("c", compiled=True)
+c.schema = "..."
+c.code = "..."
+```
+
+The factory signature is `Transformer(language="python", compiled=False, direct=False)`. It returns a code-less builder. Without compilation, the language must be `"python"` or `"bash"`; Python and Bash languages are read-only. `direct` and `delayed` are Python-only and no longer accept a language argument.
+
 ## Wrapping Python with `direct` and `delayed`
 
 ```python

@@ -4,7 +4,7 @@ This page defines the compiled-language additions to the common Transformer buil
 
 ## What compiled transformers are
 
-`CompiledTransformer` and `DirectCompiledTransformer` are Transformer builders that execute **compiled source code** instead of a Python function. Their common builder, binding and build semantics are `contracts/transformers.md`. The compiled source must define a `transform()` function whose signature matches the C header generated from the schema (see `tf.header`). The schema is written in the seamless-signature YAML format.
+`Transformer(language, compiled=True, direct=False)` and `Transformer(language, compiled=True, direct=True)` construct Transformer builders that execute **compiled source code** instead of a Python function. Their common builder, binding and build semantics are `contracts/transformers.md`. The compiled source must define a `transform()` function whose signature matches the C header generated from the schema (see `tf.header`). The schema is written in the seamless-signature YAML format.
 
 Built-in languages: `c`, `cpp`, `fortran`, `rust`. **The set is open.** Additional languages can be registered at runtime with `define_compiled_language()` (see "Custom language registration" below). Any language that compiles to a C-ABI-compatible `transform()` symbol is supported.
 
@@ -17,9 +17,9 @@ pip install seamless-transformer[compiled]
 
 ## Delayed vs direct
 
-`CompiledTransformer(language)` — calling returns a `Transformation` handle (delayed, same as `delayed` for Python).
+`Transformer(language, compiled=True)` — calling returns a `Transformation` handle (delayed, same as `delayed` for Python).
 
-`DirectCompiledTransformer(language)` — calling executes the build pipeline immediately and returns the value (same as `direct` for Python).
+`Transformer(language, compiled=True, direct=True)` — calling executes the build pipeline immediately and returns the value (same as `direct` for Python).
 
 The distinction applies only to `__call__`. On both classes, `build()` and `transformation()` return an unexecuted `Transformation`, as specified in `contracts/transformers.md`.
 
@@ -50,8 +50,7 @@ Compiled transformers share the `TransformerCore` builder base with Python trans
 - `PythonMixin` — Python source, Python callable signature, sandbox execution
 - `CompiledMixin` — schema, compiled source, CFFI build pipeline
 
-`CompiledTransformer` = `TransformerCore` + `CompiledMixin` (delayed).
-`DirectCompiledTransformer` = `TransformerCore` + `CompiledMixin` (direct).
+Both runtime implementations combine `TransformerCore` and `CompiledMixin`; the direct implementation additionally uses the same direct-call mixin as ordinary Transformers. These implementation classes are not public constructors.
 
 ## C as the ABI lingua franca
 
@@ -126,7 +125,7 @@ Implication: two runs with the same code, schema, and inputs but different optim
   - `result celltype = "deepcell"`: each dict value is individually checksum-addressed for independent caching. Use `tf.celltypes.result = "deepcell"` before calling.
   - Any other celltype is rejected for multi-output schemas.
 
-**A deep result is an index, and reading it resolves nothing.** The transformation's result *checksum* is the index's checksum, exactly as on the input side, and that is what a `Transformation` handle, a Cell, a pin and a direct call all receive; a caller that wants the bytes of a `folder` asks for them through `folder → mixed` and pays that cost explicitly. The transformer holds a reference on the index checksum only, never on the members. *Contract ahead of code:* `DirectCompiledTransformer.__call__` additionally resolves a `deepcell` result through `unpack_deep_structure`, so direct-call sugar currently returns a dict of fully materialized values; that function was wrongly ported from legacy Seamless and is to be replaced. See `contracts/deep-celltypes.md`, *The output side: a deep result is an index*.
+**A deep result is an index, and reading it resolves nothing.** The transformation's result *checksum* is the index's checksum, exactly as on the input side, and that is what a `Transformation` handle, a Cell, a pin and a direct call all receive; a caller that wants the bytes of a `folder` asks for them through `folder → mixed` and pays that cost explicitly. The transformer holds a reference on the index checksum only, never on the members. *Contract ahead of code:* the internal direct compiled implementation returned by `Transformer(..., compiled=True, direct=True)` additionally resolves a `deepcell` result through `unpack_deep_structure`, so direct-call sugar currently returns a dict of fully materialized values; that function was wrongly ported from legacy Seamless and is to be replaced. See `contracts/deep-celltypes.md`, *The output side: a deep result is an index*.
 
 ## Input type rules
 
@@ -167,9 +166,9 @@ If a schema output has a wildcard dimension that does not appear in any input (e
 Example — C main with a Fortran helper:
 
 ```python
-from seamless_transformer import DirectCompiledTransformer, CompiledObject
+from seamless_transformer import CompiledObject, Transformer
 
-tf = DirectCompiledTransformer("c")
+tf = Transformer("c", compiled=True, direct=True)
 tf.schema = ...
 tf.code = main_c_code
 

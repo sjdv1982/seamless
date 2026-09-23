@@ -1,5 +1,7 @@
 # The workflow Context (Contract)
 
+The canonical authoring namespace is `seamless.workflow`, which exports `Context`, `Cell`, and the `Transformer` factory together.
+
 **A `Context` is a DAG of nodes plus a runtime that keeps it in equilibrium.** Its essence fits in one sentence: **reactivity is re-building with fresh snapshots.** When a node takes a new value, the Context builds new immutable `Expression` / `Transformation` definitions from the new snapshot and fires them; the content-addressed cache reuses every sub-result that did not actually change. **The functional layer never mutates, and nothing below the Context knows a Context exists** — a Transformation the Context submits is indistinguishable from one submitted by hand, and its identity and caching are exactly those of `contracts/identity-and-caching.md`. The Transformer-side builder and snapshot contract is `contracts/transformers.md`.
 
 Four consequences are contract in their own right:

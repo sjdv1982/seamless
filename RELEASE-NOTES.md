@@ -147,9 +147,9 @@ See [docs/main/service-management.md](docs/main/service-management.md) for the u
 `seamless-transformer` can now wrap compiled source code as Seamless transformations, in the same `direct`/`delayed` style as Python.
 
 ```python
-from seamless_transformer import DirectCompiledTransformer
+from seamless_transformer import Transformer
 
-tf = DirectCompiledTransformer("c")
+tf = Transformer("c", compiled=True, direct=True)
 tf.schema = """
 inputs:  [{name: a, dtype: int32}, {name: b, dtype: int32}]
 outputs: [{name: result, dtype: int32}]
