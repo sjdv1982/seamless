@@ -48,9 +48,9 @@ pip install seamless-transformer[compiled]
 ## End-to-end example: adding two integers in C
 
 ```python
-from seamless_transformer import DirectCompiledTransformer
+from seamless_transformer import Transformer
 
-tf = DirectCompiledTransformer("c")
+tf = Transformer("c", compiled=True, direct=True)
 
 tf.schema = """
 inputs:
@@ -126,9 +126,9 @@ To add a language at runtime (e.g. for prototyping): call `define_compiled_langu
 `tf.objects` holds additional compiled objects that are linked alongside the main source. Each object can use a different language:
 
 ```python
-from seamless_transformer import DirectCompiledTransformer, CompiledObject
+from seamless_transformer import CompiledObject, Transformer
 
-tf = DirectCompiledTransformer("c")
+tf = Transformer("c", compiled=True, direct=True)
 tf.schema = ...
 tf.code = main_c_code
 
@@ -150,7 +150,7 @@ See the [Environment API reference](api/reference/seamless_transformer.transform
 
 ## delayed vs direct
 
-- `DirectCompiledTransformer(language)` — executes immediately and returns the value (like `direct`)
-- `CompiledTransformer(language)` — returns a `Transformation` handle for deferred execution (like `delayed`)
+- `Transformer(language, compiled=True, direct=True)` — executes immediately and returns the value (like `direct`)
+- `Transformer(language, compiled=True)` — returns a `Transformation` handle for deferred execution (like `delayed`)
 
 Both support the same attributes: `schema`, `code`, `header`, `metavars`, `objects`, `compilation`, `environment`.

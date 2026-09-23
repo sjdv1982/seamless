@@ -11,6 +11,20 @@ A **transformation** in Seamless is a deterministic computation: given the same 
 3. **Executing** the code — either Python (via `exec`) or bash (via subprocess with file-mapped pins).
 4. **Returning** the result as a checksum, which can be cached and reused.
 
+## Public Transformer constructors
+
+The public constructors are `direct`, `delayed`, and the `Transformer` factory:
+
+```python
+from seamless.transformer import Transformer, direct, delayed
+
+python_builder = Transformer()
+bash_builder = Transformer("bash", direct=True)
+compiled_builder = Transformer("c", compiled=True)
+```
+
+The factory signature is `Transformer(language="python", compiled=False, direct=False)` and returns a code-less builder. `direct` and `delayed` accept Python functions (or clone an existing ordinary builder into the requested call mode); they do not accept a language argument. Concrete Python, Bash, and compiled implementation classes are not exported as constructors.
+
 ## Worker pool
 
 For production use, `seamless-transformer` can spawn a pool of worker processes (`seamless_transformer.worker.spawn()`). Workers run in separate processes using the `spawn` multiprocessing context, and communicate with the parent via a custom IPC channel built on `multiprocessing.Connection` and shared memory.

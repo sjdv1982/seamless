@@ -6,7 +6,28 @@ That is the same builder/snapshot distinction as Cell and Expression, but not an
 
 This page owns the Transformer as a **builder and workflow handle**. Pin behavior belongs to `contracts/pins.md`; execution and the immutable Transformation handle belong to `contracts/direct-delayed-and-transformation.md`; Context assignment and reactive scheduling belong to `contracts/workflow-context.md`; compiled-language additions belong to `contracts/compiled-transformers.md`.
 
-**The `direct` and `delayed` decorators both return a Transformer.** They do not return a Transformation and they do not execute the decorated function at decoration time. The difference between them is the call mode installed on the returned Transformer: calling a delayed Transformer returns a Transformation, while calling a direct Transformer executes the built Transformation and returns its value.
+**The `direct` and `delayed` decorators both return a Python Transformer.** They accept no language argument, do not return a Transformation and do not execute the decorated function at decoration time. The difference between them is the call mode installed on the returned Transformer: calling a delayed Transformer returns a Transformation, while calling a direct Transformer executes the built Transformation and returns its value.
+
+## Canonical construction API
+
+There are three canonical ways to construct a Transformer in Python:
+
+- outside a workflow, `direct(function)` and `delayed(function)` construct Python Transformers;
+- in a workflow, assigning a Python function (`ctx.tf = function`) constructs a bound Python Transformer;
+- in any scenario, `Transformer(language="python", compiled=False, direct=False)` constructs a code-less builder that can be configured and optionally bound later.
+
+`Transformer` is a factory class. With `compiled=False`, `language` must be `"python"` or `"bash"`; the factory selects the delayed or direct Python/Bash implementation from `direct`. With `compiled=True`, the factory forwards `language` to the delayed or direct compiled implementation. The concrete implementation classes are not public constructors.
+
+The factory is importable from `seamless_transformer`, `seamless.transformer`, and `seamless.workflow`. The last namespace also exports `Context` and `Cell`:
+
+```python
+from seamless.workflow import Cell, Context, Transformer
+
+tf = Transformer("bash", direct=True)
+tf.code = "cat input > RESULT"
+```
+
+For Python and Bash builders, `language` is fixed by the selected class and is read-only. Compiled builders likewise have a read-only language chosen at construction.
 
 ## The two modes
 
@@ -57,7 +78,7 @@ For a bound Transformer, an explicit build snapshots the node's current builder 
 
 ### Contract change: a mode-independent build operation
 
-**Contract ahead of code.** The pre-contract implementation has no `build()` method. Its inherited `transformation()` is implemented as `self()`, so a `DirectTransformer.transformation()` follows the direct `__call__` override and returns a value rather than a Transformation; it also accepts no call arguments. `get_transformation()` inherits the same problem.
+**Contract ahead of code.** The pre-contract implementation has no `build()` method. Its inherited `transformation()` is implemented as `self()`, so a direct Transformer's `transformation()` follows the direct `__call__` override and returns a value rather than a Transformation; it also accepts no call arguments. `get_transformation()` inherits the same problem.
 
 The contract changes this:
 
@@ -121,7 +142,7 @@ A producer operation may target a pin but may not target a bound Transformer's r
 
 ## Ordinary and compiled Transformers
 
-`Transformer` and `DirectTransformer` provide ordinary callable or text-source builders. `CompiledTransformer` and `DirectCompiledTransformer` extend the same builder contract with compiled-language configuration.
+The factory's Python and Bash results provide ordinary callable or text-source builders. `Transformer(language, compiled=True, direct=...)` extends the same builder contract with compiled-language configuration.
 
 The common rules on modes, binding, pins, snapshots and named work methods do not vary by language. The compiled contract owns schemas, native source, generated headers, marshalling, compilation, compiled objects and compiled result packaging; none of those rules are repeated here. See `contracts/compiled-transformers.md`.
 
