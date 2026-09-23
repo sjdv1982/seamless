@@ -159,20 +159,17 @@ and 2 have written plans; the rest need one before they can be handed off.
 
 ### 1. Compiled transformer and transformation celltypes
 
-**Plan: `seamless/compiled-transformer-celltypes-design-plan.md`** (1498 lines, handoff-ready).
+**Implemented:** `seamless/compiled-transformer-celltypes-design-plan.md`.
 
-Today every compiled input pin is recorded in the concrete transformation as `mixed`, whatever the
-schema declares (`compiled_transformer.py:458`; `pretransformation.py:264`, `:459`). That erases the
-pin boundary, bypasses ordinary conversion and the required-pin null check, and lets invalid values
-fail only during native argument marshalling (section 4, feature 7, bug 1). The plan gives compiled
-transformers a typed Seamless boundary defined jointly by the compiled signature schema, the declared
-pin celltype, and — for a pin declared `mixed` — a restricted set of natural mixed values. It changes
-both the mutable builder/API layer and the immutable transformation layer (pin tuples, checksums,
-dependency resolution, pre-hash validation, native execution).
+Compiled input tuples now preserve declared pin celltypes. Shared schema/pin
+validation enforces the whitelist, null rejection, mixed taxonomy, native scalar
+ranges, and character byte rules. Schema mutation preserves declarations, and
+workflow graphs round-trip them. Deferred hashing fetches no input buffers;
+executor validation precedes compilation, including replayed dictionaries.
 
-`contracts/compiled-pins.md` §10 already commits to this as the end state and accepts the
-consequence: **transformation checksums change**, so cached compiled results are invalidated once.
-Only scheduling is open.
+The conservative baseline applies to the pin, with ordinary Expression conversion
+from upstream data. Transformation checksums intentionally change when corrected
+pin metadata changes. See `contracts/compiled-pins.md` for the implemented contract.
 
 ### 2. Workflow authorizer (submit gate)
 
