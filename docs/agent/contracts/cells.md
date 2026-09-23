@@ -35,14 +35,14 @@ Code locations:
 
 ```python
 Cell(celltype=None, *, checksum=None, source=None, input_celltype=None,
-     path=None, validator=None, validator_language=None)
+     validator=None, validator_language=None)
 ```
 
 - The positional argument is the **produced** celltype.
 - `checksum=` and `source=` are **mutually exclusive** (`TypeError` otherwise). `source=` takes a typed reference — a `Cell`, an `Expression`, or any object exposing the duck-typed `_workflow_endpoint` / `_compute_dependency` protocol (a `Transformation`, a bound endpoint). A bare `Checksum` passed as `source=` raises `TypeError` naming `checksum=`; a `Pin` raises `TypeError` naming `pin.source`.
 - `celltype` defaults to a typed source's `celltype`, else `"mixed"`. An unsupported name raises `TypeError` listing the supported celltypes (see `contracts/celltypes-and-conversion.md`).
 - `input_celltype=` is a **declaration**, legal only alongside a bare checksum. With a typed source it must match, or construction raises `ValueError`.
-- `path=` starts the builder at a projection; it is normalized by `normalize_path` and uses the Expression path syntax.
+- `path=` is not a constructor parameter; passing it raises `TypeError`. Add paths by projecting. **Contract ahead of code:** the current constructor still accepts `path=`; Appendix F.1a requires its removal. The `.path` property is read-only (see *Work*).
 - `validator` / `validator_language` are accepted and stored, but validators are **not implemented** (below).
 
 `build()` — also spelled `cell.expression()` and `cell()` — freezes the current builder state into an `Expression`. That Expression is the contract object; the Cell is the handle that produced it.
@@ -57,7 +57,9 @@ Assigning a Cell into a Context binds it: `ctx.a = Cell("int")` moves the builde
 
 ### Retired names
 
-`target_celltype`, `input_ref` and `SubCell` are retired and raise `AttributeError` naming the replacement (`celltype`; `source` or `checksum`; and, for `SubCell`, `Cell` — there is no separate projection class, see *Projections*). Because attribute access on a Cell falls through to *projection*, `check_retired_name` runs first in `__getattr__`, `__setattr__` and `__delattr__`, so a retired name can never silently become a sub-path. Item navigation is unaffected: `ctx.a["input_ref"]` is an ordinary projection of a data field with that name.
+`target_celltype` and `input_ref` are retired and raise `AttributeError` naming the replacement (`celltype`; `source` or `checksum`). Because attribute access on a Cell falls through to *projection*, `check_retired_name` runs first in `__getattr__`, `__setattr__` and `__delattr__`, so a retired name can never silently become a sub-path. Item navigation is unaffected: `ctx.a["input_ref"]` is an ordinary projection of a data field with that name.
+
+**`SubCell` is removed, not retained as a retirement shim.** Use `Cell` for projections. Appendix F.1a supersedes the earlier ruling to retire the name with a replacement error: remove the class and its exports, including `seamless.SubCell` and its `__all__` entry. **Contract ahead of code:** the class and exports still exist; the handle guards move to `CellBase` (see *Projections*).
 
 **There is no old → new migration.** Cells reach `main` unreleased; the contract below is the contract, not a translation of an earlier one.
 
@@ -117,7 +119,7 @@ So **`.source is None` means "nothing upstream feeds this"** and **`.checksum is
 
 **An edge exists only in a workflow.** Bound, a cell's input is an **edge** in the durable graph, which the Context can see, check, mark and save. Standalone there is no graph and there are no edges: a cell's input is a **link** — the input reference the Cell holds to the Cell, Expression or checksum above it. The invariant below is a property of the link and holds in both modes; what differs is the spelling that creates one, and what a bad one does. Where this section says *edge*, it is speaking about the bound case specifically.
 
-**A cell whose input arrives through a path has `celltype == input_celltype`.** A link that both projects into its source *and* converts is The wiring rule that keeps the invariant:
+**A cell whose input arrives through a path has `celltype == input_celltype`.** A link may not both project into its source *and* convert. The wiring rule that keeps the invariant:
 
 > Defining or redefining a cell's input is legal iff the new source carries **no path**, or the new source's celltype equals the cell's **`celltype`**.
 
@@ -139,9 +141,9 @@ TypeError: would convert text -> plain behind a projection.
   ctx.a = ctx.b.as_celltype("plain")[3]   # item 3 of the parsed list
 ```
 
-Retyping a **source** that has projecting consumers is a valid request and is *not* refused. Each affected consumer becomes **`miswired`**, and its own dependents are `blocked` with reason `blocked-by-miswiring` (`contracts/node-state-lifecycle.md`). Only invalid requests raise; a valid request that invalidates someone else's wiring leaves a node condition.
+Retyping a **source** that has projecting consumers is a valid request and is *not* refused. Each affected consumer becomes **`miswired`**. In a Context, its own dependents are `blocked` with reason `blocked-by-miswiring` (`contracts/node-state-lifecycle.md`); `blocked` and `block_reason` remain bound-only. Only invalid requests raise; a valid request that invalidates someone else's wiring leaves a node condition.
 
-**That second half is bound-only, because a node condition needs a node.** Standalone the same act is available — `c = b[3]` and then `b.celltype = "plain"`, where `c`'s `input_celltype` follows its parent **live** (*Celltypes*) — and it leaves `c` with a conversion behind a path and nothing to carry the condition: `miswired` is a node state, and a standalone Cell's states are `unwired`, `waiting`, `complete` and `failed` (*Non-goals*). **What such a `c` does on the next read is not yet ruled.**
+**Standalone consumers can also be `miswired`.** After `c = b[3]`, retyping `b` so that the link would project and convert leaves `c` in state `miswired`, rather than rejecting the valid change to `b`. Its `.checksum` is `None`. Appendix F.2a extends the standalone state vocabulary; the older four-state restriction does not apply.
 
 *Contract ahead of code.* None of this is enforced today, in either mode: `ctx.a = Cell("plain"); ctx.a = ctx.b[3]` with `b` of celltype `text` is accepted and answers `','`, and standalone a projection and a conversion still collapse into one Expression rather than two links (*Projections*).
 
@@ -171,20 +173,20 @@ A bound cell is **elidable** when nothing can ever demand its checksum — it ex
 
 An elidable cell that is **not** elided is the ordinary consequence of a **fusion barrier** — a conversion that produces a new buffer, or a deep step (`contracts/expressions.md`, *Fusion*). It is then a real member of the chain: the Context evaluates it like any other node, so its Expression is built and its result checksum is produced and cached, even though nothing can ever name it — which is exactly the work elision exists to avoid. So *elidable* says who could demand the checksum, not that none is computed; only *elided* means no Expression and no checksum.
 
-**The graph carries a symbol table.** Alongside its nodes and edges, a graph holds `symbol → (source, celltype, path)`, where `source` is a named node's name or another symbol. That table **is** the anonymous cell's definition — an entry says *take `source`, apply `path`, at `celltype`* — and an edge referring to a symbol resolves through it:
+**The graph carries anonymous nodes separately.** Named nodes are stored under `nodes`; anonymous nodes are stored under `anonymous_nodes`, not duplicated in `nodes`. The `anonymous_nodes` symbol table holds `symbol → (source, celltype, path)`, where `source` is a named node's name or another symbol. That table **is** the anonymous cell's definition — an entry says *take `source`, apply `path`, at `celltype`* — and an edge referring to a symbol resolves through it:
 
 ```
 ctx.a = ctx.b[3].as_celltype("plain")     sym → (b, text, "[3]")   edge (sym, no path) → a(plain)
 ctx.a = ctx.b.as_celltype("plain")[3]     sym → (b, plain, "")    edge (sym, path [3]) → a(plain)
 ```
 
-The two spellings are the same recipe after fusion and differ only here, which is the whole reason the table is durable: without it, the first spelling would reload indistinguishable from `ctx.a = ctx.b[3]` and come back **`miswired`**.
+The two spellings preserve their different application orders after fusion, which is the whole reason the table is durable: without it, the first spelling would reload indistinguishable from `ctx.a = ctx.b[3]` and come back **`miswired`**.
 
 - **The wiring invariant holds on table entries too**, and `set_graph` checks them exactly as it checks edges — an entry carrying both a path and a conversion is ill-formed. Chains alternate by construction, so a legal builder never writes one.
 - **An entry is garbage when no edge and no other entry names its symbol**, and is removed then. Nothing else can reach it.
 - **The table resolves the namespace question.** An edge's source is *either* a node path *or* a symbol, and which one is part of the reference, so a user cell named `abcde` and the symbol `abcde` never collide and no sigil has to leak into anything user-visible.
 
-This is a **graph format change**: the format is at `0.4`, and a graph written with a symbol table cannot be read by a loader that does not know about one.
+This is a **graph format change to `0.5`**, from `0.4`, as ruled in Appendix F.2a. A graph written with `anonymous_nodes` cannot be read by a loader that does not know about it. **Contract ahead of code.**
 
 **Fusion is independent of elision, and is always done.** Chains of Expressions collapse as far as the codebook allows — path into path, and a checksum-preserving conversion into a following path — under the rules in `contracts/expressions.md`, *Fusion*. It applies to named and anonymous intermediates alike, so these two build the same fused recipe:
 
@@ -242,7 +244,7 @@ Exactly three acts make `input_celltype` differ from `celltype`, and each of the
 - the constructor, `Cell(ct, checksum=cs, input_celltype=…)`;
 - a later `cell.celltype = …`, which retypes and therefore converts (above).
 
-Reading `.checksum` after one of those reports the converted output rather than the checksum that was declared. That is retyping doing what retyping is specified to do, not an asymmetry between the getter and the setter. Two further cases break the round-trip without any of the three, and both are stated elsewhere: a handle that carries a `path` declares the input *before* the path, so the read is the projection of what was written — coherent, not a bug, because the path is recipe, not value; and on a `bytes` cell the empty-buffer checksum canonicalizes to null on the way out (*Null and `None`*).
+Reading `.checksum` after one of those reports the converted output rather than the checksum that was declared. That is retyping doing what retyping is specified to do, not an asymmetry between the getter and the setter. On a `bytes` cell the empty-buffer checksum canonicalizes to null on the way out (*Null and `None`*). The former constructor-`path=` round-trip exception is not part of the contract: that parameter is removed. Standalone projection writes must raise; bound projection writes update the selected value (*Projections*).
 
 **`set_checksum` does not set `.checksum`.** It is the Checksum variant of the three setters and sets the *input*. It is instantaneous, so `.checksum` is normally `None` immediately afterwards — except in the two cases the `.set_checksum` contract carves out (the dummy Expression and the unbound computed property), which are stated under *Reads* below and derived in `contracts/expressions.md`.
 
@@ -306,7 +308,7 @@ Two concerns stay separate: **retrieving** `.checksum`, and **materializing** it
 
 ### Laziness: a standalone Cell pulls, a Context pushes
 
-**A standalone Cell computes nothing until it is read.** It holds a recipe, not a running computation: there is no thread, no scheduler and no background work behind it, so every evaluation it ever performs is pulled out of it by a read. The reads that pull are `.checksum`, `.exception` (which reads `.checksum` first), `.buffer` and `.value` (which need the result checksum first), and the explicit `compute()` / `run()`. Everything else — `.source`, `.celltype`, `.input_celltype`, `.path`, `build()` — is configuration and pulls nothing (*Work*).
+**A standalone Cell computes nothing until it is read.** It holds a recipe, not a running computation: there is no thread, no scheduler and no background work behind it, so every evaluation it ever performs is pulled out of it by a read. The reads that pull are `.checksum`, `.buffer` and `.value` (which need the result checksum first), and the explicit `compute()` / `run()`. Configuration and inspection — `.source`, `.celltype`, `.input_celltype`, `.path`, `build()`, `.state` and `.exception` — pull nothing (*Work*).
 
 **A pull walks the whole cheap chain, and stops at a Transformation.** A standalone Cell is a chain (*Projections*), and every link above it — an upstream Cell, an upstream Expression — is part of the same recipe and is cheap by construction, so one read evaluates as much of that run as it needs. What a pull never does is start **execution**: a source Transformation that has not run is left alone and the read answers `None`. That is what "a property getter never runs a source" means — never start a Transformation, not never evaluate the recipe.
 
@@ -316,9 +318,9 @@ Two concerns stay separate: **retrieving** `.checksum`, and **materializing** it
 
 ### `.checksum`
 
-**A property getter never runs a source *Transformation*.** For a Cell fed by a Transformation, `.checksum` reports a result only if that Transformation already has one; the call that starts it is `.compute()`, exactly as `Buffer.get_checksum()` is the working counterpart of `Buffer.checksum`. An upstream **Cell or Expression** is a different matter: it is a link of this Cell's own recipe, and a read evaluates it (*Laziness*). Cell, Pin and Expression get no `get_checksum()`, because `.compute()` already fills that role.
+**A property getter never runs a source *Transformation*.** For a Cell fed by a Transformation, `.checksum` reports a result only if that Transformation already has one; the call that starts it is `.compute()`, exactly as `Buffer.get_checksum()` is the working counterpart of `Buffer.checksum`. For a standalone Cell, an upstream **Cell or Expression** is a different matter: it is a link of this Cell's own recipe, and a read evaluates it (*Laziness*). Cell, Pin and Expression get no `get_checksum()`, because `.compute()` already fills that role.
 
-**A Cell's own expression is cheap, so the getter evaluates it** whenever the input checksum is at hand. Resolution order:
+**A standalone Cell's own expression is cheap, so its getter evaluates it** whenever the input checksum is at hand. Standalone resolution order:
 
 1. nothing to apply (no path, no conversion, no validator) — the input checksum;
 2. a hit in the process-local Expression cache;
@@ -331,9 +333,9 @@ Otherwise `.checksum` is `None`: nothing is known, no remote is configured, or e
 
 The second `.set_checksum` exception is that **on an unbound Cell `.checksum` is a computed property**, performing a synchronous evaluation of the underlying Expression. This does not change what `set_checksum` means.
 
-**Wait on expressions, never on transformations.** A source Transformation that is still running gives `None`. A running source Expression may be waited on, unless it depends on a running Transformation. *Verified:* `_available_input_checksum` returns a bare `Checksum` unchanged, asks an `Expression` for `_available_result()` (which joins matching in-flight work but returns `None` when the ultimate input is an unfinished compute dependency), recurses into a source `Cell`'s own getter, and otherwise reads only the already-recorded `_result_checksum_internal()`. **A source Expression that is not running at all is the gap**: joining in-flight work is not the same as starting it (*Laziness*).
+**Standalone: wait on expressions, never on transformations.** A source Transformation that is still running gives `None`. A running source Expression may be waited on, unless it depends on a running Transformation. *Verified:* `_available_input_checksum` returns a bare `Checksum` unchanged, asks an `Expression` for `_available_result()` (which joins matching in-flight work but returns `None` when the ultimate input is an unfinished compute dependency), recurses into a source `Cell`'s own getter, and otherwise reads only the already-recorded `_result_checksum_internal()`. **A source Expression that is not running at all is the gap**: joining in-flight work is not the same as starting it (*Laziness*).
 
-**Bound and standalone deliberately differ.** A bound `.checksum` never waits: a node that is still computing reports `None` with state `waiting`, because the Context works in the background. A standalone Cell has nothing working in the background, so it waits.
+**Bound and standalone deliberately differ.** A bound `.checksum` is a simple attribute read: it never waits, evaluates, dispatches, or probes the Expression caches/database. It reports the already-produced checksum, or `None` with state `waiting` when evaluation is pending, including an underived projection. The dummy Expression is the sole exception: its input checksum is available without evaluation (step 1 above). Steps 2–6 belong only to standalone getters; the Context does bound evaluation in the background. **Contract ahead of code:** public bound reads currently may derive/evaluate. A standalone Cell has nothing working in the background, so it waits.
 
 **A running-loop refusal is not a failure.** Inside a running event loop a synchronous evaluation that would need the async bridge is refused (`RunningLoopRefusal`, see `contracts/expressions.md`). The standalone getter turns that into `None`, leaves `.exception` as `None` and the state as `waiting`, and dispatches nothing. It is a condition that resolves itself outside the loop, not an error to be cleared.
 
@@ -376,7 +378,7 @@ Step 3 can still fail after step 2 passes, because HashType does not cover every
 
 **A failure is remembered on the handle, never in the substrate.** This is the Cell-side counterpart of "Expression failures are not cached" (`contracts/expressions.md`):
 
-- **standalone** — on the Cell (`_standalone_exception`), and reset whenever the recipe changes: a new input (`_replace_input_ref`), a new `celltype`, a new `path`, a new `validator` or `validator_language`;
+- **standalone** — on the Cell (`_standalone_exception`), and reset whenever the recipe changes: a new input (`_replace_input_ref`), a new `celltype`, a new `validator` or `validator_language`;
 - **bound** — on the Context node, where `clear_exception()` also drops the stored demand result, releases its lease and re-derives.
 
 So **a new Cell built on the same recipe never inherits an old failure.** Keying a failure by expression identity in the substrate would have exactly the opposite effect, and would poison a checksum for every later reader.
@@ -385,16 +387,17 @@ The checksum shown by a `CacheMissError` is the one whose buffer was missing. In
 
 **`Cell.exception` holds a string**, as `Transformation.exception` does — one convention across Cell, Pin and Transformation. **This is contract ahead of code** (see *Implementation status*). Its consequence is worth stating now: a `CacheMissError`'s checksum then reaches the Cell as **prose only**, inside the message. The jobserver error envelope's split between `message` (for a person) and `checksum` (for code) therefore has no machine-readable arm on the Cell; `exc.args[0]` is a `Checksum` on the `CacheMissError` that `.value` *raises*, but not on the string that `.exception` *holds*.
 
-Reading `.exception` on a standalone Cell evaluates the Cell's expression first (the getter calls `self.checksum`), so `.exception` is a read that can do cheap work — and, for a deterministic failure, re-derives the same failure after `clear_exception()`.
+**`.state` and `.exception` are passive inspection in both modes.** They never evaluate a recipe, wait for work, or fetch a buffer. Standalone, an unevaluated recipe is `waiting` with `.exception is None`; a literal dummy result can be `complete` without evaluation. After a recipe change, inspection discards any stale result or failure but does not compute the new recipe. `clear_exception()` makes `.exception` return `None`; a deterministic failure reappears only after a pulling read or explicit computation. This supersedes the earlier rule that the standalone `.exception` getter evaluates first.
 
 ## Work: which calls compute and which never do
 
 | Call | Does work? | Returns |
 |---|---|---|
 | `.source`, `.celltype`, `.input_celltype`, `.path`, `.path_python` | no | configuration |
-| `.checksum` | evaluates the Cell's own recipe — its own expression, and its upstream Cell and Expression links; never starts a source Transformation | `Checksum` or `None` |
+| `.checksum` | standalone: evaluates its recipe and upstream Cell/Expression links, never starts a Transformation; bound: reads the current result only, with the dummy exception above | `Checksum` or `None` |
 | `.buffer`, `.value` | resolve the result checksum; never fingertip | buffer / value, or raise |
-| `.exception` | reads `.checksum` first | the stored failure or `None` |
+| `.state` | no evaluation; reports current state | lifecycle state |
+| `.exception` | no evaluation; reports the stored failure | the stored failure string or `None` |
 | `build()` / `expression()` / `cell()` | no | an immutable `Expression` |
 | `compute()` | **yes** — starts missing upstream work | the result `Checksum`, or `None` |
 | `await compute_async()` / `await computation()` | **yes** | the result `Checksum`, or `None` |
@@ -411,7 +414,7 @@ Notes:
 - `compute(input_ref)` / `run(input_ref)` / `build(input_ref)` accept a one-shot input override, type-checked like a constructor input, that does not mutate the Cell. The **parameter** is still spelled `input_ref` (as it is on `Expression`); only the retired *attribute* of that name raises.
 - All of these default to `execution="auto"`; placement is in `contracts/expressions.md`.
 - **`.path` and `.path_python` are the same string.** `.path` is the path as stored — `""` at the root, dotted for identifier keys and bracketed otherwise (`contracts/expressions.md`, *Path syntax*) — and `.path_python` is an **exact alias** in both modes, kept because the bound backend protocol requires the name (`BoundCellBackend.path_python = path`; `Expression.path_python` returns `self.path`). Neither is a second spelling of the path, and nothing distinguishes them.
-- **`.path` has a standalone setter.** Assigning it re-aims the builder in place and resets the memoized result and `.exception`, exactly as a new input or a new `celltype` does (*Failures*); bound, assigning it raises `BoundStateError`. The rule that *a path is only ever added by projecting* (*Projections*) is stated for the constructor; whether this setter is retired with the constructor argument has not been ruled.
+- **`.path` is read-only in both modes.** Assigning it raises `AttributeError`; add a path by projecting, which returns a child Cell. `.path_python` is the same read-only alias. **Contract ahead of code:** the standalone setter currently re-aims the builder and must be removed; the bound setter currently raises `BoundStateError`.
 - The builder methods return **new** Cells and never mutate. On a **bound** Cell, `as_celltype()`, `with_validator()` and `with_input()` return a *standalone* Cell built on the bound cell's current Expression snapshot (`BoundCellBackend.derive`), whereas `item()` and `slice()` stay bound. Re-aiming a bound cell in place is a Context write, not a derivation.
 
 ## Projections
@@ -429,9 +432,9 @@ For example, a `Cell("text")` holding `[10, 20, 30, 40]` as text. `cell[3].as_ce
 
 *Contract ahead of code.* Today both spellings build a single Expression at `input_celltype='text'`, so both answer `','`. Standalone, `Cell._derive` updates the independent `path` and `celltype` fields and never touches `input_celltype`; bound, `BoundCellBackend.derive` detaches by building the root as a source and overwriting only the output celltype. The rule above is the contract: appending a path step to a Cell whose `input_celltype` and `celltype` differ must **close** that Expression and re-base the step on its result; appending to a Cell with no pending conversion extends the path as it does today.
 
-**Projection and `as_celltype` both return a child cell linked to the parent.** `cell[3]` is a child Cell whose *source* is `cell`, carrying the path; `cell.as_celltype(ct)` is a child Cell whose source is `cell`, carrying the conversion. `Cell.__init__` takes **no `path` argument** — a path is only ever added by projecting. Three things follow:
+**Projection and `as_celltype` both return a child cell linked to the parent.** `cell[3]` is a child Cell whose *source* is `cell`, carrying the path; `cell.as_celltype(ct)` is a child Cell whose source is `cell`, carrying the conversion. `Cell.__init__` takes **no `path` argument** — constructor paths are replaced by projection. **Contract ahead of code:** both the constructor removal and the parent-linked child model remain to be implemented; `.path` becomes read-only as well. Three things follow:
 
-- **A path is only ever added by projecting**, so the builder stays a chain. The constructor was the one route that produced a path-carrying Cell without a parent link, and its `.checksum` round-trip could not work: `set_checksum` sets the *pre-path* input, so what went in never came back out.
+- **Constructor paths are replaced by projecting**, so the builder stays a chain. The removed constructor route produced a path-carrying Cell without a parent link, and its `.checksum` round-trip could not work: `set_checksum` sets the *pre-path* input, so what went in never came back out.
 - **The wiring invariant holds standalone too.** `cell[3].as_celltype("plain")` is two cells and two links, not one cell carrying both; so **binding is a move, not a decomposition** — the chain that goes into the Context already has the shape the graph requires, one symbol-table entry per anonymous link.
 - **`.source` on a standalone projection answers the parent handle**, where today `Cell._derive` copies the parent's own input and so reports the *grand*parent. The new reading is the one the name promises.
 
@@ -440,6 +443,8 @@ This costs nothing at evaluation time: a run of path links fuses back into one E
 **API-name arbitration: normal Python lookup wins.** `__getattr__` projects only for a name that is not statically defined on `Cell` or its bases. A bound-only member whose getter raises `AttributeError` on a standalone Cell (`mount`, `block_reason`) must *not* fall through to a same-named projection, so `Cell.__getattr__` consults `_class_attribute` and re-raises rather than projecting. Names starting with `_` never project. Item access is the escape hatch: `ctx.a["value"]` and `ctx.a["run"]` are ordinary projections of data fields with those names. Cells have no `.pins` API, and `pins` is not reserved, so `ctx.a.pins` is an ordinary projection.
 
 **A Cell is a handle, and says so.** `==`, ordering, `bool()`, `len()` and iteration raise `ProjectionError` — which subclasses both `TypeError` and `AttributeError` — on **every** Cell, and on every Pin, which shares `CellBase`. Handle identity carries no meaning, so comparing a Cell to a value, or to another Cell, is always a mistake whether or not a path is involved. **There is no separate projection class**: the guard lives on `CellBase`, and the message adapts to the object — on a Cell carrying a path it names the path and suggests the misspelling that attribute projection makes silent (`ctx.a.vlaue`), and on one without a path it says to read `.value`. One gap has no fix: `is None` compiles to a pointer comparison with no protocol to intercept, so `assert ctx.a.vlaue is not None` still passes.
+
+**Contract ahead of code:** these guards currently exist only on `SubCell`; they must move to `CellBase` and cover root Cells and Pins as well. Internal identity-based membership handling must land before the equality guard. Appendix F.1a requires guard tests and removal of `SubCell`.
 
 **Projection depth is unlimited; connection targets are not.** A projection path may be arbitrarily deep wherever the underlying Expression path and source celltype support it. A **connection target** — a graph location that may receive a bound source — is the **root or one level below it, and nothing deeper**. A one-level target is a single point selection: a mapping key, an attribute name, or an integer sequence index. A slice may be read or value-updated but is never a connection target, because it denotes several positions. `ctx.a.b.c = ctx.x` raises `PathError: Cell connection targets are limited to one point component`.
 
@@ -470,7 +475,9 @@ ctx.join.left = ctx.left
 ctx.join.right = ctx.right
 ```
 
-**A join is plain local Python.** It is assembled directly in the Context, in-process: the root value is resolved, each connected sub-path source's value is resolved and assigned into a detached copy, and the aggregate is re-serialized. **There is no Transformation and no Expression behind it.** *Verified:* `Context._derive_cell` takes this branch when there are sub-path edges and no root edge, and hands `sidework.evaluate_cell` to `_demand`, which runs it in a worker thread; `evaluate_cell` calls `Checksum.resolve`, `_assign_path` and `checksum_for_value`, and nothing else.
+**Join members convert to the join's celltype before insertion.** For an assignable member of a `mixed` or `plain` join, `ctx.j["left"] = ctx.t; a = ctx.j.value` and the root connection `ctx.j = ctx.t; b = ctx.j.value` must give the same value for `a["left"]` and `b` after computation. For example, a `text` source containing `"[1,2]"` contributes the list `[1, 2]` to a `plain` join, not the source string. A heterogeneous member source must be pathless: conversion cannot share its link with a source projection. Conversion failure is an evaluation failure, as for a root conversion. **Contract ahead of code:** current assembly embeds the value resolved at the source's own celltype without this conversion.
+
+**Current implementation: a join is plain local Python.** It is assembled directly in the Context, in-process: the root value is resolved, each connected sub-path source's value is resolved and assigned into a detached copy, and the aggregate is re-serialized. **There is no Transformation and no Expression behind it.** *Verified:* `Context._derive_cell` takes this branch when there are sub-path edges and no root edge, and hands `sidework.evaluate_cell` to `_demand`, which runs it in a worker thread; `evaluate_cell` calls `Checksum.resolve`, `_assign_path` and `checksum_for_value`, and nothing else.
 
 Observable behaviour — stable, and the only thing promised:
 
@@ -498,7 +505,7 @@ Because every typed route raises today, indexing that dict yourself is also **th
 
 ## Implementation status and current limitations
 
-Settled contract that the code does not yet implement, or implements differently. Where a design document and the code disagree, **the code wins** and the disagreement is listed here.
+Settled contract that the code does not yet implement, or implements differently. The settled rules above define the test oracle, including explicitly marked contract-ahead-of-code rules; current implementation differences are listed here. Appendix F decisions and the read-only `.path` ruling supersede older descriptions.
 
 - **`.exception` is an exception object, not a string.** `execution_error` returns the exception with its traceback stripped, its `__cause__`/`__context__` cleared and a `failure_id` attached, and both `CellBase.exception` (standalone) and `node.exception` (bound) hand that object out. The string convention is settled and the code is to be changed. Two code sites depend on the object form and must change with it: standalone `.value` and `run()` `raise self._standalone_exception`.
 - **Validators are deferred.** `validator` and `validator_language` are accepted by the constructor, by `with_validator()` and by `CellConfig`, and are excluded from Expression identity, but every evaluation entry point raises `NotImplementedError("Expression validators are not implemented yet")`, which a Cell records as `.exception` (wrapped as `WorkflowExecutionError`). The reject-only semantics are settled; nothing writes the database's validator columns. A validator must be a `Checksum` (or hex) — a validator given as source text fails with a `fromhex` error, not a useful message.
@@ -508,12 +515,23 @@ Settled contract that the code does not yet implement, or implements differently
 - **`.buffer` returns `None` where `.value` raises.** After a recorded evaluation failure the standalone `.checksum` getter short-circuits to `None`, so `.buffer` answers `None` while `.value` re-raises the stored exception. The contract is that both report the same failure the same way.
 - **A bound public read does not validate, and does not record.** `Context._get_buffer` and `_get_value` validate against the celltype and record a failure on the node, but `ingress.controller_method` intercepts `_get_checksum` / `_get_buffer` / `_get_value` for every caller outside the controller and resolves the checksum directly. So a bound `.buffer` returns unvalidated bytes, and a bound `.value` whose deserialization fails raises without setting `.exception` — where the standalone path does both. The settled rule ("the same applies to bound and standalone Cells") is the standalone behaviour.
 - **A bound read of a non-existent projection raises instead of reporting.** `ctx.p.nope.checksum`, `.value` and `.compute()` raise `ExpressionEvaluationError`, because the ingress read path catches only `KeyError` and `IndexError` while `_apply_step` wraps those in `ExpressionEvaluationError`. Standalone, the same projection returns `None` and records the failure in `.exception`. The standalone behaviour is the intended one.
-- **Standalone `clear_exception()` does not clear the memoized result.** It clears only `_standalone_exception`; the next read re-evaluates. This is correct for a deterministic failure (it reproduces) and is why `.exception` appears unchanged immediately after `clear_exception()` — the getter has already re-derived it.
+- **Standalone `clear_exception()` does not clear the memoized result.** It clears only `_standalone_exception`. Inspection is passive: `.exception` stays `None` until a pulling read or explicit computation encounters a failure again. If a result was already produced and only materialization failed, its checksum remains available; the next materializing read may reproduce that failure.
 - **`context-internals-followup-design.md` is stale on two points**: it makes `.checksum`, `.buffer` and `.value` bound-only (superseded by the standalone-read contract above), and it makes a projection's `input_ref` its owning root endpoint (that meaning belongs to the private `_input_ref`; the public split is `.source` / `.checksum`).
 - **On a bound projection, `input_celltype` does not follow the path while `.source` does.** `BoundCellBackend.input_celltype` (`seamless-workflow/seamless_workflow/builder_state.py:64-69`) calls `Context._effective_input_celltype(self.node_path)` and drops `self.local_path`, whereas `BoundCellBackend.source` passes `local_path` into `_public_cell_source`. So for a join `ctx.join.left = ctx.left`, `ctx.join.left.source` reports `ctx.left` but `ctx.join.left.input_celltype` reports the **root's** input celltype. **This is a known bug, not an intended divergence**: the two members are one lookup, as stated in *The input* above, and `local_path` is to be passed through. Until it is, do not rely on `input_celltype` at a bound projection.
 - **`Cell.fingertip()` does not exist**, and neither does `Pin.fingertip()`. The only entry point is `Checksum.fingertip()`, which holds a bare checksum and therefore cannot express the ownership rule above. Related, and worse: Expression evaluation currently writes its result buffer to the hashserver on every evaluation, so a fingertip today re-adds exactly the buffer that scratch or eviction excluded (`contracts/expressions.md`, *Status: publication and fingertipping*).
 - **A standalone read does not evaluate an upstream Expression.** A pull should walk the whole cheap chain and stop only at a Transformation (*Reads*, *Laziness*), but `_available_input_checksum` hands a source `Expression` to `_available_result()`, which returns an already-published result or joins *already-active* work and otherwise answers `None`, so nothing starts that link. A source `Cell` is recursed into correctly, and the Transformation boundary is correct. The visible effect is a standalone chain whose read answers `None` although every link of it is evaluable — the shape that projecting and `as_celltype` produce, where the intermediate survives only as the next link's input reference (*Connecting*). This is to be fixed in code.
-- **A standalone projection's property writes are silently lost.** `cell.b.checksum = cs`, `cell.b.set_checksum(cs)`, `cell.b.value = v` and `cell.b.buffer = buf` do not raise, unlike `cell.b = v` (`AttributeError`) and `cell["b"] = v` (`TypeError`). `cell.b` returns a fresh, throwaway handle (`Cell.item`) whose setters are `CellBase`'s ordinary ones, so the write mutates that handle's own private state and the handle is then discarded. (In the code today that handle is a `SubCell`, which overrides only the comparison, truthiness and iteration dunders at `cell_class.py:688-750`; the contract retires the class and puts those dunders on `CellBase`, which does not by itself fix this.) *Verified against code (2026-09-20):* `Cell.item` builds the projection through `_derive`, which for a standalone Cell constructs a brand-new instance rather than returning a view; `CellBase.checksum`'s setter (`_write_checksum` → `_replace_input_ref`) runs against that instance. The contract is that these four spellings raise the same way item/attribute assignment already does.
+- **A standalone projection's property writes are silently lost.** `cell.b.checksum = cs`, `cell.b.set_checksum(cs)`, `cell.b.value = v` and `cell.b.buffer = buf` do not raise, unlike `cell.b = v` (`AttributeError`) and `cell["b"] = v` (`TypeError`). `cell.b` returns a fresh, throwaway handle (`Cell.item`) whose setters are `CellBase`'s ordinary ones, so the write mutates that handle's own private state and the handle is then discarded. (In the code today that handle is a `SubCell`, which overrides only the comparison, truthiness and iteration dunders at `cell_class.py:688-750`; the contract removes the class and puts those dunders on `CellBase`, which does not by itself fix this.) *Verified against code (2026-09-20):* `Cell.item` builds the projection through `_derive`, which for a standalone Cell constructs a brand-new instance rather than returning a view; `CellBase.checksum`'s setter (`_write_checksum` → `_replace_input_ref`) runs against that instance. The contract is that these four spellings raise the same way item/attribute assignment already does.
+
+### Additional test-confirmed gaps (2026-09-22)
+
+The feature 5 alignment pass exercised the public APIs without inspecting the workflow implementation:
+
+- **Bound empty-`bytes` checksum canonicalization:** writing the empty-buffer checksum to a bound `bytes` Cell leaves that checksum visible instead of the canonical null. Value and buffer writes, and the standalone checksum write, pass the same test.
+- **Unwired bound builders:** `as_celltype()` / `build()` on an unwired bound Cell raise `ValueError("Cannot build unwired Cell ...")`, whereas the standalone builder can return an unevaluated recipe. This contradicts the shared builder API in *Work*.
+- **Bound deferred-validator failure reporting:** `compute()` raises `WorkflowExecutionError("Expression validators are not implemented yet")` instead of returning `None` and exposing the failure through the Cell. The corresponding standalone case passes, including when the unvalidated recipe was already computed. This test pins only the settled refusal, not future validator semantics.
+- **Standalone null retyping:** a null Cell retyped to `int` from `python`, `ipython`, `deepcell`, `deepfolder`, `folder` or `module` fails instead of preserving null. For example, the Python case records `Illegal expression conversion: python -> int`. The corresponding bound cases pass. The null shortcut must precede the ordinary conversion refusal.
+
+These have paired regression cases in `tests/test_cells_contract_alignment.py` in both repositories. See [the alignment report](../../../cells-feature-5-test-alignment.md) for coverage and validation.
 
 ## Non-goals
 
@@ -524,4 +542,4 @@ Settled contract that the code does not yet implement, or implements differently
 - **Fingertipping from a property.** `.buffer` and `.value` never recompute a missing buffer. `fingertip()` is the explicit method; `contracts/scratch-witness-audit.md` defines fingertipping and where it happens.
 - **Value identity.** A Cell names a checksum, not a value. One value may have several checksums, and identity stays with the checksum (`contracts/identity-and-caching.md`); a Cell never re-serializes a result to normalize it, and `==` between two Cells is not a value comparison.
 - **Failure caching.** A Cell failure lives on the handle for as long as the recipe does, and nowhere else.
-- **Node state.** `.state` and `.block_reason` are node-lifecycle members shared with bound Transformers, and belong to feature 10's node state lifecycle; standalone, `.state` reports only `unwired`, `waiting`, `complete` and `failed`, and `.block_reason` is bound-only.
+- **Node state.** `.state` and `.block_reason` are node-lifecycle members shared with bound Transformers, and belong to feature 10's node state lifecycle; standalone, `.state` reports `unwired`, `waiting`, `complete`, `failed` and (Appendix F.2a, contract ahead of code) `miswired`, and `.block_reason` is bound-only.

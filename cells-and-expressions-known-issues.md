@@ -591,6 +591,25 @@ one — 3.4 and 3.5 are its output — which is not the same thing and left hole
 3×2 write matrix among them (3.5). Feature 5's contract page was re-read against the code on 2026-09-22
 with the alignment pass in view: **Appendix F**. This section is where the full output belongs.
 
+### 3.7 Feature 5 test alignment (2026-09-22)
+
+The feature 5 pass is now recorded in [cells-feature-5-test-alignment.md](cells-feature-5-test-alignment.md).
+`contracts/cells.md` incorporates Appendix F's decisions and the follow-up ruling that `.path` is
+read-only. The contract is sufficiently precise for this pass. Paired standalone/bound suites cover
+Cell operations, writes, wiring, fusion, failures and the existing Expression witness corpus;
+bound-only suites cover joins, graph storage and elision. Section 3.4 item 3 retains its non-strict
+xfail and now explicitly requires a string before comparing repeated `.exception` reads.
+
+Additional public-API failures observed during validation (not assumptions about workflow code):
+
+- bound checksum-form empty-`bytes` writes do not canonicalize to null;
+- unwired bound `build()` / `as_celltype()` raise instead of returning a deferred recipe;
+- bound `compute()` raises the deferred-validator refusal instead of reporting it;
+- standalone null-to-`int` retyping fails for six source celltypes; their bound counterparts pass.
+
+Each is documented in `cells.md` and marked specifically in its failing test. No blanket workflow
+xfail was added. Tests that passed an initial known-gap run were promoted to ordinary regressions.
+
 ## 4. Known bugs
 
 None of these is scheduled. All are documented as current behaviour in the contract docs, which is why
@@ -1528,13 +1547,6 @@ nothing says it is ahead of code. The page marks that status scrupulously everyw
 mechanical omission, not a disagreement. **F.2 is four rulings** the author owes before the corresponding
 tests can be written at all.
 
-**Fixed in flight (2026-09-22), recorded so the history is not lost.** Three minor findings of the same
-review are already corrected and are not listed below: `cells.md` never documented `.path_python`
-(an exact alias of `.path` in both modes, kept because the bound backend protocol requires the name) or
-the standalone `.path` **setter**, and its *Elidable and elided* paragraph defined "elidable" twice, loosely,
-and left the elidable-but-not-elided case — the ordinary consequence of a fusion barrier, where the
-Expression *is* built and a checksum *is* produced — implicit.
-
 ### F.1 Blocking: three unmarked contract-ahead-of-code statements
 
 1. **`path=` in the constructor contradicts itself.** §*The definition* documents `path=` as a live
@@ -1569,6 +1581,12 @@ Expression *is* built and a checksum *is* produced — implicit.
    raise. The section invites tests — it discusses the unclosable `is None` gap — and half of what it
    invites currently fails. Note the ordering constraint already recorded in section 2, item 9: raising
    from `CellBase.__eq__` breaks membership tests, so the internal identity helper lands first.
+
+### F.1a decisions for F.1 (section inserted by the author)
+- `path=` is to be removed from the code.
+- `SubCell` is to be removed from the code.
+- The dunder guards are to be added to CellBase and tests are to be written.
+- Follow-up ruling (2026-09-22): `.path` must become read-only. Projection creates a child; assigning `.path` is not a second way to add a path.
 
 ### F.2 Rulings owed before the tests can be written
 
@@ -1612,3 +1630,12 @@ Expression *is* built and a checksum *is* produced — implicit.
    representation. The same passage calls the symbol table "a graph format change" while giving the format
    as `0.4` — the number the format already carries — so a version assertion has nothing to check. Decide
    both, and state the new number.
+
+### F.2a decisions for F.2 (section inserted by the author)
+4. These are conversions, and the code is wrong. If "left" is assignable at all (i.e. "mixed" or "plain"), `ctx.j["left"] = ctx.t; a = ctx.j.value` and `ctx.j = ctx.t; b = ctx.j.value` will have `a["left"]` === `b`. This also implies that the RHS cannot carry a path (the project-OR-convert rule for cells).
+
+5. Bound checksums are simple attribute reads and must never wait or evaluate. Report `None` with state `waiting` is expected, unless it is a dummy expression.
+
+6. 'miswired' is a state for unbound cells as well. 
+
+7. Anonymous nodes are nodes, but stored under "anonymous_nodes". Bump graph format to 0.5 .
