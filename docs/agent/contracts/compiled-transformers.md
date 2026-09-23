@@ -1,10 +1,10 @@
 # Compiled Transformers (Contract)
 
-This page defines the behavior an agent may rely on when working with compiled-language transformers in Seamless.
+This page defines the compiled-language additions to the common Transformer builder contract in `contracts/transformers.md`. It owns schemas, native code, compilation and marshalling; it does not redefine standalone versus bound builders or the Transformation snapshot boundary.
 
 ## What compiled transformers are
 
-`CompiledTransformer` and `DirectCompiledTransformer` extend the same delayed/direct model as Python transformers, but execute **compiled source code** instead of a Python function. The compiled source must define a `transform()` function whose signature matches the C header generated from the schema (see `tf.header`). The schema is written in the seamless-signature YAML format.
+`CompiledTransformer` and `DirectCompiledTransformer` are Transformer builders that execute **compiled source code** instead of a Python function. Their common builder, binding and build semantics are `contracts/transformers.md`. The compiled source must define a `transform()` function whose signature matches the C header generated from the schema (see `tf.header`). The schema is written in the seamless-signature YAML format.
 
 Built-in languages: `c`, `cpp`, `fortran`, `rust`. **The set is open.** Additional languages can be registered at runtime with `define_compiled_language()` (see "Custom language registration" below). Any language that compiles to a C-ABI-compatible `transform()` symbol is supported.
 
@@ -20,6 +20,8 @@ pip install seamless-transformer[compiled]
 `CompiledTransformer(language)` — calling returns a `Transformation` handle (delayed, same as `delayed` for Python).
 
 `DirectCompiledTransformer(language)` — calling executes the build pipeline immediately and returns the value (same as `direct` for Python).
+
+The distinction applies only to `__call__`. On both classes, `build()` and `transformation()` return an unexecuted `Transformation`, as specified in `contracts/transformers.md`.
 
 Both classes support all the same attributes (`schema`, `code`, `header`, `metavars`, `objects`, `compilation`, `environment`).
 
@@ -42,7 +44,7 @@ Code like `load_model()` or `open_database_session()` **cannot be wrapped** as a
 
 ## Architecture
 
-Compiled transformers share a `TransformerCore` base with Python transformers. The distinction is in the mixin:
+Compiled transformers share the `TransformerCore` builder base with Python transformers. The common behavioral contract is `contracts/transformers.md`; the implementation distinction is in the mixin:
 
 - `TransformerCore` — shared state and `__call__` dispatch flow
 - `PythonMixin` — Python source, Python callable signature, sandbox execution
@@ -214,6 +216,7 @@ These settings propagate to the worker as part of the transformation's `__env__`
 
 ## Reference Map (load only as needed)
 
+- `contracts/transformers.md` — common Transformer builder, binding and snapshot semantics
 - `contracts/seamless-signature-schema.md` — full schema YAML format, dtype tables, wildcard rules, shape constraints, and language-native derivation examples
 - `contracts/identity-and-caching.md` — load-bearing vs orthogonal key split, caching model, referential transparency
 - `contracts/pins.md` — the pin layer: reaching pins, the pin set, pin celltypes, optional pins and the null rules, and conversion at the pin boundary

@@ -2,7 +2,7 @@
 
 **A workflow node is always in exactly one of seven states, and every one of them is *derived*, never assigned.** The Context is a DAG of nodes plus a runtime that keeps it in equilibrium (`contracts/workflow-context.md`); this page is the state machine that runtime implements — what the seven states mean, how each is derived from a node's own configuration and its upstreams, how a change cascades through the downstream cone without ever producing an inconsistent intermediate result, how superseded work is speculatively retained, and how a user reclaims it.
 
-A **node** is a Context-bound builder — `ctx.a`, `ctx.tf` — and `Cell`, `Pin` and `Transformer` handles are *views* onto one (`contracts/workflow-context.md`, `contracts/cells.md`, `contracts/pins.md`). State is a property of the node, so two handles onto one node always report the same state, and a handle carries none of it.
+A **node** is a Context-bound builder — `ctx.a`, `ctx.tf` — and `Cell`, `Pin` and `Transformer` handles are *views* onto one (`contracts/workflow-context.md`, `contracts/cells.md`, `contracts/pins.md`, `contracts/transformers.md`). State is a property of the node, so two handles onto one node always report the same state, and a handle carries none of it.
 
 This page owns: the state vocabulary, the derivation rules, block reasons and their precedence, the cascade and its glitch-freedom invariant, the hold/supersession policy, and what `prune` reclaims. It does **not** own the Context API (`contracts/workflow-context.md`), the handle-side read/write API (`contracts/cells.md`, `contracts/pins.md`), what softcancel means (`contracts/cancellation.md`), or Expression-level cancellation and materialization (`contracts/expressions.md`).
 
