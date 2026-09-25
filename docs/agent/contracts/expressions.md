@@ -29,7 +29,7 @@ Code locations:
 | Concern | Module / symbol |
 |---|---|
 | Definition container | `seamless.expression_class` (`Expression`, `normalize_path`, `append_item_path`, `append_slice_path`); re-exported as `seamless.Expression` |
-| Evaluation, cache, placement, dedup, cancellation | `seamless.checksum.expression` (`ExpressionKey`, `ExpressionEvaluationError`, `evaluate_expression`, `evaluate_expression_async`, `evaluate_expression_remote`, `choose_expression_evaluation_location`, `get_expression_cache`, `parse_path`, `resolve_expression_value`, `softcancel_expression`, `cancel_expression`, `wait_for_active_expression`) |
+| Evaluation, cache, placement, dedup, cancellation | `seamless.checksum.expression` (`ExpressionKey`, `ExpressionEvaluationError`, `evaluate_expression`, `evaluate_expression_async`, `evaluate_expression_remote`, `choose_expression_evaluation_location`, `get_expression_cache`, `parse_path`, `resolve_expression_value`, `softcancel_expression`, `wait_for_active_expression`) |
 | Checksum-level pre-validation | `seamless.checksum.hash_type_validation.validate_expression[_async]` |
 | Error envelope | `seamless.error_envelope` (`encode_error`, `decode_error`, `error_kind`, `WorkflowExecutionError`, `RunningLoopRefusal`) |
 | Remote dispatch | `seamless_remote.jobserver_remote.run_expression` / `has_jobserver`, `seamless_remote.daskserver_remote.run_expression` / `has_daskserver`, `seamless_transformer.worker.dispatch_expression` |
@@ -95,7 +95,7 @@ The order has nothing to sequence, and is therefore vacuous, in exactly two case
 
 **The identity of an Expression is the 4-tuple `(input_checksum, path, input_celltype, celltype)`.** The tuple names a recipe's ingredients, not the order they are combined in: that order — project, then convert — is fixed by evaluation (above) and is not recoverable from the tuple alone.
 
-- `Expression.identity_key` is the in-process form; `__eq__` and `__hash__` use it. Its first element is `("checksum", hex)` for a concrete input, `("expression", …)` for an Expression input, and `("object", id(...))` for an unresolved source, so an Expression over an uncomputed source is identical only to itself.
+- `Expression.identity_key` is the in-process form; `__eq__` and `__hash__` use it. Its first element is `("checksum", hex)` for a concrete input, `("expression", …)` for an Expression input, and `("object", id(...))` for an unresolved source. An unresolved dummy Expression remains an Expression input, so separate unresolved sources never collapse to the shared identity of `None`.
 - `Expression.database_key` is the wire form `(input_checksum.hex(), path, input_celltype, celltype)`. It raises `ValueError` when the input is not yet a concrete checksum.
 - `ExpressionKey` canonicalizes the input checksum against the input celltype on construction, so `sha256(b"")` as `bytes` and the canonical null are one identity (see `contracts/celltypes-and-conversion.md`).
 - The seamless-database `Expression` row has exactly this 4-tuple as its **composite primary key**, with `result` as the payload. A second write of the same key is accepted only when the stored `result` agrees; otherwise the row is kept and the request answered with a conflict.
@@ -181,8 +181,6 @@ A **Cell** builds its Expression lazily, so a construction refusal surfaces at t
 **At evaluation** the input checksum's `HashType` is available and a sharper pass runs: for a **pathed** Expression the same path / `input_celltype` rules are re-applied against what the word now proves (`capabilities`); for a **pathless** Expression over the 13, `deserializable_as` and `conversion_feasible` do that vetting instead. Either rejection is a `HashTypeValidationError` at checksum level, before any buffer is fetched (`contracts/hashtype.md`).
 
 **HashType is never asked about a deep celltype.** Deep feasibility is structural — it turns on the declared celltypes and the path shape, never on the data — so it is settled at construction by the deep table. `deserializable_as` accepts only the 13 and **raises `ValueError`** on anything else: that is a caller error, not an answer (`contracts/hashtype.md`). This is what keeps HashType's false-negative property intact, rather than widening it to cover deep names.
-
-*Contract ahead of code:* today there is one pass, not two. `validate_expression[_async]` runs before evaluation — source celltype, then path capability, then (for an empty path) `conversion_feasible` — and nothing is checked at construction. Deep celltypes have no rules anywhere: they reach `deserializable_as`, which answers `False`, which is why every deep Expression currently raises.
 
 ## Results and caching
 
@@ -272,6 +270,8 @@ The run becomes one Expression — `(the run's root checksum, the concatenated p
 
 A fused Expression's failure belongs to the node whose recipe it is — the downstream end of the run. Anonymous intermediates inside the run have no node to carry it, which is why the error names the failing path step: that is what locates it.
 
+*Contract ahead of code — bound Cells only.* The pair rules and the deep barrier above are implemented wherever an Expression is constructed over another Expression (`Expression.__post_init__`), which is what a standalone chain builds. The bound walk described in this subsection is not: a Context builds each cell's Expression over its source node's current **checksum** (`Context._build_source_expression`), never over that node's own Expression, so no run spans more than one edge and nothing collapses across nodes. See `contracts/cells.md`, *Connecting*.
+
 **Identity.** A collapsed chain has a genuinely different identity: `(root, "[3][1]", X, X)` is not the 4-tuple `(intermediate, "[1]", X, X)`, so it is a different database row and a different cache entry, arriving at the same result checksum. That is not a conflict — the reverse index simply gains a second route to that result (`contracts/scratch-witness-audit.md`). Where a chain does *not* collapse, the outer member's input resolves to the intermediate's checksum, and the key is exactly the one an unfused evaluation would have used.
 
 ## Placement: an Expression is evaluated where the data is
@@ -307,7 +307,7 @@ Two derived rules:
 
 **Locality includes an explicitly configured read-buffer directory.** A buffer sitting in a configured local read-buffer directory counts as **local**, and the Expression is evaluated here rather than dispatched: the client could read those bytes for free, and paying a server round trip for them is waste. Read-buffer directories are consulted **before** any hashserver query, and a hit means local placement. The gate is deliberately narrow — an *explicitly configured* read-buffer-directory path, never a generic filesystem scan — so that placement stays a **cheap and deterministic** check: a filesystem check against a configured path is allowed, which is a deliberate relaxation of the earlier "side-effect-free" phrasing, and the index-only alternative is not required.
 
-The rule is about the **input** buffer, which is what placement is about. **Resolution already behaves correctly and needs no change**: `Checksum.resolution()` goes through `buffer_remote.get_buffer`, which queries every configured read *folder* before any read *server* (`seamless-remote/seamless_remote/buffer_remote.py:171-186`), so steps 5 and 6 of the resolution order above already prefer a local directory. *Contract ahead of code:* only the placement half is missing — `choose_expression_evaluation_location` today defines locality as this process's **memory** alone, so a buffer on local disk is currently treated as remote and dispatched.
+The rule is about the **input** buffer, which is what placement is about. **Resolution already behaves correctly and needs no change**: `Checksum.resolution()` goes through `buffer_remote.get_buffer`, which queries every configured read *folder* before any read *server* (`seamless-remote/seamless_remote/buffer_remote.py:171-186`), so steps 5 and 6 of the resolution order above already prefer a local directory. `choose_expression_evaluation_location()` checks process memory. When `evaluate_expression_remote()` gets a remote result from that helper, it checks configured read-folder clients before dispatch; a directory hit materializes the input locally and changes the final placement to local.
 
 ### Fingertipping is exempt from "where the data is"
 
@@ -416,63 +416,21 @@ One in-flight evaluation per Expression identity, with a membership set of inter
 - in daskserver mode the same ownership is preserved by giving equivalent submissions a deterministic Dask task identity, so duplicate requests resolve to one Dask evaluation;
 - active work is process-local/scheduler-local and is never recorded in the database.
 
-**This membership set is not the waiting set of *Cancellation*, below.** Today one code object (`_active_expressions`) serves both roles, which is exactly the conflation the settled model exists to undo: deduplication belongs to the **Expression identity**, while the waiting set belongs to the **checksum being materialized**, one layer down and shared with transformation input resolution, `.buffer` reads and mounts. They are keyed differently and they will be two objects.
+**This membership set is also the waiting set of *Cancellation*, below.** `_active_expressions` and `_lingering_expressions` are keyed by the **Expression identity**; there is no separate buffer-layer waiting set for Expression cancellation. The same keyed entry deduplicates equal Expressions and tracks which callers still want the shared evaluation.
 
 A caller identifies itself to the set by a member id: a standalone `Expression` uses `id(self)`, and the workflow Context uses its demand key, which it deregisters when its own job is cancelled (node supersession, `Context.close()`). Two `Expression` objects with the same identity are therefore two members of one evaluation.
 
 ## Cancellation
 
-**The cancellation mechanism does not belong to Expressions.** The only cancellable work is remote materialization of a buffer, which Expressions share with transformation input resolution, `.buffer` reads and mounts. Expression evaluation proper — deserialize, walk the path, convert, serialize, hash — is cheap and CPU-bound inside a single thread, so it could not usefully be interrupted even if there were a way to.
+Expression cancellation is keyed by the **full Expression identity**, the 4-tuple used for evaluation and caching. It is not a checksum-keyed waiting set in the buffer layer. Equal Expressions share one evaluation and each Expression instance is a member of that shared work; different Expressions do not share a cancellation set merely because they need the same input buffer.
 
-Three premises decide the shape of the mechanism, and each is a consequence of a rule stated elsewhere on this page:
+`softcancel()` means that this Expression instance leaves its evaluation's member set. It returns `True` only when it was a registered member. If another member remains, the shared evaluation continues. An Expression that is free, already complete, or no longer waiting returns `False`; a second call also returns `False`.
 
-- **A materialization's cost is unbounded**, which is what makes the machinery worth building at all. An Expression does not normally fingertip its input checksum, but it can, as a step in a fingertip chain — and **a chain may contain Transformations**. Do not read *Fingertipping is exempt from "where the data is"* as saying otherwise: the **frontier** bound there is about how much of the *ancestry* is walked, not about how much work the frontier itself is. Recomputing one frontier Transformation can cost hours.
-- **Every Expression waits on *at most* one buffer — `folder → mixed` excepted.** The number of buffers an Expression waits on is exactly its **cost class** (*Cost class*, above), read as a waiting-set requirement:
+When the last member leaves, the evaluation enters a short linger under the same Expression identity. A requester arriving during that interval rejoins the existing evaluation and clears the pending expiry. If the result completes during the linger, it is recorded and remains usable. If the linger expires with no member, the shared evaluation task is cancelled. Failures are not cached, so a later request starts fresh work.
 
-  | Cost class | Buffers waited on | What that means for cancellation |
-  |---|---|---|
-  | **free** | **none** | there is nothing to materialize, so there is **no cancellable window at all**: the Expression never registers in a waiting set, and `softcancel()` answers `False` from the start. This class is not a corner case — it holds the **dummy Expression** (the most common Expression in the system), a null short-circuit, any conversion decidable from the checksum, the rule table and the cached `HashType`, and **every deep index conversion** |
-  | **one buffer** (*one child*) | **exactly one** | the ordinary case, and the one the waiting set is designed for: it is keyed by that single checksum. Over a deep checksum the one buffer is the **index**, never a member |
-  | **all children** | the index **plus every member** | `folder → mixed`, and nothing else |
+The linger is an internal implementation constant, currently 3 seconds. The shared evaluation holds a lifecycle claim on its input until the task finishes, including while it is lingering. A `seamless.close()` during that period can therefore observe the outstanding claim; completion or expiry releases it.
 
-  Materializing a deep checksum into a value is banned from Expressions except for `folder → mixed` (`contracts/deep-celltypes.md`), so **the waiting set is keyed by a single checksum in every case but that one**. `folder → mixed` is the only shape in the system that needs a **multi-checksum waiter**, and it is the only reason that case has to exist. (This premise used to read *exactly* one buffer. That was wrong at the free end, and wrong about something ordinary rather than exotic; what the mechanism actually needs is an upper bound of one, which is what the table gives.)
-- **There is no cancel point once the data is present.** Evaluation is then near-instantaneous, so the buffer's arrival is the end of the cancellable window.
-
-**Why latch-on and a delay rather than an eager abort.** The value of a cancel is *remaining resource cost × the chance that nobody else wants the output* (`contracts/cancellation.md`, *What cancellation is not for*). For a materialization the second factor is **low — lower than for a Transformation result** — because the same buffer is routinely wanted by somebody else: by **sibling projections of one parent** (`ctx.a.x` and `ctx.a.y` resolve the same root), by the **Transformation that takes the same checksum as an input**, and by a **revert**. An eager abort would therefore throw away work that another requester is about to ask for, which is exactly what latch-on and the linger exist to prevent.
-
-The settled model:
-
-- **A waiting set per in-flight materialization, keyed by checksum**, held at the materialization site in the buffer layer.
-- **Latch-on**: a second requester for the same checksum joins the in-flight fetch instead of starting a second one.
-- **Softcancel = deregister.** The fetch is aborted only when the set is empty, and then only after a **linger**; a requester arriving during the linger re-registers and the fetch continues.
-- **No hard cancel at all** — a documented non-feature. The only leaf a hard cancel could kill is a shared fetch, which would merely make the other waiters fail and re-fetch. A single waiter pressing Ctrl-C is already covered: with one member, softcancel aborts the fetch.
-- **No cancel point once the buffer is present.** Evaluation then runs to completion and its result is recorded.
-- **Failure is not sticky** (above).
-- **Soft deregistration cascades down fingertip chains**; a step shared with a live chain survives, because it still has a member of its own. **The leaf Transformation needs no special case**: the linger keeps its member registered for those few seconds, and it is killed only when its own set empties — softness cascading to the leaf, exactly as in `contracts/cancellation.md`.
-- Vocabulary: **waiting set**, not refcount. It tracks who still wants a fetch that has not finished, which is a different thing with a different lifetime from the checksum reference lifecycle. The two meet in one place: the site holds a lifecycle claim for the duration of the linger.
-
-### The linger
-
-**Three independent arguments produce the linger**, which is why it is not an optimization to be tuned away:
-
-1. **Somebody else usually wants the same buffer** — sibling projections, a Transformation over the same checksum, a revert (above).
-2. **Convergence is normal in a fingertip chain.** Two chains often need the same intermediate, and one may arrive seconds after the other gave up.
-3. **Abandoning mid-chain discards every intermediate**, and where those intermediates are `scratch` no trace of the work remains — so the next requester starts from nothing.
-
-The linger is an internal constant — "a few seconds, not contractual" — at most a test hook, and is **not user-visible**. **It is a knob of its own.** The node-state-lifecycle self-edit revert hold (`contracts/node-state-lifecycle.md`, *Self-edit revert hold*) is a human-timescale window of the same order, but the two are **two knobs, not one shared constant**: they answer different events — a person reverting an edit, versus a second requester arriving for the same buffer — so tuning one must never retune the other, and each may be measured and moved alone. The linger is a few seconds, pending measurement; the revert hold's own figure is on that page. Its observable consequences are contract:
-
-- after the last waiter leaves, a fetch may run on for a few seconds;
-- it may still complete, and its result is then recorded and usable;
-- the site holds a lifecycle claim meanwhile, so a `seamless.close()` landing in that window can block briefly or report an outstanding claim.
-
-### Why deregistration, not task cancellation
-
-Cancelling the caller's `asyncio` task is the right way to make it abandon an Expression — it unwinds the caller's own awaits — but task cancellation is not itself the deregistration mechanism, for four reasons:
-
-- **it does not deregister**: cancellation knows nothing about the waiting set, so each site must leave the set in its own cleanup path, synchronously or under a shield, since an `await` inside an already-cancelled task raises at once;
-- **it does not protect shared work**: if the caller's task *owns* the fetch rather than merely awaiting it, cancelling that task kills the fetch for every latched waiter too — a hard cancel in disguise. Shared work must instead be owned by a task belonging to the materialization site, with each waiter awaiting a derived or shielded future;
-- **it does not stop what is not an `await`**: a thread (`asyncio.to_thread`), a subprocess, a jobserver request or a Dask future all keep running and keep holding their resource once the awaiting task is abandoned — the Dask case in *Implementation status* below is one instance of this;
-- **it gives no delay**: a linger is by definition not "cancel the child the moment the parent is cancelled", so the site's task must outlive every individual waiter.
+Cancelling a caller's `asyncio` task unwinds that caller's wait. The evaluator's cleanup path softcancels its membership, so cancellation of one caller does not cancel work while another member remains. There is no hard-cancel operation on an Expression.
 
 ### API
 
@@ -487,24 +445,15 @@ Cancelling the caller's `asyncio` task is the right way to make it abandon an Ex
 
 `softcancel()` returns `bool`, meaning **"I was a registered waiter and have now left"**:
 
-- `False` when the Expression was not waiting — already complete, never started, past the buffer into the CPU phase, or **free**, since an Expression that needs no buffer never enters a waiting set at all (*Cancellation*, first premises);
+- `False` when the Expression was not waiting — already complete, never started, past the buffer into the CPU phase, or **free**, since an Expression that needs no buffer never enters a waiting set at all;
 - `False` again on a second call (idempotent);
-- **it never means the work stopped.** With other waiters, or during the linger, the fetch continues, and a result that arrives anyway is recorded and usable.
+- **it never means the work stopped.** With other waiters, or during the linger, the shared evaluation continues, and a result that arrives anyway is recorded and usable.
 
 There is no "cancelled" state to clear. Results are content-addressed and failures are not cached, so a caller that changes its mind simply asks again.
 
-### Implementation status: cancellation
+### Implementation details
 
-The settled cancellation model above is **ahead of the code**. What exists today:
-
-- The waiting set lives at the **Expression** layer (`_active_expressions` in `seamless.checksum.expression`), not at the materialization site in the buffer layer, and buffer resolution itself is **not** deduplicated by checksum.
-- There is **no linger**: when the last member deregisters, the in-flight remote request is aborted at once and the awaiting task receives `CancelledError`.
-- `Expression.cancel()` exists and is soft; `Expression.softcancel()` does not exist yet, `cancel` is not retired, and `cancel_expression` is still an alias of `softcancel_expression`.
-- `Expression.cancel()` is a **silent no-op for local in-flight evaluations**: `evaluate_expression_async` registers members under a 7-tuple key `("local", hex, path, input_celltype, celltype, str(validator), validator_language)`, while `cancel_expression` looks up the 4-tuple identity key. The call returns `False` while the evaluation keeps running. Only the remote path (`evaluate_expression_remote`, which registers under the 4-tuple with `member_id=id(self)`) can be deregistered.
-- **Dask-dispatched Expressions cannot be interrupted mid-flight**: `dispatch_expression` awaits `asyncio.to_thread(thin.result)`, so cancelling the awaiting task neither cancels the Dask future nor frees the thread, which stays blocked until the remote side finishes. This is the confirmed half of "an abandoned waiter keeps holding a bounded resource", and it is the head-of-line blocking that justifies the mechanism.
-- **The jobserver half of that is unconfirmed.** Whether an abandoned Expression materialization keeps holding a jobserver worker slot has not been read out of the dispatch/cancel path; it is recorded for *Transformations* that a jobserver cancel does not free the slot. It should be settled before the waiting set is built, because it materially changes how much the mechanism is worth.
-- No soft-deregistration cascade down fingertip chains exists.
-- Repo tests cover the remote path only: one member leaving keeps a shared request alive and both callers get the result; the last member leaving aborts the request; `cancel()` on an idle Expression returns `False`. There is no test for local in-flight cancellation.
+The local and remote evaluators both use `_active_expressions` and `_lingering_expressions` in `seamless.checksum.expression`, keyed by the Expression 4-tuple. `_EXPRESSION_LINGER` is currently `3.0`. Each active evaluation holds an input lifecycle claim until its shared task completes or is cancelled after expiry.
 
 ## Deep checksums
 
@@ -520,17 +469,16 @@ An Expression whose `input_celltype` or `celltype` is `deepcell`, `deepfolder` o
 | **Fusion** | a deep step is a **barrier**. The run ends at it, and the child's own conversion is a separate Expression (*Fusion*, above) |
 | **Connecting a deep source on a Cell** | the path-and-conversion wiring rule does **not** apply; a deep step necessarily changes the celltype, so path and conversion always travel together (`contracts/cells.md`, *Connecting*) |
 
-**Status: settled contract, not yet enforced.** The Expression path contains no deep-celltype rules at all — no deep conversion table, no deep path rule, no flatness validator — and a deep celltype on either side of an Expression currently raises `HashTypeValidationError` before evaluation, because `deserializable_as` returns `False` for any celltype outside the 13 (`contracts/hashtype.md`). That `False` is retired by the ruling: under the contract `deserializable_as` raises `ValueError` when asked about a deep celltype, and the shape is admitted or refused at construction by the deep table instead (*When an Expression is vetted*). Enforcing it requires the Expression layer and pin unpacking (`unpack_deep_structure` / `pack_deep_structure`) to change **together, under one shared validator**, or the two layers will disagree about what a deep value is.
+**Enforced.** `validate_expression_shape` applies the deep conversion and path rules at construction. Deep buffers are checked for flatness when they are read, and `deserializable_as` raises `ValueError` if a deep celltype is passed to it (`contracts/hashtype.md`).
 
 ## Current limitations
 
 - **Validators are not implemented, and their interaction with the caches is not specified.** Supplying `validator` or `validator_language` raises `NotImplementedError` from every evaluation entry point, before any cache lookup — so the refusal is total and the cache-hit case cannot arise. Reject-only semantics and the identity exclusion are settled; cache-hit behaviour *once validators run*, two validators under one identity, and the database column conflict rule are open. See *Identity*, "Validators are deferred".
 - **No forensic "irreproducible expression" analogue exists.** There is no Expression counterpart of `IrreproducibleTransformation` (see `contracts/execution-records.md`); an Expression that yields a different result for the same identity tuple is not recorded anywhere.
-- **Cancellation** — see *Implementation status: cancellation*.
-- **Deep-checksum restrictions are unenforced** — see above.
+- **Cancellation** — see *Cancellation* for the Expression-keyed linger and `softcancel()` behavior.
+- **Bound Cells do not fuse across nodes** — see the marker at the end of *Fusion*. Fusion between Expressions is implemented.
 - **The process-local Expression cache is unbounded** and result-only; it is cleared only by process exit or an explicit `get_expression_cache().clear()`.
-- **Locality is process memory only** — *placement* does not yet consult a configured read-buffer directory (resolution already does); see *Placement*.
-- **A non-scratch dispatch is signalled by omitting `scratch`**, so it depends on the receiving side defaulting to `False`. See *Status: publication and fingertipping*.
+- **Locality selection has two layers**: `choose_expression_evaluation_location()` checks process memory, while `evaluate_expression_remote()` also recognizes buffers in configured read-buffer directories.
 - **A reachability check costs a hashserver query.** Under `scratch=False`, a cached result checksum without a local buffer is confirmed with `buffer_remote.get_buffer_lengths` before it is returned. (That a fingertip reports no reason for a failed candidate is *not* a limitation — it is the contract: see *When a fingertip fails, and the materialize mode it needs*.)
 
 ## Non-goals

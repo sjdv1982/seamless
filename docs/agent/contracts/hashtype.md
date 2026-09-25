@@ -18,7 +18,7 @@ Each layer is defined **on top of** the one before it, and no page re-derives th
 
 HashType is the only layer that both of its neighbours consult directly: the reference parser and the conversion engine of layer 1/3 call it before touching bytes, and layer 4 calls it (`validate_expression`) before evaluating anything. **HashType never decides that work is possible** — see the next section.
 
-**The deep celltypes are outside HashType's vocabulary, by ruling and not by omission.** `deepcell`, `deepfolder`, `folder` and `module` classify nothing here, and a query about one **raises**; their feasibility is structural and is settled at Expression construction by `contracts/deep-celltypes.md`. Today the code answers `False` instead, which is what makes every deep Expression fail.
+**The deep celltypes are outside HashType's vocabulary, by ruling and not by omission.** `deepcell`, `deepfolder`, `folder` and `module` classify nothing here, and a query about one **raises**; their feasibility is structural and is settled at Expression construction by `contracts/deep-celltypes.md`.
 
 Code locations:
 
@@ -42,10 +42,10 @@ different class from imprecision, which is why the false-rejection family fixed 
 `827bd5b` was treated as a defect rather than as accepted conservatism
 (`contracts/celltypes-and-conversion.md`, *Implementation status*).
 
-**Every consumer acts on `False` alone.** The reference parser, the conversion engine and Expression
-pre-validation all use HashType only to refuse; none of them uses a `True` to skip a check that would
-otherwise run. An agent reading a `True` or a `None` out of any query on this page has learned
-"not disproved", and nothing more.
+**Consumers use `False` only to reject work.** A `True` or `None` does not guarantee that parsing or
+conversion will succeed; the reference parser or conversion engine still makes the final decision.
+The conversion engine has one identity shortcut: `bytes→mixed` keeps the checksum when the cached
+word already identifies it as mixed.
 
 ## The word
 
@@ -129,8 +129,6 @@ Each query below takes its celltypes from **the 13, and only the 13**. A name ou
 
 **Inside the domain, an empty answer is a real answer.** `capabilities` returns the empty set for `int`, `float`, `bool` and `checksum` because those admit no path step at all — that is a classification, not a shrug. Likewise a `False` from `deserializable_as` is a proof, while `None` is "not disproved".
 
-*Contract ahead of code:* today each query falls through to a default for any name it does not recognize — `False` for `deserializable_as`, the empty set for `capabilities`, `None` for the item-type hints — so a deep name gets an answer instead of an error, and `deserializable_as`'s `False` is what makes every deep Expression raise.
-
 ### `deserializable_as(celltype, *, checksum) -> True | False | None`
 
 `checksum` is a required keyword because null and boolean deserialization depend on the exact
@@ -158,8 +156,6 @@ Evaluated in order:
 
 **Why raise rather than widen.** Teaching `deserializable_as` the four names would make HashType the owner of deep feasibility, and the legal deep set is *smaller* than "anything goes", not larger — so the widened function would have to carry the whole deep table, and its `False` answers would then be structural refusals dressed as classification. Raising keeps one rule per layer and keeps the false-negative property a property of the 13.
 
-*Contract ahead of code:* today the function's final fallthrough is `return False`, which is what makes every deep-celltype or `module` Expression raise `HashTypeValidationError` before evaluation, and it is the one place where a HashType answer is not conservative in the harmless direction. See `contracts/deep-celltypes.md`, "Current status: none of this is enforced yet".
-
 ### `capabilities(source_celltype) -> set` (expression capability)
 
 Records which path steps the **root** structure admits: `"SEQ"` (positional item/slice) and `"MAP"` (string key).
@@ -168,16 +164,15 @@ Records which path steps the **root** structure admits: `"SEQ"` (positional item
 |---|---|
 | `bytes`, `text`, `str`, `python`, `ipython`, `yaml` | `{"SEQ"}` |
 | `binary` | `"SEQ"` if `Rank != SCALAR`; `"MAP"` if `STRUCTURED` |
-| `plain`, `mixed` | `JSON_OBJECT`/`MIXED_OBJECT` → `{"MAP"}`; `JSON_ARRAY`/`MIXED_ARRAY`/`JSON_STRING` → `{"SEQ"}`; else empty |
+| `plain` | `JSON_OBJECT` → `{"MAP"}`; `JSON_ARRAY`/`JSON_STRING` → `{"SEQ"}`; else empty |
+| `mixed` | `NUMPY` follows the `binary` rule; `JSON_OBJECT`/`MIXED_OBJECT` → `{"MAP"}`; `JSON_ARRAY`/`MIXED_ARRAY`/`JSON_STRING` → `{"SEQ"}`; else empty |
 | `int`, `float`, `bool`, `checksum` | empty — **no path step is ever admitted** over a scalar or a reference |
 
 **A deep source celltype is never routed here.** A deep path — exactly one string-item step — is a
 structural rule, settled by the deep table at construction time (`contracts/deep-celltypes.md`,
-*Paths*), so `capabilities` is not the oracle that admits or refuses it. It needs no new capability
-word either way: a flat index is a `JSON_OBJECT`, and `plain`/`mixed` already yield `{"MAP"}` for
-that word, so a deep index that does reach this query classifies like the ordinary JSON object it
-is. *Contract ahead of code:* today `deepcell`, `deepfolder` and `folder` are absent from the
-dispatch above and fall into `other`, yielding the empty set.
+*Paths*), so `capabilities` is not the oracle that admits or refuses it. A flat index is a
+`JSON_OBJECT`, and ordinary `plain`/`mixed` queries classify that buffer as a map; deep path
+admission remains structural and is settled before this query.
 
 `has_numeric_items` and `has_string_items` return `True`/`False`/`None` item-type hints for the same sources. Path validation (`_validate_path_capability`) skips untested words and checks a step only while the root word still types the value: a slice keeps the capabilities; an item step stops checking, except that any further step after a `bytes` item is rejected (the item is an int) and a `NUMERIC` NumPy array with rank below `D3PLUS` admits as many positional item steps as its rank.
 
