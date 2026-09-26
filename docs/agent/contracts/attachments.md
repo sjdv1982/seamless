@@ -3,11 +3,16 @@
 An **attachment** connects one Context cell node to an external resource, in one or both directions:
 
 - **sense** — external state becomes an **authoritative value write** on the node: an ordinary user assignment that happens to arrive from somewhere else;
-- **actuate** — after a turn in which the node's value changed, that **complete** value is **delivered** to the resource.
+- **actuate** — after a turn in which the node's value changed, and once the node is **`complete`**, that value is **delivered** to the resource.
 
-This page is the framework: direction, scope, ownership, delivery discipline, error state and lifecycle. The **file driver** — bytes, paths, celltype canonicalization, fingerprints, atomic writes, directories, limits — is `contracts/mounts.md`. The seam is **direction and discipline versus bytes and filesystem**: `contracts/mounts.md` never restates a rule from this page, it only says where the file driver specializes one.
+This page is the framework: scope, the durable spec and the ephemeral session, the topology rules, the sense and actuate disciplines, the error model, the oscillation detector, the cut barrier, the lifecycle and leaf retention. The **file driver** — bytes, paths, celltype canonicalization, fingerprints, atomic writes, directories, limits — is `contracts/mounts.md`. The seam is **direction and discipline versus bytes and filesystem**: `contracts/mounts.md` never restates a rule from this page; it only says where the file driver specializes one.
 
-**This page specifies the guaranteed behaviour of the attachments that exist; it is not a supported plugin API.** The file driver is the only production driver. `ManualDriver` is a test instrument, `WidgetDriver` is experimental, and third-party drivers are not supported. There is a real transport boundary and it is worth understanding, but nothing below is a stable extension point, and the "generic" layer is still file-shaped in four named places (see *Implementation status*).
+**This page specifies the guaranteed behaviour of the attachments that exist; it is not a supported plugin API.** The file driver is the only production driver. `ManualDriver` is a test instrument, `WidgetDriver` is experimental, and third-party drivers are not supported. There is a real transport boundary and it is worth understanding, but nothing below is a stable extension point, and the "generic" layer is still file-shaped in four named places (*Current limitations*, below).
+
+**"Authority" has two unrelated meanings**, both inherited from the code's own naming. Keep them apart:
+
+- **Write authority** — the topology check that every write passes, and that refuses with **`AuthorityError`** when a source controls the target (`contracts/cells.md`, *Authority*). An **authoritative write** is one that passes this check and installs a value. **Unqualified, "authority" and "authoritative" on this page always mean this.**
+- **The `authority` spec field** — `"file"`, `"cell"` or `"file-strict"`, an argument of `mount()`. It **only resolves the initial file-versus-cell conflict at attach time** (`contracts/mounts.md`, *The initial decision table*). It confers no write authority, is not a continuous ownership rule, and has nothing to do with `AuthorityError`. This page always names it as "the `authority` field" or writes it as `authority=…`.
 
 Code locations:
 
@@ -31,11 +36,15 @@ An attachment attaches to a **whole cell node of a workflow Context**, and to no
 |---|---|
 | a bound whole cell node | the only legal target |
 | a standalone `Cell` | `AttributeError("mount is only available for bound workflow cells")` — the bound-only error `Cell` already uses for Context-only members |
-| a sub-path projection (`ctx.a.b`), or a read-only handle — **including a transformer's result, `ctx.tf.result`** | `AttributeError("Only whole Context cell nodes can be mounted")` |
+| a sub-path projection (`ctx.a.b`) | `AttributeError("Only whole Context cell nodes can be mounted")` |
+| a read-only handle, **including a transformer's result, `ctx.tf.result`** | `AttributeError("Only whole Context cell nodes can be mounted")` |
+| a bound `as_celltype` handle (`ctx.a.as_celltype("text")`) | **unspecified — deferred.** Whether mounting one is refused, and with which error, is an open question; do not depend on either outcome |
 | a transformer pin | no `mount` member exists at all (`AttributeError`); see `contracts/pins.md` |
 | transformer code | not a cell handle; there is no `mount` on it |
 | a missing node, or a transformer node | `NodeError("Mounts require an existing whole cell node")` |
-| a node that already has one | `ValueError("Cell is already mounted; unmount first")` |
+| a node that already has an attachment | `ValueError("Cell is already mounted; unmount first")` |
+
+The messages `"Only whole Context cell nodes can be mounted"` and `"Cell is already mounted; unmount first"` are contract, and so is the `NodeError` message.
 
 **The remedy for every exclusion is the same: attach a cell and connect it**, in whichever direction the value flows. `ctx.code = Cell(celltype="python"); ctx.code.mount("code.py"); ctx.tf.code = ctx.code` is the supported way to edit transformer code externally; `ctx.out = ctx.tf.result; ctx.out.mount("outdir", mode="w")` is the supported way to write a transformer's result out. This is not a temporary limitation: only nodes carry checksums, only a Context has a controller and an update stream, and an attachment's whole discipline is built on the node being the unit of change.
 
@@ -47,50 +56,53 @@ An attachment attaches to a **whole cell node of a workflow Context**, and to no
 
 An attachment is two objects with two different lifetimes.
 
-**The spec is durable node state.** It is a frozen dataclass stored in a dedicated `Node.mount` field — deliberately *not* in `CellConfig`, so that the parameterized configuration path cannot reach it. Only attach and detach change it. It is what `get_graph()` serializes and what `set_graph()` restores.
+**The spec is durable node state.** It is a frozen dataclass stored in a dedicated `Node.mount` field — deliberately *not* in `CellConfig`, so that the parameterized configuration path cannot reach it. Only attaching and detaching change it. It is what `get_graph()` serializes and what `set_graph()` restores.
 
-- The spec **survives value writes and every configuration edit that leaves the node a cell.**
-- It is removed, and the session closed, when the node is **deleted** or **replaced by a transformer**. The post-turn pass detaches any session whose node has disappeared or is no longer a cell, so this needs no cooperation from the caller.
+- The spec **survives value writes and every configuration edit that leaves the node a cell** — with one exception: replacing the cell with an **empty builder of the same celltype** detaches it (*Detach*).
+- It is removed, and the session closed, when the attachment is **unmounted**, when the node is **deleted**, and when the graph is **replaced** by `set_graph()`. Every one of those paths is a detach (*Detach*).
+- **The post-turn pass is the backstop:** it detaches any session whose node has disappeared or is no longer a cell, so no removal path depends on the caller's cooperation. Through the public API a cell node never turns into a transformer in place — assigning transformer code or a `Transformer` builder onto a cell node is refused with `NodeError` (`contracts/workflow-context.md`, *What an assignment means*) — so the "no longer a cell" branch guards internal paths only.
 
 **The session is runtime state, and is never copied, serialized or restored.** It holds the transport registration, the one belief about the resource, the processed watch sequence, the actuation baseline, the pending and in-flight deliveries, the reassert timestamps, the two error slots and the session state (`active`, `tripped`, `closing`).
 
-- **A fresh `session_id` per session, never reused**, plays the role of a generation. Replacing a spec, re-attaching, or reloading the graph closes the old session and opens a new one.
+- **A fresh `session_id` per session, never reused**, plays the role of a generation. Detaching and re-attaching, or reloading the graph, closes the old session and opens a new one.
 - **Every late message from an old session is discarded**, and the payload claims it carries are released. Every handler matches the session id first.
-- Therefore `get_graph()` / `set_graph()` round-trips carry the spec and nothing else: after a reload, sensing starts from a fresh initial read, not from a remembered state.
+- Therefore a `get_graph()` / `set_graph()` round trip carries the spec and nothing else: after a reload, sensing starts from a fresh initial read, not from a remembered state.
 
 ## The topology rules an attachment imposes
 
 **A sensing attachment is the node's producer.** While a node has an attachment whose mode contains `r`:
 
 - any operation that would add an **incoming edge** to it — at the root **or at any sub-path** — raises `AuthorityError("Sensing mount is the producer; unmount first")`. That includes assignment syntax, which would otherwise detach and connect;
-- attaching to a node that already has an incoming edge raises `AuthorityError("Sensing mount cannot have incoming edges; unmount first")`;
+- attaching a sensing mode to a node that already has an incoming edge raises `AuthorityError("Sensing mount cannot have incoming edges; unmount first")`. A `w`-only attachment on a connected node is legal: that is how a computed value is written out;
 - a graph carrying such a connection is refused at load with `PathError("Sensing mounts cannot have incoming connections")`.
 
-This is the ordinary "a target has at most one producer" rule, and it is what makes a sensed write's authority check unable to fail.
+This is the ordinary "a target has at most one producer" rule, and it is what makes a sensed write's write-authority check unable to fail (*Sense*).
 
-Two further refusals apply to **any** attached node, sensing or not:
+Two further refusals apply to **any** attached node, whatever the mode:
 
-- **The celltype is frozen.** Retyping, or replacing the cell with a builder of a different celltype, raises `ValueError("Mounted celltype cannot change; unmount first")`. The celltype decides how the resource's bytes are read and written, and re-initializing in place would need a multi-turn protocol that a configuration edit does not have.
-- **Clearing is refused.** `ctx.a.checksum = None` and the other clearing spellings raise `AuthorityError("Cannot clear a mounted cell; unmount first")`. Clearing is an explicit graph operation, and there is no defined external state for "no value".
+- **The celltype is frozen.** Retyping, or replacing the cell with a builder of a **different** celltype, raises `ValueError("Mounted celltype cannot change; unmount first")`. The celltype decides how the resource's bytes are read and written, and re-initializing in place would need a multi-turn protocol that a configuration edit does not have.
+- **Clearing is refused.** `ctx.a.checksum = None` and the other clearing spellings raise `AuthorityError("Cannot clear a mounted cell; unmount first")`. Clearing a value is an explicit graph operation, and there is no defined external state for "no value".
 
-`contracts/cells.md` states the last two from the handle's side.
+**One assignment is exempt from both refusals: `ctx.a = Cell(celltype=<same>)`**, an empty builder of the cell's own celltype. It is not refused, and it is not a clearing spelling of an attached cell: it **detaches the attachment and clears the cell** in one operation (*Detach*), so the cell it clears is no longer attached.
+
+`contracts/cells.md` states the celltype freeze and the clearing refusal from the handle's side.
 
 ## Sense: a non-detaching authoritative write
 
 A sensed value is installed exactly as a user assignment is, with two qualifications:
 
-- **The same authority check, never detaching.** The write is validated against topology as a non-detaching root write and installed without clearing edges, followed by the ordinary cascade. The newest authoritative input wins, by acceptance order; a sense has no privilege over a user write and no user write has privilege over a sense.
-- **The authority check cannot fail** while the edge rule above holds. If it fails anyway, the failure is **recorded in the session, not raised** — a sense arrives on the controller as a message from a background producer, and raising would poison ingress.
+- **The same write-authority check, never detaching.** The write is validated against topology as a non-detaching root write and installed without clearing edges, followed by the ordinary cascade. The newest authoritative input wins, by acceptance order: a sense has no privilege over a user write, and no user write has privilege over a sense.
+- **The check cannot fail** while the edge rule above holds. If it fails anyway, the failure is **recorded in the session, not raised** — a sense arrives on the controller as a message from a background producer, and raising would poison ingress.
 
 Two consequences:
 
-- **A sensed value supersedes an *undispatched* pending delivery.** The pending delivery is dropped and its claim released: there is no point writing back a value the resource has just told us is stale. An **in-flight** delivery is never cancelled (below).
-- **A sense clears the sense error.** Every value write passes through the one installation point, which clears `session.sense_error`, so a valid observation *and* a user assignment both clear it.
+- **A sensed value supersedes an *undispatched* pending delivery.** The pending delivery is dropped and its claim released: there is no point writing back a value the resource has just told us is stale. An **in-flight** delivery is never cancelled (*Actuate*).
+- **Any value write clears the sense error.** Every value write passes through the one installation point, which clears `session.sense_error`, so a valid observation *and* a user assignment both clear it.
 
 Sensing deliberately does **not** do three things:
 
 - **Invalid external state does not stop sensing.** It fails the cell and monitoring continues; the next valid observation recovers it with no user action.
-- **Content that is merely wrong for the program is not rejected.** A syntax error in a `python` cell passes, because a user assignment of the same text passes. The failure surfaces where it would for a user write: in the transformer that runs it.
+- **Only what the celltype's parser checks is rejected; nothing more.** A mount checks exactly what a user assignment of the same value would check (`contracts/celltypes-and-conversion.md`, the parser table) — no more leniently, no more strictly. For `python`, that parser check includes syntax, so the contract wants a syntax error in a sensed `python` value rejected the same way `ctx.a.set("def (:\n")` would be, as a sense error (see `contracts/mounts.md`, *there is no mount-local parsing*). **Contract ahead of code:** `canon_T` deliberately skips the parser for all four code celltypes, so neither a direct assignment nor a sensed value is actually rejected for a syntax error today — both are sensed as `complete`, and the error surfaces only later, when `.value` is read or when a transformer runs the code. Content that parses but is merely wrong for the program (e.g. a `python` file that parses but raises at runtime) is never rejected here, syntax check or not; that failure surfaces where it would for a user write, in the transformer that runs it.
 - **Disappearance does not clear the node.** Removing a value is an explicit graph operation.
 
 ## Actuate: delivery after a turn
@@ -105,8 +117,8 @@ if N is not None and N != session.last_synced:
         request a delivery of N
 ```
 
-- **Only `complete` actuates.** A node that is `waiting`, `computing`, `blocked`, `failed` or `unwired` delivers nothing: **transient states never delete or rewrite the resource.** A cell mid-recompute does not blank its file, and a failed cell does not propagate its failure into external state.
-- **Actuation is triggered by node changes**, never by a node/resource mismatch on its own. The one exception is the `w`-mode **reassert** (below), where a foreign change to an output the Context owns re-requests the current value.
+- **Only `complete` actuates.** A node in **any other state** — `waiting`, `blocked`, `failed`, `unwired`, `miswired` — delivers nothing: **a node that is not complete never deletes or rewrites the resource.** A cell mid-recompute does not blank its file, and a failed or blocked cell does not propagate its failure into external state.
+- **Actuation is triggered by node changes**, never by a node/resource mismatch on its own. The one exception is the `w`-mode **reassert** (*The oscillation detector*), where a foreign change to an output the Context owns re-requests the current value.
 - The pass is O(number of attachments) per turn and needs no changed-set from the cascade.
 
 **Latest discipline.** A session has **at most one pending and at most one in-flight delivery**.
@@ -131,7 +143,7 @@ Consequences worth stating, because the tempting reading is the wrong one:
 
 | Error | Lives on | Meaning | Cleared by |
 |---|---|---|---|
-| **sense error** | the **cell**: `failed`, with the error as `.exception` | the resource cannot supply the cell's value | the next valid observation, **any** value write, or detaching |
+| **sense error** | the **cell**: `failed`, with the error's text as the string `.exception` | the resource cannot supply the cell's value | the next valid observation, **any** value write, or detaching |
 | **delivery error** | the **attachment**: `.error` | the value is valid; only the resource is behind | the next successful delivery |
 | **conflict error** | the **attachment**: `.error`, **latched** | the oscillation detector tripped | `clear_error()` only |
 
@@ -155,14 +167,14 @@ A failed delivery is **retried with capped exponential backoff — 1 s, doubling
 
 ### Error typing: objects here, strings on the cell
 
-**`ctx.a.mount.error` and `status["sense_error"]` are `Exception` objects** (`MountError`, or its subclass `ConflictError`). **`Cell.exception` is a string** (the ruling of `contracts/cells.md`).
+**`ctx.a.mount.error` and `status["sense_error"]` are `MountError` objects** (a `ConflictError`, which subclasses `MountError`, for a tripped detector). **`ctx.a.exception` is a string**, as it is for every Cell failure (`contracts/cells.md`, *Failures*).
 
-The rule that makes this extensible is the **remote boundary**: the string convention exists because Expressions and Transformations can execute remotely, and exception objects do not transfer well. Attachments are fundamentally local — the transport lives in this process — so a local-only error surface is exempt.
+The rule that separates the two is the **remote boundary**: the string convention exists because Expressions and Transformations can execute remotely, and exception objects do not transfer well. Attachments are fundamentally local — the transport lives in this process — so the attachment's own error surface is exempt and keeps objects. The cell surface is not exempt, because a cell's failure is read like any other.
 
 Two consequences:
 
-- **`isinstance(ctx.a.mount.error, ConflictError)` remains the machine-readable way to tell a tripped detector from a failed write.** There is no other flag for it; `status["state"] == "tripped"` says the same thing about the session.
-- **The same `MountError` appears as an object on the attachment surface and as a string on the cell.** Its `"<path>: <reason>"` prefix is **contract**, and it is what identifies a sense error among ordinary cell failures.
+- **`isinstance(ctx.a.mount.error, ConflictError)` is the machine-readable way to tell a tripped detector from a failed write.** There is no other flag for it on the error; `status["state"] == "tripped"` says the same about the session.
+- **The same sense error appears as a `MountError` object in `status["sense_error"]` and as a string in `ctx.a.exception`.** Its `"<path>: <reason>"` prefix is **contract** on both surfaces, and it is what identifies a sense error among ordinary cell failures: check the string for that prefix, never `isinstance(ctx.a.exception, MountError)`.
 
 ## The oscillation detector
 
@@ -207,26 +219,46 @@ The spelling — `ctx.mounts.sync()`, `await ctx.mounts.synchronization()` — a
 
 ## Attach, detach, close
 
-**Attach** does all the slow work on the caller's thread, then decides in one turn:
+### Attach
+
+**Attaching** (`ctx.a.mount(...)`) does all the slow work on the caller's thread, then decides in one turn:
 
 1. validate the request and the node (the table in *Scope*, plus spec validation);
 2. reserve the resource with the transport;
 3. run the **initial observation** and wait for it. The observation fixes the watch **baseline**, so a change made after it is not lost: it is detected as an ordinary later event once the session is active (observation begins as a post-turn effect of step 4, not at reservation);
-4. submit one message. In its turn the controller re-validates, evaluates the **initial decision table** against the node's value *at that turn*, installs spec and session, applies a resource → node write or sets a sense error if the table says so, and queues an initial delivery if the table says node → resource;
+4. submit one message. In its turn the controller re-validates, evaluates the **initial decision table** — where the `authority` field decides a file-versus-cell conflict (`contracts/mounts.md`) — against the node's value *at that turn*, installs spec and session, applies a resource → node write or sets a sense error if the table says so, and queues an initial delivery if the table says node → resource;
 5. if an initial delivery was queued, **wait for its acknowledgement**, so that attach-then-read from outside the process works. A failed initial write does not make attaching raise; it becomes the attachment's error and is retried.
 
 **Attach blocks, and raises only for an invalid request.** It never raises for the *state* of the resource — missing, unreadable, invalid for the celltype, or not writable. In all of those the attachment is installed and monitoring, each problem is logged once, and when the resource is fixed the attachment recovers with no user action. If it does raise, nothing is installed and the reservation is released.
 
-**Detach** (`del ctx.a.mount`) is a single turn that:
+### Detach
+
+**Unmounting** (`del ctx.a.mount`) is a single turn that:
 
 - marks the session `closing` and removes it, so every later message from it fails the id match;
 - drops the pending delivery and releases its claim, and releases the controller's claim on an in-flight one — the transport keeps its own claim until that operation finishes;
 - **clears the cell's sense error, unmasking the stored value**;
-- releases the registration, and waits for the transport's cleanup, bounded by the delivery timeout.
+- releases the registration.
 
-Node deletion and replacement by a transformer detach in exactly the same way.
+The call then **waits for the transport's cleanup**, bounded by the delivery timeout. Cleanup includes the driver's conditional deletes, so for the file driver a `persistent=False` file has already been deleted — where the conditional-delete rule allows it — by the time `del ctx.a.mount` returns (`contracts/mounts.md`, *Unmount, persistence and close*).
 
-**Close** flushes, once, and does not retry:
+**Node deletion detaches in exactly the same way, including the wait.** `del ctx.a`, or deleting a subcontext that contains attached cells, detaches each attachment as above and **returns only after the transport's cleanup has run**: the conditional delete of a `persistent=False` file has happened when `del` returns, exactly as for unmounting. The leaf-retention claims of a deleted node are released (*Leaf retention*).
+
+**An empty builder of the same celltype detaches and clears.** `ctx.a = Cell(celltype=<same>)` on an attached cell:
+
+- **detaches the attachment**: the spec, the session and the status are removed — `ctx.a.mount.spec` and `ctx.a.mount.status` read `None`, `get_graph()` writes no `mount` entry for the node, the node is no longer actuated, and the registration is released, so the resource can be attached again;
+- **clears the cell**: it no longer has a checksum;
+- **leaves a persistent resource untouched**: the file is neither rewritten nor deleted.
+
+**Unspecified — deferred:** whether a `persistent=False` file is deleted on this path. Do not depend on either outcome.
+
+An empty builder of a **different** celltype is still refused (*The topology rules an attachment imposes*), and every other clearing spelling is still refused with `AuthorityError`.
+
+**Graph replacement** by `set_graph()` detaches every session **with deletion disabled**, so no conditional delete runs on that path (`contracts/mounts.md`).
+
+### Close
+
+**Closing the Context** (`ctx.close()`, or leaving its `with` block) flushes once, and does not retry:
 
 1. admission closes and sensing stops;
 2. each **persistent** session with a pending delivery and no error dispatches it;
@@ -266,7 +298,19 @@ Only `driver == "file"` is serializable; `AttachmentSpec.to_graph()` raises `Val
 
 ## Implementation status and current limitations
 
-Settled contract that the code does not yet implement, or implements differently. Where a design document and the code disagree, **the code wins**, and the disagreement is listed here.
+Settled contract that the code does not yet implement, or implements differently. The rules above are the test oracle; each gap below is pinned by an `xfail(strict=False)` test whose reason reads "contract ahead of code". Where the code or an older design text disagrees with a rule above, the rule above wins.
+
+- **A standalone `Cell().mount` loses its message.** It raises a bare `AttributeError('mount')` instead of `AttributeError("mount is only available for bound workflow cells")`: the property's own `AttributeError` is swallowed, and `Cell.__getattr__` raises a new one (*Scope*).
+- **The `NodeError` row of *Scope* is unreachable through the public API.** Mounting a **transformer node** raises `AttributeError`, because the transformer handle has no `mount` member; mounting a **missing node** raises `TypeError`, because `ctx.missing.mount` is a `MissingView` and calling it fails. Neither raises `NodeError("Mounts require an existing whole cell node")`.
+- **Node deletion returns before the transport's cleanup.** `_delete_subtree` does not wait for the unregister future, so when `del ctx.a` returns, the conditional delete of a `persistent=False` file usually has not run yet (*Detach*). Unmounting with `del ctx.a.mount` does wait.
+- **An empty same-celltype builder keeps the attachment.** `ctx.a = Cell(celltype=<same>)` on an attached cell clears the cell but leaves it attached — spec, session and status survive, and `get_graph()` still writes the `mount` entry — instead of detaching it (*Detach*). The cell is left cleared and `unwired` while still attached. The rest already matches the contract: nothing is refused, and the resource is not rewritten.
+- **A cell below a miswired transformer stays `waiting` forever.** `Context._apply_upstream_state` has no branch for `miswired` or `blocked-by-miswiring`, so the transformer's result cell never becomes `blocked` (`contracts/node-state-lifecycle.md`). The actuate rule still holds — the cell is not `complete`, so nothing is delivered — but the cut barrier's graph-quiescence step never completes, so `ctx.mounts.sync()` times out instead of resolving with a report (*The cut barrier*). `ctx.compute()` times out for the same reason.
+- **"No longer a cell" cannot be reached by assigning a transformer.** `ctx.a = f` or `ctx.a = delayed(f)` onto a cell node raises `TypeError` from `_retain_producer`, mounted or not, instead of the `NodeError` of `contracts/workflow-context.md`. The spec stays, which is the contractual outcome of a refused assignment; only the exception type is wrong. Node deletion is the only public path to the post-turn backstop detach (*The durable spec and the ephemeral session*).
+- **A `python`/`yaml` syntax error is not rejected at sense time.** `canon_T` deliberately skips the parser for all four code celltypes, so neither a direct assignment nor a sensed value is rejected for a syntax error — both are sensed as `complete`. This holds identically for a mount (`contracts/mounts.md` carries the same gap); the error surfaces only later, when `.value` is read or a transformer runs the code.
+
+### Current limitations
+
+These are properties of the code that the rules above permit, plus one divergence that cannot be reached. None of them is test-pinned as a gap.
 
 **The generic layer is file-shaped in four places.** They are why this page is not a plugin API:
 
@@ -288,19 +332,18 @@ Settled contract that the code does not yet implement, or implements differently
 
 — and `SyncPredicate` cuts every session regardless of driver.
 
-Smaller divergences and rough edges:
+Smaller rough edges:
 
-- **`Cell.exception` is still an exception object in code, not a string.** A sense error is installed on the node as the `MountError` itself. `contracts/cells.md` carries the same note for cell failures generally; the string contract is what agents should code against, and the `"<path>: <reason>"` prefix holds either way.
-- **On an *unattached* cell the surface answers `None` — except `clear_error()`.** `.mount.spec`, `.mount.status` and `.mount.error` all return `None`, and `del ctx.a.mount` is a silent no-op, but `ctx.a.mount.clear_error()` raises a bare `KeyError(<node path>)`. That is an inconsistency, not a designed refusal; do not depend on the exception type.
+- **On an *unattached* cell the surface answers `None` — except `clear_error()`.** `.mount.spec`, `.mount.status` and `.mount.error` all return `None`, and `del ctx.a.mount` is a silent no-op, but `ctx.a.mount.clear_error()` raises a bare `KeyError(<node path>)`. **Whether that `KeyError` is contract is deferred**; until it is decided, do not depend on the exception type.
 - **Delivery retries are dispatched by the post-turn pass, and `_mount_tick` is an explicit no-op.** The attachment layer owns no timer. In practice the file driver's broker enqueues one `_mount_tick` message per registration per poll interval, and since the post-turn pass runs after **every** turn, a due backoff fires within about one poll interval even on an otherwise idle Context (measured: ~1.5 s for the first, 1 s retry). A driver that sends no tick — `ManualDriver` — fires a due retry only when something else causes a turn; `ctx.mounts.sync()` is one.
-- **A failure inside the observation handler becomes `session.error` as a bare `MountError(str(exc))`**, without the `"<path>: "` prefix that every other `MountError` carries. It is a can't-happen path (the authority check cannot fail while the edge rule holds), but the prefix contract does not hold for it.
+- **A failure inside the observation handler becomes `session.error` as a bare `MountError(str(exc))`**, without the `"<path>: "` prefix that every other `MountError` carries. Strictly this breaks the prefix contract, but the path cannot be reached while the edge rule holds (the write-authority check of a sense cannot fail, *Sense*), so no test pins it.
 - **Malformed internal messages are dropped silently.** `_mount_delivered` and `_mount_cut` validate their payload shape and return without effect on anything unexpected, because they run as class-5 messages and raising would poison ingress.
 
 ## Non-goals
 
 - **A plugin API.** See the top of this page. The contract describes the attachments that exist.
-- **Standalone, sub-path, pin and code mounts.** Only a bound whole cell node can be mounted (see *Scope*, above) — this is architectural, not a version gap: a standalone `Cell` has no controller, a sub-path write is a read-modify-set transaction on the root with nothing of its own to compare against, and a pin or code handle is not a cell. The remedy is always the same: attach a cell and connect it.
-- **Continuous external ownership** (an `edit_policy="external-owned"` that would forbid later user assignment). Deferred with a named condition: if it is added it gets its own name and specification. `contracts/mounts.md` has the file driver's constraint on how it must **not** be expressed (not by redefining `authority="file"`).
+- **Standalone, sub-path, pin and code mounts.** Only a bound whole cell node can be mounted (*Scope*) — this is architectural, not a version gap: a standalone `Cell` has no controller, a sub-path write is a read-modify-set transaction on the root with nothing of its own to compare against, and a pin or code handle is not a cell. The remedy is always the same: attach a cell and connect it. (Bound `as_celltype` handles are the one undecided target; see *Scope*.)
+- **Continuous external ownership** (an `edit_policy="external-owned"` that would forbid later user assignment). Deferred with a named condition: if it is added it gets its own name and specification. It must **not** be expressed by redefining the `authority` field's `"file"` value, which only resolves the initial conflict (`contracts/mounts.md`).
 - **Cross-process locking or exclusivity.** The registry is a safety net within one process (`contracts/mounts.md`); two processes sharing a resource are handled by conditional writes and the detector, not prevented.
 - **A settledness predicate without a cut.** `settled()` was considered and rejected.
 - **Hard cancellation of an in-flight delivery.** It is never cancelled, by design: the write is either done or not, and cancelling it would leave the belief about the resource undefined.
