@@ -21,7 +21,7 @@ Code locations:
 | Durable graph | `seamless_workflow.graph` (`ContextGraph`, `Node`, `NodeState`, `CellConfig`, `TransformerConfig`) |
 | Controller thread and sequenced ingress | `seamless_workflow.controller.Controller`; `seamless_workflow.ingress` (`controller_method`, `_wait`, `_wait_async`, `_edit`, `_prepare_assignment`) |
 | Reactive derivation and execution | `seamless_workflow.reactive.Reactive` |
-| Barriers, snapshots, leases | `seamless_workflow.runtime_api.RuntimeAPI` (`_install_wait`, `_check_barriers`, `_snapshot_transformer`) |
+| Barriers, FrozenTransformers, leases | `seamless_workflow.runtime_api.RuntimeAPI` (`_install_wait`, `_check_barriers`, `_freeze_transformer`) |
 | Transient run records and speculation | `seamless_workflow.scheduler` (`ContextRuntime`, `RunRecord`, `Scheduler`) |
 | Bound handles | `seamless_workflow.builder_state` (`BoundCellBackend`, `BoundPinBackend`, `BoundTransformerBackend`) |
 | Namespaces | `seamless_workflow.views` (`MissingView`, `SubContextView`) |

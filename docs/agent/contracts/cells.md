@@ -40,6 +40,7 @@ Cell(celltype=None, *, checksum=None, source=None, input_celltype=None,
 
 - The positional argument is the **produced** celltype.
 - `checksum=` and `source=` are **mutually exclusive** (`TypeError` otherwise). `source=` takes a typed reference — a `Cell`, an `Expression`, or any object exposing the duck-typed `_workflow_endpoint` / `_compute_dependency` protocol (a `Transformation`, a bound endpoint of a named node). A bare `Checksum` passed as `source=` raises `TypeError` naming `checksum=`; a `Pin` raises `TypeError` naming `pin.source`; a handle to an anonymous cell raises `DependencyError` (*Binding*).
+- **A source is a dependency, not an owned input.** A Cell claims an explicit `checksum=` input from construction. It does not claim the input behind a `source=`: that input stays with its own owner (for a bound node, the Context) until the Cell evaluates and claims its result (`contracts/internal/checksum-reference-lifecycle.md`, §7). To keep a bound node's value past its Context, capture the checksum: `Cell(ctx.a.celltype, checksum=ctx.a.checksum)`.
 - `celltype` defaults to a typed source's `celltype`, else `"mixed"`. An unsupported name raises `TypeError` listing the supported celltypes (`contracts/celltypes-and-conversion.md`).
 - `input_celltype=` is a **declaration**, legal only alongside a bare checksum. With a typed source it must match, or construction raises `ValueError`.
 - `path=` is not a constructor parameter; passing it raises `TypeError`. Paths come only from projecting, and `.path` is read-only (*Work*).
@@ -460,7 +461,7 @@ Step 3 can still fail after step 2 passes, because HashType does not cover every
 - **A scratch Cell keeps its result in memory only.** Its hold is a scratch claim, and its requests carry `scratch=True`: nothing is written. After a remote evaluation `.value` may raise `CacheMissError`; `fingertip()` recovers the bytes locally.
 - **Standalone and bound alike.** A standalone Cell stores the flag itself; a bound Cell stores it on its Context node (`ctx.a.scratch = True`), where it is saved with the graph. A standalone Cell assigned into a Context brings its flag along.
 - **Per Cell, not inherited.** A projection (`cell["a"]`, `cell.a`) or a retyping (`as_celltype()`) is a new Cell that owns its own result, so it starts non-scratch. `with_input()` and `with_validator()` return a new Cell that copies the flag. A transformer result's `scratch` is its transformer's setting, and is read-only on the result handle.
-- **Snapshots do not decide.** In-flight and snapshot claims held by a Context (leases) are neutral: they keep a buffer alive but neither publish it nor change its scratch status (`contracts/internal/checksum-reference-lifecycle.md`). Only the owning node's claim follows the policy.
+- **Leases do not decide.** The leases a Context holds, on reads, on FrozenTransformers and on in-flight work, are neutral: they keep a buffer alive but neither publish it nor change its scratch status (`contracts/internal/checksum-reference-lifecycle.md`). Only the owning node's claim follows the policy.
 
 *Contract ahead of code, bound* (*Implementation status*): a bound projection reports its parent node's `scratch`, and bound `with_input()` / `with_validator()` drop the flag.
 

@@ -54,7 +54,7 @@ The present tense is normative.
 | `None` | **neutral claim** | yes | no | unchanged |
 
 A **neutral claim** is for a claim that is not an owner's decision about persistence. The neutral claims are:
-- a `Context`'s snapshot and in-flight leases;
+- a `Context`'s leases: on a read's result, on a `FrozenTransformer`'s code and modules (§7), and on in-flight work;
 - an `Expression`'s `"result"` role (§6);
 - an anonymous or projection handle's `"result"` role (§6);
 - **the waiting set's in-flight claim** on an evaluation's input, which it holds until the shared task finishes, including through the linger (§6).
@@ -181,15 +181,15 @@ This table is the normative ownership and ordering contract. The *Kind* column u
 
 | Owner | Semantic roles | Kind | Acquisition and release |
 |---|---|---|---|
-| Standalone `Cell` | `"input"` for an explicit checksum input; `"result"` for its evaluated result | owner: the Cell's scratch policy | Acquire on construction or replacement. The Context adopts before binding releases it. |
+| Standalone `Cell` | `"input"` for an explicit checksum input; `"result"` for its evaluated result. A `source=` is a dependency and is not claimed (§7) | owner: the Cell's scratch policy | Acquire on construction or replacement. The Context adopts before binding releases it. |
 | `Expression` | `"result"`, only after public result interest | **neutral** | Inputs are tempref-only. Internal evaluation records without a claim; the first public call or read acquires the already-recorded result once. The claim protects the result from eviction and does **not** publish it or change its scratch status. Cleanup releases only an acquired result. |
 | Waiting-set entry (one per in-flight shared Expression evaluation, keyed by Expression identity) | the evaluation's input (logged as `expression materialization`) | **neutral** | Acquired when the shared evaluation starts; held until its task completes or is cancelled, **including through the linger** after the last member leaves (`contracts/expressions.md`, *Cancellation*); released when the task finishes or the linger expires and the task is cancelled. An unreleased claim here is exactly what the shutdown audit catches. |
 | Anonymous or projection handle | `"result"` on the checksum it pulled | **neutral** | Acquired when the handle pulls; a re-pull replaces it (§5 ordering); released when the handle dies. |
 | Standalone `Transformer` builder | `"pin:<name>"`, `"code"`, `"module:<name>"` for checksum-backed fields | owner | Wrapper mutation and cloning acquire independently. The Context adopts all roles before the builder becomes a neutral bound handle. |
 | `PreTransformation` | `"input:<pin>"` for converted non-scratch pins | owner | Scratch pins are tempref-only and absent from `_value_refs`. The Transformation acquires every input before the PreTransformation releases. CodeManager roles stay separate. |
-| `Transformation` | `"input:<pin>"` for direct and adopted dependency inputs; `"definition"`; optional public `"result"` | owner: the Transformation's scratch policy (but see §8 for `"definition"`, and §10 for inputs) | The definition is retained through completion. Each dependency is adopted immediately. A public entry or read enables result holding; internal access stays neutral. Terminal cancellation settles or detaches work, blocks late recording, then releases roles while the fields stay intact. Cancellation after completed recording is a no-op. |
+| `Transformation` | `"input:<pin>"` for direct inputs (from construction) and adopted dependency inputs (on resolution, §7); `"definition"`; optional public `"result"` | owner: the Transformation's scratch policy (but see §8 for `"definition"`, and §10 for inputs) | The definition is retained through completion. Each dependency is adopted immediately. A public entry or read enables result holding; internal access stays neutral. Terminal cancellation settles or detaches work, blocks late recording, then releases roles while the fields stay intact. Cancellation after completed recording is a no-op. |
 | `CodeManager` | `"syntactic:direct"`, `"syntactic:guard"`, `"semantic:direct"`, `"semantic:guard"` | owner | Each direct or guard multiplicity acquires and releases once. Guard creation and removal follow the demand maps; `_release_refholds()` drains exact multiplicities idempotently. |
-| Workflow `Context` | `"cell:<path>:literal"`; `"transformer:<path>:pin:<pin>"`; `"transformer:<path>:code"`; `"transformer:<path>:module:<name>"`; `"node:<path>:current"`; `"node:<path>:superseded:<generation>"`; `"anonymous:<symbol>:current"` | owner: the node's scratch policy; **never publishing for a scratch node** (§1). Snapshot and in-flight leases are neutral. | The Context acquires before installing graph or runtime state and releases the old state afterwards. Current and producer roles are independent even for equal checksums. Superseded roles end on the cap, the deadline, `prune()`, node deletion, graph replacement or cleanup. `anonymous:<symbol>:current` exists **only for non-elided anonymous nodes**, which the Context evaluates itself; it ends when the controller removes the entry (§5). Bound handles onto named nodes own nothing. |
+| Workflow `Context` | `"cell:<path>:literal"`; `"transformer:<path>:pin:<pin>"`; `"transformer:<path>:code"`; `"transformer:<path>:module:<name>"`; `"node:<path>:current"`; `"node:<path>:superseded:<generation>"`; `"anonymous:<symbol>:current"` | owner: the node's scratch policy; **never publishing for a scratch node** (§1). Its leases (§1) are neutral. | The Context acquires before installing graph or runtime state and releases the old state afterwards. Current and producer roles are independent even for equal checksums. Superseded roles end on the cap, the deadline, `prune()`, node deletion, graph replacement or cleanup. `anonymous:<symbol>:current` exists **only for non-elided anonymous nodes**, which the Context evaluates itself; it ends when the controller removes the entry (§5). Bound handles onto named nodes own nothing. |
 | `seamless-database` stored Expression row, when it stores its path indirectly | the path buffer's checksum | **durable**, out of process | See *The durable refholder* below. |
 
 **Public versus internal interest is a hard rule.** Every public Expression or Transformation API that requests, returns or schedules a result expresses public interest. Dependency helpers, `PreTransformation`, workflow schedulers, backend result-recording code and internal CLI orchestration use named *internal* evaluation and result accessors. **No framework path may create a producer result role merely to inspect a dependency.**
@@ -210,6 +210,24 @@ Handoff happens **before the producer's tempref may expire**.
 | Dependent Expression | makes or refreshes a tempref on the input checksum and evaluates immediately; it does **not** increment the refholder count | nothing; its own result receives a fresh or refreshed tempref |
 
 A shared Expression evaluation's input is additionally held by the waiting set's neutral claim (§6). That claim belongs to the waiting-set entry, not to the Expression object.
+
+### One rule for owners: direct inputs from construction, dependencies on resolution (ruled 2026-09-28)
+
+**An owner (a Cell or a Transformation) claims what it is given directly from construction, and a dependency only when it resolves it.**
+
+- **Direct** means a value or a checksum. For a Transformation that includes its code, its modules and its envelope dunders. The PreTransformation converts a value, claims it, and the Transformation adopts the claim before the PreTransformation releases (§6).
+- **A dependency** is an Expression, a Cell or an upstream Transformation. A Transformation adopts a dependency's result as the table above says. A Cell claims its result when it is evaluated.
+- **Until a dependency resolves, its source is kept alive by its own owner, or by the hashserver.** The consumer claims nothing on it, and an Expression holds only a tempref (§6).
+
+Consequences:
+
+- **A build off a bound node owns no data inputs.** `ctx.tf.build()`, `ctx.a.build()` and `Cell(source=ctx.a.build())` receive every input as an Expression over a node checksum, so every input is a dependency. Once the Context releases that checksum (replacement followed by `prune()`, or `close()`), nothing claims it. The build still resolves while the hashserver holds the buffer: a non-scratch node's buffer was written when the Context claimed it. Otherwise `run()` fails because the input cannot be resolved: an Expression or a Cell raises `CacheMissError`, and a Transformation raises `TransformationError` with the missing checksum as its exception.
+- **Such a Transformation does claim its code**, because the code is a direct input. This is correct, not a leak.
+- **The same holds standalone.** A `tf.build()` whose pin is an Expression or a Cell claims nothing on that input until it runs. If the Cell is dropped first, nothing does.
+- **To keep a value past its owner, capture its checksum into an owner.** `Cell(celltype, checksum=ctx.a.checksum)` claims it with the `"input"` role.
+- **A `FrozenTransformer` is not an owner.** It is the immutable copy of a Transformer's settings from which every Transformation is built (`seamless_transformer.frozen_transformer`). A bound one carries neutral hand-over leases on its code and modules. They end when it is consumed or garbage-collected. Keeping a FrozenTransformer alive does not keep its inputs alive, and it is not part of the public API.
+
+This rule supersedes [MOD-16] of `seamless/attachments-and-mount-design.md`, which asked `Expression` to claim its input.
 
 ## 8. Scratch, deep checksums, workers, services
 
