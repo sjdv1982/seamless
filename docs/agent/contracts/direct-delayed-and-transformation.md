@@ -47,8 +47,8 @@ Both functions are Python-only and accept exactly one argument: a Python functio
 ## `Transformation` handle
 
 Assume these meanings (confirm with docs/docstrings for exact behavior):
-- `.compute()`: execute and return an identifier (checksum) for the result.
-- `.run()`: execute and return the resolved/materialized value.
+- `.compute()`: execute and return an identifier (checksum) for the result. **On failure it returns `None` and sets `.exception`; it does not raise** (ruled 2026-09-28, one rule with Cells and Pins: `contracts/cells.md`, *Failures*, *How a failure is delivered*).
+- `.run()`: execute and return the resolved/materialized value. **This is the call that raises:** a failure raises `TransformationError`, whose message carries the recorded exception.
 - `.start()`: schedule computation (useful when starting many tasks before collecting results).
 - `.task()` / `await`: async execution; preferred in Jupyter/async contexts.
 - `.cancel(*, recursive=False)` / `await .cancel_async(*, recursive=False)`: move **this handle** to a terminal **canceled** state, and **softcancel its participation** in the underlying run — which is shared, so it continues for every other member and stops only when the last member leaves (`contracts/cancellation.md`). Returns `True` if it transitioned active work (or a local promise) to canceled or requested backend cancellation, `False` if nothing was active. After cancellation, `status` reports `"Status: canceled"`, `result_checksum` raises `TransformationError`, and `clear_exception()` does **not** revive it — a retry requires a new object. Cancellation never invalidates the `tf_checksum`; a later submission of the same checksum is a new submission. With `recursive=True`, known upstream dependency handles are softcancelled with the same semantics.
