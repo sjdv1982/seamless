@@ -29,7 +29,7 @@ Code locations:
 | Null results | `seamless_transformer.run` |
 | Bound pin handle and writes | `seamless_workflow.builder_state` (`BoundPinBackend`, `WorkflowTransformerPins`, `BoundTransformerBackend`) |
 | Bound pin derivation, blocking and conversion | `seamless_workflow.reactive.Reactive._derive_transformer` |
-| Bound snapshot conversion | `seamless_workflow.runtime_api` (`_snapshot_transformer`) |
+| Bound call-time conversion | `seamless_workflow.runtime_api` (`_freeze_transformer`) |
 | Pin writes through the controller | `seamless_workflow.context.Context._set_transformer_pin` |
 
 ## Reaching pins
@@ -172,7 +172,7 @@ Whether "illegal" also covers forbidden ordinary pairs such as `python → int`,
 **Every route converts, and reactive and snapshot runs agree**, including on the resulting checksum identity: `ctx.tf.run()` and `ctx.tf().run()` produce the same transformation checksum for the same inputs. The routes are:
 
 - a **pre-bound standalone pin**: `Pin.build()` wraps any typed reference in a converting Expression;
-- a **bound edge** or stored producer: `runtime_api._snapshot_transformer` builds the same converting Expression, and `Reactive._derive_transformer` converts through the Context's projection path;
+- a **bound edge** or stored producer: `runtime_api._freeze_transformer` builds the same converting Expression, and `Reactive._derive_transformer` converts through the Context's projection path;
 - a **call-time argument**: `_convert_pin_arguments` wraps a typed argument whose celltype differs in `Expression(arg, input_celltype=arg.celltype, celltype=<pin celltype>)`. Call-time arguments are converted, but the wiring rule below does not apply to them, and whether Cells may be passed at all is undecided (*Call-time arguments*).
 
 **A retype converts again from the stored input**; it never reinterprets the stored bytes. This is the pin counterpart of the Cell rule in `contracts/cells.md` ("retyping converts; it does not reinterpret the stored input"), and it is why a pin stores `(input, input celltype)` rather than a value.

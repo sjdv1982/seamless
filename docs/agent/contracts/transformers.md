@@ -91,6 +91,8 @@ So a build can raise for malformed call arguments or concrete inputs even though
 
 For a bound Transformer, `build()` snapshots the node's current builder configuration and input bindings into a detached Transformation. It does not return the Context's transient run object, and it does not make that snapshot the node's new durable state.
 
+**Detached means detached in definition, not in lifetime.** The detached Transformation claims what it was given directly, which is its code and modules. Its pins arrive as Expressions over the node's checksums, so they are dependencies, and it claims them only when it runs. It stays runnable only while the Context, or the hashserver, keeps those checksums. After replacement plus `prune()`, or after `close()`, and with no hashserver, `run()` raises `TransformationError`. To keep an input past its Context, capture its checksum into an owner. The rule is in `contracts/internal/checksum-reference-lifecycle.md`, §7, *One rule for owners*.
+
 **`build()` is the semantic boundary.** `__call__` and the standalone named work methods are layered on top of `build()`, never on `self()`, so a Transformer's call mode cannot change what they mean.
 
 ## Delayed and direct calls
@@ -140,7 +142,7 @@ ctx.tf = tf
 
 Every later read of `ctx.tf` returns a fresh Transformer view onto that node. Handle identity carries no meaning: two views are interchangeable, and dependencies are recorded by node path and content, not by Python object identity. Deleting the node or closing the Context makes existing views stale or closed, as specified in `contracts/workflow-context.md`.
 
-The Context stores the node and its builder configuration, **not a persistent Transformation object**. When an input changes, the Context builds a fresh immutable Transformation from the new snapshot and submits it. The snapshots it fires are private runtime artifacts. An explicit `ctx.tf.build()` is a detached user snapshot (*Building a Transformation*).
+The Context stores the node and its builder configuration, **not a persistent Transformation object**. When an input changes, the Context freezes the node's configuration into a private `FrozenTransformer`, builds a fresh immutable Transformation from it and submits it. The FrozenTransformers and the Transformations the Context fires are private runtime artifacts. An explicit `ctx.tf.build()` is a detached user snapshot (*Building a Transformation*).
 
 ## Pins and result
 
