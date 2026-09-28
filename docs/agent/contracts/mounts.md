@@ -99,7 +99,7 @@ An unmountable celltype raises at attach time and at graph load.
 
 | Celltype | Mounts as | `canon_T` on read | Notes |
 |---|---|---|---|
-| `text`, `python`, `ipython`, `yaml` | file | strict UTF-8; the trailing newline is normalized to exactly one; the celltype's parser runs | no CRLF conversion — CRLF is content. Code text is checked **exactly as an assignment checks it** (*Canonical bytes*): a `python` file that fails to parse is `rejected` |
+| `text`, `python`, `ipython`, `yaml` | file | strict UTF-8; the trailing newline is normalized to exactly one; **no syntax check** | no CRLF conversion — CRLF is content. Code text is checked **exactly as an assignment checks it** (*Canonical bytes*): a `python` file with a syntax error is sensed as `complete` |
 | `plain` | file | JSON parse, canonical re-serialization | JSON only. User formatting survives until the value changes |
 | `str` | file | JSON parse (with the deserializer's `str()` coercion), re-serialize | the file holds a **quoted** JSON string; use `text` for raw text |
 | `int`, `float`, `bool` | file | JSON parse with coercion, re-serialize | |
@@ -200,13 +200,13 @@ Four rules make this converge:
 For each mountable celltype *T* the mount uses exactly two functions, both defined by the **existing serializer and deserializer**:
 
 - **write:** the canonical buffer of the node's checksum, byte for byte (compressed, if the path carries a compression suffix);
-- **read:** `canon_T(bytes) = serialize(deserialize(bytes, T), T)`, and the observed checksum is the checksum of `canon_T(bytes)`. If deserialization raises, the observation is `rejected`.
+- **read:** `canon_T(bytes) = serialize(deserialize(bytes, T), T)`, and the observed checksum is the checksum of `canon_T(bytes)`. If deserialization raises, the observation is `rejected`. For the code celltypes (`text`, `python`, `ipython`, `yaml`), *deserialize* here is the strict UTF-8 decode only: `canon_T` does not run the syntax check of the reference parser, exactly as the serializer an assignment uses does not (ruled 2026-09-28; `contracts/celltypes-and-conversion.md`, the serializer table).
 
 Four consequences:
 
 - a file written by the mount **reads back as an exact echo**;
 - a user-formatted file maps to **the checksum of its value**, so reformatting JSON by hand is not a change;
-- **there is no mount-local parsing.** A mount parses neither more leniently nor more strictly than a user assignment of the same value: it checks exactly what the celltype's parser checks (`contracts/celltypes-and-conversion.md`, the parser table). For `python`, that parser check includes syntax — but **contract ahead of code:** neither a direct assignment (`ctx.a.set("def (:\n")`) nor a mount actually runs that check today. `canon_T` deliberately skips the parser for all four code celltypes, so a syntax error is accepted as `complete`, both by assignment and by a mount, and only surfaces later, when `.value` is read (`HashTypeValidationError`) or when a transformer runs the code. The contract calls this a bug: once fixed, a syntax error becomes a sense error on the mounted cell, not something that surfaces only downstream. See *Implementation status*.
+- **there is no mount-local parsing.** A mount parses neither more leniently nor more strictly than a user assignment of the same value: it checks exactly what an assignment checks. **For the code celltypes that excludes syntax** (ruled 2026-09-28). `ctx.a.set("def (:\n")` is accepted as `complete`, and so is a mounted file with that content; neither is a sense error. The syntax error surfaces downstream: a transformer that runs the code fails with the `SyntaxError` as its own failure, and a `.value` read raises `HashTypeValidationError` on every read without failing the cell (`contracts/cells.md`, *`.buffer` and `.value`*). Fixing the file is an ordinary change, sensed like any other.
 - **non-canonical bytes are never rewritten.** User formatting survives until the node's value actually changes. `canon_T` is idempotent, and that is property-tested.
 
 *T* is always the cell's **output `celltype`**, including for a connected cell; the producer's input type is stored separately (`contracts/cells.md`). Retyping while mounted is refused (*Errors*).
@@ -385,7 +385,6 @@ Settled contract that the code does not yet implement, or implements differently
 - **`NodeError` is unreachable through the public API.** A missing node yields a `MissingView`, so `ctx.missing.mount(...)` raises `TypeError` (`'MissingView' object is not callable`); a transformer handle has no `mount` member and raises `AttributeError`; a stale handle raises `StaleWorkflowHandleError`. The `NodeError` check exists only inside the controller (`AttachmentRuntime`).
 - **An empty same-celltype builder keeps the mount.** `ctx.a = Cell(celltype=<same>)` on a mounted cell leaves the mount active instead of detaching it and clearing the cell.
 - **Graph format `0.5` has not landed.** `get_graph()` writes `0.4`, and `set_graph()` refuses `0.5` with `PathError` (`contracts/cells.md` and `contracts/workflow-context.md` carry the same gap).
-- **A `python`/`yaml` syntax error is not checked at write time.** `canon_T` deliberately skips the parser for all four code celltypes, so neither `ctx.a.set("def (:\n")` nor a mount of that content raises or is rejected — both are `complete`. The syntax error surfaces only later: when `.value` is read (`HashTypeValidationError`), or when a transformer runs the code. This holds for a direct assignment exactly as much as for a mount, so "a mount parses exactly like an assignment" still holds — both are more lenient than the contract intends.
 
 Rough edges that are not contract gaps:
 

@@ -93,7 +93,7 @@ A dash means this page does not specify the combination. The rules the table rel
 ## Reads
 
 - **Reads on a named node never wait.** A bound `.checksum` reports the node's current result, or `None` when it has none; it never evaluates, dispatches or probes a cache (the dummy-Expression exception is `contracts/cells.md`, *Reads*). Waiting is the job of the explicit barriers below.
-- **On a named node that is not `complete`, `.buffer` and `.value` return `None`.** They neither wait nor raise. On a `complete` node they materialize the result checksum, and a materialization failure — `CacheMissError` for an unreachable buffer, a validation or deserialization error — is raised to the caller. This is what `contracts/cells.md`'s *Work* table means by "buffer / value, or raise": the raise concerns a result that exists and cannot be materialized, never a result that does not exist yet.
+- **On a named node that is not `complete`, `.buffer` and `.value` return `None`.** They neither wait nor raise, and that includes a `failed` node: its failure is on `.exception`, and only `run()` raises it (`contracts/cells.md`, *Failures*, *How a failure is delivered*; ruled 2026-09-28). On a `complete` node they materialize the result checksum, and a materialization failure — `CacheMissError` for an unreachable buffer, a validation or deserialization error — is raised to the caller on every read and never recorded: the node stays `complete`. This is what `contracts/cells.md`'s *Work* table means by "buffer / value, or raise": the raise concerns a result that exists and cannot be materialized, never a result that does not exist yet.
 - **Anonymous and projection handles pull over the parent's checksum.** A read or `compute()` through such a handle builds the handle's own Expression over the parent's current checksum and evaluates it through the standalone resolution order, so it **can** wait — for its own dispatched evaluation, never for the parent. If the parent has no checksum it returns `None` without raising. The handle's `.state` and `.exception` are its own, and the state the Context derives for the anonymous node is invisible (`contracts/cells.md`, *Reads*, *Anonymous and projection handles*).
 - This is the one place where bound and standalone reads deliberately differ: a standalone Cell has nothing working in the background, so it pulls; a named node's Context is eager, so its reads only report.
 
@@ -109,7 +109,7 @@ A dash means this page does not specify the combination. The rules the table rel
 - **`compute()` on an anonymous or projection handle is not a barrier.** It evaluates the handle's Expression over the parent's current checksum (*Reads*) and never waits on the parent; with no parent checksum it returns `None` without raising. Its `timeout=` bounds only the handle's own dispatched evaluation, and expiry raises `TimeoutError`.
 - **A barrier timeout raises `TimeoutError`.** Both a timeout and an async cancellation **withdraw the predicate without cancelling any graph work**: a barrier is a wait, never a control operation.
 - A barrier on a path whose node has been deleted raises `StaleWorkflowHandleError`.
-- A **reading** barrier — the form behind a bound `compute()` on a named node, which returns a checksum — additionally reports the outcome. If the node settles in `unwired`, `miswired` or `blocked` it raises a `NodeError` naming the state and what to repair: the block reason, the miswired edge with its two celltypes, or the missing pin. If it settles in `failed` it re-raises the node's own recorded exception.
+- A **reading** barrier — the form behind a bound `compute()` on a named node, which returns a checksum — **reports the outcome and never raises it** (ruled 2026-09-28). It returns the node's checksum when the node settles in `complete`, and `None` when it settles in `failed`, `unwired`, `miswired` or `blocked`; `.state`, `.exception` and `.block_reason` say which. **`run()` is the form that raises.** After the same wait it re-raises the node's own recorded exception on `failed`, and raises a `NodeError` naming the state and what to repair on `unwired`, `miswired` or `blocked`: the block reason, the miswired edge with its two celltypes, or the missing pin. Otherwise it materializes the result (`contracts/cells.md`, *Failures*, *How a failure is delivered*).
 - **Quiescence is a property of node states only.** A `complete` node may still have a superseded run in flight; see *Speculation control* below, and `contracts/node-state-lifecycle.md` for what the states mean. **Elided anonymous nodes take no part in state derivation or in barriers**: they are never `waiting` and never hold a barrier open.
 - **`compute()` stays graph-only and never waits for external state.** External settlement is a separate barrier, `ctx.mounts.sync()`, and it is stateful: it cuts, waits for quiescence, waits for deliveries, and starts another round if anything moved. `contracts/attachments.md` specifies it; there is deliberately no `settled()` predicate.
 
@@ -162,7 +162,8 @@ Only the operations this page specifies are listed; handle-level calls are in `c
 | `ctx.a`, `ctx.foo.bar` (unknown path) | no | a fresh handle, or a namespace view |
 | `ctx.a.checksum` / `.buffer` / `.value` on a named node | no | the current result, or `None` when the node is not `complete` |
 | `ctx.compute()` / `await ctx.computation()` | **yes** — graph-wide barrier | `None`, or raises `TimeoutError` |
-| `node.compute()` / `await node.computation()` on a named node | **yes** — that node's upstream cone | the node's checksum; raises `NodeError` on `unwired`, `miswired` or `blocked`, and the recorded exception on `failed` |
+| `node.compute()` / `await node.computation()` on a named node | **yes** — that node's upstream cone | the node's checksum, or `None` when it settles in any other state; never raises for the node's state |
+| `node.run()` on a named node | **yes** — as `node.compute()` | the materialized value; raises the recorded exception on `failed`, `NodeError` on `unwired`, `miswired` or `blocked`, and any materialization failure |
 | `x.compute()` on an anonymous or projection handle | not a barrier — only for the handle's own dispatched evaluation | the handle's checksum, or `None` when the parent has none |
 | `ctx.mounts.sync()` / `await ctx.mounts.synchronization()` | **yes** — the external cut barrier | a `SyncReport`; raises `TimeoutError` |
 | `ctx.mounts.errors` | no | `{node path: error}`, computed without a cut |
@@ -179,7 +180,7 @@ Only the operations this page specifies are listed; handle-level calls are in `c
 | `ControllerFailedError` | ingress is poisoned by an internal continuation failure; only `close()` still works |
 | `ReentrantContextError` | a public Context operation or a bound handle is called from inside a controller turn |
 | `StaleWorkflowHandleError` | a handle — or a barrier — names a node that has been deleted; or a handle to an anonymous node was invalidated because another handle to that node was assigned to a new name |
-| `NodeError` | an assignment mismatches the node kind; or a reading barrier on a **named** node settles in `unwired`, `miswired` or `blocked` |
+| `NodeError` | an assignment mismatches the node kind; or `run()` on a **named** node settles in `unwired`, `miswired` or `blocked` (never `compute()`) |
 | `ReadOnlyEndpointError` | a producer operation targets a transformer's result, including `ctx.tf.result = …` |
 | `DependencyError` | a new edge would close a cycle; or a handle — named, anonymous or projection — is assigned into a different Context |
 | `ValueUnavailableError` | a sub-path write finds no root checksum and the node is not `waiting` (defined in seamless-core; `seamless.ValueUnavailableError`) |
@@ -191,8 +192,9 @@ Only the operations this page specifies are listed; handle-level calls are in `c
 
 ## Implementation status and current limitations
 
-The rules above are the test oracle; where a design document disagrees with them, the rules above win. The code does not yet do the following; each gap is pinned by an `xfail(strict=False)` test with reason "… contract ahead of code: …".
+The rules above are the test oracle; where a design document disagrees with them, the rules above win. The code does not yet do the following; each gap is pinned by an `xfail(strict=False)` test with reason "… contract ahead of code: …", except the named-barrier gap, which is pinned by plain tests.
 
+- **A named barrier raises for the outcome.** `node.compute()` / `await node.computation()` on a named Cell or Transformer re-raises the recorded exception on `failed`, and raises `NodeError` on `unwired`, `miswired` or `blocked`, instead of returning `None`. `run()` already raises both (*Barriers*; ruled 2026-09-28). Pinned by `test_reading_barrier_reports_a_failure_and_run_raises_it`, `test_named_barrier_returns_the_checksum_or_none_and_run_raises_node_error` and the barrier tests of `contracts/node-state-lifecycle.md`.
 - **A callable or a `Transformer` builder assigned onto a cell raises `TypeError`, not `NodeError`.**
 - **A value assigned onto a transformer raises `AssertionError`, not `NodeError`.**
 - **A whole-checksum write is not HashType-validated.** The checksum is installed without checking it against the node celltype (*Writes through the Context*).
@@ -204,7 +206,7 @@ The rules above are the test oracle; where a design document disagrees with them
   - the bound anonymous-cell model is not implemented: a bound projection is a view onto the parent node, a bound `as_celltype` is a standalone snapshot, and there are no symbols, renaming or elision, so handle reads, `.state` and `compute()` on a bound projection follow the parent node and `compute()` waits on the parent's barrier (`contracts/cells.md`);
   - a root edge plus a sub-path edge is accepted, and bound cell targets do not enforce the wiring rule (`contracts/cells.md`);
   - a bound sub-path checksum or buffer write, and a sub-path clear, fail with `TypeError` from `_edit()` (`contracts/cells.md`);
-  - a bound public read does not validate and does not record, and a bound read of a non-existent projection raises rather than reporting; in each case the standalone behaviour is the intended contract (`contracts/cells.md`);
+  - a read that fails to materialize a result that exists records the failure, so the node becomes `failed` and later reads answer `None`; and a Context records a parse failure of a cell node's Expression result as the node's failure while deriving it (`contracts/cells.md`);
   - a cell fed by a `miswired` transformer, or below a `blocked-by-miswiring` node, stays `waiting` forever, so `ctx.compute()` and `ctx.mounts.sync()` time out (`contracts/node-state-lifecycle.md`).
 
 **Deferred features and known limitations.** These are not contract gaps, and no test pins them:
