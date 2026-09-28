@@ -582,6 +582,14 @@ A read snapshots immutable content. Later messages cannot change the meaning of 
 checksum, so its dematerialisation can overlap both later reads and later writes. Reference
 ownership must keep the snapshot resolvable until dematerialisation finishes.
 
+> **Superseded in part (2026-09-28).** The first half of [MOD-16], that `Expression` must claim
+> its `input_ref`, is superseded by the checksum reference lifecycle contract
+> (`docs/agent/contracts/internal/checksum-reference-lifecycle.md`, §6/§7, *One rule for owners*).
+> An Expression's inputs are tempref-only. An escaped Expression is a dependency on the Context's
+> state, and a value is kept past its Context by capturing its checksum into an owner. The second
+> half, that the controller acquires a read's lease inside the reading turn, stands.
+> `snapshot_for_call` below is now `_freeze`, returning a `FrozenTransformer`.
+>
 > **[MOD-16] `Expression` does not claim its `input_ref`, and the escape hatches rely on it
 > doing so.** The Context's own refholder accounting is correct: every claim it makes is
 > matched, staged before publication, and released on replacement. The gap is in the
@@ -1224,7 +1232,8 @@ Everything here is independent of concurrency and can proceed immediately and in
 - Write **expression-correctness tests** over Cell-only Contexts with deep and wide dependency
   trees — sub-path sources, sub-path targets, chained projections, diamonds. These pass now and
   must keep passing; they are the regression net for **[MOD-3]**.
-- Fix `Expression` to claim its `input_ref`, and add a lifetime test (**[MOD-16]**).
+- Fix `Expression` to claim its `input_ref`, and add a lifetime test (**[MOD-16]**). *Superseded
+  2026-09-28: see the note on [MOD-16] in §7.*
 - Settle the semantic decisions: **[MOD-1]** (decided: assignment detaches, `.set()` does not),
   **[MOD-2]**, **[MOD-4]**, **[MOD-7]**.
 
@@ -1861,7 +1870,7 @@ Each is a constraint imposed by the current implementation; derivation and evide
 | **MOD-13** | document that `AuthorityError` can follow paid-for serialisation | clarification | §7 |
 | **MOD-14** | make materialisation observable before removing it | test instrument, do first | §3, §15 A0 |
 | **MOD-15** | non-Python transformers need correctness tests; stop reporting `complete` | test gap + one-branch fix | §13, §15 A0/A4 |
-| **MOD-16** | `Expression` must claim its `input_ref`; leases acquired in-turn | lifetime defect | §7, §15 A0/A3 |
+| **MOD-16** | ~~`Expression` must claim its `input_ref`~~ (superseded 2026-09-28); leases acquired in-turn | lifetime defect | §7, §15 A0/A3 |
 | **MOD-17** | a barrier installs a predicate; it never stalls the frontier; all four forms take a `timeout` that raises | design correction | §14.2, §27 |
 
 ---
@@ -2045,7 +2054,9 @@ justification — pin the behaviour before removing it.
 Also outstanding: the one-branch fix of **[MOD-15]** (its acceptance test is
 written and red); the **[MOD-16]** `Expression.input_ref` fix — its lifetime test
 now exists, folded in from the second suite, and is red for the right reason (the
-Expression claims nothing at all on its input); and the decisions **[MOD-2]**,
+Expression claims nothing at all on its input) *(superseded 2026-09-28: the contract
+rules the opposite, and the lifetime test now pins it; see the note on [MOD-16] in §7)*;
+and the decisions **[MOD-2]**,
 **[MOD-4]**, **[MOD-7]**. **[MOD-17]** versus §14.2 is no longer among them: §27
 settles it.
 
