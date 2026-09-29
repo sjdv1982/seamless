@@ -13,7 +13,7 @@ This page defines what an agent may assume about how Seamless treats **files** a
 - A directory is represented by a **deep checksum**: the checksum of an **index**, which is a **flat** JSON object mapping string keys to 64-character lowercase hex checksums, serialized and parsed by the `plain` rules. Nesting is not part of the contract, and the keys are opaque strings that routinely contain `/`.
 - The index commits to the directory's contents by reference: a deep checksum can be held, compared and passed around **without any child buffer being present**, and holding it materializes nothing.
 - The celltypes that carry this identity are `deepfolder` (the index; the contents stay by reference) and `folder` (the contents; the consumer wants the bytes), alongside `deepcell` for a keyed collection of Seamless values. A `folder` index buffer and a `deepfolder` index buffer of the same directory are **byte-identical**, so the conversion between them is free in both directions.
-- The exact buffer format, the member typing of each celltype, the legal conversions, the one-string-item path rule, and the fact that **none of it is enforced by the code yet**, are all in `contracts/deep-celltypes.md`. Do not re-derive them here.
+- The exact buffer format, the member typing of each celltype, the legal conversions, the one-string-item path rule and their implementation status are all in `contracts/deep-celltypes.md`. Do not re-derive them here.
 
 ## Practical limitations to keep in mind
 

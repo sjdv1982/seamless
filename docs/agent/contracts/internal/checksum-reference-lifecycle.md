@@ -7,14 +7,14 @@ This mechanism is **internal**. It lives in `contracts/internal/`, apart from th
 Two neighbouring mechanisms are kept apart on purpose, with their own vocabularies:
 
 - **The workflow node state lifecycle** is the `Context`'s seven-state node machine, its cascade and its speculative supersession. It is user-visible behaviour, documented in `contracts/node-state-lifecycle.md`. This page is only about who keeps a checksum's buffer alive. Where the two meet (a speculative grace hold), the node state lifecycle decides *when* to hold, and this page owns only the claim (§6).
-- **The cancellation waiting set** is the membership set of callers that still want a shared, in-flight Expression evaluation, keyed by **Expression identity** (`contracts/expressions.md`, *Deduplication* and *Cancellation*). It tracks who still wants a result; a reference keeps a buffer alive once it exists. The waiting set is a "waiting set", never a "refcount". It does hold **one** refholder claim of its own, on the evaluation's input, which is neutral (§1, §6).
+- **The Expression member set** is the membership set of callers that still want a shared, in-flight Expression evaluation, keyed by **Expression identity** (`contracts/expressions.md`, *Deduplication* and *Cancellation*). It tracks who still wants a result; a reference keeps a buffer alive once it exists. It is a member set, never a refcount. It does hold **one** refholder claim of its own, on the evaluation's input, which is neutral (§1, §6). The buffer layer's shared fetch, which deduplicates concurrent fetches of one checksum (`contracts/expressions.md`, *Buffer fetches are shared by checksum*), is a separate mechanism: its participants are anonymous, and it holds no claim.
 
 Code locations:
 
 | Concern | Repository and modules |
 |---|---|
 | Accounting, the weak registry, the audit, explicit and `atexit` shutdown | `seamless-core`: `seamless/caching/buffer_cache.py`, `seamless/reference_lifecycle.py`, `seamless/shutdown.py` |
-| Cell and Expression ownership, the waiting set's claim, the forced-expiry test helper | `seamless-core`: `seamless/cell_class.py`, `seamless/expression_class.py`, `seamless/checksum/expression.py` |
+| Cell and Expression ownership, the member set's claim, the forced-expiry test helper | `seamless-core`: `seamless/cell_class.py`, `seamless/expression_class.py`, `seamless/checksum/expression.py` |
 | Builder roles, temporary transfer, dependency adoption, definition and result roles, cancellation | `seamless-transformer`: `transformer_class.py`, `pretransformation.py`, `transformation_class.py`, `code_manager.py`, and the worker paths |
 | Context producer, current and superseded ownership; binding, replacement, deletion, graph lifecycle | `seamless-workflow`: `context.py`, `graph.py`, `scheduler.py`, `builder_state.py`, `adapters.py` |
 | Cached, thin and fat result publishing, scratch, failure, cancellation | `seamless-dask`: `transformation_mixin.py`, `client.py` |
@@ -43,7 +43,7 @@ The present tense is normative.
 - It is cleared by a non-scratch `incref` / `incref_refholder`, or by a `transfer_write()`.
 - `PreTransformation` reads it to decide whether an input gets a refholder claim or only a tempref.
 
-**Transfer write**: `transfer_write()`, an explicit write of a buffer to the hashserver made on a requester's behalf, without any claim (§8). It clears scratch status.
+**Transfer write**: `transfer_write()`, the code primitive that publishes a buffer without acquiring any claim, on a requester's behalf (§8). It clears scratch status.
 
 **Claim kinds.** `BufferCache.incref_refholder(checksum, buffer=None, scratch=…)` takes three values of `scratch`, and every claim is exactly one of them:
 
@@ -57,24 +57,25 @@ A **neutral claim** is for a claim that is not an owner's decision about persist
 - a `Context`'s leases: on a read's result, on a `FrozenTransformer`'s code and modules (§7), and on in-flight work;
 - an `Expression`'s `"result"` role (§6);
 - an anonymous or projection handle's `"result"` role (§6);
-- **the waiting set's in-flight claim** on an evaluation's input, which it holds until the shared task finishes, including through the linger (§6).
+- **the member set's in-flight claim** on an evaluation's input, which it holds until the shared task finishes, including through the linger (§6).
 
 An owner's claim is `scratch=False` or `scratch=True`, and follows the owner's scratch policy (`Cell.scratch`, the Transformer's or Transformation's `scratch`, a Context node's configured scratch).
 
-**No claim held for a scratch node publishes.** This is a ruling, and it covers every claim the `Context` holds for a scratch node:
+**No result-side claim held for a scratch node publishes.** This is a ruling, and it covers every result-side claim the `Context` holds for a scratch node:
 - the current claim (`node:<path>:current`, and `anonymous:<symbol>:current`);
 - superseded-run claims (`node:<path>:superseded:<generation>`);
 - literal claims (`cell:<path>:literal`);
-- transformer pin, code and module claims;
 - copied-current claims, which a subcontext copy acquires for the copied node.
 
-Each such claim neither publishes nor clears scratch status. (Several of these do today; see §10.) Whether the ruling also covers the definition write of a scratch Transformation is deferred (§8, *The definition write*).
+Each such claim neither publishes nor clears scratch status.
+
+**Input-side claims publish whatever the scratch** (ruled 2026-09-30). Scratch governs a transformer's *result* only. Its pin, code and module claims, and its definition write (§8, *The definition write*), are input-side: a scratch transformation may be dispatched, and fingertipping its result in another process recomputes it there, so both need its inputs on the hashserver. They therefore refhold and publish like any other transformer's, standalone and bound. (The Context and the standalone `Transformation` do not do this yet; see §10.)
 
 **Recording**: making a successful Expression or Transformation result **checksum** visible. Local execution, cache, database, remote, jobserver, worker and Dask success paths all record. Every success temprefs before recording, and repeated deterministic recording is idempotent for result ownership. **Failure and cancellation record nothing.**
 
-**Publishing**: writing a **buffer** to the hashserver. For results it happens on a **non-scratch incref** and nowhere else (§8, *Buffer persistence*); a transfer write is the one non-claim write (§8).
+**Publishing**: writing a result **buffer** to the hashserver, and nothing more (ruled 2026-09-29): it takes no claim and asserts nothing about who holds the result. For results it happens in exactly two ways: on a **non-scratch incref**, or on the executing side of a **non-scratch dispatch**, which publishes without a claim (§8, *Buffer persistence*). A scratch result is never published.
 
-> **One vocabulary across every page (ruled 2026-09-21).** *Publishing* is the buffer write; *recording* is what happens to a result checksum. They follow different rules: recording always happens on success, and a buffer is written only when somebody increfs it non-scratch. `contracts/scratch-witness-audit.md`, `contracts/expressions.md` and `contracts/identity-and-caching.md` use the same vocabulary. The code's former `_publish_expression_result` did neither; it is now **`_tempref_expression_result`**, which registers a tempref and marks a buffer the evaluation produced as scratch.
+> **One vocabulary across every page (ruled 2026-09-21).** *Publishing* is the buffer write; *recording* is what happens to a result checksum. They follow different rules: recording always happens on success, and a result buffer is written only when somebody increfs it non-scratch or a non-scratch dispatch asks for it. `contracts/scratch-witness-audit.md`, `contracts/expressions.md` and `contracts/identity-and-caching.md` use the same vocabulary. The code's former `_publish_expression_result` did neither; it is now **`_tempref_expression_result`**, which registers a tempref and marks a buffer the evaluation produced as scratch.
 
 **Adoption / handoff**: a consumer validates a concrete checksum, acquires its own semantic role, records that role, and only then yields or waits. Adoption is independent ownership: it does not transfer the producer's reference. An Expression consumer instead refreshes a tempref and consumes on the same path (§7).
 
@@ -183,7 +184,7 @@ This table is the normative ownership and ordering contract. The *Kind* column u
 |---|---|---|---|
 | Standalone `Cell` | `"input"` for an explicit checksum input; `"result"` for its evaluated result. A `source=` is a dependency and is not claimed (§7) | owner: the Cell's scratch policy | Acquire on construction or replacement. The Context adopts before binding releases it. |
 | `Expression` | `"result"`, only after public result interest | **neutral** | Inputs are tempref-only. Internal evaluation records without a claim; the first public call or read acquires the already-recorded result once. The claim protects the result from eviction and does **not** publish it or change its scratch status. Cleanup releases only an acquired result. |
-| Waiting-set entry (one per in-flight shared Expression evaluation, keyed by Expression identity) | the evaluation's input (logged as `expression materialization`) | **neutral** | Acquired when the shared evaluation starts; held until its task completes or is cancelled, **including through the linger** after the last member leaves (`contracts/expressions.md`, *Cancellation*); released when the task finishes or the linger expires and the task is cancelled. An unreleased claim here is exactly what the shutdown audit catches. |
+| Member-set entry (one per in-flight shared Expression evaluation, keyed by Expression identity) | the evaluation's input (logged as `expression materialization`) | **neutral** | Acquired when the shared evaluation starts; held until its task completes or is cancelled, **including through the linger** after the last member leaves (`contracts/expressions.md`, *Cancellation*); released when the task finishes or the linger expires and the task is cancelled. An unreleased claim here is exactly what the shutdown audit catches. |
 | Anonymous or projection handle | `"result"` on the checksum it pulled | **neutral** | Acquired when the handle pulls; a re-pull replaces it (§5 ordering); released when the handle dies. |
 | Standalone `Transformer` builder | `"pin:<name>"`, `"code"`, `"module:<name>"` for checksum-backed fields | owner | Wrapper mutation and cloning acquire independently. The Context adopts all roles before the builder becomes a neutral bound handle. |
 | `PreTransformation` | `"input:<pin>"` for converted non-scratch pins | owner | Scratch pins are tempref-only and absent from `_value_refs`. The Transformation acquires every input before the PreTransformation releases. CodeManager roles stay separate. |
@@ -209,7 +210,7 @@ Handoff happens **before the producer's tempref may expire**.
 | Dependent Transformation | calls `incref_refholder()` for the input **immediately**, and only then may it wait for other inputs | its own `"input:<pin>"` role; the producer needs no result reference on its behalf |
 | Dependent Expression | makes or refreshes a tempref on the input checksum and evaluates immediately; it does **not** increment the refholder count | nothing; its own result receives a fresh or refreshed tempref |
 
-A shared Expression evaluation's input is additionally held by the waiting set's neutral claim (§6). That claim belongs to the waiting-set entry, not to the Expression object.
+A shared Expression evaluation's input is additionally held by the member set's neutral claim (§6). That claim belongs to the member-set entry, not to the Expression object.
 
 ### One rule for owners: direct inputs from construction, dependencies on resolution (ruled 2026-09-28)
 
@@ -235,25 +236,25 @@ This rule supersedes [MOD-16] of `seamless/attachments-and-mount-design.md`, whi
 
 **Fingertipping never publishes.** A **fingertip chain always runs locally and never publishes, at any site** (client, jobserver or Dask worker alike). There is no exception: neither an input fingertip inside a job nor a manual fingertip writes to the hashserver, not even the chain's end result. A buffer recovered by fingertipping is temprefed and marked scratch. It is persisted only through a non-scratch claim, as the next paragraph describes (`contracts/scratch-witness-audit.md`, *Where a fingertip chain runs, and what it leaves behind*; the two cases are summarized in `contracts/identity-and-caching.md`).
 
-### Buffer persistence: a non-scratch claim is the only publisher
+### Buffer persistence: who publishes
 
-This is the mechanism behind the rule that neither evaluation nor fingertipping writes a result buffer to the hashserver. This page owns it.
+This is the mechanism behind the rule that neither evaluation nor fingertipping writes a result buffer to the hashserver of its own accord. A result is published by a non-scratch claim, or by the executing side of a non-scratch dispatch (the last bullet). This page owns it.
 
 - **A non-scratch claim publishes, in either order.**
   - *Claim after buffer:* a non-scratch `incref` / `incref_refholder` on a checksum whose buffer is in the local cache discards the checksum from the scratch set and queues the buffer for the remote store. One act overturns scratch status and is the write.
   - *Buffer after claim:* a non-scratch claim acquired while no buffer is here marks the entry remote-registered and writes nothing. When the buffer arrives later, `BufferCache.register` writes it, because it arrives under an existing non-scratch claim. A buffer that arrives under a scratch claim only is not written.
   - So **`Cell.fingertip()` persists the recovered buffer only on a non-scratch Cell**: a non-scratch Cell holds its result under a non-scratch claim, and a scratch Cell under a scratch one.
   - Both orders are tested (`seamless-core/tests/test_contract_reference_lifecycle.py`, `seamless-core/tests/test_contract_reference_lifecycle_late_buffer.py`). The one caveat is a `purge_scratch()` that lands between a local evaluation and a later non-scratch claim.
-- **Only an owner with a scratch policy publishes.** A Cell, a Transformation and a Context node have one. An `Expression`, a handle and the waiting set do not, which is why their claims are neutral (§6). Reading `Expression.checksum` therefore cannot write a buffer, and a scratch decision cannot be defeated through a property read. (One case looks like an exception and is not: a bare `Expression` asked for a **value** across a dispatch; see the transfer-write bullet below.)
-- Therefore **persistence is a property of who holds, never of who computed.** An evaluator that writes its result buffer is asserting an interest it does not have. A fingertip site in particular holds a bare checksum, with **no owner and no scratch intent**, so it cannot decide.
+- **Among claims, only an owner's publishes.** A Cell, a Transformation and a Context node have a scratch policy. An `Expression`, a handle and the member set do not, which is why their claims are neutral (§6). Reading `Expression.checksum` therefore cannot write a buffer, and a scratch decision cannot be defeated through a property read. (A dispatch publishes without any claim; see the last bullet.)
+- Therefore **persistence is a property of who holds or who requested, never of who computed.** An evaluator that writes its result buffer unasked makes a decision that is not its own. A fingertip site in particular holds a bare checksum, with **no owner and no scratch intent**, so it cannot decide.
 - **Interest travels with a dispatch.** When work runs elsewhere, the buffer may never reach this process (a jobserver returns a checksum only), so a claim acquired here afterwards has nothing to write. That is why `scratch` is a request parameter and the executing side publishes on the requester's behalf, rather than the client applying interest afterwards.
-- **A transfer write is not an ownership claim.** When the requester is a bare `Expression` asking for a *value*, the dispatch carries `scratch=False` although nobody will hold the result, because the hashserver is the only channel by which the bytes can reach the requester (`contracts/expressions.md`, *The requester's scratch decision, and what a bare Expression carries*). For Expressions the executing side writes the end result explicitly (`buffer_remote.write_buffer`); on the transformation path it calls `transfer_write()` next to a tempref. Either way no durable claim is created, and with nothing holding it, the entry is as evictable as any other unheld buffer. Asking for a *checksum* carries `scratch=True` and writes nothing at all.
+- **A dispatch's write is publishing without an ownership claim.** When the requester is a bare `Expression` asking for a *value*, the dispatch carries `scratch=False` although nobody will hold the result, because the hashserver is the only channel by which the bytes can reach the requester (`contracts/expressions.md`, *The requester's scratch decision, and what a bare Expression carries*). For Expressions the executing side writes the end result explicitly (`buffer_remote.write_buffer`); on the transformation path it calls `transfer_write()` next to a tempref. Either way no durable claim is created, and with nothing holding it, the entry is as evictable as any other unheld buffer. Asking for a *checksum* carries `scratch=True` and writes nothing at all.
 
 A tempref never writes (`BufferCache.tempref` has no scratch parameter), so Expression evaluation queues no hashserver write on any terminal branch, and a buffer it produces is marked scratch (`contracts/expressions.md`, *Status: publication and fingertipping*).
 
 ### The definition write
 
-`Transformation._publish_definition` writes the transformation definition with `transfer_write()` and then claims it under `"definition"` with a non-scratch claim, **even for a scratch Transformation**. The definition is provenance, not a result: another process can fingertip the scratch result only if it can read the definition. **Whether the scratch ruling of §1 covers this write is deferred.** Until it is ruled, this is the behaviour, and it is recorded neither as a gap nor as settled contract.
+`Transformation._publish_definition` writes the transformation definition with `transfer_write()` and then claims it under `"definition"` with a non-scratch claim, **even for a scratch Transformation**. The definition is provenance, not a result: another process can fingertip the scratch result only if it can read the definition. This is settled contract: the definition write is input-side, and input-side claims publish whatever the scratch (§1, ruled 2026-09-30).
 
 ### Deep checksums
 
@@ -319,28 +320,25 @@ Settled contract that the code does not yet implement, or implements differently
 
 **Gaps (xfail-pinned):**
 
-- **A superseded hold on a scratch node publishes.** `node:<path>:superseded:<generation>` is acquired with `incref_refholder()`, i.e. `scratch=False`, which writes the speculative result and clears its scratch status (`seamless-workflow/tests/test_contract_reference_lifecycle_scratch.py`).
-- **A subcontext copy publishes a scratch node's result.** `Context._copy_subcontext` acquires the copied node's current claim with `scratch=False` (`context.py:1704`; same test file).
-- **A scratch cell's literal claim publishes.** `_retain_producer` uses `incref_refholder()`, i.e. `scratch=False` (same test file).
-- **A scratch transformer's pin and code claims publish.** They are acquired with `scratch=False` whatever the transformer's scratch (same test file). The module claims are acquired the same way (`context.py:637`) and fall under the same ruling, but no test pins them yet.
-- **The waiting set's claim is not neutral.** `hold_input` (`seamless/checksum/expression.py`) claims with `scratch=True`, so an input that a non-scratch holder owns and has published is marked scratch (`seamless-remote/tests/test_contract_reference_lifecycle_linger.py`).
+- **A scratch transformer's pin, code and module claims do not publish.** The Context acquires them under the transformer's scratch, so for a scratch transformer they are scratch claims and write nothing (`seamless-workflow/tests/test_contract_reference_lifecycle_scratch.py`). A scratch transformer dispatched to a jobserver therefore fails with `CacheMissError` on its code checksum (`seamless-workflow/tests/test_contract_scratch_transformer_remote.py`).
 - **A superseded claim on a cell node never ends at the hold deadline.** `Context._update_runtime` calls `ContextRuntime.supersede()`, which records a `hold_deadline` but never schedules the expiry timer — only the transformer path (`Reactive._suspend`) does. A superseded cell claim therefore ends only at the cap, on `prune()`, on node deletion or on cleanup, never at the deadline on its own. Whether the deadline rule is meant to cover cell nodes at all is unconfirmed (`seamless-workflow/tests/test_reference_lifecycle_forced_expiry.py`; the transformer case is tested and passes).
 - **Copying a converted projection raises instead of copying.** `copy.copy`/`copy.deepcopy` of a Cell built through a projection-plus-conversion (e.g. `root["x"].as_celltype("text")`) raises `TypeError("Cannot implicitly convert behind a projection")` from `Cell.__copy__` rebuilding the Cell through its constructor, instead of giving an independent claim as §5 says copying should (`seamless-core/tests/test_contract_reference_lifecycle.py`). This narrows the "copy defect fixed" item under *Fixed* below: the fix covers a plain Cell or Expression, not this projection-conversion combination.
 - **The anonymous-node roles have narrow pins, not none.** `anonymous:<symbol>:current` and the handles' `"result"` claim belong to the bound anonymous-node model, which is not implemented (`contracts/cells.md`, *Implementation status*), so the Context-side role can only be pinned failing at binding (`TypeError`). But a plain bound projection handle (e.g. `ctx.b["k"]`) already exhibits the handle-side half of the gap today — it pulls the right checksum while holding no claim at all — and that narrower case is xfail-pinned (`seamless-workflow/tests/test_contract_reference_lifecycle_anonymous.py`).
 
-**Deferred (not gaps):**
+**Gap, not yet pinned by a test:**
 
-- A scratch `Transformation` claims its inputs with `scratch=self._scratch` (`transformation_class.py`), so it marks as scratch an input that a non-scratch holder owns. Whether that is correct is not ruled.
-- Whether the scratch ruling covers `_publish_definition` (§8, *The definition write*).
+- **A scratch `Transformation` claims its inputs as scratch.** `_replace_input_role` uses `scratch=self._scratch` (`transformation_class.py`), which marks as scratch an input that a non-scratch holder owns. Under the input-side ruling (§1), its input claims must be non-scratch whatever its own scratch. The standalone builder's literal pin claims already are (`seamless-transformer/tests/test_transformer_reference_lifecycle.py::test_literal_pin_is_published_whatever_the_transformer_scratch`).
 
 **Fixed.** These were code-versus-contract findings of the 2026-09-24 coverage pass, and the code now follows the page:
 - an `Expression`'s inputs are tempref-only, with no refholder claim (§6, §7);
 - the `Expression` `"result"` claim is neutral (§6);
+- a scratch node's superseded hold, a subcontext copy of a scratch node, and a scratch cell's literal claim no longer publish (`seamless-workflow/tests/test_contract_reference_lifecycle_scratch.py`, ordinary passing tests);
+- the member set's input claim is neutral: `hold_input` claims with `scratch=None` (seamless-core `281850a`; `seamless-remote/tests/test_contract_reference_lifecycle_linger.py::test_waiting_set_claim_is_neutral_about_scratch_status`);
 - `copy.copy` and `copy.deepcopy` of a plain Cell or an Expression acquire an independent claim (§5) — except a Cell built through a projection-plus-conversion, which is a newly-found gap, listed above under *Gaps*.
 
 Two earlier defects in the workflow `Context` were fixed before the verification handoff: checksum-backed **module replacement** now stages the new role before releasing the old one, and **failed bound-Transformer replacement** now restores semantic and runtime state and exact ownership.
 
-The waiting set's linger claim (§6) exists and is tested: the claim holds through the linger and is released when the linger expires.
+The member set's linger claim (§6) exists and is tested: the claim holds through the linger and is released when the linger expires.
 
 The database's path storage (§6, *The durable refholder*) currently keeps every path inline, so no indirect row, and therefore no durable claim, arises yet.
 
@@ -364,4 +362,4 @@ Tests run **one process per file**: process-global cache and refholder state car
 - A public attribution or report model, a holder-token hierarchy, recursive deep ownership, or a cross-process reference protocol. (The database's durable path claim of §6 is a storage property, not such a protocol.)
 - Automatic retry, eviction policy, or memory-pressure strategy. This contract says only that referenced data is never deleted to satisfy a limit.
 - Making temprefs auditable. A tempref is deliberately unattributed and deliberately bounded to a same-path handoff.
-- Replacing the node state lifecycle or the cancellation waiting set, which are different mechanisms with different vocabularies.
+- Replacing the node state lifecycle or the Expression member set, which are different mechanisms with different vocabularies.

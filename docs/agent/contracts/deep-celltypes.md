@@ -171,7 +171,8 @@ Illegal pairs worth spelling out:
 - **All-or-nothing.** The result is the complete dict of children, or an error. There is no partial result.
 - **Per-child failure is not sticky.** A child that could not be resolved does not poison the deep checksum; a later attempt may succeed (for example once the buffer is reachable again).
 - **Resolution order and concurrency are unspecified.** Children may be resolved in any order, sequentially or in parallel. Concurrency here is an optimization, not contract. Do not depend on an observed order, and do not treat parallelism as guaranteed.
-- **This is the only shape in the system that waits on more than one buffer.** Every other Expression materializes **at most** one checksum — exactly one where it needs a buffer at all, and none where it is *free* (the identity conversion, every index conversion above, a null short-circuit) — so the buffer layer's waiting set is keyed by a single checksum, and a free Expression never enters one. `folder → mixed` is the sole reason a **multi-checksum waiter** has to exist at all (`contracts/expressions.md`, *Cancellation*). It is a further reason the fan-out is confined to this one conversion.
+- **It is the only Expression that needs more than one buffer.** Every other Expression materializes **at most** one checksum — exactly one where it needs a buffer at all, and none where it is *free* (the identity conversion, every index conversion above, a null short-circuit). `folder → mixed` needs the index plus every child. That is a further reason the fan-out is confined to this one conversion.
+- **Three mechanisms are involved, and they are distinct** (`contracts/expressions.md`, *Deduplication*). The evaluation has one **member set**, keyed by its Expression identity like any other Expression's, and cancellation reaches the children only through it. Each child fetch is an ordinary **shared fetch**, keyed by the child's checksum and shared with any other request for that child (`contracts/expressions.md`, *Buffer fetches are shared by checksum*). A **multi-checksum waiter**, which would fetch all children in parallel and leave all their fetches when the evaluation is cancelled, is **deferred**: today the children are fetched one after another, so the evaluation waits on one fetch at a time (*Implementation status*).
 - **Each child is a 1-D NumPy `S1` array, one element per byte** (`np.frombuffer(content, dtype="S1")`), **never a 0-dimensional `S<N>` scalar.** Only the 1-D form round-trips faithfully — a 0-d scalar's `.tobytes()` turns an empty child into `b"\x00"`, and `.item()` strips trailing NULs (`b"ab\x00\x00"` reads back as `b"ab"`), because NumPy's `S` dtype strips trailing NULs on scalar extraction. Serializing a dict of Python `bytes` into `mixed` produces 0-d scalars and must never be the route by which a `folder` value is serialized as `mixed`. The `folder` pin handing the transformer Python `bytes` (*How deep values reach a transformer*) is a separate, in-process presentation, not this serialization route.
 
 ### Conversion stops at `mixed`
@@ -259,7 +260,7 @@ This is the pin layer, not the Expression layer; the shared flatness validator a
 | `deepfolder` | dict of `Checksum` objects (no resolution) |
 | `folder` | dict of child **contents** as Python `bytes`, resolved (`unpack_deep_structure`, one buffer per child) |
 
-`deepfolder` and `folder` pins additionally carry `{"filesystem": {"mode": "directory"}}`, which is how a bash or compiled transformer gets the directory written to disk.
+`deepfolder` and `folder` pins additionally carry `{"filesystem": {"mode": "directory"}}`, which is how a bash transformer gets the directory written to disk. A compiled transformer cannot take a directory this way: a deep celltype is never compatible with a compiled pin, and declaring one raises (`contracts/compiled-pins.md`).
 
 ### The output side: a deep result is an index
 
@@ -285,6 +286,10 @@ Settled contract that the code does not yet implement, or implements differently
 - **Bound writes at `k` fail or use the wrong celltype.** Through `ctx.a["k"]`, the checksum forms raise `TypeError: _edit() got an unexpected keyword argument 'input_celltype'` (the general bound sub-path write gap of `contracts/cells.md`, *Implementation status*), the buffer forms are validated at the parent's deep celltype instead of the member celltype (`ValueError` / `HashTypeValidationError`), and the value forms do not produce the member checksum.
 - **Null passes illegal deep pairs, at construction and in the engine.** Expression construction skips the shape check for a canonical-null empty-path input, so an illegal deep pair (for example `deepfolder → deepcell` or `plain → folder`) is accepted instead of raising `ValueError`, and evaluation returns null. `convert_checksum` returns `(checksum, None)` for either null form on any pair with a deep celltype, before the deep legality check, instead of raising `SeamlessConversionError` (*Zero-path conversions*).
 - **`.buffer` at a deep celltype does not check flatness.** `Cell.buffer` only checks that the buffer parses as `plain`; a nested or otherwise non-flat index is returned with no error instead of being refused the way `.value`, a one-step path or pin unpacking would refuse it. A non-JSON buffer is still refused (`HashTypeValidationError`).
+
+**Current limitations** (not contract violations):
+
+- **`folder → mixed` fetches its children one at a time.** `_evaluate_expression_async` awaits each child's `resolution()` in index order, the synchronous path calls `resolve()` per child, and the `folder` pin (`unpack_deep_structure`) does the same. Resolution order and concurrency are unspecified (*`folder → mixed`*), so this is not a gap. The parallel multi-checksum waiter is deferred.
 
 ## Agent guidance
 

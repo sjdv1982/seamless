@@ -85,7 +85,7 @@ These three are the **transformation** sites. The Expression layer has a set of 
 
 So `Transformation.cancel()`:
 
-- marks the handle terminal. `status` reports canceled, `result_checksum` raises, and `clear_exception()` does **not** revive it; a retry needs a new handle. The exception that `result_checksum` raises is proposed to be **`TransformationError`**; the author has deferred confirmation.
+- marks the handle terminal. `status` reports canceled, `result_checksum` raises **`TransformationError`**, and `clear_exception()` does **not** revive it; a retry needs a new handle.
 - **softcancels this handle's participation** in the shared run, which continues for any other member;
 - returns `True` if it moved active work (or a local promise) to canceled, and `False` if nothing was active. Whether `cancel()` on an already completed handle still marks it terminal is deferred;
 - with `recursive=True`, cascades the **same soft semantics** to known upstream dependency handles;
@@ -101,7 +101,7 @@ An `Expression` handle has nothing terminal to mark, which is why its only verb 
 
 ## The Expression layer is the same pattern
 
-Expression evaluation has its **own member set, keyed by the full Expression identity** (the 4-tuple used for evaluation and caching), not by a `tf_checksum` and not by a checksum in the buffer layer. A standalone `Expression` joins it as `id(self)`, and the workflow Context joins it with its demand key. `contracts/expressions.md` (*Deduplication*, *Cancellation*) owns this set, including the linger; this page does not repeat it. Three consequences matter here:
+Expression evaluation has its **own member set, keyed by the full Expression identity** (the 4-tuple used for evaluation and caching), not by a `tf_checksum` and not by a checksum in the buffer layer. The buffer layer does deduplicate fetches by checksum, but that shared fetch is not one of this page's sites: its participants are anonymous and counted, not members, it aborts as soon as the count reaches zero, with no linger, and it has no hard cancel (`contracts/expressions.md`, *Buffer fetches are shared by checksum*). A standalone `Expression` joins it as `id(self)`, and the workflow Context joins it with its demand key. `contracts/expressions.md` (*Deduplication*, *Cancellation*) owns this set, including the linger; this page does not repeat it. Three consequences matter here:
 
 - the same membership model applies, so an evaluation shared with a live requester survives another requester's departure;
 - there is **no hard cancel at that layer at all**, by design, so a hard `cancel_by_checksum` has no Expression counterpart;
@@ -129,7 +129,7 @@ This section lists where the code does not yet implement the contract above, or 
 
 **Latent hazard (not a contract statement).** The jobserver's `_run_transformation` handler awaits the shared job task directly (`await entry["task"]`), without shielding it. This is harmless while aiohttp's `handler_cancellation` is off. With `handler_cancellation` enabled, one client disconnecting would cancel its handler, the cancellation would propagate into the shared task, and the job would be killed for every member. That would turn a disconnect into a peer kill, against constraint 2. Anyone enabling that option must first shield the shared task, so that a disconnect can at most deregister its own member.
 
-**The Expression layer's status is in `contracts/expressions.md`.** Three items this page used to list there are stale: the Expression-keyed linger exists, `Expression.softcancel()` exists, and `cancel_expression` is gone (`softcancel_expression` is the module-level entry point). Three other items were carried here in the past: a local-key mismatch that made `Expression.cancel()` a silent no-op for local evaluations, non-interruptible Dask-dispatched Expressions, and the missing fingertip-chain cascade. They are unverified, and `contracts/expressions.md` does not currently list any of them. The first is at least moot as stated, since `Expression.cancel` is retired and raises.
+**The Expression layer's status is in `contracts/expressions.md`.** Three items this page used to list there are stale: the Expression-keyed linger exists, `Expression.softcancel()` exists, and `cancel_expression` is gone (`softcancel_expression` is the module-level entry point). Of three other items carried here in the past, one is current and listed there: **cancellation does not reach the executing side of a dispatched Expression.** Linger expiry cancels the client's shared task, but the jobserver's `run-expression` handler joins its own member set as an anonymous member and is not told, so the remote evaluation runs to completion. On Dask, `dispatch_expression` blocks a default-executor thread until the remote side finishes. This is under-cancellation, which constraint 2 makes benign (`contracts/expressions.md`, *Current limitations*). The other two are not listed there: a local-key mismatch that made `Expression.cancel()` a silent no-op for local evaluations, which is moot since `Expression.cancel` is retired and raises; and the missing fingertip-chain cascade (*The Expression layer is the same pattern*), which is unverified.
 
 ## Non-goals
 
