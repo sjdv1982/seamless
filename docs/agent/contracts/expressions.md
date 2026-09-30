@@ -17,7 +17,7 @@ Each layer is defined **on top of** the one before it, and no page re-derives th
 | Layer | Page | What it adds |
 |---|---|---|
 | 1. **Celltypes and the type hierarchy** | `contracts/celltypes-and-conversion.md` | which checksums are valid as which celltype, and the subtype→supertype edges |
-| 2. **HashType** | `contracts/hashtype.md` | a checksum-level classification that **disproves** readings and conversions without fetching a buffer. Only a `False` is a proof |
+| 2. **HashType** | `contracts/hashtype.md` | a checksum-level classification that **disproves** readings and conversions, and **proves** readings where the word settles them, without fetching a buffer. Every `False` is a proof, and so is a `True` from `deserializable_as`. A `True` from `conversion_feasible` is not |
 | 3. **Conversion** | `contracts/celltypes-and-conversion.md`, *Conversion engine* | the rule table, built on the hierarchy, which uses layer 2 to refuse or skip work before any buffer is fetched |
 | 4. **Expressions** | **this page** | path steps plus at most one conversion, in that order. Layer 3 is exactly the **empty-path** case of an Expression, and its results are stored under empty-path Expression identities |
 | 5. **Cells** | `contracts/cells.md` | a Cell is a *deferred* Expression: the mutable builder for the same recipe, standalone or bound |
@@ -140,7 +140,7 @@ Exclusion from identity creates all three questions. Answering them is part of i
 
 An Expression with an **empty path and `input_celltype == celltype`** is the identity (dummy) Expression. It resolves to its input checksum without any work: no buffer is fetched, no conversion runs, and the input checksum is recorded as the result. Checksum-level validation still applies (a known structural incompatibility is rejected without source content), but nothing else happens.
 
-**A null input short-circuits for every legal pair.** An empty-path Expression whose canonicalized input is null yields the canonical null result without fetching, for every **legal** `(input_celltype, celltype)` pair: a dummy pair, or a conversion that `contracts/celltypes-and-conversion.md` or `contracts/deep-celltypes.md` allows. **Null does not make an illegal pair legal.** On a forbidden ordinary pair or an illegal deep pair, construction raises `ValueError` exactly as it would for any other input, and the engine raises `SeamlessConversionError` without fetching. One scope question is deferred: whether the ruling covers forbidden ordinary pairs such as `python → int` as well as illegal deep pairs. The tests assume it does. See *Implementation status*: today the null shortcut runs before the legality check.
+**Null does not make an illegal pair legal.** On a forbidden ordinary pair or an illegal deep pair, construction raises `ValueError` exactly as it would for any other input, and the engine raises `SeamlessConversionError` without fetching. This holds for the forbidden ordinary pairs, such as `python → int`, as well as for the illegal deep pairs.
 
 The dummy case is load-bearing for the `.set_checksum` contract. `Cell.set_checksum` and `Pin.set_checksum` are the checksum variant of the three setters: they set the **input** checksum, not `.checksum`. So `.checksum` is normally `None` immediately afterwards, with two exceptions:
 
@@ -560,7 +560,6 @@ This section lists where the code does not yet implement the contract above, or 
 
 **Contract ahead of code (xfail-pinned):**
 
-- **Null passes illegal pairs.** The null shortcut runs before the legality check (*The dummy Expression*). Expression construction accepts the canonical null on a forbidden ordinary pair and on an illegal deep pair, empty-path evaluation returns null for it, and `convert_checksum` returns null for either null form on an illegal deep pair. Pinned in `seamless-core/tests/test_contract_celltypes_conversion.py` (`test_expression_construction_refuses_null_on_every_forbidden_pair`, `test_empty_path_evaluation_refuses_null_on_every_forbidden_pair`, `test_engine_refuses_null_on_illegal_deep_pairs`, `test_expression_refuses_null_on_illegal_deep_pairs`) and `seamless-core/tests/test_contract_deep_celltypes.py`. The engine already refuses null on forbidden ordinary pairs.
 - **Bound Cells do not fuse across nodes** (the marker at the end of *Fusion*). Fusion between Expressions is implemented; the bound walk, anonymous nodes and elision are not. `contracts/cells.md` owns this gap and its xfail tests.
 
 **Contract ahead of code, not yet pinned:**

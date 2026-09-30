@@ -154,7 +154,7 @@ This is the contract of feature 6:
 - an optional `int` pin fed a null from a `plain` source is **dropped**: `plain → int` is legal, the null never meets the `null → int` value conversion, and absence is decided by **comparing checksums, never by deserializing**;
 - an optional `deepcell`, `deepfolder` or `folder` pin fed a null from a `plain` source is **not** absence: `plain → <deep>` is illegal, so the input is refused like any other value on that pair. Whether that refusal leaves the pin `failed` (and the transformer `blocked` with `blocked-by-error`) or `miswired` is **deferred**; do not rely on either.
 
-Whether "illegal" also covers forbidden ordinary pairs such as `python → int` is deferred as well (`contracts/celltypes-and-conversion.md`). The tests assume that forbidden ordinary pairs count as illegal.
+"Illegal" includes the forbidden ordinary pairs such as `python → int` (`contracts/celltypes-and-conversion.md`, *Null and conversion legality*).
 
 ### What optionality does not do
 
