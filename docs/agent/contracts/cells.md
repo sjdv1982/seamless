@@ -342,7 +342,7 @@ So with an edge at `ctx.a.b`: `ctx.a.b.c.set(2)` raises, `ctx.a.set({...})` rais
 
 **`None` is a value for every Cell celltype.** Every cell is in effect `T | None`. There is **one celltype-independent representation**: the canonical JSON-null buffer `b"null\n"`, checksum `38e0b9de…`, which is trivial and resolves without cache residency, and `str(checksum)` prints `NULL`.
 
-**Null converts to itself on every legal conversion pair, and only there.** Retyping a null cell along a legal pair is a no-op. A forbidden pair or an illegal deep pair stays illegal for null too: retyping a null `python`, `ipython`, `deepcell`, `deepfolder` or `folder` cell to `int` fails exactly as it would for any other value, because null being deserializable as every celltype is a statement about readings, not a licence to convert. One scope question is deferred: whether the ruling covers forbidden ordinary pairs such as `python → int` as well as illegal deep pairs (the tests assume it does). The pair tables are in `contracts/celltypes-and-conversion.md` (*Null and conversion legality*) and `contracts/deep-celltypes.md`. *Contract ahead of code:* null passes illegal conversions today, bound and standalone (*Implementation status*).
+**Null converts to itself on every legal conversion pair, and only there.** Retyping a null cell along a legal pair is a no-op. A forbidden pair or an illegal deep pair stays illegal for null too: retyping a null `python`, `ipython`, `deepcell`, `deepfolder` or `folder` cell to `int` fails exactly as it would for any other value, because null being deserializable as every celltype is a statement about readings, not a licence to convert. This covers the forbidden ordinary pairs, such as `python → int`, as well as the illegal deep pairs. The pair tables are in `contracts/celltypes-and-conversion.md` (*Null and conversion legality*) and `contracts/deep-celltypes.md`.
 
 The spellings stay apart:
 
@@ -658,7 +658,6 @@ Each gap is pinned by an `xfail(strict=False)` test whose reason reads "… cont
 
 **Null**
 
-- **Null passes illegal conversions**, bound and standalone: a null cell retyped to `int` from `python`, `ipython`, `deepcell`, `deepfolder` or `folder` reports a complete `NULL` instead of failing, and a standalone null `as_celltype` child over those pairs reads back `NULL` (*Null and `None`*).
 - **Bound empty-`bytes` checksum canonicalization.** Writing the empty-buffer checksum to a bound `bytes` Cell leaves that checksum visible instead of the canonical null; the bound dummy path does not canonicalize. Value and buffer writes, and the standalone checksum write, canonicalize correctly (*Null and `None`*).
 
 **Reads and failures**
@@ -685,7 +684,6 @@ The author has deferred these. Do not rely on either answer; where a test exists
 
 - **Exception classes** for: a root edge combined with sub-path edges (*Cell-level joins*); a write under a stored null, bound and standalone (*Projections*); a write below `k` under a deep parent (*Writes through a handle*).
 - **Retype-refusal text.** Whether `Cannot convert behind a projection; use as_celltype()` is contract (*Connecting*).
-- **Null-ruling scope.** Whether "null only on legal pairs" covers forbidden ordinary pairs such as `python → int` (*Null and `None`*).
 - **Handle state over an unwired parent.** When a handle reports `unwired` rather than `waiting` (*Anonymous and projection handles*).
 - **`block_reason` of a cell with no input at all.** Owned by `contracts/node-state-lifecycle.md` (*Unspecified*) (*State and `block_reason`*).
 - **`.exception` string format.** Whether every `.exception` string carries the class name (*Failures*).

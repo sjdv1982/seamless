@@ -1,6 +1,6 @@
 # HashType (Contract)
 
-`HashType` classifies a **checksum** by the structure of its buffer. Seamless uses it to make deserialization, conversion and path decisions at the checksum level, so that it can reject impossible work without fetching or parsing a buffer. It replaces the old `BufferInfo` decision layer: no seamless-core, seamless-transformer, seamless-remote or seamless-dask code reads or writes `BufferInfo`.
+`HashType` classifies a **checksum** by the structure of its buffer. Seamless uses it to make deserialization, conversion and path decisions at the checksum level, so that it can reject impossible work, and skip a check it has already settled, without fetching or parsing a buffer.
 
 HashType classifies the **13 celltypes** defined in `contracts/celltypes-and-conversion.md`, and only those. Four other celltype names exist in Seamless: the three **deep celltypes** `deepcell`, `deepfolder` and `folder`, and **`module`**, which is not a deep celltype (`contracts/deep-celltypes.md`, *`module` is not a deep celltype*). This page calls them **the four structural names**. They are outside HashType's vocabulary by ruling, not by omission: a HashType query about one of them is a caller error and raises (*Queries*).
 
@@ -11,12 +11,12 @@ Each layer is defined **on top of** the one before it, and no page re-derives th
 | Layer | Page | What it adds |
 |---|---|---|
 | 1. **Celltypes and the type hierarchy** | `contracts/celltypes-and-conversion.md` | which checksums are valid as which celltype, and the subtype→supertype edges |
-| 2. **HashType** | **this page** | a checksum-level classification that **disproves** readings and conversions without fetching a buffer |
+| 2. **HashType** | **this page** | a checksum-level classification that **disproves** readings and conversions, and **proves** readings where the word settles them, without fetching a buffer |
 | 3. **Conversion** | `contracts/celltypes-and-conversion.md`, *Conversion engine* | the rule table, built on the hierarchy, using layer 2 to refuse or skip work before any buffer is fetched |
 | 4. **Expressions** | `contracts/expressions.md` | path steps plus at most one conversion, in that order (**project, then convert**); layer 3 is exactly the empty-path case |
 | 5. **Cells** | `contracts/cells.md` | a Cell is a *deferred* Expression |
 
-The reference parser (layer 1), the conversion engine (layer 3) and Expression validation (layer 4) all consult HashType before touching bytes. **HashType never decides that work is possible**; see *The false-negative property*.
+The reference parser (layer 1), the conversion engine (layer 3) and Expression validation (layer 4) all consult HashType before touching bytes. A `False` refuses work (*The false-negative property*). A `True` from `deserializable_as` proves a reading, and the conversion engine uses it to skip a fetch whose only purpose would be that check (*The positive property*). Nothing else in HashType decides that work is possible.
 
 Code locations:
 
@@ -32,13 +32,32 @@ Code locations:
 
 **HashType may answer "unknown", but it must never reject a valid deserialization or conversion.**
 
-- A `False` from a query is a **proof of impossibility**, and it is the only answer callers act on. They act by raising `HashTypeValidationError`, a `ValueError` subclass (see *Errors*).
-- `True` and `None` are **not guarantees**. They mean "not disproved"; the reference parser or the conversion engine still makes the final decision.
-- **One positive shortcut exists.** The conversion engine's `bytes→mixed` rule keeps the checksum when the cached word already identifies the buffer as `mixed` (`contracts/celltypes-and-conversion.md`, *Reformat rules*).
+- A `False` from any query is a **proof of impossibility**. Callers act on it by raising `HashTypeValidationError`, a `ValueError` subclass (see *Errors*).
+- `None` means "unknown". Whether a `True` proves anything depends on the query: see *The positive property*.
 
 The property is kept by **narrowing the domain rather than widening the vocabulary**: a query is asked only about the 13 celltypes, and anything else raises. Deep feasibility is decided before HashType is consulted (`contracts/deep-celltypes.md`, *Where deep validation happens*).
 
-Where HashType is imprecise, it is imprecise conservatively: it answers `None` or reports an over-permissive capability, and never falsely rejects. A *false rejection* is therefore a bug of a different class from imprecision. That is why the false-rejection family fixed in `0d3ccfb` / `827bd5b` was treated as a defect and not as accepted conservatism (`contracts/celltypes-and-conversion.md`, *Implementation status*).
+Where HashType is imprecise, it is imprecise conservatively: it answers `None` or reports an over-permissive capability. It never falsely rejects, and `deserializable_as` never falsely proves. A *false rejection* or a *false proof* is therefore a bug of a different class from imprecision: a defect to fix, never a conservatism to accept.
+
+## The positive property
+
+**A `True` from `deserializable_as(celltype, checksum=…)` is a proof that the reference parser accepts the checksum as that celltype.**
+
+- **Only `deserializable_as` makes this promise.** A `True` from `conversion_feasible` still means only "not disproved": whether a conversion succeeds also depends on the source value, which the word does not settle. No caller acts on it. `capabilities` and the item hints are over-permissive by design (*Current limitations*).
+- **Where the word cannot settle a reading, the answer is `None`, never `True`.** The word cannot settle four things:
+  - `python`, `ipython` and `yaml` syntax;
+  - whether 64 characters are hexadecimal, for `checksum`;
+  - the payload of a Seamless-mixed buffer, of which the producer reads only the header;
+  - whether an unflagged `JSON_STRING` is a string or a non-canonical spelling of `null`, which `str` refuses.
+
+  The tables in *`deserializable_as`* follow this rule.
+- **Who acts on a `True`.** Only the conversion engine, and only to skip a fetch whose sole purpose would be that same check. That means a **reinterpretation**, which keeps the checksum and whose only work is validating the target reading, and the keep branch of `bytes→mixed` (`contracts/celltypes-and-conversion.md`, *Principle*). Everywhere else, the parser needs the value and not just the verdict, so it still parses. Retrieval validation still raises only on `False`.
+- **A word is a claim about the whole buffer.** Both properties rest on this.
+  - `from_buffer` meets it by construction: a `NUMPY` word means that `np.load` succeeded, and a JSON word means that `orjson` parsed the whole text. The one exception is the header-only Seamless-mixed classification, which is why a `MIXED_*` word answers `None` for `mixed`.
+  - An untested kind is a claim too. `UTF8_UNTESTED` says that the whole buffer decodes as UTF-8. `JSON_UNTESTED` says that the whole buffer parses as JSON (`orjson`). A producer that has not checked the whole buffer must write `UNTESTED`.
+- **What a wrong word costs.** The database checks that a word is well-formed, not that it is true (*Storage and tightening*). A word that falsely proves a reading makes a reinterpretation succeed, and the empty-path Expression records that success. The failure then surfaces later, when the checksum is read. This is the same trust that the database already gets for Expression and transformation results.
+
+The positive property is monotone under tightening. A tighter word implies the stored one, so it never withdraws a proof. A conversion that the engine's dry run (`conversion_needs_buffer`) settled without a buffer therefore stays settled when it runs.
 
 ## The word
 
@@ -75,14 +94,14 @@ A HashType is a 13-bit integer (`pack`/`unpack`; `HashType.word`). `HashType` is
 
 `mic` is the most-informative celltype: `RAW_BYTES`/`UNTESTED` → `bytes`; `RAW_TEXT`/`UTF8_UNTESTED` → `text`; `NUMPY` → `binary`; `MIXED_*` → `mixed`; `JSON_OBJECT`/`JSON_ARRAY`/`JSON_UNTESTED` → `plain`; `JSON_STRING` → `str`; `JSON_NUMBER` → `float`.
 
-**The untested kinds** are placeholders that record less knowledge. `from_buffer`, the only producer, never emits them; they arrive only through `set_hash_type` or from the database, and every rule on this page supports them.
+**The untested kinds** are placeholders that record less knowledge. `from_buffer`, the only producer, never emits them; they arrive only through `set_hash_type` or from the database, and every rule on this page supports them. Whoever writes one owes the claim that it makes about the whole buffer (*The positive property*).
 
 ## Producer: `from_buffer`
 
 `HashType.from_buffer(buffer)` classifies by the **bytes only**:
 
-1. Starts with `b"\x93NUMPY"`: `NUMPY`. The file is loaded with `np.load(allow_pickle=False)` to read `DType`, `Rank` and `NUMPY_BYTES`.
-2. Starts with `b"\x94SEAMLESS-MIXED"`: `MIXED_OBJECT` or `MIXED_ARRAY`, from the root type in the form header. Any other root type raises `ValueError`.
+1. Starts with `b"\x93NUMPY"`: `NUMPY`. The whole file is loaded with `np.load(allow_pickle=False)` to read `DType`, `Rank` and `NUMPY_BYTES`. If `np.load` refuses it, the result is `RAW_BYTES`.
+2. Starts with `b"\x94SEAMLESS-MIXED"`: `MIXED_OBJECT` or `MIXED_ARRAY`, from the root type in the form header. **Only the header is read**, not the payload. A header that cannot be read, or whose root type is neither object nor array, gives `RAW_BYTES`.
 3. Not UTF-8: `RAW_BYTES`.
 4. Otherwise the whole text is parsed with `orjson.loads`:
    - object → `JSON_OBJECT`; array → `JSON_ARRAY`;
@@ -92,6 +111,8 @@ A HashType is a 13-bit integer (`pack`/`unpack`; `HashType.word`). `HashType` is
    - not JSON → `RAW_TEXT`.
 
 `Length` is always the byte-length bucket.
+
+A magic prefix alone therefore never makes `from_buffer` raise. Every buffer gets a word, and so a checksum.
 
 **When it runs.** A HashType is computed and registered (`register_hash_type_for_buffer` → `set_hash_type`) whenever:
 
@@ -104,7 +125,7 @@ Registering a HashType is neither *recording* a result checksum nor *publishing*
 
 ## Storage and tightening
 
-- **Local**: a process-wide dict `checksum → word` (`get_hash_type_cache()`), guarded by an `RLock`.
+- **Local**: a process-wide dict `checksum → word` (`get_hash_type_cache()`), guarded by an `RLock`. A word is never evicted; it can only be tightened.
 - **Remote**: the seamless-database table `hash_type`. A `GET` of type `hash_type` returns the word, or `null` for an unknown checksum. A `PUT` of type `hash_type` validates the word with seamless-core's `is_valid_word` (the database imports seamless-core).
 - **Tightening only.** Local `set_hash_type` and the database (`HashType.create`, inside an `IMMEDIATE` transaction) apply the same rule, `_hash_type_implies(tighter, looser)`:
   - `Length` must be equal.
@@ -142,7 +163,7 @@ Every query below takes its celltypes from **the 13, and only the 13**. A name o
 | `has_numeric_items` / `has_string_items` | as `capabilities` | `ValueError` |
 | `conversion_feasible(hash_type, source, target, *, checksum)` | `source` **and** `target` ∈ the 13 | `ValueError` |
 
-**Inside the domain, an empty answer is a real answer.** `capabilities` returns the empty set for `int`, `float`, `bool` and `checksum` because those admit no path step at all; that is a classification, not a shrug. Likewise a `False` from `deserializable_as` is a proof, and `None` means "not disproved".
+**Inside the domain, an empty answer is a real answer.** `capabilities` returns the empty set for `int`, `float`, `bool` and `checksum` because those admit no path step at all; that is a classification, not a shrug. Likewise a `False` and a `True` from `deserializable_as` are both proofs, and `None` means "unknown".
 
 **Why raise rather than widen.** Teaching the queries the four structural names would make HashType the owner of their feasibility. The legal deep set is *smaller* than "anything goes", so a widened `deserializable_as` would have to carry the whole deep table, and its `False` answers would be structural refusals dressed up as classification. Raising keeps one rule per layer, and keeps the false-negative property a property of the 13.
 
@@ -155,6 +176,8 @@ Where the four structural names are decided instead:
 
 `checksum` is a required keyword, because the null and boolean answers depend on the exact checksum. Omitting it raises `TypeError` at the call site.
 
+Every `False` below disproves the reading and every `True` proves it (*The false-negative property*, *The positive property*). A reading that the word cannot settle is `None`.
+
 Evaluated in order:
 
 1. `checksum` is either null checksum: `True`. A null checksum deserializes as every one of the 13 celltypes: it reads as `b""` for `bytes` and as `None` for the others (`contracts/celltypes-and-conversion.md`, *Canonical null*). **This is deserializability, not convertibility.** It does not make a conversion legal: a null checksum on a forbidden pair is still refused by `conversion_feasible` (below).
@@ -164,7 +187,8 @@ Evaluated in order:
 
    | Celltype | Result |
    |---|---|
-   | `text`, `yaml`, `python`, `ipython` | `True` if `is_utf8`, else `None` |
+   | `text` | `True` if `is_utf8`, else `None` |
+   | `yaml`, `python`, `ipython` | `None` (syntax is never proved) |
    | `plain`, `mixed` | `True` if `is_json`, else `None` |
    | `str` | `True` for a boolean checksum, else `None` |
    | `int`, `float` | `False` if `LONG`, else `None` |
@@ -175,13 +199,14 @@ Evaluated in order:
 
    | Celltype | Result |
    |---|---|
-   | `text`, `yaml`, `python`, `ipython` | `is_utf8` (syntax is not checked; the parser checks it) |
+   | `text` | `is_utf8` |
+   | `yaml`, `python`, `ipython` | `False` if not `is_utf8`; otherwise `None` (the syntax is the parser's to check) |
    | `plain` | `is_json` |
-   | `str` | kind `JSON_STRING` or `JSON_NUMBER`, or a boolean checksum |
+   | `str` | `True` for `JSON_NUMBER`, for a `JSON_STRING` with `NUMERIC_SCALAR`, and for a boolean checksum; `None` for any other `JSON_STRING`, which may be a non-canonical spelling of `null` (*Current limitations*); otherwise `False` |
    | `int`, `float` | `False` if `LONG`; otherwise whether `NUMERIC_SCALAR` is set |
    | `binary` | kind `NUMPY` |
-   | `mixed` | kind not `RAW_BYTES`/`RAW_TEXT` |
-   | `checksum` | kind `RAW_TEXT` or `JSON_NUMBER` (an all-digit digest is a JSON number), and `EQ64`; hex validity is left to the parser |
+   | `mixed` | `False` for `RAW_BYTES`/`RAW_TEXT`; `None` for `MIXED_OBJECT`/`MIXED_ARRAY`, whose payload the producer never read; otherwise `True` |
+   | `checksum` | `None` if the kind is `RAW_TEXT` or `JSON_NUMBER` (an all-digit digest is a JSON number) and the length is `EQ64`, because hex validity is the parser's to check; otherwise `False` |
 
 ### `capabilities(source_celltype) -> set`
 
@@ -215,7 +240,7 @@ The checksum-level conversion query, asked before any conversion work. A pair of
 Rules, in order:
 
 1. `source == target`: `True`.
-2. **A forbidden pair: `False`, for every checksum, including a null checksum.** The null checksum short-circuits only on a **legal** pair; an illegal conversion stays illegal for null (ruling, `contract-clarity-rulings.md`). The author has deferred confirming that this ruling, stated for illegal deep pairs, also covers forbidden ordinary pairs such as `python → int`; this page and the tests assume that it does. See *Implementation status*.
+2. **A forbidden pair: `False`, for every checksum, including a null checksum.** The null checksum short-circuits only on a **legal** pair; an illegal conversion stays illegal for null (ruling, `contract-clarity-rulings.md`). The ruling covers forbidden ordinary pairs such as `python → int` as well as illegal deep pairs.
 3. A null checksum on a legal pair: `True`.
 4. `deserializable_as(source, checksum=checksum)` is `False`: `False`.
 5. `target == "checksum"`: `True`.
@@ -238,13 +263,22 @@ Rules, in order:
      - `binary→plain`: `True` for `NUMERIC`/`STRUCTURED`;
      - everything else: `None`.
 
+**Only a `False` from this query is acted on.** Its `True` means "not disproved", and nothing more:
+
+- for a trivial or reformat pair, the answer is given without proving that the source is valid (rule 4 refuses only a *disproved* source);
+- in the possible and value categories, the conversion's outcome depends on the value, which the word does not see.
+
+For a reinterpretation the answer *is* `deserializable_as(target)`, which is a proof. Even so, the engine asks `deserializable_as` directly (*The positive property*).
+
 ## Where HashType is consulted
 
 - **Reference parser** (`_parse_buffer`): after virtual values, `validate_deserializable_as(checksum, celltype, buffer=buffer)` runs before any parsing.
-- **Conversion engine** (`seamless.checksum.convert`): before a source buffer is fetched, `validate_deserializable_as` runs without a buffer. This is also where the `bytes→mixed` positive shortcut lives (*The false-negative property*).
+- **Conversion engine** (`seamless.checksum.convert`): before a source buffer is fetched, it looks up the word (`validate_deserializable_as` without a buffer), and a `False` refuses the conversion. For a reinterpretation, and for the keep branch of `bytes→mixed`, a `True` from `deserializable_as(target)` settles the conversion without fetching (*The positive property*; `contracts/celltypes-and-conversion.md`, *Principle*). The dry run `conversion_needs_buffer` sees the same word, so it answers `False` there.
 - **Expression validation** (`validate_expression[_async]`), before evaluation:
   - If either celltype is one of the four structural names, HashType is not asked anything: the checksum is only classified (`ensure_hash_type[_async]`), and the structural half of vetting, which ran at construction, stands. An unknown celltype name raises `ValueError`.
   - Otherwise, it checks the source celltype (`validate_deserializable_as`), then path capability, then `conversion_feasible` for an empty path only.
+
+  Before an empty-path Expression decides whether its conversion needs the input buffer, evaluation loads the input's word with `ensure_hash_type_async`. A word that is known only to the database therefore counts too, and the synchronous dry run then finds it in the local cache (*Current limitations*, first item).
 
   This is the **evaluation-time** half of Expression vetting; the structural half runs at construction and never consults HashType (`contracts/expressions.md`, *When an Expression is vetted, and by what*). The order is **project, then convert** read at the checksum level (`contracts/expressions.md`, *Application order: project, then convert*): capability is asked of the **input** celltype, because the path walks the input's structure, and `conversion_feasible` is asked only where there is no path. No query on this page classifies "the value a path would select": that is data behind the checksum, and HashType never looks there.
 - **Retrieval validation** of a declared checksum and celltype (`validate_deserializable_as`) in `seamless.cell_class`, `seamless_transformer` (`pin_class`, `pretransformation`, `transformation_class`), `seamless_dask` and `seamless_workflow.context`.
@@ -265,18 +299,13 @@ Rules, in order:
 
 ## Current limitations
 
-These are contract. They are conservative (a `None` or an over-permissive answer), never false rejections.
+These are contract. They are conservative (a `None` or an over-permissive answer): never false rejections, and never false proofs.
 
 - **No remote lookup from synchronous validation inside a running event loop.** With no buffer supplied, `ensure_hash_type` skips the database and returns `None` for a checksum missing from the local cache (*Lookup*). Async `parse_buffer` calls the synchronous `_parse_buffer`, but it passes the buffer, so parse-time validation classifies it locally without a database request. Use `ensure_hash_type_async` when remote-only metadata is needed before a buffer is available.
-- **JSON `true`/`false`/`null` are classified `JSON_STRING`.** For `plain` and `mixed`, path validation therefore sees `{"SEQ"}` and can admit positional access to a scalar; parsing and evaluation still decide whether that access is valid. The classification is not a proof of a JSON string either, which is why `conversion_possible` answers `None` for an unflagged `JSON_STRING` word with an `int`/`float` target: JSON `true`/`false` convert there.
-
-## Implementation status
-
-Contract ahead of code. Each item is pinned by an `xfail(strict=False)` test whose reason says "contract ahead of code".
-
-- **A null checksum makes a forbidden pair feasible.** `conversion_feasible` returns `True` for a null checksum on a forbidden pair (for example `python → yaml` or `python → int`), because its null shortcut runs before the forbidden check. The contract is rule 2 of *`conversion_feasible`*: a forbidden pair is `False` for every checksum. Pinned by `seamless-core/tests/test_contract_hashtype.py::test_null_checksum_does_not_make_a_forbidden_pair_feasible`.
+- **JSON `true`/`false`/`null` are classified `JSON_STRING`.** For `plain` and `mixed`, path validation therefore sees `{"SEQ"}` and can admit positional access to a scalar; parsing and evaluation still decide whether that access is valid. The classification is not a proof of a JSON string either, which is why `conversion_possible` answers `None` for an unflagged `JSON_STRING` word with an `int`/`float` target: JSON `true`/`false` convert there. Nor is it a proof of a `str` reading. A non-canonical spelling of `null` (`b" null \n"`, `b"null\n\n"`) is also an unflagged `JSON_STRING`, and `str` refuses it. `deserializable_as("str")` therefore answers `None` for every unflagged `JSON_STRING`, so `plain→str` over a non-numeric JSON string fetches and parses its buffer.
+- **A Seamless-mixed word proves nothing about a `mixed` reading.** The producer reads only the form header, so `deserializable_as("mixed")` answers `None` for `MIXED_OBJECT`/`MIXED_ARRAY`. As a result, `bytes→mixed` over a Seamless-mixed buffer always fetches and parses it (`contracts/celltypes-and-conversion.md`, *Reformat rules*).
 
 ## Non-goals
 
 - **The four structural names.** HashType classifies buffers. A deep buffer is an ordinary `plain` buffer, so a deep index *does* get a `JSON_OBJECT` word like any other. What HashType does not do is know the names `deepcell`, `deepfolder`, `folder` and `module`: every query raises for them (*The domain of every query*). `contracts/deep-celltypes.md` owns deep feasibility and decides it structurally, before any query on this page is reached.
-- **Value-level syntax and hex validation.** HashType classifies buffer bytes without parsing them for the requested celltype. It does not check `python`/`ipython`/`yaml` syntax, or whether `checksum` text is valid hexadecimal. Those checks belong to the parser and the conversion engine. A permissive HashType answer is allowed; only `False` is used to reject work.
+- **Value-level syntax and hex validation.** HashType classifies buffer bytes without parsing them for the requested celltype. It does not check `python`/`ipython`/`yaml` syntax, or whether `checksum` text is valid hexadecimal. Those checks belong to the parser and the conversion engine. Wherever a reading turns on them, `deserializable_as` answers `None`, never `True` (*The positive property*).
