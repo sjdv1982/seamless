@@ -305,9 +305,11 @@ A schema `char` parameter receives bytes (rule 6). The declared pin celltype dec
 |---|---|---|
 | `bytes` | `bytes` literals and Cells; `str` literals, encoded as UTF-8; NumPy dtype-`S` arrays of any shape from a `binary` or `mixed` Cell, converted with `tobytes()` | a `text` Cell keeps its trailing newline (`text → bytes` is trivial); a `plain` Cell delivers its JSON text, quotes included; a non-`S` array delivers its whole `.npy` buffer |
 | `text` (one-dimensional only) | `str` literals; `text` and `str` Cells; `bytes` Cells whose content is UTF-8 | NumPy arrays; content that is not UTF-8 |
-| `binary` | NumPy `S1` arrays: `ndarray` literals, and `binary` or `mixed` Cells holding an `S1` `.npy` | a `bytes` literal — the `binary` serializer takes a `bytes` object as an already-serialized buffer, so its checksum is unreadable as `binary`; a `bytes` or `text` Cell on `char [N]`, which converts to a zero-dimensional `S{len}` array |
+| `binary` | NumPy `S1` arrays: `ndarray` literals, and `binary` or `mixed` Cells holding an `S1` `.npy` | a `bytes` literal — the `binary` serializer takes a `bytes` object as an already-serialized buffer, so its checksum is unreadable as `binary`; a `bytes` Cell on `char [N]`, which converts to a zero-dimensional `S{len}` array and is then rejected (exact `S1` only, below); a `text` Cell, which does not convert at all: `text → binary` raises `SeamlessConversionError`, so the pin itself fails, and bound, the transformer is `blocked`, not `failed` (`contracts/pins.md`, *Pin failures*). Routing the text through a `bytes` Cell does not help, because that is the `bytes` case; declare the pin `bytes` or `text` instead |
 
 `bytes` is the broadest choice, `text` is for text, and `binary` is for data that already is a NumPy `S1` array.
+
+**Declaring the pin `bytes` is the standard way to pass a text buffer to a compiled transformer.** Feed it from a `text` Cell, directly or through a `bytes` Cell: `text → bytes` is trivial, so the kernel receives the stored buffer unchanged, including the trailing newline that `text` serialization appends (`ACGT` arrives as `ACGT\n`, N = 5). Declare the pin `text` instead only when the kernel should receive the value without that newline. Never declare it `binary` for text: a `text` Cell cannot convert to `binary`, and a `bytes` Cell becomes a rejected zero-dimensional `S{len}` array.
 
 ## 9. Errors
 

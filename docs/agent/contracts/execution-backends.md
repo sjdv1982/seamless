@@ -34,7 +34,7 @@ This page defines the minimum operational model an agent may rely on when discus
 A jobserver or daskserver also evaluates **Expressions** (the jobserver endpoint is `GET /run-expression`). Three differences from the transformation backends above matter:
 
 - **It is not a backend choice but a placement rule.** An Expression is evaluated *where the data is*: local when no buffer is needed or the input buffer is already in this process's memory, otherwise dispatched. Selecting a backend does not turn this on or off.
-- **`execution="auto" | "local" | "remote"` is a per-Expression argument, not the `execution:` config key.** Here `"local"` means *in this process's memory* and `"remote"` means *not in this process's memory* — independently of which transformation backend is configured. A Context fixes the policy for its own Expression jobs with `Context(expression_execution=…)`.
+- **`execution="auto" | "local" | "remote"` is a per-Expression argument, not the `execution:` config key.** Here `"local"` means *in this process's memory* and `"remote"` means *not in this process's memory* — independently of which transformation backend is configured. One deliberate deviation: for placement, a buffer in an explicitly configured read-buffer directory also counts as local (`contracts/expressions.md`, *Placement*). A Context fixes the policy for its own Expression jobs with `Context(expression_execution=…)`.
 - **A daskserver is a jobserver *mode* for Expressions**, not a competing backend: both expose the same checksum, error, caching and HashType contracts.
 
 The full rule, the resolution order, the no-silent-fallback rules and the two open placement questions are `contracts/expressions.md`, *Placement*.
@@ -46,7 +46,7 @@ Remote execution — `jobserver` **and** `daskserver` alike — submits work **b
 Consequences an agent may rely on:
 
 - **Inputs are not necessarily uploaded at submission.** They may be **pre-present** — staged by a prior upload, or **by design**, when the client already holds the checksum of a large server-side dataset. Only buffers actually missing on the server are staged (e.g. `--upload`, or `--write-remote-job` which implies it).
-- **Results are durable out-of-process.** A remote run's non-`scratch` results live in the shared hashserver/database independently of the submitting client, so tearing the client down does not lose them. (A `scratch` result is the exception: not stored, recomputed at a consumer via input fingertipping — see `contracts/scratch-witness-audit.md`.)
+- **Results are durable out-of-process.** A remote run's non-`scratch` results live in the shared hashserver/database independently of the submitting client, so tearing the client down does not lose them. (A `scratch` result is the exception: a scratch transformation may be dispatched, but its result is not stored. It is recomputed at a consumer via input fingertipping, or on the client by `Transformation.run()`, which then runs the transformation a second time — see `contracts/scratch-witness-audit.md`.)
 - **Materialization is content-addressed, not a side effect.** A worker resolving an input checksum is performing materialization, not "reading whatever is on disk" (see `contracts/identity-and-caching.md`).
 
 ## Testing surface

@@ -154,7 +154,7 @@ This is the contract of feature 6:
 - an optional `int` pin fed a null from a `plain` source is **dropped**: `plain → int` is legal, the null never meets the `null → int` value conversion, and absence is decided by **comparing checksums, never by deserializing**;
 - an optional `deepcell`, `deepfolder` or `folder` pin fed a null from a `plain` source is **not** absence: `plain → <deep>` is illegal, so the input is refused like any other value on that pair. Whether that refusal leaves the pin `failed` (and the transformer `blocked` with `blocked-by-error`) or `miswired` is **deferred**; do not rely on either.
 
-Whether "illegal" also covers forbidden ordinary pairs such as `python → int`, and whether `module → int` is legal, are deferred as well (`contracts/celltypes-and-conversion.md`). The tests assume that forbidden ordinary pairs count as illegal.
+Whether "illegal" also covers forbidden ordinary pairs such as `python → int` is deferred as well (`contracts/celltypes-and-conversion.md`). The tests assume that forbidden ordinary pairs count as illegal.
 
 ### What optionality does not do
 
@@ -204,7 +204,7 @@ TypeError: would convert text -> plain behind a projection.
 
 - the pin's state is `failed`, and `pin.exception` holds the failure as a string;
 - bound, the transformer is `blocked`, with a **`blocked-by-error` entry for that pin in `tf.block_reason`**. A failed upstream gives the pin no checksum either, and gives the same `blocked-by-error` entry;
-- **`tf.exception` is not set**: it stays `None`, because nothing of the transformer's own has failed;
+- bound, **`tf.exception` is not set**: it stays `None`, because nothing of the transformer's own has failed. (Standalone, a Transformer has no `exception` at all: reading it raises `AttributeError`, and the failure is on the pin and on the Transformation that `tf()` returns; `contracts/transformers.md`, *Live-node members*);
 - **no transformation is built and none is submitted.** Standalone, `tf()` still returns a `Transformation` handle, but it constructs no transformation checksum (`construct()` returns `None`), and running it raises `TransformationError` naming the failed dependency.
 
 A failure of this kind is therefore never blamed on execution. The opposite case, where every pin has a valid checksum but the transformer cannot use one of them, is the transformer's own failure: `failed`, with `tf.exception` set. For ordinary transformers that case is a failure of the run itself; for compiled transformers it also includes schema validation of a valid pin value (`contracts/compiled-pins.md`, section 5; `contracts/node-state-lifecycle.md`, *Transformer nodes*).
@@ -217,7 +217,7 @@ The read API is `CellBase`'s, so `contracts/cells.md` governs what `.checksum` m
 
 - `pin.source` is the connected upstream handle, or `None`. `pin.checksum` is the pin's **current converted value**, and `None` when the pin is not complete, as for a Cell.
 - `pin.build()` returns the pin's `Expression`. Standalone, it accepts a one-shot input override; bound, it does not (`TypeError: Pin.build does not accept a replacement input`, and likewise for `compute`).
-- `pin.run()` computes and materializes; under celltype `bytes` it returns raw `bytes`. **It is the pin call that raises** (ruled 2026-09-28; `contracts/cells.md`, *Failures*, *How a failure is delivered*): it re-raises the pin's recorded failure, and raises any failure to materialize the pin's result. Bound, a pin that settles with no checksum for any other reason makes `run()` raise `NodeError` naming the pin's state. `.checksum`, `.buffer`, `.value` and `compute()` answer `None` in all of these cases.
+- `pin.run()` computes and materializes; under celltype `bytes` it returns raw `bytes`. **It is the pin call that raises** (ruled 2026-09-28; `contracts/cells.md`, *Failures*, *How a failure is delivered*): it re-raises the pin's recorded failure, and raises any failure to materialize the pin's result. Bound, a pin that settles with no checksum for any other reason makes `run()` raise `NodeError` naming the pin's state. `.checksum`, `.buffer`, `.value` and `compute()` answer `None` for a recorded failure and whenever the pin has no checksum. A failure to materialize a result that exists is the exception: `.buffer` and `.value` raise it too, on every read, and never record it (*Pin state*, below); `.checksum` and `compute()` do not materialize, so they return the checksum.
 - **`pin.fingertip()` is `Cell.fingertip()` on a pin**, with the same contract and for the same reason: a Pin is an owner, so a fingertip through it can decide whether the recovered buffer persists, where a bare `Checksum.fingertip()` cannot. It never forces `pin.checksum`, so it is a **no-op returning `None`** when the pin has no result checksum; it returns the recovered **buffer**; and it never records `.exception` (`contracts/cells.md`, *`.buffer` and `.value`*).
 - **`pin.exception` is a string or `None`**, in both modes. Whether every `.exception` string carries the exception class name, as ruled for compiled pins (`contracts/compiled-pins.md`, D5), is deferred.
 

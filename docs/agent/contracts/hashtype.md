@@ -149,7 +149,7 @@ Every query below takes its celltypes from **the 13, and only the 13**. A name o
 Where the four structural names are decided instead:
 
 - **Deep celltypes.** Deep feasibility never depends on the data behind the checksum, so it is structural and settled at Expression construction: a pathless deep Expression by the conversion engine's deep table, a pathed one by the deep path table, both defined in `contracts/deep-celltypes.md` (`contracts/expressions.md`, *When an Expression is vetted, and by what*).
-- **`module`.** None of the deep rules apply to it, and it is not in the conversion rule table either. Its conversion legality is not defined on this page; whether `module → int` is legal is an open question the author has deferred.
+- **`module`.** None of the deep rules apply to it, and it is not in the conversion rule table either. Its conversion legality is not defined on this page.
 
 ### `deserializable_as(celltype, *, checksum) -> True | False | None`
 

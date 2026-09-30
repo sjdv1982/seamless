@@ -105,7 +105,7 @@ The five record-mode environment buckets themselves have no equivalent auto-refr
 
 ## Database protocol
 
-- **Protocol version: 2.1**
+- **Protocol version: 2.3**
 - **`PUT metadata`** (request type): atomically creates `Transformation`, `RevTransformation`, and `MetaData` when missing. Validates identity (`tf_checksum` matches request, `result_checksum` matches request, `schema_version` integer, `checksum_fields` format if present). Identical duplicate is idempotent success; differing duplicate or result mismatch is rejected.
 - **`GET metadata`**: returns the canonical record body for a `tf_checksum`.
 - **`GET irreproducible`**: returns all rows for a `tf_checksum` (optionally filtered by `result`), each carrying `checksum`, `result`, and `metadata`.
