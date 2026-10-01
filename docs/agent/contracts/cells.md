@@ -55,7 +55,7 @@ Assigning a Cell into a Context binds it: `ctx.a = Cell("int")` moves the builde
 - **Handle identity carries no meaning.** `ctx.a is not ctx.a`; two handles for one node are interchangeable, and a handle for a deleted node raises `StaleWorkflowHandleError` on its next use.
 - **A bound Cell is a view, not a copy.** The Context runtime holds nodes, Expressions and Transformations, never Cells.
 - **A standalone Cell is never implicitly bound.** `Cell(source=ctx.a)` captures the bound endpoint of a **named** node as its input (`_capture_workflow_source`): a reference to the node, not a binding of the new Cell.
-- **Every handle belongs to its Context.** Assigning a handle — named, anonymous or projection — into a *different* Context raises **`DependencyError`**. A handle to an **anonymous** cell additionally cannot be captured as a standalone source: `Cell(source=ctx.a[3])` and `Cell(source=ctx.b.as_celltype("plain"))` raise `DependencyError`. Assign the handle into its own Context instead (*Connecting*, *Assigning an anonymous handle*). *Implemented* for the cross-Context assignment of a projection handle. *Contract ahead of code:* `Cell(source=<handle>)` is accepted, and a bound `as_celltype` is still a standalone snapshot, so assigning it anywhere raises `TypeError: Cannot bind a Cell whose input_ref is Expression` (*Implementation status*).
+- **Every handle belongs to its Context.** Assigning a handle — named, anonymous or projection — into a *different* Context raises **`DependencyError`**. A handle to an **anonymous** cell additionally cannot be captured as a standalone source: `Cell(source=ctx.a[3])` and `Cell(source=ctx.b.as_celltype("plain"))` raise `DependencyError`. Assign the handle into its own Context instead (*Connecting*, *Assigning an anonymous handle*).
 
 ### Retired names
 
@@ -243,13 +243,6 @@ Here `b` is a `mixed` cell, so `mixed → plain` is a checksum-preserving reinte
 What fusion does **not** do is remove a named intermediate's own work: `ctx.mid` still produces its checksum, because something may read it. What it removes is the *consumer's* dependency on that intermediate's **buffer** — the fused chain is evaluated where the root's data is and yields only what the path selected, and where the intermediate is `scratch` its buffer need never exist at all.
 
 **Elidability and miswiring are re-detected together**, whenever a celltype changes or an edge is added or removed — exactly the events that can create or destroy a conversion. Same trigger set, same local comparison of a source's `celltype` against the cell's, so one pass over the affected cone.
-
-*Contract ahead of code — bound Cells only* (*Implementation status*). Fusion exists below the Context: constructing an Expression over another Expression fuses the pair (`Expression.__post_init__`), so a standalone chain fuses as described here. A Context does not fuse: it builds each bound cell's Expression over its source node's current **checksum** (`Context._build_source_expression`), never over that node's own Expression, so no run spans more than one edge. None of the anonymous-cell model exists yet:
-
-- a bound projection is a view onto the parent node (`BoundCellBackend` with a `local_path`), not a node with a symbol;
-- a bound `as_celltype` returns a standalone Cell over a snapshot of the parent's Expression (`BoundCellBackend.derive`), which is not reactive;
-- binding a chain raises `TypeError: Cannot bind a Cell whose input_ref is Expression`;
-- there is no `anonymous_nodes` table, no renaming, no weak/strong holding and no elision, and `get_graph()` writes format `0.4`.
 
 ## Writes: two verb families
 
@@ -634,9 +627,7 @@ Each gap is pinned by an `xfail(strict=False)` test whose reason reads "… cont
 
 **Bound anonymous-cell model**
 
-- **The model is not implemented.** Bound projections are views onto the parent node, a bound `as_celltype` is a standalone snapshot, binding a chain raises `TypeError: Cannot bind a Cell whose input_ref is Expression`, and there are no symbols, no `anonymous_nodes`, no renaming, no elision and no bound fusion; `get_graph()` writes format `0.4` (*Connecting*).
 - **Handle reads follow the parent node.** `.state` on a bound projection reports the parent node's state; over an unwired parent, `compute()` and `run()` raise `NodeError` instead of returning `None`; and `compute()` otherwise waits on the parent's barrier (*Reads*, *Anonymous and projection handles*).
-- **`Cell(source=<handle>)` is accepted** instead of raising `DependencyError` (*Binding*).
 - **Bound `as_celltype` writes.** Its declare-family writes detach the snapshot instead of raising `AuthorityError` (*Writes through a handle*).
 - **Bound scratch flag.** A bound projection reports its parent node's `scratch` instead of starting non-scratch, and bound `with_input()` / `with_validator()` drop the flag (*Scratch policy*).
 - **Bound deep handles keep the deep celltype** instead of the member celltype (*Deep celltypes on a Cell*).

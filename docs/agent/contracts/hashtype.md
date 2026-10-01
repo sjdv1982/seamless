@@ -44,11 +44,12 @@ Where HashType is imprecise, it is imprecise conservatively: it answers `None` o
 **A `True` from `deserializable_as(celltype, checksum=…)` is a proof that the reference parser accepts the checksum as that celltype.**
 
 - **Only `deserializable_as` makes this promise.** A `True` from `conversion_feasible` still means only "not disproved": whether a conversion succeeds also depends on the source value, which the word does not settle. No caller acts on it. `capabilities` and the item hints are over-permissive by design (*Current limitations*).
-- **Where the word cannot settle a reading, the answer is `None`, never `True`.** The word cannot settle four things:
+- **Where the word cannot settle a reading, the answer is `None`, never `True`.** The word cannot settle three things:
   - `python`, `ipython` and `yaml` syntax;
   - whether 64 characters are hexadecimal, for `checksum`;
   - the payload of a Seamless-mixed buffer, of which the producer reads only the header;
-  - whether an unflagged `JSON_STRING` is a string or a non-canonical spelling of `null`, which `str` refuses.
+
+  A concrete JSON scalar has no ambiguity for a `str` reading: `JSON_NULL` records parsed null, and `JSON_STRING` records strings or booleans, all of which `str` accepts. The two virtual null checksums are handled before the word is examined.
 
   The tables in *`deserializable_as`* follow this rule.
 - **Who acts on a `True`.** Only the conversion engine, and only to skip a fetch whose sole purpose would be that same check. That means a **reinterpretation**, which keeps the checksum and whose only work is validating the target reading, and the keep branch of `bytes→mixed` (`contracts/celltypes-and-conversion.md`, *Principle*). Everywhere else, the parser needs the value and not just the verdict, so it still parses. Retrieval validation still raises only on `False`.
@@ -65,7 +66,7 @@ A HashType is a 13-bit integer (`pack`/`unpack`; `HashType.word`). `HashType` is
 
 | Bits | Field | Values |
 |---|---|---|
-| 0–3 | `Kind` | `RAW_BYTES`=0, `NUMPY`=1, `MIXED_OBJECT`=2, `MIXED_ARRAY`=3, `RAW_TEXT`=4, `JSON_OBJECT`=5, `JSON_ARRAY`=6, `JSON_STRING`=7, `JSON_NUMBER`=8, `UNTESTED`=9, `UTF8_UNTESTED`=10, `JSON_UNTESTED`=11 |
+| 0–3 | `Kind` | `RAW_BYTES`=0, `NUMPY`=1, `MIXED_OBJECT`=2, `MIXED_ARRAY`=3, `RAW_TEXT`=4, `JSON_OBJECT`=5, `JSON_ARRAY`=6, `JSON_STRING`=7, `JSON_NUMBER`=8, `UNTESTED`=9, `UTF8_UNTESTED`=10, `JSON_UNTESTED`=11, `JSON_NULL`=12 |
 | 4–5 | `Length` | `SHORT` (<64 bytes), `EQ64` (=64), `MEDIUM` (65–1000), `LONG` (>1000) |
 | 6–7 | `DType` | `NA`, `NUMERIC` (NumPy kinds `biufc`), `NONNUMERIC`, `STRUCTURED` (has fields) |
 | 8–9 | `Rank` | `SCALAR`, `D1`, `D2`, `D3PLUS` |
@@ -92,7 +93,7 @@ A HashType is a 13-bit integer (`pack`/`unpack`; `HashType.word`). `HashType` is
 | `is_numpy` | `NUMPY` |
 | `is_mixed` | `MIXED_OBJECT`, `MIXED_ARRAY` |
 
-`mic` is the most-informative celltype: `RAW_BYTES`/`UNTESTED` → `bytes`; `RAW_TEXT`/`UTF8_UNTESTED` → `text`; `NUMPY` → `binary`; `MIXED_*` → `mixed`; `JSON_OBJECT`/`JSON_ARRAY`/`JSON_UNTESTED` → `plain`; `JSON_STRING` → `str`; `JSON_NUMBER` → `float`.
+`mic` is the most-informative celltype: `RAW_BYTES`/`UNTESTED` → `bytes`; `RAW_TEXT`/`UTF8_UNTESTED` → `text`; `NUMPY` → `binary`; `MIXED_*` → `mixed`; `JSON_OBJECT`/`JSON_ARRAY`/`JSON_NULL`/`JSON_UNTESTED` → `plain`; `JSON_STRING` → `str`; `JSON_NUMBER` → `float`.
 
 **The untested kinds** are placeholders that record less knowledge. `from_buffer`, the only producer, never emits them; they arrive only through `set_hash_type` or from the database, and every rule on this page supports them. Whoever writes one owes the claim that it makes about the whole buffer (*The positive property*).
 
@@ -107,7 +108,8 @@ A HashType is a 13-bit integer (`pack`/`unpack`; `HashType.word`). `HashType` is
    - object → `JSON_OBJECT`; array → `JSON_ARRAY`;
    - string → `JSON_STRING`, plus `NUMERIC_SCALAR` if it parses as a finite float;
    - number → `JSON_NUMBER` + `NUMERIC_SCALAR`;
-   - `true`/`false`/`null` → `JSON_STRING` with no flags (see *Current limitations*);
+   - `true`/`false` → `JSON_STRING` with no flags (see *Current limitations*);
+   - `null` → `JSON_NULL` with no flags, including non-canonical whitespace spellings;
    - not JSON → `RAW_TEXT`.
 
 `Length` is always the byte-length bucket.
@@ -202,7 +204,7 @@ Evaluated in order:
    | `text` | `is_utf8` |
    | `yaml`, `python`, `ipython` | `False` if not `is_utf8`; otherwise `None` (the syntax is the parser's to check) |
    | `plain` | `is_json` |
-   | `str` | `True` for `JSON_NUMBER`, for a `JSON_STRING` with `NUMERIC_SCALAR`, and for a boolean checksum; `None` for any other `JSON_STRING`, which may be a non-canonical spelling of `null` (*Current limitations*); otherwise `False` |
+   | `str` | `True` for `JSON_NUMBER`, `JSON_STRING`, or a boolean checksum; otherwise `False`. The two virtual null checksums were already answered `True` in step 1; other `JSON_NULL` checksums are refused. |
    | `int`, `float` | `False` if `LONG`; otherwise whether `NUMERIC_SCALAR` is set |
    | `binary` | kind `NUMPY` |
    | `mixed` | `False` for `RAW_BYTES`/`RAW_TEXT`; `None` for `MIXED_OBJECT`/`MIXED_ARRAY`, whose payload the producer never read; otherwise `True` |
@@ -253,7 +255,8 @@ Rules, in order:
        - a NumPy word, whatever the source celltype: non-scalar → `False`; `NUMERIC` → `True`; otherwise `None`;
        - `JSON_OBJECT`, `JSON_ARRAY`, `MIXED_OBJECT`, `MIXED_ARRAY` → `False`;
        - `JSON_NUMBER`, or `NUMERIC_SCALAR` set → `True`;
-       - an unflagged `JSON_STRING` → `None`;
+       - an unflagged `JSON_STRING` → `None`, because JSON booleans can convert to numbers;
+       - `JSON_NULL` → `False`, because `int(None)` and `float(None)` fail;
        - `LONG` does not decide this category; the length limit belongs to the deserialization and reinterpretation checks.
      - `mixed→str`: `False` for `JSON_OBJECT`/`JSON_ARRAY`, otherwise `True`.
      - everything else, including `bool` targets: `None`.
@@ -302,7 +305,7 @@ For a reinterpretation the answer *is* `deserializable_as(target)`, which is a p
 These are contract. They are conservative (a `None` or an over-permissive answer): never false rejections, and never false proofs.
 
 - **No remote lookup from synchronous validation inside a running event loop.** With no buffer supplied, `ensure_hash_type` skips the database and returns `None` for a checksum missing from the local cache (*Lookup*). Async `parse_buffer` calls the synchronous `_parse_buffer`, but it passes the buffer, so parse-time validation classifies it locally without a database request. Use `ensure_hash_type_async` when remote-only metadata is needed before a buffer is available.
-- **JSON `true`/`false`/`null` are classified `JSON_STRING`.** For `plain` and `mixed`, path validation therefore sees `{"SEQ"}` and can admit positional access to a scalar; parsing and evaluation still decide whether that access is valid. The classification is not a proof of a JSON string either, which is why `conversion_possible` answers `None` for an unflagged `JSON_STRING` word with an `int`/`float` target: JSON `true`/`false` convert there. Nor is it a proof of a `str` reading. A non-canonical spelling of `null` (`b" null \n"`, `b"null\n\n"`) is also an unflagged `JSON_STRING`, and `str` refuses it. `deserializable_as("str")` therefore answers `None` for every unflagged `JSON_STRING`, so `plain→str` over a non-numeric JSON string fetches and parses its buffer.
+- **JSON `true`/`false` are classified `JSON_STRING`.** For `plain` and `mixed`, path validation can therefore still admit positional access to a boolean; parsing and evaluation decide whether that access is valid. The word does not prove an actual JSON string, and `conversion_possible` answers `None` for an unflagged `JSON_STRING` with an `int`/`float` target because booleans convert there. But every `JSON_STRING` proves a `str` reading: strings and booleans both pass. `JSON_NULL` has no sequence capability. A non-canonical spelling of null (`b" null \n"`, `b"null\n\n"`) receives `JSON_NULL`; its `str` reading is disproved, while the two virtual null checksums still read as `None` without a buffer. With a cached concrete word, `plain→str` over either kind is settled without fetching the buffer.
 - **A Seamless-mixed word proves nothing about a `mixed` reading.** The producer reads only the form header, so `deserializable_as("mixed")` answers `None` for `MIXED_OBJECT`/`MIXED_ARRAY`. As a result, `bytes→mixed` over a Seamless-mixed buffer always fetches and parses it (`contracts/celltypes-and-conversion.md`, *Reformat rules*).
 
 ## Non-goals

@@ -8,7 +8,7 @@ A **Cell is a deferred Expression**: the mutable builder for the same recipe, ei
 
 Expressions and the conversion engine are entangled. Buffer-level conversion results are cached as **empty-path Expressions**, so every conversion that produces a new buffer is recorded under an Expression identity (`contracts/celltypes-and-conversion.md`).
 
-**Read this rule before anything else on this page: an Expression projects, and only then converts.** The path is applied to the input read at `input_celltype`. `celltype` converts *what the path selected*, never the input as a whole. An Expression never converts its input, so it performs at most one conversion, and that conversion is always last. Get this backwards and a path silently means something else (*Application order*).
+**Read this rule before anything else on this page: an Expression projects, and only then converts.** The path is applied to the input read at `input_celltype`. `celltype` converts *what the path selected*, never the input as a whole. An Expression never pre-converts its input, so it performs at most one conversion, and that conversion is always last. Get this backwards and a path silently means something else (*Application order*).
 
 ## Where this page sits: the stack
 
@@ -29,14 +29,12 @@ Code locations:
 | Concern | Module / symbol |
 |---|---|
 | Definition container | `seamless.expression_class` (`Expression`, `normalize_path`, `append_item_path`, `append_slice_path`); re-exported as `seamless.Expression` |
-| Evaluation, cache, placement, deduplication, cancellation | `seamless.checksum.expression` (`ExpressionKey`, `ExpressionEvaluationError`, `evaluate_expression`, `evaluate_expression_async`, `evaluate_expression_remote`, `choose_expression_evaluation_location`, `get_expression_cache`, `parse_path`, `resolve_expression_value`, `softcancel_expression`, `wait_for_active_expression`) |
+| Evaluation, cache, placement, deduplication, cancellation | `seamless.checksum.expression` (`ExpressionKey`, `ExpressionEvaluationError`, `evaluate_expression_local`, `evaluate_expression_local_async`, `evaluate_expression_placed`, `choose_expression_evaluation_location`, `get_expression_cache`, `parse_path`, `resolve_expression_value`, `softcancel_expression`, `wait_for_active_expression`) |
 | Checksum-level pre-validation | `seamless.checksum.hash_type_validation.validate_expression[_async]` |
 | Error envelope | `seamless.error_envelope` (`encode_error`, `decode_error`, `error_kind`, `WorkflowExecutionError`, `RunningLoopRefusal`) |
 | Remote dispatch | `seamless_remote.jobserver_remote.run_expression` / `has_jobserver`, `seamless_remote.daskserver_remote.run_expression` / `has_daskserver`, `seamless_transformer.worker.dispatch_expression` |
 | Server endpoint | seamless-jobserver `GET /run-expression` |
 | Database | seamless-database `Expression` model → table `expression`; request types `expression` (GET/PUT) and `rev_expression` (GET only); protocol `("seamless", "database", "2.3")`. Client: `seamless_remote.database_client.DatabaseClient.set_expression_result`, via `seamless_remote.database_remote.set_expression_result` |
-
-> **Read the evaluation names with care.** `evaluate_expression` and `evaluate_expression_async` are **local-only**, although their names do not say so. `evaluate_expression_remote` is the **dispatching** entry point, and the only one that can decide *local*. `_tempref_expression_result` (formerly `_publish_expression_result`) registers a tempref, marks a buffer the evaluation produced as scratch, and publishes nothing. The full table, and the wrong model these names invite, is in *Fingertipping is exempt from "where the data is"*.
 
 ## The definition
 
@@ -64,7 +62,7 @@ The path is stored as a string and parsed at evaluation time (`parse_path`):
 
 `append_item_path` writes a string key in dotted form when it is a Python identifier, and otherwise in bracket form with `repr()`. Any non-identifier key, including one containing `/`, must therefore be written in bracket form.
 
-Applying a step (`_apply_step`): a string item key indexes a `dict` or a structured NumPy array, and otherwise falls back to `getattr`; any other key indexes. A step that raises becomes an `ExpressionEvaluationError`.
+Applying a step (`_apply_step`): a string item key indexes a `dict` or a structured NumPy array (or one of its records), and **nothing else**. Over any other value it fails. A path never reads an attribute of a value: `.name` is item syntax, not `getattr`. Any other key indexes. A step that raises becomes an `ExpressionEvaluationError`.
 
 A step is one of three kinds: a **string item** (`.name`, `["name"]`), a **positional item** (`[3]`, or any non-string literal) or a **slice** (`[1:4]`).
 
@@ -91,7 +89,7 @@ The order is vacuous in exactly two cases, because there is nothing to sequence:
 
 **Convert-then-project is spellable; it is just not one Expression.** It is the composition of `(input_checksum, "", X, Y)` with `(that result, path, Y, Y)`. The converted parent is a distinct Expression, with its own identity and its own cache entry. Unless `X → Y` is in the checksum-preserving trivial or reinterpret classes of `contracts/celltypes-and-conversion.md`, it also produces its own **new, parent-sized buffer**, which the path then walks. That cost is the point, and it is also why such a pair does not fuse (*Fusion*). The composition is what a Cell builds when `as_celltype` is spelled before a projection.
 
-*Verified:* `_evaluate_expression_after_validation` (`seamless-core/seamless/checksum/expression.py`) deserializes the input buffer at `key.input_celltype` (`_deserialize_for_expression`), applies every parsed step (`_apply_step`), and only then serializes the projected value at `key.celltype` (`_serialize_expression_result`). Nothing on the remote path reorders this: `evaluate_expression_remote`, the jobserver `GET /run-expression` endpoint and `dispatch_expression` all pass `path`, `input_celltype` and `celltype` as three separate fields to the same evaluator, wherever it runs.
+*Verified:* `_evaluate_expression_after_validation` (`seamless-core/seamless/checksum/expression.py`) deserializes the input buffer at `key.input_celltype` (`_deserialize_for_expression`), applies every parsed step (`_apply_step`), and only then serializes the projected value at `key.celltype` (`_serialize_expression_result`). Nothing on the remote path reorders this: `evaluate_expression_placed`, the jobserver `GET /run-expression` endpoint and `dispatch_expression` all pass `path`, `input_celltype` and `celltype` as three separate fields to the same evaluator, wherever it runs.
 
 **Where the rule shows up on other pages.** It is one rule with four consequences, each owned elsewhere:
 
@@ -110,7 +108,7 @@ The order is vacuous in exactly two cases, because there is nothing to sequence:
 - **Wire form.** `Expression.database_key` is `(input_checksum.hex(), path, input_celltype, celltype)`. It raises `ValueError` while the input is not yet a concrete checksum.
 - **Canonical null.** `ExpressionKey` canonicalizes the input checksum against the input celltype on construction, so `sha256(b"")` as `bytes` and the canonical null are one identity (`contracts/celltypes-and-conversion.md`).
 - **Database row.** The seamless-database `Expression` row has exactly this 4-tuple as its **composite primary key**, with `result` as the payload. A second write of the same key with the same `result` is accepted. A second write with a **different** `result` is refused: the stored row is kept, and the server answers HTTP **409** (`"Expression already exists with different result"`).
-- **What the client does on that conflict: it raises nothing.** `DatabaseClient.set_expression_result` returns `False` for that 409, and `database_remote.set_expression_result` reports the write as not done. The evaluation that attempted the write still returns its own result checksum, which it has already recorded in the process-local Expression cache. So a conflicting result is invisible to the caller, and the process cache and the database may disagree about one identity (*Implementation status*: no irreproducible-Expression record exists). Any **other** 4xx/5xx answer to the write raises `ClientConnectionError`.
+- **What the client does on that conflict: it raises nothing.** `DatabaseClient.set_expression_result` returns `False` for that 409, and `database_remote.set_expression_result` reports the write as not done. The evaluation that attempted the write still returns its own result checksum, which it has already recorded in the process-local Expression cache. So a conflicting result is invisible to the caller, and the process cache and the database may disagree about one identity (*Implementation status*: irreproducible Expressions). Any **other** 4xx/5xx answer to the write raises `ClientConnectionError`.
 - **Reverse index.** The same 4-tuple is the **reverse index** that fingertipping walks: `rev_expression` in the database plus the process-local Expression cache. Given a wanted result checksum, Seamless finds the Expressions that produce it, fingertips their inputs and re-evaluates them (`contracts/scratch-witness-audit.md`).
 - **Wire and storage form of the path.** `path` is serialized as **Seamless-`plain`**: canonical bytes, so one path has exactly one stored form. **There is no limit on path length, and no Expression is ever refused for it.** How seamless-database stores a path is internal to that service. Each celltype is stored in a 20-character column. **Identity is over the path itself**, never over an encoding of it.
 
@@ -193,7 +191,7 @@ These are decidable from `input_celltype` and the path **shape** alone, so they 
 | `checksum` | **refused** | **refused** | **refused** | none: a `checksum` is a reference, not a container (`contracts/celltypes-and-conversion.md`: every pair with `checksum` on either side is value-level) |
 | `deepcell`, `deepfolder`, `folder` | **exactly one, as the whole path** | **refused** | **refused** | none: the deep table owns this row (`contracts/deep-celltypes.md`, *Paths*) |
 
-A string item over a text-like celltype is refused rather than left to evaluation, because `_apply_step` would fall back to `getattr` on a `str` object, which does not address a value at all.
+A string item over a text-like celltype is refused at construction rather than left to evaluation: a string has no string-keyed members, so the step could only ever fail.
 
 ### Which refusal happens where
 
@@ -261,13 +259,14 @@ A checksum request keeps the short-circuit: any recorded checksum answers it. Th
 
 **That write is publishing, and it asserts nothing.** Publishing is only the buffer write (*Evaluating, recording identity and publishing*). After a bare `run()` nobody holds the result, and no claim is taken with the write: the entry is written, the requester resolves it, and with nothing increfing it, the buffer is as evictable as any other unheld buffer. Durability still requires an owner, on the requester's side. What matters is that **the write is not the evaluator's decision.** A bare `run()` on a locally placed Expression writes nothing; the same call on a dispatched one writes, because that is the only way the bytes can arrive. A caller that wants no write even then (against a hashserver that is deliberately kept thin, say) uses `execution="local"`, and pays the input transfer instead.
 
-Four consequences, all contract:
+Three consequences, all contract:
 
 - **Locally placed, nothing is written either way.** The buffer is in this process's memory, which is all `run()` needs, so `scratch` has no publication effect on a local evaluation. **The flag is observable only across a dispatch.** The result of an Expression still does not depend on where it ran (*Placement*); only its *persistence side effect* does, and that is the requester's to choose.
 - **`compute()` never causes a write, anywhere.** A client that asks for a checksum and gets one may be unable to resolve it. That is not a defect: it is *A result checksum does not imply a result buffer*, one layer down.
 - **A scratch owner's `.value` may miss, and that is the scratch contract, not a defect.** A scratch Cell whose Expression was dispatched receives a checksum and no buffer. `.buffer` and `.value` resolve and never fingertip (`contracts/cells.md`), so they raise `CacheMissError`, and the explicit route to the bytes is `Cell.fingertip()` / `Pin.fingertip()`. A scratch *transformation* result behaves the same way. An agent that wants a dispatched value with no hashserver write at all has two other options: evaluate locally (`execution="local"`, paying the input transfer that placement avoided), or fingertip.
-- **A non-scratch owner's `.value` can miss too**, when its checksum came from a record whose buffer is gone: the process cache, the database, or a scratch dispatch it joined. That is the price of a cheap `.checksum` (*A value request is answered only by bytes the requester can reach*). `Cell.fingertip()` is the route to the bytes, as for a scratch owner, and a non-scratch Cell then persists what it recovers.
 - **`scratch` is not part of identity, so it is not part of the deduplication key** (*Deduplication*). A dispatch is made under the **strongest request among the members at the moment it is made**: non-scratch wins. A member that joins afterwards and needs more does not change the dispatch retroactively. It resolves the result checksum as usual and, finding no buffer, asks again, non-scratch. Asking again is always safe, because results are content-addressed and failures are not cached (*Expression failures are not cached*).
+
+A non-scratch Cell is not immune either. Under specific circumstances, usually an external eviction or cleanup of the hashserver's directory contents, its buffer and value may be unavailable. `Cell.fingertip()` then restores them, and the Cell, being non-scratch, persists what it recovers.
 
 ## Fusion
 
@@ -278,7 +277,7 @@ An Expression's input may be another Expression, so a recipe is in general a **c
 | adjacent pair | fuses to | when |
 |---|---|---|
 | **path + path** | one Expression, paths concatenated | always |
-| **conversion + path** | one Expression over the *source's* checksum, with `input_celltype` set to the converted celltype | only when the conversion is **checksum-preserving**: the trivial and reinterpret classes of `contracts/celltypes-and-conversion.md` |
+| **conversion + path** | one Expression over the *source's* checksum, with `input_celltype` set to the converted celltype | only when the conversion is **pathless** (its own Expression has an empty path, so what it converts is a checksum) **and checksum-preserving**: the trivial and reinterpret classes of `contracts/celltypes-and-conversion.md`. A conversion that follows a path inside its own Expression converts a value that has no checksum, so it closes the run like any other conversion, whatever its class |
 | **path + conversion** | already one Expression | — |
 | **conversion + conversion** | **never fuses; it stays two Expressions** | — |
 
@@ -293,10 +292,6 @@ So each conversion keeps its own identity 4-tuple and its own cache entry, and t
 
 **A deep step is a barrier and forms no pair.** A one-step path over a deep checksum yields a **child checksum**, so a following path would project into the checksum rather than into what it names. The run ends at the deep step, and anything after it (a further path, or the child's own conversion) is a separate Expression over the child checksum. This is not only a correctness point. `contracts/deep-celltypes.md` restricts the one-step result precisely so that the child's conversion is keyed at the **child's** checksum, and is therefore shared by every parent index that references that child. Fusing it into the parent's Expression would re-key that shared work under each parent.
 
-**Fusion can widen what is defined.** A chain additionally requires each intermediate to be *serializable at its own celltype*; the fused form never serializes it. So a fused Expression succeeds wherever the chain does, sometimes where the chain does not, and where both succeed they agree. Fusing **always** is what makes that difference unobservable, which is why fusion is unconditional rather than an optimization.
-
-**Open: a path, then a checksum-preserving conversion, then a path.** The chain `(root, p1, X, Y)` followed by `(that result, p2, Y, Y)`, where `X → Y` is checksum-preserving, is not covered by the pair table. Its first member already holds a path *and* a conversion, and absorbing the conversion into a single `input_celltype` would change the celltype at which `p1` is walked. Whether this corner fuses, and to what, is **deferred** and not contract. Today it is not fused: `Expression.__post_init__` fuses path + path only when the inner member has no conversion, and conversion + path only when the inner member has no path, so the chain keeps two members. Tests must pin neither answer.
-
 **What an Expression corresponds to.** Not a cell, and not an edge: a **maximal fusible run** of edges. Building a bound Cell's recipe walks its incoming edge backwards, accumulating projecting edges, and closes the run at the first of:
 
 - a **conversion**. A checksum-preserving one is absorbed into the run's `input_celltype`; any other is left outside the run. At most one can ever be absorbed, because an Expression has exactly one `input_celltype`;
@@ -310,8 +305,6 @@ A fused Expression's failure belongs to the node whose recipe it is: the downstr
 
 **Identity.** A collapsed chain has a genuinely different identity. `(root, "[3][1]", X, X)` is not the 4-tuple `(intermediate, "[1]", X, X)`, so it is a different database row and a different cache entry that arrives at the same result checksum. That is not a conflict: the reverse index simply gains a second route to that result (`contracts/scratch-witness-audit.md`). Where a chain does *not* collapse, the outer member's input resolves to the intermediate's checksum, and the key is exactly the one an unfused evaluation would have used.
 
-*Contract ahead of code, for bound Cells only.* The pair rules and the deep barrier are implemented wherever an Expression is constructed over another Expression (`Expression.__post_init__`), which is what a standalone chain builds. The bound walk is not: a Context builds each cell's Expression over its source node's current **checksum** (`Context._build_source_expression`), never over that node's Expression, so no run spans more than one edge and nothing collapses across nodes. `contracts/cells.md`, *Connecting*, owns this gap and its tests.
-
 ## Placement: an Expression is evaluated where the data is
 
 **Placement is contract.** A jobserver or daskserver counts as closer to the hashserver than the client, so an input the client does not hold is evaluated there rather than downloaded. What is contract is the *rule for choosing* where to evaluate. Placement is no more part of an Expression's identity than of a Transformation's: the identity is the 4-tuple, and the result must not depend on where the Expression ran.
@@ -320,7 +313,7 @@ A fused Expression's failure belongs to the node whose recipe it is: the downstr
 
 **`"local"` means *the input buffer is already here***: in this process's memory, or in an explicitly configured read-buffer directory (below). **`"remote"` means *it is not here*, whether or not a backend is available.** `choose_expression_evaluation_location` answers only that question: local if no buffer is needed or if the input buffer is already in process memory, remote otherwise.
 
-Resolution order (`evaluate_expression_remote`):
+Resolution order (`evaluate_expression_placed`):
 
 1. the process-local Expression cache;
 2. the database Expression result;
@@ -335,10 +328,9 @@ Rules:
 
 - **No silent fallback once a *configured* server fails.** Availability is queried without side effects (`has_jobserver()` / `has_daskserver()`). A missing backend downgrades `"auto"` to local *before* dispatch, but connection, restart and evaluation errors from a configured server propagate.
 - **Explicit `"local"` and `"remote"` never fall back.** `"remote"` raises `ExpressionEvaluationError` when `seamless_remote` is unavailable, and `RuntimeError` when no client is configured. `"local"` never dispatches. Only `"auto"` may downgrade.
-- **Client-side dispatch target.** A configured jobserver is used first. A client with no jobserver but a configured daskserver submits the Expression to the Dask scheduler itself. Only `ClientRestartRequiredError` is retried (once, then the next client); a decoded job failure is never retried.
+- **Dispatch target.** A configured jobserver is used first. A client with no jobserver but a configured daskserver submits the Expression to the Dask scheduler itself. A jobserver with a Dask client forwards the Expression to a Dask worker, passing only the identity fields: it never downloads the input in order to forward it. Only `ClientRestartRequiredError` is retried (once, then the next client); a decoded job failure is never retried.
 - **Synchronous evaluation inside a running event loop is refused, not failed.** `Expression.compute()` in a running loop evaluates only when the location is local; otherwise it raises `RunningLoopRefusal`. A standalone Cell getter turns that refusal into `None`, with the Cell left `waiting`, no exception recorded and nothing dispatched. Outside a loop, the synchronous path drives the full asynchronous path through `asyncio.run`.
 - **A dispatched `run()` resolves its result from the hashserver, and step 6 is not an accident of deployment.** It succeeds only because the step-4 request carried the requester's scratch decision and the executing side wrote the end result on its behalf. A dispatched `compute()` carries no such decision and leaves nothing for step 6 to find (*The requester's scratch decision, and what a bare Expression carries*).
-- **A daskserver is a jobserver *mode*, not a competing backend.** Both modes expose the same checksum, error, caching and HashType contracts. In a jobserver, `dispatch_expression` evaluates in-process when no Dask client is configured, and otherwise submits the Expression to a Dask worker, passing only the identity fields. The jobserver does not download the input in order to forward it.
 
 Two derived rules:
 
@@ -349,7 +341,7 @@ Two derived rules:
 
 **This definition of *local* deliberately deviates from the convention.** Elsewhere in Seamless, *local* means this process's memory, and a buffer in storage is not local (`contracts/execution-backends.md`). Placement treats the two stores asymmetrically because it asks where the bytes are *closest*. The hashserver is assumed to be local to the jobserver's or daskserver's file system, so a buffer that is only on the hashserver is closer to the server than to the client, and the Expression goes there. A read-buffer directory is assumed to be local to this process (a remotely mounted read-buffer directory is assumed not to occur), so a buffer there is closest to this process, and the Expression stays here.
 
-The rule concerns the **input** buffer, which is what placement is about. **Resolution already behaves correctly**: `Checksum.resolution()` goes through `buffer_remote.get_buffer`, which queries every configured read *folder* before any read *server* (`seamless-remote/seamless_remote/buffer_remote.py`), so steps 5 and 6 already prefer a local directory. The check is split over two functions: `choose_expression_evaluation_location()` checks process memory, and when it answers remote, `evaluate_expression_remote()` checks the configured read-folder clients before dispatching. A directory hit materializes the input locally and changes the final placement to local.
+The rule concerns the **input** buffer, which is what placement is about. **Resolution already behaves correctly**: `Checksum.resolution()` goes through `buffer_remote.get_buffer`, which queries every configured read *folder* before any read *server* (`seamless-remote/seamless_remote/buffer_remote.py`), so steps 5 and 6 already prefer a local directory. The check is split over two functions: `choose_expression_evaluation_location()` checks process memory, and when it answers remote, `evaluate_expression_placed()` checks the configured read-folder clients before dispatching. A directory hit materializes the input locally and changes the final placement to local.
 
 ### Fingertipping is exempt from "where the data is"
 
@@ -370,15 +362,7 @@ Three things follow, and they are contract:
 
 An optimization remains available and is **not** recommended: remote evaluation followed by immediate hashserver eviction. It buys the projection case at the price of a write that scratch or eviction had excluded, and anything expensive enough to justify it should not have been scratched.
 
-**A naming hazard.** Two readers have already got this backwards. The wrong model is: *"a fingertip chain is only orchestrated locally; each Expression in it is dispatched to where the data is, and each Transformation runs on the server."* Every clause of that is false: the whole chain runs where the buffer is wanted, in the job (case 1) or in the requester (case 2). The function names invite the wrong model:
-
-| Name | What it actually does |
-|---|---|
-| `evaluate_expression_async` | **local only**, despite having no "local" in its name. It calls the local evaluator directly, registering its callers in the same member set that a dispatched evaluation of the same Expression uses (*Deduplication*) |
-| `evaluate_expression` | local only too (the synchronous form) |
-| `evaluate_expression_remote` | **the dispatching entry point**. The one function whose name says "remote" is the only one that can decide *local*, because it takes `execution="auto"` and consults `choose_expression_evaluation_location` |
-| `Checksum.fingertip` | calls the **local** evaluator, so no placement decision is taken anywhere in a fingertip chain |
-| `_tempref_expression_result` | formerly `_publish_expression_result`, a name that did **not** mean "publish" in the sense of *Evaluating, recording identity and publishing*. It registers a tempref, marks a newly produced buffer as scratch, and writes nothing |
+**The wrong model.** *"A fingertip chain is only orchestrated locally; each Expression in it is dispatched to where the data is, and each Transformation runs on the server."* Every clause of that is false: the whole chain runs where the buffer is wanted, in the job (case 1) or in the requester (case 2). `Checksum.fingertip` calls the local evaluator, `evaluate_expression_local_async`, and never `evaluate_expression_placed`, so no placement decision is taken anywhere in a fingertip chain.
 
 What *is* remote-aware in a fingertip is **candidate discovery**. The reverse index is read from the local caches *and* from the database (`get_rev_transformations`, `get_rev_expressions`), so a client with no local cache can still find the chain. And a fingertip *inside* a job (case 1) runs on that job's host. Neither is a counter-example: both are the same rule, that the work happens at the site that wants the buffer.
 
@@ -408,7 +392,7 @@ Two consequences:
 **`materialize=True` is the evaluator-level flag that means: produce the buffer in this process; a recorded result checksum is not an answer unless its buffer is already here.** It has two callers:
 
 - A fingertip. Its target checksum is already known (the reverse-index mapping is *how the candidate was found*), so every short-circuit that answers with a checksum answers the wrong question.
-- A value request (*A value request is answered only by bytes the requester can reach*). It needs the buffer, either locally or, when dispatched, on the executing side before that side writes it. At the dispatching entry point (`evaluate_expression_remote`), `materialize` takes the looser client-level form: a cached checksum answers if its buffer is reachable here *or on the hashserver*. Otherwise the local evaluator is called with `materialize=True`, or the dispatch goes out non-scratch.
+- A value request (*A value request is answered only by bytes the requester can reach*). It needs the buffer, either locally or, when dispatched, on the executing side before that side writes it. At the dispatching entry point (`evaluate_expression_placed`), `materialize` takes the looser client-level form: a cached checksum answers if its buffer is reachable here *or on the hashserver*. Otherwise the local evaluator is called with `materialize=True`, or the dispatch goes out non-scratch.
 
 Its rules:
 
@@ -556,21 +540,16 @@ An Expression whose `input_celltype` or `celltype` is `deepcell`, `deepfolder` o
 
 ## Implementation status and current limitations
 
-This section lists where the code does not yet implement the contract above, or implements it differently. **The contract wins**: the rules above are the test oracle. Each item under *Contract ahead of code (xfail-pinned)* is pinned by an `xfail(strict=False)` test whose reason reads "… contract ahead of code: …". The one gap that has no such test yet is listed separately, and needs one.
+This section lists where the code does not yet implement the contract above, where it implements it differently, and what is still open. **The contract wins**: the rules above are the test oracle.
 
-**Contract ahead of code (xfail-pinned):**
+**Open, not yet ruled:**
 
-- **Bound Cells do not fuse across nodes** (the marker at the end of *Fusion*). Fusion between Expressions is implemented; the bound walk, anonymous nodes and elision are not. `contracts/cells.md` owns this gap and its xfail tests.
-
-**Contract ahead of code, not yet pinned:**
-
-- **Open, not yet ruled: an Expression-produced input is recovered only with the input-fingertip opt-in.** A transformation's input is a checksum request (*The requester's scratch decision*), so when it is dispatched its result is not written, and the process that runs the transformation must recover the bytes by fingertipping. It does so only when the transformation's `__meta__` sets `allow_input_fingertip` (`transformation_namespace.py`). Otherwise it raises `CacheMissError`, unless the buffer happens to be reachable, for example still in the jobserver's memory. Whether an Expression-produced input should be recoverable without the opt-in (one level deep) is not yet ruled.
-- **An explicit `execution="local"` evaluation is never recorded in the database.** `Expression.compute(execution="local")` reaches `evaluate_expression_async`, which never calls `database_remote.set_expression_result` — only `evaluate_expression_remote` does, including when `execution="auto"` places the evaluation locally. This contradicts *Results and caching* and the *Recording identity* row, which say the evaluating process records in both places regardless of where it ran. Likely also true of fingertip, which calls the same local evaluator (untested). Pinned by `seamless-core/tests/test_contract_expressions.py::test_explicit_local_evaluation_also_records_identity_in_the_database`.
+- **An Expression-produced input is recovered only with the input-fingertip opt-in.** A transformation's input is a checksum request (*The requester's scratch decision*), so when it is dispatched its result is not written, and the process that runs the transformation must recover the bytes by fingertipping. It does so only when the transformation's `__meta__` sets `allow_input_fingertip` (`transformation_namespace.py`). Otherwise it raises `CacheMissError`, unless the buffer happens to be reachable, for example still in the jobserver's memory. Whether an Expression-produced input should be recoverable without the opt-in (one level deep) is not yet ruled.
 
 **Current limitations** (not contract violations):
 
 - **Validators are not implemented.** See *Validators are deferred*: supplying `validator` or `validator_language` raises `NotImplementedError` from every evaluation entry point, before any cache lookup.
-- **No irreproducible-Expression record exists.** There is no Expression counterpart of `IrreproducibleTransformation` (`contracts/execution-records.md`). An Expression that yields a different result for the same identity tuple is recorded nowhere, and the database's 409 for it is swallowed by the client (*Identity*).
+- **Irreproducible Expressions normally do not exist.** An Expression runs no user code, so for a given implementation its result is a function of its identity tuple. But the celltype contract under it relies on reference implementations: `orjson` (`plain`, the JSON part of `mixed`), NumPy's `.npy` format (`binary`, the arrays in `mixed`), PyYAML (`yaml`), IPython's input transformer (`ipython`) and CPython's parser (`python`). Drift in one of these, over time or between the hosts an Expression can be placed on, can give one identity two results. There is no Expression counterpart of `IrreproducibleTransformation` (`contracts/execution-records.md`); the database refuses the second result with a 409, which the client does not surface (*Identity*).
 - **The process-local Expression cache is unbounded** and result-only. It is cleared only at process exit or by an explicit `get_expression_cache().clear()`.
 - **A reachability check costs a hashserver query.** Under `scratch=False`, a cached result checksum without a local buffer is confirmed with `buffer_remote.get_buffer_lengths` before it is returned.
 - **Cancellation does not reach the executing side of a dispatch.** Linger expiry cancels the client's shared task, but the jobserver's `run-expression` handler joins its own member set as an anonymous member and is not told, so the remote evaluation runs to completion. For Dask, the register (Appendix A, item 5) records that `dispatch_expression` blocks a default-executor thread until the remote side finishes. This is under-cancellation, which `contracts/cancellation.md` (constraint 2) makes benign; it is reported, not re-verified here.
@@ -579,9 +558,9 @@ This section lists where the code does not yet implement the contract above, or 
 
 *Verified against code (2026-09-24), and implemented:*
 
-- **Expression evaluation does not publish its result buffer.** Every terminal branch of `_evaluate_expression_after_validation` calls `_tempref_expression_result`, which temprefs (a tempref never writes) and marks a buffer it produced as scratch; the input tempref leaves the input's scratch status alone. So a fingertip that recovers a scratch or evicted buffer through an Expression leaves it in local memory only, and the Expression and transformation branches of the walk agree. Identity recording (`_expression_cache`, `set_expression_result`) and HashType registration are kept. Pinned by `seamless-core/tests/test_expression_contract.py::test_expression_evaluation_does_not_publish_without_a_refholder`.
-- **The Expression dispatch carries `scratch`.** `jobserver_remote.run_expression` always sends it, the jobserver `run-expression` handler passes it to `worker.dispatch_expression`, and a non-scratch request ends in an explicit `buffer_remote.write_buffer` of the end result (the Dask path carries it as `expression.scratch`). The table in *The requester's scratch decision* is implemented: `run()` / `expr()` pass `scratch=False`, `compute()` passes `scratch=True`, a Cell passes its own `scratch` with `materialize=False` from its getters and `compute()` alike (standalone through `_available_input_checksum` and `Expression._compute_for_owner`, bound through the Context's projection of the cell node, whose job key includes it), and transformation inputs pass `scratch=True`. `evaluate_expression_remote` and `Expression._evaluate_internal` take `materialize` separately from `scratch`, defaulting to `not scratch` (fixed 2026-09-30; `seamless-core/tests/test_standalone_read_remote_steps.py`). A value request that joined a scratch dispatch already under way and finds no reachable buffer asks once more, non-scratch.
-- **The materialize mode exists.** `evaluate_expression`, `evaluate_expression_async` and `_evaluate_expression_async` take `materialize`. `Checksum.fingertip()` passes it (the old memo-evicting workaround is gone), `worker.dispatch_expression` passes `materialize=not scratch`, and `evaluate_expression_remote` applies the client-level rule for `scratch=False`.
+- **Expression evaluation does not publish its result buffer.** Every terminal branch of `_evaluate_expression_after_validation` calls `_tempref_expression_result`, which temprefs (a tempref never writes) and marks a buffer it produced as scratch; the input tempref leaves the input's scratch status alone. So a fingertip that recovers a scratch or evicted buffer through an Expression leaves it in local memory only, and the Expression and transformation branches of the walk agree. Identity recording (`_record_expression_result`: the process cache and the database) and HashType registration are kept. Pinned by `seamless-core/tests/test_expression_contract.py::test_expression_evaluation_does_not_publish_without_a_refholder`.
+- **The Expression dispatch carries `scratch`.** `jobserver_remote.run_expression` always sends it, the jobserver `run-expression` handler passes it to `worker.dispatch_expression`, and a non-scratch request ends in an explicit `buffer_remote.write_buffer` of the end result (the Dask path carries it as `expression.scratch`). The table in *The requester's scratch decision* is implemented: `run()` / `expr()` pass `scratch=False`, `compute()` passes `scratch=True`, a Cell passes its own `scratch` with `materialize=False` from its getters and `compute()` alike (standalone through `_available_input_checksum` and `Expression._compute_for_owner`, bound through the Context's projection of the cell node, whose job key includes it), and transformation inputs pass `scratch=True`. `evaluate_expression_placed` and `Expression._evaluate_internal` take `materialize` separately from `scratch`, defaulting to `not scratch` (`seamless-core/tests/test_standalone_read_remote_steps.py`). A value request that joined a scratch dispatch already under way and finds no reachable buffer asks once more, non-scratch.
+- **The materialize mode exists.** `evaluate_expression_local`, `evaluate_expression_local_async` and `_evaluate_expression_async` take `materialize`. `Checksum.fingertip()` passes it (the old memo-evicting workaround is gone), `worker.dispatch_expression` passes `materialize=not scratch`, and `evaluate_expression_placed` applies the client-level rule for `scratch=False`.
 - **A failed fingertip reports a bare `CacheMissError`.** Both candidate loops are `except Exception: continue`, and the walk ends in a bare `CacheMissError`. This was once recorded as a defect; it is **ruled to be the contract** (*What a failed fingertip reports*), including for a candidate silently skipped because a mismatched environment recomputed it to a different checksum.
 - **`Cell.fingertip()` and `Pin.fingertip()` exist, and persistence follows the owner.** Both resolve the owner's current result checksum and delegate to `Checksum.fingertip_sync()`. A non-scratch Cell persists the recovered buffer through its own incref, and a scratch Cell does not (`seamless-core/tests/test_contract_reference_lifecycle_late_buffer.py::test_cell_fingertipping_a_held_result_persists_it_only_if_non_scratch`).
 

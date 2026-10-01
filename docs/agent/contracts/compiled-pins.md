@@ -223,7 +223,7 @@ Computing a transformation checksum must not require input buffers. Python trans
 Rules:
 
 - A pre-hash check may reject only what the executor would also reject, with the same exception class and message, and it never changes what is accepted.
-- Pre-hash checks use only sound facts. A `JSON_STRING` HashType word does not prove a JSON string, because JSON `true`, `false` and `null` are classified `JSON_STRING` (`contracts/hashtype.md`). HashType does not record exact dtype, shape, byte order or wildcard sizes, so those checks run in the executor unless the input was a literal.
+- Pre-hash checks use only sound facts. A `JSON_STRING` HashType word does not prove an actual JSON string, because JSON `true` and `false` are also classified `JSON_STRING`; JSON `null` has its own `JSON_NULL` kind (`contracts/hashtype.md`). HashType does not record exact dtype, shape, byte order or wildcard sizes, so those checks run in the executor unless the input was a literal.
 - **The invariant: an invalid input never reaches native compilation or the native call, and never produces a cached result.** An invalid input *may* acquire a transformation checksum when its invalidity cannot be decided without its data.
 - Whether a failure surfaces before hashing or in the executor may depend on local state, such as whether a HashType word is cached. Its class, its message and the resulting node state do not.
 
