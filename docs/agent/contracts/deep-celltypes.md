@@ -244,6 +244,13 @@ Every other entry of the index is unchanged, and the parent's new checksum is th
 
 **Writes below `k` are illegal** — for example, `d["k"]["x"] = v` or `d["k"]["x"].set(v)`. A member is behind a checksum; a write into it would be a write into a different checksum. The exception class is an open question the author has deferred; do not rely on a specific class.
 
+### Bound wiring around the step
+
+- **Writing an ill-formed deep link raises `ValueError`**, the class the Expression constructor uses for a statically ill-formed shape (`contracts/expressions.md`, *Which refusal happens where*). This covers an integer key, a slice, a second step and an illegal deep conversion, and the graph is left unchanged. `set_graph` does not refuse a graph that contains such an entry. The entry is ill-formed, and the cells it feeds are `blocked` with reason `blocked-by-miswiring` (`contracts/node-state-lifecycle.md`).
+- **The reference form must be spelled out.** `ctx.x = ctx.d["k"].as_celltype("checksum")` gives it. Assigning the bare handle `ctx.d["k"]` into an existing `checksum` cell is refused with the wiring rule's `TypeError`, because the handle carries a path at the member celltype and the target would convert behind it (`contracts/cells.md`, *Connecting*).
+- **Built through a handle, the reference form is two Expressions.** The first is the step to the member celltype, which yields the child's own checksum. The second is `member celltype → checksum` over the child. The result checksum equals that of the one-step `→ checksum` Expression in *What the one step yields*, but the identity differs, because the step forms no pair (*Paths*).
+- **A conversion before the step is never elided.** In `ctx.d.as_celltype("deepfolder")["k"]`, the conversion's result is the index that the step reads. The step forms no pair, so the anonymous cell holding the converted index is evaluated (`contracts/cells.md`, *Anonymous cells, symbols and elision*).
+
 ### Graph edges into a deep cell
 
 In the workflow layer, `seamless_workflow.context.PIN_CELLTYPES = {"plain", "mixed", "deepcell", "deepfolder", "folder"}` is — despite its name — about Cells, not transformer pins. It is the set of Cell celltypes that may be the **target of a sub-path edge**, such as the join `ctx.c["k"] = ctx.x`. A sub-path edge into a Cell of any other celltype is refused with `PathError("Cell subvalue connections require a container-capable Cell")`.
@@ -281,9 +288,6 @@ Two consequences follow, and both are contract:
 
 Settled contract that the code does not yet implement, or implements differently. The rules above are the test oracle; each gap below is pinned by an `xfail(strict=False)` test whose reason reads "contract ahead of code". Where the code disagrees with a rule above, the rule above wins.
 
-- **Bound handles keep the deep celltype.** A bound one-step projection `ctx.a["k"]` of a deep `ctx.a` carries the parent's deep celltype instead of the member celltype, so reading it raises `ValueError` ("Illegal deep path … deepcell -> deepcell"). The standalone projection carries the member celltype, as specified (*Handles and writes one step below a deep parent*).
-- **Standalone writes at `k` insert the value, not the member checksum.** Through `d["k"]` on a standalone deep Cell, the checksum, buffer and value forms resolve the member to its value and insert that value into the index. For `deepcell` the index becomes nested and is then refused by the flatness validator ("Deep member 'k' is nested" / "must be a lowercase checksum"); for `deepfolder` and `folder` serialization fails ("Type is not JSON serializable: Buffer").
-- **Bound writes at `k` fail or use the wrong celltype.** Through `ctx.a["k"]`, the checksum forms raise `TypeError: _edit() got an unexpected keyword argument 'input_celltype'` (the general bound sub-path write gap of `contracts/cells.md`, *Implementation status*), the buffer forms are validated at the parent's deep celltype instead of the member celltype (`ValueError` / `HashTypeValidationError`), and the value forms do not produce the member checksum.
 - **`.buffer` at a deep celltype does not check flatness.** `Cell.buffer` only checks that the buffer parses as `plain`; a nested or otherwise non-flat index is returned with no error instead of being refused the way `.value`, a one-step path or pin unpacking would refuse it. A non-JSON buffer is still refused (`HashTypeValidationError`).
 
 **Current limitations** (not contract violations):
@@ -296,7 +300,7 @@ Settled contract that the code does not yet implement, or implements differently
 - Use `deepfolder` when you want to refer to a directory, `folder` only when the consumer needs the bytes. The conversion between them is free, so declare the cheap one and widen late.
 - Reach a single child with the one-step path, `cell["key"]` (bracket form): it yields the child's checksum at the member celltype, or at `checksum` for the reference form. Do not chain a second step or a second conversion into it; apply further conversions as separate Expressions, keyed at the child.
 - Never write a nested deep index. Flat, string keys, 64-hex values. A `deepcell` *member* may be any `mixed` value, dicts and lists included.
-- To change one member, write at `k` (`d["k"].set(v)`, `.checksum =`, `.buffer =`); never write below `k`. Until the gaps under *Implementation status* close, prefer building the whole new index and writing it at the root.
+- To change one member, write at `k` (`d["k"].set(v)`, `.checksum =`, `.buffer =`); never write below `k`.
 - Do not expect null to rescue an illegal deep conversion: an illegal pair fails for null too.
 - Do not expect a decoded-text view of a `folder`. Decode per file with `bytes → text`, or decode the whole folder inside a transformer.
 - Do not depend on the order in which `folder → mixed` resolves children, nor on it being parallel.

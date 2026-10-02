@@ -48,7 +48,7 @@ with Context() as ctx:
 
 - **A named node is created by assignment to a name that does not exist yet.** `ctx.a` afterwards returns a fresh handle for that node.
 - **A name that is not a node is a namespace placeholder, not an error.** `ctx.foo` for an unknown path returns a *view* whose attribute and item access extend the path, so `ctx.foo.bar = 1` creates the node at path `("foo", "bar")`. Item access stringifies its key: `ctx["a"]` and `ctx.a` are the same node.
-- **An anonymous node is created by a bound projection or `as_celltype`.** `ctx.a[3]`, `ctx.a.b` and `ctx.b.as_celltype("plain")` each return a handle to an **anonymous** cell node: it has a symbol and no name, never appears in the Context's attribute namespace, and is reached only through a handle or as the source of an edge. The Context holds it weakly through its symbol entry; edges naming its symbol, and live handles to it, hold it strongly. Handles to the same recipe share one node. Symbols, fusion and elision are `contracts/cells.md`, *Connecting*.
+- **An anonymous node exists while an edge refers to its recipe.** `ctx.a[3]`, `ctx.a.b` and `ctx.b.as_celltype("plain")` each return a handle to the recipe of an **anonymous** cell node: it has a symbol and no name, never appears in the Context's attribute namespace, and is reached only through a handle or as the source of an edge. A handle neither creates nor holds it: it is created, and its symbol assigned, when an edge or another entry first refers to the recipe, and it is held by those references only. References to the same recipe share one node. Symbols, fusion and elision are `contracts/cells.md`, *Connecting*.
 - **`ctx.sub = Context()` declares a namespace**, not a nested runtime: it marks the path as a namespace of *this* Context. Assigning a namespace view copies that subtree. A genuine sub-Context — one with its own controller and its own equilibrium — is out of scope (see *Non-goals*).
 - **`mounts` is reserved.** `ctx.mounts` is the Context's mount API — the external synchronization barrier and the per-mount error map — and assigning to it raises `AttributeError("mounts is reserved for the Context mount API")`. A graph node at that path is refused with `PathError`. See `contracts/mounts.md`.
 - `del ctx.a` deletes the node, and deleting a namespace path deletes its whole subtree. Deleting a node softcancels its remaining run memberships (*Speculation control*).
@@ -60,7 +60,7 @@ with Context() as ctx:
 | `X` | `a` does not exist | `a` is a cell | `a` is a transformer |
 |---|---|---|---|
 | a handle to a **named** node | creates a cell with the source's `celltype` and an edge from the source | replaces the incoming edge (detaching); `a` keeps its own `celltype` and converts into it | **converts `a` to a cell** with an edge from the source, softcancelling its runs and releasing its producers |
-| an **anonymous** handle — a bound projection (`ctx.b[3]`, `ctx.b.x`) or `as_celltype` | **takes the anonymous node over**: it becomes the named node `a`, keeping its `celltype`; the handle assigned becomes a handle to `a`, and every other handle to the old symbol raises `StaleWorkflowHandleError` | adds an edge **from the symbol**, as in the row above; the handle stays anonymous | as in the row above, with an edge from the symbol |
+| an **anonymous** handle — a bound projection (`ctx.b[3]`, `ctx.b.x`) or `as_celltype` | creates a cell with the handle's `celltype`, fed by a **dummy edge** (an identity) from the handle's anonymous node; nothing is renamed, and the handle and every other handle stay valid. On save, the dummy edge of a single link is written as `a`'s own incoming link (`contracts/cells.md`, *Assigning an anonymous handle*) | adds an edge **from the symbol**, as in the row above; the handle stays anonymous | as in the row above, with an edge from the symbol |
 | a standalone **`Cell`** builder | creates a cell from the builder | replaces the cell's configuration (below, for a mounted cell) | `NodeError` |
 | a standalone **`Transformer`** builder | creates a transformer | `NodeError` | replaces the transformer's configuration |
 | a **callable** or a transformer configuration | creates a transformer | `NodeError("Cannot replace a cell node with transformer code")` | sets the transformer's code |
@@ -149,8 +149,6 @@ The Context **launches replacement work immediately and delays only the cancella
 - **Run generations are never reused across a replacement**, and node revisions are bumped for the same reason: a late completion from the old graph can never be mistaken for a run at the same path in the new one.
 - **Graph loading never executes code to reconstruct callables.**
 
-*Contract ahead of code:* `get_graph()` writes format `0.4`, without `anonymous_nodes`, and `set_graph()` refuses a `0.5` graph with `PathError` (*Implementation status*).
-
 ## The Context surface: which calls wait, and which errors mean what
 
 Only the operations this page specifies are listed; handle-level calls are in `contracts/cells.md` and `contracts/pins.md`.
@@ -179,7 +177,7 @@ Only the operations this page specifies are listed; handle-level calls are in `c
 | `ClosedContextError` | a bound handle is used after `close()`. A Context-level call after `close()` is refused with an unspecified exception type |
 | `ControllerFailedError` | ingress is poisoned by an internal continuation failure; only `close()` still works |
 | `ReentrantContextError` | a public Context operation or a bound handle is called from inside a controller turn |
-| `StaleWorkflowHandleError` | a handle — or a barrier — names a node that has been deleted; or a handle to an anonymous node was invalidated because another handle to that node was assigned to a new name |
+| `StaleWorkflowHandleError` | a handle — or a barrier — names a node that has been deleted |
 | `NodeError` | an assignment mismatches the node kind; or `run()` on a **named** node settles in `unwired`, `miswired` or `blocked` (never `compute()`) |
 | `ReadOnlyEndpointError` | a producer operation targets a transformer's result, including `ctx.tf.result = …` |
 | `DependencyError` | a new edge would close a cycle; or a handle — named, anonymous or projection — is assigned into a different Context |
@@ -199,11 +197,9 @@ The rules above are the test oracle; where a design document disagrees with them
 - **A value assigned onto a transformer raises `AssertionError`, not `NodeError`.**
 - **A whole-checksum write is not HashType-validated.** The checksum is installed without checking it against the node celltype (*Writes through the Context*).
 - **`ctx.tf.result = …` raises `AttributeError`, not `ReadOnlyEndpointError`.** `TransformerCore.result` is a property with no setter, so the assignment never reaches the Context's producer check (`contracts/transformers.md`).
-- **Graph format `0.5` has not landed.** `get_graph()` writes `0.4`, and `set_graph()` refuses `0.5` with `PathError` (`contracts/cells.md` and `contracts/mounts.md` carry the same gap).
 - **An empty same-celltype builder keeps the mount.** `ctx.a = Cell(celltype=<same>)` on a mounted cell leaves the attachment active instead of detaching it (`contracts/attachments.md`, `contracts/mounts.md`).
 - **`close()` kills shared runs.** A shared run's background task is owned by the first caller's event loop, so on `Context.close()` every surviving peer receives `ExecutionCanceledError` (`contracts/cancellation.md`, *Implementation status*).
 - **Gaps owned by other pages, which change what this page promises:**
-  - the bound anonymous-cell model is not implemented: a bound projection is a view onto the parent node, a bound `as_celltype` is a standalone snapshot, and there are no symbols, renaming or elision, so handle reads, `.state` and `compute()` on a bound projection follow the parent node and `compute()` waits on the parent's barrier (`contracts/cells.md`);
   - a root edge plus a sub-path edge is accepted, and bound cell targets do not enforce the wiring rule (`contracts/cells.md`);
   - a bound sub-path checksum or buffer write, and a sub-path clear, fail with `TypeError` from `_edit()` (`contracts/cells.md`);
   - a read that fails to materialize a result that exists records the failure, so the node becomes `failed` and later reads answer `None`; and a Context records a parse failure of a cell node's Expression result as the node's failure while deriving it (`contracts/cells.md`);
@@ -233,4 +229,4 @@ The rules above are the test oracle; where a design document disagrees with them
 - **Mandatory preemption.** Reclaiming a slot from a superseded run in favour of a current run elsewhere is, at most, an optional nicety; `prune()` is the supported control.
 - **Epoch-stamping of the invalidation cone.** The cone is marked eagerly; a generation/epoch scheme was considered and rejected.
 - **Storing Cells, Expressions or Transformations.** The Context holds nodes. Anything that looks like a stored Expression is a snapshot it fired and discarded.
-- **Handle identity.** As for Cells and Pins: views are interchangeable, and nothing may be keyed on them. The one place a particular handle matters is renaming: the anonymous handle assigned to a new name becomes that node's handle.
+- **Handle identity.** As for Cells and Pins: views are interchangeable, and nothing may be keyed on them; no operation depends on a particular handle object.

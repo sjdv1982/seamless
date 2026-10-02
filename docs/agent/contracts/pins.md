@@ -209,6 +209,27 @@ TypeError: would convert text -> plain behind a projection.
 
 A failure of this kind is therefore never blamed on execution. The opposite case, where every pin has a valid checksum but the transformer cannot use one of them, is the transformer's own failure: `failed`, with `tf.exception` set. For ordinary transformers that case is a failure of the run itself; for compiled transformers it also includes schema validation of a valid pin value (`contracts/compiled-pins.md`, section 5; `contracts/node-state-lifecycle.md`, *Transformer nodes*).
 
+## Scratch at the pin
+
+**A pin's scratch is derived, never configured, and the transformer's `scratch` plays no part in it.** A transformer's `scratch` governs its *result* only (`contracts/scratch-witness-audit.md`). A pin is an input, and one question decides whether its claim is scratch: can the bytes be recovered where the transformation runs?
+
+- **A literal pin is never scratch.** A literal is a checksum the pin holds itself, however it was written: a value serialized at assignment, the code of a function, or a `Checksum`. Nothing produces it, so nothing can fingertip it, and no other owner holds it. The transformation's definition is always published for the same reason (`contracts/internal/checksum-reference-lifecycle.md`, §8, *The definition write*).
+- **Any other pin is scratch exactly when the transformer fingertips its inputs** (`allow_input_fingertip = True`; `contracts/scratch-witness-audit.md`, *Scratch*). The process that runs the transformation, or that later fingertips its result, then recomputes a missing input itself, so nothing has to be stored for it. Without the opt-in the pin is non-scratch, because that process looks for the bytes in its own memory and on the hashserver, and nowhere else.
+
+**What a pin's scratch decides:**
+
+- **Its claim.** A non-scratch pin holds its input under a non-scratch claim, which publishes it (`contracts/internal/checksum-reference-lifecycle.md`, §8, *Buffer persistence*). A scratch pin's claim writes nothing.
+- **Its request.** A scratch pin asks for a checksum, which is all a transformation's identity needs. A non-scratch pin asks for its input's **value**: a recorded checksum whose buffer cannot be reached does not answer it. Every Expression that produces the input, whether a pin conversion or a link of a bound edge, is requested under the pin's scratch (`contracts/expressions.md`, *The requester's scratch decision*).
+- **`pin.fingertip()`.** It persists the recovered buffer exactly when the pin is non-scratch, as `Cell.fingertip()` does for a non-scratch Cell.
+
+**A non-scratch pin overrules a scratch producer.** When a scratch transformer feeds a non-scratch pin, directly or through cells and Expressions, the pin's need wins and the producer's result is published:
+
+- If the producer's buffer is in this process, the pin's claim publishes it.
+- If the producer ran elsewhere as scratch, its result was never written. The value request reaches the producer and asks for its result again, non-scratch, so the producer runs a second time: the cost that a value request on a scratch result always carries (`contracts/scratch-witness-audit.md`, *Scratch*). A Context knows its graph, so it dispatches a transformer non-scratch from the start when its result feeds a non-scratch pin, and the transformer runs once.
+- Through a projection or a conversion, the producer's whole result is published, not only the part the pin receives, because the Expression in between needs the producer's bytes where it is evaluated.
+
+The way to keep a scratch producer scratch is the opt-in: a transformer that fingertips its inputs has scratch pins, and they overrule nothing. In a Context, every cell the producer's result feeds must be scratch as well, because a non-scratch cell overrules it too (`contracts/cells.md`, *Scratch policy*). That is the common use of scratch, a bulky intermediate regenerated where its consumer runs (`contracts/scratch-witness-audit.md`, *Where a fingertip chain runs*, case 1). Several consumers of one result never conflict, because publishing is per holder: a non-scratch pin publishes the result, and a scratch pin's claim on the same checksum is simply redundant.
+
 ## Reads, state and work
 
 The read API is `CellBase`'s, so `contracts/cells.md` governs what `.checksum` may evaluate, that `.buffer` and `.value` resolve and never fingertip, what `fingertip()` does, how a failure is delivered (reads and `compute()` report, `run()` raises), that materialization failures are never recorded, and how `clear_exception()` works. Only the Pin-specific parts are stated here.
@@ -218,7 +239,7 @@ The read API is `CellBase`'s, so `contracts/cells.md` governs what `.checksum` m
 - `pin.source` is the connected upstream handle, or `None`. `pin.checksum` is the pin's **current converted value**, and `None` when the pin is not complete, as for a Cell.
 - `pin.build()` returns the pin's `Expression`. Standalone, it accepts a one-shot input override; bound, it does not (`TypeError: Pin.build does not accept a replacement input`, and likewise for `compute`).
 - `pin.run()` computes and materializes; under celltype `bytes` it returns raw `bytes`. **It is the pin call that raises** (ruled 2026-09-28; `contracts/cells.md`, *Failures*, *How a failure is delivered*): it re-raises the pin's recorded failure, and raises any failure to materialize the pin's result. Bound, a pin that settles with no checksum for any other reason makes `run()` raise `NodeError` naming the pin's state. `.checksum`, `.buffer`, `.value` and `compute()` answer `None` for a recorded failure and whenever the pin has no checksum. A failure to materialize a result that exists is the exception: `.buffer` and `.value` raise it too, on every read, and never record it (*Pin state*, below); `.checksum` and `compute()` do not materialize, so they return the checksum.
-- **`pin.fingertip()` is `Cell.fingertip()` on a pin**, with the same contract and for the same reason: a Pin is an owner, so a fingertip through it can decide whether the recovered buffer persists, where a bare `Checksum.fingertip()` cannot. It never forces `pin.checksum`, so it is a **no-op returning `None`** when the pin has no result checksum; it returns the recovered **buffer**; and it never records `.exception` (`contracts/cells.md`, *`.buffer` and `.value`*).
+- **`pin.fingertip()` is `Cell.fingertip()` on a pin**, with the same contract and for the same reason: a Pin is an owner, so a fingertip through it can decide whether the recovered buffer persists, where a bare `Checksum.fingertip()` cannot. It persists exactly when the pin is non-scratch (*Scratch at the pin*). It never forces `pin.checksum`, so it is a **no-op returning `None`** when the pin has no result checksum; it returns the recovered **buffer**; and it never records `.exception` (`contracts/cells.md`, *`.buffer` and `.value`*).
 - **`pin.exception` is a string or `None`**, in both modes. Whether every `.exception` string carries the exception class name, as ruled for compiled pins (`contracts/compiled-pins.md`, D5), is deferred.
 
 ### Pin state

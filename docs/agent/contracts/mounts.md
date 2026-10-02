@@ -338,7 +338,7 @@ Unmounting, and what it clears, is in `contracts/attachments.md`, *Attach, detac
 
 ## Graph serialization
 
-- **Format.** The contract format is **`0.5`**, which adds the top-level `anonymous_nodes` table (`contracts/cells.md`, *Connecting*; `contracts/workflow-context.md`). *Contract ahead of code:* `get_graph()` writes `0.4`, and `set_graph()` refuses `0.5` with `PathError`. `0.2`, `0.3` and `0.4` graphs load; an unknown version raises `PathError("Unsupported workflow graph version: …")`.
+- **Format.** The contract format is **`0.5`**, which adds the top-level `anonymous_nodes` table (`contracts/cells.md`, *Connecting*; `contracts/workflow-context.md`). `0.2`, `0.3` and `0.4` graphs load; an unknown version raises `PathError("Unsupported workflow graph version: …")`.
 - **The mount entry** is `{"path", "mode", "authority", "persistent"}` on a cell entry — the spec after normalization, without the driver. Only `driver == "file"` is serialized at all, so manual and widget sessions leave no entry.
 - **Every mount entry is validated by `prepare_graph`, before `mounts` is consulted at all.** Unknown fields, a bad mode or authority, an illegal `file-strict` combination, an unmountable celltype, a `w`/`rw` `deepfolder`, a mount on a non-cell node and a connection into a sensing-mounted node are all refused as `PathError` — **including when `mounts=False`**, because a malformed spec makes the graph malformed whether or not this loader attaches it.
 - **`mounts=False` strips the (valid) specs** and loads the graph as an ordinary one.
@@ -384,7 +384,6 @@ Settled contract that the code does not yet implement, or implements differently
 
 - **`NodeError` is unreachable through the public API.** A missing node yields a `MissingView`, so `ctx.missing.mount(...)` raises `TypeError` (`'MissingView' object is not callable`); a transformer handle has no `mount` member and raises `AttributeError`; a stale handle raises `StaleWorkflowHandleError`. The `NodeError` check exists only inside the controller (`AttachmentRuntime`).
 - **An empty same-celltype builder keeps the mount.** `ctx.a = Cell(celltype=<same>)` on a mounted cell leaves the mount active instead of detaching it and clearing the cell.
-- **Graph format `0.5` has not landed.** `get_graph()` writes `0.4`, and `set_graph()` refuses `0.5` with `PathError` (`contracts/cells.md` and `contracts/workflow-context.md` carry the same gap).
 
 Rough edges that are not contract gaps:
 
@@ -404,7 +403,7 @@ Rough edges that are not contract gaps:
 - `mount-design.md` §17.3, the row "clearing an `r`/`rw` cell's value stays cleared": clearing a mounted cell is **refused** with `AuthorityError("Cannot clear a mounted cell; unmount first")`, in every mode, except through an empty same-celltype builder, which unmounts and clears (*Unmount, persistence and close*).
 - `mount-design.md`'s promise that a `set_graph` does not delete a non-persistent file only "when the new graph re-attaches the same path" is too narrow: a `set_graph` never deletes it.
 - `mount-design.md` §16's "naming is provisional": the names are now fixed.
-- `mount-implementation.md` says graph format `0.3`; the code writes `0.4`, and the contract format is `0.5` (*Graph serialization*).
+- `mount-implementation.md` says graph format `0.3`; the contract format, which the code writes, is `0.5` (*Graph serialization*).
 - `attachments-and-mount-design.md` Part II §21 still discusses a `settled()` predicate and spells the barrier `ctx.mount.sync()` (singular). Both are dead. Where that document and `mount-design.md` differ, this page wins.
 - **Every "legacy Seamless" claim anywhere in the design documents is unverified.** The 0.x characterization never ran, so this page carries **no** comparison with it — including in the decision table, whose "legacy" column is not reproduced here.
 
