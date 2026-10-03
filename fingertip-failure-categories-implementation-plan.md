@@ -270,4 +270,7 @@ Coordinate this step with the ongoing contract discussion. It covers every place
   FROM rev_transformation r JOIN transformation t ON r.checksum = t.checksum
   WHERE r.result != t.result;
   ```
-- **Fingertips in worker children without a database.** Such a fingertip cannot query the database, so it can report `materialization` where its parent would have found candidates. This predates the plan; discovering candidates through the parent would fix it.
+- **Fingertips in worker children without Dask.** Such a fingertip cannot see its parent's candidates: neither the parent's reverse caches nor its database. It tries only the worker's own candidates (the nested transformations the worker itself launched). If those do not recover the buffer, it raises `NotImplementedError` instead of a `CacheMissError` with a category, because the search was incomplete.
+  - **Who is affected:** the workers of an `execution: spawn` client and of a jobserver. The workers of a Dask worker have database access and are not affected.
+  - **What it blocks:** the input fingertip of a transformation with `allow_input_fingertip` that runs in such a worker, when the worker did not launch the input's producer itself.
+  - **The fix:** discover candidates through the parent.
