@@ -19,3 +19,15 @@ continue rejecting a missing cluster.
 Regression: `tests/test_tools_hashserver.py` (4 passed) and
 `tests/test_execution_command.py` (27 passed), each run in its own pytest
 process in the `seamless1` conda environment.
+
+## Database hash type fixture
+
+File: `seamless-database/tests/test_contract_hashtype_db.py`.
+
+Decision: the `unused-kind-12` test case was stale. Kind 12 is the valid
+`JSON_NULL` member, so the test incorrectly expected it to be rejected. The
+fixture now uses unknown kind 13, preserving the malformed-kind check.
+
+Regression: `test_contract_hashtype_db.py` (26 passed) and
+`test_hash_type_tightening.py` (15 passed), each run in its own pytest process
+in the `seamless1` conda environment.
