@@ -52,3 +52,21 @@ non-contract, so no product change is warranted.
 Regression: `test_conversion_engine.py` (50 passed) and
 `test_contract_canonical_bytes.py` (34 passed), each run in its own pytest
 process in the `seamless1` conda environment.
+
+## Core expression evaluation
+
+Files: `seamless-core/tests/test_contract_expressions.py` and
+`seamless-core/tests/test_expression_errors.py`. Regression also covered
+`test_expression_materialize.py`.
+
+Decision: the fingertip tests' fake database module was incomplete. Production
+`database_remote` defines `has_read_database()`, but the fake omitted it. The
+fake now returns false, consistent with its lack of a reverse lookup database.
+The wrong `CacheMissError` checksum was a real product regression: local
+evaluation of a known result with no reachable direct input now reports the
+requested result checksum. The guard is in the local branch so valid remote
+dispatch remains possible.
+
+Regression: `test_contract_expressions.py` (320 passed),
+`test_expression_errors.py` (8 passed), and `test_expression_materialize.py`
+(11 passed), each run in its own pytest process in `seamless1`.
