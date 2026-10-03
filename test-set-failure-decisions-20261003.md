@@ -93,3 +93,24 @@ Regression: `test_core_remote_integration.py` (2 passed),
 `test_hash_type_remote_cache.py` (7 passed), each run in its own pytest
 process in `seamless1`. These pytest files are classified non-remote in the
 source TSV; `simple2.py` did not pass and had no remote service interaction.
+
+## Remote lifecycle and materialization
+
+Files: `seamless-remote/tests/test_contract_reference_lifecycle_linger.py`,
+`test_materialization_waiter_contract.py`, and
+`test_reference_lifecycle_forced_expiry.py`.
+
+Decision: the forced-expiry test called the removed private method
+`Expression._publish_result`; the current private hold method is
+`_hold_result`, so the test reference was stale. Its independent result-claim
+assertions remain. The linger and waiter timeouts exposed a real core bug:
+local expression evaluation rejected an input before `Checksum.resolution()`
+could ask configured read clients for it. That premature guard was removed.
+The stubbed tests had no server connection, so no server log or service cache
+was involved.
+
+Regression: the three assigned files passed (3, 9, and 6 tests). Also passed:
+`seamless-core/tests/test_expression_errors.py` (8),
+`test_expression_materialize.py` (11), and
+`seamless-remote/tests/test_contract_expression_linger.py` (4). Each file ran
+in its own `seamless1` pytest process.
