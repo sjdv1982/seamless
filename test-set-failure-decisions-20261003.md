@@ -139,3 +139,23 @@ scratch; no nested Expression behavior was changed.
 local `cmd-test` service/cache state. Fresh daskserver and hashserver logs had
 no errors. Parent regression also passed the reverse-publish file (2 tests)
 and `test_pin_scratch_contract.py` (15 tests), each in its own pytest process.
+
+## Transformer local reads and execution records
+
+Files: `seamless-transformer/tests/test_cell_transformation_reads.py` and
+`tests/test_execution_records.py`.
+
+Decision: neither test file is faulty or non-contract. The Cell test requires
+checksum and state inspection to leave an unresolved source transformation
+unstarted and the Cell waiting. Core Expression evaluation now returns no
+checksum when `run_source=False` and the source has no result, preserving that
+state contract. The execution-record failures were a closure scoping bug:
+`write_execution_record` assigns the outer probe and compilation contexts
+without declaring them `nonlocal`.
+
+Assigned-file checks passed in separate `seamless1` pytest processes:
+`test_cell_transformation_reads.py` (1 test) and
+`test_execution_records.py` (14 tests). Parent regression also passed
+`test_probe_capture.py` (11 tests) and
+`seamless-core/tests/test_standalone_cell_laziness.py` (11 tests), each in its
+own pytest process.
