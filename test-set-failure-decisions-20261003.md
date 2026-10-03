@@ -114,3 +114,28 @@ Regression: the three assigned files passed (3, 9, and 6 tests). Also passed:
 `test_expression_materialize.py` (11), and
 `seamless-remote/tests/test_contract_expression_linger.py` (4). Each file ran
 in its own `seamless1` pytest process.
+
+## Transformer remote execution and input publication
+
+Files: `seamless-transformer/tests/cmd/manyjobs.sh`, `cmd/simple-dir.sh`, and
+`tests/test_contract_input_side_reverse_publish.py`.
+
+Decision: a bare `manyjobs.sh` run under the classifier's 600-second cap is
+non-contract stress work. Its defaults submit 1,000 jobs of 1,000,000,000 dots
+each, with about 330 seconds of submission delay alone. Its timeout is not
+evidence of a product defect; the stress defaults were left unchanged.
+
+The reverse-publish test setup allowed direct reads from the local cluster's
+shared hashserver folder and used a default `mixed` pin, which wrapped its
+`str` Expression in a scratch intermediate. The test now disables the direct
+read-folder shortcut and types the pin as `str`, so it actually exercises the
+non-scratch pin-facing Expression. Its hashserver publication assertion remains.
+The public `allow_input_fingertip=False` setter also dropped its metadata key;
+it now preserves explicit false so remote dispatch receives the policy. The
+separate scratch-chain contract showed that nested intermediates must remain
+scratch; no nested Expression behavior was changed.
+
+`simple-dir.sh` passed twice for the subagent and once for the parent on cold
+local `cmd-test` service/cache state. Fresh daskserver and hashserver logs had
+no errors. Parent regression also passed the reverse-publish file (2 tests)
+and `test_pin_scratch_contract.py` (15 tests), each in its own pytest process.
