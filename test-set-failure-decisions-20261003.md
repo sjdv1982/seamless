@@ -35,3 +35,20 @@ fixture now uses unknown kind 13, preserving the malformed-kind check.
 Regression: `test_contract_hashtype_db.py` (26 passed) and
 `test_hash_type_tightening.py` (15 passed), each run in its own pytest process
 in the `seamless1` conda environment.
+
+## Core conversion and binary demo
+
+Files: `seamless-core/tests/test_contract_celltypes_conversion.py` and
+`seamless-core/tests/binary.py`.
+
+Decision: the conversion test's exact call count was faulty. Planning calls
+`convert_checksum` to determine whether a buffer is needed, then execution
+calls it again. The test now requires that every observed call has the expected
+conversion pair and retains its result checksum assertions. The full test file
+passed (686 tests). `binary.py` is an intentional failing demo: it writes to a
+read-only array at a line annotated `# error!`; its bare nonzero exit is
+non-contract, so no product change is warranted.
+
+Regression: `test_conversion_engine.py` (50 passed) and
+`test_contract_canonical_bytes.py` (34 passed), each run in its own pytest
+process in the `seamless1` conda environment.
