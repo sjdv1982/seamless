@@ -159,3 +159,27 @@ Assigned-file checks passed in separate `seamless1` pytest processes:
 `test_probe_capture.py` (11 tests) and
 `seamless-core/tests/test_standalone_cell_laziness.py` (11 tests), each in its
 own pytest process.
+
+## Workflow reference ownership
+
+Files: `seamless-workflow/tests/test_contract_reference_lifecycle_anonymous.py`
+and `test_reference_lifecycle_binding.py`.
+
+Decision: the anonymous-node test expected canonical `plain` bytes after a
+`text -> plain` conversion of valid JSON. That conversion preserves the source
+text checksum, so the test now compares the hold to `ctx.b.checksum` while
+retaining its role, count, and value assertions. The binding test called
+`audit_reference_accounting(holders=[ctx])`, which compares the global cache
+against only one holder and omits a live fact `Lease`. It now audits all
+registered holders and retains the no-warning assertion.
+
+The projection-chain cases also exposed a real ownership bug:
+`CellBase._release_refholds` and `_refheld_checksums` read `_input_ref`, which
+delegates to a bound backend after binding. That let a bound cell release a
+checksum it had never acquired as a standalone input. Both lifecycle paths now
+inspect `_standalone_input_ref`, the reference owned by that cell.
+
+Regression: the two assigned files passed (7 and 14 tests), plus
+`test_contract_reference_lifecycle_scratch.py` (8) and
+`seamless-core/tests/test_cell_reference_lifecycle.py` (4), each in its own
+`seamless1` pytest process.
