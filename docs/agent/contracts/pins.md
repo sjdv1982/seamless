@@ -287,18 +287,7 @@ ctx.tf2.pins.y = ctx.tf.pins.x          # TypeError, naming pin.source
 
 ## Implementation status and current limitations
 
-The rules above are the test oracle. Where the code differs, **the contract wins**, and the difference is listed here. Each gap is pinned by an `xfail(strict=False)` test whose reason reads "… contract ahead of code: …" (`seamless-transformer/tests/test_contract_pins.py`, `seamless-workflow/tests/test_contract_pins_bound.py`), unless the entry says otherwise.
-
-- **An optional `folder` or `deepfolder` null leaves `__format__` behind (F1).** When a connected optional pin of either celltype resolves to null, the pin is dropped but its `__format__[pin]` entry stays in the transformation dictionary, so "connected and null" gets a different transformation checksum from "absent" (*The identity rule*). This happens on every route, in both modes.
-- **A required `module` pin fed null from upstream still builds (F3).** The pin correctly reports `failed` with the required-pin message, but `tf().construct()` succeeds: a module pin is stored as celltype `plain` in the transformation dictionary, so `validate_pin_null` lets the null through (*Pin failures*).
-- **Bound `del tf.celltypes.x` resets the pin to `mixed` (F4).** On signature-less code it keeps the pin and its input instead of removing the declaration (*Which pins exist*). Standalone removes it.
-- **A standalone Pin never becomes `miswired` (ruling 5).** After the upstream source of a pin fed through a path is retyped, the pin reports `waiting`, and `tf()` still constructs a transformation (*Pin state*).
-- **A bound handle is accepted on a standalone pin (ruling 1(g)).** `tf.pins.x = ctx.c[0]` on a standalone transformer is accepted rather than refused (*Pins hold checksums, never values*).
-- **Bound `as_celltype` spellings are refused.** `ctx.tf.pins.x = ctx.b[3].as_celltype("plain")` and `ctx.tf.pins.x = ctx.b.as_celltype("plain")[3]` both raise, and so does the symbol-with-path retype check that depends on them: a bound `as_celltype` does not yet return an anonymous cell (`contracts/cells.md`, *Implementation status*).
-- **Waiting inputs are listed in `tf.block_reason`.** Inputs that are `waiting` appear with the value `waiting`, and a `waiting` transformer reports a dict with every input as `waiting` instead of `None` (*Transformer-level reporting*).
-- **A null plain Cell on an optional deep pin is dropped instead of refused.** On an optional `deepcell`, `deepfolder` or `folder` pin, the null crosses the illegal `plain → <deep>` pair and is treated as absence: standalone the transformation builds with the absent identity, and bound the transformer completes (*The identity rule*).
-- **The wiring refusal uses the short text.** The message is `Cannot implicitly convert behind a projection; use as_celltype() before or after projecting`, not the contract format (*Wiring*).
-- **A code-less Bash builder drops an undeclared keyword argument.** `Transformer("bash", direct=True)(input="hi")` with no `input` pin builds without raising and runs the Bash code without the input, which then fails inside Bash (*Call-time arguments*). Pinned by `test_bash_undeclared_keyword_raises_at_build` in `seamless-transformer/tests/test_contract_transformer_builder.py`, not by the pins test files.
+The rules above are the test oracle. The former optional-null identity, required-module-null, declaration deletion, miswiring, anonymous-handle wiring, block-reason and call-time keyword gaps now satisfy the contract. Focused plain tests in `seamless-transformer/tests/test_contract_pins.py`, `seamless-workflow/tests/test_contract_pins_bound.py` and `seamless-transformer/tests/test_contract_transformer_builder.py` cover them. Deep buffer reads validate the mapped celltype and flatness, and materialization failures leave Pin state and transformer block reasons unchanged.
 
 **Current limitations** (out of scope, not gaps):
 

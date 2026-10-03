@@ -174,11 +174,7 @@ For information only, not contract: today these raise, respectively, `TypeError`
 
 ## Implementation status and current limitations
 
-The rules above are the test oracle. The code does not yet do the following; each gap is pinned by an `xfail(strict=False)` test with reason "… contract ahead of code: …".
-
-- **Bound `task()` returns a bare coroutine.** The contract is an `asyncio.Task`, the same as a standalone `task()` returns. Today `BoundTransformerBackend.task` is an `async def`, so `ctx.tf.task()` returns an unscheduled coroutine that does nothing until it is awaited.
-- **`ctx.tf.result = …` raises `AttributeError`, not `ReadOnlyEndpointError`.** `TransformerCore.result` is a property with no setter, so the assignment never reaches the Context's producer check (*Pins and result*; `contracts/workflow-context.md`).
-- **A code-less Bash builder doesn't raise for an unknown keyword.** `Transformer("bash", direct=True)(input="hi")` on a builder with no pin declared for `input` should raise at build time (`contracts/pins.md`, *Call-time arguments*); instead it builds and runs the Transformation, dropping the undeclared keyword, and fails only inside bash for lacking the input.
+The former bound task, read-only result assignment and signature-less call-time keyword gaps now satisfy the contract. Focused plain tests in `seamless-workflow/tests/test_contract_transformer_bound.py` and `seamless-transformer/tests/test_contract_transformer_builder.py` cover them.
 
 ## Non-goals
 

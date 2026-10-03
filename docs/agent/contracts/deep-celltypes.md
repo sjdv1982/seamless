@@ -286,9 +286,7 @@ Two consequences follow, and both are contract:
 
 ## Implementation status
 
-Settled contract that the code does not yet implement, or implements differently. The rules above are the test oracle; each gap below is pinned by an `xfail(strict=False)` test whose reason reads "contract ahead of code". Where the code disagrees with a rule above, the rule above wins.
-
-- **`.buffer` at a deep celltype does not check flatness.** `Cell.buffer` only checks that the buffer parses as `plain`; a nested or otherwise non-flat index is returned with no error instead of being refused the way `.value`, a one-step path or pin unpacking would refuse it. A non-JSON buffer is still refused (`HashTypeValidationError`).
+Deep `.buffer` reads now validate both the mapped `plain` celltype and index flatness, in standalone and bound Cells and Pins. They return the index buffer without resolving its children; failures are raised on each read and leave the owner complete. Focused plain tests cover these routes in the deep-celltype and Pin contract test files.
 
 **Current limitations** (not contract violations):
 

@@ -620,33 +620,11 @@ A Cell whose `celltype` or `input_celltype` is `deepcell`, `deepfolder` or `fold
 
 The rules above are the test oracle; where the code or an older design text disagrees with them, the rules win.
 
-### Gaps: contract ahead of code
+### Contract alignment
 
-Each gap is pinned by an `xfail(strict=False)` test whose reason reads "… contract ahead of code: …", in `seamless-core/tests/` and `seamless-workflow/tests/`. The exception is the failure-delivery gaps under *Reads and failures*, which are pinned by plain tests.
+The former gaps in bound scratch policy, wiring, join conversion, null writes, reads and named barriers now satisfy the contract. Focused coverage is in the Cell alignment tests in `seamless-core` and `seamless-workflow`, the bound Cell and wiring contracts, and the expression-result read tests. These are plain tests; no contract-gap xfail marks remain in those files.
 
-**Bound anonymous-cell model**
-
-- **Bound scratch flag.** A bound projection reports its parent node's `scratch` instead of starting non-scratch, and bound `with_input()` / `with_validator()` drop the flag (*Scratch policy*).
-
-**Wiring and joins**
-
-- **A root edge plus a sub-path edge is accepted**, and in the root-after-sub-path order the sub-path edge is silently dropped (*Cell-level joins*).
-- **Join members are not converted.** Assembly embeds the value at the source's own celltype (*Cell-level joins*).
-
-**Null**
-
-- **Bound empty-`bytes` checksum canonicalization.** Writing the empty-buffer checksum to a bound `bytes` Cell leaves that checksum visible instead of the canonical null; the bound dummy path does not canonicalize. Value and buffer writes, and the standalone checksum write, canonicalize correctly (*Null and `None`*).
-
-**Reads and failures**
-
-The first three gaps below are the delivery rule ruled on 2026-09-28 (*Failures*, *How a failure is delivered*). Their tests are plain tests, not xfails: they fail until the implementation catches up.
-
-- **A failed Cell's reads re-raise, standalone.** `.buffer` and `.value` on a standalone Cell whose evaluation failed re-raise the recorded failure instead of returning `None` (the `CellBase.buffer` and `CellBase.value` getters). Bound named nodes already return `None`.
-- **A read records a materialization failure, in both modes.** A validation or deserialization failure while reading a result that exists makes the Cell `failed`, instead of being raised and leaving it `complete`: standalone through `_handle_materialization_error`, bound through `ingress.controller_method`, which calls `_record_node_error`. Later reads then answer `None`. A Context also records a parse failure of a cell node's Expression result while deriving the node, so a bound `ctx.b = ctx.a.code.as_celltype("python")` over invalid code is `failed` before anything reads it, where the standalone Cell over the same Expression is `complete` (*`.buffer` and `.value`*).
-- **A bound named barrier raises for the outcome.** `compute()` / `computation()` on a named Cell or Transformer re-raises the node's recorded exception when it settles in `failed`, and raises `NodeError` when it settles in `unwired`, `miswired` or `blocked`, instead of returning `None`; `run()` already raises both (*Work*; `contracts/node-state-lifecycle.md`). The deferred-validator refusal is one instance: bound `compute()` raises `WorkflowExecutionError("Expression validators are not implemented yet")`.
-- **Unwired bound builders.** `as_celltype()` / `build()` on an unwired bound Cell raise `ValueError("Cannot build unwired Cell ...")`, whereas the standalone builder returns an unevaluated recipe (*Work*).
-
-The gaps under *Reads and failures*, the bound empty-`bytes` case and the null-retype cases have paired tests in `tests/test_cells_contract_alignment.py` in both `seamless-core` and `seamless-workflow`. For the bound empty-`bytes` and null cases the bound test is the xfail (for null, both are xfail); the delivery gaps are plain tests in both repositories, and also in `seamless-core/tests/test_expression_result_never_undone.py`, `seamless-core/tests/test_contract_deep_celltypes.py`, `seamless-workflow/tests/test_undeserializable_expression_result.py` and the barrier tests of `contracts/node-state-lifecycle.md` and `contracts/workflow-context.md`. The join-member conversion gap and the scalar join `block_reason` are pinned in `seamless-workflow/tests/test_cells_wiring_contract.py`; the first-incomplete-edge half of the `_apply_pending` gap (a progressing first member hides a failed second one) in `seamless-workflow/tests/test_contract_cells_bound.py`. All of these were re-checked against the code on 2026-09-26. The history is in [the alignment report](../../../cells-feature-5-test-alignment.md).
+The remaining named/anonymous Expression fusion gap is tracked in [the carried-gap plan](../../../contract-ahead-of-code-plan.md), with its failing tests preserved in `seamless-workflow/tests/test_contract_cells_handles.py`.
 
 ### Current limitations (not gaps)
 

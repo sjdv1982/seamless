@@ -380,12 +380,9 @@ Stated as current behaviour, with no claim about what any earlier version did:
 
 ## Implementation status and current limitations
 
-Settled contract that the code does not yet implement, or implements differently. The rules above define the test oracle, including the rules explicitly marked *contract ahead of code*; each gap below is pinned by an `xfail(strict=False)` test. Where a design document disagrees with a rule above, the rule above wins.
+The former public `NodeError` and empty-builder detach gaps now satisfy the contract, including missing, non-cell and stale cell handles. Focused plain tests in `seamless-workflow/tests/test_contract_mounts.py` and `test_contract_attachments.py` cover them.
 
-- **`NodeError` is unreachable through the public API.** A missing node yields a `MissingView`, so `ctx.missing.mount(...)` raises `TypeError` (`'MissingView' object is not callable`); a transformer handle has no `mount` member and raises `AttributeError`; a stale handle raises `StaleWorkflowHandleError`. The `NodeError` check exists only inside the controller (`AttachmentRuntime`).
-- **An empty same-celltype builder keeps the mount.** `ctx.a = Cell(celltype=<same>)` on a mounted cell leaves the mount active instead of detaching it and clearing the cell.
-
-Rough edges that are not contract gaps:
+### Current limitations
 
 - **The `ConflictError` message hardcodes "three reasserts in 20 seconds."** Retuning the detector would leave the message stale; treat the message as prose and `isinstance(..., ConflictError)` as the check.
 - **The vocabulary of the code is `mount`, not `attachment`**, all the way down to `Node.mount` and the `_mount_*` handlers, and `AttachmentSpec` carries file fields. See `contracts/attachments.md`, *Implementation status*, for the four places where the generic layer is file-shaped.
