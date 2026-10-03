@@ -29,6 +29,14 @@ This page defines the minimum operational model an agent may rely on when discus
    - Intended for HPC/distributed throughput; can integrate with schedulers (commonly via `dask-jobqueue` on SLURM/OAR).
    - Operationally: typically long-lived/bundled workers execute many tasks (not one scheduler submission per Seamless step).
 
+### Current limitation: fingertipping in a worker needs Dask
+
+In `spawn` and `remote: jobserver`, a transformation runs in a worker process that cannot see its parent's fingertip candidates: neither the parent's reverse caches nor its database. A fingertip in such a worker tries only the producers that the worker itself launched (nested transformations). If those do not recover the buffer, it raises `NotImplementedError`, and the job fails with that error in its traceback. It does not report a `CacheMissError`, because the search was incomplete.
+
+- **What this blocks.** A transformation with `allow_input_fingertip` whose input buffer is absent (a `scratch` result, or an evicted one) fails in `spawn` and `remote: jobserver`, unless the worker launched the input's producer itself.
+- **What still works.** `process` (the fingertip runs in the caller's process, which holds the candidates) and `remote: daskserver` (the workers of a Dask worker can query the database).
+- **This is a limitation, not the contract.** The contract is that an input fingertip inside a job works on every backend (`contracts/scratch-witness-audit.md`, *Case 1*).
+
 ## Expressions are placed, not configured
 
 A jobserver or daskserver also evaluates **Expressions** (the jobserver endpoint is `GET /run-expression`). Three differences from the transformation backends above matter:
@@ -46,7 +54,7 @@ Remote execution — `jobserver` **and** `daskserver` alike — submits work **b
 Consequences an agent may rely on:
 
 - **Inputs are not necessarily uploaded at submission.** They may be **pre-present** — staged by a prior upload, or **by design**, when the client already holds the checksum of a large server-side dataset. Only buffers actually missing on the server are staged (e.g. `--upload`, or `--write-remote-job` which implies it).
-- **Results are durable out-of-process.** A remote run's non-`scratch` results live in the shared hashserver/database independently of the submitting client, so tearing the client down does not lose them. (A `scratch` result is the exception: a scratch transformation may be dispatched, but its result is not stored. It is recomputed at a consumer via input fingertipping, or on the client by `Transformation.run()`, which then runs the transformation a second time — see `contracts/scratch-witness-audit.md`.)
+- **Results are durable out-of-process.** A remote run's non-`scratch` results live in the shared hashserver/database independently of the submitting client, so tearing the client down does not lose them. (A `scratch` result is the exception: a scratch transformation may be dispatched, but its result is not stored. It is recomputed at a consumer via input fingertipping, or on the client by `Transformation.run()`, which then runs the transformation a second time — see `contracts/scratch-witness-audit.md`. Input fingertipping does not yet work on every backend: see *Current limitation: fingertipping in a worker needs Dask* above.)
 - **Materialization is content-addressed, not a side effect.** A worker resolving an input checksum is performing materialization, not "reading whatever is on disk" (see `contracts/identity-and-caching.md`).
 
 ## Testing surface

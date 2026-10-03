@@ -24,7 +24,7 @@
 | `seamless-workflow/seamless_workflow/reactive.py:96-100` (pin conversion) | `scratch=False` | the pin's scratch, as a value request when non-scratch |
 | Context claims on edge-fed pins | none: an edge-fed pin's input is held only by the source node's claim and, during a run, by the Transformation's `input:<pin>` claim | a `transformer:<path>:pin:<pin>` claim under the pin's scratch, for as long as the edge's current value stands (Step 2c) |
 | Context literal pins, code, modules (`context.py` ~:741-759, :921-923, :933-946, `_sync_module_refholds`) | claimed `scratch=False` | unchanged (already right) |
-| Transformer dispatch in a Context (`runtime_api._freeze_transformer`, `scratch=cfg.scratch`) | the node's own scratch | `False` when the result feeds a non-scratch pin, directly or through cells and edges (Step 2d) |
+| Transformer dispatch in a Context (`runtime_api._freeze_transformer`, `scratch=cfg.scratch`) | the node's own scratch | `False` when the result feeds a non-scratch pin or a non-scratch cell, directly or through cells and edges (Step 2d) |
 
 ## Step 1 — seamless-transformer
 
@@ -51,7 +51,7 @@ It applies to **every** link of the edge, the deep step (`_evaluate_deep_step`) 
 
 **2c. Context claims on edge-fed pins.** Hold the converted input of each edge-fed pin under `transformer:<path>:pin:<pin>` with the pin's scratch, released when the edge's value changes or the edge goes. Report it in `_refheld_checksums` (~:1319) like a literal pin's claim. This is what makes "a non-scratch pin holds its input under a non-scratch claim" true in a Context, and it keeps the published input from being an unheld write that nothing protects.
 
-**2d. Producer dispatch.** In the reactive layer, compute a transformer's dispatch scratch as `cfg.scratch and not feeds_non_scratch_pin(path)`, where `feeds_non_scratch_pin` follows edges from the transformer's result through cells (identity or Expression edges, anonymous nodes included) until it reaches transformer pins, and is true if any reached pin is non-scratch. Pass it as `FrozenTransformer.scratch` for the dispatch only; the node's result claim (`node:<path>:current`) keeps `cfg.scratch`. Recompute it when edges or `allow_input_fingertip` change; a change does not by itself invalidate a completed result (the pin's value request covers a result that was never written).
+**2d. Producer dispatch.** In the reactive layer, compute a transformer's dispatch scratch as `cfg.scratch and not feeds_non_scratch_consumer(path)` (`contracts/cells.md`, *Scratch policy*: a non-scratch cell overrules a scratch transformer too), where `feeds_non_scratch_consumer` follows edges from the transformer's result through cells (identity or Expression edges, anonymous nodes included) and is true if any cell it reaches is non-scratch, or any transformer pin it reaches is non-scratch. Pass it as `FrozenTransformer.scratch` for the dispatch only; the node's result claim (`node:<path>:current`) keeps `cfg.scratch`. Recompute it when edges or `allow_input_fingertip` change; a change does not by itself invalidate a completed result (the pin's value request covers a result that was never written).
 
 **2e. Comments.** Update the comments that cite the old rule: `context.py` ~:1864 ("A transformer's pin or code edge is input-side…"), `reactive.py:97`, `pretransformation.py` ("Input-side: a dispatched input is written by the executing side; any recorded checksum answers (lifecycle §1)").
 
@@ -80,4 +80,3 @@ seamless-core, seamless-transformer (including `dask/` and `persistent/`), seaml
 
 - **1a, prepared transformation dicts:** treating every input of a `PreparedPreTransformation` as literal publishes inputs of a re-run that was not asked to publish anything. The alternative is neutral (tempref-only) claims there. Which?
 - **2c:** whether the Context should hold edge-fed pin inputs between runs (this plan says yes) or only during a run.
-- **2d:** a transformer whose result feeds a non-scratch **cell** (not a pin) is not covered by the ruling and keeps today's behaviour: the cell's claim publishes a local buffer, and a dispatched scratch result stays unwritten.
