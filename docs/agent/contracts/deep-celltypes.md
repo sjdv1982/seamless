@@ -131,7 +131,7 @@ Flatness is a property of the **index**, not of the members. A `deepcell` member
 | a checksum-preserving zero-path conversion (`deepcell → deepfolder`, `deepcell → plain`, …) | **no** | **no** |
 | a one-step path | yes | **yes** |
 | reading `.value` at a deep celltype | yes | **yes** |
-| reading `.buffer` at a deep celltype | yes | **contract ahead of code** — see *Implementation status* |
+| reading `.buffer` at a deep celltype | yes | **yes** |
 | `folder → mixed` | yes | **yes** |
 | pin unpacking or result packing (`unpack_deep_structure` / `pack_deep_structure`) | yes | **yes** |
 

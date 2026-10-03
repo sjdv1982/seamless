@@ -268,7 +268,7 @@ The window is **event-driven**, under a **fixed maximum of about five minutes**:
 
 A `computing` node's **own** code or load-bearing metadata is edited, so its identity changes and the old run is reusable only on a revert. No upstream event governs this case. It is a **behavioural bet on a revert**, so a **fixed human-timescale window** is the right shape, **independent of the run's runtime**. Holding a superseded two-hour run for a few seconds is worthwhile precisely because a revert within those seconds saves the whole restart.
 
-**The window is 30 seconds** (ruled 2026-09-21, pending measurement). *Contract ahead of code:* the implemented default is 15 seconds (*Implementation status*).
+**The window is 30 seconds** (ruled 2026-09-21, pending measurement).
 
 **This is its own knob, independent of the Expression linger** (author's ruling 7). The linger of `contracts/expressions.md`, *Cancellation*, keeps a shared Expression evaluation alive briefly after its last requester leaves. The two answer different events, a person reverting an edit versus a requester re-arriving for the same evaluation, so they are not one shared constant, and each may be measured and moved without touching the other.
 
