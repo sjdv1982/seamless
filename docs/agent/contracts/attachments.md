@@ -301,18 +301,11 @@ Only `driver == "file"` is serializable; `AttachmentSpec.to_graph()` raises `Val
 
 ## Implementation status and current limitations
 
-Settled contract that the code does not yet implement, or implements differently. The rules above are the test oracle; each gap below is pinned by an `xfail(strict=False)` test whose reason reads "contract ahead of code". Where the code or an older design text disagrees with a rule above, the rule above wins.
-
-- **A standalone `Cell().mount` loses its message.** It raises a bare `AttributeError('mount')` instead of `AttributeError("mount is only available for bound workflow cells")`: the property's own `AttributeError` is swallowed, and `Cell.__getattr__` raises a new one (*Scope*).
-- **The `NodeError` row of *Scope* is unreachable through the public API.** Mounting a **transformer node** raises `AttributeError`, because the transformer handle has no `mount` member; mounting a **missing node** raises `TypeError`, because `ctx.missing.mount` is a `MissingView` and calling it fails. Neither raises `NodeError("Mounts require an existing whole cell node")`.
-- **Node deletion returns before the transport's cleanup.** `_delete_subtree` does not wait for the unregister future, so when `del ctx.a` returns, the conditional delete of a `persistent=False` file usually has not run yet (*Detach*). Unmounting with `del ctx.a.mount` does wait.
-- **An empty same-celltype builder keeps the attachment.** `ctx.a = Cell(celltype=<same>)` on an attached cell clears the cell but leaves it attached — spec, session and status survive, and `get_graph()` still writes the `mount` entry — instead of detaching it (*Detach*). The cell is left cleared and `unwired` while still attached. The rest already matches the contract: nothing is refused, and the resource is not rewritten.
-- **A cell below a miswired transformer stays `waiting` forever.** `Context._apply_upstream_state` has no branch for `miswired` or `blocked-by-miswiring`, so the transformer's result cell never becomes `blocked` (`contracts/node-state-lifecycle.md`). The actuate rule still holds — the cell is not `complete`, so nothing is delivered — but the cut barrier's graph-quiescence step never completes, so `ctx.mounts.sync()` times out instead of resolving with a report (*The cut barrier*). `ctx.compute()` times out for the same reason.
-- **"No longer a cell" cannot be reached by assigning a transformer.** `ctx.a = f` or `ctx.a = delayed(f)` onto a cell node raises `TypeError` from `_retain_producer`, mounted or not, instead of the `NodeError` of `contracts/workflow-context.md`. The spec stays, which is the contractual outcome of a refused assignment; only the exception type is wrong. Node deletion is the only public path to the post-turn backstop detach (*The durable spec and the ephemeral session*).
+The former scope-message, public `NodeError`, deletion-cleanup, empty-builder detach, downstream miswiring and node-replacement exception gaps now satisfy the contract. They are covered by plain focused tests in `seamless-workflow/tests/test_contract_attachments.py` and `test_contract_mounts.py`.
 
 ### Current limitations
 
-These are properties of the code that the rules above permit, plus one divergence that cannot be reached. None of them is test-pinned as a gap.
+These are properties of the code that the rules above permit. None is test-pinned as a gap.
 
 **The generic layer is file-shaped in four places.** They are why this page is not a plugin API:
 

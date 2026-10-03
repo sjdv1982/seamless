@@ -268,7 +268,7 @@ The window is **event-driven**, under a **fixed maximum of about five minutes**:
 
 A `computing` node's **own** code or load-bearing metadata is edited, so its identity changes and the old run is reusable only on a revert. No upstream event governs this case. It is a **behavioural bet on a revert**, so a **fixed human-timescale window** is the right shape, **independent of the run's runtime**. Holding a superseded two-hour run for a few seconds is worthwhile precisely because a revert within those seconds saves the whole restart.
 
-**The window is 30 seconds** (ruled 2026-09-21, pending measurement). *Contract ahead of code:* the implemented default is 15 seconds (*Implementation status*).
+**The window is 30 seconds** (ruled 2026-09-21, pending measurement).
 
 **This is its own knob, independent of the Expression linger** (author's ruling 7). The linger of `contracts/expressions.md`, *Cancellation*, keeps a shared Expression evaluation alive briefly after its last requester leaves. The two answer different events, a person reverting an edit versus a requester re-arriving for the same evaluation, so they are not one shared constant, and each may be measured and moved without touching the other.
 
@@ -330,27 +330,9 @@ The barrier API itself is in `contracts/workflow-context.md`; only what depends 
 
 ## Implementation status and current limitations
 
-Settled contract that the code does not yet implement, or implements differently. The rules above define the test oracle, including the rules marked *contract ahead of code*. Each gap below is pinned by an `xfail(strict=False)` test whose reason names the section of this page (`seamless-workflow/tests/test_contract_node_state_lifecycle.py`, `seamless-workflow/tests/test_transformer_block_reason.py`). Where a design document disagrees with a rule above, the rule above wins.
+The former state propagation, block-reason shape and precedence, deep-table miswiring, stale-exception, root/sub-path exclusion, compiled failure, named-barrier and repair-message gaps now satisfy the contract. Their focused coverage is in `seamless-workflow/tests/test_contract_node_state_lifecycle.py` and the Pin and wiring contract tests; these are plain tests.
 
-- **Miswiring does not propagate into cells.** A cell fed by a `miswired` transformer, or below a `blocked-by-miswiring` node, stays `waiting` forever, because `Context._apply_upstream_state` has no branch for either. As a result the graph never quiesces, and `ctx.compute()` and `ctx.mounts.sync()` time out. Transformers below a miswiring are derived correctly.
-- **Block-reason precedence is inverted for cell nodes — and only the first incomplete edge is looked at.** `Context._apply_pending` ranks `blocked-by-error` above `blocked-by-unwired`, but in practice it only ever inspects the join's first incomplete edge, so the stated ranking rarely matters. What actually happens: a join whose first edge has errored and second edge is unwired reports `blocked-by-error` where the contract wants `blocked-by-unwired`; a join whose first edge is still computing and second edge is blocked reports `waiting` where the contract wants `blocked`. Transformer derivation follows the contract precedence and looks at every input.
-- **The deep-table rule for `miswired` is not implemented for transformer pins.** A source outside the one-step deep-conversion table (for example a `folder` source feeding a `plain` pin, where `folder → plain` is not in the table) should make the transformer `miswired`. Instead the link is accepted at write time, and if the conversion later fails, the pin's own conversion failure makes the transformer `blocked`/`blocked-by-error` instead. This is the pin-side counterpart of "bound cell targets are never derived `miswired`", below.
-- **A `blocked` transformer can keep a stale `.exception` from a prior failure.** If a transformer fails, and its upstream is then edited so the *upstream* itself fails, the transformer becomes `blocked`/`blocked-by-error` (correctly), but `tf.exception` still returns the old failure instead of `None`. Two causes: `Reactive._derive_transformer` clears `node.exception` only when the node becomes `unwired`, not when it becomes `blocked`; and `BoundTransformerBackend.exception` exposes the stored exception for `blocked` nodes as well as `failed` ones. This holds for ordinary, non-compiled transformers and breaks "blocked: not itself errored".
-- **`block_reason` does not have the ruled shape.**
-  - Waiting inputs are still listed in a transformer's dict, with the value `waiting`, and a waiting node reports a dict instead of `None`.
-  - A join reports a single value, not a dict keyed by edge.
-- **A root edge plus a sub-path edge is accepted**, in both orders; in the root-after-sub-path order the sub-path edge is silently dropped.
-- **Bound cell targets are never derived `miswired`.** Only transformer pins are checked (`contracts/cells.md`, *Implementation status*).
-- **A standalone Pin never becomes `miswired`.** After its projected source is retyped, it reports `waiting`.
-- **The rule-3 split is not implemented for compiled transformers.**
-  - A failed conversion into a compiled pin copies the pin's error into `tf.exception`; the contract is `None`.
-  - A valid value that compiled validation rejects before hashing (for example a JSON list on a `mixed` pin) reports `blocked` with `blocked-by-error`; the contract is `failed`. The same rejection found in the executor already reports `failed`.
-
-  For non-compiled transformers the first row of the rule is implemented: a null on a required pin or a failed conversion leaves the transformer `blocked` with `tf.exception` `None`.
-- **A compiled Stage 1 failure reports `blocked` with `block_reason == {}`**, instead of `failed` with `None`. The diagnostic is already stored as `tf.exception`.
-- **The node barrier raises for the outcome.** `ctx.a.compute()` on a named Cell or Transformer re-raises the recorded exception on `failed` and raises `NodeError` on `unwired`, `miswired` or `blocked`, instead of returning `None`. `run()` already raises both. This gap is pinned by plain tests, not xfails (ruled 2026-09-28; *States as seen through barriers and handles*).
-- **`NodeError` does not name what to repair.** On a miswired node it reads `"Node is miswired: None"`, without the edge and its celltypes, and on an unwired transformer `"Node is unwired: None"`, without the missing pin.
-- **The three hold cases are not implemented as three.** Every supersession gets the same fixed window of case (b), and that window is **15 seconds** (`Scheduler.self_edit_hold_seconds`), not 30. The event-driven upstream-confirmation hold (a) and the completed-downstream retention (c) do not exist yet, and the five-minute figure appears only as a ceiling on the expiry timer. What *is* implemented: the cap of three superseded in-flight runs, eviction by softcancel, reinstatement by re-latching, and `prune` at both scopes.
+The self-edit hold default is the ruled 30 seconds, independently configurable from Expression linger. The upstream-confirmation hold and the completed-downstream retention are bounded by the upstream event under the five-minute backstop, which is its own knob. Focused coverage is in `seamless-workflow/tests/test_contract_upstream_hold.py`. Two points on which this section is silent, and how the code answers them today, are listed for a ruling in [the carried-gap plan](../../../contract-ahead-of-code-plan.md).
 
 **Deferred features and cost properties.** These are not contract gaps, and no test pins them:
 

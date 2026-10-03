@@ -9,7 +9,7 @@ An execution record is a JSON body stored in the `MetaData` table of `seamless.d
 Records exist for three concrete reasons:
 
 1. **Cache lifecycle decisions.** Resource cost (CPU time, memory peak) feeds eviction policy.
-2. **Fingertipping diagnosis.** When fingertipping fails or a result migrates to `IrreproducibleTransformation`, the record is the breadcrumb back to the original execution context.
+2. **Fingertipping diagnosis.** When fingertipping fails, or an automatic observation or manual quarantine records a divergent result, the original execution record is the breadcrumb back to the original execution context.
 3. **Trust under sharing.** When `seamless.db` is shared, the record lets a recipient inspect *in what context was this result produced* without trusting the publisher unconditionally.
 
 Records are **not consulted for cache hits** in normal operation. They are evidence preserved across the moment of execution.
@@ -21,7 +21,7 @@ Seamless is a **referential-transparency system, not a database-integrity system
 Execution records are **evidence about the envelope**, not part of the identity. They exist to make the optimistic null hypothesis (that scientifically meaningful results are invariant under environment variation) falsifiable later. Concretely:
 
 - A metadata conflict is **not** automatically a cache-identity conflict. If two parties have the same `tf_checksum` and same `result_checksum` but different metadata bodies, that is **evidence disagreement about the execution envelope** — informative for audit, but it does not invalidate the cached result.
-- A `result_checksum` mismatch for the same `tf_checksum`, on the other hand, *is* a referential-transparency violation. That is what `IrreproducibleTransformation` is for; metadata travels with the result on migration.
+- A `result_checksum` mismatch for the same `tf_checksum` *is* a referential-transparency violation. An **automatic** `IrreproducibleTransformation` observation records the divergent result without replacing the forward result or moving metadata. A **manual** quarantine moves the normal result and its metadata into the irreproducible table and removes the forward row.
 - During fingertipping, the goal is to *rematerialize* a checksum, not to author a new canonical execution record. Fingertip retries do not displace the original record.
 
 Treat records as a forensic substrate for human or agent investigators when something has gone wrong; do not treat them as a query target or a synchronization point in the normal cache path.
@@ -107,10 +107,12 @@ The five record-mode environment buckets themselves have no equivalent auto-refr
 
 - **Protocol version: 2.3**
 - **`PUT metadata`** (request type): atomically creates `Transformation`, `RevTransformation`, and `MetaData` when missing. Validates identity (`tf_checksum` matches request, `result_checksum` matches request, `schema_version` integer, `checksum_fields` format if present). Identical duplicate is idempotent success; differing duplicate or result mismatch is rejected.
+- **`PUT transformation`**: inserts the forward result and ensures one reverse row. Repeating the same result is idempotent; a different result answers HTTP 409 and leaves both stored rows unchanged.
 - **`GET metadata`**: returns the canonical record body for a `tf_checksum`.
 - **`GET irreproducible`**: returns all rows for a `tf_checksum` (optionally filtered by `result`), each carrying `checksum`, `result`, and `metadata`.
-- **`PUT irreproducible`**: moves a normal entry into `IrreproducibleTransformation`, preserving the metadata body unchanged.
-- Once `IrreproducibleTransformation` rows exist for a `tf_checksum`, `PUT metadata` for that checksum is **rejected** to avoid silently migrating it back.
+- **`PUT irreproducible`, manual mode** (`mode` omitted or `"manual"`): moves the normal entry into `IrreproducibleTransformation`, preserving its metadata body and removing the forward and reverse rows. This is the explicit quarantine operation.
+- **`PUT irreproducible`, automatic mode** (`mode: "automatic"`): requires a forward row with a *different* result, else answers 404 for no forward row or 409 for the same result. It adds one row for the divergent `(tf_checksum, result_checksum)` pair, with empty metadata, and skips duplicate reports. The forward, reverse, metadata, and original execution record remain unchanged. Automatic rows carry no execution record of their own; an investigator runs the candidate separately.
+- `PUT metadata` still refuses a checksum once any irreproducible row exists, including an automatic observation. Runtime recording writes metadata only for a newly inserted forward result, before any automatic observation; an identical result writes nothing. The refusal therefore remains observable to an external caller but is not reached by the normal automatic-report path.
 
 Schema upgrade: a fresh database creates the upgraded `meta_data` table directly. An empty legacy two-column table is dropped and recreated. A non-empty legacy table fails loudly (it must be migrated explicitly).
 
@@ -121,6 +123,7 @@ Schema upgrade: a fresh database creates the upgraded `meta_data` table directly
 - `set_execution_record(tf_checksum, result_checksum, record)` — write a record.
 - `get_execution_record(tf_checksum)` — read a record.
 - `get_irreproducible_records(tf_checksum, result_checksum=None)` — read irreproducible rows.
+- `report_irreproducible_result(tf_checksum, result_checksum)` — report a divergent result in automatic mode; a 404 or 409 returns `False`.
 
 Worker-side payloads carrying the record back from jobserver/daskserver are **structured** (typed dicts); the remote client tolerates legacy string responses for backwards compatibility but new code should expect structured payloads.
 

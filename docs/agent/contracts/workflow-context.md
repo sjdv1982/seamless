@@ -190,20 +190,9 @@ Only the operations this page specifies are listed; handle-level calls are in `c
 
 ## Implementation status and current limitations
 
-The rules above are the test oracle; where a design document disagrees with them, the rules above win. The code does not yet do the following; each gap is pinned by an `xfail(strict=False)` test with reason "… contract ahead of code: …", except the named-barrier gap, which is pinned by plain tests.
+The former named-barrier, node-replacement exception, checksum validation, result assignment, mount detach, shared-run close, wiring, handle-write, materialization and miswiring propagation gaps now satisfy the contract. Focused plain tests cover these in `seamless-workflow/tests/test_contract_workflow_context.py`, the Cell/Pin/node-state contracts, attachment tests and cancellation-policy tests.
 
-- **A named barrier raises for the outcome.** `node.compute()` / `await node.computation()` on a named Cell or Transformer re-raises the recorded exception on `failed`, and raises `NodeError` on `unwired`, `miswired` or `blocked`, instead of returning `None`. `run()` already raises both (*Barriers*; ruled 2026-09-28). Pinned by `test_reading_barrier_reports_a_failure_and_run_raises_it`, `test_named_barrier_returns_the_checksum_or_none_and_run_raises_node_error` and the barrier tests of `contracts/node-state-lifecycle.md`.
-- **A callable or a `Transformer` builder assigned onto a cell raises `TypeError`, not `NodeError`.**
-- **A value assigned onto a transformer raises `AssertionError`, not `NodeError`.**
-- **A whole-checksum write is not HashType-validated.** The checksum is installed without checking it against the node celltype (*Writes through the Context*).
-- **`ctx.tf.result = …` raises `AttributeError`, not `ReadOnlyEndpointError`.** `TransformerCore.result` is a property with no setter, so the assignment never reaches the Context's producer check (`contracts/transformers.md`).
-- **An empty same-celltype builder keeps the mount.** `ctx.a = Cell(celltype=<same>)` on a mounted cell leaves the attachment active instead of detaching it (`contracts/attachments.md`, `contracts/mounts.md`).
-- **`close()` kills shared runs.** A shared run's background task is owned by the first caller's event loop, so on `Context.close()` every surviving peer receives `ExecutionCanceledError` (`contracts/cancellation.md`, *Implementation status*).
-- **Gaps owned by other pages, which change what this page promises:**
-  - a root edge plus a sub-path edge is accepted, and bound cell targets do not enforce the wiring rule (`contracts/cells.md`);
-  - a bound sub-path checksum or buffer write, and a sub-path clear, fail with `TypeError` from `_edit()` (`contracts/cells.md`);
-  - a read that fails to materialize a result that exists records the failure, so the node becomes `failed` and later reads answer `None`; and a Context records a parse failure of a cell node's Expression result as the node's failure while deriving it (`contracts/cells.md`);
-  - a cell fed by a `miswired` transformer, or below a `blocked-by-miswiring` node, stays `waiting` forever, so `ctx.compute()` and `ctx.mounts.sync()` time out (`contracts/node-state-lifecycle.md`).
+Expression fusion satisfies the contract, and a cell bound from a direct Expression over a checksum is wired, and saved, as ordinary links; focused coverage is in `seamless-workflow/tests/test_contract_bound_fusion.py` and `seamless-workflow/tests/test_contract_direct_expression_binding.py`. One case remains: a cell bound from a direct Expression whose innermost input is not a checksum is not saved. It is tracked in [the carried-gap plan](../../../contract-ahead-of-code-plan.md).
 
 **Deferred features and known limitations.** These are not contract gaps, and no test pins them:
 

@@ -122,7 +122,7 @@ The named methods never inherit direct-call sugar. A standalone Transformer appl
 
 This table fixes only whether an operation targets a detached snapshot or the live bound node. Execution, cancellation and error behavior are specified by the Transformation, Context and node-lifecycle contracts.
 
-**`compute()` reports a failure, and `run()` raises it** (ruled 2026-09-28; `contracts/cells.md`, *Failures*, *How a failure is delivered*). In both modes `compute()` / `computation()` return the result checksum, or `None` when there is none, and never raise for a failure or a node state. Standalone, that is `Transformation.compute()`, which sets `.exception` on the Transformation; `Transformation.run()` raises `TransformationError` (`contracts/direct-delayed-and-transformation.md`). Bound, `compute()` is the node barrier: it returns `None` when the node settles in `failed`, `unwired`, `miswired` or `blocked`, and `run()` re-raises the node's recorded exception or raises `NodeError` (`contracts/node-state-lifecycle.md`, *States as seen through barriers and handles*). A direct Transformer's call is `build().run()`, so it raises. *Contract ahead of code, bound:* the barrier still raises both (`contracts/workflow-context.md`, *Implementation status*).
+**`compute()` reports a failure, and `run()` raises it** (ruled 2026-09-28; `contracts/cells.md`, *Failures*, *How a failure is delivered*). In both modes `compute()` / `computation()` return the result checksum, or `None` when there is none, and never raise for a failure or a node state. Standalone, that is `Transformation.compute()`, which sets `.exception` on the Transformation; `Transformation.run()` raises `TransformationError` (`contracts/direct-delayed-and-transformation.md`). Bound, `compute()` is the node barrier: it returns `None` when the node settles in `failed`, `unwired`, `miswired` or `blocked`, and `run()` re-raises the node's recorded exception or raises `NodeError` (`contracts/node-state-lifecycle.md`, *States as seen through barriers and handles*). A direct Transformer's call is `build().run()`, so it raises.
 
 The table holds for direct Transformers exactly as for delayed ones. On a direct Transformer, `build()` returns a Transformation, not a value, and `compute()`, `computation()`, `run()` and `task()` work in both modes. *Verified against code (2026-09-26):* `TransformerCore.build`, `.compute`, `.run`, `.task` and `.computation` use `self.build()`.
 
@@ -174,11 +174,7 @@ For information only, not contract: today these raise, respectively, `TypeError`
 
 ## Implementation status and current limitations
 
-The rules above are the test oracle. The code does not yet do the following; each gap is pinned by an `xfail(strict=False)` test with reason "… contract ahead of code: …".
-
-- **Bound `task()` returns a bare coroutine.** The contract is an `asyncio.Task`, the same as a standalone `task()` returns. Today `BoundTransformerBackend.task` is an `async def`, so `ctx.tf.task()` returns an unscheduled coroutine that does nothing until it is awaited.
-- **`ctx.tf.result = …` raises `AttributeError`, not `ReadOnlyEndpointError`.** `TransformerCore.result` is a property with no setter, so the assignment never reaches the Context's producer check (*Pins and result*; `contracts/workflow-context.md`).
-- **A code-less Bash builder doesn't raise for an unknown keyword.** `Transformer("bash", direct=True)(input="hi")` on a builder with no pin declared for `input` should raise at build time (`contracts/pins.md`, *Call-time arguments*); instead it builds and runs the Transformation, dropping the undeclared keyword, and fails only inside bash for lacking the input.
+The former bound task, read-only result assignment and signature-less call-time keyword gaps now satisfy the contract. Focused plain tests in `seamless-workflow/tests/test_contract_transformer_bound.py` and `seamless-transformer/tests/test_contract_transformer_builder.py` cover them.
 
 ## Non-goals
 
