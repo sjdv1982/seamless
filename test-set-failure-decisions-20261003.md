@@ -70,3 +70,26 @@ dispatch remains possible.
 Regression: `test_contract_expressions.py` (320 passed),
 `test_expression_errors.py` (8 passed), and `test_expression_materialize.py`
 (11 passed), each run in its own pytest process in `seamless1`.
+
+## Remote expression evaluation
+
+Files: `seamless-remote/tests/simple2.py`,
+`test_core_remote_integration.py`, and `test_expression_remote_evaluation.py`.
+
+Decision: the bare `simple2.py` run is non-contract in this checkout. It
+selects no cluster/profile and expects a checksum buffer absent from the
+configured local buffer store. Its cache miss occurs before any server
+connection. No fixture data was invented or seeded.
+
+The integration test's exact asynchronous file-read count was an incidental
+implementation assertion; it retains the checksum and resolved-value checks.
+The expression test fake omitted `get_buffer_lengths`, which production uses
+for reachability checks. Several tests asserted queued database writes before
+the writer flushed. The fake now implements the production API, and the tests
+flush the writer before asserting persistence. No production code changed.
+
+Regression: `test_core_remote_integration.py` (2 passed),
+`test_expression_remote_evaluation.py` (23 passed), and
+`test_hash_type_remote_cache.py` (7 passed), each run in its own pytest
+process in `seamless1`. These pytest files are classified non-remote in the
+source TSV; `simple2.py` did not pass and had no remote service interaction.
