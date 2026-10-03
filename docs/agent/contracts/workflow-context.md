@@ -192,7 +192,7 @@ Only the operations this page specifies are listed; handle-level calls are in `c
 
 The former named-barrier, node-replacement exception, checksum validation, result assignment, mount detach, shared-run close, wiring, handle-write, materialization and miswiring propagation gaps now satisfy the contract. Focused plain tests cover these in `seamless-workflow/tests/test_contract_workflow_context.py`, the Cell/Pin/node-state contracts, attachment tests and cancellation-policy tests.
 
-Remaining Expression fusion and root Expression graph serialization gaps are tracked in [the carried-gap plan](../../../contract-ahead-of-code-plan.md).
+Expression fusion satisfies the contract, and a cell bound from a direct Expression over a checksum is wired, and saved, as ordinary links; focused coverage is in `seamless-workflow/tests/test_contract_bound_fusion.py` and `seamless-workflow/tests/test_contract_direct_expression_binding.py`. One case remains: a cell bound from a direct Expression whose innermost input is not a checksum is not saved. It is tracked in [the carried-gap plan](../../../contract-ahead-of-code-plan.md).
 
 **Deferred features and known limitations.** These are not contract gaps, and no test pins them:
 

@@ -27,10 +27,21 @@ Several pages repeat old gap notes in their *Implementation status* sections. Im
 
 ## Remaining gaps found during reconciliation
 
-These are separate follow-ups, not unfinished original carried entries. No failing plain test was changed to xfail.
+The three gaps first listed here are closed. The upstream-confirmation hold and completed-downstream retention (`node-state-lifecycle.md`) and Expression fusion and elision across named and anonymous intermediates (`cells.md`) are implemented. The root Expression serialization gap (`workflow-context.md`) needed no format change: with fusion in place, a direct Expression that projects and converts in one operation is bound as a path link followed by a conversion link, which fuse back into that Expression, so the cell is saved in the ordinary 0.5 format. Focused tests are plain tests in `seamless-workflow/tests/`: `test_contract_upstream_hold.py`, `test_contract_bound_fusion.py` and `test_contract_direct_expression_binding.py`.
 
-| Page and former line | Implementation work and code owner |
+What is left, found while implementing them:
+
+| Page | Implementation work and code owner |
 |---|---|
-| `node-state-lifecycle.md:355` | Implement the upstream-confirmation hold and completed-downstream buffer retention, each bounded by the upstream event and five-minute backstop, in `seamless-workflow/reactive.py` and `scheduler.py`. All supersessions currently use the 30-second self-edit hold. |
-| `cells.md:234` | Complete Expression fusion/elision across named and anonymous intermediates in `seamless-workflow/context.py` and `graph.py`. `test_contract_cells_handles.py::test_conversion_then_path_is_elided_only_when_checksum_preserving` fails in both cases: the mixed→plain intermediate is evaluated, and a text→plain anonymous recipe has a different build identity from its named counterpart. |
-| `workflow-context.md:144` | Serialize retained root Expression recipes in `seamless-workflow/context.py::get_graph` and restore them in `serialization.py`. `cell_root_expression` is omitted today, including direct Expressions that project into a different result celltype and cannot be represented as the graph's path-only/conversion-only Cell links. Runtime evaluation preserves their original semantics. |
+| `workflow-context.md`, *Graph serialization* | A direct Expression whose innermost input is not a checksum (no input, or a live object such as a Transformation) is still retained as `Node.cell_root_expression` by `Context._replace_cell_from_builder`. It has no durable form, so `get_graph()` omits it and the cell reloads `unwired`. Decide between refusing such a binding and resolving the input to a checksum; owner `seamless-workflow/context.py`. |
+| `cells.md`, *Anonymous cells, symbols and elision* | `seamless-workflow/tests/test_contract_reference_lifecycle_anonymous.py::test_context_holds_anonymous_current_for_a_non_elided_node` fails, as it did before this work. The non-elided `text → plain` intermediate is evaluated and held, but the test expects the canonical `plain` serialization's checksum, and the conversion keeps the JSON-parseable bytes. Either the test's expectation or the conversion is wrong; owner `seamless-core` conversion, or the test. |
+| `workflow-context.md`, `close()` | Closing a Context with a cell bound from a `Cell(source=<direct Expression>)` logs `Refholder decref ignored … refholder count is already zero`, for the source's input and the Expression's result. It predates this work and shows in `test_undeserializable_expression_result.py`; owner `seamless-workflow/context.py::_replace_cell_from_builder` and the release of the bound Cell's holds. |
+
+## Awaiting a ruling: hold kinds where the contract is silent
+
+`node-state-lifecycle.md`, *Speculation*, describes the upstream-confirmation hold for an upstream that is recomputing. The implementation had to answer two cases the section does not state. Both answers keep more work alive rather than less, and neither is yet in the contract page.
+
+- **An upstream change that resolves within the same turn** (a literal edit of an upstream cell, passed on through a same-celltype edge). The downstream's identity changes with every input resolved, so there is no upstream event to wait for. The code gives the superseded run the fixed 30-second window, as before, instead of cancelling it at once as the table's "different output" row would. `test_runtime_and_prune.py::test_node_level_prune_scopes_to_downstream_cone` and the scratch superseded-hold test depend on this.
+- **An upstream that settles without a result** (`failed`, `blocked`, `unwired`). There is no output checksum to compare, so the code keeps the upstream hold until the five-minute backstop, or until `prune()`.
+
+The hold kind is decided once, when the run is superseded: `upstream` when a node feeding it is `waiting` or `computing` at that moment, `self-edit` otherwise.

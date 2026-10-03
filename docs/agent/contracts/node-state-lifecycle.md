@@ -332,7 +332,7 @@ The barrier API itself is in `contracts/workflow-context.md`; only what depends 
 
 The former state propagation, block-reason shape and precedence, deep-table miswiring, stale-exception, root/sub-path exclusion, compiled failure, named-barrier and repair-message gaps now satisfy the contract. Their focused coverage is in `seamless-workflow/tests/test_contract_node_state_lifecycle.py` and the Pin and wiring contract tests; these are plain tests.
 
-The self-edit hold default is the ruled 30 seconds, independently configurable from Expression linger. The remaining upstream-confirmation hold and completed-downstream retention gap is tracked in [the carried-gap plan](../../../contract-ahead-of-code-plan.md).
+The self-edit hold default is the ruled 30 seconds, independently configurable from Expression linger. The upstream-confirmation hold and the completed-downstream retention are bounded by the upstream event under the five-minute backstop, which is its own knob. Focused coverage is in `seamless-workflow/tests/test_contract_upstream_hold.py`. Two points on which this section is silent, and how the code answers them today, are listed for a ruling in [the carried-gap plan](../../../contract-ahead-of-code-plan.md).
 
 **Deferred features and cost properties.** These are not contract gaps, and no test pins them:
 

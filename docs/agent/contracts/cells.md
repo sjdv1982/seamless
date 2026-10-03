@@ -624,7 +624,7 @@ The rules above are the test oracle; where the code or an older design text disa
 
 The former gaps in bound scratch policy, wiring, join conversion, null writes, reads and named barriers now satisfy the contract. Focused coverage is in the Cell alignment tests in `seamless-core` and `seamless-workflow`, the bound Cell and wiring contracts, and the expression-result read tests. These are plain tests; no contract-gap xfail marks remain in those files.
 
-The remaining named/anonymous Expression fusion gap is tracked in [the carried-gap plan](../../../contract-ahead-of-code-plan.md), with its failing tests preserved in `seamless-workflow/tests/test_contract_cells_handles.py`.
+Expression fusion and elision across named and anonymous intermediates satisfy the contract. Focused coverage is in `seamless-workflow/tests/test_contract_bound_fusion.py` and `seamless-workflow/tests/test_contract_cells_handles.py`.
 
 ### Current limitations (not gaps)
 
