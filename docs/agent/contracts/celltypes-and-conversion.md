@@ -94,6 +94,7 @@ Consequences:
 
 - **Identity stays with the checksum.** One value can have several checksums. Examples: `b"true"` and `b"true\n"`; compact and indented JSON for the same object; `b"4.5\n"` read as `int` (value `4`) and the canonical `int` buffer `b"4\n"`.
 - A checksum-preserving conversion (trivial or reinterpret) keeps the source checksum, even when the target celltype's serializer would write different bytes for the resulting value. Seamless never replaces a checksum with the checksum of the re-serialized value. The one exception is empty bytes → null (below).
+- **Canonicalization is asked for, never implicit.** A non-canonical `plain` checksum stays non-canonical until it is converted `plain → text → plain` (*Canonicalizing a `plain` checksum*).
 - **"Deserializable as X"** means the reference parser (`_parse_buffer`) accepts the buffer as X. It does **not** mean that re-serializing the value as X gives back the same checksum.
 
 ## Canonical null
@@ -268,10 +269,21 @@ Every other pair with a deep name on either side is an illegal deep pair and rai
 | `binary→bytes` | Parse as `binary`. **Every** dtype-`S` array, of any shape (a 0-d `S{len}`, a 1-D `S1`, …), becomes `value.tobytes()` in C order, serialized as `bytes`; an empty `S` array therefore gives empty bytes, which is the canonical null. Any array whose dtype is not `S` keeps its `.npy` checksum. |
 | `mixed→bytes` | `.npy` magic: as `binary→bytes`. Otherwise validate as `mixed` and keep. |
 | `plain→text` | Value is a JSON string: new `text` buffer of that string. Otherwise keep. |
-| `text→plain` | Null/boolean checksum, or text that `orjson` accepts: keep. Otherwise: new `plain` buffer holding the text as a JSON string. |
+| `text→plain` | The result is always the **canonical** `plain` buffer of a value. Text that `orjson` accepts: the parsed value. Any other text: the text itself, as a JSON string. The checksum is kept only when the source already is that canonical buffer. A null or boolean checksum is decided without fetching: the canonical ones are kept, and the two spellings without a trailing newline become the canonical ones. |
 | `text→str`, `str→text` | Re-serialize the same value under the target celltype |
 | `yaml→plain` | `yaml.safe_load`, then canonical `plain`. A value with no JSON form raises `SeamlessConversionError`, for example NaN or infinity (`.nan`, `.inf`) or a non-string mapping key. |
 | `ipython→python` | `ipython2python` |
+
+`text → int`, `text → float` and `text → bool` are chains through `text → plain`, so they too return the checksum of the canonical buffer.
+
+### Canonicalizing a `plain` checksum
+
+A checksum-preserving conversion never canonicalizes (*Checksum identity vs values*). A `plain` checksum that came from a foreign buffer, such as a file or `bytes → plain`, therefore stays non-canonical through every trivial and reinterpret rule. **`plain → text → plain` canonicalizes it.** `plain → text` keeps the checksum of every value that is not a string, and `text → plain` then writes the canonical buffer.
+
+- **The `plain` reading does not change.** The result reads as the same value as the source, and its checksum is the one that serializing that value as `plain` gives. What is discarded is everything the reading already ignores: whitespace, key order, the spelling of numbers and string escapes, all but the last of a duplicated key, and the digits of an integer that `orjson` reads as a float (*Reference parser*, *Large integers*).
+- **A top-level string is the exception.** `plain → text` unwraps a string, and `text → plain` reads the text as JSON again. A string whose content is not JSON comes back as itself, canonical. A string whose content is itself JSON does not: `"5"` comes back as the number `5`, `"null"` as null, `"[1]"` as a list.
+- **It is asked for, never implicit.** The two conversions are two Expressions and never fuse (`contracts/expressions.md`, *Fusion*). The second one fetches the buffer, and writes a new parent-sized buffer unless the source is already canonical.
+- **It is idempotent.** Applied to a canonical `plain` checksum, both steps keep it, apart from the string exception above.
 
 ### Possible and value rules
 
@@ -333,7 +345,7 @@ These are contract, not limitations awaiting a fix, and tests pin them. Each is 
 ## Agent guidance
 
 - Compare identities by checksum, never by deserialized value.
-- For values of the same celltype, you can normally assume that one value has one checksum *if the buffer was serialized by Seamless*. For arbitrary files/buffers, you can never assume this.
+- For values of the same celltype, you can normally assume that one value has one checksum *if the buffer was serialized by Seamless*. For arbitrary files/buffers, you can never assume this. To get the canonical checksum of foreign JSON, convert `plain → text → plain` (*Canonicalizing a `plain` checksum*), and mind its exception for a top-level string.
 - Prefer conversions along hierarchy edges (trivial) when you want to avoid buffer I/O; reinterpretations need a parse unless a virtual value or HashType settles them.
 - Do not print `str(checksum)` into machine-readable output; use `.hex()`.
 - Expect `int` readings to truncate, and `bool` readings to accept only canonical boolean checksums.
