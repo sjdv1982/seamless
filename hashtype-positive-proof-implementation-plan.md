@@ -158,7 +158,7 @@ On `set_hash_type` / `set_hash_type_remote`: an untested word is a claim about t
 
 - **Reformat branches that a proof could settle:**
   - `bytes→binary` over a `NUMPY` word: keep;
-  - `text→plain` over a JSON word: keep;
+  - ~~`text→plain` over a JSON word: keep~~ — no longer possible: `text→plain` canonicalizes, and a word cannot tell whether a JSON buffer is canonical;
   - `binary→bytes` / `mixed→bytes` over a `NUMPY` word with a `NUMERIC`/`STRUCTURED` dtype: keep;
   - `plain→text` over `JSON_OBJECT`/`JSON_ARRAY`/`JSON_NUMBER`: keep.
 
