@@ -12,7 +12,7 @@ license = "MIT"
 license-files = ["LICENSE.txt"]
 authors = [{name = "Sjoerd de Vries"}]
 dependencies = [
-    "seamless-core>=0.1.4",
+    "seamless-core>=0.2",
     "seamless-config>=0.3.3",
     "seamless-remote>=0.5.0",
     "seamless-transformer[compiled]>=0.7.0",
