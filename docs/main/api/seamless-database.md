@@ -12,13 +12,27 @@ The database stores the following kinds of records:
 |-------|---------|
 | **Transformation** | Maps a transformation checksum to its result checksum |
 | **RevTransformation** | Reverse lookup: finds which transformations produced a given result |
-| **BufferInfo** | Stores buffer metadata (length, dtype, encoding, etc.) for a checksum |
+| **HashType** | Stores the packed checksum classification word used by new HashType validation and conversion checks |
 | **SyntacticToSemantic** | Maps between syntactic and semantic checksums per celltype |
-| **Expression** | Caches expression evaluation results (input checksum + path + celltype → result checksum) |
+| **Expression** | Caches expression evaluation results keyed by `(input_checksum, path, input_celltype, celltype)` |
 | **MetaData** | Stores a canonical execution record for each successful, non-probe transformation |
 | **IrreproducibleTransformation** | Records transformations whose results are not reproducible; metadata is preserved on migration |
 
-All data is persisted in a single SQLite file (typically `seamless.db`). The current protocol version is **2.1**.
+All data is persisted in a single SQLite file (typically `seamless.db`). The current protocol version is **2.3**.
+
+## Expression cache schema
+
+Expression `input_celltype` describes the input checksum's interpretation;
+`celltype` describes the produced result. Both are part of the composite cache
+key. Database, jobserver, remote client, and Dask payloads use those same names.
+The unreleased old `celltype`/`target_celltype` keys are not accepted aliases.
+Existing development caches need these statements, in order, or a recreated
+expression cache table:
+
+```sql
+ALTER TABLE expression RENAME COLUMN celltype TO input_celltype;
+ALTER TABLE expression RENAME COLUMN target_celltype TO celltype;
+```
 
 ## Execution records
 
