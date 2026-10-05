@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <link rel="shortcut icon" href="../img/favicon.ico" />
+    <title>seamless-workflow - Seamless</title>
+    <link rel="stylesheet" href="../css/theme.css" />
+    <link rel="stylesheet" href="../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "seamless-workflow";
+        var mkdocs_page_input_path = "api/seamless-workflow.md";
+        var mkdocs_page_url = null;
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href="../index.html" class="icon icon-home"> Seamless
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../index.html">Home</a>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Getting Started</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../getting-started.html">Wrapping Python and bash</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../cluster.html">Setting up a local cluster</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../seamless-mode.html">Seamless mode</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">How-To Guides</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../caching.html">Caching, identity, and sharing</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../composition.html">Composition</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../parallelism.html">Local parallelism</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../remote.html">Remote execution</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../hpc.html">HPC specifics</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../remote-launch.html">Remote job launching</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../sharing.html">Sharing in depth</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../compiled-transformers.html">Compiled transformers</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../compression.html">Compressed data</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../service-management.html">Service management</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Reference API</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="index.html">Overview</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="seamless-core.html">seamless-core</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="seamless-transformer.html">seamless-transformer</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="seamless-config.html">seamless-config</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="seamless-remote.html">seamless-remote</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="seamless-dask.html">seamless-dask</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="seamless-jobserver.html">seamless-jobserver</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="seamless-database.html">seamless-database</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="remote-http-launcher.html">remote-http-launcher</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Python docstrings</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="reference/seamless.html">seamless</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="reference/seamless.checksum_class.html">Checksum</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="reference/seamless.buffer_class.html">Buffer</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="reference/seamless.transformer.html">seamless.transformer</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="reference/seamless_transformer.transformation_class.html">Transformation</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="reference/seamless_transformer.transformer_class.html">Transformer properties</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="reference/seamless_config.select.html">seamless.config.select</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="reference/seamless_config.tools.html">seamless.config.tools</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >CLI docstrings</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="reference/seamless-run.html">seamless-run</a>
+                </li>
+    </ul>
+                  </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Seamless</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../index.html" class="icon icon-home" aria-label="Docs"></a></li>
+      <li class="breadcrumb-item active">seamless-workflow</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h1 id="seamless-workflow">seamless-workflow</h1>
+<p>Reactive workflow <code>Context</code> layer for Seamless.</p>
+<p>Context nodes are exposed through the canonical <code>seamless.Cell</code> and
+<code>seamless_transformer.Transformer</code> handles. The experimental wrapper/view surface
+described by the earlier context handoff documents is superseded by
+<a href="https://github.com/sjdv1982/seamless/blob/main/seamless-workflow/../seamless/context-internals-followup-plan.md"><code>context-internals-followup-plan.md</code></a>.</p>
+<p>Construct cells with <code>Cell("int")</code> or <code>Cell(celltype="int")</code>; the default type
+is <code>"mixed"</code> without a typed source. Initial references are keyword-only, for example
+<code>Cell("int", checksum=checksum)</code>. Assign values with <code>.set(value)</code>.</p>
+<p><code>celltype</code> is the output type; <code>input_celltype</code> is read-only and follows the
+source or the constant's declared serialization type. Creating <code>ctx.a = ctx.b</code>
+copies <code>b.celltype</code> once. Rewiring an existing cell retains its type. Retyping
+converts the original input; <code>.build().run()</code> agrees with <code>.value</code>. A cell's own
+conversion failure reports <code>failed</code> with <code>.exception</code>.</p>
+<p><code>cell.source</code> reports the configured source. On a projection it reports the edge
+at that path, else the nearest enclosing source, else None. <code>.checksum</code> reads
+the produced checksum. Public <code>input_ref</code> and <code>target_celltype</code> are retired.</p>
+<p><code>ctx.tf.pins.x</code> returns a fresh Pin, also when unwired. Read <code>.value</code>, <code>.checksum</code>,
+<code>.buffer</code>, <code>.source</code>, <code>.input_celltype</code>, <code>.state</code>, or <code>.exception</code> explicitly.
+<code>pin.celltype</code> and <code>ctx.tf.celltypes.x</code> are linked. Pins convert their original
+inputs before transformation construction; a failed conversion leaves the Pin
+failed and the Transformer blocked on its name. A Pin is not a source; connect
+<code>pin.source</code>. There are no sub-pin targets, validators, or mounts.</p>
+<p>For Cells and Pins, <code>.value</code>, <code>.buffer</code>, and <code>.checksum</code> assignments declare a
+new input and detach connections; <code>set</code>, <code>set_buffer</code>, and <code>set_checksum</code> check
+ownership. <code>set_checksum(cs, input_celltype=...)</code> declares the input encoding.
+<code>.value = None</code> stores canonical null; <code>.buffer = None</code> and <code>.checksum = None</code>
+clear the input. All Cell types allow null. Required pins allow null only for
+plain/mixed/bytes; optional pins of any type drop null before conversion.
+A connected optional pin whose upstream has no checksum blocks.</p>
+<p><code>del ctx.a</code> deletes a node. <code>del ctx.tf.pins.x</code> deletes a declaration only for
+signatureless code; use <code>.checksum = None</code> to clear a fixed-signature pin.</p>
+<p>Whole Context cells can be mounted to files:</p>
+<pre><code class="language-python">from seamless.workflow import Cell, Context, Transformer
+
+with Context() as ctx:
+    ctx.config = Cell(&quot;plain&quot;)
+    ctx.config.mount(&quot;config.json&quot;)
+    ctx.output = Cell(&quot;text&quot;)
+    ctx.output.set(&quot;ready&quot;)
+    ctx.output.mount(&quot;output.txt&quot;, mode=&quot;w&quot;)
+    report = ctx.mounts.sync(timeout=10)
+</code></pre>
+<p><code>mount(path, mode="rw", authority="file", persistent=True)</code> blocks through the
+initial read and first write attempt. Modes are <code>r</code>, <code>w</code>, and <code>rw</code>. Authority
+chooses the initial winner; subsequent file edits are authoritative inputs in
+sensing modes. A missing path supplies no value, while zero-byte and <code>null\n</code>
+files supply null. At mount time, missing, zero-byte, and an empty directory do
+not override an existing cell value. A sensing mount on a cell without a value
+installs null; <code>file-strict</code> instead fails when the path is missing. Invalid or
+unreadable input fails the cell, preserves its stored last good value, and
+continues monitoring. Delivery failures appear on <code>ctx.output.mount.error</code> and
+retry with backoff; they do not invalidate the cell's value.</p>
+<p><code>ctx.compute()</code> waits only for graph work. Call <code>ctx.mounts.sync()</code> before
+reading mounted outputs externally, or <code>await ctx.mounts.synchronization()</code> in
+async code. The returned mapping contains status and errors per node path.
+Synchronization establishes a finite filesystem cut; continuously changing
+external files can prevent completion, so interactive clients can set a timeout.</p>
+<p>Use <code>del ctx.config.mount</code> to unmount. <code>persistent=False</code> conditionally deletes
+unchanged files at unmount or close. Explicit Context close flushes already
+requested persistent deliveries, bounded by <code>close(timeout=60)</code>. A foreign
+modification is never deleted based solely on its path. Two incompatible mounts
+of overlapping paths within one process are refused. Write-only mounts pause
+after three foreign-write reassertions in 20 seconds; inspect <code>.mount.error</code> and
+call <code>.mount.clear_error()</code> to resume.</p>
+<p>Null writes truncate an existing file to zero bytes, including <code>.gz</code> and <code>.zst</code>
+paths, but do not create a missing file. Deleting a sensed file preserves the
+stored cell value; under <code>file-strict</code> it raises a recoverable sense error. An
+initially empty directory supplies no value, while a directory emptied after
+mounting reads as <code>{}</code>. Directory null delivery leaves the tree in place and the
+mount out of sync. Clearing a mounted cell is refused; unmount first. These rules
+are separate from explicit nonpersistent unmount cleanup.</p>
+<p>Text/code, JSON scalar/plain, bytes, binary, and mixed celltypes are supported.
+<code>.gz</code> and <code>.zst</code> paths compress canonical bytes. <code>folder</code> and <code>deepfolder</code> use
+directories, with per-leaf atomic replacement. <code>folder</code> mounts in <code>r</code>, <code>w</code> or
+<code>rw</code>; <code>deepfolder</code> is read-only (sensing) and may only be mounted with
+<code>mode="r"</code>. Directory trees are not replaced
+atomically. Mounts follow a target symlink and preserve it; atomic file writes
+break hardlink sharing. Cross-process exclusion and filesystem aliases such as
+hardlinks are not covered by the registry.</p>
+<p>Graphs retain mount specifications (format <code>0.4</code>). Legacy 0.2/0.3 graphs load
+only when <code>target_celltype</code> is absent or equals <code>celltype</code>; conflicting graphs
+raise <code>PathError</code>. Constant producers retain their input encoding as <code>value.celltype</code>. <strong>Loading a graph can write
+files:</strong> use <code>ctx.set_graph(graph, mounts=False)</code> for graphs of unknown origin.
+Sensing cells cannot receive incoming edges; mounted celltypes cannot change.
+Unmount first. Standalone cells, sub-path projections, transformer pins and code
+handles cannot be mounted directly: mount a whole cell and connect it instead.</p>
+<p>The transport currently uses polling and a bounded daemon I/O pool. Diagnostics
+include <code>seamless_workflow.diagnostics.record_attachments(ctx)</code> and the
+controllable <code>attachments.manual.ManualDriver</code> for ordering tests.</p>
+<p>Set <code>SEAMLESS_MOUNT_NATIVE=1</code> before the first mount to enable Linux inotify hints
+alongside polling. Unsupported platforms and failed watches retain polling.
+The experimental <code>attachments.widget.WidgetDriver(widget).attach(ctx.cell)</code>
+exercises the same session protocol with a traitlets-style callback widget;
+widget and manual-driver sessions are never serialized. This is an experimental
+second transport, not a promise that arbitrary external services share file
+mount conflict policy.</p>
+              
+            </div>
+          </div><footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+    
+    
+  </span>
+</div>
+    <script src="../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "..";</script>
+    <script src="../js/theme_extra.js"></script>
+    <script src="../js/theme.js"></script>
+      <script src="../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>

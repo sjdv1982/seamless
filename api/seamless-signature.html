@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <link rel="shortcut icon" href="../img/favicon.ico" />
+    <title>seamless-signature - Seamless</title>
+    <link rel="stylesheet" href="../css/theme.css" />
+    <link rel="stylesheet" href="../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "seamless-signature";
+        var mkdocs_page_input_path = "api/seamless-signature.md";
+        var mkdocs_page_url = null;
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href="../index.html" class="icon icon-home"> Seamless
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../index.html">Home</a>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Getting Started</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../getting-started.html">Wrapping Python and bash</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../cluster.html">Setting up a local cluster</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../seamless-mode.html">Seamless mode</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">How-To Guides</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../caching.html">Caching, identity, and sharing</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../composition.html">Composition</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../parallelism.html">Local parallelism</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../remote.html">Remote execution</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../hpc.html">HPC specifics</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../remote-launch.html">Remote job launching</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../sharing.html">Sharing in depth</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../compiled-transformers.html">Compiled transformers</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../compression.html">Compressed data</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../service-management.html">Service management</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Reference API</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="index.html">Overview</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="seamless-core.html">seamless-core</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="seamless-transformer.html">seamless-transformer</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="seamless-config.html">seamless-config</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="seamless-remote.html">seamless-remote</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="seamless-dask.html">seamless-dask</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="seamless-jobserver.html">seamless-jobserver</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="seamless-database.html">seamless-database</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="remote-http-launcher.html">remote-http-launcher</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Python docstrings</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="reference/seamless.html">seamless</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="reference/seamless.checksum_class.html">Checksum</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="reference/seamless.buffer_class.html">Buffer</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="reference/seamless.transformer.html">seamless.transformer</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="reference/seamless_transformer.transformation_class.html">Transformation</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="reference/seamless_transformer.transformer_class.html">Transformer properties</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="reference/seamless_config.select.html">seamless.config.select</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="reference/seamless_config.tools.html">seamless.config.tools</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >CLI docstrings</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="reference/seamless-run.html">seamless-run</a>
+                </li>
+    </ul>
+                  </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Seamless</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../index.html" class="icon icon-home" aria-label="Docs"></a></li>
+      <li class="breadcrumb-item active">seamless-signature</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h1 id="seamless-signature">seamless-signature</h1>
+<p>YAML schema language for describing Seamless compiled-kernel function signatures, with a deterministic schema-to-C-header generator.</p>
+<p><code>seamless-signature</code> turns a YAML schema like:</p>
+<pre><code class="language-yaml">inputs:
+  - name: a
+    dtype: int32
+  - name: matrix
+    dtype: float64
+    shape: [&quot;X&quot;, &quot;Y&quot;]
+outputs:
+  - name: result
+    dtype: float64
+    shape: [&quot;Y&quot;]
+</code></pre>
+<p>into a parsed <code>Signature</code> object and a generated C header (<code>tf.header</code>) that the Seamless <a href="https://github.com/sjdv1982/seamless-transformer">compiled transformer</a> pipeline feeds to CFFI to build the <code>.so</code> extension. It is the single source of truth from which the Python callable signature, C header, and runtime type-marshalling rules are all derived.</p>
+<h2 id="what-the-schema-describes">What the schema describes</h2>
+<ul>
+<li><strong>Scalars</strong>: <code>dtype: int32 | int64 | float32 | float64 | bool | …</code> (the standard numpy scalar names).</li>
+<li><strong>Arrays</strong>: <code>shape: [...]</code> with named wildcard dimensions (<code>"X"</code>, <code>"Y"</code>) shared across the whole signature.</li>
+<li><strong>Trailing fixed dimensions</strong>: <code>shape: ("X", "Y", 3)</code> collapses into a generated typedef (<code>typedef int32_t int32_3[3];</code>) so kernels can write idiomatic C indexing.</li>
+<li><strong>Structured dtypes</strong> (<code>StructDType</code>): recursive nested field definitions that map to C <code>typedef struct</code>s with field-by-field byte-offset alignment.</li>
+<li><strong>Output-only wildcards</strong>: dimensions that do not appear in any input (e.g. <code>K</code>); the runtime requires a <code>metavars.maxK</code> upper bound and the kernel writes the actual size back via an output pointer.</li>
+</ul>
+<h2 id="why-a-separate-package">Why a separate package</h2>
+<p>Compiled transformers need a stable contract between the YAML schema, the C header, and the Python callable signature. Splitting that contract into its own package keeps the surface narrow and lets both the Seamless transformer pipeline and external tooling (e.g. cross-language signature generators for Fortran or Rust) consume the same parsed <code>Signature</code> without dragging in the rest of <code>seamless-transformer</code>.</p>
+<h2 id="installation">Installation</h2>
+<pre><code class="language-bash">pip install seamless-signature
+</code></pre>
+<p><code>seamless-signature</code> is also pulled in automatically by <code>seamless-transformer[compiled]</code>.</p>
+<h2 id="public-api">Public API</h2>
+<pre><code class="language-python">from seamless_signature import load_signature, generate_header
+
+sig = load_signature(yaml_path_or_string)
+header = generate_header(sig)   # returns the C header text
+</code></pre>
+<p>For the full schema reference, including dtype tables, wildcard rules, struct-field semantics, and worked examples (including derivations to Fortran and Rust signatures), see <a href="https://github.com/sjdv1982/seamless/blob/main/docs/agent/contracts/seamless-signature-schema.md"><code>docs/agent/contracts/seamless-signature-schema.md</code></a> in the Seamless repo.</p>
+<h2 id="relationship-to-the-seamless-ecosystem">Relationship to the Seamless ecosystem</h2>
+<pre><code class="language-text">seamless-signature       ← schema parsing + C header generation
+        │
+        ▼
+seamless-transformer     ← consumes Signature; builds .so via CFFI
+  (CompiledTransformer / DirectCompiledTransformer)
+</code></pre>
+<p><code>seamless-signature</code> has no dependency on the rest of Seamless and is published as an independent PyPI package; it is reusable in any context that needs a YAML-to-C-signature contract.</p>
+              
+            </div>
+          </div><footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+    
+    
+  </span>
+</div>
+    <script src="../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "..";</script>
+    <script src="../js/theme_extra.js"></script>
+    <script src="../js/theme.js"></script>
+      <script src="../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>

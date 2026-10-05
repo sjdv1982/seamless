@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <link rel="shortcut icon" href="../img/favicon.ico" />
+    <title>Hashserver - Seamless</title>
+    <link rel="stylesheet" href="../css/theme.css" />
+    <link rel="stylesheet" href="../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "Hashserver";
+        var mkdocs_page_input_path = "api/hashserver.md";
+        var mkdocs_page_url = null;
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href="../index.html" class="icon icon-home"> Seamless
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../index.html">Home</a>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Getting Started</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../getting-started.html">Wrapping Python and bash</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../cluster.html">Setting up a local cluster</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../seamless-mode.html">Seamless mode</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">How-To Guides</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../caching.html">Caching, identity, and sharing</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../composition.html">Composition</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../parallelism.html">Local parallelism</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../remote.html">Remote execution</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../hpc.html">HPC specifics</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../remote-launch.html">Remote job launching</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../sharing.html">Sharing in depth</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../compiled-transformers.html">Compiled transformers</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../compression.html">Compressed data</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../service-management.html">Service management</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Reference API</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="index.html">Overview</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="seamless-core.html">seamless-core</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="seamless-transformer.html">seamless-transformer</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="seamless-config.html">seamless-config</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="seamless-remote.html">seamless-remote</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="seamless-dask.html">seamless-dask</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="seamless-jobserver.html">seamless-jobserver</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="seamless-database.html">seamless-database</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="remote-http-launcher.html">remote-http-launcher</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Python docstrings</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="reference/seamless.html">seamless</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="reference/seamless.checksum_class.html">Checksum</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="reference/seamless.buffer_class.html">Buffer</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="reference/seamless.transformer.html">seamless.transformer</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="reference/seamless_transformer.transformation_class.html">Transformation</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="reference/seamless_transformer.transformer_class.html">Transformer properties</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="reference/seamless_config.select.html">seamless.config.select</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="reference/seamless_config.tools.html">seamless.config.tools</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >CLI docstrings</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="reference/seamless-run.html">seamless-run</a>
+                </li>
+    </ul>
+                  </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Seamless</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../index.html" class="icon icon-home" aria-label="Docs"></a></li>
+      <li class="breadcrumb-item active">Hashserver</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h1 id="hashserver">Hashserver</h1>
+<p>A lightweight, content-addressed file server over HTTP.</p>
+<p>Hashserver stores and serves opaque binary buffers keyed by their cryptographic checksum. You PUT a buffer with its checksum in the URL; you GET it back by the same checksum. There are no filenames, no directories, no metadata — just content and its hash.</p>
+<p>The hash algorithm is configurable: SHA-256 (default) or SHA3-256.</p>
+<h2 id="why-content-addressed-storage">Why content-addressed storage?</h2>
+<p>Content-addressed storage (CAS) is a well-established pattern used by Git, IPFS, Docker registries, and many other systems. Identifying data by its cryptographic hash gives you automatic deduplication, trivially verifiable integrity, and strong reproducibility guarantees.</p>
+<p>Hashserver brings these benefits to any project that needs a simple HTTP-based buffer store. It is intentionally minimal: a single ASGI application backed by a directory of files, designed to be easy to deploy, easy to integrate, and easy to reason about.</p>
+<h2 id="relationship-to-seamless">Relationship to Seamless</h2>
+<p>Hashserver was originally developed as the buffer-serving component of <a href="https://github.com/sjdv1982/seamless">Seamless</a>, a framework for reproducible, reactive computational workflows. In Seamless, all data — inputs, source code, and results — is represented as a tree of checksums, and hashserver provides the storage layer that maps those checksums back to actual data.</p>
+<p>However, <strong>hashserver has no dependency on Seamless</strong> and no knowledge of it. It is a generic content-addressed file server that is useful in any context where you need to store and retrieve buffers by hash — caching layers, artifact stores, reproducible pipelines, or your own CAS-backed application. It is published as an independent PyPI package for exactly this reason.</p>
+<h2 id="features">Features</h2>
+<ul>
+<li><strong>Content-addressed</strong>: buffers are stored and retrieved by their cryptographic checksum.</li>
+<li><strong>Configurable hash algorithm</strong>: SHA-256 (default) or SHA3-256, selected at startup.</li>
+<li><strong>Integrity-verified reads</strong>: every buffer (if not compressed) is re-checksummed on GET to detect corruption.</li>
+<li><strong>Prefix directory layout</strong>: by default, buffers are stored under a two-character prefix subdirectory (e.g. <code>ab/ab3f7c...</code>) to avoid filesystem performance problems with large flat directories. A flat layout is also supported.</li>
+<li><strong>Extra read-only directories</strong>: additional buffer directories can be mounted as fallback read sources.</li>
+<li><strong>Promises</strong>: a client can announce that a buffer will be uploaded soon via <code>PUT /promise/{checksum}</code>. Other clients reading that checksum will wait for the upload rather than getting a 404.</li>
+<li><strong>Concurrent-safe</strong>: in-flight PUT requests are tracked so concurrent GETs and batch queries return consistent results. Lock files are respected for external writers.</li>
+<li><strong>Multiple instances</strong>: several hashserver processes can safely share the same buffer directory.</li>
+<li><strong>Lightweight</strong>: built on FastAPI/Starlette — no database, no external services.</li>
+<li><strong>Flexible deployment</strong>: run as a CLI tool, under any ASGI server, or via Docker Compose.</li>
+</ul>
+<h2 id="installation">Installation</h2>
+<pre><code class="language-bash">pip install hashserver
+</code></pre>
+<p>Or with conda:</p>
+<pre><code class="language-bash">mamba env create --file environment.yml
+conda activate hashserver
+</code></pre>
+<h2 id="quick-start">Quick start</h2>
+<p>Serve buffers from a local directory:</p>
+<pre><code class="language-bash">hashserver ./my-buffers
+</code></pre>
+<p>This starts the server under uvicorn on a random free port in the dynamic/private range (<code>49152-65535</code>). Run <code>hashserver -h</code> for all options.</p>
+<h3 id="storing-and-retrieving-a-buffer">Storing and retrieving a buffer</h3>
+<pre><code class="language-bash"># Start a writable server
+hashserver ./my-buffers --writable --port 8000
+
+# Compute the SHA-256 checksum and upload
+CHECKSUM=$(python3 -c &quot;
+import hashlib, sys
+print(hashlib.sha256(open(sys.argv[1],'rb').read()).hexdigest())
+&quot; myfile.bin)
+curl -X PUT --data-binary @myfile.bin http://localhost:8000/$CHECKSUM
+
+# Download
+curl -O http://localhost:8000/$CHECKSUM
+</code></pre>
+<p>To use SHA3-256 instead, start the server with <code>--hash-algorithm sha3-256</code> and hash your files with <code>hashlib.sha3_256</code>.</p>
+<h3 id="status-file-protocol">Status-file protocol</h3>
+<p><code>hashserver</code> does not require a status file. If <code>--status-file</code> is omitted, it runs independently.</p>
+<p>If <code>--status-file</code> is provided, the file is used for two things:</p>
+<ol>
+<li>Report the chosen port, especially when <code>--port-range</code> is used.</li>
+<li>Report whether startup succeeded (<code>"running"</code>) or failed (<code>"failed"</code>).</li>
+</ol>
+<p>The status-file protocol is as follows:</p>
+<ol>
+<li>Wait for the status file to exist and parse it as JSON.</li>
+<li>Reuse the existing JSON object as the base payload. An empty JSON object <code>{}</code> is sufficient.</li>
+<li>Pick or validate its listening port.</li>
+<li>On ASGI startup, rewrite the same file with <code>"status": "running"</code> and the chosen <code>"port"</code>.</li>
+<li>If startup fails before that point, rewrite the file with <code>"status": "failed"</code>.</li>
+</ol>
+<p>If <code>remote-http-launcher</code> is used, it may pre-populate the JSON with fields such as the PID, workdir, or <code>"status": "starting"</code>. <code>hashserver</code> preserves such fields when it writes back the final status.</p>
+<h2 id="api">API</h2>
+<h3 id="retrieving-buffers">Retrieving buffers</h3>
+<p><strong><code>GET /{checksum}</code></strong> — Retrieve a buffer by its hex checksum. The server verifies the checksum before sending the response. Returns the raw buffer (200), or 404 if not found.</p>
+<h3 id="storing-buffers">Storing buffers</h3>
+<p>Requires <code>--writable</code>.</p>
+<p><strong><code>PUT /{checksum}</code></strong> — Upload a buffer. The request body is the raw data; the server verifies that its checksum matches the URL. Returns 200 on success, 201 if the buffer already existed, or 400 on checksum mismatch.</p>
+<p><strong><code>PUT /promise/{checksum}</code></strong> — Announce that a buffer will be uploaded soon. Returns 202 with the promise TTL. While a promise is active, GET requests for that checksum will wait rather than returning 404, and <code>/has</code> queries will report the checksum as present.</p>
+<h3 id="querying-availability">Querying availability</h3>
+<p><strong><code>GET /has</code></strong> — Batch existence check. Send a JSON list of checksums in the request body. Returns a JSON list of booleans. Includes both on-disk buffers and active promises.</p>
+<p><strong><code>GET /has-now</code></strong> — Same as <code>/has</code>, but excludes promises — only reports buffers that are already on disk.</p>
+<p><strong><code>GET /buffer-length</code></strong> — Batch size query. Send a JSON list of checksums in the request body. Returns a JSON list of integers: the buffer size in bytes, or 0 if not present. Promised checksums are reported as <code>true</code>.</p>
+<h3 id="health">Health</h3>
+<p><strong><code>GET /healthcheck</code></strong> — Returns "OK". Useful for load balancer probes.</p>
+<h2 id="configuration">Configuration</h2>
+<h3 id="cli-flags">CLI flags</h3>
+<table>
+<thead>
+<tr>
+<th>Flag</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>directory</code></td>
+<td>Buffer storage directory (positional, required)</td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>--writable</code></td>
+<td>Enable PUT endpoints</td>
+<td>off</td>
+</tr>
+<tr>
+<td><code>--hash-algorithm</code></td>
+<td>Hash algorithm: <code>sha3-256</code> or <code>sha-256</code></td>
+<td><code>sha-256</code></td>
+</tr>
+<tr>
+<td><code>--layout</code></td>
+<td>Directory layout: <code>prefix</code> or <code>flat</code></td>
+<td><code>prefix</code></td>
+</tr>
+<tr>
+<td><code>--extra-dirs</code></td>
+<td>Semicolon-separated list of extra read-only buffer directories</td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>--host</code></td>
+<td>Listen address</td>
+<td><code>127.0.0.1</code></td>
+</tr>
+<tr>
+<td><code>--port</code></td>
+<td>Listen port</td>
+<td>random free port in <code>49152-65535</code></td>
+</tr>
+<tr>
+<td><code>--port-range START END</code></td>
+<td>Pick a random free port in range (mutually exclusive with <code>--port</code>)</td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>--status-file</code></td>
+<td>JSON file for reporting server status</td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>--timeout</code></td>
+<td>Shut down after this many seconds of inactivity</td>
+<td>—</td>
+</tr>
+</tbody>
+</table>
+<h3 id="environment-variables">Environment variables</h3>
+<p>When running under an external ASGI server (e.g. <code>uvicorn hashserver:app</code>), configure via environment variables instead:</p>
+<table>
+<thead>
+<tr>
+<th>Variable</th>
+<th>Equivalent flag</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>HASHSERVER_DIRECTORY</code></td>
+<td><code>directory</code></td>
+</tr>
+<tr>
+<td><code>HASHSERVER_WRITABLE</code></td>
+<td><code>--writable</code> (set to <code>1</code> or <code>true</code>)</td>
+</tr>
+<tr>
+<td><code>HASHSERVER_HASH_ALGORITHM</code></td>
+<td><code>--hash-algorithm</code></td>
+</tr>
+<tr>
+<td><code>HASHSERVER_LAYOUT</code></td>
+<td><code>--layout</code></td>
+</tr>
+<tr>
+<td><code>HASHSERVER_EXTRA_DIRS</code></td>
+<td><code>--extra-dirs</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="docker-compose">Docker Compose</h3>
+<pre><code class="language-bash">export HASHSERVER_PORT=8000
+export HASHSERVER_HOST=0.0.0.0
+export HASHSERVER_DIRECTORY=./buffers
+export HASHSERVER_WRITABLE=1
+docker compose up -d
+</code></pre>
+<p>Container user/group ID can be set with <code>HASHSERVER_USER_ID</code> and <code>HASHSERVER_GROUP_ID</code> (both default to 0).</p>
+<h2 id="directory-layouts">Directory layouts</h2>
+<p>In <strong>prefix</strong> layout (the default), a buffer with checksum <code>ab3f7c...</code> is stored as <code>&lt;directory&gt;/ab/ab3f7c...</code>. A sentinel file <code>.HASHSERVER_PREFIX</code> is written to the directory. This avoids performance issues when storing large numbers of buffers.</p>
+<p>In <strong>flat</strong> layout, the same buffer is stored as <code>&lt;directory&gt;/ab3f7c...</code>.</p>
+<p>Extra directories auto-detect their layout by checking for the <code>.HASHSERVER_PREFIX</code> sentinel.</p>
+<h2 id="compression">Compression</h2>
+<p>Hashserver supports transparent compression for stored buffers. Supported formats: Zstandard (<code>.zst</code>) and gzip (<code>.gz</code>).</p>
+<p><strong>Core invariant:</strong> The URL checksum is always the canonical checksum of the <em>decompressed</em> bytes. A compressed upload of the same content produces the same URL as an uncompressed upload.</p>
+<p><strong>Uploading compressed buffers:</strong> Send <code>Content-Encoding: zstd</code> (or <code>gzip</code>) on PUT. The server streams the compressed body to disk while simultaneously decompressing to verify the canonical checksum. The compressed bytes are stored at <code>{dir}/{cs}.zst</code> (or <code>.gz</code>).</p>
+<p><strong>Downloading:</strong> GET always uses the canonical checksum URL. If the stored form is compressed, the response includes <code>Content-Encoding: zstd</code> (or <code>gzip</code>). The client must check this header and decompress if present. The server tries to honor <code>Accept-Encoding</code> when a matching on-disk form exists; otherwise it falls back to the uncompressed file or the server's normal on-disk preference order.</p>
+<p><strong>Coexistence:</strong> Compressed and uncompressed forms of the same buffer coexist safely: <code>{cs}</code>, <code>{cs}.zst</code>, <code>{cs}.gz</code> can all be present.</p>
+<p><strong><code>/has</code> and <code>/has-now</code>:</strong> Any stored form satisfies the existence check.</p>
+<p><strong><code>/buffer-length</code>:</strong> Always returns the <em>uncompressed</em> byte count. When only a compressed form exists, this is read from a <code>.BUFFERLENGTH</code> sidecar file written during the compressed PUT.</p>
+<h2 id="running-tests">Running tests</h2>
+<pre><code class="language-bash">pip install requests
+pytest tests/
+</code></pre>
+<h2 id="license">License</h2>
+<p>MIT. See <a href="https://github.com/sjdv1982/seamless/blob/main/hashserver/LICENSE.txt">LICENSE.txt</a>.</p>
+              
+            </div>
+          </div><footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+    
+    
+  </span>
+</div>
+    <script src="../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "..";</script>
+    <script src="../js/theme_extra.js"></script>
+    <script src="../js/theme.js"></script>
+      <script src="../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>
