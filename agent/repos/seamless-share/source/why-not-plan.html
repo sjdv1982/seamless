@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <link rel="shortcut icon" href="../../../img/favicon.ico" />
+    <title>Plan: why-not tool for seamless-share - Seamless — Agent Documentation</title>
+    <link rel="stylesheet" href="../../../css/theme.css" />
+    <link rel="stylesheet" href="../../../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "Plan: why-not tool for seamless-share";
+        var mkdocs_page_input_path = "repos/seamless-share/source/why-not-plan.md";
+        var mkdocs_page_url = null;
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../../../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href="../../../index.html" class="icon icon-home"> Seamless — Agent Documentation
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../../index.html">Home</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../../overview.html">Agent Docs Overview</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../index.html">Workspace Repos</a>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Contracts</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/identity-and-caching.html">Identity and Caching</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/celltypes-and-conversion.html">Celltypes, Null, and Conversion</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/hashtype.html">HashType</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/deep-celltypes.html">Deep Celltypes</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/expressions.html">Expressions</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/cells.html">Cells</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/pins.html">Pins</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/workflow-context.html">Workflow Context</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/node-state-lifecycle.html">Node State Lifecycle</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/attachments.html">Attachments</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/mounts.html">File Mounts</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/cancellation.html">Cancellation</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/direct-delayed-and-transformation.html">direct/delayed/Transformation</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/modules-and-closures.html">Modules and Closures</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/scratch-witness-audit.html">Scratch/Witness/Audit</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/seamless-run-and-argtyping.html">seamless-run/Argtyping</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/cache-storage-and-limits.html">Cache Storage and Limits</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/content-addressed-files-and-dirs.html">Content-addressed Files and Dirs</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/execution-backends.html">Execution Backends</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/execution-records.html">Execution Records</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/service-management.html">Service Management</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/compression.html">Compression</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/compiled-transformers.html">Compiled Transformers</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/compiled-pins.html">Compiled Pins</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/seamless-signature-schema.html">seamless-signature Schema</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">API</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../api/python/seamless.html">seamless</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../api/python/seamless.transformer.html">seamless.transformer</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../api/python/seamless.buffer_class.html">seamless.buffer_class</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../api/python/seamless.checksum_class.html">seamless.checksum_class</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../api/python/seamless_config.select.html">seamless_config.select</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../api/python/seamless_config.tools.html">seamless_config.tools</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../api/python/seamless_transformer.transformation_class.html">seamless_transformer.transformation_class</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../api/python/seamless_transformer.transformer_class.html">seamless_transformer.transformer_class</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">CLI</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../api/cli/seamless-run.html">seamless-run</a>
+                  </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">Seamless — Agent Documentation</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../../../index.html" class="icon icon-home" aria-label="Docs"></a></li>
+      <li class="breadcrumb-item active">Plan: why-not tool for seamless-share</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h1 id="plan-why-not-tool-for-seamless-share">Plan: <code>why-not</code> tool for <code>seamless-share</code></h1>
+<p>This plan specifies <strong>what to build and how to test it</strong>, not how to implement it. The contract source is <a href="usage-patterns.html#pattern-2-cache-miss-diagnosis-why-not">Pattern 2 of usage-patterns.md</a>. Where this plan and that contract disagree, the contract wins; this file refines API surface and tests.</p>
+<h2 id="status-and-naming">Status and naming</h2>
+<p>Two tools are in scope, implemented as separable units:</p>
+<ul>
+<li><code>seamless-share transformation-diff</code> — low-level primitive. Compares two transformation references. No candidate selection. No I/O beyond the database endpoint(s) supplied. Read-only.</li>
+<li><code>seamless-share why-not</code> — user-facing tool. Wraps <code>transformation-diff</code>. Adds candidate-selection heuristic and human-readable output. Read-only.</li>
+</ul>
+<p>Implementers may pick different command names but must preserve the layering: <code>why-not</code> calls <code>transformation-diff</code>; <code>transformation-diff</code> has no candidate-selection logic.</p>
+<h2 id="surfaces-in-scope">Surfaces in scope</h2>
+<p>Each tool has two surfaces; both must work and both must produce the same underlying findings.</p>
+<ol>
+<li><strong>CLI</strong>: argv-driven, primary user-facing form.</li>
+<li><strong>Python API</strong>: <code>from seamless_share.why_not import why_not, transformation_diff</code> (final import path is an implementer choice; this plan uses these names). Returns structured Python objects. Used by tests and by other agents.</li>
+</ol>
+<p>Both surfaces wrap the same core. Whatever the core returns, the CLI emits as JSON (default) or formats as human-readable text (with <code>--format text</code>); the Python API returns it as typed objects.</p>
+<h2 id="what-is-explicitly-out-of-scope-v1">What is explicitly out of scope (v1)</h2>
+<ul>
+<li><strong>Cascade explanation.</strong> <code>why-not</code> does not recursively diagnose upstream transformations. A single upstream <code>result_checksum</code> change shows as one differing input pin; the user re-invokes <code>why-not</code> on that upstream <code>tf_checksum</code> manually if they want to go further.</li>
+<li><strong>Metadata divergence diagnosis.</strong> <code>MetaData</code> rows are not consulted by these tools. They are evidence about execution, not cache identity.</li>
+<li><strong>Buffer-content normalization or fuzzy matching.</strong> Identity is checksum equality. The <code>--deep</code> flag presents content for humans; it does not relax identity.</li>
+<li><strong>Any write path.</strong> Neither tool has a code path that opens any database or bufferdir endpoint for writing. This is a structural property, not a runtime guard.</li>
+</ul>
+<h2 id="cli-ergonomics">CLI ergonomics</h2>
+<h3 id="common-conventions-both-subcommands">Common conventions (both subcommands)</h3>
+<ul>
+<li>Subcommands under <code>seamless-share</code>: <code>seamless-share why-not …</code>, <code>seamless-share transformation-diff …</code>.</li>
+<li><code>--endpoint &lt;spec&gt;</code> — repeatable. Each occurrence names one database endpoint. Order matters only for tie-breaking in per-endpoint provenance display; the lookup state is computed under the documented union rules. Endpoint spec syntax mirrors what <a href="../seamless-config/">seamless-config</a> accepts for a database endpoint (path to a local <code>seamless.db</code>, URL of a remote db service, named cluster from <code>clusters.yaml</code>).</li>
+<li><code>--config &lt;path&gt;</code> — optional override for resolving named endpoints; defaults to the user's normal <code>seamless-config</code> resolution.</li>
+<li><code>--format {json,text}</code> — default <code>json</code> for <code>transformation-diff</code> (machine-readable primitive), default <code>text</code> for <code>why-not</code> (human-facing). <code>--format json</code> on <code>why-not</code> must produce the same structured output the Python API returns.</li>
+<li><code>--deep</code> — opt-in deep diff (see <a href="usage-patterns.html#default-depth-and-the---deep-flag">Default depth and the <code>--deep</code> flag</a>).</li>
+<li><code>--quiet</code> / <code>-q</code> — suppress informational lines from text format; structured output unaffected.</li>
+<li><code>--verbose</code> / <code>-v</code> — include per-endpoint provenance and timing in text format.</li>
+<li>Exit codes (both tools):</li>
+<li><code>0</code> — tool ran successfully and produced output. <strong>This is the normal exit code regardless of whether a diff was found or whether the lookup state indicates a miss.</strong> The tool ran; the user reads the output. Findings are not errors.</li>
+<li><code>2</code> — usage error (bad argv, missing required argument, unknown endpoint).</li>
+<li><code>3</code> — endpoint error (endpoint unreachable, database file corrupt, permission denied).</li>
+<li><code>4</code> — <code>--deep</code> requested but one or more buffers were unavailable. Tool still produced output; this exit code is informational. May be downgraded to <code>0</code> with <code>--deep-best-effort</code>.</li>
+<li>Reserve <code>1</code> for unexpected internal failure (crash, unhandled exception). Implementations must not use <code>1</code> for routine "diff has entries" or "lookup state is <code>NOT_PRESENT</code>".</li>
+</ul>
+<h3 id="transformation-diff-cli"><code>transformation-diff</code> CLI</h3>
+<pre><code>seamless-share transformation-diff &lt;ref-A&gt; &lt;ref-B&gt; [--endpoint &lt;spec&gt; …] [--deep] [--format {json,text}]
+</code></pre>
+<ul>
+<li>Exactly two positional references. Fewer or more is exit code <code>2</code>.</li>
+<li>A reference is one of:</li>
+<li>A 64-hex <code>tf_checksum</code> (resolved against the supplied endpoints).</li>
+<li>A path to a JSON file containing an unwrapped transformation dict (the dict whose checksum is <code>tf_checksum</code>, plus its dunder companions if present; the tool computes the checksum to surface in output).</li>
+<li>A path to a Seamless transformation definition that the tooling can evaluate to a transformation dict. The exact accepted forms are an implementer choice; document them.</li>
+<li>The two references may be of different forms (e.g., diff a local definition against a cached <code>tf_checksum</code>).</li>
+<li>The tool does not require both references to be present in any endpoint. A reference supplied as a <code>tf_checksum</code> that is absent from all endpoints is exit <code>3</code> only if it is needed to retrieve the dict; if the user also supplied the dict directly, no lookup is required.</li>
+</ul>
+<h3 id="why-not-cli"><code>why-not</code> CLI</h3>
+<pre><code>seamless-share why-not &lt;ref&gt; [--endpoint &lt;spec&gt; …] [--candidate &lt;ref&gt;] [--deep] [--format {json,text}] [--explain-selection]
+</code></pre>
+<ul>
+<li>One positional reference: the transformation the user expected to hit. Same reference forms as <code>transformation-diff</code>.</li>
+<li><code>--candidate &lt;ref&gt;</code> — optional. If supplied, skips the heuristic and diffs against this candidate. Useful when the heuristic chose poorly or when the user already knows what they want to compare against.</li>
+<li><code>--explain-selection</code> — emit the heuristic's score for the chosen candidate and the top runners-up (count is an implementer choice; recommend 3). When <code>--candidate</code> is supplied, this flag is a no-op (explicitly: no error, just nothing extra to explain).</li>
+<li>The output is the <strong>composition of axis 1 (lookup state) and axis 2 (candidate diff)</strong>, never one substituting for the other. See <a href="#output-schema">Output schema</a> below.</li>
+</ul>
+<h3 id="text-format-rendering-human-facing">Text-format rendering (human-facing)</h3>
+<p>The <code>text</code> format is meant to be glanced at. Suggested layout for <code>why-not</code>:</p>
+<pre><code>tf_checksum: &lt;hex&gt;
+lookup state: NOT_PRESENT          (queried across 2 endpoints: foo.db, bar.db)
+candidate:    &lt;hex&gt;                (selection score: 0.72; 2 runners-up; --explain-selection for details)
+identity-relevant: yes (3 of 4 entries are plain)
+
+diff:
+  [plain]  value_differs  code                &lt;hex_A&gt;  &lt;hex_B&gt;
+  [plain]  key_only_in_input    arg.c
+  [plain]  value_differs  arg.b               &lt;hex_A&gt;  &lt;hex_B&gt;
+  [dunder] value_differs  __env__             &lt;hex_A&gt;  &lt;hex_B&gt;
+</code></pre>
+<p>For <code>PRESENT_AS_HIT</code> the candidate and diff sections are omitted; the tool says explicitly "this is a cache hit on the queried endpoint set — your miss is elsewhere".</p>
+<p>For <code>IRREPRODUCIBLE</code> the tool lists row count and <code>result_checksum</code> set and notes that no candidate diff is run by default.</p>
+<p>For <code>PRESENT_RESULT_UNAVAILABLE</code> the tool prints the result identity and the reason the buffer is not materializable / re-derivable, and adds the explicit hint: "this is not an identity miss — searching for a code change will not explain it."</p>
+<p>For <code>--format text</code> on a dunder-only diff: prepend a banner line saying the candidate does not explain the miss, before the diff entries.</p>
+<h2 id="output-schema">Output schema</h2>
+<p>The structured output (CLI <code>--format json</code>, Python API return value) is the contract. Schema below is normative.</p>
+<h3 id="why-not-output-top-level"><code>why-not</code> output (top level)</h3>
+<pre><code class="language-jsonc">{
+  &quot;tool&quot;: &quot;why-not&quot;,
+  &quot;version&quot;: &quot;&lt;semver&gt;&quot;,                 // schema version; bump on breaking change
+  &quot;input&quot;: {
+    &quot;tf_checksum&quot;: &quot;&lt;hex&gt;&quot;,              // resolved from the user's reference
+    &quot;reference_form&quot;: &quot;tf_checksum&quot; | &quot;dict_path&quot; | &quot;definition_path&quot;,
+    &quot;endpoint_set&quot;: [&quot;&lt;spec&gt;&quot;, ...]
+  },
+  &quot;lookup_state&quot;: {
+    &quot;state&quot;: &quot;NOT_PRESENT&quot; | &quot;IRREPRODUCIBLE&quot; | &quot;PRESENT_RESULT_UNAVAILABLE&quot; | &quot;PRESENT_AS_HIT&quot;,
+    &quot;per_endpoint&quot;: [
+      { &quot;endpoint&quot;: &quot;&lt;spec&gt;&quot;, &quot;state&quot;: &quot;&lt;one of the four&gt;&quot;, &quot;details&quot;: { ... } }
+    ],
+    &quot;details&quot;: { ... }                   // shape varies by state; see below
+  },
+  &quot;candidate&quot;: null | {
+    &quot;tf_checksum&quot;: &quot;&lt;hex&gt;&quot;,
+    &quot;selection_score&quot;: &lt;float in [0,1]&gt;,
+    &quot;explanation&quot;: null | { ... },       // populated iff --explain-selection
+    &quot;runners_up&quot;: [] | [ { &quot;tf_checksum&quot;: &quot;&lt;hex&gt;&quot;, &quot;selection_score&quot;: &lt;float&gt; }, ... ]
+  },
+  &quot;diff&quot;: null | {                       // populated iff lookup_state.state == &quot;NOT_PRESENT&quot; AND candidate != null
+    &quot;identity_relevant&quot;: &lt;bool&gt;,
+    &quot;entries&quot;: [
+      {
+        &quot;side&quot;: &quot;key_only_in_input&quot; | &quot;key_only_in_candidate&quot; | &quot;value_differs&quot;,
+        &quot;key&quot;: &quot;&lt;dotted key path&gt;&quot;,
+        &quot;classification&quot;: &quot;plain&quot; | &quot;dunder&quot;,
+        &quot;value_input&quot;: &quot;&lt;hex&gt;&quot; | null,   // null for key_only_in_candidate
+        &quot;value_candidate&quot;: &quot;&lt;hex&gt;&quot; | null,
+        &quot;deep&quot;: null | { ... }            // populated iff --deep and content fetchable
+      },
+      ...
+    ]
+  },
+  &quot;warnings&quot;: [ &quot;&lt;string&gt;&quot;, ... ],       // e.g., &quot;candidate diff has only dunder entries&quot;
+  &quot;timing&quot;: { &quot;wall_ms&quot;: &lt;int&gt;, ... }    // present iff --verbose
+}
+</code></pre>
+<h3 id="lookup_statedetails-shape-per-state"><code>lookup_state.details</code> shape per state</h3>
+<ul>
+<li><code>NOT_PRESENT</code> — <code>{}</code>.</li>
+<li><code>IRREPRODUCIBLE</code> — <code>{ "row_count": &lt;int&gt;, "result_checksums": ["&lt;hex&gt;", ...] }</code>.</li>
+<li><code>PRESENT_RESULT_UNAVAILABLE</code> — <code>{ "result_checksum": "&lt;hex&gt;", "reason": "&lt;short tag&gt;" }</code> where reason is one of e.g. <code>not_in_bufferdir</code>, <code>scratch_no_producer_in_scope</code>, <code>evicted</code> (exact vocabulary is an implementer choice but must be enumerable and documented).</li>
+<li><code>PRESENT_AS_HIT</code> — <code>{ "result_checksum": "&lt;hex&gt;", "served_by": "&lt;endpoint spec&gt;" }</code>.</li>
+</ul>
+<h3 id="per-entry-deep-shape-only-when-deep">Per-entry <code>deep</code> shape (only when <code>--deep</code>)</h3>
+<pre><code class="language-jsonc">{
+  &quot;kind&quot;: &quot;text_diff&quot; | &quot;json_diff&quot; | &quot;checksum_fallback&quot;,
+  &quot;body&quot;: &quot;&lt;presentation-appropriate&gt;&quot;,   // unified diff text, structured json diff, or null for fallback
+  &quot;fallback_reason&quot;: null | &quot;&lt;short tag&gt;&quot; // populated only when kind == &quot;checksum_fallback&quot;
+}
+</code></pre>
+<h3 id="transformation-diff-output-top-level"><code>transformation-diff</code> output (top level)</h3>
+<pre><code class="language-jsonc">{
+  &quot;tool&quot;: &quot;transformation-diff&quot;,
+  &quot;version&quot;: &quot;&lt;semver&gt;&quot;,
+  &quot;input_A&quot;: { &quot;tf_checksum&quot;: &quot;&lt;hex&gt;&quot;, &quot;reference_form&quot;: &quot;...&quot;, &quot;source_endpoint&quot;: &quot;&lt;spec&gt;&quot;|null },
+  &quot;input_B&quot;: { ... },
+  &quot;identity_relevant&quot;: &lt;bool&gt;,
+  &quot;entries&quot;: [ ... ],     // same shape as why-not's diff.entries
+  &quot;warnings&quot;: [ ... ],
+  &quot;timing&quot;: { ... }
+}
+</code></pre>
+<p><code>transformation-diff</code> does not include lookup state or candidate selection. It is purely the diff between two dicts.</p>
+<h2 id="python-api-shape">Python API shape</h2>
+<pre><code class="language-python">from seamless_share.why_not import why_not, transformation_diff, Reference, EndpointSpec
+
+result = why_not(
+    Reference.from_tf_checksum(&quot;...&quot;),
+    endpoints=[EndpointSpec.from_str(&quot;clusters://lab&quot;), EndpointSpec.from_path(&quot;local.db&quot;)],
+    candidate=None,
+    deep=False,
+    explain_selection=False,
+)
+# result is a typed dataclass mirroring the JSON schema above
+assert result.lookup_state.state in {&quot;NOT_PRESENT&quot;, &quot;IRREPRODUCIBLE&quot;, &quot;PRESENT_RESULT_UNAVAILABLE&quot;, &quot;PRESENT_AS_HIT&quot;}
+</code></pre>
+<p>Final naming is an implementer choice; tests pin behavior, not symbol names.</p>
+<h2 id="behavioral-contracts-must-hold">Behavioral contracts (must hold)</h2>
+<p>These mirror Pattern 2's "Must hold" and are repeated here as the API-level acceptance criteria.</p>
+<ol>
+<li><strong>Read-only.</strong> Across all code paths, no <code>Transformation</code>, <code>RevTransformation</code>, <code>MetaData</code>, or <code>IrreproducibleTransformation</code> row is created, modified, or deleted; no buffer is written to any bufferdir or hashserver. The tools must not contain a write code path.</li>
+<li><strong>Lookup state is always populated.</strong> Every <code>why-not</code> result names exactly one of the four states for the union view, plus a per-endpoint breakdown.</li>
+<li><strong>Lookup state and candidate diff are independent fields.</strong> The diff field is populated iff <code>lookup_state.state == NOT_PRESENT</code> and a candidate was selected (or supplied via <code>--candidate</code>). The tool must never collapse "I have a diff" into "I have a miss" or vice versa.</li>
+<li><strong>Diff is complete.</strong> Every key-level difference between the input dict and the candidate dict appears in <code>entries</code>. No entry is collapsed, prioritized, marked "primary", or hidden. Two entries with the same key but different sides are not merged.</li>
+<li><strong>Classification is correct.</strong> Each entry's <code>classification</code> follows from <a href="seamless/docs/agent/contracts/identity-and-caching.md">identity-and-caching.md</a>. <code>identity_relevant</code> is <code>true</code> iff at least one entry is <code>plain</code>.</li>
+<li><strong>Deep best-effort.</strong> With <code>--deep</code>, an unavailable buffer falls back to <code>checksum_fallback</code> for that entry; the run does not fail. Exit code is <code>4</code> (informational) unless <code>--deep-best-effort</code> was passed, in which case <code>0</code>.</li>
+<li><strong>Endpoint union semantics.</strong> With multiple endpoints, the union rules from Pattern 2 apply: <code>NOT_PRESENT</code> only if absent from all; <code>IRREPRODUCIBLE</code> if any endpoint reports it; otherwise the most-resolvable state across endpoints wins. Per-endpoint provenance is always preserved in <code>lookup_state.per_endpoint</code>.</li>
+<li><strong>Heuristic determinism.</strong> Given the same input reference and the same database state, <code>why-not</code> selects the same candidate, returns the same diff, and emits byte-identical JSON output. The selection heuristic does not depend on iteration order of any unordered collection.</li>
+<li><strong>Heuristic refusal.</strong> If no transformation in the union of endpoints shares at least one plain-key value with the input, <code>why-not</code> returns <code>lookup_state.state == NOT_PRESENT</code> with <code>candidate == null</code> and <code>diff == null</code>. It does not invent a candidate to diff against.</li>
+</ol>
+<h2 id="must-reject-api-level">Must reject (API-level)</h2>
+<ul>
+<li><code>transformation-diff</code> invoked with anything other than exactly two references — exit <code>2</code>.</li>
+<li><code>why-not</code> or <code>transformation-diff</code> invoked with no endpoint and no inline dict that obviates lookup — exit <code>2</code> with a message naming the missing piece.</li>
+<li><code>why-not</code> invoked against an endpoint set whose <code>Transformation</code> row count is zero — exit code <code>0</code>, but <code>lookup_state.state == NOT_PRESENT</code>, <code>candidate == null</code>, and a warning <code>empty_haystack</code> is emitted. (No haystack to search; not a usage error.)</li>
+<li>Any flag combination that would write to a database or bufferdir endpoint — these must not be expressible at the CLI or in the Python API.</li>
+</ul>
+<h2 id="test-plan">Test plan</h2>
+<p>The test plan has three tiers:</p>
+<ol>
+<li><strong>Schema/contract tests</strong> — assert the structured output shape and the cross-cutting invariants. Independent of fixtures.</li>
+<li><strong>Scenario tests</strong> — concrete user actions from the <a href="usage-patterns.html#common-scenarios-and-what-the-diff-shows">Common scenarios</a> list. Each scenario is a fixture (a small <code>seamless.db</code> + companion bufferdir) plus an assertion about diff entries.</li>
+<li><strong>Property/regression tests</strong> — read-only assertions, idempotence, determinism, exit-code matrix.</li>
+</ol>
+<p>Implementers may split into more files; the assertions below must all exist somewhere in the suite.</p>
+<h3 id="test-fixtures-build-once-reuse">Test fixtures (build once, reuse)</h3>
+<p>A small generated <code>seamless.db</code> (and bufferdir) per scenario. Each fixture is a Python script under <code>tests/fixtures/</code> that, when run, materializes a fresh DB+bufferdir into a temp directory and registers it. Fixture scripts are themselves tested by a smoke test (<code>make fixture-X</code>).</p>
+<p>Fixtures required (minimum set; numbering matches scenarios below):</p>
+<ul>
+<li><code>F1</code> — single <code>@direct</code> function with two parameters; cached.</li>
+<li><code>F2</code> — <code>F1</code>'s function plus a third parameter <code>c</code>, called with a value; cached.</li>
+<li><code>F3</code> — <code>F1</code> with parameter <code>b</code> renamed to <code>x</code>; cached.</li>
+<li><code>F4</code> — <code>F1</code> with a whitespace/comment-only edit; cached.</li>
+<li><code>F5</code> — <code>F1</code> called with a different value for <code>b</code>; cached.</li>
+<li><code>F6</code> — chain <code>X → Y → Z</code> where editing the upstream <code>X</code> changes <code>Y</code>'s and <code>Z</code>'s input pins; cached at two snapshots.</li>
+<li><code>F7</code> — pair <code>(@direct, @delayed)</code> of the same function; both cached.</li>
+<li><code>F8</code> — module/closure inclusion variant: one version with <code>objects=[helper]</code>, one with <code>helper</code> inlined.</li>
+<li><code>F9</code> — pair differing only in <code>__env__</code>.</li>
+<li><code>F10</code> — pair differing only in <code>__compilation__</code>.</li>
+<li><code>F11</code> — <code>seamless-run</code> invocations differing in <code>--metavar</code>.</li>
+<li><code>F12</code> — <code>seamless-run</code> invocations differing in command string.</li>
+<li><code>F13</code> — <code>seamless-run</code> invocations switching a pin between <code>file.npy</code> and <code>file.npy.zst</code> (same canonical buffer).</li>
+<li><code>F14</code> — <code>Transformation</code> row whose <code>result_checksum</code> is recorded but whose buffer is absent (scratch, no producer in scope).</li>
+<li><code>F15</code> — <code>IrreproducibleTransformation</code> rows for a given <code>tf_checksum</code>.</li>
+<li><code>F16</code> — empty DB (zero <code>Transformation</code> rows).</li>
+<li><code>F17</code> — two endpoints, the queried <code>tf_checksum</code> is <code>NOT_PRESENT</code> in one and <code>PRESENT_AS_HIT</code> in the other.</li>
+<li><code>F18</code> — implicit closure case: a function whose body references a module-level mutable that changed, but whose plain keys did not. The diff is expected to be empty; the test asserts the tool surfaces this honestly rather than declaring "nothing wrong".</li>
+</ul>
+<p>Fixtures may reuse compiled-in helpers; their <em>content</em> is what matters for tests.</p>
+<h3 id="cross-cutting-schemacontract-tests">Cross-cutting schema/contract tests</h3>
+<p>Numbered against Pattern 2's <a href="usage-patterns.html#must-test-1">Must test</a> list 21–38; this plan refines and adds the test mechanics.</p>
+<ul>
+<li><strong>C1 (≈ Pattern 2 test 21).</strong> Identical-pair: <code>transformation-diff F1 F1</code> ⇒ <code>entries == []</code>, <code>identity_relevant == false</code>, exit <code>0</code>.</li>
+<li><strong>C2 (≈ 22).</strong> Plain-only: feed two dicts differing in one plain key ⇒ exactly one entry, <code>classification == plain</code>, <code>identity_relevant == true</code>.</li>
+<li><strong>C3 (≈ 23).</strong> Dunder-only on <code>F9</code>: exactly one entry on <code>__env__</code>, <code>classification == dunder</code>, <code>identity_relevant == false</code>. In <code>why-not text</code> output, the banner "candidate does not explain the miss" appears before the entry. The structured output includes the warning string (stable tag, e.g. <code>dunder_only_diff</code>).</li>
+<li><strong>C4 (≈ 24).</strong> Mixed plain+dunder: both classifications present in entries; <code>identity_relevant == true</code>; warning string is <em>not</em> emitted.</li>
+<li><strong>C5 (≈ 25).</strong> Key-only-in-side: <code>transformation-diff F1 F2</code> ⇒ entries include a <code>key_only_in_B</code> (the new pin <code>c</code> only in <code>F2</code>) and a <code>value_differs</code> on <code>code</code>. Asserts exact set of entries (no merge, no collapse).</li>
+<li><strong>C6 (≈ 26).</strong> Lookup <code>NOT_PRESENT</code>: query a synthesized random <code>tf_checksum</code> against <code>F1</code>'s DB ⇒ <code>lookup_state.state == NOT_PRESENT</code>; with no candidate forced, <code>candidate == null</code>; with <code>--candidate &lt;F1's tf_checksum&gt;</code>, diff is populated.</li>
+<li><strong>C7 (≈ 27).</strong> Lookup <code>IRREPRODUCIBLE</code>: query against <code>F15</code> ⇒ <code>lookup_state.state == IRREPRODUCIBLE</code>, details include <code>row_count</code> and <code>result_checksums</code>. By default, <code>candidate == null</code> and <code>diff == null</code> even when a similarly-shaped transformation exists in the cache.</li>
+<li><strong>C8 (≈ 28).</strong> Lookup <code>PRESENT_RESULT_UNAVAILABLE</code>: query against <code>F14</code> ⇒ <code>state == PRESENT_RESULT_UNAVAILABLE</code>, details include <code>result_checksum</code> and a <code>reason</code> tag. No diff is run; the human-format output explicitly steers the user away from looking for a code change.</li>
+<li><strong>C9 (≈ 29).</strong> Lookup <code>PRESENT_AS_HIT</code>: query a <code>tf_checksum</code> actually cached ⇒ <code>state == PRESENT_AS_HIT</code>; structured output makes this unambiguous; human-format output explicitly says "this is a cache hit".</li>
+<li><strong>C10 (≈ 30).</strong> Canonical multi-difference: query <code>F2</code>'s <code>tf_checksum</code> against <code>F1</code>'s DB ⇒ <code>lookup_state.state == NOT_PRESENT</code>, <code>candidate == F1</code>, diff has at least two entries: one <code>key_only_in_input</code> for the new pin on <code>c</code>, one <code>value_differs</code> on <code>code</code>. Both classified <code>plain</code>. <code>identity_relevant == true</code>. No entry is marked "primary". Exact entry count is <code>2</code> (no spurious entries).</li>
+<li><strong>C11 (≈ 31).</strong> <code>--deep</code> on <code>code</code>: entry's <code>deep.kind == "text_diff"</code>; body is a unified diff that contains the changed line(s).</li>
+<li><strong>C12 (≈ 32).</strong> <code>--deep</code> with missing buffer: tooling synthesizes a fixture where the candidate's <code>code</code> buffer is evicted; entry falls back to <code>kind == "checksum_fallback"</code> with a <code>fallback_reason</code>; run does not crash. Exit code is <code>4</code> without <code>--deep-best-effort</code> and <code>0</code> with it.</li>
+<li><strong>C13 (≈ 33).</strong> Read-only assertion: hash the DB file and every byte-file in the bufferdir before and after every test. They must be byte-identical post-run.</li>
+<li><strong>C14 (≈ 34).</strong> Heuristic determinism: run <code>why-not</code> twice on the same input + DB ⇒ byte-identical JSON output (including ordering of <code>entries</code>, <code>runners_up</code>, <code>per_endpoint</code>).</li>
+<li><strong>C15 (≈ 35).</strong> Heuristic refusal: build a DB where no row shares any plain-key value with the input; <code>why-not</code> returns <code>candidate == null</code>, <code>diff == null</code>, <code>lookup_state.state == NOT_PRESENT</code>. The text format says so plainly.</li>
+<li><strong>C16 (≈ 36).</strong> Endpoint union: feed <code>F17</code>'s two endpoints; lookup-state union is <code>PRESENT_AS_HIT</code> (the more-resolvable state wins per the rules); <code>per_endpoint</code> lists both, one <code>NOT_PRESENT</code>, one <code>PRESENT_AS_HIT</code>. Reversing the order of <code>--endpoint</code> flags produces the same union state (commutativity), with <code>per_endpoint</code> order following argv.</li>
+<li><strong>C17 (≈ 37).</strong> Dunder-only warning: ensure the structured <code>warnings</code> array contains the dunder-only tag; assert against the stable tag string, not the prose.</li>
+<li><strong>C18 (≈ 38).</strong> No cascade: on <code>F6</code>, query the downstream <code>Z</code>'s new-snapshot <code>tf_checksum</code> against the old-snapshot DB ⇒ diff is a single-step diff on one differing input pin; the tool does <strong>not</strong> recurse to diagnose <code>Y</code> or <code>X</code>.</li>
+</ul>
+<h3 id="scenario-tests">Scenario tests</h3>
+<p>These bind the <a href="usage-patterns.html#common-scenarios-and-what-the-diff-shows">Common scenarios</a> to assertions on the structured output. Each test is "fixture + invocation + expected entry shape (sides, classifications, count)". Not all are checking <em>cache hit/miss</em> — some assert the <em>converse</em> (e.g., decorator swap is a hit).</p>
+<ul>
+<li><strong>S1 (add a parameter).</strong> Fixture <code>F1</code> → <code>F2</code>. Identical to C10. The canonical multi-difference case.</li>
+<li><strong>S2 (remove a parameter).</strong> Inverse of S1: query <code>F1</code>'s <code>tf_checksum</code> against <code>F2</code>'s DB with <code>--candidate F2</code> ⇒ one <code>key_only_in_candidate</code> for the dropped pin + one <code>value_differs</code> on <code>code</code>.</li>
+<li><strong>S3 (rename a parameter).</strong> Fixture <code>F3</code> against <code>F1</code> ⇒ three entries: <code>key_only_in_input</code> (new name), <code>key_only_in_candidate</code> (old name), <code>value_differs</code> on <code>code</code>. Assert exactly three, not one.</li>
+<li><strong>S4 (default-value-only edit).</strong> Fixture adds a default in the signature, call site unchanged ⇒ one <code>value_differs</code> on <code>code</code>, no key set change. Assert no entries on input pins.</li>
+<li><strong>S5 (whitespace / comment edit).</strong> Fixture <code>F4</code> against <code>F1</code> ⇒ one <code>value_differs</code> on <code>code</code>. With <code>--deep</code>, the text-diff body should be small (test asserts the diff has fewer than N hunks, where N is liberal — the point is the assertion can distinguish "code differs" from "code differs only cosmetically").</li>
+<li><strong>S6 (algorithmic change of same shape).</strong> Same as S5 structurally — one <code>value_differs</code> on <code>code</code>. Test asserts the tool produces <em>the same shape</em> of output as S5, not that it can tell them apart.</li>
+<li><strong>S7 (different value on same parameter).</strong> Fixture <code>F5</code> against <code>F1</code> ⇒ one <code>value_differs</code> on the input pin <code>b</code>; <code>code</code> unchanged.</li>
+<li><strong>S8 (upstream <code>result_checksum</code> change).</strong> Fixture <code>F6</code> two snapshots. Querying the downstream against the wrong-snapshot DB ⇒ one differing input pin, classification <code>plain</code>. Tool does not recurse upstream.</li>
+<li><strong>S9 (normalized-to-same-buffer).</strong> Fixture passes two argument values that normalize to the same checksum ⇒ <code>lookup_state.state == PRESENT_AS_HIT</code>, <code>entries == []</code>. The test explicitly checks the tool does not invent a diff.</li>
+<li><strong>S10 (module/closure inclusion change).</strong> Fixture <code>F8</code> ⇒ at least one entry on the modules-related key; <code>code</code> may or may not also differ, but the test only asserts <em>the presence</em> of the modules entry.</li>
+<li><strong>S11 (implicit-closure change).</strong> Fixture <code>F18</code> ⇒ <code>entries == []</code>. Test asserts: (a) structured output has empty entries; (b) the human-format output includes a hint mentioning implicit closure (assert against a stable hint tag in the JSON <code>warnings</code> array, e.g. <code>empty_diff_check_implicit_closure</code>, rather than English prose).</li>
+<li><strong>S12 (celltype change).</strong> Pin changes from <code>text</code> to <code>bytes</code>. Test asserts an entry on the celltype-bearing key; classification is whatever the contracts say (test reads from the contract, doesn't hardcode).</li>
+<li><strong>S13 (<code>__env__</code> change).</strong> Fixture <code>F9</code> ⇒ one <code>dunder</code> entry on <code>__env__</code>; <code>identity_relevant == false</code>; warning <code>dunder_only_diff</code>.</li>
+<li><strong>S14 (<code>__compilation__</code> change).</strong> Fixture <code>F10</code> ⇒ same shape as S13 but on <code>__compilation__</code>.</li>
+<li><strong>S15 (decorator swap <code>@direct</code> ↔ <code>@delayed</code>).</strong> Fixture <code>F7</code> ⇒ <code>lookup_state.state == PRESENT_AS_HIT</code>, <code>entries == []</code>.</li>
+<li><strong>S16 (<code>seamless-run</code> command string change).</strong> Fixture <code>F12</code> ⇒ one entry on the command-bearing plain key.</li>
+<li><strong>S17 (<code>seamless-run</code> <code>--metavar</code> change).</strong> Fixture <code>F11</code> ⇒ one entry on the metavar-bearing dunder key; warning <code>dunder_only_diff</code>.</li>
+<li><strong>S18 (<code>seamless-run</code> compression suffix on pin name).</strong> Fixture <code>F13</code> ⇒ at least one entry reflecting the pin-name difference, despite identical canonical buffer checksums. Test asserts the diff is <em>non-empty</em> — the surprising case the doc calls out.</li>
+<li><strong>S19 (<code>seamless-run</code> argument typing change).</strong> Pin's celltype-equivalent changes; entry on the affected pin. Same caveat as S12 about classification.</li>
+<li><strong>S20 (empty haystack).</strong> Fixture <code>F16</code>, an empty DB ⇒ exit <code>0</code>, <code>lookup_state.state == NOT_PRESENT</code>, <code>warnings</code> contains <code>empty_haystack</code>, <code>candidate == null</code>.</li>
+</ul>
+<h3 id="property-and-regression-tests">Property and regression tests</h3>
+<ul>
+<li><strong>P1 (read-only invariance).</strong> Hash every file under the DB and bufferdir before each test in the suite; assert unchanged after. Run on a randomized sample of 20+ scenarios.</li>
+<li><strong>P2 (idempotence on re-invoke).</strong> Invoke <code>why-not</code> twice in succession; assert byte-identical JSON output (already partially in C14, but here run across all scenario tests as a property).</li>
+<li><strong>P3 (no-write-path static check).</strong> Grep / AST check: assert that no symbol importable from <code>seamless_share.why_not</code> calls a known write API on <code>seamless.db</code> / hashserver. This is enforced as a unit test, not just code review.</li>
+<li><strong>P4 (exit-code matrix).</strong> Parametrize across the documented exit codes (0, 2, 3, 4). For each, construct the minimal CLI invocation that should produce it, assert the exit code.</li>
+<li><strong>P5 (CLI ↔ Python API equivalence).</strong> For each scenario fixture, run the CLI with <code>--format json</code> and the Python API; assert the structured outputs are equal (modulo <code>timing</code>, which is non-deterministic).</li>
+<li><strong>P6 (schema validity).</strong> Validate every structured output against a JSON Schema kept in <code>seamless-share/why_not/schema.json</code>. The schema is part of the tool's public contract.</li>
+<li><strong>P7 (<code>--explain-selection</code> is purely additive).</strong> Same invocation with and without <code>--explain-selection</code> differs only by populated <code>candidate.explanation</code> and <code>candidate.runners_up</code>; all other fields identical. The flag is not allowed to change candidate selection.</li>
+<li><strong>P8 (<code>--candidate</code> overrides heuristic).</strong> With <code>--candidate &lt;X&gt;</code>, the result's <code>candidate.tf_checksum == X</code>, the diff is computed against <code>X</code>, and <code>candidate.selection_score</code> is <code>null</code> (or a documented sentinel) since no heuristic ran.</li>
+<li><strong>P9 (warning tags are stable).</strong> The set of warning tags emitted by the tool is enumerable. Test asserts the tool emits one of the documented tags; new tags require a doc update.</li>
+<li><strong>P10 (large-diff resilience).</strong> Synthesize a transformation with 200+ input pins, half differing; tool produces all 100+ entries in the output without truncation. (Catches accidental pagination or truncation.)</li>
+</ul>
+<h3 id="tests-that-must-not-exist">Tests that must NOT exist</h3>
+<p>The plan is also a list of things implementers should resist adding:</p>
+<ul>
+<li>Tests that assert a <em>primary</em> difference. There is no primary difference.</li>
+<li>Tests that assert cascade behavior in v1.</li>
+<li>Tests that assert metadata divergence is part of the diff.</li>
+<li>Tests that assert <code>--deep</code> "explains" the miss beyond producing content. Identity is checksum equality; <code>--deep</code> is presentation.</li>
+<li>Tests asserting that a dunder-only diff is treated as a near-miss "almost the same" — it is treated as <em>the candidate was wrong</em>.</li>
+</ul>
+<h2 id="failure-shapes-the-test-suite-must-cover">Failure shapes the test suite must cover</h2>
+<p>Beyond the matrix above, these failure shapes must each have a dedicated test:</p>
+<ol>
+<li>Endpoint unreachable mid-run (one endpoint of two) — exit <code>3</code>, error message identifies which endpoint, partial per-endpoint provenance retained where possible.</li>
+<li>Endpoint reachable but malformed (e.g., wrong schema version) — exit <code>3</code>, error tag distinguishes from "unreachable".</li>
+<li><code>--deep</code> with a buffer that requires fingertipping but no producer is in scope — falls back per C12, does not silently re-execute, does not write any record.</li>
+<li>User supplies a path to a transformation definition that fails to load — exit <code>2</code> with a message identifying the failing path; do not partially proceed.</li>
+<li>Two references resolving to the same <code>tf_checksum</code> — <code>transformation-diff</code> returns empty entries (not an error); <code>why-not</code> is non-applicable here (single reference).</li>
+</ol>
+<h2 id="documentation-deliverables-alongside-the-code">Documentation deliverables alongside the code</h2>
+<ul>
+<li><code>seamless-share/why_not/README.md</code> — user-facing quickstart, links back to <a href="usage-patterns.html#pattern-2-cache-miss-diagnosis-why-not">Pattern 2</a>.</li>
+<li><code>seamless-share/why_not/schema.json</code> — JSON Schema for the structured output.</li>
+<li><code>seamless-share/why_not/CHANGELOG.md</code> — semver, schema version bumps, warning-tag additions.</li>
+<li>Man-page-style <code>--help</code> text for both subcommands; the <code>--help</code> output is also a test fixture (regenerating it from argparse output should be byte-stable).</li>
+</ul>
+<h2 id="acceptance-criteria-for-v1">Acceptance criteria for v1</h2>
+<p>The tool is ready for v1 cut when:</p>
+<ol>
+<li>All tests above pass.</li>
+<li>The schema validator (P6) is wired into CI.</li>
+<li>The static no-write-path check (P3) is wired into CI.</li>
+<li>Running <code>why-not</code> on a real local <code>seamless.db</code> produced by a small Seamless project (a separate manual smoke test the implementer documents) gives a sensible answer for at least one deliberately-introduced cache miss of each scenario category that appears in the project.</li>
+<li>The schema and CLI are reviewed against <a href="usage-patterns.html#pattern-2-cache-miss-diagnosis-why-not">Pattern 2</a> line-by-line; any deviation is either fixed or recorded as an intentional refinement in this file.</li>
+</ol>
+              
+            </div>
+          </div><footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+    
+    
+  </span>
+</div>
+    <script src="../../../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "../../..";</script>
+    <script src="../../../js/theme_extra.js"></script>
+    <script src="../../../js/theme.js"></script>
+      <script src="../../../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>

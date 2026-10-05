@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <link rel="shortcut icon" href="../img/favicon.ico" />
+    <title>Cancellation - Seamless — Agent Documentation</title>
+    <link rel="stylesheet" href="../css/theme.css" />
+    <link rel="stylesheet" href="../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "Cancellation";
+        var mkdocs_page_input_path = "contracts/cancellation.md";
+        var mkdocs_page_url = null;
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href="../index.html" class="icon icon-home"> Seamless — Agent Documentation
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../index.html">Home</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../overview.html">Agent Docs Overview</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../repos/index.html">Workspace Repos</a>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Contracts</span></p>
+              <ul class="current">
+                  <li class="toctree-l1"><a class="reference internal" href="identity-and-caching.html">Identity and Caching</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="celltypes-and-conversion.html">Celltypes, Null, and Conversion</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="hashtype.html">HashType</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="deep-celltypes.html">Deep Celltypes</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="expressions.html">Expressions</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="cells.html">Cells</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="pins.html">Pins</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="workflow-context.html">Workflow Context</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="node-state-lifecycle.html">Node State Lifecycle</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="attachments.html">Attachments</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="mounts.html">File Mounts</a>
+                  </li>
+                  <li class="toctree-l1 current"><a class="reference internal current" href="#">Cancellation</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#the-pattern">The pattern</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#the-two-operations">The two operations</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#three-constraints">Three constraints</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#policy-which-operation-where">Policy: which operation, where</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#the-api">The API</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#what-cancellation-is-not-for">What cancellation is not for</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#materialization-is-the-same-pattern-one-layer-down">Materialization is the same pattern, one layer down</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#implementation-status-and-current-limitations">Implementation status and current limitations</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#non-goals">Non-goals</a>
+    </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="direct-delayed-and-transformation.html">direct/delayed/Transformation</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="modules-and-closures.html">Modules and Closures</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="scratch-witness-audit.html">Scratch/Witness/Audit</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="seamless-run-and-argtyping.html">seamless-run/Argtyping</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="cache-storage-and-limits.html">Cache Storage and Limits</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="content-addressed-files-and-dirs.html">Content-addressed Files and Dirs</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="execution-backends.html">Execution Backends</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="execution-records.html">Execution Records</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="service-management.html">Service Management</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="compression.html">Compression</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="compiled-transformers.html">Compiled Transformers</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="compiled-pins.html">Compiled Pins</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="seamless-signature-schema.html">seamless-signature Schema</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">API</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/python/seamless.html">seamless</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/python/seamless.transformer.html">seamless.transformer</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/python/seamless.buffer_class.html">seamless.buffer_class</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/python/seamless.checksum_class.html">seamless.checksum_class</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/python/seamless_config.select.html">seamless_config.select</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/python/seamless_config.tools.html">seamless_config.tools</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/python/seamless_transformer.transformation_class.html">seamless_transformer.transformation_class</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/python/seamless_transformer.transformer_class.html">seamless_transformer.transformer_class</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">CLI</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/cli/seamless-run.html">seamless-run</a>
+                  </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Seamless — Agent Documentation</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../index.html" class="icon icon-home" aria-label="Docs"></a></li>
+          <li class="breadcrumb-item">Contracts</li>
+      <li class="breadcrumb-item active">Cancellation</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h1 id="cancellation-contract">Cancellation (Contract)</h1>
+<p><strong>Cancellation is deregistration from a membership set, not a kill.</strong> Wherever deduplication happens there is a set whose members are the participants who still want a run that has not finished, and exactly two operations act on it: <code>softcancel</code> removes one member, and only an emptied set stops the underlying run; <code>cancel</code> declares the run <em>wrong</em> and kills it for everyone. One pattern, three sites, and the same pattern again one layer down at buffer materialization.</p>
+<p>This page is the cancellation substrate <strong>for transformations</strong>. Materialization cancellation — the per-checksum waiting set in the buffer layer, latch-on, the linger, and the fact that there is no hard cancel there at all — belongs to <code>contracts/expressions.md</code>; it is pointed at, not restated, in the "one layer down" section below.</p>
+<p><strong>The set's membership <em>is</em> the count.</strong> There is no separately maintained integer refcount and no <code>refholding</code> flag. This is deliberately a different mechanism, with a different lifetime and a different vocabulary, from the checksum reference lifecycle (<code>contracts/internal/checksum-reference-lifecycle.md</code>). One tracks who still wants work that has not finished; the other keeps a buffer alive once it exists. Do not conflate them, and do not call a membership set a refcount.</p>
+<p>Code locations:</p>
+<table>
+<thead>
+<tr>
+<th>Concern</th>
+<th>Module / symbol</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>In-process membership set, both operations</td>
+<td><code>seamless_transformer.transformation_cache</code> (<code>TransformationCache</code>, <code>_ActiveSubmission</code>, <code>_run_active_or_execute</code>, <code>_detach_active_member</code>, <code>softcancel_by_checksum</code> and its <code>_async</code> form, <code>_softcancel_leaf</code>, <code>cancel_by_checksum</code>)</td>
+</tr>
+<tr>
+<td>Handle verb</td>
+<td><code>seamless_transformer.transformation_class.Transformation</code> (<code>cancel</code>, <code>cancel_async</code>, <code>_cancel_local_futures</code>, <code>_mark_cancelled</code>) — see <code>contracts/direct-delayed-and-transformation.md</code></td>
+</tr>
+<tr>
+<td>Worker slots</td>
+<td><code>seamless_transformer.worker</code> (<code>cancel_by_checksum</code>)</td>
+</tr>
+<tr>
+<td>Server-side set</td>
+<td><code>seamless-jobserver/jobserver.py</code> (<code>_active_transformations</code>, <code>_run_transformation</code>, <code>_cancel_transformation</code>, <code>_transformation_status</code>); the clients are <code>seamless_remote.jobserver_remote</code> and <code>seamless_remote.jobserver_client</code> (<code>softcancel_transformation(tf_checksum, member_id)</code>, <code>cancel_transformation(tf_checksum)</code>)</td>
+</tr>
+<tr>
+<td>Latch-on set</td>
+<td><code>seamless_dask.client</code> (<code>submit_transformation</code>, <code>release_transformation_futures</code>, <code>softcancel_by_checksum(tf_checksum, member_id)</code>, <code>cancel_by_checksum(tf_checksum)</code>) over <code>seamless_dask.types.TransformationFutures</code></td>
+</tr>
+<tr>
+<td>Reactive policy</td>
+<td><code>seamless_workflow.reactive.Reactive</code> (<code>_suspend</code>, <code>_expire_run</code>) and <code>seamless_workflow.context.Context.prune</code> — <code>contracts/workflow-context.md</code></td>
+</tr>
+<tr>
+<td>Materialization layer</td>
+<td><code>seamless.checksum.expression</code> (<code>softcancel_expression</code>, <code>cancel_expression</code>) — <code>contracts/expressions.md</code></td>
+</tr>
+<tr>
+<td>Contract test suite</td>
+<td><code>seamless-transformer/tests/cancellation</code></td>
+</tr>
+</tbody>
+</table>
+<h2 id="the-pattern">The pattern</h2>
+<ul>
+<li><strong>Execution is owned by the deduplication site, never by the first caller.</strong> In process, the actual run is a detached background task owned by the transformation cache; <strong>every</strong> participant, the first one included, is a mere awaiter. This decoupling is what makes soft cancellation possible at all: while the first caller owns the execution, cancelling that caller kills the work for everyone.</li>
+<li>A participant <strong>registers on entry and deregisters in <code>finally</code></strong>, which covers normal completion, an exception and task cancellation alike.</li>
+<li><strong>A pure cache hit is never a member.</strong> It returns before the site is consulted.</li>
+</ul>
+<p>The three sites:</p>
+<table>
+<thead>
+<tr>
+<th>Site</th>
+<th>The set</th>
+<th>A member is</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>In process</strong> (<code>seamless-transformer</code>'s transformation cache)</td>
+<td>an awaiter set per <code>tf_checksum</code></td>
+<td>a coroutine awaiting the shared submission future</td>
+</tr>
+<tr>
+<td><strong>Jobserver</strong></td>
+<td>the same pattern, an independent instance <strong>inside the jobserver</strong></td>
+<td>a latched client process, identified by a member id it sends with its request</td>
+</tr>
+<tr>
+<td><strong>Dask</strong></td>
+<td>a first-runner → set-of-latch-on-runners map</td>
+<td>a latch-on runner; the first runner is itself a counted <strong>quasi-member</strong> — counted for cancellation and for result delivery, but <strong>not</strong> the lifecycle owner, because the cache/set owns the future reference</td>
+</tr>
+</tbody>
+</table>
+<p>The jobserver having a set of its own is what stops one client's cancel from deleting a sibling client's job.</p>
+<p>These three are the <strong>transformation</strong> sites. The same pattern appears twice more outside this page's scope, and both are <code>contracts/expressions.md</code>'s: a set per <strong>Expression identity</strong>, whose members are the callers sharing one in-flight evaluation (a standalone <code>Expression</code> joins as <code>id(self)</code>, the workflow Context as its demand key); and, one layer further down, the per-checksum <strong>waiting set</strong> at a buffer materialization (below). Neither is a <code>tf_checksum</code> site, and neither takes a hard cancel.</p>
+<h2 id="the-two-operations">The two operations</h2>
+<p><strong><code>softcancel</code> — remove this member from the set; if the set is now empty, cancel the underlying run.</strong> Above zero the run continues for the remaining members. On a completed or forgotten checksum it is a no-op.</p>
+<ul>
+<li><strong>It is pure deregistration: no signal reaches the member being removed.</strong> A softcancel is a member voluntarily leaving because its owner stopped wanting the result, so the whole operation is <code>set.discard(member)</code> plus the empty check. A cancellation signal is delivered <strong>only</strong> when the set empties, and <strong>only</strong> to the underlying run.</li>
+</ul>
+<p><strong><code>cancel</code> (hard) — cancel the underlying run outright, and signal and cancel every member.</strong> Unlike softcancel it <em>does</em> signal members, because the run is being declared <strong>wrong</strong>, not abandoned.</p>
+<ul>
+<li>Hard cancel means "<strong>this run is wrong and must be killed and resubmitted</strong>": a wrong dunder envelope, or wrong hardware. It does <strong>not</strong> mean "I lost interest".</li>
+<li><strong>Its cross-tenant reach is correct, not a footgun.</strong> The execution envelope is orthogonal to the <code>tf_checksum</code> (<code>contracts/identity-and-caching.md</code>), so the same <code>tf_checksum</code> may be running under the wrong envelope for every latcher at once, and all of them need it killed and resubmitted. Hard cancel is the deliberate escape hatch for the <code>strict_dunder</code> envelope-contention check.</li>
+<li>A wrong <em>input</em> is usually a <strong>different</strong> <code>tf_checksum</code>, which is unlikely to be shared, so softcancel suffices there.</li>
+</ul>
+<h2 id="three-constraints">Three constraints</h2>
+<ol>
+<li><strong>Softness composes across layers — this is load-bearing.</strong> The "cancel the underlying run" step inside <code>softcancel</code> is itself a <strong>softcancel of the next layer down</strong> when the underlying run is a shared remote submission: an emptied in-process set means <em>leave the jobserver or Dask set</em>, never kill it. <strong>A real termination happens only at the leaf set</strong> — the one co-located with the actual executor — when <em>that</em> set empties. If an emptied set hard-cancelled the remote instead, the unconditional kill would simply move one process hop downstream and the hazard would be unfixed.</li>
+<li><strong>Cross-process membership liveness is deliberately not built.</strong> An in-process set self-cleans through <code>finally</code>; a server-side set does not. <strong>A leaked member is benign, and often correct.</strong> It causes <em>under</em>-cancellation, never a peer kill: a crashed or disconnected client that never sends a softcancel does not pin a peer's job and corrupts nothing — the job runs to completion and deposits its result in the content-addressed cache, which is usually exactly what the crashed holder needs on reconnect, since a crash is not a statement that the work became uninteresting. TTL heartbeats that forced cancellation on disconnect would destroy work that is still wanted. Connection-scoped auto-deregistration may be taken <strong>where it is free</strong>, but it must not be relied on as a cancellation trigger.</li>
+<li><strong>Per-set atomicity.</strong> "Remove the last member → empty → cancel" races "a new submitter wants to latch on", so the membership change and the empty-check-and-cancel are one atomic step under a per-set lock. A lost race merely causes a fresh run to be submitted; it can never corrupt anything, because results come from the content-addressed cache and never from the set.</li>
+</ol>
+<h2 id="policy-which-operation-where">Policy: which operation, where</h2>
+<ul>
+<li><strong>The reactive workflow <code>Context</code> uses <code>softcancel</code> exclusively</strong>, including for node deletion, node supersession, <code>prune()</code> and <code>close()</code>. The reactive loop only ever <em>loses interest</em>, which is precisely softcancel. See <code>contracts/workflow-context.md</code>.</li>
+<li><strong>CLI and SIGINT stay hard.</strong> An explicit command-line cancel means "stop this submitted run now", and prompt slot reclamation is part of that contract.</li>
+<li><strong>Hard cancellation is checksum-addressed.</strong> It is aimed at a <code>tf_checksum</code>, not at a handle, because a wrong run is wrong for everyone holding it.</li>
+<li><strong>A caller never manages server-side membership directly.</strong> It softcancels its own participation; <strong>each site decides when to actually kill, by its own set.</strong></li>
+</ul>
+<h2 id="the-api">The API</h2>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>TransformationCache.softcancel_by_checksum(tf_checksum, member=None, *, remote=True)</code>, and its <code>_async</code> form</td>
+<td>remove one member; at zero, cancel the cache-owned background task and <em>leave</em> the remote set through the remote soft API</td>
+</tr>
+<tr>
+<td><code>TransformationCache.cancel_by_checksum(tf_checksum)</code></td>
+<td>hard: fail every local awaiter, and hard-cancel worker, Dask and jobserver</td>
+</tr>
+<tr>
+<td><code>Transformation.cancel(*, recursive=False)</code> / <code>await Transformation.cancel_async(...)</code></td>
+<td>a <strong>handle</strong> verb — see below</td>
+</tr>
+<tr>
+<td>jobserver <code>softcancel_transformation(tf_checksum, member_id)</code> / <code>cancel_transformation(tf_checksum)</code></td>
+<td>the same two operations on the server-side set</td>
+</tr>
+<tr>
+<td>Dask <code>softcancel_by_checksum(tf_checksum, member_id)</code> / <code>cancel_by_checksum(tf_checksum)</code></td>
+<td>the same two operations on the latch-on set</td>
+</tr>
+</tbody>
+</table>
+<p><strong>A handle verb and a substrate verb are not the same thing.</strong> <code>contracts/expressions.md</code> states the substrate vocabulary — <code>softcancel</code> means deregister, <code>cancel</code> means hard kill — and that rule governs the <strong>checksum-addressed</strong> API above. A <strong>handle</strong>'s <code>.cancel()</code> means "this handle gives up": it makes <em>that</em> handle terminal and softcancels its participation, leaving the shared run alive for every other member.</p>
+<p>So <code>Transformation.cancel()</code>:</p>
+<ul>
+<li>marks the handle terminal — <code>status</code> reports canceled, <code>result_checksum</code> raises, and <code>clear_exception()</code> does <strong>not</strong> revive it; a retry needs a new handle;</li>
+<li><strong>softcancels this handle's participation</strong> in the shared run, which continues for any other member;</li>
+<li>returns <code>True</code> if it transitioned active work (or a local promise) to canceled, <code>False</code> if nothing was active;</li>
+<li>with <code>recursive=True</code>, cascades the <strong>same soft semantics</strong> to known upstream dependency handles;</li>
+<li><strong>never invalidates the <code>tf_checksum</code>.</strong> A later submission of the same checksum is a new submission, latching on or starting fresh as usual.</li>
+</ul>
+<p>An <code>Expression</code> handle has nothing terminal to mark, which is why its only verb is <code>softcancel()</code> (<code>contracts/expressions.md</code>).</p>
+<h2 id="what-cancellation-is-not-for">What cancellation is <em>not</em> for</h2>
+<ul>
+<li><strong>Not for correctness.</strong> Results are content-addressed, so a late result is <em>unwanted</em>, never <em>wrong</em>; and because cancellation is best-effort, the Context must ignore late results from superseded runs in any case. The value of a cancel is exactly: remaining resource cost × the chance that nobody else wants the output.</li>
+<li><strong>Not a state to clear.</strong> There is no cancelled state that must be reset before work can proceed; a caller that changes its mind asks again. (A <em>handle</em> made terminal by <code>.cancel()</code> is the handle's own state, not the substrate's.)</li>
+<li><strong>Not a guarantee that the work stopped.</strong> A softcancel that returns <code>True</code> means "I was registered and have now left", and nothing more.</li>
+</ul>
+<h2 id="materialization-is-the-same-pattern-one-layer-down">Materialization is the same pattern, one layer down</h2>
+<p>Buffer materialization — a remote fetch of a buffer, which Expression evaluation, transformation input resolution, <code>.buffer</code> reads and attachment deliveries all share (<code>contracts/attachments.md</code>: a delivery resolves through <code>Checksum.resolution()</code> and never fingertips) — has its <strong>own waiting set, keyed by checksum, at the materialization site in the buffer layer</strong>. <code>contracts/expressions.md</code> specifies it, including latch-on and the linger; this page does not repeat it. Three consequences matter here:</p>
+<ul>
+<li>the same membership model applies, so a fetch shared with a live requester survives another requester's departure;</li>
+<li>there is <strong>no hard cancel at that layer at all</strong>, by design, so a hard <code>cancel_by_checksum</code> has no materialization counterpart;</li>
+<li>an abandoned <strong>fingertip chain</strong> deregisters softly down every step, and a step shared with a live chain survives — the membership model of this page, applied one layer down.</li>
+</ul>
+<p>Vocabulary: that set is a <strong>waiting set</strong>, never a refcount.</p>
+<h2 id="implementation-status-and-current-limitations">Implementation status and current limitations</h2>
+<p>Settled contract that the code does not yet implement, or implements differently. Where a design document and the code disagree, <strong>the code wins</strong>, and the disagreement is listed here.</p>
+<p>The in-process substrate is <strong>delivered and verified</strong> by a contract-driven suite at <code>seamless-transformer/tests/cancellation</code> (a README charter, a shared harness, in-process files, and remote multi-tenant jobserver and Dask files). The suite's README describes the two gaps below as <code>xfail(strict=False)</code>, but that is a description, not a fact about the test files: <code>test_jobserver_both_softcancel_leaf_kill</code> and <code>test_dask_first_runner_softcancel_latcher_survives</code> carry no <code>@pytest.mark.xfail</code> decorator and no dynamic xfail marking anywhere in <code>seamless-transformer/tests/cancellation/</code>, so running the suite today surfaces them as plain failures, not xfails. Verified in process: deduplication; softcancel as deregistration with peer survival; softcancel at zero cancelling the underlying run; a cache hit never becoming a member; hard cancel as kill-all; <code>strict_dunder</code> envelope rejection; and per-set atomicity. Verified across processes: jobserver deduplication, jobserver softcancel with peer survival, hard cross-tenant cancel, and the benign crashed-member case; Dask deduplication, latch-on-runner softcancel leaving the first runner alive, and hard cross-tenant cancel.</p>
+<p>Two gaps remain, both at the server boundary; their in-process equivalents pass.</p>
+<ul>
+<li><strong>The jobserver soft cascade does not reach the leaf.</strong> A local <code>cancel()</code> detaches the local awaiter but sends <strong>no server-side deregistration</strong>; the jobserver log shows the job attached and completed with no cancel message, so an all-soft-cancelled jobserver job runs to completion. Only a hard <code>cancel_by_checksum</code> stops a jobserver job. This is <strong>under-cancellation, so it is benign</strong> by constraint 2 — it wastes a slot; it never kills a peer.</li>
+<li><strong>A Dask first-runner softcancel kills its latchers.</strong> When the first runner softcancels, a latcher receives <code>TransformationError("Transformation was canceled")</code> instead of the result, because the shared future is released out from under it: across separate client processes the set does not yet own the future. This one is <strong>not benign</strong> — it is a wrong answer to a caller that never asked to stop.</li>
+</ul>
+<p>Also:</p>
+<ul>
+<li><strong>A jobserver cancel does not free the worker slot.</strong></li>
+<li>The <strong>Expression and materialization layer</strong> has an implementation-status list of its own — the local-key mismatch that makes <code>Expression.cancel()</code> a silent no-op for local evaluations, the missing linger, <code>Expression.softcancel()</code> not existing yet, <code>cancel_expression</code> still being an alias, non-interruptible Dask-dispatched Expressions, and the missing fingertip-chain cascade. It is in <code>contracts/expressions.md</code> and is not duplicated here.</li>
+</ul>
+<h2 id="non-goals">Non-goals</h2>
+<ul>
+<li><strong>Liveness machinery.</strong> No TTL, no heartbeat, no forced deregistration on disconnect (constraint 2).</li>
+<li><strong>Hard cancellation of a materialization</strong>, and hard cancellation of an Expression: documented non-features, not missing work (<code>contracts/expressions.md</code>).</li>
+<li><strong>Making instantaneous local work cancellable.</strong> Deserializing, walking a path, converting and hashing are CPU-bound and cheap; there is no useful interruption point.</li>
+<li><strong>Changing identity, retry classification, scheduling priority or cache eviction.</strong> Cancellation touches none of them; in particular a cancelled run leaves its <code>tf_checksum</code> meaning exactly what it meant (<code>contracts/identity-and-caching.md</code>).</li>
+<li><strong>Making the first caller special.</strong> It is one member among equals; anything that gives it ownership of the execution reintroduces the bug this model exists to remove.</li>
+</ul>
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="mounts.html" class="btn btn-neutral float-left" title="File Mounts"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="direct-delayed-and-transformation.html" class="btn btn-neutral float-right" title="direct/delayed/Transformation">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+    
+      <span><a href="mounts.html" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="direct-delayed-and-transformation.html" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script src="../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "..";</script>
+    <script src="../js/theme_extra.js"></script>
+    <script src="../js/theme.js"></script>
+      <script src="../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>

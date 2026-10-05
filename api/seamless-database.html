@@ -95,6 +95,8 @@
     <ul class="current">
     <li class="toctree-l2"><a class="reference internal" href="#how-it-works">How it works</a>
     </li>
+    <li class="toctree-l2"><a class="reference internal" href="#expression-cache-schema">Expression cache schema</a>
+    </li>
     <li class="toctree-l2"><a class="reference internal" href="#execution-records">Execution records</a>
         <ul>
     <li class="toctree-l3"><a class="reference internal" href="#schema-upgrade-from-legacy">Schema upgrade from legacy</a>
@@ -194,8 +196,8 @@
 <td>Reverse lookup: finds which transformations produced a given result</td>
 </tr>
 <tr>
-<td><strong>BufferInfo</strong></td>
-<td>Stores buffer metadata (length, dtype, encoding, etc.) for a checksum</td>
+<td><strong>HashType</strong></td>
+<td>Stores the packed checksum classification word used by new HashType validation and conversion checks</td>
 </tr>
 <tr>
 <td><strong>SyntacticToSemantic</strong></td>
@@ -203,7 +205,7 @@
 </tr>
 <tr>
 <td><strong>Expression</strong></td>
-<td>Caches expression evaluation results (input checksum + path + celltype → result checksum)</td>
+<td>Caches expression evaluation results keyed by <code>(input_checksum, path, input_celltype, celltype)</code></td>
 </tr>
 <tr>
 <td><strong>MetaData</strong></td>
@@ -215,7 +217,17 @@
 </tr>
 </tbody>
 </table>
-<p>All data is persisted in a single SQLite file (typically <code>seamless.db</code>). The current protocol version is <strong>2.1</strong>.</p>
+<p>All data is persisted in a single SQLite file (typically <code>seamless.db</code>). The current protocol version is <strong>2.3</strong>.</p>
+<h2 id="expression-cache-schema">Expression cache schema</h2>
+<p>Expression <code>input_celltype</code> describes the input checksum's interpretation;
+<code>celltype</code> describes the produced result. Both are part of the composite cache
+key. Database, jobserver, remote client, and Dask payloads use those same names.
+The unreleased old <code>celltype</code>/<code>target_celltype</code> keys are not accepted aliases.
+Existing development caches need these statements, in order, or a recreated
+expression cache table:</p>
+<pre><code class="language-sql">ALTER TABLE expression RENAME COLUMN celltype TO input_celltype;
+ALTER TABLE expression RENAME COLUMN target_celltype TO celltype;
+</code></pre>
 <h2 id="execution-records">Execution records</h2>
 <p><code>MetaData</code> stores one canonical execution record per successful, non-probe transformation, keyed by <code>tf_checksum</code>. Records are <strong>write-once</strong>: subsequent calls to a recorded transformation hit the normal <code>Transformation</code> cache and do not re-enter the record path.</p>
 <p>Two record sizes coexist under the same schema:</p>

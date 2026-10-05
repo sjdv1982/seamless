@@ -83,7 +83,23 @@
                   </li>
                   <li class="toctree-l1 current"><a class="reference internal current" href="#">seamless-transformer</a>
     <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#branch-notes-jupyter-sync-sync-api-inside-jupyter">Branch notes: jupyter-sync (sync API inside Jupyter)</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#why-the-december-attempt-hung">Why the December attempt hung</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#the-fix-transformation_classpy">The fix (transformation_class.py)</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#verification">Verification</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#caveats">Caveats</a>
+    </li>
+        </ul>
+    </li>
     <li class="toctree-l2"><a class="reference internal" href="#core-concepts">Core concepts</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#transformer-construction">Transformer construction</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#transformer-pins">Transformer pins</a>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#worker-pool">Worker pool</a>
     </li>
@@ -94,6 +110,8 @@
     <li class="toctree-l2"><a class="reference internal" href="#cli-scripts">CLI scripts</a>
         <ul>
     <li class="toctree-l3"><a class="reference internal" href="#seamless-run-transformation">seamless-run-transformation</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#managing-dependencies-with-seamless-run">Managing dependencies with seamless-run</a>
     </li>
         </ul>
     </li>
@@ -174,6 +192,48 @@
               
                 <h1 id="seamless-transformer">seamless-transformer</h1>
 <p><code>seamless-transformer</code> is the computation engine of the <a href="https://github.com/sjdv1982/seamless">Seamless</a> framework. It takes a <em>transformation</em> — a pure-functional computation defined as a checksum-addressed dict of inputs, code, and language — and executes it, returning a result checksum. It supports Python and bash transformations, multi-process worker pools with shared-memory IPC, and integration with the Seamless caching and remote infrastructure.</p>
+<h2 id="branch-notes-jupyter-sync-sync-api-inside-jupyter">Branch notes: <code>jupyter-sync</code> (sync API inside Jupyter)</h2>
+<p>This branch lets the sync API (<code>func()</code> of a <code>@direct</code> transformer, <code>tf.run()</code>, <code>tf.compute()</code>) be used from a Jupyter cell, or from any thread whose own event loop is running. On <code>cells-and-expressions</code> (5162312) every sync entry point is refused there with "not supported within Jupyter". The branch was re-created from <code>cells-and-expressions</code>. It replaces the December 2025 attempt (91bec26, still on <code>origin/jupyter-sync</code>), which deadlocked <code>test_nested_transformations_multi.py</code>.</p>
+<h3 id="why-the-december-attempt-hung">Why the December attempt hung</h3>
+<p>The December attempt sent every in-process computation to one shared background event loop. Transformer bodies run on that loop's default thread pool (<code>loop.run_in_executor(None, run_transformation_dict, ...)</code>), which holds <code>min(32, cpu+4)</code> threads: 18 on a 14-core machine. A nested sync <code>.run()</code> blocks its pool thread while it waits for its children. The nested multi test needs about 40 such threads at once (10 outer, 10 middle and 20 leaf), so the pool starves and everything deadlocks.</p>
+<ul>
+<li><strong>Stack dump:</strong> it shows exactly 18 threads, all waiting in a nested <code>run()</code> inside <code>_compute_sync</code>.</li>
+<li><strong>Larger pool:</strong> the same patch passes with a 200-thread pool.</li>
+<li><strong>Still reproduces:</strong> the hang still happens with that patch ported onto 5162312.</li>
+<li><strong>Spawn and Dask:</strong> those variants never hit it, because they don't share the in-process pool.</li>
+</ul>
+<h3 id="the-fix-transformation_classpy">The fix (<code>transformation_class.py</code>)</h3>
+<ul>
+<li><strong>Only the Jupyter thread changes.</strong> <code>_sync_task_loop()</code> sends work from a thread whose own loop is running (a notebook cell, or sync code inside a coroutine) to a shared background <em>driver</em> loop. Every other thread keeps its current behaviour, where each thread gets its own loop from <code>get_event_loop()</code>. Transformer bodies run on threads without a loop, so nested calls never share a pool and can't starve it. Loops patched by nest_asyncio keep their old code path.</li>
+<li><strong>Dask.</strong> The sync Dask path (<code>_try_database_cache_sync</code>, <code>_run_local_fallback_sync</code>) runs a private event loop on the calling thread. That fails in Jupyter with "Cannot run the event loop while another loop is running". When the caller's loop is running, <code>_compute_sync</code> now runs that path on <code>_COMPUTE_EXECUTOR</code>.</li>
+<li><strong>Waiting across loops.</strong> A task started in a cell now lives on the driver loop, so it can't simply be awaited from the cell's loop. <code>_await_task_any_loop()</code> handles this in two places:</li>
+<li>the Dask branch of <code>await tf.computation()</code>, which used to raise;</li>
+<li><code>await tf.cancel_async()</code>, which used to return before the cancellation had finished.</li>
+</ul>
+<h3 id="verification">Verification</h3>
+<ul>
+<li><strong>Real Jupyter kernel</strong> (driven by <code>tests/manual/jupyter-wrapper</code>): all of the following work, in-process and on a local Dask cluster:</li>
+<li>direct calls, <code>.run()</code>, <code>.compute()</code> and dependencies;</li>
+<li><code>start()</code> followed by <code>.run()</code>;</li>
+<li>nested transformations;</li>
+<li><code>await tf.task()</code> and <code>await tf.computation()</code>.</li>
+<li><strong>Spawned workers</strong> already worked in a running loop before this branch.</li>
+<li><strong><code>tests/test_sync_in_running_loop.py</code></strong> has 6 tests. They include the nested stress case that deadlocked the December attempt, and <code>cancel_async</code>. They pass on Python 3.13 and on 3.14.</li>
+<li><strong><code>test_nested_transformations_multi.py</code></strong>, and <strong><code>test_nested_transformations_multi_async.py</code></strong> copied from the December branch, both pass (about 20 s each).</li>
+<li><strong>Full suite:</strong> run one pytest process per file, every file has the same pass/fail result as 5162312. The failures that also occur on 5162312 are environmental or come from work in progress:</li>
+<li><code>target_celltype</code> errors in the expression tests;</li>
+<li><code>seamless_dask</code> missing from the base environment;</li>
+<li>the service launcher rejecting conda env <code>base</code>;</li>
+<li><code>seamless-signature</code> import errors in the compiled tests.</li>
+<li><strong>In-process cancellation tests:</strong> all pass.</li>
+</ul>
+<h3 id="caveats">Caveats</h3>
+<ul>
+<li><strong>Don't wake the loop in <code>start()</code>.</strong> A task created from another thread only runs once someone waits for it, and <code>construct()</code> relies on that to stay lazy: <code>_run_dependencies()</code> calls <code>self.start()</code>, which schedules the whole computation. When a wake-up was added, <code>construct()</code> started computing eagerly and <code>test_is_cached</code> failed with an extra database query. This behaviour exists on <code>cells-and-expressions</code> too.</li>
+<li><strong>Blocking now happens inside any running loop.</strong> Sync calls inside <code>asyncio.run()</code> scripts now block instead of raising. To keep that guard outside Jupyter, <code>_sync_task_loop()</code> could check <code>running_in_jupyter()</code>. The plain-asyncio behaviour is what allows testing without a kernel.</li>
+<li><strong>Not tested:</strong> the jobserver remote path, and nest_asyncio.</li>
+<li><code>tests/dask/dask_sync.jupyter.py</code> is a manual notebook check on Dask. Run it from <code>tests/dask</code> with <code>tests/manual/jupyter-wrapper</code>.</li>
+</ul>
 <h2 id="core-concepts">Core concepts</h2>
 <p>A <strong>transformation</strong> in Seamless is a deterministic computation: given the same inputs and code (identified by their checksums), it always produces the same output. <code>seamless-transformer</code> is responsible for:</p>
 <ol>
@@ -182,6 +242,67 @@
 <li><strong>Executing</strong> the code — either Python (via <code>exec</code>) or bash (via subprocess with file-mapped pins).</li>
 <li><strong>Returning</strong> the result as a checksum, which can be cached and reused.</li>
 </ol>
+<h2 id="transformer-construction">Transformer construction</h2>
+<p>There are three canonical construction paths:</p>
+<ul>
+<li><code>direct(function)</code> and <code>delayed(function)</code> create non-workflow Python Transformers;</li>
+<li>assigning a function to a workflow Context (<code>ctx.tf = function</code>) creates a bound Python Transformer;</li>
+<li><code>Transformer(language="python", compiled=False, direct=False)</code> creates a code-less configurable builder for any scenario.</li>
+</ul>
+<p><code>direct</code> and <code>delayed</code> are Python-only and have no <code>language</code> argument. The factory accepts <code>"python"</code> or <code>"bash"</code> when <code>compiled=False</code>; when <code>compiled=True</code>, it forwards the language to the compiled implementation. Set <code>direct=True</code> for immediate call semantics.</p>
+<pre><code class="language-python">from seamless_transformer import Transformer
+
+bash = Transformer(&quot;bash&quot;, direct=True)
+bash.code = &quot;cat input &gt; RESULT&quot;
+
+c = Transformer(&quot;c&quot;, compiled=True)
+c.schema = &quot;...&quot;
+c.code = &quot;...&quot;
+</code></pre>
+<p>Python and Bash builder languages are fixed and read-only. The factory is also available as <code>seamless.transformer.Transformer</code>; <code>seamless.workflow</code> exports <code>Transformer</code>, <code>Context</code>, and <code>Cell</code> together.</p>
+<h2 id="transformer-pins">Transformer pins</h2>
+<p><code>tf.pins.x</code> (also <code>tf.args.x</code>) returns a fresh <code>Pin</code> handle in standalone and
+workflow-bound modes. An unset declared pin is an unwired Pin; undeclared names
+raise <code>AttributeError</code>. Pins share <code>CellBase</code> with Cells but are not Cells, have
+no projection/validator/mount API, and cannot be sources. Connect <code>pin.source</code>
+when you want its upstream source.</p>
+<pre><code class="language-python">from seamless_transformer import delayed
+
+@delayed
+def echo(value):
+    return value
+
+echo.celltypes.value = &quot;str&quot;
+echo.pins.value = &quot;42&quot;       # serializes now, with a retained input checksum
+echo.pins.value.celltype = int
+assert echo.pins.value.input_celltype == &quot;str&quot;
+assert echo.pins.value.value == 42
+assert echo().run() == 42
+</code></pre>
+<p>A pin's <code>celltype</code> and <code>tf.celltypes.x</code> are the same Transformer-owned setting.
+Its read-only <code>input_celltype</code> follows a typed input, or records its original
+serialization/declared checksum type. Retyping converts from that stored input.
+Prebound and call-time Transformation/Expression inputs convert to the pin type;
+the transformation identity contains the converted checksum. Pins store input
+references and checksum claims, never Python literal values. Compiled builders
+expose the same Pin API; the native schema still constrains accepted values.</p>
+<p><code>pin.source</code> reports a connection; <code>pin.checksum</code>, <code>.buffer</code>, and <code>.value</code> read
+the produced value. Assigning any of those three declares the input and detaches
+a source. <code>.set()</code>, <code>.set_buffer()</code>, and <code>.set_checksum()</code> check ownership.
+<code>pin.set_checksum(cs, input_celltype="int")</code> declares a checksum's input type.
+Invalid literals fail at assignment. A bound pin conversion failure sets
+<code>pin.state == "failed"</code> and <code>pin.exception</code>; its Transformer blocks on that pin
+with <code>blocked-by-error</code>, before constructing a transformation.</p>
+<p>Null has one canonical checksum. Required plain/mixed/bytes pins accept it;
+other required types reject it. Optional pins of <strong>any type</strong> treat null as
+absence, comparing checksums and dropping the pin before conversion/decoding.
+A connected optional input with no checksum still blocks. Functions may return
+None for plain/mixed/bytes results; bytes null reads as <code>b""</code>. Other result types
+reject None. Empty bytes also canonicalize to null, so optional bytes pins cannot
+carry an empty byte string as a distinct present value.</p>
+<p><code>.value = None</code> stores null. <code>.checksum = None</code> and <code>.buffer = None</code> clear the
+input and retain the declaration. <code>del tf.pins.x</code> removes the declaration only
+for signatureless code; a fixed Python/compiled signature refuses deletion.</p>
 <h2 id="worker-pool">Worker pool</h2>
 <p>For production use, <code>seamless-transformer</code> can spawn a pool of worker processes (<code>seamless_transformer.worker.spawn()</code>). Workers run in separate processes using the <code>spawn</code> multiprocessing context, and communicate with the parent via a custom IPC channel built on <code>multiprocessing.Connection</code> and shared memory.</p>
 <ul>
@@ -292,6 +413,31 @@ seamless.close()
 buffers available to the run-transformation process. In practice, use the same configured
 project, hashserver, or <code>SEAMLESS_CACHE</code> for both processes, and persist the
 transformation identity buffer as shown above.</p>
+<h3 id="managing-dependencies-with-seamless-run">Managing dependencies with <code>seamless-run</code></h3>
+<p>The canonical ways to declare inputs and execution hints that are not positional command arguments:</p>
+<table>
+<thead>
+<tr>
+<th>Flag</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>-i PATH</code> / <code>--input PATH</code></td>
+<td>Add a single file or directory as an explicit input (repeatable)</td>
+</tr>
+<tr>
+<td><code>-I FILE</code> / <code>--input-file FILE</code></td>
+<td>Read input file paths (one per line) from <code>FILE</code>; each becomes an explicit input (repeatable)</td>
+</tr>
+<tr>
+<td><code>--metafile FILE</code></td>
+<td>Read meta-variable definitions (<code>NAME=VALUE</code>, one per line) from <code>FILE</code> (repeatable). Same semantics as <code>--metavar</code>: variables are available as <code>$NAME</code> in the bash command but do <strong>not</strong> contribute to the transformation identity. Use for thread counts, verbosity, temp dirs, and other execution hints that should not invalidate the cache.</td>
+</tr>
+</tbody>
+</table>
+<p>These three flags (<code>-i</code>, <code>-I</code>, <code>--metafile</code>) are the recommended mechanism for dependency management when the wrapped command does not already surface all inputs as positional file arguments.</p>
 <h2 id="execution-records">Execution records</h2>
 <p>Every successful, non-probe transformation persists one execution record in <code>seamless.db</code> (the <code>MetaData</code> table), keyed by <code>tf_checksum</code>. The default body is <strong>minimal</strong> (timing, memory, execution mode, remote target). The full record — environment fingerprints, compilation context, validation snapshots, contract violations, freshness — is opt-in via <code>seamless.config.select_record(True)</code> (or <code>- record: true</code> in <code>seamless.profile.yaml</code>).</p>
 <p>Capture is worker-side: timing, memory, GPU usage, and compilation-context checksums are collected wherever the transformation actually ran (process, spawn child, jobserver worker, or Dask worker). The shared assembly code lives in <code>seamless_transformer/record_assembly.py</code>; the runtime mode flag is cached process-locally and invalidated on <code>select_record()</code> calls. The hot path under <code>record: false</code> pays only timing/memory capture and one database write.</p>

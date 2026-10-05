@@ -1,0 +1,680 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <link rel="shortcut icon" href="../img/favicon.ico" />
+    <title>Compiled Pins - Seamless — Agent Documentation</title>
+    <link rel="stylesheet" href="../css/theme.css" />
+    <link rel="stylesheet" href="../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "Compiled Pins";
+        var mkdocs_page_input_path = "contracts/compiled-pins.md";
+        var mkdocs_page_url = null;
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href="../index.html" class="icon icon-home"> Seamless — Agent Documentation
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../index.html">Home</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../overview.html">Agent Docs Overview</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../repos/index.html">Workspace Repos</a>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Contracts</span></p>
+              <ul class="current">
+                  <li class="toctree-l1"><a class="reference internal" href="identity-and-caching.html">Identity and Caching</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="celltypes-and-conversion.html">Celltypes, Null, and Conversion</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="hashtype.html">HashType</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="deep-celltypes.html">Deep Celltypes</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="expressions.html">Expressions</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="cells.html">Cells</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="pins.html">Pins</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="workflow-context.html">Workflow Context</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="node-state-lifecycle.html">Node State Lifecycle</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="attachments.html">Attachments</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="mounts.html">File Mounts</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="cancellation.html">Cancellation</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="direct-delayed-and-transformation.html">direct/delayed/Transformation</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="modules-and-closures.html">Modules and Closures</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="scratch-witness-audit.html">Scratch/Witness/Audit</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="seamless-run-and-argtyping.html">seamless-run/Argtyping</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="cache-storage-and-limits.html">Cache Storage and Limits</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="content-addressed-files-and-dirs.html">Content-addressed Files and Dirs</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="execution-backends.html">Execution Backends</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="execution-records.html">Execution Records</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="service-management.html">Service Management</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="compression.html">Compression</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="compiled-transformers.html">Compiled Transformers</a>
+                  </li>
+                  <li class="toctree-l1 current"><a class="reference internal current" href="#">Compiled Pins</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#1-foundation-the-c-abi-contract">1. Foundation: the C ABI contract</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#2-the-conservative-baseline-is-scoped-to-the-pin">2. The conservative baseline is scoped to the pin</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#worked-example">Worked example</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#3-three-sources-of-authority">3. Three sources of authority</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#3a-natural-mixed-value-admission">3a. Natural mixed-value admission</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#3b-schema-derived-celltypes">3b. Schema-derived celltypes</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#3c-user-declared-pin-celltypes-the-whitelist">3c. User-declared pin celltypes — the whitelist</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#mixed-is-auto">mixed is "auto"</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#4-declaration-state-schema-mutation-and-reporting">4. Declaration state, schema mutation, and reporting</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#reporting-incompatible-declarations">Reporting incompatible declarations</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#5-two-validation-stages-and-where-they-run">5. Two validation stages, and where they run</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#validation-placement-identity-without-input-data">Validation placement — identity without input data</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#6-the-concrete-compiled-transformation">6. The concrete compiled transformation</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#7-native-scalar-rules">7. Native scalar rules</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#8-character-rules">8. Character rules</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#9-errors">9. Errors</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#10-graphs-snapshots-and-checksums">10. Graphs, snapshots and checksums</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#11-out-of-scope-non-goals">11. Out of scope / non-goals</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#12-implementation-status">12. Implementation status</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#reference-map-load-only-as-needed">Reference Map (load only as needed)</a>
+    </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="seamless-signature-schema.html">seamless-signature Schema</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">API</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/python/seamless.html">seamless</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/python/seamless.transformer.html">seamless.transformer</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/python/seamless.buffer_class.html">seamless.buffer_class</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/python/seamless.checksum_class.html">seamless.checksum_class</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/python/seamless_config.select.html">seamless_config.select</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/python/seamless_config.tools.html">seamless_config.tools</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/python/seamless_transformer.transformation_class.html">seamless_transformer.transformation_class</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/python/seamless_transformer.transformer_class.html">seamless_transformer.transformer_class</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">CLI</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/cli/seamless-run.html">seamless-run</a>
+                  </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Seamless — Agent Documentation</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../index.html" class="icon icon-home" aria-label="Docs"></a></li>
+          <li class="breadcrumb-item">Contracts</li>
+      <li class="breadcrumb-item active">Compiled Pins</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h1 id="compiled-pins-contract">Compiled Pins (Contract)</h1>
+<p>This page defines the contract for the <strong>input pins of compiled transformers</strong>: which pin celltypes may be declared for a given schema parameter, which values each declaration admits, where validation runs, and what fails where. It is stricter than the general pin contract because a compiled pin feeds a native C ABI call.</p>
+<p>Out of scope here: compiled <strong>result</strong> pins and multi-output packaging — see "Result types" in <code>contracts/compiled-transformers.md</code>. The general pin layer — reaching pins, which pins exist, the two write families, and conversion at the pin boundary — is <code>contracts/pins.md</code> and is not repeated; typed inputs are converted exactly as for Python and bash transformers. What is specific to compiled transformers is the restricted set of pin celltype declarations and the schema-bound validation below.</p>
+<p><strong>Terminology, used consistently on this page.</strong> <code>char</code> is always the <strong>seamless-signature schema dtype</strong>, never a C type. The C type generated for a schema <code>char</code> is <code>unsigned char</code>. Where a C type is meant it is named as such ("the C type <code>unsigned char</code>", "plain C <code>char</code>").</p>
+<h2 id="1-foundation-the-c-abi-contract">1. Foundation: the C ABI contract</h2>
+<ol>
+<li><strong>The schema is the only source of the ABI.</strong> <code>seamless-signature</code> generates the C header (<code>tf.header</code>) from the schema alone; CFFI builds the extension module from that header; the Python call signature and all marshalling rules derive from the same schema. <code>__schema__</code> is part of transformation identity; <code>__header__</code> is derived from it and excluded (<code>contracts/compiled-transformers.md</code>, "Transformation identity and caching"). A rule that changes how an input is marshalled therefore belongs in the schema, not in builder state.</li>
+<li><strong>No header, no transformer.</strong> Until a C header can be generated, the transformer is blocked, whatever the input data. Every other check that needs no input data blocks it the same way (Stage 1, section 5).</li>
+<li><strong>Every schema input is a positional C argument.</strong> <code>transform()</code> has fixed arity: scalars by value, arrays and character buffers as <code>const T *</code>, with input wildcard dimensions as leading <code>unsigned int</code> arguments. C has no absent argument, so <strong>optional pins are not supported on compiled transformers</strong>. An optional-pin declaration on a compiled input is rejected — when declared, and on graph import. It is never translated into "drop the pin".</li>
+<li><strong>C has no None.</strong> A compiled input whose value reads as None under its declared pin celltype is rejected, whatever that celltype is, <code>mixed</code> included. Detection is by <em>reading</em>, not by checksum equality: the canonical null <code>null\n</code>, the non-canonical buffer <code>null</code>, and (under <code>mixed</code>) whitespace-padded JSON null all read as None.</li>
+<li><code>bytes</code> is not an exception. Under <code>bytes</code> the canonical null checksum reads as <code>b""</code>, which is how Seamless stores empty bytes. An empty <code>bytes</code> value is passed as <strong>length 0 with a valid, non-NULL pointer</strong>, never as a NULL pointer (Rust's <code>slice::from_raw_parts</code> requires a non-null pointer even at length 0; <code>memcpy(dst, NULL, 0)</code> is undefined behaviour in C before C2y; an empty array through the <code>binary</code> path already arrives non-NULL). Length 0 is only valid where the header takes a pointer and a wildcard length; for a scalar <code>char</code> or a fixed-size character array it is a schema refinement error.</li>
+<li>Two documented collisions that no check can resolve:<ul>
+<li>Under <code>bytes</code>, content that is exactly <code>null\n</code> has the canonical null checksum. Its checksum and buffer are identical to those of empty bytes, so nothing anywhere — the executor included — can tell them apart, and it reaches the kernel as length 0.</li>
+<li>Under <code>text</code>, the string <code>null</code> serializes to <code>null\n</code>, the canonical null, which <code>text</code> reads as None; a <code>text</code> pin therefore rejects it, and no check can distinguish it from a real null. The empty string is unaffected: it is stored as <code>\n</code>, reads as <code>""</code>, and is passed as length 0 where the schema admits it.</li>
+</ul>
+</li>
+<li>The <strong>non-canonical</strong> null checksum (content <code>null</code>, no trailing newline) is never produced by empty bytes (the serializer writes <code>null\n</code>, and canonicalization maps <code>sha256(b"")</code> to the canonical null). Its origin is ambiguous — real 4-byte content, or a non-canonical JSON null that crossed a trivial <code>plain → bytes</code> conversion. No reading is right for both, so a <code>bytes</code> pin <strong>rejects</strong> it with a targeted error naming both possible origins. The test is checksum-level and needs no buffer.</li>
+<li>A <code>binary</code> character array (NumPy <code>S1</code>) has neither problem and is the choice when the content is arbitrary.</li>
+<li><strong>NaN and infinity are NumPy values.</strong> JSON cannot hold them, and <code>float</code> is a checksum-level subtype of <code>plain</code>, so serializing NaN or infinity under <code>plain</code> or <code>float</code> raises. Under <code>mixed</code> they are serialized as NumPy data (a zero-dimensional <code>.npy</code> at the top level; a NumPy value inside JSON when nested) and read back as <code>np.float64(nan)</code> / <code>np.float64(inf)</code>. They therefore reach a compiled transformer only as a zero-dimensional <code>binary</code> scalar, which a floating-point parameter admits whatever its precision.</li>
+<li><strong>A schema <code>char</code> is an unsigned byte, passed without a terminator.</strong> The generated header declares every schema <code>char</code> as the C type <code>unsigned char</code> — scalars, array element types, struct fields — because plain C <code>char</code> has implementation-defined signedness while the transformation checksum stays the same. Kernels declare <code>unsigned char</code> (Rust <code>u8</code>). A character array is passed as a pointer to its bytes plus its length (the input wildcard, or the fixed size); <strong>no NUL terminator is added</strong>, so no copy is needed and the pointer may point directly into the input buffer. The length is authoritative: bytes at and beyond it are not part of the input and reading them is undefined behaviour (under <code>text</code>, the next byte is usually the newline serialization appends). NUL bytes inside the data are ordinary data.</li>
+</ol>
+<h2 id="2-the-conservative-baseline-is-scoped-to-the-pin">2. The conservative baseline is scoped to the pin</h2>
+<p>The conservative compatibility baseline governs exactly one pair: <strong>(schema parameter, declared compiled-pin celltype)</strong>. It does <strong>not</strong> constrain the celltype of an upstream Cell and does not prohibit liberally typed workflow data. Conversion into the pin's celltype is normal and expected; it happens <em>before</em> the pin:</p>
+<pre><code>liberally typed upstream Cell
+   → explicit workflow edge / Seamless Expression conversion
+   → conservatively typed compiled pin (checksum already has the pin celltype)
+   → compiled transformation construction and schema validation
+</code></pre>
+<p>A <code>mixed</code> Cell may feed an <code>int</code> pin through an empty-path <code>mixed → int</code> Expression; a <code>plain</code> list may feed a <code>binary</code> array pin where that conversion is valid; a Seamless-mixed structure may be navigated or transformed by an explicit Expression whose scalar or binary result then feeds the pin — but the Seamless-mixed structure itself is not a valid direct value of a compiled <code>mixed</code> pin.</p>
+<p>Once the pin checksum is known, <strong>neither transformation construction nor the executor may perform a second round of broad conversion</strong>. Between them they may only:</p>
+<ul>
+<li>canonicalize checksums, and reject values reading as None;</li>
+<li>validate readability as the declared pin celltype;</li>
+<li>classify and reject disallowed representations for a <code>mixed</code> pin;</li>
+<li>resolve/materialize when a schema check actually needs the value or buffer;</li>
+<li>validate schema refinements;</li>
+<li>prepare an already-valid value for the native call, without semantic coercion.</li>
+</ul>
+<h3 id="worked-example">Worked example</h3>
+<p>A C function that parses a JSON document receives UTF-8 text. The dict is <code>plain</code> data, but the compiled pin is declared <code>text</code>: <strong>a pin celltype describes what the C function receives, not what the upstream data is.</strong> <code>plain</code> and <code>mixed</code> are not possible — a JSON object has no C ABI and a <code>mixed</code> compiled pin rejects JSON containers. The schema parameter is a one-dimensional character array (<code>doc</code>, dtype <code>char</code>, shape <code>[N]</code>); the kernel gets the UTF-8 bytes and their length, without a terminator.</p>
+<ul>
+<li><strong>Bound, in a workflow:</strong> put the dict in a <code>plain</code> Cell and connect it to the <code>text</code> pin; the edge converts <code>plain → text</code>.</li>
+<li><strong>Unbound, typed input:</strong> pass a <code>plain</code> Cell, Expression or Transformation as the argument, or assign it as the pin's source; it is converted exactly as an edge would. A failed conversion raises an error naming the pin, the input celltype and the pin celltype.</li>
+<li><strong>Unbound, raw Python dict:</strong> a raw value has no celltype. A literal passed or assigned to a pin means exactly <code>Buffer(value, pin_celltype).get_checksum()</code> — so passing the dict itself gives the <code>text</code> checksum of <code>str(d)</code>, Python's repr, which is not JSON. Make it JSON text first: <code>Expression(checksum, input_celltype="plain", celltype="text")</code>, or <code>json.dumps(d)</code> in Python. The two routes format the JSON differently and give different input checksums; both are valid.</li>
+<li><strong>A checksum works the same way.</strong> Like a Cell, a Pin has an underlying Expression: <code>set_checksum</code> sets that Expression's <em>input</em> checksum and <code>.checksum</code> is its result, so <code>set_checksum(cs, input_celltype="plain")</code> converts to the pin celltype like any other input. The conversion is not performed during the <code>set_checksum</code> call. Only when the input celltype equals the pin celltype is no conversion involved.</li>
+</ul>
+<p>Three points that are easy to misread:</p>
+<ul>
+<li>"Conservative" restricts the pin <strong>declaration</strong>, not conversion.</li>
+<li>A Pin has an underlying Expression; an input celltype equal to the pin celltype is the <strong>special case</strong>, not the rule.</li>
+<li>Pins hold <strong>checksums, not values</strong> — a literal is serialized under the pin celltype when passed or assigned. That is the celltype's contract, not a conversion.</li>
+</ul>
+<h2 id="3-three-sources-of-authority">3. Three sources of authority</h2>
+<h3 id="3a-natural-mixed-value-admission">3a. Natural mixed-value admission</h3>
+<p>What a declared <code>mixed</code> pin accepts, by the actual representation behind the checksum:</p>
+<table>
+<thead>
+<tr>
+<th>Actual <code>mixed</code> representation</th>
+<th>Direct compiled <code>mixed</code> pin policy</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Pure binary / NumPy <code>.npy</code></td>
+<td>Accept when the schema can consume the scalar, array or structure</td>
+</tr>
+<tr>
+<td>Pure JSON integer/float/Boolean</td>
+<td>Accept for a compatible native scalar schema</td>
+</tr>
+<tr>
+<td>Pure JSON string</td>
+<td>Reject; declare the pin <code>text</code> when textual input is intended</td>
+</tr>
+<tr>
+<td>Pure JSON list/dict</td>
+<td>Reject as a direct <code>mixed</code> pin value</td>
+</tr>
+<tr>
+<td>Proper Seamless-mixed list/dict containing NumPy values</td>
+<td>Reject</td>
+</tr>
+<tr>
+<td>Null (any buffer reading as None)</td>
+<td>Reject before ordinary value validation (rule 4)</td>
+</tr>
+</tbody>
+</table>
+<p>"Proper mixed" means Seamless-specific mixed serialization that is neither pure <code>.npy</code> nor pure JSON; it has no natural C ABI. JSON containers likewise have no general native ABI: for a JSON document declare a <code>text</code> pin and parse explicitly; for list data intended as an array, put an explicit source-to-<code>binary</code> conversion on a workflow Expression before the pin. A JSON string is not native text at the boundary — it is JSON-quoted; a <code>text</code> target gives the <code>mixed → plain → text</code> chain the opportunity to produce unquoted UTF-8.</p>
+<h3 id="3b-schema-derived-celltypes">3b. Schema-derived celltypes</h3>
+<table>
+<thead>
+<tr>
+<th>Schema parameter</th>
+<th>Schema celltype</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Signed or unsigned integer scalar</td>
+<td><code>int</code></td>
+</tr>
+<tr>
+<td>Floating-point scalar</td>
+<td><code>float</code></td>
+</tr>
+<tr>
+<td>Boolean scalar</td>
+<td><code>bool</code></td>
+</tr>
+<tr>
+<td>Complex or structured scalar</td>
+<td><code>binary</code></td>
+</tr>
+<tr>
+<td>Scalar <code>char</code>, or one-dimensional <code>char</code> array</td>
+<td>none: an explicit declaration is required</td>
+</tr>
+<tr>
+<td>Every other array, of any dtype and number of dimensions</td>
+<td><code>binary</code></td>
+</tr>
+</tbody>
+</table>
+<p>Integer width/signedness, float precision, NumPy dtype, shape, byte order, alignment and struct layout are <strong>schema refinements</strong>, not new celltypes. The schema celltype never replaces the declared pin celltype and a <code>mixed</code> pin is never resolved to it; its one job is to generate the whitelist of compatible declarations (3c), plus diagnostics and inspection.</p>
+<p><strong>Auto consistency</strong> — the property that makes <code>mixed</code> safe wherever a schema celltype exists: <em>a value of the schema celltype that satisfies the schema, serialized under that celltype, is accepted by a <code>mixed</code> pin and makes the same native call as on a pin declared with the schema celltype.</em> It holds because <code>int</code>/<code>float</code>/<code>bool</code> convert to <code>mixed</code> without changing the checksum (through <code>plain</code>) and read under <code>mixed</code> as the same JSON scalar, and <code>binary</code> converts to <code>mixed</code> without changing the checksum, with both celltypes using the same parser. The property concerns values serialized under the schema celltype; a checksum that is not canonical for it can behave differently — an <code>int</code> pin reads JSON <code>5.7</code> as 5, while a <code>mixed</code> pin on an integer parameter rejects it. That is the documented <code>int</code> reading, not an auto inconsistency.</p>
+<p><strong>No auto for a scalar <code>char</code> or a one-dimensional <code>char</code> array.</strong> There the natural celltype is ambiguous — <code>bytes</code>, <code>binary</code> and (for the array) <code>text</code> all fit and accept different inputs. <code>mixed</code> cannot stand in: converting <code>bytes</code> to <code>mixed</code> keeps a JSON-parsable buffer as that JSON value (<code>b"1"</code> becomes integer 1), turns other UTF-8 content into a JSON string (<code>b"ACGT"</code> becomes <code>"ACGT"</code>), and only non-UTF-8 content into a zero-dimensional <code>S{len}</code> array — all rejected on <code>char [N]</code>; <code>text</code> converts to <code>mixed</code> as a JSON string and fails the same way; only <code>binary</code> agrees with <code>mixed</code>, and making it the schema celltype would turn auto into a silent choice of the narrowest option. A <code>char</code> array with two or more dimensions keeps auto, because <code>binary</code> is its only other declaration and it agrees with <code>mixed</code>.</p>
+<h3 id="3c-user-declared-pin-celltypes-the-whitelist">3c. User-declared pin celltypes — the whitelist</h3>
+<table>
+<thead>
+<tr>
+<th>Schema kind</th>
+<th>Compatible declared pin celltypes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Integer scalar</td>
+<td><code>int</code>, zero-dimensional <code>binary</code>, schema-bound <code>mixed</code></td>
+</tr>
+<tr>
+<td>Floating scalar</td>
+<td><code>float</code>, zero-dimensional <code>binary</code>, schema-bound <code>mixed</code></td>
+</tr>
+<tr>
+<td>Boolean scalar</td>
+<td><code>bool</code>, zero-dimensional <code>binary</code>, schema-bound <code>mixed</code></td>
+</tr>
+<tr>
+<td>Complex scalar</td>
+<td>zero-dimensional <code>binary</code>, schema-bound <code>mixed</code></td>
+</tr>
+<tr>
+<td>Numeric/Boolean/complex array</td>
+<td><code>binary</code>, schema-bound <code>mixed</code></td>
+</tr>
+<tr>
+<td>Structured scalar or array</td>
+<td><code>binary</code>, schema-bound <code>mixed</code></td>
+</tr>
+<tr>
+<td>Scalar <code>char</code></td>
+<td><code>bytes</code>, zero-dimensional <code>S1</code> <code>binary</code> (no <code>mixed</code>)</td>
+</tr>
+<tr>
+<td>One-dimensional <code>char</code> array (<code>[N]</code> or <code>[k]</code>)</td>
+<td><code>bytes</code>, <code>text</code>, <code>S1</code> <code>binary</code> (no <code>mixed</code>)</td>
+</tr>
+<tr>
+<td><code>char</code> array with two or more dimensions</td>
+<td><code>S1</code> <code>binary</code>, schema-bound <code>mixed</code></td>
+</tr>
+</tbody>
+</table>
+<p>One formula generates the table: where a parameter has a schema celltype, the compatible declarations are the schema celltype, <code>binary</code> and <code>mixed</code>; where it has none they are listed explicitly. The compatible declarations are therefore always drawn from <code>int</code>, <code>float</code>, <code>bool</code>, <code>bytes</code>, <code>text</code>, <code>binary</code>, <code>mixed</code>. <code>bytes</code> and <code>text</code> carry only a length, so they cannot fill a multidimensional array (<code>[N, M]</code> has no single split; <code>[N, 4]</code> would need a reshape rule). <code>plain</code>, <code>str</code>, general code/text celltypes, <code>checksum</code> and deep/structural celltypes are <strong>not</strong> compatible with a native parameter.</p>
+<p>This is a <strong>whitelist, not a test of whether some generic conversion path happens to exist</strong>. It grows only when a specific native representation and validation rule are documented — never because the current native-call library happens to coerce a value successfully.</p>
+<h3 id="mixed-is-auto"><code>mixed</code> is "auto"</h3>
+<p><code>mixed</code> is the default declaration and it lets the schema decide which values pass. There is no separate auto state: declaring <code>mixed</code> explicitly is the same as the default, and resets a pin to auto. For a declared <code>mixed</code> pin, <code>mixed</code> has one compiled-specific meaning: <em>accept only natural mixed values compatible with the schema, reject the other mixed representations, and apply the schema refinements without general value coercion.</em> <strong>There is no unrestricted, non-schema-bound <code>mixed</code> mode for compiled input pins.</strong> Auto exists everywhere except a scalar <code>char</code> or a one-dimensional <code>char</code> array, which need an explicit declaration.</p>
+<h2 id="4-declaration-state-schema-mutation-and-reporting">4. Declaration state, schema mutation, and reporting</h2>
+<p>Assigning a schema is an <strong>atomic builder-state update</strong>:</p>
+<ol>
+<li>parse and validate the prospective schema (a schema that does not parse raises and changes nothing);</li>
+<li>derive the prospective schema-celltype map;</li>
+<li><strong>preserve declared celltypes for surviving pin names</strong>, whether or not they are still compatible;</li>
+<li>give newly introduced pins the declared celltype <code>mixed</code> (auto);</li>
+<li>remove declarations for pins that disappeared;</li>
+<li>rebuild the call signature and schema-derived metadata;</li>
+<li>recompute Stage 1 state and report every incompatible declaration.</li>
+</ol>
+<p>Never reset every declared pin to <code>mixed</code> on a schema change, and never replace a <code>mixed</code> declaration with an explicit one. A <code>mixed</code> pin stays auto and becomes incompatible only when its parameter becomes a scalar <code>char</code> or a one-dimensional <code>char</code> array, where it is reported as a <em>missing declaration</em>. Any other declaration can become incompatible too; either way it is kept and reported, never silently changed.</p>
+<p>Pins are identified by name:</p>
+<ul>
+<li><strong>A pin exists only once the schema defines it.</strong> Its celltype cannot be declared before that: the compiled celltypes wrapper raises <code>AttributeError</code> for an unknown pin.</li>
+<li><strong>"Either order" applies to existing pins</strong> — a user may change a declaration first and then the schema, or the other way round; temporary builder inconsistency is allowed. A new pin needs the schema first.</li>
+<li><strong>Renaming a pin in the schema removes one pin and adds another</strong>: the old name's declaration is dropped and the new name starts as auto. This is intended.</li>
+</ul>
+<p><strong>Absent or unparsable schema.</strong> The API prevents it, but graph import can produce it. Declarations are then kept as imported, without validation, and the transformer is blocked on its schema; declarations are removed and compatibility-checked only against a schema that parses.</p>
+<h3 id="reporting-incompatible-declarations">Reporting incompatible declarations</h3>
+<p>A declared celltype the schema does not allow is always reported, never silently accepted, reset or replaced.</p>
+<ul>
+<li>A celltype <strong>no</strong> schema allows (anything outside <code>int</code>, <code>float</code>, <code>bool</code>, <code>bytes</code>, <code>text</code>, <code>binary</code>, <code>mixed</code> — e.g. <code>plain</code>, <code>str</code>, <code>deepcell</code>) raises immediately when declared, because no schema edit can make it valid. Graph import can still bring one in; it is imported as declared, blocks the transformer, and is reported like the case below.</li>
+<li>A celltype <strong>some</strong> schema allows but the current one does not is accepted (so schema and declaration can be edited in either order) and reported:</li>
+<li><strong>when it arises</strong>, from a declaration change or a schema change, as a <code>CompiledPinCelltypeWarning</code> carrying the diagnostic;</li>
+<li><strong>whenever the transformer is used</strong> — a standalone call or snapshot build raises <code>CompiledPinCelltypeError</code>; a bound workflow transformer is blocked with it as its exception;</li>
+<li><strong>on inspection</strong> — repr output and the schema-celltype view mark the pin incompatible;</li>
+<li><strong>after graph import or snapshot restore</strong> — the same way, as if it had just arisen.</li>
+<li>Every report lists <strong>all</strong> incompatible pins, not only the first.</li>
+<li>While the schema is absent or unparsable, compatibility cannot be checked: the schema failure is reported instead, and declarations are checked as soon as a schema parses.</li>
+</ul>
+<p>The diagnostic names the pin; the declared pin celltype; the schema dtype and shape; the derived schema celltype or that there is none; and the allowed declarations:</p>
+<pre><code class="language-text">Compiled pin 'x' declares celltype 'int', which is incompatible with
+schema dtype 'float64', shape [N] (schema celltype 'binary'). Allowed pin
+celltypes are 'binary' and 'mixed'.
+</code></pre>
+<pre><code class="language-text">Compiled pin 'seq' (schema dtype 'char', shape [N]) needs an explicit
+celltype: 'bytes', 'text', or 'binary'. 'mixed' (auto) is not available
+for this parameter.
+</code></pre>
+<p>Both the declared and the schema celltype are exposed for inspection (at minimum in repr/debug output; a read-only <code>schema_celltypes</code> view or equivalent is preferable to hiding the derived state).</p>
+<h2 id="5-two-validation-stages-and-where-they-run">5. Two validation stages, and where they run</h2>
+<p><strong>Stage 1 — data-independent; a failure blocks the transformer.</strong> Decided from builder state alone:</p>
+<ul>
+<li>the schema is set and parses, so a C header can be generated;</li>
+<li>metavars are complete;</li>
+<li>every declared pin celltype is compatible with its schema parameter (3c);</li>
+<li>no compiled input pin is declared optional.</li>
+</ul>
+<p>A Stage 1 failure blocks the transformer whatever its inputs, exactly as a missing header does, and <strong>no input is resolved, converted or validated</strong>: a standalone call or snapshot build raises before binding its call arguments; a bound workflow transformer is blocked with the Stage 1 diagnostic before its pins are resolved. Graph import <strong>rejects</strong> a compiled transformer node with optional input pins (that state can never become valid) and <strong>imports other Stage 1 failures as a blocked transformer</strong> (builder state may be temporarily inconsistent).</p>
+<p><strong>Stage 2 — data-dependent; runs per transformation.</strong> Needs input checksums, and for some checks buffers or values: null (rule 4); readability of each checksum as its declared pin celltype; <code>mixed</code> representation classification; schema refinements (dtype, width and range, shape and wildcard consistency, byte order, alignment, layout).</p>
+<h3 id="validation-placement-identity-without-input-data">Validation placement — identity without input data</h3>
+<p>Computing a transformation checksum must not require input buffers. Python transformations already have this property (identity from input checksums; HashType checks never fetch a buffer) and compiled transformations keep it; otherwise a cache hit would still download every input, and a large remote array would be fetched to the client only to compute identity. Stage 2 therefore runs in two places.</p>
+<p><strong>Before hashing, at construction: only checks that need no input buffer fetch.</strong></p>
+<ul>
+<li>Inputs supplied as <strong>literal values</strong> (standalone call arguments, pin assignments): the value is serialized under the declared pin celltype, and every Stage 2 check applies to the value <em>as read back from that local buffer</em>. The Python object before serialization plays no part, so a literal and its checksum <code>Buffer(value, pin_celltype).get_checksum()</code> get the same verdict — <code>np.float32(1.5)</code> given to a <code>mixed</code> pin is serialized as JSON <code>1.5</code> and validated as that JSON number, not as a <code>float32</code>.</li>
+<li><strong>Every</strong> input: checksum-level facts — the null checksums (under <code>bytes</code>, the non-canonical one too), the boolean virtual values, and the other trivial checksums (<code>{}</code>, <code>[]</code>, <code>""</code>).</li>
+<li><strong>Every</strong> input: HashType facts available without fetching the buffer — readability disproofs for the declared celltype, <code>mixed</code> storage classes that are always rejected (JSON and Seamless-mixed objects and arrays), and NumPy dtype class and rank.</li>
+</ul>
+<p><strong>In the executor, before compilation: every Stage 2 check on every input</strong>, whatever construction already checked. This is the guarantee; the pre-hash checks are an early-fail optimization.</p>
+<p>Rules:</p>
+<ul>
+<li>A pre-hash check may reject only what the executor would also reject, with the same error type and message, and never changes what is accepted.</li>
+<li>Pre-hash checks use only sound facts. A <code>JSON_STRING</code> HashType word does not prove a JSON string, because JSON <code>true</code>, <code>false</code> and <code>null</code> are classified <code>JSON_STRING</code> (see <code>contracts/hashtype.md</code>); HashType does not record exact dtype, shape, byte order or wildcard sizes, so those run in the executor unless the input was a literal.</li>
+<li><strong>The invariant: an invalid input never reaches native compilation or the native call, and never produces a cached result.</strong> An invalid input <em>may</em> acquire a transformation checksum when its invalidity cannot be decided without its data.</li>
+<li>Whether an error surfaces before hashing or in the executor may depend on local state (such as whether a HashType word is cached); its type and message do not. In a bound workflow the transformer's exception names the offending pin in either case.</li>
+</ul>
+<h2 id="6-the-concrete-compiled-transformation">6. The concrete compiled transformation</h2>
+<p>Every concrete compiled transformation input tuple contains its <strong>actual declared pin celltype</strong>:</p>
+<pre><code class="language-python">{
+    &quot;a&quot;: (&quot;int&quot;, None, checksum_hex),
+    &quot;array&quot;: (&quot;binary&quot;, None, checksum_hex),
+    &quot;auto_pin&quot;: (&quot;mixed&quot;, None, checksum_hex),
+}
+</code></pre>
+<p>The schema remains part of the transformation definition and checksum. A declared <code>mixed</code> pin stays <code>mixed</code> in the concrete tuple — its restricted meaning comes from the schema plus the compiled mixed-value validator — and is never silently rewritten to the schema celltype after the workflow has targeted the pin.</p>
+<p>Stage 2 validation order, once Stage 1 has passed and all dependencies have concrete checksums (construction applies each step only as far as it can be decided without fetching an input buffer; the executor applies every step in full, before compilation):</p>
+<ol>
+<li>Canonicalize checksums according to their declared pin celltypes.</li>
+<li>Reject every input that reads as None (rule 4). <strong>No pin is dropped</strong> — compiled transformers have no optional pins. Under <code>bytes</code> the canonical null reads as <code>b""</code> and is left to schema refinement, while the non-canonical <code>null</code> checksum is rejected.</li>
+<li>Validate that every checksum is deserializable as its declared pin celltype.</li>
+<li>For a declared <code>mixed</code> pin, classify the actual mixed representation and apply the admission/rejection table (3a).</li>
+<li>Apply schema refinement validation.</li>
+</ol>
+<p>Construction computes the transformation checksum only after its pre-hash checks pass. Sync and async/deferred construction share this order.</p>
+<p>Validation follows the conversion engine's economy: checksum-only facts first, then cached HashType/storage classification, then buffer inspection, and full value deserialization only for schema checks that require it. Classification is <strong>reject-only</strong>: it never rewrites or canonicalizes a successful non-null value.</p>
+<h2 id="7-native-scalar-rules">7. Native scalar rules</h2>
+<p>A scalar parameter is passed to C <strong>by value</strong>, so its value is always converted to the C type and the rules below decide only which values are <em>admitted</em>. An array is passed as a <strong>pointer to its buffer</strong>, so its dtype is its memory layout: a mismatch would need a copy and a cast, which is exactly the hidden conversion this contract rules out. Numeric scalars are therefore admitted <strong>by kind and range</strong>; arrays by <strong>exact dtype</strong>.</p>
+<p>For pins declared <code>mixed</code> or <code>binary</code>, one admission table covers JSON scalars and zero-dimensional numeric <code>binary</code> scalars alike; the admitted value is passed on without further semantic coercion:</p>
+<table>
+<thead>
+<tr>
+<th>Schema scalar</th>
+<th>JSON scalar</th>
+<th>Zero-dimensional <code>binary</code> scalar</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Signed/unsigned integer</td>
+<td>Python <code>int</code>, excluding <code>bool</code></td>
+<td>any signed or unsigned integer dtype</td>
+</tr>
+<tr>
+<td>Floating point</td>
+<td>Python <code>float</code>; a Python <code>int</code> only when the target type represents it exactly (D1)</td>
+<td>any floating-point dtype; an integer dtype only when the target represents it exactly (D1)</td>
+</tr>
+<tr>
+<td>Boolean</td>
+<td>Python <code>bool</code> only</td>
+<td><code>bool</code> dtype only</td>
+</tr>
+<tr>
+<td>Complex</td>
+<td>No JSON representation</td>
+<td>any complex dtype</td>
+</tr>
+<tr>
+<td><code>char</code></td>
+<td>No JSON representation; a JSON string is rejected. A scalar <code>char</code> does not allow <code>mixed</code></td>
+<td>exact dtype <code>S1</code></td>
+</tr>
+</tbody>
+</table>
+<p>After admission the range of the schema type is enforced:</p>
+<ul>
+<li>integers must lie within the native range;</li>
+<li>for floating-point values, and for each part of a complex value: NaN and ±infinity pass through (rule 5); rounding within the finite range is accepted; <strong>a finite value outside the target's finite range is rejected</strong>, under every declared celltype (decision D2 — converting such a value to C <code>float</code> is undefined behaviour, C11 6.3.1.5). Example: JSON <code>1e300</code> or <code>np.float64(1e300)</code> on a <code>float32</code> parameter is rejected, while JSON <code>0.1</code> on <code>float32</code> is accepted with ordinary rounding.</li>
+<li><strong>D1, decided:</strong> an integer — JSON or <code>binary</code> — is accepted on a floating-point parameter <strong>only when the target type represents it exactly</strong>, and rejected otherwise. (Integers beyond 2^53 for <code>float64</code> or 2^24 for <code>float32</code> are not all exactly representable. JSON has a single number type, so <code>5</code> versus <code>5.0</code> is a serialization accident; silent precision loss is not.)</li>
+<li><strong>D3, decided:</strong> a numeric scalar parameter admits a zero-dimensional <code>binary</code> value <strong>by kind, not by exact dtype</strong>, under the same range rules as a JSON scalar, on <code>mixed</code> and <code>binary</code> pins alike, NaN and infinity included. Structured scalars, character scalars, and <strong>all</strong> arrays including shape-<code>(1,)</code> arrays on a scalar parameter keep exact dtype and native byte order.</li>
+</ul>
+<p>The dtype of an admitted zero-dimensional value is not compared with the schema dtype and its byte order plays no part. The rule is the same for <code>mixed</code> and <code>binary</code> pins: converting <code>binary</code> to <code>mixed</code> does not change the checksum, so both give the same checksum the same verdict. A JSON scalar carries no dtype, and neither does a finite NumPy scalar serialized under <code>mixed</code>, which is written as a JSON number: <code>np.float32(1.5)</code> as a zero-dimensional <code>.npy</code>, <code>np.float64(1.5)</code> as one, and JSON <code>1.5</code> have <strong>different checksums but make the same native call</strong>; they are cached separately, which duplicates a result but never returns a wrong one.</p>
+<p>There is <strong>no float-to-int truncation</strong> in the schema-bound validator, for JSON or <code>binary</code> scalars. A user who wants Seamless <code>float → int</code> semantics puts that conversion on a workflow edge feeding an <code>int</code> pin. For a pin explicitly declared <code>int</code>, <code>float</code> or <code>bool</code>, ordinary celltype serialization and Expression conversion semantics remain authoritative, including documented Seamless scalar conversion behaviour; those celltypes cannot hold NaN or infinity. The table above exists because <code>mixed</code> and <code>binary</code> values have no Seamless scalar conversion semantics of their own.</p>
+<h2 id="8-character-rules">8. Character rules</h2>
+<p>A schema <code>char</code> parameter receives bytes (rule 6). The declared pin celltype decides how the input is read into bytes; once read, the bytes are passed the same way whatever the celltype, so the kernel cannot tell which celltype delivered them.</p>
+<table>
+<thead>
+<tr>
+<th>Declared pin celltype</th>
+<th>Schema shapes</th>
+<th>Bytes the kernel receives</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>bytes</code></td>
+<td>scalar <code>char</code>; one-dimensional array</td>
+<td>the <code>bytes</code> value, unchanged</td>
+</tr>
+<tr>
+<td><code>text</code></td>
+<td>one-dimensional array</td>
+<td>the <code>text</code> value encoded as UTF-8, without the newline serialization appends</td>
+</tr>
+<tr>
+<td><code>binary</code></td>
+<td>every <code>char</code> shape</td>
+<td>the data of a NumPy array of exact dtype <code>S1</code> and the schema's shape</td>
+</tr>
+<tr>
+<td><code>mixed</code></td>
+<td><code>char</code> arrays with two or more dimensions</td>
+<td>the same as <code>binary</code></td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li><strong>Length.</strong> For a wildcard dimension the length is the <strong>byte</strong> count — for <code>text</code>, UTF-8 bytes, not characters. A fixed size <code>[k]</code> requires exactly k bytes and a scalar <code>char</code> exactly one; any other length is a schema refinement error. Nothing is padded (with NUL or otherwise) or truncated; padding is an explicit upstream conversion.</li>
+<li><strong><code>text</code> delivers its value, not its buffer.</strong> The value <code>ACGT</code> is stored as <code>ACGT\n</code> and reading strips trailing newlines, so the kernel receives <code>ACGT</code> with length 4; the value is a prefix of the stored buffer, so it can be passed without a copy. A <code>text</code> pin and a <code>bytes</code> pin fed from the same <code>text</code> Cell therefore differ: the trivial <code>text → bytes</code> conversion keeps the buffer unchanged, so the <code>bytes</code> pin receives <code>ACGT\n</code> with length 5.</li>
+<li><strong><code>binary</code> and <code>mixed</code> take exact <code>S1</code>.</strong> A NumPy fixed-width byte string <code>S{k}</code> with k &gt; 1 is rejected even where its bytes would fit — a zero-dimensional <code>S4</code> on <code>char [4]</code>, or an <code>S4</code> array of shape <code>(N,)</code> on <code>char [N, 4]</code>. This includes the zero-dimensional <code>S{len}</code> array that converting <code>bytes</code> to <code>binary</code> produces, and the one <code>mixed</code> produces when it reads a raw byte buffer that is neither JSON nor NumPy. Such a byte string belongs on a <code>bytes</code> pin. A JSON string is rejected.</li>
+<li><strong>Null.</strong> Under <code>bytes</code> the canonical null is <code>b""</code>; under <code>text</code> the string <code>null</code> is rejected and <code>""</code> has length 0 (rule 4).</li>
+<li>A declared celltype the table does not list for the parameter's shape is a <strong>Stage 1</strong> failure. This includes <code>mixed</code> on a scalar <code>char</code> or a one-dimensional <code>char</code> array.</li>
+</ul>
+<p><strong>Choosing a declaration</strong> for a scalar <code>char</code> or a one-dimensional <code>char</code> array — the three choices accept different inputs:</p>
+<table>
+<thead>
+<tr>
+<th>Declaration</th>
+<th>Typical inputs</th>
+<th>Rejected or surprising</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>bytes</code></td>
+<td><code>bytes</code> literals and Cells; <code>str</code> literals, encoded as UTF-8; NumPy <code>S1</code> arrays from a <code>binary</code> or <code>mixed</code> Cell, converted with <code>tobytes</code></td>
+<td>a <code>text</code> Cell keeps its trailing newline (<code>text → bytes</code> is trivial); a <code>plain</code> Cell delivers its JSON text, quotes included</td>
+</tr>
+<tr>
+<td><code>text</code> (one-dimensional only)</td>
+<td><code>str</code> literals; <code>text</code> and <code>str</code> Cells; <code>bytes</code> Cells whose content is UTF-8</td>
+<td>NumPy arrays; content that is not UTF-8</td>
+</tr>
+<tr>
+<td><code>binary</code></td>
+<td>NumPy <code>S1</code> arrays: <code>ndarray</code> literals, and <code>binary</code> or <code>mixed</code> Cells holding an <code>S1</code> <code>.npy</code></td>
+<td>a <code>bytes</code> literal — the <code>binary</code> serializer takes a <code>bytes</code> object as an already-serialized buffer, so its checksum is unreadable as <code>binary</code>; a <code>bytes</code> or <code>text</code> Cell on <code>char [N]</code>, which converts to a zero-dimensional <code>S{len}</code> array</td>
+</tr>
+</tbody>
+</table>
+<p><code>bytes</code> is the broadest choice, <code>text</code> is for text, and <code>binary</code> is for data that already is a NumPy <code>S1</code> array.</p>
+<h2 id="9-errors">9. Errors</h2>
+<p>Stable, targeted failures:</p>
+<ul>
+<li><code>CompiledPinCelltypeError</code> — a declared pin celltype incompatible with the schema. A <strong>Stage 1</strong> failure: it blocks the transformer. <code>CompiledPinCelltypeWarning</code> carries the same diagnostic when the incompatibility arises. A celltype no schema allows raises when declared.</li>
+<li>An optional-pin declaration on a compiled input: rejected when declared and on graph import.</li>
+<li><strong>Null on a compiled pin</strong> (rule 4), for every declared celltype: a targeted pin-level error naming the pin, the declared celltype and the schema dtype/shape. It is never reported as a CFFI error or a <code>KeyError</code>.</li>
+<li><strong>Non-canonical <code>null</code> checksum on a <code>bytes</code> pin:</strong> a targeted pin-level error stating that the checksum is ambiguous and naming both possible origins (4-byte content <code>null</code>, or a non-canonical JSON null).</li>
+<li><code>CompiledMixedValueError</code> — a declared <code>mixed</code> pin given JSON text/container or proper Seamless-mixed data. The message lists the other declarations the whitelist allows for the parameter, so a user of an auto pin sees which explicit declaration converts the input (for example <code>binary</code> for a JSON list on a numeric array).</li>
+<li><code>CompiledPinSchemaError</code> — the value has the right pin celltype but violates dtype, range, shape, length, byte-order, alignment or layout requirements.</li>
+<li>Existing dependency errors remain dependency errors. Existing conversion errors remain <strong>Expression conversion</strong> errors, raised <em>before</em> compiled transformation construction by an edge or by the conversion of a typed standalone input; they name the pin, the input celltype and the pin celltype. In a workflow they are recorded on the pin and block the transformer (<code>blocked-by-error</code>; see <code>contracts/node-state-lifecycle.md</code>).</li>
+</ul>
+<p><strong>Decision D5, decided:</strong> these are <strong>public exception classes subclassing <code>TypeError</code></strong>, so existing <code>except TypeError</code> code keeps working and tests assert on classes rather than on message wording. Across the executor boundary, rule (b) holds: a failure raised in the executor arrives as a <code>TransformationError</code> whose <strong>message contains the same class name and message</strong>. Propagating the real class out of the executor stays possible later without changing the classes. Note that an <code>.exception</code> attribute is a <strong>string</strong>, not an <code>Exception</code> instance, so a blocked or failed transformer carries the class name and message as text.</p>
+<h2 id="10-graphs-snapshots-and-checksums">10. Graphs, snapshots and checksums</h2>
+<ul>
+<li>Graph export/import and compiled-transformer snapshots preserve the schema text, the declared pin celltypes, and the distinction between builder state and concrete transformation inputs. Compiled transformer nodes never carry optional input pins; graph import rejects them.</li>
+<li><strong>Decision D4, decided — no separate legacy rule.</strong> A compiled input with no declared celltype imports as <code>mixed</code>, the same rule as a pin newly introduced by a schema change. Declared celltypes import as declared, and the resulting checksum change is accepted. Consequence: a scalar <code>char</code> or one-dimensional <code>char</code> input in a legacy graph imports <strong>blocked</strong>, reported as a missing declaration, until the user declares <code>bytes</code>, <code>text</code> or <code>binary</code>. Everything else goes through Stage 1.</li>
+<li><strong>Checksum consequences.</strong> Recording the real pin celltype intentionally changes transformation checksums wherever the stored pin celltype changes; this is correct, because an <code>int</code> pin and a <code>mixed</code> pin have different acceptance and conversion semantics. Old cached compiled results may be reused only when the full corrected transformation definition — schema and pin celltypes included — has the same checksum. Declared <code>mixed</code> inputs that remain encoded as <code>mixed</code> may keep their old checksum for valid values. Generating <code>unsigned char</code> for schema <code>char</code> changes <strong>no</strong> checksum, because <code>__header__</code> is excluded from identity — but kernel source that declares the parameter as plain C <code>char</code> must be updated to <code>unsigned char</code> (Rust <code>u8</code>), and the updated source has a new <strong>code</strong> checksum.</li>
+</ul>
+<h2 id="11-out-of-scope-non-goals">11. Out of scope / non-goals</h2>
+<ul>
+<li><strong>Compiled result pins and the current multi-output aggregate:</strong> see <code>contracts/compiled-transformers.md</code>. Whether single outputs acquire schema-derived result celltypes, and how multiple typed outputs avoid conflating native output structure with unrestricted <code>mixed</code>, is a separate decision.</li>
+<li><strong>Optional compiled inputs</strong> — the C ABI has no absent argument (rule 3).</li>
+<li><strong>Redesigning the global Seamless conversion table</strong>; adding unrestricted recursive Python-object marshalling; treating proper Seamless-mixed serialization as a native ABI; defining a new scalar <code>complex</code> celltype.</li>
+<li><strong>Changing ordinary Python/bash transformer pin semantics</strong> (<code>contracts/pins.md</code>).</li>
+</ul>
+<h2 id="12-implementation-status">12. Implementation status</h2>
+<p>This page specifies <strong>settled contract that the code does not yet implement in full</strong>. Where a design document and the code disagree, the contract on this page governs, and an agent must <strong>not</strong> infer compiled-pin behaviour from the current code.</p>
+<p>Some of the rules above depend on seamless-core serializing NaN/infinity, <code>np.bool_</code> and complex values as NumPy data under <code>mixed</code> and <code>binary</code>, which <code>contracts/celltypes-and-conversion.md</code> already specifies.</p>
+<p><strong>Rule 4's null rejection is not enforced by today's general pin-null check.</strong> Every compiled input pin is recorded internally as celltype <code>mixed</code>, whatever its declared celltype (<code>compiled_transformer.py</code>: <code>self._celltypes = {parameter.name: "mixed" for parameter in sig.inputs}</code>; <code>pretransformation.py</code>: <code>pretransformation_dict[pinname] = ("mixed", None, value)</code>). <code>transformation_utils.validate_pin_null</code> — the required-pin null check shared with <code>contracts/pins.md</code> — exempts celltypes <code>plain</code>, <code>mixed</code> and <code>bytes</code> from its <code>TypeError</code>, so a null value on a required compiled pin whose <em>declared</em> schema celltype is none of those (e.g. <code>float</code>) passes that check instead of being rejected by it. Rule 4 still applies, but no compiled-specific Stage 2 check currently enforces it: the null reaches native argument marshalling as Python <code>None</code>, and the failure that results is untraced and unclear rather than the intended pin-level error naming the pin, the declared celltype and the schema dtype/shape. This is the same gap <code>contracts/pins.md</code> already flags in general ("today's code does not yet honour a compiled pin's declared celltype"); fixing it is the celltype-recording change discussed in §10's Checksum consequences, which already rules that the resulting checksum change is correct. No test currently sends null into a compiled input pin (<code>seamless-workflow/tests/correctness/test_correctness_compiled.py</code> covers only a null <em>result</em>).</p>
+<p><strong>The gap is wider than the null bypass: §3c's whitelist, §4's reporting, and §9's error classes are not implemented at all</strong>, not merely bypassed for null:</p>
+<ul>
+<li><strong>The declared-pin-celltype whitelist (§3c) is not checked against the schema.</strong> <code>CompiledCelltypesWrapper.__setitem__</code> delegates a non-<code>result</code> key straight to the general-purpose <code>CelltypesWrapper</code> (<code>compiled_transformer.py:372-376</code>), which validates against the ordinary 13 celltypes plus <code>deepcell</code>/<code>deepfolder</code>/<code>folder</code>/<code>module</code> — <code>contracts/pins.md</code>'s table, not this page's whitelist. <code>tf.celltypes.x = "plain"</code> on a scalar <code>float64</code> parameter is accepted without error today. <em>Verified:</em> none of <code>CompiledPinCelltypeError</code>, <code>CompiledPinCelltypeWarning</code>, <code>CompiledMixedValueError</code> or <code>CompiledPinSchemaError</code> (§9) exist anywhere under <code>seamless-transformer</code> (checked by name, 2026-09-20).</li>
+<li><strong>Assigning <code>tf.schema</code> resets every input pin's declared celltype to <code>mixed</code> instead of preserving it.</strong> <code>CompiledMixin.schema</code>'s setter replaces the whole map unconditionally — <code>self._celltypes = {parameter.name: "mixed" for parameter in sig.inputs}</code> (<code>compiled_transformer.py:458</code>) — on every schema assignment. §4 step 3 ("preserve declared celltypes for surviving pin names") is not implemented: a <code>tf.celltypes.x</code> declared before a later <code>tf.schema = ...</code> is discarded, not carried forward, and no incompatibility is ever reported because nothing is preserved to check.</li>
+<li><strong>A compiled pin marked optional is not rejected, and can be silently dropped — the one outcome rule 3 forbids.</strong> <code>tf.optional_pins</code> is <code>TransformerCore.optional_pins</code>, shared by every transformer kind with no compiled-specific check, and <code>compiled_transformer_to_pretransformation</code>'s output flows into the same <code>transformation_from_pretransformation</code> → <code>normalize_optional_pins_for_construction</code> path a Python/bash transformer uses, with no branch that special-cases <code>__compiled__</code>. A compiled pin declared optional and resolving to canonical null is therefore dropped from the transformation dict exactly as a Python pin's would be, rather than being rejected when declared or on graph import.</li>
+</ul>
+<p>Together these mean nearly all of §3–§4 and §9 describe <strong>prospective</strong> contract from <code>compiled-transformer-celltypes-design-plan.md</code>, not current behaviour; only the schema-derived call signature (§3b's shapes/dtypes, feeding native argument marshalling directly) and the numpy-level scalar/array validation (<code>_validate_native_numpy_value</code>) exist today, organized around dtype and shape rather than around a declared pin celltype. An agent must not infer from a passing <code>tf.celltypes.x = ct</code> assignment, or from a compiled transformer accepting <code>tf.optional_pins</code>, that either is contractually valid.</p>
+<hr />
+<h2 id="reference-map-load-only-as-needed">Reference Map (load only as needed)</h2>
+<ul>
+<li><code>contracts/pins.md</code> — the general pin layer: reaching pins, the pin set, writes, conversion at the pin boundary, and the Python/bash null and optional-pin rules this page overrides</li>
+<li><code>contracts/compiled-transformers.md</code> — compiled transformers as a whole: schema, calling convention, struct marshalling, result types, identity and caching</li>
+<li><code>contracts/seamless-signature-schema.md</code> — schema YAML format, dtype tables, shapes and wildcards</li>
+<li><code>contracts/celltypes-and-conversion.md</code> — celltype semantics, serialization and the conversion table</li>
+<li><code>contracts/hashtype.md</code> — what HashType words do and do not prove, for pre-hash checks</li>
+<li><code>contracts/expressions.md</code> — Expression construction and conversion semantics at and before the pin</li>
+<li><code>contracts/node-state-lifecycle.md</code> — bound-transformer blocking, block reasons and the node states a Stage 1 failure puts a transformer in</li>
+</ul>
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="compiled-transformers.html" class="btn btn-neutral float-left" title="Compiled Transformers"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="seamless-signature-schema.html" class="btn btn-neutral float-right" title="seamless-signature Schema">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+    
+      <span><a href="compiled-transformers.html" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="seamless-signature-schema.html" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script src="../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "..";</script>
+    <script src="../js/theme_extra.js"></script>
+    <script src="../js/theme.js"></script>
+      <script src="../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>

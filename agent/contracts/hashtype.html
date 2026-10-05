@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <link rel="shortcut icon" href="../img/favicon.ico" />
+    <title>HashType - Seamless — Agent Documentation</title>
+    <link rel="stylesheet" href="../css/theme.css" />
+    <link rel="stylesheet" href="../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "HashType";
+        var mkdocs_page_input_path = "contracts/hashtype.md";
+        var mkdocs_page_url = null;
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href="../index.html" class="icon icon-home"> Seamless — Agent Documentation
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../index.html">Home</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../overview.html">Agent Docs Overview</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../repos/index.html">Workspace Repos</a>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Contracts</span></p>
+              <ul class="current">
+                  <li class="toctree-l1"><a class="reference internal" href="identity-and-caching.html">Identity and Caching</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="celltypes-and-conversion.html">Celltypes, Null, and Conversion</a>
+                  </li>
+                  <li class="toctree-l1 current"><a class="reference internal current" href="#">HashType</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#the-false-negative-property">The false-negative property</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#the-word">The word</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#producer-from_buffer">Producer: from_buffer</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#storage-and-tightening">Storage and tightening</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#lookup">Lookup</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#queries">Queries</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#deserializable_ascelltype-checksum-true-false-none">deserializable_as(celltype, *, checksum) -&gt; True | False | None</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#capabilitiessource_celltype-set-expression-capability">capabilities(source_celltype) -&gt; set (expression capability)</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#conversion_feasiblehash_type-source-target-checksum-true-false-none">conversion_feasible(hash_type, source, target, *, checksum) -&gt; True | False | None</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#where-hashtype-is-consulted">Where HashType is consulted</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#current-limitations">Current limitations</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#non-goals">Non-goals</a>
+    </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="deep-celltypes.html">Deep Celltypes</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="expressions.html">Expressions</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="cells.html">Cells</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="pins.html">Pins</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="workflow-context.html">Workflow Context</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="node-state-lifecycle.html">Node State Lifecycle</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="attachments.html">Attachments</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="mounts.html">File Mounts</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="cancellation.html">Cancellation</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="direct-delayed-and-transformation.html">direct/delayed/Transformation</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="modules-and-closures.html">Modules and Closures</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="scratch-witness-audit.html">Scratch/Witness/Audit</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="seamless-run-and-argtyping.html">seamless-run/Argtyping</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="cache-storage-and-limits.html">Cache Storage and Limits</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="content-addressed-files-and-dirs.html">Content-addressed Files and Dirs</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="execution-backends.html">Execution Backends</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="execution-records.html">Execution Records</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="service-management.html">Service Management</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="compression.html">Compression</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="compiled-transformers.html">Compiled Transformers</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="compiled-pins.html">Compiled Pins</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="seamless-signature-schema.html">seamless-signature Schema</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">API</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/python/seamless.html">seamless</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/python/seamless.transformer.html">seamless.transformer</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/python/seamless.buffer_class.html">seamless.buffer_class</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/python/seamless.checksum_class.html">seamless.checksum_class</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/python/seamless_config.select.html">seamless_config.select</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/python/seamless_config.tools.html">seamless_config.tools</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/python/seamless_transformer.transformation_class.html">seamless_transformer.transformation_class</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/python/seamless_transformer.transformer_class.html">seamless_transformer.transformer_class</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">CLI</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/cli/seamless-run.html">seamless-run</a>
+                  </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Seamless — Agent Documentation</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../index.html" class="icon icon-home" aria-label="Docs"></a></li>
+          <li class="breadcrumb-item">Contracts</li>
+      <li class="breadcrumb-item active">HashType</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h1 id="hashtype-contract">HashType (Contract)</h1>
+<p><code>HashType</code> classifies a <strong>checksum</strong> by the structure of its buffer. It lets Seamless make deserialization, conversion and path decisions at the checksum level, rejecting impossible work without fetching or parsing a buffer. It replaces the old <code>BufferInfo</code> decision layer: no seamless-core, seamless-transformer, seamless-remote or seamless-dask code reads or writes <code>BufferInfo</code>.</p>
+<p>Celltypes, the reference parser and the conversion engine are defined in <code>contracts/celltypes-and-conversion.md</code>. HashType classifies only the 13 celltypes; the deep celltypes (<code>deepcell</code>, <code>deepfolder</code>, <code>folder</code>) are outside its vocabulary, and <code>contracts/deep-celltypes.md</code> records what that currently means for them.</p>
+<p>Code locations:</p>
+<table>
+<thead>
+<tr>
+<th>Concern</th>
+<th>Module / symbol</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Word, producer, queries, local cache</td>
+<td><code>seamless.checksum.hash_type</code> (<code>HashType</code>, <code>Kind</code>, <code>Length</code>, <code>DType</code>, <code>Rank</code>, <code>Flag</code>, <code>pack</code>, <code>unpack</code>, <code>is_valid_word</code>, <code>from_buffer</code>, <code>deserializable_as</code>, <code>capabilities</code>, <code>has_numeric_items</code>, <code>has_string_items</code>, <code>get_hash_type</code>, <code>get_hash_type_remote</code>, <code>set_hash_type</code>, <code>register_hash_type_for_buffer</code>)</td>
+</tr>
+<tr>
+<td>Validation and conversion feasibility</td>
+<td><code>seamless.checksum.hash_type_validation</code> (<code>HashTypeValidationError</code>, <code>ensure_hash_type[_async]</code>, <code>validate_deserializable_as[_async]</code>, <code>validate_expression[_async]</code>, <code>conversion_feasible</code>)</td>
+</tr>
+<tr>
+<td>Upload queue</td>
+<td><code>seamless.caching.buffer_writer.register_hash_type</code></td>
+</tr>
+<tr>
+<td>Remote client</td>
+<td><code>seamless_remote.database_remote.get_hash_type</code> / <code>set_hash_type</code></td>
+</tr>
+<tr>
+<td>Database</td>
+<td>seamless-database <code>HashType</code> model → table <code>hash_type</code> (<code>checksum</code> primary key, <code>hash_type</code> integer); request type <code>hash_type</code></td>
+</tr>
+</tbody>
+</table>
+<h2 id="the-false-negative-property">The false-negative property</h2>
+<p><strong>HashType may answer "unknown", but it must never reject a valid deserialization or conversion.</strong> A <code>False</code> from a query is a proof of impossibility. <code>True</code> and <code>None</code> are not guarantees: the reference parser or the conversion engine still makes the final decision. Callers act only on <code>False</code>, by raising <code>HashTypeValidationError</code> (a <code>ValueError</code> subclass; error-envelope kind <code>"hash_type_validation"</code>).</p>
+<p>The rules below preserve this property; current limitations are conservative (<code>None</code> or an
+over-permissive capability), not false rejections.</p>
+<h2 id="the-word">The word</h2>
+<p>A HashType is a 13-bit integer (<code>pack</code>/<code>unpack</code>; <code>HashType.word</code>). It is a frozen dataclass with these fields:</p>
+<table>
+<thead>
+<tr>
+<th>Bits</th>
+<th>Field</th>
+<th>Values</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0–3</td>
+<td><code>Kind</code></td>
+<td><code>RAW_BYTES</code>=0, <code>NUMPY</code>=1, <code>MIXED_OBJECT</code>=2, <code>MIXED_ARRAY</code>=3, <code>RAW_TEXT</code>=4, <code>JSON_OBJECT</code>=5, <code>JSON_ARRAY</code>=6, <code>JSON_STRING</code>=7, <code>JSON_NUMBER</code>=8, <code>UNTESTED</code>=9, <code>UTF8_UNTESTED</code>=10, <code>JSON_UNTESTED</code>=11</td>
+</tr>
+<tr>
+<td>4–5</td>
+<td><code>Length</code></td>
+<td><code>SHORT</code> (&lt;64 bytes), <code>EQ64</code> (=64), <code>MEDIUM</code> (65–1000), <code>LONG</code> (&gt;1000)</td>
+</tr>
+<tr>
+<td>6–7</td>
+<td><code>DType</code></td>
+<td><code>NA</code>, <code>NUMERIC</code> (NumPy kinds <code>biufc</code>), <code>NONNUMERIC</code>, <code>STRUCTURED</code> (has fields)</td>
+</tr>
+<tr>
+<td>8–9</td>
+<td><code>Rank</code></td>
+<td><code>SCALAR</code>, <code>D1</code>, <code>D2</code>, <code>D3PLUS</code></td>
+</tr>
+<tr>
+<td>10–12</td>
+<td><code>Flag</code></td>
+<td><code>NUMERIC_SCALAR</code>=1, <code>NUMPY_BYTES</code>=2, <code>SEMANTIC</code>=4 (reserved)</td>
+</tr>
+</tbody>
+</table>
+<p>Well-formedness (<code>is_valid_word</code>; enforced locally, by the remote client, and by the database):</p>
+<ul>
+<li><code>DType != NA</code> if and only if <code>Kind == NUMPY</code>. <code>Rank != SCALAR</code> only for <code>NUMPY</code>.</li>
+<li><code>NUMPY_BYTES</code> only with <code>NUMPY</code> + <code>NONNUMERIC</code> + <code>SCALAR</code> (a 0-d dtype-<code>S</code> array).</li>
+<li><code>JSON_NUMBER</code> requires <code>NUMERIC_SCALAR</code>. <code>NUMERIC_SCALAR</code> is allowed only on <code>JSON_NUMBER</code> or <code>JSON_STRING</code>.</li>
+<li>The <code>SEMANTIC</code> bit is reserved; words with it set are invalid.</li>
+</ul>
+<p>Derived properties: <code>is_utf8</code> (<code>RAW_TEXT</code>, the JSON kinds, <code>UTF8_UNTESTED</code>, <code>JSON_UNTESTED</code>); <code>is_json</code> (the JSON kinds, <code>JSON_UNTESTED</code>); <code>is_untested</code>; <code>is_numpy</code>; <code>is_mixed</code>; <code>mic</code> (most-informative celltype: <code>RAW_BYTES</code>/<code>UNTESTED</code>→<code>bytes</code>, <code>RAW_TEXT</code>/<code>UTF8_UNTESTED</code>→<code>text</code>, <code>NUMPY</code>→<code>binary</code>, <code>MIXED_*</code>→<code>mixed</code>, <code>JSON_OBJECT</code>/<code>JSON_ARRAY</code>/<code>JSON_UNTESTED</code>→<code>plain</code>, <code>JSON_STRING</code>→<code>str</code>, <code>JSON_NUMBER</code>→<code>float</code>).</p>
+<p>The untested kinds are placeholders that record less knowledge. The only producer in current code, <code>from_buffer</code>, never emits them. They can arrive only through <code>set_hash_type</code> or from the database.</p>
+<h2 id="producer-from_buffer">Producer: <code>from_buffer</code></h2>
+<p><code>HashType.from_buffer(buffer)</code> classifies by the <strong>bytes only</strong>.</p>
+<ol>
+<li>Starts with <code>b"\x93NUMPY"</code>: <code>NUMPY</code>. The file is loaded with <code>np.load(allow_pickle=False)</code> to read <code>DType</code>, <code>Rank</code> and <code>NUMPY_BYTES</code>.</li>
+<li>Starts with <code>b"\x94SEAMLESS-MIXED"</code>: <code>MIXED_OBJECT</code> or <code>MIXED_ARRAY</code>, from the root type in the form header. Any other root type raises <code>ValueError</code>.</li>
+<li>Not UTF-8: <code>RAW_BYTES</code>.</li>
+<li>Otherwise the whole text is parsed with <code>orjson.loads</code>: object → <code>JSON_OBJECT</code>; array → <code>JSON_ARRAY</code>; string → <code>JSON_STRING</code> (plus <code>NUMERIC_SCALAR</code> if it parses as a finite float); number → <code>JSON_NUMBER</code> + <code>NUMERIC_SCALAR</code>; <code>true</code>/<code>false</code>/<code>null</code> → <code>JSON_STRING</code> with no flags; not JSON → <code>RAW_TEXT</code>.</li>
+</ol>
+<p><code>Length</code> is always the byte-length bucket.</p>
+<p><strong>When it runs.</strong> A HashType is computed and registered (<code>register_hash_type_for_buffer</code> → <code>set_hash_type</code>) whenever:</p>
+<ul>
+<li>a checksum is calculated from a buffer (<code>Buffer.get_checksum</code>, <code>cached_calculate_checksum[_sync]</code>);</li>
+<li>a <code>Buffer</code> is constructed with an explicit <code>checksum=</code>;</li>
+<li><code>ensure_hash_type[_async]</code> is given a buffer for an unclassified checksum;</li>
+<li>an Expression publishes a result that has a buffer. This covers both local evaluation and remote evaluation, where the worker's <code>evaluate_expression_async</code> publishes.</li>
+</ul>
+<h2 id="storage-and-tightening">Storage and tightening</h2>
+<ul>
+<li><strong>Local</strong>: a process-wide dict <code>checksum → word</code> (<code>get_hash_type_cache()</code>), guarded by an <code>RLock</code>.</li>
+<li><strong>Remote</strong>: seamless-database table <code>hash_type</code>. <code>GET</code> of type <code>hash_type</code> returns the word or <code>null</code>. <code>PUT</code> of type <code>hash_type</code> validates the word with seamless-core's <code>is_valid_word</code> (the database imports seamless-core).</li>
+<li><strong>Tightening only.</strong> One rule is used locally (<code>set_hash_type</code>) and in the database (<code>HashType.create</code>, inside an <code>IMMEDIATE</code> transaction): <code>_hash_type_implies(tighter, looser)</code>.</li>
+<li><code>Length</code> must be equal.</li>
+<li>A looser <code>UNTESTED</code> is implied by any word, <code>UTF8_UNTESTED</code> by any <code>is_utf8</code> word, and <code>JSON_UNTESTED</code> by any <code>is_json</code> word.</li>
+<li>A concrete word is implied only by an identical word.</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>Incoming vs stored</th>
+<th>Outcome</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>equal, or looser (implied by stored)</td>
+<td>ignored; stored word kept; local write queues no upload</td>
+</tr>
+<tr>
+<td>tighter (implies stored)</td>
+<td>replaces the stored word</td>
+</tr>
+<tr>
+<td>contradictory</td>
+<td>logged as an error; local <code>set_hash_type</code> raises <code>ValueError</code>; the database answers 409, which the remote client (<code>database_client.set_hash_type</code>) raises as <code>ValueError</code></td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li><strong>Upload.</strong> A local change is queued on the buffer writer (<code>buffer_writer.register_hash_type</code>, deduplicated per <code>(checksum, word)</code>). It is sent with <code>database_remote.set_hash_type</code> when <code>seamless_remote</code> is importable. A word loaded from the database (<code>get_hash_type_remote</code>) enters the local cache without being uploaded again.</li>
+</ul>
+<h2 id="lookup">Lookup</h2>
+<table>
+<thead>
+<tr>
+<th>Function</th>
+<th>Order</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>get_hash_type(cs)</code></td>
+<td>local cache only</td>
+</tr>
+<tr>
+<td><code>await get_hash_type_remote(cs)</code></td>
+<td>local cache → database</td>
+</tr>
+<tr>
+<td><code>ensure_hash_type(cs, buffer=None)</code> (sync)</td>
+<td>local cache → if <code>buffer</code> is supplied, classify/register it and queue its upload; otherwise, <strong>if no event loop is running</strong>, query the database (via <code>asyncio.run</code>). <strong>Inside a running event loop with no buffer, it returns <code>None</code> after the local cache.</strong></td>
+</tr>
+<tr>
+<td><code>await ensure_hash_type_async(cs, buffer=None)</code></td>
+<td>local cache → database → classify <code>buffer</code> if given</td>
+</tr>
+</tbody>
+</table>
+<h2 id="queries">Queries</h2>
+<h3 id="deserializable_ascelltype-checksum-true-false-none"><code>deserializable_as(celltype, *, checksum) -&gt; True | False | None</code></h3>
+<p><code>checksum</code> is a required keyword because null and boolean deserialization depend on the exact
+checksum. Omitting it raises <code>TypeError</code> at the call site.</p>
+<p>Evaluated in order:</p>
+<ol>
+<li><code>checksum</code> is either null checksum: <code>True</code> (null is valid for every celltype).</li>
+<li><code>bytes</code>: <code>True</code>.</li>
+<li><code>bool</code>: <code>True</code> only if <code>checksum</code> is one of the four canonical boolean checksums; otherwise <code>False</code>.</li>
+<li>Untested kinds: <code>text/yaml/python/ipython</code> → <code>True</code> if <code>is_utf8</code> else <code>None</code>; <code>plain/mixed</code> → <code>True</code> if <code>is_json</code> else <code>None</code>; <code>str</code> → <code>True</code> for null/boolean checksums else <code>None</code>; <code>int/float</code> → <code>False</code> if <code>LONG</code> else <code>None</code>; <code>binary</code> → <code>None</code> for <code>UNTESTED</code>, else <code>False</code>; <code>checksum</code> → <code>None</code> if <code>EQ64</code> else <code>False</code>.</li>
+<li>Concrete kinds:</li>
+</ol>
+<table>
+<thead>
+<tr>
+<th>Celltype</th>
+<th>Result</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>text</code>, <code>yaml</code>, <code>python</code>, <code>ipython</code></td>
+<td><code>is_utf8</code> (syntax is not checked; the parser checks it)</td>
+</tr>
+<tr>
+<td><code>plain</code></td>
+<td><code>is_json</code></td>
+</tr>
+<tr>
+<td><code>str</code></td>
+<td>kind <code>JSON_STRING</code> or <code>JSON_NUMBER</code>, or a null/boolean checksum</td>
+</tr>
+<tr>
+<td><code>int</code>, <code>float</code></td>
+<td><code>False</code> if <code>LONG</code>; else <code>NUMERIC_SCALAR</code> is set</td>
+</tr>
+<tr>
+<td><code>binary</code></td>
+<td>kind <code>NUMPY</code></td>
+</tr>
+<tr>
+<td><code>mixed</code></td>
+<td>kind not <code>RAW_BYTES</code>/<code>RAW_TEXT</code></td>
+</tr>
+<tr>
+<td><code>checksum</code></td>
+<td>kind <code>RAW_TEXT</code> or <code>JSON_NUMBER</code> (an all-digit digest is a JSON number) and <code>EQ64</code> (hex validity is left to the parser)</td>
+</tr>
+</tbody>
+</table>
+<p><strong>A <code>celltype</code> outside the 13 above</strong> — a deep celltype (<code>deepcell</code>, <code>deepfolder</code>, <code>folder</code>) or <code>module</code> — matches none of the branches above, and the function's final fallthrough is <code>return False</code>. This is why every deep-celltype or <code>module</code> Expression currently raises <code>HashTypeValidationError</code> before evaluation: see <code>contracts/deep-celltypes.md</code>, "Current status: none of this is enforced yet".</p>
+<h3 id="capabilitiessource_celltype-set-expression-capability"><code>capabilities(source_celltype) -&gt; set</code> (expression capability)</h3>
+<p>Records which path steps the <strong>root</strong> structure admits: <code>"SEQ"</code> (positional item/slice) and <code>"MAP"</code> (string key).</p>
+<table>
+<thead>
+<tr>
+<th>Source celltype</th>
+<th>Capabilities</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>bytes</code>, <code>text</code>, <code>str</code>, <code>python</code>, <code>ipython</code>, <code>yaml</code></td>
+<td><code>{"SEQ"}</code></td>
+</tr>
+<tr>
+<td><code>binary</code></td>
+<td><code>"SEQ"</code> if <code>Rank != SCALAR</code>; <code>"MAP"</code> if <code>STRUCTURED</code></td>
+</tr>
+<tr>
+<td><code>plain</code>, <code>mixed</code></td>
+<td><code>JSON_OBJECT</code>/<code>MIXED_OBJECT</code> → <code>{"MAP"}</code>; <code>JSON_ARRAY</code>/<code>MIXED_ARRAY</code>/<code>JSON_STRING</code> → <code>{"SEQ"}</code>; else empty</td>
+</tr>
+<tr>
+<td>other</td>
+<td>empty</td>
+</tr>
+</tbody>
+</table>
+<p><code>has_numeric_items</code> and <code>has_string_items</code> return <code>True</code>/<code>False</code>/<code>None</code> item-type hints for the same sources. Path validation (<code>_validate_path_capability</code>) skips untested words and checks a step only while the root word still types the value: a slice keeps the capabilities; an item step stops checking, except that any further step after a <code>bytes</code> item is rejected (the item is an int) and a <code>NUMERIC</code> NumPy array with rank below <code>D3PLUS</code> admits as many positional item steps as its rank.</p>
+<h3 id="conversion_feasiblehash_type-source-target-checksum-true-false-none"><code>conversion_feasible(hash_type, source, target, *, checksum) -&gt; True | False | None</code></h3>
+<p>This is the checksum-level conversion query used before any conversion work. Rules:</p>
+<ul>
+<li>A null checksum, or <code>source == target</code>: <code>True</code>.</li>
+<li><code>deserializable_as(source, checksum=checksum)</code> is <code>False</code>: <code>False</code>.</li>
+<li><code>target == "checksum"</code>: <code>True</code>.</li>
+<li>The pair is mapped once through <code>conversion_equivalent</code>. After that:</li>
+<li><code>conversion_chain</code>: evaluate the first step. <code>False</code> disproves the chain. If the first step
+    preserves the checksum (<code>conversion_trivial</code> or <code>conversion_reinterpret</code>), evaluate the
+    second step on the same word; its <code>False</code> also disproves the chain. If the second step always
+    succeeds on valid input (<code>conversion_trivial</code> or <code>conversion_reformat</code>), return the first
+    step's answer. Otherwise return <code>None</code>; in particular, do not predict through a first step
+    that creates a new buffer.</li>
+<li><code>conversion_forbidden</code> → <code>False</code>;</li>
+<li><code>conversion_trivial</code> or <code>conversion_reformat</code> → <code>True</code>;</li>
+<li><code>conversion_reinterpret</code> → <code>deserializable_as(target, checksum=checksum)</code>.</li>
+<li><code>conversion_possible</code>: untested → <code>None</code>. Concrete:</li>
+<li><code>int</code>/<code>float</code> target:<ul>
+<li>NumPy word, regardless of source celltype: non-scalar → <code>False</code>; <code>NUMERIC</code> → <code>True</code>; otherwise <code>None</code>.</li>
+<li><code>JSON_OBJECT</code>, <code>JSON_ARRAY</code>, <code>MIXED_OBJECT</code>, <code>MIXED_ARRAY</code> → <code>False</code>.</li>
+<li><code>JSON_NUMBER</code> or <code>NUMERIC_SCALAR</code> set → <code>True</code>.</li>
+<li>Unflagged <code>JSON_STRING</code> → <code>None</code>.</li>
+<li><code>LONG</code> does not decide this category; the length limit remains in deserialization/reinterpretation checks.</li>
+</ul>
+</li>
+<li><code>mixed→str</code>: <code>False</code> for <code>JSON_OBJECT</code>/<code>JSON_ARRAY</code>, otherwise <code>True</code>.</li>
+<li>Everything else, including <code>bool</code> targets: <code>None</code>.</li>
+<li><code>conversion_values</code>: untested → <code>None</code> (except for the earlier <code>checksum</code> target rule). Concrete:</li>
+<li><code>checksum→X</code>: <code>None</code>.</li>
+<li><code>plain→binary</code>: <code>False</code> for <code>JSON_OBJECT</code>.</li>
+<li><code>binary→plain</code>: <code>True</code> for <code>NUMERIC</code>/<code>STRUCTURED</code>.</li>
+<li>Everything else: <code>None</code>.</li>
+</ul>
+<h2 id="where-hashtype-is-consulted">Where HashType is consulted</h2>
+<ul>
+<li><strong>Reference parser</strong> (<code>_parse_buffer</code>): after virtual values, <code>validate_deserializable_as(checksum, celltype, buffer=buffer)</code> runs before any parsing.</li>
+<li><strong>Conversion engine</strong> (<code>seamless.checksum.convert</code>): before a source buffer is fetched, via <code>validate_deserializable_as</code> without a buffer. <code>bytes→mixed</code> also keeps the checksum when the cached word says <code>mixed</code>.</li>
+<li><strong>Expression validation</strong> (<code>validate_expression[_async]</code>): checks the source celltype, then path capability, then <code>conversion_feasible</code> for an empty path, before evaluation.</li>
+<li><strong>Retrieval validation</strong> of a declared checksum/celltype (<code>validate_deserializable_as</code>) in <code>seamless.cell_class</code>, <code>seamless_transformer</code> (<code>pin_class</code>, <code>pretransformation</code>, <code>transformation_class</code>), <code>seamless_dask</code> and <code>seamless_workflow.context</code>.</li>
+</ul>
+<h2 id="current-limitations">Current limitations</h2>
+<ul>
+<li><strong>Remote lookup from synchronous validation inside a running event loop</strong>: when no buffer is supplied, <code>ensure_hash_type</code> skips the database and returns <code>None</code> if the checksum is not in the local cache. A supplied buffer is classified locally and its upload is queued. Although async <code>parse_buffer</code> calls the synchronous <code>_parse_buffer</code>, it passes the buffer, so parse-time validation can classify it without a database request. Use <code>ensure_hash_type_async</code> when remote-only metadata is needed before a buffer is available.</li>
+<li><strong>JSON <code>true</code>/<code>false</code>/<code>null</code> are classified <code>JSON_STRING</code>.</strong> For <code>plain</code> and <code>mixed</code>, path validation sees <code>{"SEQ"}</code> and can allow positional access to a scalar; parsing/evaluation still decides whether that access is valid. The classification is therefore not a proof of a JSON string: <code>conversion_possible</code> answers <code>None</code> for an unflagged <code>JSON_STRING</code> word with an <code>int</code>/<code>float</code> target, because JSON <code>true</code>/<code>false</code> convert there.</li>
+<li><strong>Untested kinds remain supported</strong> and can arrive through <code>set_hash_type</code> or from the database, although <code>from_buffer</code> does not currently produce them. The <code>SEMANTIC</code> bit is reserved and rejected by <code>is_valid_word</code>.</li>
+</ul>
+<h2 id="non-goals">Non-goals</h2>
+<ul>
+<li><strong>Value-level syntax and hex validation.</strong> HashType classifies buffer bytes without parsing them for the requested celltype. It does not check <code>python</code>/<code>ipython</code>/<code>yaml</code> syntax or whether <code>checksum</code> text contains valid hexadecimal characters. Those checks belong to the parser or conversion engine. A permissive HashType answer is allowed; only <code>False</code> is used to reject work.</li>
+</ul>
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="celltypes-and-conversion.html" class="btn btn-neutral float-left" title="Celltypes, Null, and Conversion"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="deep-celltypes.html" class="btn btn-neutral float-right" title="Deep Celltypes">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+    
+      <span><a href="celltypes-and-conversion.html" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="deep-celltypes.html" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script src="../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "..";</script>
+    <script src="../js/theme_extra.js"></script>
+    <script src="../js/theme.js"></script>
+      <script src="../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>

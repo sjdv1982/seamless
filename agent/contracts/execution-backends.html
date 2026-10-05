@@ -55,6 +55,28 @@
               <ul class="current">
                   <li class="toctree-l1"><a class="reference internal" href="identity-and-caching.html">Identity and Caching</a>
                   </li>
+                  <li class="toctree-l1"><a class="reference internal" href="celltypes-and-conversion.html">Celltypes, Null, and Conversion</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="hashtype.html">HashType</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="deep-celltypes.html">Deep Celltypes</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="expressions.html">Expressions</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="cells.html">Cells</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="pins.html">Pins</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="workflow-context.html">Workflow Context</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="node-state-lifecycle.html">Node State Lifecycle</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="attachments.html">Attachments</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="mounts.html">File Mounts</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="cancellation.html">Cancellation</a>
+                  </li>
                   <li class="toctree-l1"><a class="reference internal" href="direct-delayed-and-transformation.html">direct/delayed/Transformation</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="modules-and-closures.html">Modules and Closures</a>
@@ -73,6 +95,10 @@
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#backend-semantics-agent-assumptions">Backend semantics (agent assumptions)</a>
     </li>
+    <li class="toctree-l2"><a class="reference internal" href="#expressions-are-placed-not-configured">Expressions are placed, not configured</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#storage-prerequisite-by-checksum-submission-shared-hashserver">Storage prerequisite (by-checksum submission, shared hashserver)</a>
+    </li>
     <li class="toctree-l2"><a class="reference internal" href="#testing-surface">Testing surface</a>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#minimal-configuration-shape-command-language">Minimal configuration shape (command language)</a>
@@ -88,6 +114,8 @@
                   <li class="toctree-l1"><a class="reference internal" href="compression.html">Compression</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="compiled-transformers.html">Compiled Transformers</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="compiled-pins.html">Compiled Pins</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="seamless-signature-schema.html">seamless-signature Schema</a>
                   </li>
@@ -148,6 +176,7 @@
 <li><strong>Remote target</strong> (only relevant when <code>execution: remote</code>): <code>jobserver</code> or <code>daskserver</code>.</li>
 <li><strong>Mutual exclusivity</strong>: a single configured cluster/frontend should not expose both jobserver and daskserver without explicitly selecting one.</li>
 </ul>
+<p><strong>This page is about Transformations.</strong> Expressions also run on a jobserver or daskserver, but they are placed by a different rule and on a different axis — see <em>Expressions are placed, not configured</em> below. Do not read the <code>execution:</code> configuration key and an Expression's <code>execution=</code> argument as the same setting.</p>
 <h2 id="backend-semantics-agent-assumptions">Backend semantics (agent assumptions)</h2>
 <p>1) <strong><code>process</code></strong>
    - Runs in the caller’s Python process.
@@ -162,6 +191,22 @@
    - Uses Dask as the execution/scheduling substrate.
    - Intended for HPC/distributed throughput; can integrate with schedulers (commonly via <code>dask-jobqueue</code> on SLURM/OAR).
    - Operationally: typically long-lived/bundled workers execute many tasks (not one scheduler submission per Seamless step).</p>
+<h2 id="expressions-are-placed-not-configured">Expressions are placed, not configured</h2>
+<p>A jobserver or daskserver also evaluates <strong>Expressions</strong> (the jobserver endpoint is <code>GET /run-expression</code>). Three differences from the transformation backends above matter:</p>
+<ul>
+<li><strong>It is not a backend choice but a placement rule.</strong> An Expression is evaluated <em>where the data is</em>: local when no buffer is needed or the input buffer is already in this process's memory, otherwise dispatched. Selecting a backend does not turn this on or off.</li>
+<li><strong><code>execution="auto" | "local" | "remote"</code> is a per-Expression argument, not the <code>execution:</code> config key.</strong> Here <code>"local"</code> means <em>in this process's memory</em> and <code>"remote"</code> means <em>not in this process's memory</em> — independently of which transformation backend is configured. A Context fixes the policy for its own Expression jobs with <code>Context(expression_execution=…)</code>.</li>
+<li><strong>A daskserver is a jobserver <em>mode</em> for Expressions</strong>, not a competing backend: both expose the same checksum, error, caching and HashType contracts.</li>
+</ul>
+<p>The full rule, the resolution order, the no-silent-fallback rules and the two open placement questions are <code>contracts/expressions.md</code>, <em>Placement</em>.</p>
+<h2 id="storage-prerequisite-by-checksum-submission-shared-hashserver">Storage prerequisite (by-checksum submission, shared hashserver)</h2>
+<p>Remote execution — <code>jobserver</code> <strong>and</strong> <code>daskserver</code> alike — submits work <strong>by checksum, not by value</strong>. A remote target receives input <em>checksums</em>; it <strong>materializes the input buffers server-side from a shared hashserver</strong>, writes produced (non-<code>scratch</code>) results back to that hashserver, and records <code>tf_checksum → result_checksum</code> in the shared database. So a <strong>shared hashserver and database, reachable by the remote workers, are a hard prerequisite for any remote backend</strong> — they are what make server-side input materialization and result persistence possible. (A minimal local cluster that defines a hashserver/database but no jobserver/daskserver therefore cannot run <code>execution: remote</code>; it must use <code>execution: process</code> — see <code>../main/cluster.md</code>.)</p>
+<p>Consequences an agent may rely on:</p>
+<ul>
+<li><strong>Inputs are not necessarily uploaded at submission.</strong> They may be <strong>pre-present</strong> — staged by a prior upload, or <strong>by design</strong>, when the client already holds the checksum of a large server-side dataset. Only buffers actually missing on the server are staged (e.g. <code>--upload</code>, or <code>--write-remote-job</code> which implies it).</li>
+<li><strong>Results are durable out-of-process.</strong> A remote run's non-<code>scratch</code> results live in the shared hashserver/database independently of the submitting client, so tearing the client down does not lose them. (A <code>scratch</code> result is the exception: not stored, recomputed at a consumer via input fingertipping — see <code>contracts/scratch-witness-audit.md</code>.)</li>
+<li><strong>Materialization is content-addressed, not a side effect.</strong> A worker resolving an input checksum is performing materialization, not "reading whatever is on disk" (see <code>contracts/identity-and-caching.md</code>).</li>
+</ul>
 <h2 id="testing-surface">Testing surface</h2>
 <p>Agents should not assume HPC or scheduler-backed testing lives only in <code>seamless-dask</code>.</p>
 <ul>

@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <link rel="shortcut icon" href="../../../img/favicon.ico" />
+    <title>Plan: seamless-signature — YAML schema language for function signatures - Seamless — Agent Documentation</title>
+    <link rel="stylesheet" href="../../../css/theme.css" />
+    <link rel="stylesheet" href="../../../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "Plan: seamless-signature \u2014 YAML schema language for function signatures";
+        var mkdocs_page_input_path = "repos/seamless-signature/source/plan.md";
+        var mkdocs_page_url = null;
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../../../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href="../../../index.html" class="icon icon-home"> Seamless — Agent Documentation
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../../index.html">Home</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../../overview.html">Agent Docs Overview</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../index.html">Workspace Repos</a>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Contracts</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/identity-and-caching.html">Identity and Caching</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/celltypes-and-conversion.html">Celltypes, Null, and Conversion</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/hashtype.html">HashType</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/deep-celltypes.html">Deep Celltypes</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/expressions.html">Expressions</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/cells.html">Cells</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/pins.html">Pins</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/workflow-context.html">Workflow Context</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/node-state-lifecycle.html">Node State Lifecycle</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/attachments.html">Attachments</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/mounts.html">File Mounts</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/cancellation.html">Cancellation</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/direct-delayed-and-transformation.html">direct/delayed/Transformation</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/modules-and-closures.html">Modules and Closures</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/scratch-witness-audit.html">Scratch/Witness/Audit</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/seamless-run-and-argtyping.html">seamless-run/Argtyping</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/cache-storage-and-limits.html">Cache Storage and Limits</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/content-addressed-files-and-dirs.html">Content-addressed Files and Dirs</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/execution-backends.html">Execution Backends</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/execution-records.html">Execution Records</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/service-management.html">Service Management</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/compression.html">Compression</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/compiled-transformers.html">Compiled Transformers</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/compiled-pins.html">Compiled Pins</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/seamless-signature-schema.html">seamless-signature Schema</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">API</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../api/python/seamless.html">seamless</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../api/python/seamless.transformer.html">seamless.transformer</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../api/python/seamless.buffer_class.html">seamless.buffer_class</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../api/python/seamless.checksum_class.html">seamless.checksum_class</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../api/python/seamless_config.select.html">seamless_config.select</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../api/python/seamless_config.tools.html">seamless_config.tools</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../api/python/seamless_transformer.transformation_class.html">seamless_transformer.transformation_class</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../api/python/seamless_transformer.transformer_class.html">seamless_transformer.transformer_class</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">CLI</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../api/cli/seamless-run.html">seamless-run</a>
+                  </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">Seamless — Agent Documentation</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../../../index.html" class="icon icon-home" aria-label="Docs"></a></li>
+      <li class="breadcrumb-item active">Plan: seamless-signature — YAML schema language for function signatures</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h1 id="plan-seamless-signature-yaml-schema-language-for-function-signatures">Plan: <code>seamless-signature</code> — YAML schema language for function signatures</h1>
+<h2 id="context">Context</h2>
+<p>Seamless needs a precise schema language to describe the signatures of functions whose parameters are numpy scalars and arrays. The schema must be expressive enough that a C header declaring the equivalent <code>transform()</code>-style function can be generated deterministically from it. The legacy compiled-transformer pipeline (<a href="legacy-seamless/seamless/workflow/graphs/compiled_transformer/gen_header.py">legacy-seamless/seamless/workflow/graphs/compiled_transformer/gen_header.py</a>) did something similar by piggy-backing on JSON-schema + Silk "form" metadata, but that design wraps every array in a runtime <code>{data, shape[], strides[]}</code> struct, which is heavy and doesn't match how C programmers naturally write compiled kernels.</p>
+<p>The new schema introduces two key simplifications:</p>
+<ol>
+<li><strong>Named wildcard dimensions</strong> (<code>"X"</code>, <code>"Y"</code>, …) appear as plain integer parameters in the C signature, shared across the whole signature so the same name always denotes the same length.</li>
+<li><strong>Trailing fixed dimensions</strong> collapse into a generated C typedef, so <code>dtype=int32, shape=("X","Y",3)</code> yields <code>typedef int32_t int32_3[3];</code> and a parameter <code>const int32_3 *arr</code> of logical length <code>X*Y</code>.</li>
+</ol>
+<p>Structured numpy dtypes are supported as recursive nested field definitions, which map directly to C <code>typedef struct</code>s.</p>
+<p>Design follows the YAML-to-dataclass idiom already used in <a href="seamless-config/seamless_config/cluster.py">seamless-config/seamless_config/cluster.py</a>: plain <code>@dataclass</code>, <code>from_dict</code> classmethods, <code>__post_init__</code> validation, <code>yaml.safe_load</code>, no dacite/pydantic.</p>
+<h2 id="package-layout">Package layout</h2>
+<p>New sibling package <code>seamless-signature/</code> (alongside <code>seamless-config/</code>, <code>seamless-transformer/</code>):</p>
+<pre><code>seamless-signature/
+  pyproject.toml
+  seamless_signature/
+    __init__.py          # public API re-exports
+    dtype.py             # DType parsing (scalar names + structured)
+    schema.py            # Parameter, Signature dataclasses + from_dict
+    loader.py            # load_signature(yaml_path) entry point
+    c_header.py          # generate_header(Signature) -&gt; str
+  tests/
+    fixtures/
+      simple.yaml
+      wildcard.yaml
+      structured.yaml
+      outputs.yaml
+    test_schema.py
+    test_c_header.py
+</code></pre>
+<h2 id="yaml-schema">YAML schema</h2>
+<p>Top level has <code>inputs</code> and <code>outputs</code>, each a list of parameter entries. One file = one function signature (<code>function_name</code> at top level).</p>
+<pre><code class="language-yaml">function_name: rmsd
+inputs:
+  - name: coords1
+    dtype: float32
+    shape: [X, Y, 3]
+  - name: coords2
+    dtype: float32
+    shape: [X, Y, 3]
+  - name: weight            # scalar: no `shape` key
+    dtype: float64
+  - name: residues          # structured dtype, inline
+    dtype:
+      fields:
+        - {name: resname, dtype: char,    shape: [4]}
+        - {name: pos,     dtype: float32, shape: [3]}
+        - {name: mass,    dtype: float32}
+    shape: [X, Y]
+outputs:
+  - name: result
+    dtype: float64          # scalar output → pointer-out parameter
+</code></pre>
+<h3 id="rules-enforced-in-__post_init__">Rules (enforced in <code>__post_init__</code>)</h3>
+<ul>
+<li><code>shape</code> absent → scalar; <code>shape</code> present and non-empty → array. Empty shape <code>[]</code> is an error.</li>
+<li>Each shape entry is either a positive <code>int</code> (fixed dim) or a <code>str</code> matching <code>[A-Za-z_][A-Za-z0-9_]*</code> (wildcard dim name).</li>
+<li><strong>Trailing-fixed rule</strong>: walking a shape from the right, the maximal run of consecutive fixed ints is the <em>element shape</em>; the rest must be <em>all wildcards</em>. A fixed dim appearing before any wildcard (e.g. <code>[X, 3, Y]</code>) is a <code>TypeError</code>.</li>
+<li>Wildcard dim names are collected signature-wide into a single set. Every unique name becomes one <code>unsigned int</code> parameter prepended to the C signature, in first-seen order across <code>inputs</code> then <code>outputs</code>.</li>
+<li>Inside structured-dtype fields, <code>shape</code> entries must be fixed ints (structs have fixed layout).</li>
+<li><code>dtype</code> is either a string (recognized numpy scalar name) or a mapping with a <code>fields</code> list (each entry itself has <code>name</code>, <code>dtype</code>, optional <code>shape</code>). Recursive.</li>
+<li>Recognized scalar dtypes: <code>int8/16/32/64</code>, <code>uint8/16/32/64</code>, <code>float32/64</code>, <code>bool</code>, <code>char</code>, <code>complex64</code>, <code>complex128</code>.</li>
+<li>Arrays are assumed strictly C-contiguous; no stride support. Runtime assertion belongs to the consumer, not this package.</li>
+</ul>
+<h2 id="dataclasses-seamless_signatureschemapy">Dataclasses (<a href="seamless-signature/seamless_signature/schema.py">seamless_signature/schema.py</a>)</h2>
+<pre><code class="language-python">DTypeSpec = Union[ScalarDType, StructDType]  # discriminated
+
+@dataclass
+class ScalarDType:
+    name: str                    # 'int32', 'float64', ...
+
+@dataclass
+class StructField:
+    name: str
+    dtype: DTypeSpec
+    shape: tuple[int, ...] = ()  # only fixed dims allowed
+
+@dataclass
+class StructDType:
+    fields: list[StructField]
+    # __post_init__: reject wildcard dims in any nested field
+
+@dataclass
+class Parameter:
+    name: str
+    dtype: DTypeSpec
+    shape: tuple[int | str, ...] | None = None  # None = scalar
+    # __post_init__: enforce trailing-fixed rule
+
+    @property
+    def element_shape(self) -&gt; tuple[int, ...]:
+        &quot;&quot;&quot;The trailing fixed dims (possibly empty).&quot;&quot;&quot;
+    @property
+    def wildcard_dims(self) -&gt; tuple[str, ...]:
+        &quot;&quot;&quot;The leading wildcard dims (possibly empty).&quot;&quot;&quot;
+
+    @classmethod
+    def from_dict(cls, d: dict) -&gt; &quot;Parameter&quot;: ...
+
+@dataclass
+class Signature:
+    function_name: str
+    inputs: list[Parameter]
+    outputs: list[Parameter]
+
+    @property
+    def wildcard_names(self) -&gt; tuple[str, ...]:
+        &quot;&quot;&quot;Unique wildcard dim names in first-seen order across inputs+outputs.&quot;&quot;&quot;
+
+    @classmethod
+    def from_dict(cls, d: dict) -&gt; &quot;Signature&quot;: ...
+</code></pre>
+<p>DType parsing lives in <a href="seamless-signature/seamless_signature/dtype.py">seamless_signature/dtype.py</a> with a single <code>parse_dtype(node) -&gt; DTypeSpec</code> that handles the string-or-mapping union, recurses into <code>fields</code>, and is reused by <code>Parameter.from_dict</code> and <code>StructField.from_dict</code>.</p>
+<h2 id="loader-seamless_signatureloaderpy">Loader (<a href="seamless-signature/seamless_signature/loader.py">seamless_signature/loader.py</a>)</h2>
+<pre><code class="language-python">def load_signature(path: str | Path) -&gt; Signature:
+    with open(path) as f:
+        data = yaml.safe_load(f)
+    return Signature.from_dict(data)
+</code></pre>
+<p>Mirrors the entry-point style of <a href="seamless-config/seamless_config/config_files.py">seamless-config/seamless_config/config_files.py</a> (<code>load_config_files</code>).</p>
+<h2 id="c-header-generation-seamless_signaturec_headerpy">C header generation (<a href="seamless-signature/seamless_signature/c_header.py">seamless_signature/c_header.py</a>)</h2>
+<pre><code class="language-python">def generate_header(sig: Signature) -&gt; str: ...
+</code></pre>
+<p><strong>Algorithm:</strong></p>
+<ol>
+<li>Emit preamble: comment block + <code>#include &lt;stdint.h&gt;</code> + <code>#include &lt;stdbool.h&gt;</code>. (Reuse the phrasing style from legacy <a href="legacy-seamless/seamless/workflow/graphs/compiled_transformer/gen_header.py">gen_header.py</a> lines 3-14.)</li>
+<li>Walk every <code>Parameter</code>:</li>
+<li>For any structured dtype encountered, recursively emit <code>typedef struct { … } &lt;StructName&gt;;</code>. Struct name derivation mirrors legacy <code>gen_struct_name</code> (path-based CamelCase + <code>Struct</code> suffix) in <a href="legacy-seamless/seamless/workflow/graphs/compiled_transformer/gen_header.py#L35-L41">gen_header.py:35-41</a> — reused verbatim where sensible.</li>
+<li>For any non-empty <code>element_shape</code> on a scalar dtype, emit a typedef named <code>&lt;dtype&gt;_&lt;d1&gt;[x&lt;d2&gt;...]</code>, e.g. <code>typedef int32_t int32_3[3];</code>, <code>typedef float float32_4x4[4][4];</code>. De-duplicate across parameters.</li>
+<li>Emit <code>int transform(...)</code> with args in this order:</li>
+<li>Every unique wildcard dim name, as <code>unsigned int &lt;name&gt;</code> (type choice matches legacy <code>shape[]</code> element type in <a href="legacy-seamless/seamless/workflow/graphs/compiled_transformer/gen_header.py#L114">gen_header.py:114</a>).</li>
+<li>Each input parameter:<ul>
+<li>Scalar: <code>&lt;ctype&gt; &lt;name&gt;</code> by value (<code>const</code> not needed — passed by value).</li>
+<li>Array: <code>const &lt;element_typedef&gt; *&lt;name&gt;</code> (where element_typedef is the scalar C name or the generated typedef/struct name).</li>
+</ul>
+</li>
+<li>Each output parameter:<ul>
+<li>Scalar: <code>&lt;ctype&gt; *&lt;name&gt;</code> (pointer-out).</li>
+<li>Array: <code>&lt;element_typedef&gt; *&lt;name&gt;</code> (non-const, pointer-out; caller pre-allocates length = product of wildcard dims).</li>
+</ul>
+</li>
+</ol>
+<p><strong>Scalar name → C type mapping</strong> (reuse the legacy table in <a href="legacy-seamless/seamless/workflow/graphs/compiled_transformer/gen_header.py#L21-L32">gen_header.py:21-32</a>, simplified):</p>
+<pre><code class="language-python">SCALAR_C_TYPES = {
+    &quot;int8&quot;:  &quot;int8_t&quot;,  &quot;int16&quot;:  &quot;int16_t&quot;,  &quot;int32&quot;:  &quot;int32_t&quot;,  &quot;int64&quot;:  &quot;int64_t&quot;,
+    &quot;uint8&quot;: &quot;uint8_t&quot;, &quot;uint16&quot;: &quot;uint16_t&quot;, &quot;uint32&quot;: &quot;uint32_t&quot;, &quot;uint64&quot;: &quot;uint64_t&quot;,
+    &quot;float32&quot;: &quot;float&quot;, &quot;float64&quot;: &quot;double&quot;,
+    &quot;bool&quot;: &quot;bool&quot;, &quot;char&quot;: &quot;char&quot;,
+    &quot;complex64&quot;: &quot;_Complex float&quot;, &quot;complex128&quot;: &quot;_Complex double&quot;,
+}
+</code></pre>
+<h2 id="example-end-to-end">Example: end-to-end</h2>
+<p><strong>Input</strong> <code>rmsd.yaml</code>:</p>
+<pre><code class="language-yaml">function_name: rmsd
+inputs:
+  - {name: coords1, dtype: float32, shape: [X, Y, 3]}
+  - {name: coords2, dtype: float32, shape: [X, Y, 3]}
+  - {name: weight,  dtype: float64}
+outputs:
+  - {name: result,  dtype: float64}
+</code></pre>
+<p><strong>Generated header:</strong></p>
+<pre><code class="language-c">/* Auto-generated from rmsd.yaml — do not edit. */
+#include &lt;stdint.h&gt;
+#include &lt;stdbool.h&gt;
+
+typedef float float32_3[3];
+
+int transform(
+    unsigned int X, unsigned int Y,
+    const float32_3 *coords1,
+    const float32_3 *coords2,
+    double weight,
+    double *result
+);
+</code></pre>
+<h2 id="tests-in-seamless-signaturetests">Tests (in <code>seamless-signature/tests/</code>)</h2>
+<ul>
+<li><code>test_schema.py</code></li>
+<li>Round-trip <code>load_signature</code> on each fixture YAML.</li>
+<li>Assert <code>wildcard_names</code>, <code>element_shape</code>, and structured-field traversal.</li>
+<li>Negative cases: <code>[X, 3, Y]</code> (fixed before wildcard), <code>shape: []</code> (empty list), wildcard dim inside struct field, unknown scalar dtype name.</li>
+<li><code>test_c_header.py</code></li>
+<li>Golden-file comparison for <code>simple.yaml</code>, <code>wildcard.yaml</code>, <code>structured.yaml</code>, <code>outputs.yaml</code>.</li>
+<li>Assert that identical <code>(dtype, element_shape)</code> pairs produce exactly one typedef (de-dup).</li>
+<li>Sanity check: generated header parses through <code>gcc -fsyntax-only -xc -</code> (only if gcc is available; skip otherwise).</li>
+</ul>
+<h2 id="critical-files-to-read-before-implementation">Critical files to read before implementation</h2>
+<ul>
+<li><a href="seamless-config/seamless_config/cluster.py">seamless-config/seamless_config/cluster.py</a> — canonical <code>from_dict</code> + <code>__post_init__</code> pattern to copy.</li>
+<li><a href="seamless-config/seamless_config/config_files.py#L187-L209">seamless-config/seamless_config/config_files.py:187-209</a> — loader entry-point idiom.</li>
+<li><a href="seamless-config/pyproject.toml">seamless-config/pyproject.toml</a> — package metadata template.</li>
+<li><a href="legacy-seamless/seamless/workflow/graphs/compiled_transformer/gen_header.py">legacy-seamless/seamless/workflow/graphs/compiled_transformer/gen_header.py</a> — reference for scalar→C-type table, struct-name generation, and preamble phrasing. Do <strong>not</strong> copy the <code>{data, shape[], strides[]}</code> wrapping or the Silk <code>form</code>/<code>storage</code> machinery — the new design deliberately avoids both.</li>
+</ul>
+<h2 id="verification">Verification</h2>
+<ol>
+<li><code>cd seamless-signature &amp;&amp; pip install -e .</code> inside the <code>seamless1</code> conda env.</li>
+<li><code>pytest seamless-signature/tests/ -v</code> — all tests pass.</li>
+<li>Hand-spot-check generated headers for the four fixtures against the in-plan example above.</li>
+<li>If <code>gcc</code> is available in the env, run <code>gcc -fsyntax-only -xc - &lt; generated.h</code> on each fixture output to confirm the C is well-formed.</li>
+</ol>
+<h2 id="explicit-non-goals-for-this-first-iteration">Explicit non-goals (for this first iteration)</h2>
+<ul>
+<li>No stride support (C-contiguous only).</li>
+<li>No integer-constant dim names (e.g. <code>MAX_N</code>); only wildcard identifiers or literal ints.</li>
+<li>No cross-file imports / named struct reuse across signatures — structured dtypes are inline-only.</li>
+<li>No CFFI/ctypes runtime binding; only header text generation. Runtime consumption is a separate concern handled by whoever calls this package.</li>
+<li>No replacement of the legacy compiled-transformer pipeline; this package stands alone.</li>
+</ul>
+              
+            </div>
+          </div><footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+    
+    
+  </span>
+</div>
+    <script src="../../../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "../../..";</script>
+    <script src="../../../js/theme_extra.js"></script>
+    <script src="../../../js/theme.js"></script>
+      <script src="../../../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>

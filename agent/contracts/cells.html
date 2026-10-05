@@ -1,0 +1,756 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <link rel="shortcut icon" href="../img/favicon.ico" />
+    <title>Cells - Seamless — Agent Documentation</title>
+    <link rel="stylesheet" href="../css/theme.css" />
+    <link rel="stylesheet" href="../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "Cells";
+        var mkdocs_page_input_path = "contracts/cells.md";
+        var mkdocs_page_url = null;
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href="../index.html" class="icon icon-home"> Seamless — Agent Documentation
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../index.html">Home</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../overview.html">Agent Docs Overview</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../repos/index.html">Workspace Repos</a>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Contracts</span></p>
+              <ul class="current">
+                  <li class="toctree-l1"><a class="reference internal" href="identity-and-caching.html">Identity and Caching</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="celltypes-and-conversion.html">Celltypes, Null, and Conversion</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="hashtype.html">HashType</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="deep-celltypes.html">Deep Celltypes</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="expressions.html">Expressions</a>
+                  </li>
+                  <li class="toctree-l1 current"><a class="reference internal current" href="#">Cells</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#the-definition">The definition</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#binding">Binding</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#retired-names">Retired names</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#celltypes-celltype-is-the-output">Celltypes: celltype is the output</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#the-input-source-versus-checksum">The input: .source versus .checksum</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#writes-two-verb-families">Writes: two verb families</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#the-32-matrix-at-the-root">The 3×2 matrix at the root</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#set-and-value-take-values-only">.set() and .value = take values only</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#authority">Authority</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#null-and-none">Null and None</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#celltype-checksum">Celltype checksum</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#reads">Reads</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#checksum">.checksum</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#buffer-and-value">.buffer and .value</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#failures">Failures</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#work-which-calls-compute-and-which-never-do">Work: which calls compute and which never do</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#projections">Projections</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#cell-level-joins">Cell-level joins</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#deep-celltypes-on-a-cell">Deep celltypes on a Cell</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#implementation-status-and-current-limitations">Implementation status and current limitations</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#non-goals">Non-goals</a>
+    </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="pins.html">Pins</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="workflow-context.html">Workflow Context</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="node-state-lifecycle.html">Node State Lifecycle</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="attachments.html">Attachments</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="mounts.html">File Mounts</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="cancellation.html">Cancellation</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="direct-delayed-and-transformation.html">direct/delayed/Transformation</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="modules-and-closures.html">Modules and Closures</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="scratch-witness-audit.html">Scratch/Witness/Audit</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="seamless-run-and-argtyping.html">seamless-run/Argtyping</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="cache-storage-and-limits.html">Cache Storage and Limits</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="content-addressed-files-and-dirs.html">Content-addressed Files and Dirs</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="execution-backends.html">Execution Backends</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="execution-records.html">Execution Records</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="service-management.html">Service Management</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="compression.html">Compression</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="compiled-transformers.html">Compiled Transformers</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="compiled-pins.html">Compiled Pins</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="seamless-signature-schema.html">seamless-signature Schema</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">API</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/python/seamless.html">seamless</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/python/seamless.transformer.html">seamless.transformer</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/python/seamless.buffer_class.html">seamless.buffer_class</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/python/seamless.checksum_class.html">seamless.checksum_class</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/python/seamless_config.select.html">seamless_config.select</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/python/seamless_config.tools.html">seamless_config.tools</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/python/seamless_transformer.transformation_class.html">seamless_transformer.transformation_class</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/python/seamless_transformer.transformer_class.html">seamless_transformer.transformer_class</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">CLI</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/cli/seamless-run.html">seamless-run</a>
+                  </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Seamless — Agent Documentation</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../index.html" class="icon icon-home" aria-label="Docs"></a></li>
+          <li class="breadcrumb-item">Contracts</li>
+      <li class="breadcrumb-item active">Cells</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h1 id="cells-contract">Cells (Contract)</h1>
+<p><strong>A Cell is a deferred Expression.</strong> Where an <code>Expression</code> is a frozen recipe that has already been closed over its input, a <code>Cell</code> is the mutable builder for the same recipe — <code>(input, input_celltype, celltype)</code> plus a path and an optional validator — that can be re-aimed, retyped and re-read, and that snapshots into an immutable <code>Expression</code> on demand. Everything an Expression means (identity, cost class, placement, the error envelope, uncached failures) is in <code>contracts/expressions.md</code> and is not repeated here.</p>
+<p>A Cell exists in one of two modes:</p>
+<ul>
+<li><strong>standalone</strong> — the builder state is private to the Python object;</li>
+<li><strong>bound</strong> — the builder state is owned by a workflow <code>Context</code> node, and the Cell is a <em>view</em> onto that node.</li>
+</ul>
+<p>The two modes share one class, one read API and one write API. They differ in exactly three places: who owns the state, whether a read waits, and which operations exist at all (projection writes, mounts, <code>prune()</code> and <code>block_reason</code> are bound-only). Those differences are marked throughout.</p>
+<p>Pins are the <strong>sister class</strong>, not a subclass: <code>Pin</code> and <code>Cell</code> share <code>CellBase</code>, which carries the value, type, evaluation and ownership API. Everything Pin-specific — routing to a Transformer, the pin null rules, the absence of projection, validators and mounts — is specified in <code>contracts/pins.md</code>. A Pin is never a valid Cell input; passing one raises <code>TypeError</code> pointing at <code>pin.source</code>.</p>
+<p>Code locations:</p>
+<table>
+<thead>
+<tr>
+<th>Concern</th>
+<th>Module / symbol</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Shared value/type/evaluation/ownership API</td>
+<td><code>seamless.cell_class.CellBase</code></td>
+</tr>
+<tr>
+<td>Builder, navigation, snapshots</td>
+<td><code>seamless.cell_class.Cell</code>; re-exported as <code>seamless.Cell</code></td>
+</tr>
+<tr>
+<td>Sub-path projection handle</td>
+<td><code>seamless.cell_class.SubCell</code></td>
+</tr>
+<tr>
+<td>Module helpers</td>
+<td><code>seamless.cell_class</code> (<code>_is_input_ref</code>, <code>_check_input_ref</code>, <code>_serialize_value</code>, <code>_checksum_for_buffer</code>, <code>_available_input_checksum</code>, <code>_typed_input_celltype</code>, <code>_capture_workflow_source</code>, <code>_class_attribute</code>)</td>
+</tr>
+<tr>
+<td>Errors</td>
+<td><code>seamless.cell_errors</code> (<code>AuthorityError</code>, <code>ProjectionError</code>, <code>BoundStateError</code>, <code>WorkflowError</code>); <code>seamless.CacheMissError</code>; <code>seamless.error_envelope</code> (<code>RunningLoopRefusal</code>, <code>execution_error</code>, <code>WorkflowExecutionError</code>); <code>seamless_workflow.errors</code>, which re-exports <code>WorkflowError</code> / <code>AuthorityError</code> and adds <code>PathError</code>, <code>ValueUnavailableError</code>, <code>StaleWorkflowHandleError</code>, <code>ConcurrentUpdateError</code></td>
+</tr>
+<tr>
+<td>Retired names</td>
+<td><code>seamless.retired_names</code> (<code>RETIRED_NAMES</code>, <code>check_retired_name</code>)</td>
+</tr>
+<tr>
+<td>Snapshot container</td>
+<td><code>seamless.expression_class.Expression</code> (see <code>contracts/expressions.md</code>)</td>
+</tr>
+<tr>
+<td>Bound backend</td>
+<td><code>seamless_workflow.builder_state.BoundCellBackend</code></td>
+</tr>
+<tr>
+<td>Bound writes, reads, barriers</td>
+<td><code>seamless_workflow.ingress</code> (<code>controller_method</code>, <code>_edit</code>, <code>_wait</code>, <code>_wait_async</code>, <code>_prepare_assignment</code>)</td>
+</tr>
+<tr>
+<td>Bound graph operations</td>
+<td><code>seamless_workflow.context.Context</code> (<code>_assign</code>, <code>_cell_operation</code>, <code>_validate_write</code>, <code>_cell_delete_path</code>, <code>_derive_cell</code>, <code>_projection</code>, <code>_demand</code>, <code>_build_cell_expression</code>, <code>_effective_input_celltype</code>, <code>_public_cell_source</code>, <code>_get_checksum</code>/<code>_get_buffer</code>/<code>_get_value</code>, <code>_clear_exception</code>)</td>
+</tr>
+<tr>
+<td>Local join and projection workers</td>
+<td><code>seamless_workflow.sidework</code> (<code>evaluate_cell</code>, <code>evaluate_projection</code>, <code>Lease</code>, <code>SideLoop</code>)</td>
+</tr>
+<tr>
+<td>Value-form classification</td>
+<td><code>seamless_workflow.adapters.checksum_for_value</code></td>
+</tr>
+</tbody>
+</table>
+<h2 id="the-definition">The definition</h2>
+<pre><code class="language-python">Cell(celltype=None, *, checksum=None, source=None, input_celltype=None,
+     path=None, validator=None, validator_language=None)
+</code></pre>
+<ul>
+<li>The positional argument is the <strong>produced</strong> celltype.</li>
+<li><code>checksum=</code> and <code>source=</code> are <strong>mutually exclusive</strong> (<code>TypeError</code> otherwise). <code>source=</code> takes a typed reference — a <code>Cell</code>, an <code>Expression</code>, or any object exposing the duck-typed <code>_workflow_endpoint</code> / <code>_compute_dependency</code> protocol (a <code>Transformation</code>, a bound endpoint). A bare <code>Checksum</code> passed as <code>source=</code> raises <code>TypeError</code> naming <code>checksum=</code>; a <code>Pin</code> raises <code>TypeError</code> naming <code>pin.source</code>.</li>
+<li><code>celltype</code> defaults to a typed source's <code>celltype</code>, else <code>"mixed"</code>. An unsupported name raises <code>TypeError</code> listing the supported celltypes (see <code>contracts/celltypes-and-conversion.md</code>).</li>
+<li><code>input_celltype=</code> is a <strong>declaration</strong>, legal only alongside a bare checksum. With a typed source it must match, or construction raises <code>ValueError</code>.</li>
+<li><code>path=</code> starts the builder at a projection; it is normalized by <code>normalize_path</code> and uses the Expression path syntax.</li>
+<li><code>validator</code> / <code>validator_language</code> are accepted and stored, but validators are <strong>not implemented</strong> (below).</li>
+</ul>
+<p><code>build()</code> — also spelled <code>cell.expression()</code> and <code>cell()</code> — freezes the current builder state into an <code>Expression</code>. That Expression is the contract object; the Cell is the handle that produced it.</p>
+<h3 id="binding">Binding</h3>
+<p>Assigning a Cell into a Context binds it: <code>ctx.a = Cell("int")</code> moves the builder state into a Context node, and every later <code>ctx.a</code> returns a <strong>fresh</strong> <code>Cell</code> whose state lives entirely in <code>BoundCellBackend</code> (<code>Cell._from_backend</code>). Consequences:</p>
+<ul>
+<li><strong>Handle identity carries no meaning.</strong> <code>ctx.a is not ctx.a</code>; two handles for one node are interchangeable, and a handle for a deleted node raises <code>StaleWorkflowHandleError</code> on its next use.</li>
+<li>A bound Cell is a view, not a copy: the Context runtime holds nodes, Expressions and Transformations, never Cells.</li>
+<li>A standalone Cell is never implicitly bound. <code>Cell(source=ctx.a)</code> captures the bound endpoint as its input (<code>_capture_workflow_source</code>), which is a reference to the node, not a binding of the new Cell.</li>
+</ul>
+<h3 id="retired-names">Retired names</h3>
+<p><code>target_celltype</code> and <code>input_ref</code> are retired and raise <code>AttributeError</code> naming the replacement (<code>celltype</code>, and <code>source</code> or <code>checksum</code>). Because attribute access on a Cell falls through to <em>projection</em>, <code>check_retired_name</code> runs first in <code>__getattr__</code>, <code>__setattr__</code> and <code>__delattr__</code>, so a retired name can never silently become a sub-path. Item navigation is unaffected: <code>ctx.a["input_ref"]</code> is an ordinary projection of a data field with that name.</p>
+<p><strong>There is no old → new migration.</strong> Cells reach <code>main</code> unreleased; the contract below is the contract, not a translation of an earlier one.</p>
+<h2 id="celltypes-celltype-is-the-output">Celltypes: <code>celltype</code> is the output</h2>
+<p><strong><code>celltype</code> is the type of what the Cell produces</strong> — its checksum, its <code>.buffer</code>, its <code>.value</code>, its <code>run()</code>. <strong><code>input_celltype</code> says how the input is read, and is read-only</strong> (assigning it raises <code>AttributeError</code>; there is no setter in either mode).</p>
+<p><code>input_celltype</code> comes from the input, and from nowhere else:</p>
+<table>
+<thead>
+<tr>
+<th>The input is</th>
+<th><code>input_celltype</code> is</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>a typed reference (Cell, Expression, Transformation, bound upstream node)</td>
+<td>that reference's <code>celltype</code>, followed <strong>live</strong> on a Cell; an <code>Expression</code> resolves it once, at construction</td>
+</tr>
+<tr>
+<td>a value written with <code>.set()</code> / <code>.value =</code> / assignment</td>
+<td>the celltype it was serialized in, which is the Cell's <code>celltype</code> at that moment</td>
+</tr>
+<tr>
+<td>a bare <code>Checksum</code></td>
+<td>the celltype declared with it (<code>Cell(ct, checksum=cs, input_celltype=…)</code>, <code>set_checksum(cs, input_celltype=…)</code>), defaulting to <code>celltype</code> at that moment</td>
+</tr>
+<tr>
+<td>absent</td>
+<td><code>None</code></td>
+</tr>
+</tbody>
+</table>
+<p><em>Verified:</em> standalone in <code>CellBase.input_celltype</code> / <code>_replace_input_ref</code> (<code>_typed_input_celltype(input_ref) or input_celltype or self.celltype</code>); bound in <code>Context._effective_input_celltype</code> (the root edge's source celltype, else <code>cell_root_producer.celltype</code>, else <code>None</code>).</p>
+<p>Three rules follow:</p>
+<ul>
+<li><strong>Retyping converts; it does not reinterpret the stored input.</strong> <code>cell.celltype = ct</code> changes only the output side. A <code>str</code> cell holding <code>"hello"</code> (<code>b'"hello"\n'</code>) retyped to <code>text</code> keeps <code>input_celltype == "str"</code> and produces the <code>text</code> checksum of <code>b"hello\n"</code> — a different checksum, the same value. Where the conversion is checksum-preserving (<code>int → float</code>, <code>int → text</code>, the trivial and reinterpret classes of <code>contracts/celltypes-and-conversion.md</code>) the checksum does not move and only <code>.value</code> differs.</li>
+<li><strong>Copy once, at creation.</strong> A <em>new</em> cell built from a typed source copies that source's <code>celltype</code> once: <code>ctx.a = ctx.b</code> creates <code>a</code> with <code>b.celltype</code>. An <em>existing</em> cell keeps its own output type when rewired — <code>ctx.existing = ctx.typed</code> leaves <code>existing.celltype</code> alone and converts into it.</li>
+<li><strong>To correct a wrong declaration, declare the input again.</strong> There is no setter; <code>set_checksum(cs, input_celltype=…)</code> is the spelling.</li>
+</ul>
+<p>Retyping is refused on a mounted cell: <code>ValueError("Mounted celltype cannot change; unmount first")</code>. The celltype decides how the attached file's bytes are read and written, so it is frozen for as long as the attachment lives (<code>contracts/attachments.md</code>).</p>
+<h2 id="the-input-source-versus-checksum">The input: <code>.source</code> versus <code>.checksum</code></h2>
+<p>The configured input is public as two read-only-in-meaning names that used to be one union:</p>
+<table>
+<thead>
+<tr>
+<th>Public</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>.source</code></td>
+<td>the <strong>derivation</strong> arm, read-only: the upstream handle (bound) or the Cell / Expression / Transformation a standalone builder is built on; <code>None</code> when the node holds its own value</td>
+</tr>
+<tr>
+<td><code>.checksum</code></td>
+<td>the <strong>value</strong> arm: the current produced checksum. As a <em>write</em> it declares a literal input, and <code>None</code> clears</td>
+</tr>
+</tbody>
+</table>
+<p>Connecting is always assignment (<code>ctx.a = ctx.b</code>, <code>Cell(source=…)</code>, <code>with_input(…)</code>), so <code>.source</code> needs no setter and there is exactly one spelling. <code>_input_ref</code> is private and is the Expression recipe, in both modes.</p>
+<p><code>.checksum</code> reports the node's <strong>current value</strong>, so it is populated for a connected node too, and is <code>None</code> whenever the node is not complete:</p>
+<table>
+<thead>
+<tr>
+<th>State</th>
+<th><code>.source</code></th>
+<th><code>.checksum</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>unwired</td>
+<td><code>None</code></td>
+<td><code>None</code></td>
+</tr>
+<tr>
+<td>literal, complete</td>
+<td><code>None</code></td>
+<td>the literal, converted if its <code>input_celltype</code> differs from <code>celltype</code></td>
+</tr>
+<tr>
+<td>connected, complete, no conversion</td>
+<td>the handle</td>
+<td><code>== source.checksum</code></td>
+</tr>
+<tr>
+<td>connected, complete, checksum-preserving conversion</td>
+<td>the handle</td>
+<td>equal to the source's (trivial / reinterpret: <code>plain → mixed</code>, <code>int → float</code>, <code>str → int</code>)</td>
+</tr>
+<tr>
+<td>connected, complete, reformatting conversion</td>
+<td>the handle</td>
+<td>a different checksum (<code>str → text</code>, <code>int → bool</code>)</td>
+</tr>
+<tr>
+<td>connected, upstream waiting / blocked / failed</td>
+<td>the handle</td>
+<td><code>None</code></td>
+</tr>
+<tr>
+<td>own conversion or validator failed</td>
+<td>the handle</td>
+<td><code>None</code></td>
+</tr>
+</tbody>
+</table>
+<p>So <strong><code>.source is None</code> means "nothing upstream feeds this"</strong> and <strong><code>.checksum is None</code> means "not complete"</strong> — the blocker rule, read off the handle.</p>
+<p><strong>On a projection, <code>.source</code> answers for that path.</strong> It is the one-level edge targeting that path if there is one, otherwise the nearest enclosing source, otherwise <code>None</code>; deeper paths, which can never carry an edge, walk up the same way. A cell with a literal root and a connection at <code>b</code> therefore reports <code>ctx.a.source is None</code> and <code>ctx.a.b.source</code> as the upstream — otherwise sub-path edges would be visible only through <code>get_graph()</code>. <em>Verified:</em> <code>Context._public_cell_source</code> walks <code>local[:length]</code> downwards from the full path to the root; the standalone equivalent falls back to the root builder's own input.</p>
+<h2 id="writes-two-verb-families">Writes: two verb families</h2>
+<p>Every write either <strong>defines</strong> the node's input or <strong>writes under</strong> an existing one, and they differ in whether authority is checked.</p>
+<table>
+<thead>
+<tr>
+<th>Family</th>
+<th>Spellings</th>
+<th>On a connected target</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Declare the input</strong></td>
+<td><code>ctx.a = X</code>, <code>.value =</code>, <code>.buffer =</code>, <code>.checksum =</code> (including <code>= None</code>)</td>
+<td><strong>make it so</strong>: replaces whatever input exists, edge or producer</td>
+</tr>
+<tr>
+<td><strong>Write what you own</strong></td>
+<td><code>.set()</code>, <code>.set_buffer()</code>, <code>.set_checksum()</code>, sub-path assignment, <code>+=</code> and friends</td>
+<td><strong>check</strong>: <code>AuthorityError</code>, since an upstream edge would overwrite the write on the next recompute</td>
+</tr>
+</tbody>
+</table>
+<p>The reason for the split is that the two answer different questions. <code>ctx.a = 7</code> over a connected cell is a statement about what <code>a</code> <em>is</em>; <code>ctx.a.set(7)</code> is a statement about a value the caller believes it owns, and an upstream edge falsifies that belief.</p>
+<h3 id="the-32-matrix-at-the-root">The 3×2 matrix at the root</h3>
+<p>Three forms — value, buffer, checksum — each in both families. All three are readable and all three are writable.</p>
+<table>
+<thead>
+<tr>
+<th>Form</th>
+<th>Declare the input (detaches)</th>
+<th>Write what you own (checks)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>value</td>
+<td><code>ctx.a.value = v</code>; <code>ctx.a = v</code> and <code>tf.pins.x = v</code> are the idiomatic sugar</td>
+<td><code>ctx.a.set(v)</code></td>
+</tr>
+<tr>
+<td>buffer</td>
+<td><code>ctx.a.buffer = buf</code></td>
+<td><code>ctx.a.set_buffer(buf)</code></td>
+</tr>
+<tr>
+<td>checksum</td>
+<td><code>ctx.a.checksum = cs</code></td>
+<td><code>ctx.a.set_checksum(cs, input_celltype=…)</code></td>
+</tr>
+</tbody>
+</table>
+<p>Everything reduces to setting a checksum; the rows differ in what they do first and in what they can guarantee:</p>
+<ul>
+<li><strong>value</strong> — serialize with the node's <code>celltype</code>, which <strong>validates</strong>: <code>Cell("int").set("abc")</code> raises <code>ValueError</code>. This is where an invalid literal is rejected. The buffer is deposited (with a tempref until the Cell's refhold adopts it) and <code>input_celltype = celltype</code> is recorded.</li>
+<li><strong>buffer</strong> — the bytes are in hand, so nothing is serialized, but they are still checked against the celltype: <code>_checksum_for_buffer</code> runs <code>validate_deserializable_as(checksum, celltype, buffer=buffer)</code> <em>and</em> <code>buffer.get_value(celltype)</code>, so a buffer that does not parse as the celltype is rejected at write time. A <code>Buffer</code> carries no celltype of its own, so <code>input_celltype = celltype</code>.</li>
+<li><strong>checksum</strong> — an id only. Nothing is deposited, so the buffer must already be resolvable or the read fails later with <code>CacheMissError</code>; validation is limited to the hash-type bits; <code>input_celltype</code> defaults to <code>celltype</code> and is declarable.</li>
+</ul>
+<p><strong>Both sides of a property write speak <code>celltype</code>.</strong> Every spelling in the declare family is expressed in the Cell's <code>celltype</code> <em>and records <code>input_celltype = celltype</code></em>: <code>.value =</code> serializes with it, <code>.buffer =</code> is validated against it, <code>.checksum =</code> declares it. None of the three can name a different input celltype — there is no argument to pass one. So at the root a property write is its own inverse at the moment it happens: <code>ctx.a.checksum = cs</code> leaves <code>ctx.a.checksum == cs</code>, exactly as <code>ctx.a.value = v</code> leaves <code>ctx.a.value == v</code>. The conversion a Cell can perform is the identity right after the write; it becomes non-trivial only later. <em>Verified:</em> the <code>CellBase.checksum</code> setter calls <code>_write_checksum(value, detach=True)</code> with <code>input_celltype=None</code>, and <code>_replace_input_ref</code> resolves that through <code>_typed_input_celltype(input_ref) or input_celltype or self.celltype</code> to <code>self.celltype</code>.</p>
+<p>Exactly three acts make <code>input_celltype</code> differ from <code>celltype</code>, and each of them names the other celltype <strong>explicitly</strong>:</p>
+<ul>
+<li>the method form, <code>set_checksum(cs, input_celltype=…)</code>;</li>
+<li>the constructor, <code>Cell(ct, checksum=cs, input_celltype=…)</code>;</li>
+<li>a later <code>cell.celltype = …</code>, which retypes and therefore converts (above).</li>
+</ul>
+<p>Reading <code>.checksum</code> after one of those reports the converted output rather than the checksum that was declared. That is retyping doing what retyping is specified to do, not an asymmetry between the getter and the setter. Two further cases break the round-trip without any of the three, and both are stated elsewhere: a handle that carries a <code>path</code> declares the input <em>before</em> the path, so the read is the projection of what was written — coherent, not a bug, because the path is recipe, not value; and on a <code>bytes</code> cell the empty-buffer checksum canonicalizes to null on the way out (<em>Null and <code>None</code></em>).</p>
+<p><strong><code>set_checksum</code> does not set <code>.checksum</code>.</strong> It is the Checksum variant of the three setters and sets the <em>input</em>. It is instantaneous, so <code>.checksum</code> is normally <code>None</code> immediately afterwards — except in the two cases the <code>.set_checksum</code> contract carves out (the dummy Expression and the unbound computed property), which are stated under <em>Reads</em> below and derived in <code>contracts/expressions.md</code>.</p>
+<h3 id="set-and-value-take-values-only"><code>.set()</code> and <code>.value =</code> take values only</h3>
+<p>A reference is never a value:</p>
+<ul>
+<li>a <code>Checksum</code> raises <code>TypeError: A Checksum is not a value: use .set_checksum() (a Checksum is a value only for celltype 'checksum')</code>;</li>
+<li>a <code>Cell</code>, <code>Expression</code>, <code>Transformation</code> or bound endpoint raises <code>TypeError: A &lt;T&gt; is not a value: connect it by assignment, or with Cell(source=...)</code>;</li>
+<li>a <code>Pin</code> raises <code>TypeError</code> naming <code>pin.source</code>.</li>
+</ul>
+<p>The check runs before the bound/standalone split, so it applies identically in both modes and to <code>.value =</code> as well as <code>.set()</code>. Assignment (<code>ctx.a = X</code>) and call-time transformer arguments are the <em>other</em> family and do keep reading a <code>Checksum</code> as a declared reference.</p>
+<p>Consequences worth stating: a standalone Cell can no longer be rewired to a source in place — only <code>Cell(source=…)</code> and <code>with_input()</code>, and both create a new Cell.</p>
+<h3 id="authority">Authority</h3>
+<p><code>AuthorityError</code> (a <code>WorkflowError</code>) is raised by the checking family when a source controls the target:</p>
+<ul>
+<li>standalone: <code>CellBase._check_write_authority</code> refuses when <code>.source is not None</code>;</li>
+<li>bound: <code>Context._validate_write</code> refuses when an incoming edge is an <strong>ancestor</strong> of the write path, or when an edge is <strong>covered</strong> by the write path and the write is not detaching.</li>
+</ul>
+<p>So with an edge at <code>ctx.a.b</code>: <code>ctx.a.b.c.set(2)</code> raises, <code>ctx.a.set({...})</code> raises (the edge is covered by the root write), and <code>ctx.a.other.set(2)</code> succeeds — an edge at an unrelated first-level key does not block a sibling.</p>
+<p><strong>Sub-path writes never detach.</strong> <code>BoundCellBackend.write_value</code> / <code>write_checksum</code> pass <code>detach=detach and not self.local_path</code>, so the declare family collapses into the checking family below the root: <code>ctx.a.b.value = 3</code> checks authority exactly as <code>ctx.a.b.set(3)</code> does. Detaching is a root-level act.</p>
+<p>A mounted cell refuses to be cleared: <code>AuthorityError("Cannot clear a mounted cell; unmount first")</code>, and a sensing mount refuses an incoming edge, at the root or at any sub-path (<code>"Sensing mount is the producer; unmount first"</code>) — a sensing attachment <em>is</em> the node's producer. Both refusals, and the sense that writes through this same path, are in <code>contracts/attachments.md</code>.</p>
+<h2 id="null-and-none">Null and <code>None</code></h2>
+<p><strong><code>None</code> is a value for every Cell celltype.</strong> Every cell is in effect <code>T | None</code>. There is <strong>one celltype-independent representation</strong>: the canonical JSON-null buffer <code>b"null\n"</code>, checksum <code>38e0b9de…</code>, which is trivial and resolves without cache residency. Null converts to itself for every celltype pair, so retyping a null cell is a no-op, and <code>str(checksum)</code> prints <code>NULL</code>. The details are in <code>contracts/celltypes-and-conversion.md</code>.</p>
+<p>Three behaviours stay apart, and each has its own spelling:</p>
+<table>
+<thead>
+<tr>
+<th>Spelling</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>.value = None</code>, <code>.set(None)</code></td>
+<td>store the <strong>null value</strong> — a real checksum; state <code>complete</code></td>
+</tr>
+<tr>
+<td><code>.checksum = None</code>, <code>.buffer = None</code>, <code>.set_checksum(None)</code></td>
+<td><strong>clear the input</strong> — node stays, state <code>unwired</code>, <code>input_celltype</code> becomes <code>None</code></td>
+</tr>
+<tr>
+<td><code>del ctx.a</code></td>
+<td><strong>delete the node</strong></td>
+</tr>
+<tr>
+<td><code>del ctx.a["b"]</code></td>
+<td>delete a key from the value (and any edge targeting that exact path)</td>
+</tr>
+</tbody>
+</table>
+<p><code>del</code> means the named thing is gone, and never "empty it". <code>ctx.a = None</code> does <strong>not</strong> delete; it stores null. This is required, not incidental: merging "no value" with "the value <code>None</code>" would destroy the distinction that optional pins and the "no result" checksum are built on, and the absence of a checksum is the blocker that gates every dependent.</p>
+<p><strong><code>bytes</code> is the one celltype where empty <em>is</em> null</strong>, in both directions. <code>bytes</code> is the only celltype whose canonical serialization of a legitimate value is empty (<code>b""</code>, checksum <code>e3b0c442…</code>, which is also the empty file), so an empty buffer under celltype <code>bytes</code> canonicalizes to the null checksum, and resolving the null checksum as <code>bytes</code> gives <code>b""</code>. Hence <code>ctx.a = b""</code> on a <code>bytes</code> cell stores null and reads back <code>b""</code>. The rule is blanket — serialization, expression evaluation with output celltype <code>bytes</code>, transformation results, mount reads — and it is enforced in three places on the Cell path: <code>Buffer(b"", "bytes")</code>, <code>_checksum_for_buffer</code>, and the <code>.checksum</code> dummy fast path. One-directional aliasing would be worse: <code>b""</code> would silently become "no value" and every downstream required <code>bytes</code> pin would reject it.</p>
+<p>No other celltype is affected, because none serializes to zero bytes (<code>text ""</code> is <code>b"\n"</code>, <code>str ""</code> is <code>b'""\n'</code>, <code>plain {}</code> is <code>b"{}\n"</code>).</p>
+<h2 id="celltype-checksum">Celltype <code>checksum</code></h2>
+<p><strong>A <code>Checksum</code> is a value exactly when the target celltype is <code>checksum</code>.</strong> One rule, covering <code>.set()</code>, <code>.value =</code>, <code>ctx.a =</code>, <code>tf.pins.x =</code> and <code>tf(x=…)</code>. For a <code>checksum</code> cell:</p>
+<ul>
+<li>the buffer is the bare 64-character hex digest, which the cell does <strong>not</strong> hold — the cell points at a checksum, it does not contain the buffer behind it;</li>
+<li><code>.value</code> is a <code>Checksum</code> object, and <code>.value == .run() == .build().run()</code>;</li>
+<li><code>.set(cs)</code> and <code>.set(cs.hex())</code> give the same checksum.</li>
+</ul>
+<p>For every other celltype, assignment and call-time arguments read a <code>Checksum</code> as a declared reference, while <code>.set()</code> and <code>.value =</code> raise <code>TypeError</code>. A 64-character <code>str</code> is always a value, never a checksum. Note that <code>Checksum == hex_str</code> is true but the two hash differently.</p>
+<h2 id="reads">Reads</h2>
+<p>Two concerns stay separate: <strong>retrieving</strong> <code>.checksum</code>, and <strong>materializing</strong> it into <code>.buffer</code> or <code>.value</code>.</p>
+<h3 id="checksum"><code>.checksum</code></h3>
+<p><strong>A property getter never runs a source.</strong> For a Cell fed by an Expression or a Transformation, <code>.checksum</code> reports a result only if the source already has one. The call that does work is <code>.compute()</code>, exactly as <code>Buffer.get_checksum()</code> is the working counterpart of <code>Buffer.checksum</code>. Cell, Pin and Expression get no <code>get_checksum()</code>, because <code>.compute()</code> already fills that role.</p>
+<p><strong>A Cell's own expression is cheap, so the getter evaluates it</strong> whenever the input checksum is at hand. Resolution order:</p>
+<ol>
+<li>nothing to apply (no path, no conversion, no validator) — the input checksum;</li>
+<li>a hit in the process-local Expression cache;</li>
+<li>a hit in the database;</li>
+<li>the same evaluation already running in this process — wait for it;</li>
+<li>the input buffer is local — evaluate now;</li>
+<li>the input buffer is elsewhere — dispatch the evaluation and wait.</li>
+</ol>
+<p>Otherwise <code>.checksum</code> is <code>None</code>: nothing is known, no remote is configured, or evaluation failed. Steps 2–6 are <code>Expression</code> placement and are specified in <code>contracts/expressions.md</code>; step 1 is the <strong>dummy Expression</strong> fast path, and on a standalone Cell it is implemented in the getter itself rather than being delegated, because <code>set_checksum</code> is instantaneous and <code>.checksum</code> must answer without entering the evaluator. That fast path also applies the empty-<code>bytes</code> → null canonicalization.</p>
+<p>The second <code>.set_checksum</code> exception is that <strong>on an unbound Cell <code>.checksum</code> is a computed property</strong>, performing a synchronous evaluation of the underlying Expression. This does not change what <code>set_checksum</code> means.</p>
+<p><strong>Wait on expressions, never on transformations.</strong> A source Transformation that is still running gives <code>None</code>. A running source Expression may be waited on, unless it depends on a running Transformation. <em>Verified:</em> <code>_available_input_checksum</code> returns a bare <code>Checksum</code> unchanged, asks an <code>Expression</code> for <code>_available_result()</code> (which joins matching in-flight work but returns <code>None</code> when the ultimate input is an unfinished compute dependency), recurses into a source <code>Cell</code>'s own getter, and otherwise reads only the already-published <code>_result_checksum_internal()</code>.</p>
+<p><strong>Bound and standalone deliberately differ.</strong> A bound <code>.checksum</code> never waits: a node that is still computing reports <code>None</code> with state <code>waiting</code>, because the Context works in the background. A standalone Cell has nothing working in the background, so it waits.</p>
+<p><strong>A running-loop refusal is not a failure.</strong> Inside a running event loop a synchronous evaluation that would need the async bridge is refused (<code>RunningLoopRefusal</code>, see <code>contracts/expressions.md</code>). The standalone getter turns that into <code>None</code>, leaves <code>.exception</code> as <code>None</code> and the state as <code>waiting</code>, and dispatches nothing. It is a condition that resolves itself outside the loop, not an error to be cleared.</p>
+<p>Reading <code>.checksum</code> expresses <strong>user result interest</strong> — <code>Expression.compute()</code> enables result holding, so the result checksum acquires a refholder claim for the lifetime of the reading handle. That is the checksum reference lifecycle, an internal contract: <code>contracts/internal/checksum-reference-lifecycle.md</code>.</p>
+<h3 id="buffer-and-value"><code>.buffer</code> and <code>.value</code></h3>
+<p><strong>Neither ever fingertips.</strong> Both resolve through <code>Checksum.resolve()</code>: local cache, then hashserver, otherwise <code>CacheMissError</code>. <code>Transformation.run()</code> does fingertip, but it is an explicit method, not a property.</p>
+<p><strong>A <code>CacheMissError</code> on the <em>result</em> checksum is raised to the caller and never becomes <code>.exception</code>.</strong> The computation succeeded; whether its buffer can be reached depends on storage and on who is reading. The state stays <code>complete</code> and <code>.checksum</code> keeps its value. This is the one materialization failure that is deliberately not recorded — contrast a <code>CacheMissError</code> on an <em>input</em> buffer, which is an evaluation failure and does become <code>.exception</code>.</p>
+<p>The deserialization pipeline is:</p>
+<ol>
+<li>retrieve the result checksum, without questioning its validity;</li>
+<li>validate it against the celltype using the result's HashType (<code>validate_deserializable_as</code>, checksum-level first, then again with the buffer in hand);</li>
+<li>obtain the buffer, and for <code>.value</code> deserialize it.</li>
+</ol>
+<p>Step 3 can still fail after step 2 passes, because HashType does not cover every future deserialization: <code>python</code>, <code>ipython</code> and <code>yaml</code> need text validation at parse time, which no classification of the bytes provides (<code>contracts/hashtype.md</code>). <strong>A validation or deserialization failure is raised to the caller and also sets <code>.exception</code></strong>, and it is <strong>deterministic</strong>: the expression result stays stored, so <code>clear_exception()</code> followed by the same read produces the same failure again. <em>Verified:</em> a <code>RAW_TEXT</code> buffer that is not valid Python, under celltype <code>python</code>, gives a readable <code>.buffer</code> and a <code>.value</code> that raises <code>HashTypeValidationError</code>; after <code>clear_exception()</code> the checksum and the state return, and the next <code>.value</code> fails identically.</p>
+<p><code>.value</code> returns <code>Buffer.content</code> (raw <code>bytes</code>) for celltype <code>bytes</code>, and the parsed value otherwise.</p>
+<h2 id="failures">Failures</h2>
+<p><strong>What sets <code>.exception</code>:</strong> an evaluation failure of the Cell's own expression — an impossible path, a forbidden or failing conversion, a <code>CacheMissError</code> on an <em>input</em> buffer, a HashType rejection — and a validation or deserialization failure while materializing. <code>NotImplementedError</code> from an unimplemented validator arrives the same way. <strong>What does not:</strong> a running-loop refusal, and a <code>CacheMissError</code> on the result checksum.</p>
+<p><strong>A failure sticks.</strong> The state is <code>failed</code>, <code>.checksum</code> reports <code>None</code> even where the result checksum is well-defined, and it stays that way until <code>clear_exception()</code>. There is <strong>no automatic retry</strong>: <code>clear_exception()</code> is the explicit retry, for when more caches are configured or the network is better. A deterministic failure simply reproduces; a transient one succeeds.</p>
+<p><strong>A failure is remembered on the handle, never in the substrate.</strong> This is the Cell-side counterpart of "Expression failures are not cached" (<code>contracts/expressions.md</code>):</p>
+<ul>
+<li><strong>standalone</strong> — on the Cell (<code>_standalone_exception</code>), and reset whenever the recipe changes: a new input (<code>_replace_input_ref</code>), a new <code>celltype</code>, a new <code>path</code>, a new <code>validator</code> or <code>validator_language</code>;</li>
+<li><strong>bound</strong> — on the Context node, where <code>clear_exception()</code> also drops the stored demand result, releases its lease and re-derives.</li>
+</ul>
+<p>So <strong>a new Cell built on the same recipe never inherits an old failure.</strong> Keying a failure by expression identity in the substrate would have exactly the opposite effect, and would poison a checksum for every later reader.</p>
+<p>The checksum shown by a <code>CacheMissError</code> is the one whose buffer was missing. In a chain of expressions, that can be an inner input rather than the Cell's own.</p>
+<p><strong><code>Cell.exception</code> holds a string</strong>, as <code>Transformation.exception</code> does — one convention across Cell, Pin and Transformation. <strong>This is contract ahead of code</strong> (see <em>Implementation status</em>). Its consequence is worth stating now: a <code>CacheMissError</code>'s checksum then reaches the Cell as <strong>prose only</strong>, inside the message. The jobserver error envelope's split between <code>message</code> (for a person) and <code>checksum</code> (for code) therefore has no machine-readable arm on the Cell; <code>exc.args[0]</code> is a <code>Checksum</code> on the <code>CacheMissError</code> that <code>.value</code> <em>raises</em>, but not on the string that <code>.exception</code> <em>holds</em>.</p>
+<p>Reading <code>.exception</code> on a standalone Cell evaluates the Cell's expression first (the getter calls <code>self.checksum</code>), so <code>.exception</code> is a read that can do cheap work — and, for a deterministic failure, re-derives the same failure after <code>clear_exception()</code>.</p>
+<h2 id="work-which-calls-compute-and-which-never-do">Work: which calls compute and which never do</h2>
+<table>
+<thead>
+<tr>
+<th>Call</th>
+<th>Does work?</th>
+<th>Returns</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>.source</code>, <code>.celltype</code>, <code>.input_celltype</code>, <code>.path</code></td>
+<td>no</td>
+<td>configuration</td>
+</tr>
+<tr>
+<td><code>.checksum</code></td>
+<td>evaluates the Cell's <strong>own</strong> expression only; never starts a source</td>
+<td><code>Checksum</code> or <code>None</code></td>
+</tr>
+<tr>
+<td><code>.buffer</code>, <code>.value</code></td>
+<td>resolve the result checksum; never fingertip</td>
+<td>buffer / value, or raise</td>
+</tr>
+<tr>
+<td><code>.exception</code></td>
+<td>reads <code>.checksum</code> first</td>
+<td>the stored failure or <code>None</code></td>
+</tr>
+<tr>
+<td><code>build()</code> / <code>expression()</code> / <code>cell()</code></td>
+<td>no</td>
+<td>an immutable <code>Expression</code></td>
+</tr>
+<tr>
+<td><code>compute()</code></td>
+<td><strong>yes</strong> — starts missing upstream work</td>
+<td>the result <code>Checksum</code>, or <code>None</code></td>
+</tr>
+<tr>
+<td><code>await compute_async()</code> / <code>await computation()</code></td>
+<td><strong>yes</strong></td>
+<td>the result <code>Checksum</code>, or <code>None</code></td>
+</tr>
+<tr>
+<td><code>run()</code></td>
+<td><strong>yes</strong> — compute, then materialize</td>
+<td>the value</td>
+</tr>
+<tr>
+<td><code>with_input()</code>, <code>as_celltype()</code>, <code>item()</code>, <code>slice()</code>, <code>with_validator()</code></td>
+<td>no</td>
+<td>a new Cell</td>
+</tr>
+<tr>
+<td><code>clear_exception()</code>, <code>prune()</code></td>
+<td>no evaluation</td>
+<td><code>None</code></td>
+</tr>
+</tbody>
+</table>
+<p>Notes:</p>
+<ul>
+<li><code>compute()</code> is the explicit operation that starts missing upstream work; <code>.checksum</code> is not. <code>computation()</code> is <code>compute_async()</code> under its Context-facing name, and <code>await cell.computation()</code> is the asynchronous demand equivalent.</li>
+<li>A <strong>standalone</strong> <code>compute()</code> / <code>compute_async()</code> records a failure in <code>.exception</code> and returns <code>None</code> rather than raising; <code>run()</code> re-raises the stored failure. A <strong>bound</strong> <code>compute()</code> / <code>compute_async()</code> waits on a Context barrier, and <code>timeout=</code> is meaningful there (a barrier timeout raises <code>TimeoutError</code>; that is feature 10).</li>
+<li><code>compute(input_ref)</code> / <code>run(input_ref)</code> / <code>build(input_ref)</code> accept a one-shot input override, type-checked like a constructor input, that does not mutate the Cell. The <strong>parameter</strong> is still spelled <code>input_ref</code> (as it is on <code>Expression</code>); only the retired <em>attribute</em> of that name raises.</li>
+<li>All of these default to <code>execution="auto"</code>; placement is in <code>contracts/expressions.md</code>.</li>
+<li>The builder methods return <strong>new</strong> Cells and never mutate. On a <strong>bound</strong> Cell, <code>as_celltype()</code>, <code>with_validator()</code> and <code>with_input()</code> return a <em>standalone</em> Cell built on the bound cell's current Expression snapshot (<code>BoundCellBackend.derive</code>), whereas <code>item()</code> and <code>slice()</code> stay bound. Re-aiming a bound cell in place is a Context write, not a derivation.</li>
+</ul>
+<h2 id="projections">Projections</h2>
+<p>Attribute, item and slice reads navigate uniformly in both modes and each return a derived Cell carrying one more normalized path step:</p>
+<pre><code class="language-python">cell.foo   cell[&quot;foo&quot;]   cell[0]   cell[1:4]
+ctx.a.foo  ctx.a[&quot;foo&quot;]  ctx.a[0]  ctx.a[1:4]
+</code></pre>
+<p><strong>API-name arbitration: normal Python lookup wins.</strong> <code>__getattr__</code> projects only for a name that is not statically defined on <code>Cell</code> or its bases. A bound-only member whose getter raises <code>AttributeError</code> on a standalone Cell (<code>mount</code>, <code>block_reason</code>) must <em>not</em> fall through to a same-named projection, so <code>Cell.__getattr__</code> consults <code>_class_attribute</code> and re-raises rather than projecting. Names starting with <code>_</code> never project. Item access is the escape hatch: <code>ctx.a["value"]</code> and <code>ctx.a["run"]</code> are ordinary projections of data fields with those names. Cells have no <code>.pins</code> API, and <code>pins</code> is not reserved, so <code>ctx.a.pins</code> is an ordinary projection.</p>
+<p>A projection of a plain <code>Cell</code> is a <strong><code>SubCell</code></strong>, a handle that is deliberately loud about being used as a value: <code>==</code>, ordering, <code>bool()</code>, <code>len()</code> and iteration all raise <code>ProjectionError</code> (which subclasses both <code>TypeError</code> and <code>AttributeError</code>). This catches the two mistakes that projection makes silent — a typo (<code>ctx.a.vlaue</code>) and a name that used to be API. One gap has no fix: <code>is None</code> compiles to a pointer comparison with no protocol to intercept, so <code>assert ctx.a.vlaue is not None</code> still passes.</p>
+<p><strong>Projection depth is unlimited; connection targets are not.</strong> A projection path may be arbitrarily deep wherever the underlying Expression path and source celltype support it. A <strong>connection target</strong> — a graph location that may receive a bound source — is the <strong>root or one level below it, and nothing deeper</strong>. A one-level target is a single point selection: a mapping key, an attribute name, or an integer sequence index. A slice may be read or value-updated but is never a connection target, because it denotes several positions. <code>ctx.a.b.c = ctx.x</code> raises <code>PathError: Cell connection targets are limited to one point component</code>.</p>
+<p>A mapping-key connection can bootstrap an unwired cell as a mapping. An integer-index connection requires an existing compatible sequence; it never infers or grows a list, and the check happens when the value is assembled (<code>evaluate_cell</code> raises <code>TypeError("Integer Cell connection targets require an existing sequence")</code>).</p>
+<p><strong>A sub-path write is an atomic read-modify-set of the root value</strong>, not persistent path-overlay state and not a sub-value producer. One serialized transaction:</p>
+<ol>
+<li>check that no incoming edge targets the root or an ancestor of the path;</li>
+<li>read a <strong>detached</strong> copy of the current resolved root value;</li>
+<li>apply ordinary Python container mutation along the path;</li>
+<li>re-serialize and commit the changed aggregate as the root, preserving every unrelated one-level incoming edge.</li>
+</ol>
+<p>It therefore <strong>needs the current value to be materializable</strong>. When the node is <code>waiting</code> the write waits on a barrier and retries (a sub-path write only ever targets a cell node, and a cell node is never <code>computing</code>); otherwise a root with no checksum raises <code>ValueUnavailableError</code> — except that for a string/attribute path an <em>unwired</em> cell is treated as an empty mapping and missing intermediate keys are created as <code>{}</code>, so <code>ctx.a = Cell(); ctx.a.b.c = 12</code> yields <code>{"b": {"c": 12}}</code>. An explicitly stored <code>null</code> is not unwired and fails. The commit is optimistically concurrent (base checksum plus node revision) and retries up to 8 times before raising <code>ConcurrentUpdateError</code>.</p>
+<p>Augmented assignment (<code>+=</code>, <code>-=</code>, <code>*=</code>, <code>/=</code>) reads the current resolved value and commits through the same single transaction. Because Python writes the result of <code>__iadd__</code> back to its owner, the returned handle must be treated as an inert same-endpoint reassignment and must not create a self-edge; a separately retained projection (<code>p = ctx.a.b.c; p += 1</code>) performs the same single transaction. <code>del ctx.a["b"]</code> deletes the key and, being a detaching delete, also removes any edge targeting that exact path.</p>
+<p>Sub-path writes and augmented assignment are <strong>bound-only</strong>. Standalone, <code>cell["b"] = v</code> and <code>cell += 1</code> raise <code>TypeError</code>, and <code>cell.b = v</code> raises <code>AttributeError</code>: a standalone Cell has no controller to serialize the transaction.</p>
+<p>The same absence of a controller means a standalone projection's <em>property</em> writes — <code>cell.b.checksum = cs</code>, <code>cell.b.set_checksum(cs)</code>, <code>cell.b.value = v</code>, <code>cell.b.buffer = buf</code> — are contractually errors for the identical reason, but today they do not raise; see <em>Implementation status</em>.</p>
+<h2 id="cell-level-joins">Cell-level joins</h2>
+<p>A <strong>join</strong> is a Cell with several producers — a root value and/or one-level sub-path connections:</p>
+<pre><code class="language-python">ctx.join = {}
+ctx.join.left = ctx.left
+ctx.join.right = ctx.right
+</code></pre>
+<p><strong>A join is plain local Python.</strong> It is assembled directly in the Context, in-process: the root value is resolved, each connected sub-path source's value is resolved and assigned into a detached copy, and the aggregate is re-serialized. <strong>There is no Transformation and no Expression behind it.</strong> <em>Verified:</em> <code>Context._derive_cell</code> takes this branch when there are sub-path edges and no root edge, and hands <code>sidework.evaluate_cell</code> to <code>_demand</code>, which runs it in a worker thread; <code>evaluate_cell</code> calls <code>Checksum.resolve</code>, <code>_assign_path</code> and <code>checksum_for_value</code>, and nothing else.</p>
+<p>Observable behaviour — stable, and the only thing promised:</p>
+<ul>
+<li>the value is correct, and it is the value of the assembled aggregate at the Cell's own <code>celltype</code>;</li>
+<li>it recomputes reactively when an upstream changes;</li>
+<li>reverting an upstream reproduces the checksum;</li>
+<li>a failed upstream leaves the join <strong>blocked-by-error</strong>, not failed; an unwired or blocked upstream leaves it blocked-by-unwired;</li>
+<li><strong>no transformation is observed</strong> — not in the observation log, not in the transformation cache;</li>
+<li>the node goes straight from <code>waiting</code> to <code>complete</code> and is <strong>never seen <code>computing</code></strong>, because <code>computing</code> belongs to the transformer path alone;</li>
+<li><code>build()</code> on a join does <strong>not</strong> return a recipe: with no root edge to follow, it snapshots the join's <em>current</em> checksum as a dummy Expression.</li>
+</ul>
+<p><strong>This is provisional.</strong> A future re-implementation is to cache joins and evaluate them where the data is. Describe and depend on the observable behaviour above; <strong>no join identity is promised</strong> — the in-process memoization key is internal and per-Context, and nothing about a join is content-addressed beyond its result. (The design text in <code>context-internals-followup-design.md</code> that a join "may require a join <code>Transformation</code> followed by a projected <code>Expression</code>" is superseded.)</p>
+<h2 id="deep-celltypes-on-a-cell">Deep celltypes on a Cell</h2>
+<p>A Cell whose <code>celltype</code> or <code>input_celltype</code> is <code>deepcell</code>, <code>deepfolder</code> or <code>folder</code> is restricted, because an Expression's cost class must be a function of its identity tuple and never of the data behind the checksum: exactly <strong>one string-item step</strong>, and a short list of index-level conversions. The table, the member-celltype rules, the flatness requirement and the reasons are in <code>contracts/deep-celltypes.md</code>; <code>module</code> is not a deep celltype. Keys are opaque strings that routinely contain <code>/</code>, so the step usually has to be written in bracket form.</p>
+<p><strong>Status: settled contract, not yet enforced.</strong> Today a deep celltype on either side of an Expression is rejected by <code>HashTypeValidationError</code> before evaluation, so on a Cell only the dummy case works: <code>Cell("deepcell")</code> holding an index reads back its own checksum (the fast path does no evaluation), while <code>as_celltype("plain")</code> or any path step records a <code>HashTypeValidationError</code> in <code>.exception</code>.</p>
+<p>In that dummy case, <code>.value</code> and <code>.buffer</code> disagree, for a reason specific to how each is read. <code>.value</code> succeeds and returns the raw index dict: it resolves through <code>Checksum.resolve(celltype)</code> → <code>Buffer.get_value(celltype)</code>, which maps <code>deepcell</code>/<code>deepfolder</code>/<code>folder</code> to <code>plain</code> (<code>Buffer._map_celltype</code>) before parsing, and a flat index is valid <code>plain</code> JSON. <code>.buffer</code> instead raises <code>HashTypeValidationError</code> (recorded in <code>.exception</code>), because <code>CellBase.buffer</code> validates the checksum against the <strong>unmapped</strong> celltype before resolving. This is a second, distinct <code>.buffer</code>/<code>.value</code> asymmetry from the one in <em>Implementation status</em> — that one is <code>None</code> versus a re-raised stored failure after an evaluation failure; this one is a raise versus a silent success on an otherwise-untouched dummy read.</p>
+<h2 id="implementation-status-and-current-limitations">Implementation status and current limitations</h2>
+<p>Settled contract that the code does not yet implement, or implements differently. Where a design document and the code disagree, <strong>the code wins</strong> and the disagreement is listed here.</p>
+<ul>
+<li><strong><code>.exception</code> is an exception object, not a string.</strong> <code>execution_error</code> returns the exception with its traceback stripped, its <code>__cause__</code>/<code>__context__</code> cleared and a <code>failure_id</code> attached, and both <code>CellBase.exception</code> (standalone) and <code>node.exception</code> (bound) hand that object out. The string convention is settled and the code is to be changed. Two code sites depend on the object form and must change with it: standalone <code>.value</code> and <code>run()</code> <code>raise self._standalone_exception</code>.</li>
+<li><strong>Validators are deferred.</strong> <code>validator</code> and <code>validator_language</code> are accepted by the constructor, by <code>with_validator()</code> and by <code>CellConfig</code>, and are excluded from Expression identity, but every evaluation entry point raises <code>NotImplementedError("Expression validators are not implemented yet")</code>, which a Cell records as <code>.exception</code> (wrapped as <code>WorkflowExecutionError</code>). The reject-only semantics are settled; nothing writes the database's validator columns. A validator must be a <code>Checksum</code> (or hex) — a validator given as source text fails with a <code>fromhex</code> error, not a useful message.</li>
+<li><strong>The join implementation is provisional</strong> — see above. Caching and placement are to change; only the observable behaviour is contract.</li>
+<li><strong>Deep-celltype rules are unenforced</strong> — see above.</li>
+<li><strong>A bound sub-path checksum or buffer write fails.</strong> <code>ctx.a.b.checksum = cs</code>, <code>ctx.a.b.set_checksum(cs)</code>, <code>ctx.a.b.buffer = buf</code> and <code>ctx.a.b.set_buffer(buf)</code> all raise <code>TypeError: _edit() got an unexpected keyword argument 'input_celltype'</code>: <code>BoundCellBackend.write_checksum</code> always passes <code>input_celltype=</code> on, and <code>ingress.controller_method</code> forwards it into <code>_edit</code>, which has no such parameter. Root writes are unaffected, and the standalone path is unaffected. The contract is that all six writes work at a sub-path, with the checksum resolved to a value before the read-modify-set (<code>checksum_rhs</code>).</li>
+<li><strong><code>.buffer</code> returns <code>None</code> where <code>.value</code> raises.</strong> After a recorded evaluation failure the standalone <code>.checksum</code> getter short-circuits to <code>None</code>, so <code>.buffer</code> answers <code>None</code> while <code>.value</code> re-raises the stored exception. The contract is that both report the same failure the same way.</li>
+<li><strong>A bound public read does not validate, and does not record.</strong> <code>Context._get_buffer</code> and <code>_get_value</code> validate against the celltype and record a failure on the node, but <code>ingress.controller_method</code> intercepts <code>_get_checksum</code> / <code>_get_buffer</code> / <code>_get_value</code> for every caller outside the controller and resolves the checksum directly. So a bound <code>.buffer</code> returns unvalidated bytes, and a bound <code>.value</code> whose deserialization fails raises without setting <code>.exception</code> — where the standalone path does both. The settled rule ("the same applies to bound and standalone Cells") is the standalone behaviour.</li>
+<li><strong>A bound read of a non-existent projection raises instead of reporting.</strong> <code>ctx.p.nope.checksum</code>, <code>.value</code> and <code>.compute()</code> raise <code>ExpressionEvaluationError</code>, because the ingress read path catches only <code>KeyError</code> and <code>IndexError</code> while <code>_apply_step</code> wraps those in <code>ExpressionEvaluationError</code>. Standalone, the same projection returns <code>None</code> and records the failure in <code>.exception</code>. The standalone behaviour is the intended one.</li>
+<li><strong>Standalone <code>clear_exception()</code> does not clear the memoized result.</strong> It clears only <code>_standalone_exception</code>; the next read re-evaluates. This is correct for a deterministic failure (it reproduces) and is why <code>.exception</code> appears unchanged immediately after <code>clear_exception()</code> — the getter has already re-derived it.</li>
+<li><strong><code>context-internals-followup-design.md</code> is stale on two points</strong>: it makes <code>.checksum</code>, <code>.buffer</code> and <code>.value</code> bound-only (superseded by the standalone-read contract above), and it makes a projection's <code>input_ref</code> its owning root endpoint (that meaning belongs to the private <code>_input_ref</code>; the public split is <code>.source</code> / <code>.checksum</code>).</li>
+<li><strong>On a bound projection, <code>input_celltype</code> does not follow the path while <code>.source</code> does.</strong> <code>BoundCellBackend.input_celltype</code> (<code>seamless-workflow/seamless_workflow/builder_state.py:64-69</code>) calls <code>Context._effective_input_celltype(self.node_path)</code> and drops <code>self.local_path</code>, whereas <code>BoundCellBackend.source</code> passes <code>local_path</code> into <code>_public_cell_source</code>. So for a join <code>ctx.join.left = ctx.left</code>, <code>ctx.join.left.source</code> reports <code>ctx.left</code> but <code>ctx.join.left.input_celltype</code> reports the <strong>root's</strong> input celltype. Which of the two readings is intended is not yet ruled; until it is, do not rely on <code>input_celltype</code> at a bound projection.</li>
+<li><strong>A standalone projection's property writes are silently lost.</strong> <code>cell.b.checksum = cs</code>, <code>cell.b.set_checksum(cs)</code>, <code>cell.b.value = v</code> and <code>cell.b.buffer = buf</code> do not raise, unlike <code>cell.b = v</code> (<code>AttributeError</code>) and <code>cell["b"] = v</code> (<code>TypeError</code>). <code>cell.b</code> returns a fresh, throwaway <code>SubCell</code> (<code>Cell.item</code>); <code>SubCell</code> overrides only the comparison, truthiness and iteration dunders (<code>cell_class.py:688-750</code>) and inherits <code>CellBase</code>'s ordinary setters unchanged, so the write mutates that handle's own private state and the handle is then discarded. <em>Verified against code (2026-09-20):</em> <code>Cell.item</code> builds the projection through <code>_derive</code>, which for a standalone Cell constructs a brand-new instance rather than returning a view; <code>CellBase.checksum</code>'s setter (<code>_write_checksum</code> → <code>_replace_input_ref</code>) runs against that instance. The contract is that these four spellings raise the same way item/attribute assignment already does.</li>
+</ul>
+<h2 id="non-goals">Non-goals</h2>
+<ul>
+<li><strong>Execution.</strong> A Cell has no code, no environment, no pins and no dunders. Anything that needs one is a Transformer; see <code>contracts/direct-delayed-and-transformation.md</code>.</li>
+<li><strong>Handle identity.</strong> Handles are views. Two handles for one node are equal in effect and identical in nothing; nothing may be keyed on a handle's identity.</li>
+<li><strong>Deep connection targets.</strong> One level below the root, by design: a deeper target would be a producer of a sub-value, which the read-modify-set model exists to avoid.</li>
+<li><strong>Persistent sub-path overlays.</strong> A sub-path write is a transaction on the root value, not a stored per-path input.</li>
+<li><strong>Fingertipping from a property.</strong> <code>.buffer</code> and <code>.value</code> never recompute a missing buffer; <code>contracts/scratch-witness-audit.md</code> defines fingertipping and where it does happen.</li>
+<li><strong>Value identity.</strong> A Cell names a checksum, not a value. One value may have several checksums, and identity stays with the checksum (<code>contracts/identity-and-caching.md</code>); a Cell never re-serializes a result to normalize it, and <code>==</code> between two Cells is not a value comparison.</li>
+<li><strong>Failure caching.</strong> A Cell failure lives on the handle for as long as the recipe does, and nowhere else.</li>
+<li><strong>Node state.</strong> <code>.state</code> and <code>.block_reason</code> are node-lifecycle members shared with bound Transformers, and belong to feature 10's node state lifecycle; standalone, <code>.state</code> reports only <code>unwired</code>, <code>waiting</code>, <code>complete</code> and <code>failed</code>, and <code>.block_reason</code> is bound-only.</li>
+</ul>
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="expressions.html" class="btn btn-neutral float-left" title="Expressions"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="pins.html" class="btn btn-neutral float-right" title="Pins">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+    
+      <span><a href="expressions.html" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="pins.html" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script src="../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "..";</script>
+    <script src="../js/theme_extra.js"></script>
+    <script src="../js/theme.js"></script>
+      <script src="../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>

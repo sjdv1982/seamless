@@ -1,0 +1,1058 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <link rel="shortcut icon" href="../../../img/favicon.ico" />
+    <title>Implementation Plan: why-not and transformation-diff - Seamless — Agent Documentation</title>
+    <link rel="stylesheet" href="../../../css/theme.css" />
+    <link rel="stylesheet" href="../../../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "Implementation Plan: why-not and transformation-diff";
+        var mkdocs_page_input_path = "repos/seamless-share/source/why-not-implementation-plan.md";
+        var mkdocs_page_url = null;
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../../../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href="../../../index.html" class="icon icon-home"> Seamless — Agent Documentation
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../../index.html">Home</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../../overview.html">Agent Docs Overview</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../index.html">Workspace Repos</a>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Contracts</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/identity-and-caching.html">Identity and Caching</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/celltypes-and-conversion.html">Celltypes, Null, and Conversion</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/hashtype.html">HashType</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/deep-celltypes.html">Deep Celltypes</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/expressions.html">Expressions</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/cells.html">Cells</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/pins.html">Pins</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/workflow-context.html">Workflow Context</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/node-state-lifecycle.html">Node State Lifecycle</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/attachments.html">Attachments</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/mounts.html">File Mounts</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/cancellation.html">Cancellation</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/direct-delayed-and-transformation.html">direct/delayed/Transformation</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/modules-and-closures.html">Modules and Closures</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/scratch-witness-audit.html">Scratch/Witness/Audit</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/seamless-run-and-argtyping.html">seamless-run/Argtyping</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/cache-storage-and-limits.html">Cache Storage and Limits</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/content-addressed-files-and-dirs.html">Content-addressed Files and Dirs</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/execution-backends.html">Execution Backends</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/execution-records.html">Execution Records</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/service-management.html">Service Management</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/compression.html">Compression</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/compiled-transformers.html">Compiled Transformers</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/compiled-pins.html">Compiled Pins</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/seamless-signature-schema.html">seamless-signature Schema</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">API</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../api/python/seamless.html">seamless</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../api/python/seamless.transformer.html">seamless.transformer</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../api/python/seamless.buffer_class.html">seamless.buffer_class</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../api/python/seamless.checksum_class.html">seamless.checksum_class</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../api/python/seamless_config.select.html">seamless_config.select</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../api/python/seamless_config.tools.html">seamless_config.tools</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../api/python/seamless_transformer.transformation_class.html">seamless_transformer.transformation_class</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../api/python/seamless_transformer.transformer_class.html">seamless_transformer.transformer_class</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">CLI</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../api/cli/seamless-run.html">seamless-run</a>
+                  </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">Seamless — Agent Documentation</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../../../index.html" class="icon icon-home" aria-label="Docs"></a></li>
+      <li class="breadcrumb-item active">Implementation Plan: why-not and transformation-diff</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h1 id="implementation-plan-why-not-and-transformation-diff">Implementation Plan: <code>why-not</code> and <code>transformation-diff</code></h1>
+<p>This is a handoff-ready implementation plan derived from <code>why-not-plan.md</code> and
+the Pattern 2 contract in <code>usage-patterns.md</code>. It is written for an implementer
+who has not read the source plan yet.</p>
+<p>The contract source of truth is still:</p>
+<ul>
+<li><code>seamless-share/why-not-plan.md</code></li>
+<li><code>seamless-share/usage-patterns.md</code>, Pattern 2: cache-miss diagnosis</li>
+<li><code>seamless/docs/agent/contracts/identity-and-caching.md</code></li>
+</ul>
+<p>If this implementation plan conflicts with those contracts, the contracts win,
+except for the candidate-selection refinement called out below: v1 should use a
+near-match threshold instead of accepting a candidate merely because it shares
+one plain-key value.</p>
+<h2 id="current-repository-state">Current Repository State</h2>
+<p><code>seamless-share</code> is currently a stub repository with documentation only:</p>
+<ul>
+<li><code>README.md</code></li>
+<li><code>usage-patterns.md</code></li>
+<li><code>why-not-plan.md</code></li>
+<li><code>LICENSE.txt</code></li>
+</ul>
+<p>There is no Python package, CLI entry point, test suite, or <code>pyproject.toml</code> in
+<code>seamless-share</code> yet. Build the package structure from scratch inside this repo.
+The adjacent workspace contains reusable APIs and models:</p>
+<ul>
+<li><code>seamless-database/database_models.py</code> defines SQLite models:
+  <code>Transformation</code>, <code>RevTransformation</code>, <code>MetaData</code>,
+  <code>IrreproducibleTransformation</code>, and helpers such as <code>db_init</code>.</li>
+<li><code>seamless-remote/seamless_remote/database_client.py</code> has read-only client
+  methods for remote database services:
+  <code>get_transformation_result</code>, <code>get_rev_transformations</code>,
+  <code>get_execution_record</code>, and <code>get_irreproducible_records</code>.</li>
+<li><code>seamless-core/seamless/checksum/calculate_checksum.py</code> exposes
+  <code>calculate_dict_checksum</code>, compatible with plain-cell dict checksums.</li>
+<li><code>seamless-transformer/seamless_transformer/pretransformation.py</code> defines
+  <code>NON_CHECKSUM_ITEMS</code>, which is the current implementation-level list of
+  dunder/non-checksum transformation keys.</li>
+</ul>
+<p>Do not assume this workspace root is a single git repository. <code>seamless-share</code>
+is its own git repository.</p>
+<h2 id="v1-deliverable">V1 Deliverable</h2>
+<p>Implement two read-only tools as separate layers:</p>
+<ol>
+<li><code>seamless-share transformation-diff</code></li>
+<li>Low-level primitive.</li>
+<li>Compares exactly two transformation references.</li>
+<li>Has no candidate-selection logic.</li>
+<li>
+<p>Reports complete key-level differences with <code>plain</code> vs <code>dunder</code>
+     classification.</p>
+</li>
+<li>
+<p><code>seamless-share why-not</code></p>
+</li>
+<li>User-facing diagnostic.</li>
+<li>Resolves one expected transformation reference.</li>
+<li>Always reports lookup state for the queried endpoint set.</li>
+<li>When lookup state is <code>NOT_PRESENT</code>, selects or accepts a candidate and
+     calls the <code>transformation-diff</code> core to produce the diff.</li>
+</ol>
+<p>Both tools must expose:</p>
+<ul>
+<li>CLI surface.</li>
+<li>Python API surface:
+  <code>from seamless_share.why_not import why_not, transformation_diff, Reference, EndpointSpec</code></li>
+</ul>
+<p>The CLI should use the same core as the Python API. JSON CLI output must be the
+serialized form of the Python dataclass result.</p>
+<h2 id="non-negotiable-constraints">Non-Negotiable Constraints</h2>
+<ul>
+<li>Read-only by construction. No code path may write to a database, bufferdir, or
+  hashserver.</li>
+<li><code>why-not</code> must call <code>transformation-diff</code> for diff computation. It must not
+  contain independent diff logic.</li>
+<li>Lookup state and candidate diff are independent fields. Do not collapse them
+  into one result enum.</li>
+<li>Diffs are complete key-level lists. Do not pick a primary cause, do not hide
+  entries, and do not merge opposite-side key entries.</li>
+<li><code>identity_relevant</code> is <code>true</code> if and only if at least one diff entry is
+  classified <code>plain</code>.</li>
+<li><code>--deep</code> is presentation only. It must never relax identity semantics and must
+  not write missing content into any cache.</li>
+<li>No v1 cascade explanation. Upstream result checksum changes are reported as
+  one differing input pin.</li>
+<li>Do not consult <code>MetaData</code> for identity diffing. Metadata may be useful for
+  execution diagnostics elsewhere, but not here.</li>
+</ul>
+<h2 id="candidate-selection-refinement">Candidate-Selection Refinement</h2>
+<p>The source plan says the heuristic should refuse only when no transformation in
+the union of endpoints shares at least one plain-key value with the input. That
+is too loose for v1: a single matching plain-key value can select a wildly
+unrelated transformation.</p>
+<p>Use a near-match threshold instead:</p>
+<ul>
+<li>Compute <code>plain_delta_count</code> between input and candidate over plain keys only.</li>
+<li>Count one delta for each plain key present on only one side.</li>
+<li>Count one delta for each plain key present on both sides whose normalized
+  value differs.</li>
+<li>A candidate is eligible only if <code>plain_delta_count &lt;= max_plain_delta</code>.</li>
+<li>Set <code>max_plain_delta = 3</code> by default.</li>
+<li>Keep this default in one named constant, e.g. <code>DEFAULT_MAX_PLAIN_DELTA = 3</code>.</li>
+<li>It is acceptable to expose <code>--max-plain-delta &lt;N&gt;</code> later, but do not add that
+  flag in v1 unless tests pin it.</li>
+</ul>
+<p>Refusal rule:</p>
+<ul>
+<li>If no transformation in the endpoint union satisfies the near-match threshold,
+  <code>why-not</code> returns <code>lookup_state.state == NOT_PRESENT</code>, <code>candidate == null</code>,
+  and <code>diff == null</code>.</li>
+<li>It must not invent a candidate to diff against.</li>
+<li>Emit a stable warning tag, e.g. <code>candidate_not_near_enough</code>.</li>
+<li>The old "at least one shared plain-key value" condition may be used only as a
+  cheap prefilter, never as the final eligibility test.</li>
+</ul>
+<p>This refinement affects tests C15/P8-style candidate behavior: build fixtures
+where a candidate shares one plain-key value but has more than three plain
+differences, and assert refusal.</p>
+<h2 id="proposed-package-layout">Proposed Package Layout</h2>
+<p>Create this structure in <code>seamless-share</code>:</p>
+<pre><code class="language-text">seamless-share/
+  pyproject.toml
+  seamless_share/
+    __init__.py
+    cli.py
+    why_not/
+      __init__.py
+      api.py
+      models.py
+      references.py
+      endpoints.py
+      local_database.py
+      remote_database.py
+      lookup.py
+      diff.py
+      selection.py
+      deep.py
+      render.py
+      errors.py
+      schema.json
+      README.md
+      CHANGELOG.md
+  tests/
+    fixtures/
+    test_cli.py
+    test_contract_schema.py
+    test_diff.py
+    test_lookup.py
+    test_selection.py
+    test_deep.py
+    test_readonly.py
+    test_scenarios.py
+</code></pre>
+<p>Use <code>argparse</code> for the CLI unless the repo establishes a different convention
+before implementation starts. Keep dependencies minimal:</p>
+<ul>
+<li>Required: <code>seamless-core</code>, <code>seamless-database</code>, <code>seamless-remote</code>, <code>peewee</code>
+  only if imported directly for local DB access, and <code>jsonschema</code> for tests or
+  runtime schema validation if desired.</li>
+<li>Optional for tests: <code>pytest</code>.</li>
+</ul>
+<p>Suggested <code>pyproject.toml</code> entry point:</p>
+<pre><code class="language-toml">[project.scripts]
+seamless-share = &quot;seamless_share.cli:main&quot;
+</code></pre>
+<h2 id="public-data-model">Public Data Model</h2>
+<p>Implement typed dataclasses in <code>seamless_share/why_not/models.py</code>. Keep field
+names identical to the JSON schema so serialization is boring and stable.</p>
+<p>Core enums:</p>
+<ul>
+<li><code>ReferenceForm</code>: <code>tf_checksum</code>, <code>dict_path</code>, <code>definition_path</code></li>
+<li><code>LookupStateName</code>: <code>NOT_PRESENT</code>, <code>IRREPRODUCIBLE</code>,
+  <code>PRESENT_RESULT_UNAVAILABLE</code>, <code>PRESENT_AS_HIT</code></li>
+<li><code>DiffSide</code>: <code>key_only_in_input</code>, <code>key_only_in_candidate</code>, <code>value_differs</code>
+  for <code>why-not</code>; use A/B internally and normalize labels at the API boundary.</li>
+<li><code>Classification</code>: <code>plain</code>, <code>dunder</code></li>
+<li><code>DeepKind</code>: <code>text_diff</code>, <code>json_diff</code>, <code>checksum_fallback</code></li>
+</ul>
+<p>Dataclasses:</p>
+<ul>
+<li><code>Reference</code></li>
+<li>User-facing constructor helpers:
+    <code>from_tf_checksum</code>, <code>from_dict_path</code>, <code>from_definition_path</code>, <code>from_str</code>.</li>
+<li>Store original value, reference form, resolved <code>tf_checksum</code>, and resolved
+    transformation dict when available.</li>
+<li><code>EndpointSpec</code></li>
+<li>User-facing constructor helpers:
+    <code>from_str</code>, <code>from_path</code>.</li>
+<li>Store raw spec, endpoint kind, resolved path or URL, and display name.</li>
+<li><code>DiffEntry</code></li>
+<li><code>DeepDiff</code></li>
+<li><code>TransformationDiffResult</code></li>
+<li><code>LookupState</code></li>
+<li><code>EndpointLookupState</code></li>
+<li><code>CandidateInfo</code></li>
+<li><code>WhyNotResult</code></li>
+</ul>
+<p>Serialization rules:</p>
+<ul>
+<li>JSON output must be deterministic:</li>
+<li>sort object keys with <code>json.dumps(..., sort_keys=True)</code></li>
+<li>deterministic list ordering</li>
+<li>no timing field unless <code>--verbose</code></li>
+<li>Warning values should be stable tags, not prose. Start with:</li>
+<li><code>dunder_only_diff</code></li>
+<li><code>empty_haystack</code></li>
+<li><code>empty_diff_check_implicit_closure</code></li>
+<li><code>deep_checksum_fallback</code></li>
+<li><code>candidate_not_found</code></li>
+<li><code>candidate_not_near_enough</code></li>
+</ul>
+<h2 id="cli-contract">CLI Contract</h2>
+<p>Implement:</p>
+<pre><code class="language-text">seamless-share transformation-diff &lt;ref-A&gt; &lt;ref-B&gt;
+  [--endpoint &lt;spec&gt; ...]
+  [--config &lt;path&gt;]
+  [--deep]
+  [--deep-best-effort]
+  [--format {json,text}]
+  [--quiet|-q]
+  [--verbose|-v]
+</code></pre>
+<p>Default format: <code>json</code>.</p>
+<p>Implement:</p>
+<pre><code class="language-text">seamless-share why-not &lt;ref&gt;
+  [--endpoint &lt;spec&gt; ...]
+  [--config &lt;path&gt;]
+  [--candidate &lt;ref&gt;]
+  [--deep]
+  [--deep-best-effort]
+  [--format {json,text}]
+  [--explain-selection]
+  [--quiet|-q]
+  [--verbose|-v]
+</code></pre>
+<p>Default format: <code>text</code>.</p>
+<p>Exit codes:</p>
+<ul>
+<li><code>0</code>: command ran and produced output. Diff entries, misses, and hits are
+  normal findings, not errors.</li>
+<li><code>2</code>: usage error, bad argv, missing required endpoint/ref, unknown endpoint,
+  definition path cannot load.</li>
+<li><code>3</code>: endpoint error, unreachable endpoint, corrupt database, malformed schema,
+  permission denied.</li>
+<li><code>4</code>: <code>--deep</code> requested and at least one buffer was unavailable. Output is
+  still produced. Downgrade to <code>0</code> when <code>--deep-best-effort</code> is passed.</li>
+<li><code>1</code>: unexpected internal failure only.</li>
+</ul>
+<h2 id="reference-resolution">Reference Resolution</h2>
+<p>Implement in <code>references.py</code>.</p>
+<p>Accepted reference forms:</p>
+<ol>
+<li>A 64-hex <code>tf_checksum</code>.</li>
+<li>A path to a JSON file containing an unwrapped transformation dict. The file
+   may include dunder keys. Compute the plain transformation checksum from the
+   dict after excluding dunder/non-checksum keys.</li>
+<li>A path to a transformation definition that tooling can evaluate to a
+   transformation dict. For v1, define the smallest supportable subset:</li>
+<li>Prefer JSON dict paths first.</li>
+<li>Add Python definition support only if there is a clear existing API to
+     construct without executing the transformation.</li>
+<li>If no safe evaluator exists, document <code>definition_path</code> as accepted only
+     for explicitly supported file types and return exit <code>2</code> for unsupported
+     paths.</li>
+</ol>
+<p>Checksum computation:</p>
+<ul>
+<li>The transformation checksum is over the unwrapped transformation dict's plain
+  keys only.</li>
+<li>Use the same canonical JSON/checksum logic as Seamless. Start with
+  <code>seamless.checksum.calculate_checksum.calculate_dict_checksum</code>.</li>
+<li>Exclude dunder/non-checksum keys according to the contract and current
+  implementation. Importing <code>NON_CHECKSUM_ITEMS</code> from
+  <code>seamless_transformer.pretransformation</code> is acceptable, but wrap it in one
+  local function so future contract changes are localized.</li>
+</ul>
+<p>Important: a <code>tf_checksum</code> reference can only be diffed if the transformation
+dict can be retrieved from an endpoint or supplied inline. If the endpoint only
+stores <code>tf_checksum -&gt; result_checksum</code>, add the missing read API described
+below before claiming checksum references are fully supported.</p>
+<h2 id="endpoint-resolution">Endpoint Resolution</h2>
+<p>Implement in <code>endpoints.py</code>.</p>
+<p>Support these endpoint specs:</p>
+<ol>
+<li>Local SQLite database path:</li>
+<li>Plain path ending in <code>.db</code> or existing file path.</li>
+<li>Open read-only with SQLite URI mode where possible:
+     <code>file:/path/to/seamless.db?mode=ro</code></li>
+<li>Never call <code>db_init(..., create_tables=True)</code> on a diagnostic endpoint.</li>
+<li>Remote database URL:</li>
+<li>Use <code>DatabaseClient(readonly=True)</code> from <code>seamless_remote.database_client</code>.</li>
+<li>Never instantiate a non-readonly client.</li>
+<li>Named cluster from <code>seamless-config</code>:</li>
+<li>Resolve through the same configuration path that existing Seamless tools
+     use.</li>
+<li>Pass <code>mode="ro"</code> or equivalent read-only configuration.</li>
+<li>Honor <code>--config &lt;path&gt;</code> if supported by <code>seamless-config</code>; otherwise fail
+     with exit <code>2</code> and a clear message.</li>
+</ol>
+<p>Expose one common read-only protocol:</p>
+<pre><code class="language-python">class DatabaseEndpoint:
+    spec: EndpointSpec
+    def get_transformation_result(tf_checksum: str) -&gt; str | None: ...
+    def get_transformation_dict(tf_checksum: str) -&gt; dict | None: ...
+    def iter_transformation_dicts() -&gt; Iterable[TransformationRecord]: ...
+    def get_irreproducible_records(tf_checksum: str) -&gt; list[dict]: ...
+    def buffer_available(checksum: str) -&gt; bool: ...
+    def get_buffer(checksum: str) -&gt; bytes | None: ...
+</code></pre>
+<p>If existing database services do not expose transformation dict retrieval,
+implement local SQLite support first and add a read-only remote API extension
+before marking remote checksum refs complete. Do not fake this by re-executing
+or materializing transformations.</p>
+<h2 id="required-database-read-api-gap">Required Database Read API Gap</h2>
+<p>Pattern 2 requires diffing transformation dicts, but the existing normal cache
+model shown in <code>seamless-database/database_models.py</code> stores only:</p>
+<ul>
+<li><code>Transformation.checksum</code></li>
+<li><code>Transformation.result</code></li>
+</ul>
+<p>It does not visibly store the transformation dict. Execution records in
+<code>MetaData</code> may contain <code>tf_checksum</code> and <code>result_checksum</code>, but the contract says
+metadata is not identity input and must not be used as the transformation dict.</p>
+<p>Before full v1, confirm where transformation dicts are persisted. If they are
+not persisted, implement one of these read-only-compatible prerequisites:</p>
+<ol>
+<li>Preferred: add a canonical <code>TransformationDict</code> table or buffer reference in
+   the producer path, then expose a read-only <code>GET transformation_dict</code> endpoint.</li>
+<li>Acceptable v1 staging: support full diffs only when references include inline
+   dict files, and have checksum-only references fail with exit <code>3</code> or a stable
+   endpoint capability error when the dict cannot be retrieved.</li>
+</ol>
+<p>Do not silently degrade <code>transformation-diff</code> into comparing only
+<code>tf_checksum -&gt; result_checksum</code>; that would violate the contract.</p>
+<h2 id="lookup-state-algorithm">Lookup State Algorithm</h2>
+<p>Implement in <code>lookup.py</code>.</p>
+<p>For each endpoint:</p>
+<ol>
+<li>Query <code>IrreproducibleTransformation</code> rows first.</li>
+<li>If rows exist: endpoint state is <code>IRREPRODUCIBLE</code>.</li>
+<li>Details: row count and sorted unique result checksums.</li>
+<li>Query <code>Transformation</code> by <code>tf_checksum</code>.</li>
+<li>If absent: endpoint state is <code>NOT_PRESENT</code>.</li>
+<li>If present: inspect <code>result_checksum</code>.</li>
+<li>Determine result materializability.</li>
+<li>If buffer is present or can be re-derived under read-only policy:
+     <code>PRESENT_AS_HIT</code>.</li>
+<li>If not materializable and not re-derivable:
+     <code>PRESENT_RESULT_UNAVAILABLE</code>.</li>
+<li>Details include <code>result_checksum</code> and a short reason tag such as
+     <code>not_in_bufferdir</code>, <code>scratch_no_producer_in_scope</code>, or <code>evicted</code>.</li>
+</ol>
+<p>Union view across endpoints:</p>
+<ol>
+<li>If any endpoint is <code>IRREPRODUCIBLE</code>, union state is <code>IRREPRODUCIBLE</code>.</li>
+<li>Else if any endpoint is <code>PRESENT_AS_HIT</code>, union state is <code>PRESENT_AS_HIT</code>.</li>
+<li>Else if any endpoint is <code>PRESENT_RESULT_UNAVAILABLE</code>, union state is
+   <code>PRESENT_RESULT_UNAVAILABLE</code>.</li>
+<li>Else union state is <code>NOT_PRESENT</code>.</li>
+</ol>
+<p><code>NOT_PRESENT</code> means absent from all endpoints. Always preserve
+<code>per_endpoint</code> in argv order.</p>
+<p>Endpoint error behavior:</p>
+<ul>
+<li>If an endpoint is unreachable, corrupt, or permission denied, return exit <code>3</code>.</li>
+<li>Include the endpoint spec in the error.</li>
+<li>Preserve partial per-endpoint provenance if it was already collected before
+  the failure.</li>
+</ul>
+<h2 id="diff-algorithm">Diff Algorithm</h2>
+<p>Implement the primitive in <code>diff.py</code>.</p>
+<p>Inputs:</p>
+<ul>
+<li>Two resolved transformation dicts.</li>
+<li>Labels for sides. Internally use A/B. For <code>why-not</code>, map A to <code>input</code> and B to
+  <code>candidate</code>.</li>
+<li>Optional deep diff fetcher.</li>
+</ul>
+<p>Steps:</p>
+<ol>
+<li>Normalize both dicts:</li>
+<li>Ensure keys are strings.</li>
+<li>Preserve dunder keys in the dict for diffing.</li>
+<li>Do not include <code>MetaData</code>.</li>
+<li>Compute sorted key union using lexical ordering for deterministic output.</li>
+<li>For each key:</li>
+<li>If only in A: <code>key_only_in_A</code>.</li>
+<li>If only in B: <code>key_only_in_B</code>.</li>
+<li>If in both and normalized value differs: <code>value_differs</code>.</li>
+<li>If equal: no entry.</li>
+<li>Classification:</li>
+<li><code>dunder</code> if the key starts and ends with double underscores or is listed in
+     the non-checksum/dunder key set.</li>
+<li>Otherwise <code>plain</code>.</li>
+<li>Keep the classification function central and tested against
+     <code>identity-and-caching.md</code>.</li>
+<li>Values:</li>
+<li>Default depth reports checksums or absent values.</li>
+<li>For a pin tuple <code>(celltype, subcelltype, checksum)</code>, report the checksum.</li>
+<li>For dunder values that are direct dicts/strings rather than checksum refs,
+     either compute a presentation checksum or serialize a stable JSON value
+     under a documented field. Prefer matching the contract shape by reporting a
+     checksum-like identity where possible.</li>
+<li><code>identity_relevant = any(entry.classification == "plain")</code>.</li>
+<li>Warnings:</li>
+<li>If entries are non-empty and all are dunder, emit <code>dunder_only_diff</code>.</li>
+<li>If entries are empty in <code>why-not</code> candidate mode, emit
+     <code>empty_diff_check_implicit_closure</code>.</li>
+</ol>
+<p>Side naming:</p>
+<ul>
+<li><code>transformation-diff</code> JSON uses <code>key_only_in_A</code>, <code>key_only_in_B</code>, and
+  <code>value_differs</code> unless the final schema chooses the contract names exactly.</li>
+<li><code>why-not</code> JSON must use <code>key_only_in_input</code>, <code>key_only_in_candidate</code>, and
+  <code>value_differs</code> as in <code>why-not-plan.md</code>.</li>
+</ul>
+<h2 id="deep-diff-algorithm">Deep Diff Algorithm</h2>
+<p>Implement in <code>deep.py</code>.</p>
+<p>Only run deep diff for entries where a checksum can be found for both sides.</p>
+<ol>
+<li>Fetch buffers read-only from the endpoint set or configured bufferdir.</li>
+<li>If either buffer is unavailable:</li>
+<li>Attach <code>{"kind": "checksum_fallback", "body": null,
+     "fallback_reason": "&lt;tag&gt;"}</code>.</li>
+<li>Add warning <code>deep_checksum_fallback</code>.</li>
+<li>Mark the command for exit <code>4</code> unless <code>--deep-best-effort</code> is set.</li>
+<li>If both buffers decode as UTF-8 and the key is textual, emit unified diff:</li>
+<li><code>kind = "text_diff"</code></li>
+<li>stable context size, e.g. 3 lines</li>
+<li>If both buffers parse as JSON, emit:</li>
+<li><code>kind = "json_diff"</code></li>
+<li>stable structural body</li>
+<li>Otherwise emit checksum fallback with reason <code>binary_or_opaque</code>.</li>
+</ol>
+<p>Never fingertip, recompute, upload, or cache missing buffers in the deep path.</p>
+<h2 id="candidate-selection-heuristic">Candidate Selection Heuristic</h2>
+<p>Implement in <code>selection.py</code>. This belongs only to <code>why-not</code>.</p>
+<p>Inputs:</p>
+<ul>
+<li>Resolved input transformation dict.</li>
+<li>All candidate transformation dicts from the union of endpoints.</li>
+<li>Optional <code>explain_selection</code>.</li>
+</ul>
+<p>Eligibility and refusal:</p>
+<ul>
+<li>Compute <code>plain_delta_count</code> for every candidate as defined in
+  "Candidate-Selection Refinement".</li>
+<li>A candidate is eligible only when <code>plain_delta_count &lt;= 3</code> by default.</li>
+<li>If the endpoint set has zero <code>Transformation</code> rows, return
+  <code>candidate = null</code>, <code>diff = null</code>, warning <code>empty_haystack</code>.</li>
+<li>If no transformation meets the threshold, return <code>candidate = null</code>,
+  <code>diff = null</code>, warning <code>candidate_not_near_enough</code>.</li>
+<li>If no candidate shares any plain-key value at all, this is also a refusal; the
+  emitted warning may be <code>candidate_not_found</code> or <code>candidate_not_near_enough</code>,
+  but document the distinction and keep tests stable.</li>
+</ul>
+<p>Scoring eligible candidates:</p>
+<ol>
+<li>Split each dict into plain keys and dunder keys.</li>
+<li>Count exact key/value matches on plain keys.</li>
+<li>Count exact key overlap on plain keys.</li>
+<li>Count <code>plain_delta_count</code>; lower is better.</li>
+<li>Count exact key/value matches on dunder keys as a tie-breaker only.</li>
+<li>Compute a deterministic score in <code>[0, 1]</code>. Suggested:</li>
+<li><code>delta_score = max(0, (max_plain_delta - plain_delta_count) / max_plain_delta)</code></li>
+<li><code>plain_match_score = matching_plain_key_values / max(len(input_plain_keys), 1)</code></li>
+<li><code>plain_key_overlap_score = overlapping_plain_keys / max(len(input_plain_keys), 1)</code></li>
+<li><code>dunder_tiebreak = matching_dunder_key_values / max(len(input_dunder_keys), 1)</code></li>
+<li>final sort tuple:
+     <code>(delta_score, plain_match_score, plain_key_overlap_score,
+       dunder_tiebreak, candidate_tf_checksum)</code></li>
+<li>expose a documented float such as <code>delta_score</code> or a weighted combination;
+     use the full tuple for deterministic ordering.</li>
+<li>Sort candidates by the score tuple descending, with <code>candidate_tf_checksum</code>
+   ascending as the final tie-breaker.</li>
+<li>Return the top candidate and, when <code>--explain-selection</code> is set, the top 3
+   runners-up with score components, including <code>plain_delta_count</code>.</li>
+</ol>
+<p><code>--candidate</code> behavior:</p>
+<ul>
+<li>Skip heuristic entirely.</li>
+<li>Resolve the supplied candidate reference.</li>
+<li>Set <code>candidate.tf_checksum</code> to the supplied candidate.</li>
+<li>Set <code>selection_score</code> to <code>null</code> or a documented sentinel because no heuristic
+  ran.</li>
+<li><code>--explain-selection</code> is a no-op when <code>--candidate</code> is supplied.</li>
+</ul>
+<h2 id="python-api">Python API</h2>
+<p>Implement in <code>api.py</code> and export from <code>seamless_share/why_not/__init__.py</code>.</p>
+<pre><code class="language-python">def transformation_diff(
+    ref_a: Reference | str,
+    ref_b: Reference | str,
+    *,
+    endpoints: list[EndpointSpec | str] | None = None,
+    deep: bool = False,
+    deep_best_effort: bool = False,
+    verbose: bool = False,
+) -&gt; TransformationDiffResult:
+    ...
+
+def why_not(
+    ref: Reference | str,
+    *,
+    endpoints: list[EndpointSpec | str] | None = None,
+    candidate: Reference | str | None = None,
+    deep: bool = False,
+    deep_best_effort: bool = False,
+    explain_selection: bool = False,
+    verbose: bool = False,
+) -&gt; WhyNotResult:
+    ...
+</code></pre>
+<p>API errors:</p>
+<ul>
+<li>Raise typed exceptions from <code>errors.py</code>, e.g. <code>UsageError</code>, <code>EndpointError</code>,
+  <code>DeepBufferUnavailable</code>.</li>
+<li>CLI translates exceptions to the documented exit codes.</li>
+<li>Do not call <code>sys.exit</code> outside <code>cli.py</code>.</li>
+</ul>
+<h2 id="why-not-control-flow"><code>why-not</code> Control Flow</h2>
+<p>Implement this exact shape:</p>
+<ol>
+<li>Parse refs and endpoints.</li>
+<li>Resolve the input reference enough to know <code>tf_checksum</code> and, if possible,
+   the transformation dict.</li>
+<li>Compute lookup state across the endpoint union.</li>
+<li>Construct the top-level <code>WhyNotResult</code> with lookup state populated.</li>
+<li>If lookup state is not <code>NOT_PRESENT</code>:</li>
+<li>Do not run candidate selection.</li>
+<li>Do not populate <code>diff</code>.</li>
+<li>Render state-specific hints in text format.</li>
+<li>If lookup state is <code>NOT_PRESENT</code>:</li>
+<li>If <code>--candidate</code> supplied, resolve it and call the diff primitive.</li>
+<li>Else run the deterministic near-match heuristic.</li>
+<li>If heuristic refuses, leave <code>candidate</code> and <code>diff</code> null.</li>
+<li>If a candidate exists, call <code>transformation_diff_core</code>.</li>
+<li>Add warnings from candidate selection and diff.</li>
+<li>Add timing only when verbose.</li>
+<li>Serialize deterministically.</li>
+</ol>
+<h2 id="text-rendering">Text Rendering</h2>
+<p>Implement in <code>render.py</code>. JSON is the contract; text is for humans.</p>
+<p>For <code>why-not</code> text:</p>
+<ul>
+<li>Always show:</li>
+<li><code>tf_checksum</code></li>
+<li>lookup state</li>
+<li>endpoint count/spec summary</li>
+<li>For <code>PRESENT_AS_HIT</code>:</li>
+<li>Omit candidate/diff sections.</li>
+<li>Say clearly: <code>this is a cache hit on the queried endpoint set - your miss is elsewhere</code></li>
+<li>For <code>IRREPRODUCIBLE</code>:</li>
+<li>Show row count and result checksum set.</li>
+<li>Explain that candidate diff is not run by default.</li>
+<li>For <code>PRESENT_RESULT_UNAVAILABLE</code>:</li>
+<li>Show result checksum and reason.</li>
+<li>Include this exact required hint:
+    <code>this is not an identity miss - searching for a code change will not explain it</code></li>
+<li>For <code>NOT_PRESENT</code> with candidate:</li>
+<li>Show candidate checksum and selection score if present.</li>
+<li>In verbose or <code>--explain-selection</code> output, show <code>plain_delta_count</code>.</li>
+<li>Show all diff entries in stable order.</li>
+<li>For <code>NOT_PRESENT</code> with no candidate:</li>
+<li>Say that no near-enough candidate was found.</li>
+<li>If available, mention the configured max plain delta.</li>
+<li>For dunder-only diff:</li>
+<li>Prepend a banner saying the candidate does not explain the miss.</li>
+<li>Respect <code>--quiet</code> by suppressing optional explanatory lines only.</li>
+<li>Respect <code>--verbose</code> by adding per-endpoint provenance and timing.</li>
+</ul>
+<p>For <code>transformation-diff</code> text:</p>
+<ul>
+<li>Show both refs, <code>identity_relevant</code>, warnings, and all entries.</li>
+<li>No lookup state and no candidate wording.</li>
+</ul>
+<h2 id="json-schema">JSON Schema</h2>
+<p>Keep <code>seamless_share/why_not/schema.json</code> as part of the public contract.</p>
+<p>Minimum schemas:</p>
+<ul>
+<li><code>WhyNotResult</code></li>
+<li><code>TransformationDiffResult</code></li>
+<li>shared <code>DiffEntry</code></li>
+<li>shared <code>DeepDiff</code></li>
+<li>shared <code>LookupState</code></li>
+</ul>
+<p>CI/test suite must validate every JSON CLI output against this schema.</p>
+<p>Use schema version <code>0.1.0</code> for the first implementation. Bump on breaking
+output changes.</p>
+<h2 id="test-strategy">Test Strategy</h2>
+<p>Use <code>pytest</code>. Keep tests layered so the primitive can be trusted independently
+from endpoint and CLI work.</p>
+<h3 id="phase-1-pure-unit-tests">Phase 1: Pure Unit Tests</h3>
+<p>Implement before any real DB fixture.</p>
+<ul>
+<li>Identical dict diff: no entries, <code>identity_relevant == false</code>.</li>
+<li>Plain-only diff: one plain entry, <code>identity_relevant == true</code>.</li>
+<li>Dunder-only diff: one dunder entry, <code>identity_relevant == false</code>,
+  warning <code>dunder_only_diff</code>.</li>
+<li>Mixed diff: both classifications, <code>identity_relevant == true</code>.</li>
+<li>Key-only side tests in both directions.</li>
+<li>Entry order is deterministic.</li>
+<li>JSON serialization is byte-identical across repeated calls.</li>
+<li><code>why-not</code> refuses heuristic selection when there is no near-enough candidate.</li>
+<li><code>why-not</code> refuses a candidate that shares one plain-key value but exceeds
+  <code>DEFAULT_MAX_PLAIN_DELTA</code>.</li>
+<li><code>--candidate</code> bypasses heuristic and may diff a candidate outside the
+  near-match threshold because the user explicitly asked for it.</li>
+<li>CLI usage errors produce exit <code>2</code>.</li>
+</ul>
+<h3 id="phase-2-local-sqlite-endpoint-tests">Phase 2: Local SQLite Endpoint Tests</h3>
+<p>Build minimal generated fixture DBs under <code>tests/fixtures/</code>.</p>
+<p>Fixtures must be created in temp directories. The fixture builder should return:</p>
+<ul>
+<li>path to <code>seamless.db</code></li>
+<li>path to bufferdir if applicable</li>
+<li>named checksums and dicts needed by tests</li>
+</ul>
+<p>Required fixtures from the source plan:</p>
+<ul>
+<li>F1: direct function with two parameters, cached.</li>
+<li>F2: F1 plus third parameter <code>c</code>, cached.</li>
+<li>F3: F1 with parameter <code>b</code> renamed to <code>x</code>, cached.</li>
+<li>F4: F1 with whitespace/comment-only edit, cached.</li>
+<li>F5: F1 with different value for <code>b</code>, cached.</li>
+<li>F6: chain <code>X -&gt; Y -&gt; Z</code>, two snapshots.</li>
+<li>F7: equivalent direct/delayed pair.</li>
+<li>F8: module/closure inclusion variant.</li>
+<li>F9: pair differing only in <code>__env__</code>.</li>
+<li>F10: pair differing only in <code>__compilation__</code>.</li>
+<li>F11: <code>seamless-run</code> invocations differing in <code>--metavar</code>.</li>
+<li>F12: <code>seamless-run</code> invocations differing in command string.</li>
+<li>F13: <code>seamless-run</code> compressed/uncompressed pin-name case.</li>
+<li>F14: transformation row exists but result buffer is absent.</li>
+<li>F15: irreproducible rows for a <code>tf_checksum</code>.</li>
+<li>F16: empty DB.</li>
+<li>F17: two endpoints, one missing and one hit.</li>
+<li>F18: implicit closure case where dict diff is empty.</li>
+</ul>
+<p>Do not hand-author opaque checksum strings unless the test is specifically for
+bad or random checksums. Prefer generating transformation dicts and checksums in
+fixture builders.</p>
+<h3 id="phase-3-contract-tests">Phase 3: Contract Tests</h3>
+<p>Port the C1-C18 checks from <code>why-not-plan.md</code> directly, with the candidate
+selection refinement applied to C15.</p>
+<p>Must include:</p>
+<ul>
+<li>Lookup state tests for all four states.</li>
+<li>Endpoint union test, including reversed endpoint order.</li>
+<li>Deep diff text output on <code>code</code>.</li>
+<li>Deep missing-buffer fallback with exit <code>4</code> and <code>--deep-best-effort</code> exit <code>0</code>.</li>
+<li>Read-only before/after byte hashing of DB and bufferdir.</li>
+<li>Heuristic determinism, byte-identical JSON.</li>
+<li>Heuristic refusal when no candidate is near enough, including a case with one
+  shared plain-key value but more than three plain deltas.</li>
+<li>No cascade on F6.</li>
+<li>Dunder-only warning tag.</li>
+<li>Empty haystack warning.</li>
+</ul>
+<h3 id="phase-4-scenario-tests">Phase 4: Scenario Tests</h3>
+<p>Port S1-S20 from <code>why-not-plan.md</code>.</p>
+<p>The scenario suite should assert structured output shape:</p>
+<ul>
+<li>exact entry count where the plan requires exactness</li>
+<li>side values</li>
+<li>key paths</li>
+<li>classification</li>
+<li><code>identity_relevant</code></li>
+<li>warning tags</li>
+<li>lookup state</li>
+</ul>
+<p>Do not assert a primary difference. There is no primary difference in v1.</p>
+<h3 id="phase-5-property-and-regression-tests">Phase 5: Property and Regression Tests</h3>
+<p>Implement:</p>
+<ul>
+<li>P1 read-only invariance across a randomized sample of scenarios.</li>
+<li>P2 idempotence on repeated <code>why-not</code> calls.</li>
+<li>P3 static no-write-path test.</li>
+<li>AST scan importable modules under <code>seamless_share.why_not</code>.</li>
+<li>Fail on calls/imports to known write APIs:
+    <code>set_transformation_result</code>, <code>set_execution_record</code>, <code>set_bucket_probe</code>,
+    <code>undo_transformation_result</code>, Peewee <code>create</code>, <code>save</code>, <code>delete</code>, and HTTP
+    <code>put</code>/<code>post</code> in endpoint code.</li>
+<li>Allow fixture builders to write; production package only is scanned.</li>
+<li>P4 exit-code matrix.</li>
+<li>P5 CLI JSON equals Python API output, modulo timing.</li>
+<li>P6 schema validity.</li>
+<li>P7 <code>--explain-selection</code> is additive only.</li>
+<li>P8 <code>--candidate</code> override.</li>
+<li>P9 warning tags are documented and enumerable.</li>
+<li>P10 large diff with 200+ pins, no truncation.</li>
+<li>P11 candidate near-match threshold:</li>
+<li>candidates with <code>plain_delta_count &lt;= 3</code> may be selected</li>
+<li>candidates with <code>plain_delta_count &gt; 3</code> are refused unless explicitly
+    supplied through <code>--candidate</code></li>
+</ul>
+<h2 id="implementation-phases">Implementation Phases</h2>
+<h3 id="phase-a-package-skeleton-and-models">Phase A: Package Skeleton and Models</h3>
+<ol>
+<li>Add <code>pyproject.toml</code>.</li>
+<li>Add package directories and exports.</li>
+<li>Add dataclasses/enums and deterministic JSON serialization.</li>
+<li>Add CLI parser with subcommands and stub implementations returning
+   well-formed errors.</li>
+<li>Add initial JSON schema.</li>
+<li>Add tests for parser errors and serialization.</li>
+</ol>
+<p>Exit criteria:</p>
+<ul>
+<li><code>python -m pytest tests/test_contract_schema.py tests/test_cli.py</code> passes for
+  skeleton behavior.</li>
+<li><code>seamless-share --help</code>, <code>seamless-share why-not --help</code>, and
+  <code>seamless-share transformation-diff --help</code> are stable.</li>
+</ul>
+<h3 id="phase-b-pure-diff-core">Phase B: Pure Diff Core</h3>
+<ol>
+<li>Implement reference resolution for JSON dict paths and inline <code>Reference</code>
+   objects.</li>
+<li>Implement checksum computation for dict references.</li>
+<li>Implement plain/dunder classification.</li>
+<li>Implement <code>transformation_diff_core</code>.</li>
+<li>Implement JSON and basic text renderers.</li>
+<li>Add C1-C5-style tests.</li>
+</ol>
+<p>Exit criteria:</p>
+<ul>
+<li>Pure diff tests pass.</li>
+<li>No database endpoint is needed for dict-vs-dict tests.</li>
+<li>Dunder-only warning and text banner are present.</li>
+</ul>
+<h3 id="phase-c-local-endpoint-reads-and-lookup-state">Phase C: Local Endpoint Reads and Lookup State</h3>
+<ol>
+<li>Implement local SQLite read-only endpoint adapter.</li>
+<li>Implement endpoint lookup states.</li>
+<li>Implement endpoint union semantics.</li>
+<li>Implement result materializability check for local bufferdir.</li>
+<li>Add F14-F17 lookup fixtures.</li>
+<li>Add lookup tests C6-C9 and C16.</li>
+</ol>
+<p>Exit criteria:</p>
+<ul>
+<li>All four lookup states can be produced with local fixtures.</li>
+<li>Before/after DB and bufferdir hashes are identical after every command.</li>
+</ul>
+<h3 id="phase-d-transformation-dict-retrieval">Phase D: Transformation Dict Retrieval</h3>
+<ol>
+<li>Confirm where transformation dicts are stored in real Seamless artifacts.</li>
+<li>If storage exists, implement read-only retrieval.</li>
+<li>If storage does not exist, add the required producer/storage/read endpoint in
+   the appropriate repo before claiming checksum refs are supported.</li>
+<li>Add tests proving a checksum reference can resolve to the exact dict used to
+   compute it.</li>
+</ol>
+<p>Exit criteria:</p>
+<ul>
+<li><code>transformation-diff &lt;tf_checksum&gt; &lt;dict.json&gt; --endpoint local.db</code> can
+  retrieve the checksum-side dict without executing or writing.</li>
+<li>Remote support has either a tested read API or a documented capability error.</li>
+</ul>
+<h3 id="phase-e-candidate-selection-and-why-not">Phase E: Candidate Selection and <code>why-not</code></h3>
+<ol>
+<li>Implement deterministic candidate enumeration.</li>
+<li>Implement <code>plain_delta_count</code> and <code>DEFAULT_MAX_PLAIN_DELTA = 3</code>.</li>
+<li>Implement scoring and near-match refusal.</li>
+<li>Implement explicit <code>--candidate</code>.</li>
+<li>Wire <code>why-not</code> to call the diff primitive.</li>
+<li>Add C10, C14, refined C15, P7, P8, and P11 tests.</li>
+</ol>
+<p>Exit criteria:</p>
+<ul>
+<li>Repeated <code>why-not</code> JSON is byte-identical for fixed fixtures.</li>
+<li>Empty haystack and no-near-match cases refuse to invent candidates.</li>
+<li>A single shared plain-key value is not enough when the plain delta is greater
+  than three.</li>
+</ul>
+<h3 id="phase-f-deep-diff">Phase F: Deep Diff</h3>
+<ol>
+<li>Implement read-only buffer fetching.</li>
+<li>Implement text, JSON, and fallback deep entries.</li>
+<li>Implement exit code <code>4</code> and <code>--deep-best-effort</code>.</li>
+<li>Add C11, C12, and failure-shape tests.</li>
+</ol>
+<p>Exit criteria:</p>
+<ul>
+<li>Missing buffers never crash the run.</li>
+<li>Missing buffers never trigger fingertip/recompute/write paths.</li>
+</ul>
+<h3 id="phase-g-full-scenario-suite-and-docs">Phase G: Full Scenario Suite and Docs</h3>
+<ol>
+<li>Build remaining fixtures F1-F13 and F18.</li>
+<li>Port S1-S20.</li>
+<li>Add docs:</li>
+<li><code>seamless_share/why_not/README.md</code></li>
+<li><code>seamless_share/why_not/CHANGELOG.md</code></li>
+<li>schema docs</li>
+<li>Add help-output snapshot tests.</li>
+<li>Add manual smoke-test instructions for a real local <code>seamless.db</code>.</li>
+</ol>
+<p>Exit criteria:</p>
+<ul>
+<li>All contract, scenario, property, schema, and CLI tests pass.</li>
+<li>Manual smoke test is documented and has been run at least once.</li>
+</ul>
+<h2 id="failure-shapes-to-cover">Failure Shapes to Cover</h2>
+<p>Add dedicated tests for:</p>
+<ol>
+<li>One endpoint unreachable in a multi-endpoint run:</li>
+<li>exit <code>3</code></li>
+<li>error identifies endpoint</li>
+<li>partial provenance preserved if available</li>
+<li>Malformed local database schema:</li>
+<li>exit <code>3</code></li>
+<li>distinct error tag from unreachable</li>
+<li><code>--deep</code> buffer requires fingertipping/no producer in scope:</li>
+<li>checksum fallback</li>
+<li>no re-execution</li>
+<li>no writes</li>
+<li>Definition path fails to load:</li>
+<li>exit <code>2</code></li>
+<li>message names failing path</li>
+<li>no partial candidate selection</li>
+<li>Two references resolve to the same <code>tf_checksum</code>:</li>
+<li><code>transformation-diff</code> succeeds with empty entries</li>
+<li>not treated as an error</li>
+</ol>
+<h2 id="definition-of-done-for-v1">Definition of Done for V1</h2>
+<p>V1 is ready only when all of these are true:</p>
+<ol>
+<li>Both CLI subcommands work.</li>
+<li>Python API returns typed dataclasses matching the JSON schema.</li>
+<li>JSON output validates against <code>schema.json</code>.</li>
+<li>Text output includes the required state-specific hints.</li>
+<li><code>why-not</code> always reports lookup state.</li>
+<li>Candidate diff is populated only when lookup state is <code>NOT_PRESENT</code> and a
+   candidate exists or was supplied.</li>
+<li>Automatic candidate selection refuses candidates whose plain delta exceeds
+   the configured threshold; explicit <code>--candidate</code> still diffs the requested
+   candidate.</li>
+<li><code>why-not</code> calls the transformation-diff primitive for all diffs.</li>
+<li>Endpoint union semantics are tested.</li>
+<li>Deterministic JSON is tested.</li>
+<li>Read-only behavior is tested dynamically and statically.</li>
+<li>All C, S, and P tests from <code>why-not-plan.md</code> are implemented or explicitly
+    documented as blocked by a missing prerequisite such as transformation dict
+    persistence.</li>
+<li>The implementation has been reviewed line-by-line against Pattern 2 and the
+    candidate-selection refinement above.</li>
+</ol>
+<h2 id="known-risks-and-decisions-for-the-implementer">Known Risks and Decisions for the Implementer</h2>
+<ul>
+<li>The largest dependency risk is transformation dict retrieval. The visible
+  database schema stores transformation result mappings but not the dict itself.
+  Resolve this first during Phase D; do not paper over it.</li>
+<li>The candidate-selection threshold is deliberately conservative. If real-world
+  fixtures show that <code>max_plain_delta = 2</code> is better than <code>3</code>, change the single
+  constant and update tests; do not return to the one-shared-key rule.</li>
+<li><code>definition_path</code> support can easily become accidental execution. Keep v1
+  support narrow and read-only. JSON dict paths are enough to validate most of
+  the primitive before definition loading exists.</li>
+<li>Dunder classification must stay aligned with the identity contract, not just
+  current implementation names. Centralize the key classifier and test it.</li>
+<li>Remote endpoint support is useful, but local read-only correctness is the
+  foundation. Ship local support first if needed.</li>
+<li>Do not add tests or UI that imply a single primary cause. The whole point of
+  Pattern 2 is to surface all identity-level differences honestly.</li>
+</ul>
+              
+            </div>
+          </div><footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+    
+    
+  </span>
+</div>
+    <script src="../../../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "../../..";</script>
+    <script src="../../../js/theme_extra.js"></script>
+    <script src="../../../js/theme.js"></script>
+      <script src="../../../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>

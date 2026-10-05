@@ -91,6 +91,8 @@
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#buffer-cache">Buffer cache</a>
     </li>
+    <li class="toctree-l3"><a class="reference internal" href="#hashtype-and-expressions">HashType and expressions</a>
+    </li>
         </ul>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#installation">Installation</a>
@@ -179,6 +181,10 @@
 <li><code>incref()</code> / <code>decref()</code> / <code>tempref()</code> — reference counting to keep buffers alive in the cache.</li>
 <li><code>load()</code> / <code>save()</code> — file I/O (auto-appends <code>.CHECKSUM</code> extension).</li>
 </ul>
+<p>The canonical null checksum prints as <code>NULL</code> with <code>str(checksum)</code> for readability;
+use <code>checksum.hex()</code> (and not the display form) in serialized data, URLs, and other
+machine-readable formats. <code>repr(checksum)</code> remains the hexadecimal digest, and
+<code>Checksum("NULL")</code> is invalid.</p>
 <h3 id="buffer">Buffer</h3>
 <p><code>Buffer</code> represents raw content (bytes) paired with an optional checksum. It bridges Python values and content-addressed storage:</p>
 <ul>
@@ -248,6 +254,72 @@
 <li><strong>Strong cache</strong> — buffers with active references (<code>incref</code> or <code>tempref</code>); kept alive.</li>
 </ul>
 <p>Temporary references (<code>tempref</code>) model decaying interest — useful for intermediate results that may or may not be needed again. When memory usage exceeds configurable soft/hard caps (default 5 GB / 50 GB), the cache evicts buffers in cost-aware order, considering download cost, recomputation cost, and buffer size.</p>
+<h3 id="hashtype-and-expressions">HashType and expressions</h3>
+<p><code>HashType</code> is the checksum metadata surface for new code. It replaces the old
+<code>BufferInfo</code> decision layer for deserialization, expression path validation, and
+celltype conversion feasibility. A HashType is a complete packed integer for a
+checksum; it is cached locally and can be shared through <code>seamless-database</code>.</p>
+<p>Expressions are immutable structural references keyed by exactly:</p>
+<pre><code class="language-text">(input_checksum, path, input_celltype, celltype)
+</code></pre>
+<p>Validator fields are deliberately excluded from this cache identity. Empty-path
+expressions own checksum-changing celltype conversions; conversion-result
+checksums are not recreated as BufferInfo side fields.</p>
+<p><code>Cell</code> is a mutable expression builder. <code>celltype</code> always describes the produced
+checksum/value; retyping converts the stored input. The read-only <code>input_celltype</code>
+follows a typed source live, or records the type used when a literal/checksum was
+assigned. New cells copy a typed source's output type once; otherwise they default
+to <code>mixed</code>. Existing cells keep their output type when rewired.</p>
+<pre><code class="language-python">from seamless import Buffer, Cell, Expression
+
+cell = Cell(&quot;str&quot;, checksum=Buffer(42, &quot;int&quot;).get_checksum(), input_celltype=&quot;int&quot;)
+assert cell.run() == &quot;42&quot;
+cell.celltype = &quot;text&quot;
+assert cell.run() == &quot;42&quot;
+expression = Expression(cell)  # freezes the input recipe and its type now
+</code></pre>
+<p>The constructor accepts either <code>checksum=</code> or <code>source=</code>, never both. A typed
+source's input type cannot be overridden with a conflicting declaration.
+<code>cell.source</code> reports the typed upstream reference, or None for a literal;
+<code>cell.checksum</code>, <code>.buffer</code>, and <code>.value</code> report the produced value. <code>build()</code> and
+calling a Cell return an immutable Expression. <code>with_input()</code> derives a builder
+with a replacement reference. Public <code>input_ref</code> and <code>target_celltype</code> are retired
+and raise a replacement-directed error; <code>_input_ref</code> is a private recipe field.</p>
+<p>Standalone reads do not start an upstream Transformation. <code>.checksum</code> uses an
+already-produced source result and evaluates the Cell's own projection or
+conversion; <code>.compute()</code> is the explicit operation that starts missing upstream
+work. <code>.buffer</code> and <code>.value</code> resolve the resulting checksum without fingertipping.
+An expression-evaluation failure is retained as <code>.exception</code> until
+<code>clear_exception()</code>; an unavailable result buffer instead raises <code>CacheMissError</code>
+while the Cell remains complete.</p>
+<p>At the root, assigning <code>.value</code>, <code>.buffer</code>, or <code>.checksum</code> declares a new input
+and detaches a source. Their ownership-checking counterparts are <code>.set()</code>,
+<code>.set_buffer()</code>, and <code>.set_checksum(cs, input_celltype=...)</code>; these raise
+<code>AuthorityError</code> on a connected input. <code>.set()</code> and <code>.value =</code> take values only: a
+Checksum goes through <code>.set_checksum()</code>, and a source is connected by assignment or
+with <code>Cell(source=...)</code>. Passing a reference raises <code>TypeError</code>.</p>
+<p>Celltype <code>checksum</code> holds a checksum as its value: <code>.value</code> is a <code>Checksum</code>, and the
+buffer is the bare 64-character hex digest, which the cell doesn't hold. For this
+celltype alone, a <code>Checksum</code> or its hex string is a value in <code>.set()</code>, <code>.value =</code>,
+assignment, <code>tf.pins.x =</code> and <code>tf(x=...)</code>. For every other celltype, assignment and
+call-time arguments read a <code>Checksum</code> as a declared reference. A 64-character string
+is always a value. Buffer writes validate and deposit bytes;
+checksum writes declare an interpretation without resolving bytes. Sub-path
+writes retain ownership checks.</p>
+<p><code>None</code> is a value for every Cell type, serialized as <code>b"null\n"</code> with checksum
+<code>38e0b9de817f645c4bec37c0d4a3e58baecccb040f5718dc069a72c7385a0bed</code>.
+This buffer is trivial and resolves without cache residency. Null converts to
+itself for every type pair; resolving as <code>bytes</code> gives <code>b""</code>, otherwise None.
+Empty bytes canonicalize to the same checksum. <code>.value = None</code> stores null;
+<code>.checksum = None</code>, <code>.buffer = None</code>, and the corresponding set methods clear
+input. <code>del</code> remains deletion.</p>
+<p><code>CellBase</code> provides the shared value/type/evaluation API for Cell and the
+transformer's sister class Pin. Cell alone adds projection, validators, mounts,
+derivation, and source protocols. A Pin cannot be used as an input reference.</p>
+<p>Transformations can now accept expression handles as inputs, alongside concrete
+checksums and transformation futures. Dask submissions represent these as
+<code>kind="expression"</code> input specs and resolve them before the downstream
+transformation runs.</p>
 <h2 id="installation">Installation</h2>
 <pre><code class="language-bash">pip install seamless-core
 </code></pre>

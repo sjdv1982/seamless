@@ -55,6 +55,28 @@
               <ul class="current">
                   <li class="toctree-l1"><a class="reference internal" href="identity-and-caching.html">Identity and Caching</a>
                   </li>
+                  <li class="toctree-l1"><a class="reference internal" href="celltypes-and-conversion.html">Celltypes, Null, and Conversion</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="hashtype.html">HashType</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="deep-celltypes.html">Deep Celltypes</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="expressions.html">Expressions</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="cells.html">Cells</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="pins.html">Pins</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="workflow-context.html">Workflow Context</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="node-state-lifecycle.html">Node State Lifecycle</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="attachments.html">Attachments</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="mounts.html">File Mounts</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="cancellation.html">Cancellation</a>
+                  </li>
                   <li class="toctree-l1"><a class="reference internal" href="direct-delayed-and-transformation.html">direct/delayed/Transformation</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="modules-and-closures.html">Modules and Closures</a>
@@ -94,6 +116,8 @@
                   <li class="toctree-l1"><a class="reference internal" href="compression.html">Compression</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="compiled-transformers.html">Compiled Transformers</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="compiled-pins.html">Compiled Pins</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="seamless-signature-schema.html">seamless-signature Schema</a>
                   </li>
@@ -189,7 +213,7 @@ invalidate the cache when it changes.</p>
 <p>Agent guidance:
 - Expect practical limits to come from worker pool sizing / OS process limits / filesystem throughput.
 - For “many short tasks”, prefer a backend designed for high task throughput (e.g. Dask-backed execution) rather than naive “fork 1000 subprocesses locally”.
-- If two submissions resolve to the <strong>same</strong> <code>tf_checksum</code> while one is still running (e.g. running an existing checksum with different execution-only flags), the second does not start a second execution: by default it latches onto the running one and returns its result value. Pass <code>--strict</code> to instead fail when an active submission carries a different execution envelope; the prior submission must finish or be canceled (<code>seamless-cancel &lt;tf_checksum&gt;</code>) first. See <code>contracts/identity-and-caching.md</code> for the full latch-on/<code>strict</code> contract.</p>
+- If two submissions resolve to the <strong>same</strong> <code>tf_checksum</code> while one is still running (e.g. running an existing checksum with different execution-only flags), the second does not start a second execution: by default it latches onto the running one and returns its result value. <code>seamless-run</code> has no flag to opt out of that; the opt-out is <code>--strict</code> on <code>seamless-run-transformation</code> (<code>strict_dunder=True</code> in Python), which instead fails when an active submission carries a different execution envelope, so the prior submission must finish or be canceled (<code>seamless-cancel &lt;tf_checksum&gt;</code>) first. See <code>contracts/identity-and-caching.md</code> for the full latch-on/<code>strict</code> contract.</p>
 <h2 id="remote-execution-guidance">Remote execution guidance</h2>
 <p>The same “content-bound” rule applies:
 - don’t assume remotes have local files; treat inputs as artifacts and materialize where executed

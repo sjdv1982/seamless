@@ -1,0 +1,32 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "seamless-share"
+version = "0.1.0"
+description = "Read-only Seamless cache sharing diagnostics"
+readme = "README.md"
+requires-python = ">=3.10"
+license = {file = "LICENSE.txt"}
+dependencies = []
+
+[project.optional-dependencies]
+test = ["pytest", "jsonschema"]
+
+[project.scripts]
+seamless-share = "seamless_share.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["seamless_share*"]
+
+[tool.setuptools.package-data]
+seamless_share = [
+  "why_not/schema.json",
+  "why_not/README.md",
+  "why_not/CHANGELOG.md",
+  "replay/schema.json",
+  "replay/README.md",
+  "replay/CHANGELOG.md",
+  "replay/findings.md",
+]

@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <link rel="shortcut icon" href="../../img/favicon.ico" />
+    <title>Checksum reference lifecycle (internal contract) - Seamless — Agent Documentation</title>
+    <link rel="stylesheet" href="../../css/theme.css" />
+    <link rel="stylesheet" href="../../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "Checksum reference lifecycle (internal contract)";
+        var mkdocs_page_input_path = "contracts/internal/checksum-reference-lifecycle.md";
+        var mkdocs_page_url = null;
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href="../../index.html" class="icon icon-home"> Seamless — Agent Documentation
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../index.html">Home</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../overview.html">Agent Docs Overview</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../repos/index.html">Workspace Repos</a>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Contracts</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../identity-and-caching.html">Identity and Caching</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../celltypes-and-conversion.html">Celltypes, Null, and Conversion</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../hashtype.html">HashType</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../deep-celltypes.html">Deep Celltypes</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../expressions.html">Expressions</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../cells.html">Cells</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../pins.html">Pins</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../workflow-context.html">Workflow Context</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../node-state-lifecycle.html">Node State Lifecycle</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../attachments.html">Attachments</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../mounts.html">File Mounts</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../cancellation.html">Cancellation</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../direct-delayed-and-transformation.html">direct/delayed/Transformation</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../modules-and-closures.html">Modules and Closures</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../scratch-witness-audit.html">Scratch/Witness/Audit</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../seamless-run-and-argtyping.html">seamless-run/Argtyping</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../cache-storage-and-limits.html">Cache Storage and Limits</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../content-addressed-files-and-dirs.html">Content-addressed Files and Dirs</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../execution-backends.html">Execution Backends</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../execution-records.html">Execution Records</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../service-management.html">Service Management</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../compression.html">Compression</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../compiled-transformers.html">Compiled Transformers</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../compiled-pins.html">Compiled Pins</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../seamless-signature-schema.html">seamless-signature Schema</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">API</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../api/python/seamless.html">seamless</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../api/python/seamless.transformer.html">seamless.transformer</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../api/python/seamless.buffer_class.html">seamless.buffer_class</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../api/python/seamless.checksum_class.html">seamless.checksum_class</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../api/python/seamless_config.select.html">seamless_config.select</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../api/python/seamless_config.tools.html">seamless_config.tools</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../api/python/seamless_transformer.transformation_class.html">seamless_transformer.transformation_class</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../api/python/seamless_transformer.transformer_class.html">seamless_transformer.transformer_class</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">CLI</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../api/cli/seamless-run.html">seamless-run</a>
+                  </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">Seamless — Agent Documentation</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../../index.html" class="icon icon-home" aria-label="Docs"></a></li>
+      <li class="breadcrumb-item active">Checksum reference lifecycle (internal contract)</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h1 id="checksum-reference-lifecycle-internal-contract">Checksum reference lifecycle (internal contract)</h1>
+<p><strong>A buffer survives because a live object makes a semantic claim on its checksum.</strong> The claim is registered, attributable, acquired once per role and released once per role, and it is audited at shutdown. Nothing else keeps data from being demoted: not a <code>Checksum</code> object, not a tempref, not a remote registration.</p>
+<p>This mechanism is <strong>internal</strong>. It is deliberately not one of the main pages of <code>seamless/docs/agent/contracts/</code> — it lives one level down, in <code>contracts/internal/</code>, apart from the user-visible contract pages — because it is not user-visible behaviour: the only trace a user ever sees is a <code>seamless.references</code> warning at shutdown. It nevertheless needs a precise written contract, and this repository is where that contract lives.</p>
+<blockquote>
+<p><strong>Do not confuse this with the workflow node state lifecycle.</strong> That is the <code>Context</code>'s six-state node machine, its cascade and its speculative supersession — user-visible behaviour, documented in the agentic contracts. This document is about who keeps a checksum's buffer alive.</p>
+</blockquote>
+<p>It is also not the <strong>cancellation waiting set</strong>, the per-checksum set of requesters of an in-flight materialization: different thing, different lifetime — a reference keeps a buffer alive once it exists, the waiting set tracks who still wants a fetch that has not finished. The vocabulary is kept apart on purpose; the waiting set is a "waiting set", never a "refcount".</p>
+<p>Code locations:</p>
+<table>
+<thead>
+<tr>
+<th>Concern</th>
+<th>Repository and modules</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Accounting, the weak registry, the audit, explicit and <code>atexit</code> shutdown</td>
+<td><code>seamless-core</code>: <code>seamless/caching/buffer_cache.py</code>, <code>seamless/reference_lifecycle.py</code>, <code>seamless/shutdown.py</code></td>
+</tr>
+<tr>
+<td>Cell and Expression ownership, the forced-expiry test helper</td>
+<td><code>seamless-core</code>: <code>seamless/cell_class.py</code>, <code>seamless/expression_class.py</code></td>
+</tr>
+<tr>
+<td>Builder roles, temporary transfer, dependency adoption, definition and result roles, cancellation</td>
+<td><code>seamless-transformer</code>: <code>transformer_class.py</code>, <code>pretransformation.py</code>, <code>transformation_class.py</code>, <code>code_manager.py</code>, and the worker/publication paths</td>
+</tr>
+<tr>
+<td>Context producer, current and superseded ownership; binding, replacement, deletion, graph lifecycle</td>
+<td><code>seamless-workflow</code>: <code>context.py</code>, <code>graph.py</code>, <code>scheduler.py</code>, <code>builder_state.py</code>, <code>adapters.py</code></td>
+</tr>
+<tr>
+<td>Cached, thin and fat result publication, scratch, failure, cancellation</td>
+<td><code>seamless-dask</code>: <code>transformation_mixin.py</code>, <code>client.py</code></td>
+</tr>
+</tbody>
+</table>
+<h2 id="1-terminology">1. Terminology</h2>
+<p>The present tense is normative.</p>
+<p><strong>Checksum</strong> — a content address. A bare <code>Checksum</code> object owns no lifecycle reference merely by existing.</p>
+<p><strong>Concrete checksum</strong> — a checksum known now, after the receiving API has applied its normalization rules. A result that has not been computed is non-concrete. Concreteness does not imply that the buffer is locally available.</p>
+<p><strong>Refholder / semantic claim</strong> — a registered live object implementing <code>_refheld_checksums()</code> and <code>_release_refholds()</code>. Each <code>(checksum, role)</code> item yielded by <code>_refheld_checksums()</code> is <strong>one semantic claim</strong>; duplicate checksums held for distinct roles or multiplicities are yielded repeatedly.</p>
+<p><strong>Refholder reference</strong> — one unit in <code>BufferCache.refholder_counts[checksum]</code>, acquired through <code>incref_refholder()</code> and released through <code>decref_refholder()</code>. It never changes <code>manual_refs</code>.</p>
+<p><strong>Manual reference</strong> — one unit in <code>StrongEntry.manual_refs</code>, acquired through the public low-level lease API <code>Checksum.incref()</code> / <code>Buffer.incref()</code>. <strong>Lifecycle owners must use refholder references, never manual ones.</strong></p>
+<p><strong>Refholder bridge</strong> — <code>StrongEntry.has_refholder_bridge</code>, true exactly when the logical refholder count is positive. It protects the strong entry from demotion; it is neither a manual reference nor a holder object.</p>
+<p><strong>Tempref</strong> — refreshable, decaying, unattributed cache interest for a bounded same-path handoff. It is <strong>not</strong> balanced by the lifecycle audit and is <strong>insufficient across an unbounded yield, wait or queue</strong>.</p>
+<p><strong>Publication</strong> — recording a successful Expression or Transformation result checksum and making it visible. Local execution, cache, database, remote, jobserver, worker and Dask success paths all publish. Every success temprefs before publication; repeated deterministic publication is idempotent for result ownership. <strong>Failure and cancellation publish nothing.</strong></p>
+<p><strong>Adoption / handoff</strong> — a consumer validates a concrete checksum, acquires its own semantic role, records that role, and only then yields or waits. Adoption is independent ownership: it does not transfer the producer's reference. An Expression consumer instead refreshes a tempref and consumes on the same path.</p>
+<p><strong>Public result interest</strong> — an explicit user request to compute, schedule or read an Expression/Transformation result. It enables that producer's optional <code>"result"</code> role. Framework bookkeeping and dependency access are <strong>internal interest</strong> and stay producer-neutral.</p>
+<p><strong>Demotion, eviction, forced expiry</strong> — demotion removes a strong-cache entry while a still-live Buffer may remain weakly reachable; eviction is pressure-selected demotion under the same predicate; <strong>forced expiry is a test procedure</strong> that removes every non-role survival path and invokes eviction — it is not a production operation.</p>
+<p><strong>Balanced</strong> — for every checksum before shutdown cleanup, the logical count equals the number of live semantic claims and the bridge equals <code>(count &gt; 0)</code>. After holder cleanup and forced accounting cleanup, counts, bridges and manual references are zero; only a live-tempref entry with snapshot <code>(0, 0, False)</code> may remain.</p>
+<h2 id="2-three-kinds-of-cache-interest-one-demotion-predicate">2. Three kinds of cache interest, one demotion predicate</h2>
+<p><code>StrongEntry</code> carries <code>buffer</code>, <code>size</code>, <code>manual_refs</code>, <code>has_refholder_bridge</code>, <code>tempref</code>. The logical refholder multiplicity lives <strong>outside</strong> the entry, as <code>refholder_count[checksum]</code>: the entry holds one boolean where the count holds an integer, and the integer is the thing that is audited.</p>
+<table>
+<thead>
+<tr>
+<th>Interest</th>
+<th>Where it lives</th>
+<th>Who sets it</th>
+<th>Attributable</th>
+<th>Audited</th>
+<th>Survives an unbounded yield</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Manual reference</td>
+<td><code>StrongEntry.manual_refs</code></td>
+<td>any caller of the public lease API</td>
+<td>no</td>
+<td>counted, and warned when positive at shutdown</td>
+<td>yes, until <code>decref()</code></td>
+</tr>
+<tr>
+<td>Refholder reference</td>
+<td><code>refholder_count[checksum]</code>, mirrored on the entry as one boolean bridge</td>
+<td>lifecycle owners, through the internal API</td>
+<td>yes, through the weak registry</td>
+<td>yes</td>
+<td>yes, until <code>decref_refholder()</code></td>
+</tr>
+<tr>
+<td>Tempref</td>
+<td><code>StrongEntry.tempref</code></td>
+<td>any producer or consumer on a bounded same path</td>
+<td>no, by design</td>
+<td>no</td>
+<td><strong>no</strong></td>
+</tr>
+</tbody>
+</table>
+<p>The bridge follows the count's zero crossings only:</p>
+<table>
+<thead>
+<tr>
+<th>Transition</th>
+<th>Effect</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>0 → 1</code></td>
+<td>sets <code>has_refholder_bridge = True</code> and creates or promotes the strong cache entry</td>
+</tr>
+<tr>
+<td><code>N → N+1</code> and <code>N → N−1</code> for <code>N &gt; 1</code></td>
+<td>nothing</td>
+</tr>
+<tr>
+<td><code>1 → 0</code></td>
+<td>clears the bridge and demotes the entry <strong>only if</strong> neither manual refs nor a live tempref remain</td>
+</tr>
+</tbody>
+</table>
+<p>Zero-crossings and bridge updates are atomic under the lifecycle/cache lock.</p>
+<p><strong>The absolute demotion predicate:</strong></p>
+<pre><code class="language-text">manual_refs == 0
+and has_refholder_bridge is False
+and no live tempref exists
+</code></pre>
+<p>Any nonzero refholder count therefore gives exactly the required eviction protection — no more, and no less. Temprefs expire normally. If a memory limit cannot be met because every remaining buffer is referenced, Seamless <strong>reports memory pressure</strong> rather than deleting referenced data or its accounting.</p>
+<h2 id="3-the-two-apis">3. The two APIs</h2>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>Public, manual</th>
+<th>Internal, lifecycle</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Spellings</td>
+<td><code>checksum.incref()</code> / <code>checksum.decref()</code>, <code>buffer.incref()</code> / <code>buffer.decref()</code></td>
+<td><code>checksum.incref_refholder()</code> / <code>checksum.decref_refholder()</code>, and the <code>Buffer</code> equivalents</td>
+</tr>
+<tr>
+<td>Backing call</td>
+<td>—</td>
+<td><code>BufferCache.incref_refholder(checksum, buffer=None, scratch=False)</code> / <code>decref_refholder()</code></td>
+</tr>
+<tr>
+<td>Modifies</td>
+<td><code>manual_refs</code> only</td>
+<td><code>refholder_count</code>, and the bridge on zero crossings only</td>
+</tr>
+<tr>
+<td>Called at zero</td>
+<td>does nothing, warns through the logger</td>
+<td>does nothing, warns</td>
+</tr>
+<tr>
+<td>Receives the holder object</td>
+<td>n/a</td>
+<td><strong>no</strong> — attribution is reconstructed from the registry when needed</td>
+</tr>
+<tr>
+<td>Who uses it</td>
+<td>users, low-level leases</td>
+<td>lifecycle owners only</td>
+</tr>
+</tbody>
+</table>
+<p>The manual API can never consume the refholder bridge, and the lifecycle API stores <strong>no event history</strong>.</p>
+<p><strong>Snapshot (internal/test):</strong> <code>BufferCache.reference_snapshot() -&gt; dict[Checksum, tuple[refholder_count, manual_refs, has_refholder_bridge]]</code>.</p>
+<h2 id="4-the-weak-refholder-registry-and-the-audit-protocol">4. The weak refholder registry and the audit protocol</h2>
+<p>The registry is a process-global, <strong>identity-keyed weak</strong> collection of every live refholding object — a <code>WeakSet</code> suffices, and slotted classes must support weak references. It is populated by <code>register_refholder()</code>.</p>
+<ul>
+<li>An object registers when it becomes capable of holding its first reference. It may stay registered after its held list empties; that is harmless. Destruction removes it automatically.</li>
+<li>No holder key is needed: <code>id(obj)</code> suffices for formatting while the object is alive, and nothing about dead holders is preserved.</li>
+<li>Each refholding class implements:</li>
+</ul>
+<pre><code class="language-python">def _refheld_checksums(self) -&gt; Iterable[tuple[Checksum, str]]:
+    &quot;&quot;&quot;Yield one item per currently held reference; the string names the owning field or pin.&quot;&quot;&quot;
+</code></pre>
+<p><code>_refheld_checksums()</code> is <strong>side-effect free</strong> and derives ownership from the object's real state — there is no generic acquisition mirror and no generic <code>_checksum_refs</code> counter. <code>_release_refholds()</code> is <strong>idempotent</strong>.</p>
+<p>Because the registry is weak, a holder that dies without decrementing cannot be named. Its effect is still detected, as an excess <code>refholder_count</code> that no live holder explains, and other live holders of the same checksum are still listed.</p>
+<h2 id="5-governing-invariants">5. Governing invariants</h2>
+<p>For every checksum <code>c</code> during normal runtime:</p>
+<pre><code class="language-text">refholder_count[c] == number of live semantic claims for c
+has_refholder_bridge[c] == (refholder_count[c] &gt; 0)
+</code></pre>
+<p>And:</p>
+<ul>
+<li>each owner acquires once per semantic role and releases once per semantic role;</li>
+<li><strong>replacement is: acquire the new roles, publish the new state, then release the old roles</strong> — including when the replacing checksum is equal to the replaced one;</li>
+<li>a producer <code>"result"</code> role represents <strong>public</strong> interest only; framework dependency access stays neutral;</li>
+<li>a Transformation <strong>adopts each dependency before waiting for another dependency</strong>;</li>
+<li><strong>a bound Cell or Transformer handle owns no references</strong>; the Context owns the bound state;</li>
+<li>finalizers are idempotent backstops, not the primary correctness mechanism;</li>
+<li>audit claims come from semantic fields or demand maps, not from a generic acquisition mirror.</li>
+</ul>
+<p>The general rules that follow:</p>
+<ul>
+<li>every object that promises later use of a checksum calls <code>incref_refholder()</code>, and calls <code>decref_refholder()</code> on replacement, deletion, explicit destruction or normal object destruction;</li>
+<li>cleanup is idempotent;</li>
+<li>copying a refholding object creates an <strong>independent</strong> reference;</li>
+<li>serialization stores checksums and owns no local references; deserialization into a live object acquires new ones;</li>
+<li>a bare <code>Checksum</code> is not a refholder;</li>
+<li>two objects holding one checksum contribute <strong>two</strong> to the count while setting <strong>one</strong> boolean bridge; one object holding it through two independent fields contributes two and yields it twice.</li>
+</ul>
+<h2 id="6-ownership-by-object-type">6. Ownership by object type</h2>
+<p>This table is the normative ownership and ordering contract.</p>
+<table>
+<thead>
+<tr>
+<th>Owner</th>
+<th>Exact semantic roles</th>
+<th>Acquisition and release boundary</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Standalone <code>Cell</code></td>
+<td><code>"input"</code> for an explicit checksum input</td>
+<td>Acquire on construction/replacement; the Context adopts before binding releases it. Bound handles own nothing.</td>
+</tr>
+<tr>
+<td><code>Expression</code></td>
+<td><code>"result"</code> only after public result interest</td>
+<td>Inputs are tempref-only. Internal evaluation publishes neutrally; the first public call/read acquires an already-published result once. Cleanup releases only an acquired result.</td>
+</tr>
+<tr>
+<td>Standalone <code>Transformer</code> builder</td>
+<td><code>"pin:&lt;name&gt;"</code>, <code>"code"</code>, <code>"module:&lt;name&gt;"</code> for checksum-backed fields</td>
+<td>Wrapper mutation and cloning acquire independently. The Context adopts all roles before the builder becomes a neutral bound handle.</td>
+</tr>
+<tr>
+<td><code>PreTransformation</code></td>
+<td><code>"input:&lt;pin&gt;"</code> for converted non-scratch pins</td>
+<td>Scratch pins are tempref-only and absent from <code>_value_refs</code>. The Transformation acquires every input before PreTransformation releases. CodeManager roles stay separate.</td>
+</tr>
+<tr>
+<td><code>Transformation</code></td>
+<td><code>"input:&lt;pin&gt;"</code> for direct and adopted dependency inputs; <code>"definition"</code>; optional public <code>"result"</code></td>
+<td>The definition is retained through completion. Each dependency is adopted immediately. A public entry/read enables result holding; internal access stays neutral. Terminal cancellation settles or detaches work, blocks late publication, then releases roles while the fields stay intact. Cancellation after completed publication is a no-op.</td>
+</tr>
+<tr>
+<td><code>CodeManager</code></td>
+<td><code>"syntactic:direct"</code>, <code>"syntactic:guard"</code>, <code>"semantic:direct"</code>, <code>"semantic:guard"</code></td>
+<td>Each direct or guard multiplicity acquires and releases once. Guard creation and removal follow the demand maps; <code>_release_refholds()</code> drains exact multiplicities idempotently.</td>
+</tr>
+<tr>
+<td>Workflow <code>Context</code></td>
+<td><code>"cell:&lt;path&gt;:literal"</code>; <code>"transformer:&lt;path&gt;:pin:&lt;pin&gt;"</code>; <code>"transformer:&lt;path&gt;:code"</code>; <code>"transformer:&lt;path&gt;:module:&lt;name&gt;"</code>; <code>"node:&lt;path&gt;:current"</code>; <code>"node:&lt;path&gt;:superseded:&lt;generation&gt;"</code></td>
+<td>The Context acquires before publishing graph/runtime state and releases the old state afterwards. Current and producer roles are independent even for equal checksums. Superseded roles end on cap, deadline, prune, deletion, graph replacement or cleanup. Bound views own nothing.</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Public versus internal interest is a hard rule.</strong> All public Expression/Transformation APIs that request, return or schedule a result express public interest. Dependency helpers, <code>PreTransformation</code>, workflow schedulers, backend publication code and internal CLI orchestration use named <em>internal</em> evaluation/result accessors. <strong>No framework path may create a producer result role merely to inspect a dependency.</strong></p>
+<p><strong>The Context's <code>current</code> / <code>superseded:&lt;generation&gt;</code> roles are what makes a speculative grace hold real.</strong> A superseded run's result stays resolvable for as long as the Context holds its role, and the role ends on the cap, the deadline, <code>prune()</code>, node deletion, graph replacement or cleanup. The policy that decides <em>when</em> to hold is the node state lifecycle's, documented elsewhere; this document owns only the claim.</p>
+<h2 id="7-dependency-handoff">7. Dependency handoff</h2>
+<p>Handoff must happen <strong>before the producer's tempref may expire</strong>.</p>
+<table>
+<thead>
+<tr>
+<th>Consumer</th>
+<th>What it does with a concrete producer result</th>
+<th>What it owns</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Dependent Transformation</td>
+<td>calls <code>incref_refholder()</code> for the input <strong>immediately</strong>, and only then may it wait for other inputs</td>
+<td>its own <code>"input:&lt;pin&gt;"</code> role; the producer needs no result reference on its behalf</td>
+</tr>
+<tr>
+<td>Dependent Expression</td>
+<td>makes or refreshes a tempref on the input checksum and evaluates immediately; it does <strong>not</strong> increment the refholder count</td>
+<td>nothing; its own result receives a fresh or refreshed tempref</td>
+</tr>
+</tbody>
+</table>
+<h2 id="8-scratch-deep-checksums-workers-services">8. Scratch, deep checksums, workers, services</h2>
+<p><strong>Scratch.</strong> Scratch acquisition does not register a buffer remotely, and later non-scratch interest upgrades registration monotonically. <strong>Explicit public interest in a scratch result refholds and protects it</strong>; an unrequested scratch result stays purgeable. See <code>contracts/scratch-witness-audit.md</code> for what scratch means.</p>
+<p><strong>Deep checksums.</strong> Only the <strong>top-level</strong> checksum of a <code>deepcell</code> / <code>deepfolder</code> / <code>folder</code> is owned. Members rely on ordinary deep-buffer resolution and remote durability; there is no recursive deep ownership. The one permanent exception is on the mount sense path: leaves that a mount <em>sensed</em> keep a claim for as long as the node holds that index, including after unmounting (<code>contracts/attachments.md</code>, <em>Leaf retention</em>).</p>
+<p><strong>Execution workers.</strong> Workers use no-op registry/refholder wrappers and run no lifecycle audit. Parent-side objects retain ownership across IPC.</p>
+<p><strong>Remote, database and jobserver services.</strong> They publish or retrieve buffers but gain no distributed reference-count protocol. Remote-registration status is not a semantic claim.</p>
+<p><strong>Shared-memory PID accounting and durable remote storage</strong> are outside this count.</p>
+<h2 id="9-runtime-correctness-versus-shutdown-verification">9. Runtime correctness versus shutdown verification</h2>
+<p><strong>Runtime correctness is continuous</strong>: ownership stays balanced and buffers stay resolvable while a semantic owner can still use them. This is provable independently of ordinary cache luck by <em>forced expiry</em> — the test procedure that removes every non-role survival path and then evicts. A positive forced-expiry test is meaningless without a negative control.</p>
+<p><strong>Shutdown verification is observational, then corrective.</strong> Forced cleanup must never retroactively turn a warning-producing run into a passing one. A balanced explicit close and a balanced atexit emit no <code>seamless.references</code> warnings.</p>
+<h3 id="the-shutdown-audit">The shutdown audit</h3>
+<p>The audit is integrated into <code>seamless.close()</code> after new work is prohibited and before buffer-cache teardown; <code>atexit</code> uses the same audit. The sequence:</p>
+<ol>
+<li>cancel or settle running local and remote work;</li>
+<li>snapshot the weak registry and build a reverse index <code>checksum -&gt; [(holder, description), ...]</code>, one entry per held reference;</li>
+<li>snapshot each checksum's <code>refholder_count</code>, <code>manual_refs</code> and <code>has_refholder_bridge</code>;</li>
+<li>compare <code>len(reverse_index[c]) == refholder_count[c]</code>; a mismatch warns — an excess integer is unattributed (a holder may have died without decrementing), a larger reverse index means missing refs or over-decrement. List every still-live holder for the checksum;</li>
+<li>verify <code>has_refholder_bridge == (refholder_count &gt; 0)</code>, and warn for every positive <code>manual_refs</code>;</li>
+<li>flush required buffers while references still retain them;</li>
+<li>invoke cleanup hooks and every live registered refholder's idempotent cleanup;</li>
+<li>run <code>gc.collect()</code> twice;</li>
+<li>re-inspect: counts must be zero, bridges false, manual refs zero;</li>
+<li>force-clear residual counts after the warnings, so that shutdown finishes deterministically.</li>
+</ol>
+<p>Pre-cleanup warnings are <strong>not</strong> erased by a successful forced cleanup.</p>
+<h3 id="warning-format">Warning format</h3>
+<p>Warnings go to a dedicated logger, <code>seamless.references</code>. Balanced shutdown emits nothing. Warnings are deterministic and concise:</p>
+<pre><code class="language-text">Checksum &lt;hex&gt; has refholder count 3, but 2 live holders were found
+  Transformation 0x... input:x
+  Context 0x... transformer:tf:result
+  1 reference is unattributed; its holder may have died without decref
+
+Checksum &lt;hex&gt; has 2 unmatched manual references at shutdown
+
+Checksum &lt;hex&gt; has refholder count 1 but its eviction bridge is absent
+
+Manual decref ignored for checksum &lt;hex&gt;: manual refcount is already zero
+</code></pre>
+<p>No creation traceback, no dead-holder tombstone, no stored event history.</p>
+<h2 id="10-implementation-status">10. Implementation status</h2>
+<p>The core architecture and the production migrations exist. Two defects were fixed immediately before the verification handoff, both in the workflow <code>Context</code>:</p>
+<ul>
+<li>checksum-backed <strong>module replacement</strong> now stages the new role before releasing the old one;</li>
+<li><strong>failed bound-Transformer replacement</strong> now restores semantic and runtime state, and exact ownership.</li>
+</ul>
+<p><strong>Verification is incomplete.</strong> Six verification packages remain:</p>
+<ol>
+<li>core forced expiry and cache accounting;</li>
+<li>transformer and workflow forced expiry;</li>
+<li>the shutdown/atexit subprocess matrix;</li>
+<li>Dask publication paths;</li>
+<li>the partially coupled <code>PreTransformation</code> and <code>CodeManager</code> role invariants;</li>
+<li>a call-site audit plus full regression.</li>
+</ol>
+<p><strong>Until those land, existing green tests are not completion evidence.</strong> The forced-cap helper leaves remote resolution and recomputation controls to callers; the named forced-cap coverage proves only a Cell case; existing shutdown coverage does not prove the full atexit / cleanup-exception / corrupted-bridge matrix; helper-dispatch Dask tests do not exercise the real cached/thin/fat branches; partial happy paths do not prove every role multiplicity; and a delayed-dependency test that expires data only after all dependencies finish does not prove per-result adoption before the next wait.</p>
+<p><strong>One open imbalance</strong>: a refholder-balance warning at <code>seamless.close()</code> on a <code>Cell</code> / <code>SubCell</code> derivation path with shared input checksums. Observed, not yet diagnosed; it looks like a real imbalance rather than an audit artefact.</p>
+<p><strong>Design intent, not yet built: where the cancellation waiting set will meet this lifecycle.</strong> The materialization-layer linger before a softcancel's abort (<code>contracts/cancellation.md</code>, <em>Materialization is the same pattern, one layer down</em>) does not exist in code yet. Once it does, the waiting-set site itself is expected to hold a lifecycle claim on the checksum for the duration of the linger and release it when the abort fires — an unreleased claim there is exactly what the shutdown audit above should catch. This is recorded from a 2026-09-17 design discussion, not yet verified against code.</p>
+<p>Tests are run <strong>one process per file</strong>: process-global cache and refholder state carries between files, and combining Seamless test files in one pytest run produces spurious failures.</p>
+<h2 id="11-non-goals">11. Non-goals</h2>
+<ul>
+<li>A public attribution or report model, a holder-token hierarchy, recursive deep ownership, or a cross-process reference protocol.</li>
+<li>Automatic retry, eviction policy, or memory-pressure strategy. This contract says only that referenced data is never deleted to satisfy a limit.</li>
+<li>Making temprefs auditable. A tempref is deliberately unattributed and deliberately bounded to a same-path handoff.</li>
+<li>Replacing the node state lifecycle or the cancellation waiting set, which are different mechanisms with different vocabularies.</li>
+</ul>
+              
+            </div>
+          </div><footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+    
+    
+  </span>
+</div>
+    <script src="../../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "../..";</script>
+    <script src="../../js/theme_extra.js"></script>
+    <script src="../../js/theme.js"></script>
+      <script src="../../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>

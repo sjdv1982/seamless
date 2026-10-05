@@ -1,0 +1,853 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <link rel="shortcut icon" href="../../../img/favicon.ico" />
+    <title>Seamless-share usage patterns - Seamless — Agent Documentation</title>
+    <link rel="stylesheet" href="../../../css/theme.css" />
+    <link rel="stylesheet" href="../../../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "Seamless-share usage patterns";
+        var mkdocs_page_input_path = "repos/seamless-share/source/usage-patterns.md";
+        var mkdocs_page_url = null;
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../../../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href="../../../index.html" class="icon icon-home"> Seamless — Agent Documentation
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../../index.html">Home</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../../overview.html">Agent Docs Overview</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../index.html">Workspace Repos</a>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Contracts</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/identity-and-caching.html">Identity and Caching</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/celltypes-and-conversion.html">Celltypes, Null, and Conversion</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/hashtype.html">HashType</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/deep-celltypes.html">Deep Celltypes</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/expressions.html">Expressions</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/cells.html">Cells</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/pins.html">Pins</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/workflow-context.html">Workflow Context</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/node-state-lifecycle.html">Node State Lifecycle</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/attachments.html">Attachments</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/mounts.html">File Mounts</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/cancellation.html">Cancellation</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/direct-delayed-and-transformation.html">direct/delayed/Transformation</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/modules-and-closures.html">Modules and Closures</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/scratch-witness-audit.html">Scratch/Witness/Audit</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/seamless-run-and-argtyping.html">seamless-run/Argtyping</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/cache-storage-and-limits.html">Cache Storage and Limits</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/content-addressed-files-and-dirs.html">Content-addressed Files and Dirs</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/execution-backends.html">Execution Backends</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/execution-records.html">Execution Records</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/service-management.html">Service Management</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/compression.html">Compression</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/compiled-transformers.html">Compiled Transformers</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/compiled-pins.html">Compiled Pins</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/seamless-signature-schema.html">seamless-signature Schema</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">API</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../api/python/seamless.html">seamless</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../api/python/seamless.transformer.html">seamless.transformer</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../api/python/seamless.buffer_class.html">seamless.buffer_class</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../api/python/seamless.checksum_class.html">seamless.checksum_class</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../api/python/seamless_config.select.html">seamless_config.select</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../api/python/seamless_config.tools.html">seamless_config.tools</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../api/python/seamless_transformer.transformation_class.html">seamless_transformer.transformation_class</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../api/python/seamless_transformer.transformer_class.html">seamless_transformer.transformer_class</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">CLI</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../api/cli/seamless-run.html">seamless-run</a>
+                  </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">Seamless — Agent Documentation</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../../../index.html" class="icon icon-home" aria-label="Docs"></a></li>
+      <li class="breadcrumb-item active">Seamless-share usage patterns</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h1 id="seamless-share-usage-patterns">Seamless-share usage patterns</h1>
+<p>Defensive specification for implementers. This file frames <em>why</em> a <code>seamless-share</code> operation succeeds or fails, then enumerates concrete usage patterns. Each pattern carries explicit invariants ("must hold"), rejection conditions ("must reject"), and test obligations ("must test"), so implementers and test authors share one source of truth.</p>
+<p><strong>Status.</strong> This document is the design contract that drives implementation, not API documentation for tools that already work. At the time of writing, the repo is a stub (see <a href="seamless-share/README.md">README.md</a>) and none of the tools described below exist; as the doc is used to produce implementations, some of the named tools (<code>fork</code>, <code>merge-back</code>, <code>transformation-diff</code>, <code>why-not</code>, ...) <strong>will</strong> come into existence and others may be renamed. Implementers may rename, but the contracts attached to each name are binding for whatever tool ends up filling that slot. When a tool exists, this file remains its source of truth for <em>required</em> behavior — implementations diverging from the contracts below are defects, not features. Verify the current implementation status by inspecting the repo directly; do not assume from this file that a tool exists or does not.</p>
+<h2 id="audience-and-scope">Audience and scope</h2>
+<p>This document is for:</p>
+<ul>
+<li>Implementer agents writing or modifying <code>seamless-share</code> code.</li>
+<li>Middleware/planner agents writing concrete implementation + testing plans from these patterns.</li>
+</ul>
+<p>It is not a Seamless tutorial. Read the agentic docs linked at the end before this file.</p>
+<h2 id="what-seamless-share-is-for">What <code>seamless-share</code> is for</h2>
+<p><code>seamless-share</code> exchanges Seamless artifacts (transformation cache entries, hashserver buffers, execution records, and the identity structures linking them) between Seamless installations so that:</p>
+<ol>
+<li>A <strong>recipient gets the same cache hits the publisher does</strong> on the shared transformations and their cascade.</li>
+<li>The recipient can reason about the <strong>provenance cascade</strong> behind those hits — the chain of transformations whose composition produced each result.</li>
+</ol>
+<p>This is the load-bearing reframe: sharing is not primarily about trust. It is about transporting enough of the content-identity graph that future computations on the recipient side resolve to cached results — and, when a recipient needs to re-derive (e.g., to fingertip a scratched intermediate, or to fork a sub-step), they have the graph slice required to do so.</p>
+<p>Trust and audit questions exist but are a separate concern (possibly a separate repo). Here we assume publisher and recipient are cooperating on caching and provenance.</p>
+<h2 id="core-mental-model">Core mental model</h2>
+<h3 id="a-share-is-a-closed-subgraph-not-a-payload">A share is a closed subgraph, not a payload</h3>
+<p>The unit of a share is a <strong>closure</strong> over the content-identity graph: a chosen set of "root" transformations, plus the transitive set of identities required to satisfy the chosen policy (rehydrate-only, allow-fingertip, allow-re-execute, audit). The publisher computes this closure; the recipient consumes it.</p>
+<p>The implementer must always answer two questions when defining a share:</p>
+<ol>
+<li><strong>What is the closure?</strong> Which transformations and which buffers are inside the slice?</li>
+<li><strong>What is the policy at the frontier?</strong> For each identity <em>not</em> included, what is supposed to happen when the recipient asks for it?</li>
+</ol>
+<p>A share that does not make both answerable is incomplete by construction.</p>
+<h3 id="two-frontiers-two-failure-modes">Two frontiers, two failure modes</h3>
+<table>
+<thead>
+<tr>
+<th>Frontier</th>
+<th>Owned by</th>
+<th>What can go wrong if it leaks out of the slice</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Input frontier</strong>: buffers a transformation reads</td>
+<td>transformation identity</td>
+<td>Recipient can verify the result checksum but cannot re-execute or fingertip a scratched output.</td>
+</tr>
+<tr>
+<td><strong>Inner frontier</strong>: sub-<code>tf_checksum</code>s inside a driver/nested transformation</td>
+<td>parent driver identity</td>
+<td>Recipient gets one cache hit at the top; modifying any inner step forces a full recompute, defeating the per-step caching that nesting was for.</td>
+</tr>
+</tbody>
+</table>
+<p>Both frontiers must be enumerable from the share artifact. Tests must exercise patterns that cross each.</p>
+<h3 id="plain-vs-dunder-restated-for-sharing">Plain vs dunder, restated for sharing</h3>
+<p>Per <a href="seamless/docs/agent/contracts/identity-and-caching.md">identity-and-caching.md</a>:</p>
+<ul>
+<li><strong>Plain keys</strong> (<code>code</code>, <code>arg1</code>, <code>objects</code>, modules, ...) are part of <code>tf_checksum</code>. For <em>cache reuse alone</em>, the recipient needs the identities the plain keys reference; bytes only matter where materialization is required.</li>
+<li><strong>Dunder keys</strong> (<code>__env__</code>, <code>__compilation__</code>, <code>__schema__</code>, ...) are excluded from <code>tf_checksum</code>. For <em>cache reuse alone</em>, they are irrelevant. For <em>re-execution or fingertipping</em>, the recipient must be able to reconstruct them locally.</li>
+</ul>
+<p>Implementer corollary: a share aimed only at cache hits may legitimately omit dunder content. A share that promises fingertipping or re-execution must materialize the dunders the worker will need.</p>
+<h3 id="scratch-interacts-with-sharing-non-trivially">Scratch interacts with sharing non-trivially</h3>
+<p>Per <a href="seamless/docs/agent/contracts/cache-storage-and-limits.md">cache-storage-and-limits.md</a> and <a href="seamless/docs/agent/contracts/scratch-witness-audit.md">scratch-witness-audit.md</a>:</p>
+<ul>
+<li>A scratch result has no stored bytes; the recipient can only obtain its value by re-deriving it.</li>
+<li>Re-derivation requires the producer transformation's identity <strong>and</strong> that producer's inputs to be present in the slice (recursively, until something materialized is reached).</li>
+<li>A share that names a scratch buffer without naming its producer (or the producer's inputs) is a <strong>silent failure surface</strong>: a top-level cache hit, followed by a fingertip failure deep inside the cascade at consumption time.</li>
+<li>Witness artifacts (per <code>scratch-witness-audit.md</code>) must not be scratch-only in a share that purports to support audit or cross-environment comparison.</li>
+</ul>
+<h3 id="execution-records-are-evidence-not-identity">Execution records are evidence, not identity</h3>
+<p>Per <a href="seamless/docs/agent/contracts/execution-records.md">execution-records.md</a>:</p>
+<ul>
+<li>Records ride alongside <code>(tf_checksum, result_checksum)</code>; they do not change cache identity.</li>
+<li>A <code>MetaData</code> body difference for the same <code>(tf_checksum, result_checksum)</code> is evidence disagreement about the execution envelope — surface it, do not treat it as a cache conflict.</li>
+<li>A <code>result_checksum</code> mismatch for the same <code>tf_checksum</code> is a referential-transparency violation; it migrates to <code>IrreproducibleTransformation</code> and the migration is one-way. <code>seamless-share</code> import paths must respect this migration and never reverse it.</li>
+<li>The optimistic null hypothesis (that scientifically meaningful results are invariant under environment variation) is the framing under which records exist; see <a href="~/.claude/skills/seamless-adoption/references/env-null-hypothesis.md">env-null-hypothesis</a>.</li>
+</ul>
+<h3 id="provenance-cascade">Provenance cascade</h3>
+<p>A share frequently spans a chain <code>... -&gt; X -&gt; Y -&gt; Z</code> where each step is a transformation whose inputs include the previous step's result. Treat the cascade as a first-class object:</p>
+<ul>
+<li><strong>Cache reuse</strong> at <code>Z</code> requires <code>Z</code>'s <code>tf_checksum</code> and the input identities <code>Z</code> consumes (some of which are <code>Y</code>'s <code>result_checksum</code>).</li>
+<li><strong>Re-derivation</strong> at <code>Z</code> requires <code>Y</code>'s bytes (or <code>Y</code>'s re-derivability through the same recursion).</li>
+<li><strong>Editing</strong> at <code>Y</code> and replaying forward requires <code>Y</code>'s inputs to be materializable.</li>
+</ul>
+<p>Slices that satisfy one of these but not the others are not wrong — they are <strong>narrower-purpose</strong>. The publisher must label which purposes the slice supports; the recipient must verify before relying on a property the slice does not promise.</p>
+<h2 id="operational-primitives">Operational primitives</h2>
+<p><code>seamless-share</code> provides — independently of any specific usage pattern — a small set of operational primitives that the patterns below compose. Implementers must treat these as first-class APIs, not as ad-hoc helpers.</p>
+<h3 id="local-working-copy-of-seamlessdb">Local working copy of <code>seamless.db</code></h3>
+<p>A <em>local working copy</em> is a file-on-disk snapshot of (a subset of) a remote <code>seamless.db</code>, decoupled from the remote so the user can experiment without disturbing team state.</p>
+<ul>
+<li><strong>Fork.</strong> Produce a local <code>seamless.db</code> from a remote source. The local copy must record a <strong>fork-point token</strong> (e.g., a digest of the remote db at fork time, or the remote's protocol-level sequence) so later operations can detect divergence.</li>
+<li><strong>Launch with override.</strong> Run computations against the local copy as the database endpoint, while the <strong>bufferdir endpoint remains remote</strong> (the team hashserver). This is implemented on top of <a href="seamless-config/">seamless-config</a>, overriding the resolved database path in <code>clusters.yaml</code> / <code>seamless.yaml</code> without altering the hashserver endpoint.</li>
+<li><strong>Merge-back.</strong> Replace the remote <code>seamless.db</code> with the local working copy, atomically.</li>
+</ul>
+<p>The bufferdir is <em>not</em> part of the working copy in this primitive. Buffers are content-addressed, shared across users, and accessed through the hashserver throughout the WIP cycle.</p>
+<h3 id="atomic-merge-back-is-a-contract-not-a-command">"Atomic merge-back" is a contract, not a command</h3>
+<p><code>scp</code> alone is not atomic; a recipient process that opens the remote db mid-copy sees a torn file. The merge-back primitive must implement, at minimum:</p>
+<ol>
+<li>Stage the new file at a side path on the destination.</li>
+<li><code>fsync</code> it.</li>
+<li><code>rename</code> it over the destination (POSIX rename is atomic on the same filesystem).</li>
+<li>Verify (re-open, query a known row, compare checksum).</li>
+</ol>
+<p>A pre-condition check against the recorded fork-point token is recommended where the storage layer allows it. If concurrency control is required, it is layered above this primitive (see scope note below).</p>
+<h3 id="concurrency-note">Concurrency note</h3>
+<p>Concurrent access to the remote <code>seamless.db</code> by multiple working copies is <strong>out of scope</strong> for <code>seamless-share</code> at present. Tooling assumes external coordination (a human convention, an organizational lock, or single-user usage). The tool <strong>must document</strong> this assumption and must not silently corrupt state when the assumption is violated — i.e., merge-back must at least be atomic enough that a concurrent reader sees either the pre- or post-merge state, never a torn file.</p>
+<h2 id="implementer-obligations-cross-pattern">Implementer obligations (cross-pattern)</h2>
+<p>These hold across every usage pattern below. Pattern-specific obligations layer on top.</p>
+<ul>
+<li><strong>Closure correctness.</strong> The share artifact's manifest enumerates every identity in the slice. Every identity in the manifest is either (a) materialized in the artifact, (b) marked scratch-by-design with its producer also in the slice, or (c) explicitly listed as out-of-slice with a documented policy for the recipient. There is no fourth category.</li>
+<li><strong>Witness preservation.</strong> Any artifact tagged as a witness is materialized — never scratch-only — in any share whose declared purpose includes audit or cross-environment comparison. For purely-internal rehydration shares, witness handling is still documented in the manifest.</li>
+<li><strong>Idempotent import.</strong> Importing the same share twice must be a no-op for any identity already present locally. <code>MetaData</code> conflicts on identical <code>(tf_checksum, result_checksum)</code> surface as evidence, never as import failures. Result-checksum conflicts route through <code>IrreproducibleTransformation</code> per the database protocol.</li>
+<li><strong>Predicted-hit oracle.</strong> Every publisher-side share operation emits a <strong>predicted-hit list</strong>: the <code>tf_checksum</code>s the publisher expects to satisfy from cache on the recipient side. Every recipient-side import emits the <strong>realized-hit list</strong>. Divergence between the two is the primary integration-test signal.</li>
+<li><strong>No silent re-execution.</strong> If, after import, a computation that the share <em>promised</em> to cache instead triggers re-execution, that is a defect — not a "soft degradation". Tests must fail when this happens.</li>
+</ul>
+<h2 id="test-design-checklist-cross-pattern">Test design checklist (cross-pattern)</h2>
+<p>For every concrete pattern below, implementers must produce tests covering at least these categories. Patterns will add more.</p>
+<ol>
+<li><strong>Round-trip happy path</strong> — publish, import on a clean recipient, verify realized hits match predicted hits exactly.</li>
+<li><strong>Closure gap</strong> — publish with a deliberately omitted dependency; recipient must refuse to claim the cache-hit guarantee, surface the gap, and fail loudly if asked to materialize the missing identity.</li>
+<li><strong>Scratch-without-producer</strong> — publish a scratch buffer whose producer is <em>not</em> in the slice; recipient must detect this at import time, not at first fingertip attempt.</li>
+<li><strong>Witness scratched</strong> — attempt to publish a witness-tagged buffer as scratch-only; publisher must reject before producing the artifact (or, for internal-only shares, the manifest must record the omission explicitly).</li>
+<li><strong>Re-import</strong> — import twice; second import is a no-op; manifests reconcile without spurious writes to <code>Transformation</code>, <code>RevTransformation</code>, <code>MetaData</code>, or buffer storage.</li>
+<li><strong>Metadata divergence</strong> — import a record whose <code>MetaData</code> body differs from a locally-stored one for the same <code>(tf_checksum, result_checksum)</code>; import succeeds, divergence is surfaced for audit, cache identity is unchanged.</li>
+<li><strong>Result divergence</strong> — import a <code>(tf_checksum, result_checksum)</code> whose <code>result_checksum</code> conflicts with a locally-stored one for the same <code>tf_checksum</code>; import routes through <code>IrreproducibleTransformation</code>; never silently overwrites.</li>
+<li><strong>Cascade re-derivation</strong> — import a slice that requires fingertipping at an internal step; verify <code>allow_input_fingertip</code> paths function and the producer is invoked exactly when (and only when) expected.</li>
+<li><strong>Driver/nested closure</strong> — import a share rooted at a driver transformation; verify each inner <code>tf_checksum</code> is independently hittable and editable.</li>
+</ol>
+<h2 id="concrete-usage-patterns">Concrete usage patterns</h2>
+<p><em>To be filled in.</em> The remainder of this file enumerates concrete patterns explained by the project author. Each pattern follows the structure: <strong>Intent · Closure rules · Frontier policy · Must hold · Must reject · Must test</strong>. This introduction is the shared substrate every pattern assumes.</p>
+<h3 id="pattern-1-consolidation-and-crystallization">Pattern 1: Consolidation and crystallization</h3>
+<h4 id="intent">Intent</h4>
+<p>During the WIP phase of a Seamless project, the local-working-copy database accumulates cache entries from many revisions of the code and parameters. At some point — either for disk space, for cognitive clarity over provenance, or for publication — the user wants to <strong>shrink the database to a chosen kept set</strong> and either:</p>
+<ul>
+<li><strong>Consolidate</strong> — push the shrunken database back to the remote, replacing it; the user continues working from a smaller, cleaner state.</li>
+<li><strong>Crystallize</strong> — emit the shrunken database (plus its referenced buffers) as a distributable artifact; the user's working state is unaffected.</li>
+</ul>
+<p>These are the same closure operation with different destinations; they share the kept-set computation and differ only in what is done with the result.</p>
+<p>This is the Seamless analog of <code>git gc</code> / <code>filter-branch</code> (consolidation) and <code>python -m build</code> + publish (crystallization). Source code has VCS and packaging tooling; for the <code>seamless.db</code> + bufferdir combination, <code>seamless-share</code> reinvents the necessary subset.</p>
+<h4 id="two-destinations-one-operation">Two destinations, one operation</h4>
+<table>
+<thead>
+<tr>
+<th>Destination</th>
+<th>Action</th>
+<th>Effect on local working copy</th>
+<th>Effect on remote <code>seamless.db</code></th>
+<th>Effect on bufferdir</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Consolidate</strong></td>
+<td>shrink → merge-back</td>
+<td>shrunken (or replaced by the shrunken copy)</td>
+<td>replaced by the shrunken local copy (atomic)</td>
+<td>not directly affected; unreferenced buffers become candidates for separate, later GC</td>
+</tr>
+<tr>
+<td><strong>Crystallize</strong></td>
+<td>shrink → emit artifact</td>
+<td>unaffected (or shrunken, by flag)</td>
+<td>unaffected</td>
+<td>emit a companion bufferdir containing the kept set's buffers (using Seamless's existing file/dir digestion tools); remote unchanged</td>
+</tr>
+</tbody>
+</table>
+<p>The crystallized artifact is a <code>seamless.db</code> file in the native format, accompanied where needed by a bufferdir directory of byte-files keyed by checksum. There is no separate packaging format: Seamless's existing tooling already handles ingestion on the recipient side.</p>
+<h4 id="keep-closure">Keep closure</h4>
+<p>Given a kept-root set <code>R</code> (a set of <code>tf_checksum</code>s the user has named as "must survive"), the kept closure is computed by walking the identity graph in the local <code>seamless.db</code>:</p>
+<ol>
+<li>Start with the <code>Transformation</code> rows for each <code>tf_checksum</code> in <code>R</code>.</li>
+<li>For each kept transformation, traverse its inputs (declared input pins and any nested <code>tf_checksum</code>s referenced by drivers). Add producer transformations whose results are consumed as inputs.</li>
+<li>Repeat to a fixed point.</li>
+<li>Result: a kept set <code>K ⊇ R</code> of <code>tf_checksum</code>s.</li>
+</ol>
+<p><code>R</code> may be specified by:</p>
+<ul>
+<li><strong>Explicit list</strong> of <code>tf_checksum</code>s.</li>
+<li><strong>Derived from project state</strong> — the user points at the current code/script/notebook, and tooling extracts the <code>tf_checksum</code>s that the current state references or has just produced. (Fragile when code has mutated between resolution and execution; implementers must surface the resolved list for confirmation before destruction.)</li>
+</ul>
+<p>In the absence of an explicit <code>R</code>, the default is <strong><code>R = all tf_checksums currently in the local working copy</code></strong> — i.e., no shrinking, only the local-copy-as-snapshot semantics. The user must opt into shrinking.</p>
+<h4 id="drop-policy-local-working-copy">Drop policy (local working copy)</h4>
+<p>The complement <code>D = (local copy's tf_checksums) ∖ K</code> is dropped from the local working copy:</p>
+<ul>
+<li><code>Transformation</code>, <code>RevTransformation</code>, and <code>MetaData</code> rows for <code>tf_checksum</code>s in <code>D</code> are deleted.</li>
+<li><code>IrreproducibleTransformation</code> rows are <strong>preserved by default</strong>, regardless of whether their <code>tf_checksum</code> is in <code>D</code>. An explicit <code>--drop-irreproducible</code> flag is required to drop them; the dry-run must surface the count.</li>
+<li>Witness-tagged buffers referenced by <code>D</code> are surfaced in the dry-run as "evidence about to be dropped"; an explicit <code>--drop-witnesses</code> flag is required to drop them.</li>
+</ul>
+<p>The bufferdir is <strong>not</strong> modified by this pattern's drop policy. Buffers referenced by <code>D</code> but not by <code>K</code> become candidates for a separate, later GC operation; that GC is out of this pattern's scope.</p>
+<h4 id="merge-back-consolidation-only">Merge-back (consolidation only)</h4>
+<p>After shrinking, the local working copy is merged back to the remote using the <a href="#atomic-merge-back-is-a-contract-not-a-command">atomic merge-back primitive</a>. Implementer obligations specific to consolidation:</p>
+<ul>
+<li>The merge-back <strong>replaces</strong> the remote, it does not union. Rows present remotely but absent locally are <strong>dropped on the remote</strong> by this operation — this is intentional (consolidation's purpose) but means the dry-run must explicitly show the rows about to disappear from the remote, not only the rows being dropped from the local working copy.</li>
+<li>The fork-point token recorded at fork time must be checked against the current remote state before merge-back. If divergence is detected, the tool must refuse and surface the divergence; concurrency reconciliation is out of scope.</li>
+</ul>
+<h4 id="artifact-emission-crystallization-only">Artifact emission (crystallization only)</h4>
+<p>The crystallized artifact is:</p>
+<ul>
+<li>A <code>seamless.db</code> file containing exactly the kept set <code>K</code>, its <code>MetaData</code>, and <code>IrreproducibleTransformation</code> rows for <code>tf_checksum</code>s in <code>K</code> (and optionally <code>IrreproducibleTransformation</code> rows whose <code>tf_checksum</code> is outside <code>K</code> but whose preservation the user opted into).</li>
+<li>A companion bufferdir (a directory of byte-files keyed by checksum) containing every buffer the kept set declares as materialized.</li>
+</ul>
+<p>No bespoke packaging format. The recipient ingests via existing Seamless tooling.</p>
+<p><strong>Compression at artifact emission.</strong> Per <a href="seamless/docs/agent/contracts/compression.md">compression.md</a>, compression is identity-transparent — <code>.zst</code> / <code>.gz</code> forms share the canonical checksum with the uncompressed form. The publisher can ship buffers in any form without affecting cache identity. Two consequences worth anticipating:</p>
+<ul>
+<li>If buffers are shipped compressed, <strong>pre-generate <code>.BUFFERLENGTH</code> sidecars</strong> before stripping the uncompressed form, or the recipient's hashserver pays a full decompression cost on every length query. Cheap to generate at publication, expensive to recover later.</li>
+<li>The recipient must have the relevant decompression library available (<code>zstd</code> or <code>gzip</code>). The artifact has no way to declare this; the publisher should make the assumption explicit in the artifact's accompanying documentation if a non-default format is used.</li>
+</ul>
+<h4 id="safety-obligations">Safety obligations</h4>
+<ul>
+<li><strong>Dry-run is the default.</strong> Destructive execution requires an explicit flag.</li>
+<li><strong>The dry-run must report</strong>: <code>|R|</code>, <code>|K|</code>, <code>|D|</code>, count of <code>IrreproducibleTransformation</code> rows in scope, count of witness-tagged buffers in scope, total disk-bytes to be reclaimed.</li>
+<li><strong><code>IrreproducibleTransformation</code> and witnesses are preserved by default.</strong> Opt-out flags are required to drop them.</li>
+<li><strong>Atomic merge-back, always.</strong> No partial writes to the remote.</li>
+<li><strong>Fork-point check before merge-back.</strong> Refuse on divergence.</li>
+<li><strong>Concurrency assumed external.</strong> The tool must document the assumption and not silently corrupt on violation.</li>
+</ul>
+<h4 id="must-hold-post-operation-invariants">Must hold (post-operation invariants)</h4>
+<ul>
+<li>After consolidation: the remote <code>seamless.db</code> is structurally consistent (every <code>RevTransformation</code> row has a matching <code>Transformation</code> row; every <code>MetaData</code> row references a present <code>Transformation</code> row).</li>
+<li>After consolidation: every <code>tf_checksum</code> in the kept set <code>K</code> resolves to a <code>result_checksum</code> on the remote that satisfies the same policy (rehydrate / fingertip / re-execute) it satisfied before.</li>
+<li>After crystallization: the artifact is self-contained for its declared policy (closure correctness, per the cross-pattern obligations).</li>
+<li>After both: any <code>IrreproducibleTransformation</code> row that existed before exists after, unless the user explicitly opted to drop it.</li>
+</ul>
+<h4 id="must-reject">Must reject</h4>
+<ul>
+<li>A consolidation operation whose dry-run was not viewed (i.e., destructive flag without prior dry-run, in the absence of an explicit <code>--yes-i-know</code> override).</li>
+<li>A consolidation operation whose fork-point token does not match the remote's current state.</li>
+<li>A crystallization operation that would emit a witness-stripped artifact without explicit opt-in.</li>
+<li>Any operation whose kept set <code>K</code> is empty when <code>R</code> was specified non-empty (indicates a closure-walk bug, not a user intent).</li>
+<li>Any operation that would, post-operation, leave a <code>Transformation</code> row referring to a <code>result_checksum</code> neither materialized nor re-derivable from <code>K</code>.</li>
+</ul>
+<h4 id="must-test">Must test</h4>
+<p>In addition to the cross-pattern checklist:</p>
+<ol>
+<li><strong>Fork → modify → consolidate → push</strong> round trip, with no shrinking: remote is byte-equal to a copy of the local working copy; fork-point token validates.</li>
+<li><strong>Fork → shrink with explicit <code>R</code> → consolidate</strong>: remote's surviving <code>tf_checksum</code>s equal <code>K</code>; <code>MetaData</code> and <code>IrreproducibleTransformation</code> invariants hold; structural-consistency check passes.</li>
+<li><strong>Fork → shrink → crystallize</strong>: emitted artifact's <code>seamless.db</code> contains exactly <code>K</code>; companion bufferdir resolves every materialized buffer the artifact's policy declares.</li>
+<li><strong>Closure-walk correctness on driver/nested transformations</strong>: a kept driver <code>tf_checksum</code> pulls all its inner <code>tf_checksum</code>s into <code>K</code>.</li>
+<li><strong>Scratch producer pulled into <code>K</code></strong>: if a kept transformation consumed a scratch output from producer P, P (and P's transitive inputs) are in <code>K</code>.</li>
+<li><strong><code>IrreproducibleTransformation</code> preservation</strong>: a row outside <code>K</code> is preserved by default; the <code>--drop-irreproducible</code> flag is required to drop it.</li>
+<li><strong>Witness preservation</strong>: a witness-tagged buffer outside <code>K</code> is surfaced in the dry-run; the <code>--drop-witnesses</code> flag is required to drop it.</li>
+<li><strong>Fork-point divergence</strong>: simulate a remote change after fork; merge-back must refuse and surface the divergence.</li>
+<li><strong>Atomic merge-back under crash injection</strong>: kill the tool mid-merge; the remote file is either pre-state or post-state, never torn.</li>
+<li><strong>Empty-<code>K</code> guard</strong>: a <code>R</code> that resolves to <code>K = ∅</code> (e.g., because the user-supplied roots are absent from the local copy) must abort, not produce an empty remote.</li>
+<li><strong>Buffer untouched</strong>: after consolidation, the bufferdir endpoint reports the same contents as before — consolidation does not touch buffers directly.</li>
+</ol>
+<h3 id="pattern-2-cache-miss-diagnosis-why-not">Pattern 2: Cache-miss diagnosis (<code>why-not</code>)</h3>
+<h4 id="intent_1">Intent</h4>
+<p>A user (or upstream agent) expected a cache hit on some transformation <code>T</code>, but observed a miss. The pattern provides tools to answer <em>"why?"</em> structurally: which determinant of <code>T</code>'s identity differs from a comparable cached transformation <code>T'</code>?</p>
+<p>The pattern is <strong>read-only and diagnostic</strong>. It never writes to any database, bufferdir, or hashserver. Tests must assert this property.</p>
+<h4 id="two-layers-separable-by-contract">Two layers, separable by contract</h4>
+<p>This pattern specifies two tools that must be implemented as separable units. A lesser agent should not collapse them into one.</p>
+<table>
+<thead>
+<tr>
+<th>Layer</th>
+<th>Proposed name</th>
+<th>Inputs</th>
+<th>Output</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Low-level primitive</td>
+<td><code>transformation-diff</code></td>
+<td>Two transformation references (a <code>tf_checksum</code>, an unwrapped transformation dict, or a path to a transformation definition) and a database endpoint</td>
+<td>Structural diff annotated with plain-vs-dunder</td>
+<td>Reusable by other tools (audit, manifest reconciliation, future cascade-explainer)</td>
+</tr>
+<tr>
+<td>User-facing tool</td>
+<td><code>why-not</code></td>
+<td>One transformation reference (the missing one) and a database endpoint</td>
+<td>A diagnosis: cache-miss-shape + (if applicable) a diff against a heuristically-chosen candidate</td>
+<td>End-user diagnostic for "why didn't this hit?"</td>
+</tr>
+</tbody>
+</table>
+<p><code>why-not</code> must call <code>transformation-diff</code> to produce its diff. <code>why-not</code> must not contain its own diff logic.</p>
+<h4 id="two-orthogonal-axes-lookup-state-and-candidate-diff">Two orthogonal axes: lookup state and candidate diff</h4>
+<p>Reporting a cache miss is the composition of two independent answers. The tool must produce both; one must never substitute for the other. Conflating them into a single "shape" enum is wrong, because a single user action routinely produces a complex result along axis 2.</p>
+<p><strong>Canonical example.</strong> Adding a parameter to a function decorated with <code>@direct</code> or <code>@delayed</code> produces, in one user action, <em>both</em>: a new input key in the transformation dict (the parameter becomes a new input pin) <em>and</em> a value difference on the plain key <code>code</code> (the function's source text changed). Both are real, independent identity-determining changes. The tool must report both. A "primary cause" framing here would mislead — there is no primary cause; the user added a parameter, and Seamless honestly reflects that as two coupled changes in the transformation dict.</p>
+<p><strong>Axis 1: lookup state of the queried <code>tf_checksum</code>.</strong> What does the queried database endpoint (or union of endpoints) say about the <em>exact</em> queried <code>tf_checksum</code>?</p>
+<table>
+<thead>
+<tr>
+<th>Lookup state</th>
+<th>How to detect</th>
+<th>What it means</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>NOT_PRESENT</code></td>
+<td>No <code>Transformation</code> row and no <code>IrreproducibleTransformation</code> row</td>
+<td>The transformation has never been recorded (or has been deleted). Candidate diff (axis 2) is the path forward.</td>
+</tr>
+<tr>
+<td><code>IRREPRODUCIBLE</code></td>
+<td><code>IrreproducibleTransformation</code> rows exist for this <code>tf_checksum</code></td>
+<td>The miss is intentional: a referential-transparency violation was recorded. Surface the row count and <code>result_checksum</code> set. Candidate diff is not run by default — the same <code>tf_checksum</code> is by definition not diff-against-itself.</td>
+</tr>
+<tr>
+<td><code>PRESENT_RESULT_UNAVAILABLE</code></td>
+<td><code>Transformation</code> row exists; <code>result_checksum</code> named; buffer not materializable and not re-derivable per the policy</td>
+<td>The identity is cached; the result is not. The user's observed "miss" is not an identity miss; searching for a code change will not explain it.</td>
+</tr>
+<tr>
+<td><code>PRESENT_AS_HIT</code></td>
+<td><code>Transformation</code> row exists; result materializable or re-derivable per the policy</td>
+<td>This is in fact a cache hit on the queried endpoint set. The user's observation of a miss is either against a different endpoint (the tool's endpoint set is incomplete) or describes a non-identity concern (e.g., latency, eviction). The tool must say so explicitly rather than reporting an empty diff.</td>
+</tr>
+</tbody>
+</table>
+<p>The lookup state must be reported in every run. It is the answer to "did the cache see this identity?" and is independent of any diff.</p>
+<p><strong>Axis 2: candidate diff.</strong> Only meaningful when axis 1 is <code>NOT_PRESENT</code>. The user-facing tool may select a candidate <code>tf_checksum</code> from the cache; the primitive runs the diff against it. The diff is a <strong>list of independent differences</strong> — never a single category. The list must be reported in full; nothing is collapsed, prioritized, or hidden.</p>
+<h4 id="diff-entries">Diff entries</h4>
+<p>A diff is a list of entries. Each entry is independently:</p>
+<ul>
+<li><strong>Side</strong>: <code>key_only_in_A</code> / <code>key_only_in_B</code> / <code>value_differs</code>.</li>
+<li><strong>Classification</strong>: <code>plain</code> (part of <code>tf_checksum</code>, identity-determining) or <code>dunder</code> (execution-only).</li>
+<li><strong>Value</strong>: at default depth, checksums (or absent, for key-only-in-X entries); with <code>--deep</code>, content rendered appropriately to the buffer's type.</li>
+</ul>
+<p>The aggregate flag <code>identity_relevant</code> is <code>true</code> iff at least one entry is classified <code>plain</code>. A diff with only <code>dunder</code> entries cannot explain a real cache miss; the user-facing tool must surface this prominently — it indicates the candidate was a poor choice and the real explanation lies elsewhere.</p>
+<p>There is no "primary" difference. The tool must not present one entry as <em>the</em> reason at the expense of others. An agent or user reading the output gets the <em>complete</em> identity-relevant delta.</p>
+<p><code>transformation-diff</code> operates on the unwrapped transformation dict — the dict whose checksum is <code>tf_checksum</code>, plus its dunder companions. The plain/dunder classification of each key follows from <a href="seamless/docs/agent/contracts/identity-and-caching.md">identity-and-caching.md</a>; when in doubt, consult that contract rather than assuming.</p>
+<h4 id="common-scenarios-and-what-the-diff-shows">Common scenarios and what the diff shows</h4>
+<p>Below are concrete user actions and the dict-level changes a lesser agent should expect when running the diff. Use these as anchors when interpreting tool output or designing test fixtures. The list is <strong>not exhaustive and not a taxonomy</strong>; it is a feel-for-the-shape reference. Where this list contradicts the contracts in <a href="seamless/docs/agent/contracts/identity-and-caching.md">identity-and-caching.md</a> or <a href="seamless/docs/agent/contracts/modules-and-closures.md">modules-and-closures.md</a>, the contracts win.</p>
+<p>For each scenario: <em>what the user did</em> → <em>what shifts in the transformation dict</em> → <em>what to expect in the diff output</em>.</p>
+<h5 id="edits-to-a-direct-delayed-function">Edits to a <code>@direct</code> / <code>@delayed</code> function</h5>
+<ul>
+<li><strong>Add a parameter.</strong> <code>f(a, b)</code> becomes <code>f(a, b, c)</code> and a call site passes the new value. The dict gains a new input pin for <code>c</code>. The <code>code</code> value (function source text) also changes, because the signature is part of the source. → Diff has at least two entries: one <code>key_only_in_input</code> for the new pin, one <code>value_differs</code> on <code>code</code>. Both classified <code>plain</code>. One user action, two coupled changes — this is normal.</li>
+<li><strong>Remove a parameter.</strong> Mirror image. → One <code>key_only_in_candidate</code> plus a <code>code</code> value difference.</li>
+<li><strong>Rename a parameter.</strong> <code>f(a, b)</code> becomes <code>f(a, x)</code>. Pin name changes; source text changes. → Three entries: <code>key_only_in_input</code> (new name), <code>key_only_in_candidate</code> (old name), <code>value_differs</code> on <code>code</code>. A rename is not "one diff"; it is three.</li>
+<li><strong>Add a default value to a parameter.</strong> Signature in source changes; if the call site still passes the same arguments, pin values are unchanged. → One <code>value_differs</code> on <code>code</code>. No key set change. Cache miss even though the call site is byte-identical.</li>
+<li><strong>Reformat / whitespace / comment-only edit.</strong> No semantic change, but the captured source text differs. → One <code>value_differs</code> on <code>code</code>. The cache miss is real. Seamless cannot distinguish "renamed a local" from "rewrote the algorithm" — they look identical at the dict level. A lesser agent should be prepared to tell the user: cosmetic edits invalidate the cache exactly like semantic edits. This is a property, not a bug.</li>
+<li><strong>Mild refactor preserving semantics</strong> (rename a local, extract an inline expression). Same as above — <code>code</code> changes, identity changes.</li>
+<li><strong>Algorithmic change</strong> (replace a loop with a comprehension, swap a constant). Indistinguishable from cosmetic at the dict level. → One <code>value_differs</code> on <code>code</code>. Semantic significance lives outside the cache key by design.</li>
+</ul>
+<h5 id="changes-at-the-call-site-or-inputs">Changes at the call site or inputs</h5>
+<ul>
+<li><strong>Pass a different value for the same parameter.</strong> The pin's checksum value changes; <code>code</code> unchanged. → One <code>value_differs</code> on the affected input pin. Classified <code>plain</code>. No key set change.</li>
+<li><strong>Upstream transformation now produces a different result checksum.</strong> From the current transformation's local view, this looks identical to "pass a different value": one input pin's checksum changed, <code>code</code> unchanged. → One entry on the affected input pin. The <em>cause</em> of the upstream change is a cascade question — out of v1 scope, but the next thing the user will ask.</li>
+<li><strong>Pass a value that normalizes to the same buffer.</strong> Distinct user input that, after Seamless's input normalization, yields the same buffer checksum. → Empty diff; lookup state <code>PRESENT_AS_HIT</code>. The tool reports this clearly rather than implying the user was wrong about caching.</li>
+</ul>
+<h5 id="changes-to-the-transformation-envelope">Changes to the transformation envelope</h5>
+<ul>
+<li><strong>Add or remove an embedded module / closure</strong> (the <code>objects</code> set or its equivalent). The dict's modules-related plain key set changes. → A <code>value_differs</code> (or key-add/remove) on the modules-related key. The <code>code</code> value may or may not also change, depending on whether the helper was inlined or imported.</li>
+<li><strong>Change a captured closure variable</strong> that is implicitly captured rather than passed as an argument. Per <a href="seamless/docs/agent/contracts/modules-and-closures.md">modules-and-closures.md</a>, implicit closures are a known anti-pattern: identity may not track such changes correctly. → If Seamless captured the closure into a plain-key value, the diff shows that entry. If it did not, the diff is empty and the user has a real bug — a silently wrong cache hit. When the tool reports an empty diff in a context where the user is sure they changed something, the output should hint that an implicit closure may be at fault.</li>
+<li><strong>Change a pin's celltype</strong> (e.g., <code>text</code> → <code>bytes</code>, or switch to a deep-checksum cell). Celltype declarations are part of the transformation specification. → An entry on the key that holds the celltype declaration. Whether that key is plain or dunder depends on the specific celltype semantics; consult <a href="seamless/docs/agent/contracts/identity-and-caching.md">identity-and-caching.md</a> and the pin schema rather than assuming.</li>
+<li><strong>Change <code>__env__</code></strong> (e.g., switch conda environment). <code>__env__</code> is a dunder. → One <code>dunder</code> entry. <code>identity_relevant: false</code>. The tool surfaces this prominently: this does not explain a real cache miss. If the user observed a real miss, it is elsewhere.</li>
+<li><strong>Change <code>__compilation__</code></strong> (e.g., compiler flags <code>-O3</code> → <code>-g</code> for a compiled transformer). Dunder. → Same shape as <code>__env__</code>: identity-irrelevant; surfaced as such.</li>
+<li><strong>Switch decorator <code>@direct</code> ↔ <code>@delayed</code>.</strong> Same code, same parameters, same call. Both produce equivalent transformation dicts. → Empty diff; lookup state <code>PRESENT_AS_HIT</code>. The tool must not invent a miss to explain.</li>
+</ul>
+<h5 id="seamless-run-cli-scenarios"><code>seamless-run</code> CLI scenarios</h5>
+<ul>
+<li><strong>Change the command string.</strong> The command lives in a plain key. → One <code>value_differs</code> on the command key.</li>
+<li><strong>Change <code>--metavar</code>.</strong> Per the contract, <code>--metavar</code> is an execution hint and lives in a dunder. → One <code>dunder</code> entry; <code>identity_relevant: false</code>.</li>
+<li><strong>Change argument typing</strong> (e.g., declare an arg as <code>--file</code> vs <code>--text</code>). This changes how Seamless interprets the argument's content, typically changing the resulting input pin and its checksum. → One or more entries on the affected pin; consult <a href="seamless/docs/agent/contracts/seamless-run-and-argtyping.md">seamless-run-and-argtyping.md</a> for the exact key shape.</li>
+<li><strong>Switch a CLI input pin between compressed and uncompressed forms</strong> (e.g., <code>file.npy</code> vs <code>file.npy.zst</code>). Per <a href="seamless/docs/agent/contracts/compression.md">compression.md</a>, compression is identity-transparent at the <em>canonical buffer</em> level — both forms share the buffer checksum — but the CLI/bash face encodes the compression suffix in the <strong>pin name</strong>. Different pin name → different transformation dict → different <code>tf_checksum</code>. → One or more entries on the affected pin (the pin name itself differs as a key). A user who expects "same content, same cache hit" is surprised to see a miss. The tool should surface this honestly rather than rationalizing; the diff <em>is</em> real at the transformation-dict level even though the canonical content is identical.</li>
+</ul>
+<h5 id="out-of-band-gotchas-the-tool-should-hint-at">Out-of-band gotchas the tool should hint at</h5>
+<ul>
+<li><strong>Empty diff against a believed-changed code path.</strong> Often means an implicit closure was the changed determinant and Seamless never saw it. The tool should hint at this rather than declaring "no diff" and stopping.</li>
+<li><strong>All entries <code>dunder</code>.</strong> The candidate is the wrong one (or the change does not affect identity); the tool should say so plainly instead of leaving the user to read the classification.</li>
+<li><strong>Diff present locally, but lookup state <code>PRESENT_AS_HIT</code> on another endpoint.</strong> The user looked at the wrong endpoint. Report both findings — "the queried endpoint has no record; endpoint <em>X</em> has it as a hit" — so the user can correct course.</li>
+</ul>
+<h4 id="default-depth-and-the-deep-flag">Default depth and the <code>--deep</code> flag</h4>
+<p><code>transformation-diff</code> and <code>why-not</code> must default to <strong>checksum-level comparison</strong> of differing values:</p>
+<ul>
+<li>For a key whose value differs, the default output is <code>{value_A: '&lt;hex&gt;', value_B: '&lt;hex&gt;'}</code>.</li>
+<li>The <code>--deep</code> flag is opt-in. It instructs the tool to fetch the underlying buffers (via the database endpoint's hashserver) and present a content diff appropriate to the buffer's type: line-level for textual content (e.g., <code>code</code>), structural for JSON-shaped values (e.g., args), checksum-only fallback for opaque/binary content.</li>
+<li><code>--deep</code> must not fail the operation when a buffer is unavailable (scratched, evicted). It must fall back to checksum-level output for that key and continue.</li>
+</ul>
+<h4 id="heuristic-candidate-selection-user-facing-tool-only">Heuristic candidate selection (user-facing tool only)</h4>
+<p><code>why-not</code> selects a candidate transformation in the cache to diff against. The candidate-selection heuristic is a part of the user-facing tool, not the primitive. Implementer obligations:</p>
+<ul>
+<li>The selection algorithm must be <strong>documented and deterministic</strong>: same inputs and same database state yield the same candidate.</li>
+<li>The selection must <strong>score by overlap on plain keys first</strong> (since dunder differences cannot explain a miss), and only break ties by dunder overlap.</li>
+<li>The tool must report the <strong>selection score and runner-up candidates</strong> so a user can override and rerun the primitive against a different candidate if the heuristic chose poorly.</li>
+<li>The tool must refuse to select a candidate when no transformation in the cache shares at least one plain-key value with the input. Reporting NEVER_COMPUTED is preferable to inventing a misleading diff.</li>
+</ul>
+<h4 id="endpoint-composition">Endpoint composition</h4>
+<p>Both tools must accept arbitrary database endpoints; they must not assume "the" cache. In particular, the tools compose with the <a href="#local-working-copy-of-seamlessdb">local working copy</a> primitive: a user must be able to ask <code>why-not</code> to diff against a remote database, a local working copy, a pre-consolidation snapshot, or any combination by enumerating endpoints.</p>
+<p>When multiple endpoints are supplied, the cache-miss taxonomy is computed as the <strong>union view</strong> (a transformation is NEVER_COMPUTED only if absent from all endpoints; IRREPRODUCIBLE if any endpoint reports it as such; etc.). The endpoint that supplied each row must be reported in the output.</p>
+<h4 id="out-of-scope-v1">Out of scope (v1)</h4>
+<ul>
+<li><strong>Cascade explanation.</strong> Recursive <code>why-not</code> on upstream transformations whose results feed the queried transformation is <strong>not</strong> part of this pattern. It may be a future pattern built on top of <code>transformation-diff</code>. Implementers must keep <code>transformation-diff</code> clean enough to support it later.</li>
+<li><strong>Metadata divergence.</strong> <code>MetaData</code> body differences are evidence-about-execution, not identity; they never cause a cache miss and are not part of this pattern. Audit tooling that consults metadata lives elsewhere.</li>
+<li><strong>Buffer-content normalization.</strong> The <code>--deep</code> output is a presentation aid; the <em>identity</em> judgment uses checksums only. Tools must not implement "fuzzy" or "tolerance-based" identity comparison anywhere in this pattern.</li>
+</ul>
+<h4 id="must-hold-post-operation-invariants_1">Must hold (post-operation invariants)</h4>
+<ul>
+<li>After any run of either tool: no <code>Transformation</code>, <code>RevTransformation</code>, <code>MetaData</code>, <code>IrreproducibleTransformation</code> row has been written or modified; no buffer has been written to any bufferdir or hashserver.</li>
+<li>The output's lookup-state field is exactly one of <code>{NOT_PRESENT, IRREPRODUCIBLE, PRESENT_RESULT_UNAVAILABLE, PRESENT_AS_HIT}</code>. The two axes (lookup state and candidate diff) are reported as independent fields; lookup state is always populated; diff is populated when (and only when) axis 1 is <code>NOT_PRESENT</code> and a candidate was selected.</li>
+<li>The diff field, when populated, is a complete list of every key-level difference between input and candidate. The tool does not collapse, prioritize, or omit entries. Entries differing only in classification (plain vs dunder) are not merged.</li>
+<li>The output's <code>identity_relevant</code> flag is <code>true</code> if and only if at least one diff entry is classified <code>plain</code>.</li>
+<li>When <code>--deep</code> is requested and a buffer is unavailable: the tool exits with success; that key's output falls back to checksum-level; the unavailability is reported in the output.</li>
+</ul>
+<h4 id="must-reject_1">Must reject</h4>
+<ul>
+<li>A <code>transformation-diff</code> invocation with fewer or more than two transformation references.</li>
+<li>A <code>why-not</code> invocation that asks the heuristic selector to operate on a database endpoint set that contains zero <code>Transformation</code> rows. (Distinct from "candidate found is unrelated"; this is "no haystack to search".)</li>
+<li>Any request that would require writing to a database or bufferdir endpoint. The tools must not have a write code path at all; reject by construction, not by runtime check.</li>
+</ul>
+<h4 id="must-test_1">Must test</h4>
+<p>In addition to the cross-pattern checklist:</p>
+<ol>
+<li><strong>Identical-pair diff</strong>: two identical transformation dicts produce a diff with no entries and <code>identity_relevant: false</code>.</li>
+<li><strong>Plain-only diff</strong>: two dicts differ in a single plain key; <code>identity_relevant: true</code>; entry classified <code>plain</code>.</li>
+<li><strong>Dunder-only diff</strong>: two dicts differ in a single dunder key; <code>identity_relevant: false</code>; entry classified <code>dunder</code>. The user-facing tool's output must explicitly state that this diff does not explain the miss.</li>
+<li><strong>Mixed diff</strong>: differences in both plain and dunder keys; <code>identity_relevant: true</code>; both classifications present.</li>
+<li><strong>Key-only-in-A</strong>: one dict has a key the other lacks; diff records the side; classification is correct.</li>
+<li><strong>Lookup <code>NOT_PRESENT</code></strong>: query a <code>tf_checksum</code> absent from all endpoints; lookup state is <code>NOT_PRESENT</code>; diff is empty when no candidate is selected.</li>
+<li><strong>Lookup <code>IRREPRODUCIBLE</code></strong>: query a <code>tf_checksum</code> present only in <code>IrreproducibleTransformation</code>; lookup state is <code>IRREPRODUCIBLE</code>; candidate-diff is not run by default, even if a similar-shape transformation exists in the cache.</li>
+<li><strong>Lookup <code>PRESENT_RESULT_UNAVAILABLE</code></strong>: <code>Transformation</code> row exists for the queried <code>tf_checksum</code>, but the <code>result_checksum</code> cannot be materialized or re-derived; lookup state is <code>PRESENT_RESULT_UNAVAILABLE</code>; the user is not misled into looking for a code change.</li>
+<li><strong>Lookup <code>PRESENT_AS_HIT</code></strong>: query a <code>tf_checksum</code> that is in fact a cache hit on the endpoint set; lookup state is <code>PRESENT_AS_HIT</code>; tool surfaces this explicitly rather than emitting an empty diff or pretending the user was right about there being a miss.</li>
+<li><strong>Canonical multi-difference case</strong>: starting from a <code>@direct</code> or <code>@delayed</code> function with parameters <code>(a, b)</code> and a cached <code>tf_checksum</code>, add a parameter <code>c</code> and rerun. <code>why-not</code> against the cache must report a diff with at least two entries: (i) a <code>key_only_in_candidate=False</code> (i.e., the new input key for <code>c</code> is present in the input transformation, absent from the candidate), and (ii) a <code>value_differs</code> entry on <code>code</code> (the function source changed). Both entries are classified <code>plain</code>. <code>identity_relevant</code> is <code>true</code>. No entry is collapsed or marked "primary".</li>
+<li><strong>Deep diff on textual content</strong>: with <code>--deep</code>, a <code>code</code>-key difference produces a line-level diff of the underlying source.</li>
+<li><strong>Deep diff with missing buffer</strong>: with <code>--deep</code>, a key whose underlying buffer is unavailable falls back to checksum-level output; the run does not fail.</li>
+<li><strong>Read-only assertion</strong>: before/after the tool runs, checksums of all queried database files and bufferdir entries are unchanged.</li>
+<li><strong>Heuristic determinism</strong>: same input, same database state ⇒ same candidate selected by <code>why-not</code>; same diff output.</li>
+<li><strong>Heuristic refusal</strong>: when no candidate in the cache shares any plain-key value with the input, <code>why-not</code> reports lookup state <code>NOT_PRESENT</code> with no candidate selected and an empty diff, rather than diffing against a maximally-unrelated candidate.</li>
+<li><strong>Endpoint union</strong>: with multiple endpoints, the lookup state is computed correctly under the documented union rules; per-endpoint provenance is preserved in the output.</li>
+<li><strong>Dunder-only diff is flagged</strong>: a candidate diff whose entries are all classified <code>dunder</code> produces <code>identity_relevant: false</code>; the user-facing tool surfaces this prominently as "candidate does not explain the miss".</li>
+<li><strong>No cascade in v1</strong>: a transformation whose only differing plain key references the <code>result_checksum</code> of an upstream transformation is reported as a single-step diff (one differing key); the tool does not auto-recurse.</li>
+</ol>
+<h3 id="pattern-3-replay-mode-verification-of-a-crystallized-artifact">Pattern 3: Replay-mode verification of a crystallized artifact</h3>
+<h4 id="intent_2">Intent</h4>
+<p>A crystallized artifact (Pattern 1's output: a <code>seamless.db</code> plus a companion bufferdir) is meant to deliver cache hits to recipients running a known client script. <strong>Replay mode</strong> is the acceptance test: it runs the recipient's intended script against the artifact under tightened cache discipline, so that any miss, fingertip attempt, or buffer-fetch outside the local bufferdir is a <em>verification failure</em> rather than a silent fallback to recomputation or remote fetch.</p>
+<p>The pattern composes the prior two: it reads Pattern 1's output, and it uses Pattern 2's <code>transformation-diff</code> primitive to explain each unexpected miss.</p>
+<h4 id="replay-mode-is-a-seamless-runtime-mode-not-just-a-seamless-share-tool">Replay mode is a Seamless runtime mode, not just a <code>seamless-share</code> tool</h4>
+<p>Replay mode changes how Seamless's transformation submission and buffer resolution paths behave. The mode flag must flow into the Seamless runtime; <code>seamless-share</code> provides the harness (set up the local bufferdir, configure endpoints, launch the script, collect findings), but the gating decisions happen inside Seamless itself.</p>
+<table>
+<thead>
+<tr>
+<th>Mechanism</th>
+<th>Normal mode</th>
+<th>Replay mode</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Cache lookup (<code>tf_checksum</code> → <code>result_checksum</code>) for non-driver</td>
+<td>hit serves; miss queues for execution</td>
+<td>hit serves; miss <strong>is a finding</strong></td>
+</tr>
+<tr>
+<td>Cache lookup for driver <code>tf_checksum</code></td>
+<td>hit serves</td>
+<td><strong>bypassed by default</strong>; the driver re-runs so its sub-transformations are actually submitted and their cache discipline verified. A knob is available to flip this back on (e.g., a smoke-test mode where only the outermost result needs to verify).</td>
+</tr>
+<tr>
+<td>Buffer materialization (<code>checksum</code> → bytes)</td>
+<td>resolve from local bufferdir → remote hashserver → fingertip, in order</td>
+<td><strong>suspicious by default.</strong> Every materialization must trace to an explicit publisher authorization (see below). Anything else is a finding. Seamless's existing behavior — fail when materialization is required and unsatisfied — is the substrate; replay mode tightens which sources count as "satisfied".</td>
+</tr>
+<tr>
+<td>Input fingertipping (re-execute producer for a missing scratch input)</td>
+<td>enabled per-consumer via <code>allow_input_fingertip</code></td>
+<td><strong>disabled by default</strong>; may be selectively re-enabled by the publisher for specific authorized cases. Any fingertip attempt outside the authorization is a finding.</td>
+</tr>
+<tr>
+<td><code>IrreproducibleTransformation</code>-only hit</td>
+<td>not a clean cache hit; normal mode may attempt re-execution</td>
+<td>a finding: the recipient may not want this in their artifact, even if the publisher consciously shipped it</td>
+</tr>
+</tbody>
+</table>
+<h4 id="drivers-are-the-only-exception-and-they-must-be-identifiable-by-definition">Drivers are the only exception, and they must be identifiable by definition</h4>
+<p>A <strong>driver transformation</strong> is one whose body composes calls to other transformations at execution time — it expands at runtime into a graph of sub-transformations rather than computing a result from its inputs directly. Drivers are necessarily re-executed during replay (their sub-transformations are not knowable until they run); but every sub-transformation the driver emits must be a clean cache hit.</p>
+<p>Replay mode identifies drivers from a <strong>definition-time marker</strong> in Seamless. Never by ad-hoc heuristic or post-hoc inference. The implementer should consult the current Seamless source for the marker's exact form (decorator, flag, or analogous mechanism) and rely on it directly.</p>
+<p>Consequences:</p>
+<ul>
+<li>A non-driver <code>tf_checksum</code> that misses is a finding.</li>
+<li>A driver's own cache lookup is <strong>bypassed by default</strong>: the driver re-runs every time replay is invoked, even when its <code>result_checksum</code> is cached. This is what makes the verification meaningful — if the cached driver result were served directly, its sub-transformations would never be submitted and their cache discipline would not be tested. A knob exists to enable driver caching for cases where the user only wants to verify the outermost result (e.g., a smoke test).</li>
+<li>A driver that produces a sub-transformation which then misses is a finding — the miss is attached to the sub-transformation, with the driver's <code>tf_checksum</code> reported as context.</li>
+<li>Drivers may be nested arbitrarily deep; each level may execute; each level's outputs are verified.</li>
+</ul>
+<p><strong>Driver weight matters.</strong> The "re-run drivers every time" default assumes the typical idiomatic Seamless driver: one that composes sub-transformations and returns a <em>deep checksum</em> (a structured content identity that names data without materializing the bytes), so re-running it is cheap. Not every driver is this shape. A driver that does concatenation, aggregation, or anything else that requires materializing its bulk inputs is legitimately heavier — and when it re-runs locally in replay, it needs those bulk inputs materializable through the publisher's authorization (bufferdir or authorized fingertip). The mismatch — driver executes locally; buffers it consumes live remotely or have been scratched — surfaces as the normal findings (<code>Unauthorized materialization</code>, <code>Unauthorized fingertip</code>, <code>Authorized materialization with unsatisfied dependency</code>) attached to the driver's <code>tf_checksum</code> as context. No new finding kind; the existing surface handles it.</p>
+<p>This is also where the driver-caching knob becomes most useful in practice: for an expensive driver the publisher does not want to pay on every replay, the knob can be flipped on. The trade-off is the one already named — caching the driver means its sub-transformations are not freshly submitted and verified.</p>
+<h4 id="materialization-in-replay-is-a-publisher-authorized-exception">Materialization in replay is a publisher-authorized exception</h4>
+<p>Replay mode inverts a normal-mode assumption: in normal Seamless operation, materialization is routine — buffers are resolved through a chain of fallbacks (local cache, remote hashserver, fingertipping) and the user rarely thinks about which source served any given byte. In replay mode, <strong>every materialization is suspicious</strong> until it is traced to a deliberate publisher authorization. This is the principle that drives the pattern; the specific mechanisms below are how that principle is currently expressed, not an exhaustive list.</p>
+<p>Two things follow:</p>
+<ul>
+<li>Agents implementing or extending replay must anticipate the design tension. Anywhere Seamless would <em>quietly</em> resolve a buffer in normal mode, replay must instead consult an authorization and, if unauthorized, surface a finding. Decisions about how to express authorizations belong to the implementer; the durable obligation is that <em>the publisher's intent must be representable, auditable, and enforced</em>.</li>
+<li>The doc does not enumerate the complete set of valid authorization mechanisms. Currently anticipated mechanisms include the local bufferdir (pre-materialized bytes shipped with the artifact) and a whitelist of checksums that may be fingertipped on demand. Future mechanisms may be added; the test is whether each candidate mechanism is explicit, auditable, and verifiable, not whether it appears on this list.</li>
+</ul>
+<h5 id="currently-anticipated-mechanisms">Currently anticipated mechanisms</h5>
+<table>
+<thead>
+<tr>
+<th>Mechanism</th>
+<th>What it ships</th>
+<th>What the recipient does</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Local (companion) bufferdir</td>
+<td>the bytes themselves</td>
+<td>reads them directly</td>
+</tr>
+<tr>
+<td>Fingertip whitelist</td>
+<td>the producer's <code>tf_checksum</code> mapping plus an authorization that this checksum may be re-derived</td>
+<td>re-executes the producer to obtain the bytes; checksums not on the whitelist remain disabled</td>
+</tr>
+</tbody>
+</table>
+<p>Each entails publisher decisions and trade-offs the implementer must anticipate:</p>
+<ul>
+<li><strong>Space vs compute.</strong> Large buffers that recompute cheaply favor the whitelist; small buffers that recompute expensively favor the bufferdir. Buffers whose producer depends on environment state the recipient lacks may not be fingertippable at all.</li>
+<li><strong>Transitive needs.</strong> A whitelisted fingertip implies the producer must be cached, and the producer's own inputs must themselves be materializable by some authorized means. Replay should surface these transitive needs as findings as the script walks them, not assume them.</li>
+<li><strong>Authorization coherence.</strong> An authorization that cannot be honored (e.g., a whitelist entry whose producer is absent from the cache) is a real failure shape the implementer must consider. How to surface it — refuse at startup, report as a finding when triggered, or both — is a design choice the implementer should make deliberately, not by accident.</li>
+</ul>
+<h5 id="the-publishers-iteration-loop">The publisher's iteration loop</h5>
+<p>The publisher's expected workflow is to <strong>converge on the minimum authorization spec</strong>:</p>
+<ol>
+<li>Start with the most restrictive setup that could plausibly work (empty bufferdir, empty whitelist, or deliberate seeds).</li>
+<li>Run the script under replay mode.</li>
+<li>For each finding: decide whether the publisher's intent is to (a) include the buffer directly, (b) authorize a fingertip, or (c) change the script so the materialization is no longer needed (e.g., <code>.run()</code> → <code>.compute()</code>).</li>
+<li>Update the authorization spec accordingly. Re-run. Converge.</li>
+</ol>
+<p>The converged authorization spec — whatever its shape — <em>is</em> the minimum materialization for the artifact. The crystallized artifact ships the database plus whatever authorized-materialization shape the implementer chose; replay verified that the recipient can satisfy the script's needs from exactly that shape.</p>
+<h4 id="expected-characteristics-of-a-successful-replay">Expected characteristics of a successful replay</h4>
+<p>If the artifact is sound and the publisher's authorization spec is right, a replay run should be:</p>
+<ul>
+<li><strong>Fast.</strong> All heavy compute is already cached. The only work happening is cache lookups, driver re-execution (light for idiomatic deep-checksum-returning drivers; potentially heavier for drivers that materialize their bulk inputs — see the driver section), and any explicitly authorized fingertip re-derivations. A replay that takes orders of magnitude longer than the expected cost is a smell — something heavy is being recomputed or fetched that should not be.</li>
+<li><strong>Local.</strong> Remote delegation (jobserver, daskserver, remote hashserver) should not be necessary. The crystallized artifact is a self-sufficiency claim; the replay is the verification of that claim. If remote delegation kicks in, the claim is in doubt.</li>
+</ul>
+<p>These are observational properties, not gating thresholds — the implementer should not invent a fixed wall-clock budget. But the tool's report should make execution time and remote-traffic footprint <em>visible</em> so a publisher can notice when replay is doing more work than it should and investigate. A clean replay with no findings but unexpectedly high latency or unexpected remote traffic is its own kind of finding.</p>
+<h4 id="failure-modes-findings">Failure modes (findings)</h4>
+<p>A replay run accumulates findings; it does <strong>not</strong> abort on the first one. The publisher iterates against a complete picture, not one finding at a time.</p>
+<table>
+<thead>
+<tr>
+<th>Finding kind</th>
+<th>Triggered by</th>
+<th>What to report</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Unexpected miss</strong></td>
+<td>non-driver <code>tf_checksum</code> lookup misses</td>
+<td>the missing <code>tf_checksum</code>, the script position if available, the driver context (if inside one), and a <code>transformation-diff</code> / <code>why-not</code> result against the crystallized DB to explain</td>
+</tr>
+<tr>
+<td><strong>Unauthorized materialization</strong></td>
+<td>a buffer fetch could not be served from any publisher-authorized source</td>
+<td>the checksum, the script context, the publisher's options for resolving it</td>
+</tr>
+<tr>
+<td><strong>Unauthorized fingertip</strong></td>
+<td>a consumer would have triggered input fingertipping on a checksum that is not authorized for fingertipping</td>
+<td>the consumer's <code>tf_checksum</code>, the missing input, the producer <code>tf_checksum</code> that would have been re-executed</td>
+</tr>
+<tr>
+<td><strong>Authorized materialization with unsatisfied dependency</strong></td>
+<td>an authorized materialization cannot complete because a transitive dependency is itself not authorized or unavailable</td>
+<td>the authorized target, the unsatisfied dependency, the transitive context</td>
+</tr>
+<tr>
+<td><strong>Remote delegation observed</strong></td>
+<td>execution dispatched to a remote backend (jobserver, daskserver, remote hashserver) during replay</td>
+<td>what was dispatched, what backend, the script context. Replay's self-sufficiency claim is under doubt as long as this finding is present.</td>
+</tr>
+<tr>
+<td><strong>Unexpected heavy compute</strong></td>
+<td>a non-driver transformation ran (or a driver ran for an unexpectedly long time)</td>
+<td>the offending <code>tf_checksum</code>, observed cost, and (for non-drivers) why it ran — typically this is dominated by the <code>Unexpected miss</code> finding above, but it is a useful cross-check when latency anomalies appear without a clear miss</td>
+</tr>
+<tr>
+<td><strong>Irreproducible-only hit</strong></td>
+<td>the only cache entry for the <code>tf_checksum</code> is in <code>IrreproducibleTransformation</code></td>
+<td>the row count, the <code>result_checksum</code> set, and a recommendation: keep with publisher acknowledgment, or remove from the artifact</td>
+</tr>
+</tbody>
+</table>
+<p>Each finding is a structured record; the report can be consumed by a human or by another agent that drives the iteration.</p>
+<h4 id="read-only-on-the-crystallized-artifact">Read-only on the crystallized artifact</h4>
+<p>Replay must not write to the crystallized <code>seamless.db</code> or to the companion bufferdir. Findings live in a separate report file. The artifact under verification must be byte-identical before and after the run.</p>
+<p>The local bufferdir is <em>writable</em> by the publisher between runs (that is how iteration converges), but the replay run itself does not add to it.</p>
+<h4 id="composition">Composition</h4>
+<ul>
+<li><strong>Reads Pattern 1's output</strong>: the crystallized <code>seamless.db</code> + companion bufferdir directory.</li>
+<li><strong>Uses Pattern 2's <code>transformation-diff</code></strong>: each <code>unexpected miss</code> finding includes the diff against the closest cached candidate so the publisher can act.</li>
+<li><strong>Builds on operational primitives</strong>: the same database-endpoint override that Pattern 1's working copy uses is reused here to point Seamless at the crystallized DB and the local bufferdir.</li>
+</ul>
+<h4 id="implications-for-the-implementer-to-anticipate">Implications for the implementer to anticipate</h4>
+<p>A handful of consequences fall out of this design that may not be obvious on first read. Surface them in the implementation rather than waiting for them to bite.</p>
+<ul>
+<li>
+<p><strong>Replay and crystallization form a verification loop, not a one-shot pipeline.</strong> Crystallization (Pattern 1) walks a closure from named roots — a <em>static</em> operation over the cache graph. Replay observes the transformations the script actually submits — a <em>dynamic</em> operation. They catch different gaps. A driver that produces sub-transformations dynamically may emit <code>tf_checksum</code>s the static walk could not have predicted; replay surfaces those as misses. The publisher's expected flow is crystallize → replay → if findings, expand the root set or rework the driver → re-crystallize → replay again, until convergence. Both tools should be designed assuming the other will be run, not in isolation.</p>
+</li>
+<li>
+<p><strong>Driver non-determinism becomes visible in replay.</strong> A driver whose body depends on RNG, wall-clock time, environment variables, or other hidden state will produce <em>different</em> sub-transformations across replays — and across publisher-vs-recipient. Replay surfaces this as misses on sub-transformations whose <code>tf_checksum</code>s vary run-to-run. The deeper cause (the driver is non-deterministic) is invisible at the cache-key level: an <code>Unexpected miss</code> finding on a sub-transformation whose closest candidate differs only on environment-derived plain keys is most likely a driver-determinism problem masquerading as a cache problem. The <code>transformation-diff</code> diagnostic does not name this directly; the interpretive work falls to the human or agent reading the report. The tool's report should include enough context (the driver's <code>tf_checksum</code>, the run's environment fingerprint) that the diagnosis is reachable.</p>
+</li>
+<li>
+<p><strong>Replay must run with an isolated Seamless config.</strong> The publisher's normal <code>seamless-config</code> typically resolves to endpoints (cluster, jobserver, remote hashserver) that exist precisely so normal work <em>can</em> delegate remotely. Replay must not inherit those endpoints — otherwise remote delegation silently succeeds and the self-sufficiency claim is undermined. The harness should construct a dedicated config for the replay process, not borrow the publisher's. Treat config-inheritance as a real bug surface, not a developer convenience.</p>
+</li>
+<li>
+<p><strong>Report ordering must be deterministic; the report should be machine-readable.</strong> Sub-transformations within drivers often run in parallel; cache resolution returns in resolution order, which varies run-to-run. The findings report must sort entries by something stable (e.g., script line position, <code>tf_checksum</code>, finding kind) so two replays of the same setup produce byte-identical reports. Diff-based CI and regression tooling cannot otherwise tell "real change" from "concurrency noise". Relatedly, replay is a natural CI target — a publisher or a paper-archive operator wants periodic re-verification without human inspection. The report should be structured (JSON or similar), with a stable schema and meaningful exit codes that distinguish <em>clean</em> / <em>findings-present</em> / <em>tool-error</em>.</p>
+</li>
+<li>
+<p><strong>Preserved <code>IrreproducibleTransformation</code> rows surface in replay too.</strong> Pattern 1 preserves these rows by default; Pattern 3 surfaces them as <code>Irreproducible-only hit</code> findings whenever the script touches them. This is the design working as intended: it forces the publisher to make an explicit decision — keep, with acknowledgment, or remove from the artifact — rather than letting inertia ship known-irreproducible identities. An implementer should expect that a "clean" replay on a real-world artifact will often include irreproducible findings the publisher must consciously sign off on.</p>
+</li>
+</ul>
+<h4 id="must-hold">Must hold</h4>
+<ul>
+<li>After a replay run: the crystallized <code>seamless.db</code> and the publisher's authorized-materialization shape are byte-identical to their pre-run state.</li>
+<li>Findings are accumulated, not aborted on; a clean replay produces zero findings and a normal-shape script output.</li>
+<li>Drivers identified by the Seamless definition-time marker re-run by default (their own cache lookup is bypassed); non-drivers do not.</li>
+<li>Every byte materialized during the run traces to a specific publisher authorization. Any materialization that does not produces a finding rather than a silent success.</li>
+<li>Each <code>unexpected miss</code> finding carries a <code>transformation-diff</code>-shaped diagnostic body produced by Pattern 2's primitive.</li>
+</ul>
+<h4 id="a-note-on-enforcement">A note on enforcement</h4>
+<p>The doc deliberately does <em>not</em> enumerate a list of conditions to refuse at startup. Seamless already chokes on its own when materialization is required and cannot be satisfied — that failure path is the substrate replay rides on. Adding tool-level refusals on top of it tends to either duplicate what Seamless does or hard-restrict legitimate variations of the workflow.</p>
+<p>Two kinds of conditions remain useful for the implementer to anticipate, but the <em>shape</em> (startup refusal vs runtime finding vs both) is a deliberate implementer choice:</p>
+<ul>
+<li><strong>Authorization coherence</strong>: an authorization that names a checksum whose producer is not in the cache; a knob configuration that contradicts itself; etc.</li>
+<li><strong>Visible-but-not-required behavior</strong>: remote delegation, unexpected heavy compute, latency anomalies. Surface these so a publisher can notice; refusing at startup is usually too aggressive.</li>
+</ul>
+<p>The one property of the tool itself worth committing: it has no code path that writes to the artifact under test. That is a property of the tool's implementation, not a runtime check.</p>
+<h4 id="must-test_2">Must test</h4>
+<p>In addition to the cross-pattern checklist:</p>
+<ol>
+<li><strong>Clean replay</strong>: a crystallized artifact whose companion bufferdir contains exactly the script's materialization needs produces zero findings; script output equals the equivalent normal-mode run.</li>
+<li><strong>Unexpected miss is reported with diff</strong>: introduce a deliberate code change in the replay client script so a leaf <code>tf_checksum</code> misses; finding includes the missing <code>tf_checksum</code> and a <code>transformation-diff</code>-shaped diff against the closest candidate.</li>
+<li><strong>Driver may miss, sub-transformation may not</strong>: a driver whose <code>tf_checksum</code> is uncached executes; its sub-transformations all hit; replay reports no findings. A driver whose sub-transformation misses produces a finding attributed to the sub-transformation, with driver context.</li>
+<li><strong>Nested drivers</strong>: drivers calling drivers to a small depth (e.g., 3); each level executes; the innermost leaves all hit; replay reports no findings.</li>
+<li><strong>Unauthorized fingertip is surfaced</strong>: a consumer that would have triggered fingertipping in normal mode, but whose target is not authorized for fingertipping in replay, produces a finding rather than triggering re-execution. The specific authorization shape (a whitelist, an annotation, ...) is an implementer choice; the test asserts the <em>behavior</em>: unauthorized → finding, never silent re-execution.</li>
+<li><strong>Authorized fingertip succeeds when coherent</strong>: when the publisher has authorized a fingertip and the supporting cache state is coherent (producer cached, producer's inputs materializable through some authorized means), the run completes the fingertip transparently and produces no finding for it.</li>
+<li><strong>Authorized materialization with unsatisfied dependency is surfaced</strong>: when an authorization is in place but cannot be honored because a transitive dependency is itself not authorized or unavailable, replay produces a finding naming the unsatisfied dependency, rather than recursively cascading into further re-execution.</li>
+<li><strong>Unauthorized materialization is surfaced</strong>: a script that needs a byte for which no authorization applies produces a finding naming the missing checksum and the script context, rather than reaching for a remote source or silently failing.</li>
+<li><strong>Iterative convergence</strong>: starting from the most-restrictive setup (no authorizations), the publisher's iteration loop (resolve findings → re-run) terminates with a minimal sufficient authorization spec — whatever shape that spec takes in the chosen implementation.</li>
+<li><strong>Irreproducible-only hit</strong>: a <code>tf_checksum</code> reachable only via <code>IrreproducibleTransformation</code> produces an <code>Irreproducible-only hit</code> finding, with row count and <code>result_checksum</code> set.</li>
+<li><strong>Read-only assertion</strong>: before/after the replay, the <code>seamless.db</code> and the artifact's authorized-materialization shape are byte-identical to their pre-run state.</li>
+<li><strong>Driver cache bypass by default</strong>: a driver <code>tf_checksum</code> whose <code>result_checksum</code> is in the cache nevertheless re-runs under default replay; its sub-transformations are submitted and verified.</li>
+<li><strong>Driver caching knob</strong>: flipping the driver-caching knob to "enabled" causes a cached driver to short-circuit on its own cache entry without submitting sub-transformations; tests assert the knob's effect is visible in the report (e.g., a count of drivers actually executed vs short-circuited).</li>
+<li><strong>Remote delegation observed</strong>: if any remote backend dispatch happens during replay (jobserver, daskserver, remote hashserver fetch), a <code>Remote delegation observed</code> finding is produced naming the backend and the dispatched work. Tests do not assert <em>whether</em> the run completes — they assert the <em>visibility</em> of the remote behavior in the report.</li>
+<li><strong>Execution-time visibility</strong>: the report includes wall-clock and per-transformation timing data sufficient for a publisher to notice latency anomalies. The test does not assert a fixed budget; it asserts the data is present.</li>
+<li><strong>Multiple findings in one run</strong>: a script with several independent issues produces findings for all of them in one run; the tool does not abort at the first.</li>
+</ol>
+<h2 id="references">References</h2>
+<p>Agentic docs (in this monorepo):</p>
+<ul>
+<li><a href="seamless/docs/agent/contracts/identity-and-caching.md">identity-and-caching.md</a> — <code>tf_checksum</code>, plain vs dunder keys, cache identity.</li>
+<li><a href="seamless/docs/agent/contracts/cache-storage-and-limits.md">cache-storage-and-limits.md</a> — scratch, input fingertipping, buffer cache.</li>
+<li><a href="seamless/docs/agent/contracts/scratch-witness-audit.md">scratch-witness-audit.md</a> — scratch policy, witness outputs, audit-by-recomputation.</li>
+<li><a href="seamless/docs/agent/contracts/execution-records.md">execution-records.md</a> — <code>MetaData</code> table, optimistic null, <code>IrreproducibleTransformation</code>, database protocol 2.1.</li>
+<li><a href="seamless/docs/agent/contracts/content-addressed-files-and-dirs.md">content-addressed-files-and-dirs.md</a> — file/dir content addressing.</li>
+<li><a href="seamless/docs/agent/contracts/modules-and-closures.md">modules-and-closures.md</a> — module identities and their role in the cache.</li>
+<li><a href="seamless/docs/agent/contracts/compression.md">compression.md</a> — compression is identity-transparent.</li>
+</ul>
+<p>Seamless-adoption skill references (under <code>~/.claude/skills/seamless-adoption/references/</code>):</p>
+<ul>
+<li><code>env-null-hypothesis.md</code> — the optimistic null, falsification through recomputation, witness comparison.</li>
+<li><code>deep-checksums.md</code> — naming-without-materializing, structured content identity.</li>
+<li><code>seamless-primitives.md</code> — Seamless mental model for porting and refactoring.</li>
+</ul>
+              
+            </div>
+          </div><footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+    
+    
+  </span>
+</div>
+    <script src="../../../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "../../..";</script>
+    <script src="../../../js/theme_extra.js"></script>
+    <script src="../../../js/theme.js"></script>
+      <script src="../../../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>

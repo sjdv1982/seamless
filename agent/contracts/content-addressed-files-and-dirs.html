@@ -55,6 +55,28 @@
               <ul class="current">
                   <li class="toctree-l1"><a class="reference internal" href="identity-and-caching.html">Identity and Caching</a>
                   </li>
+                  <li class="toctree-l1"><a class="reference internal" href="celltypes-and-conversion.html">Celltypes, Null, and Conversion</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="hashtype.html">HashType</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="deep-celltypes.html">Deep Celltypes</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="expressions.html">Expressions</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="cells.html">Cells</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="pins.html">Pins</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="workflow-context.html">Workflow Context</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="node-state-lifecycle.html">Node State Lifecycle</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="attachments.html">Attachments</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="mounts.html">File Mounts</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="cancellation.html">Cancellation</a>
+                  </li>
                   <li class="toctree-l1"><a class="reference internal" href="direct-delayed-and-transformation.html">direct/delayed/Transformation</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="modules-and-closures.html">Modules and Closures</a>
@@ -88,6 +110,8 @@
                   <li class="toctree-l1"><a class="reference internal" href="compression.html">Compression</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="compiled-transformers.html">Compiled Transformers</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="compiled-pins.html">Compiled Pins</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="seamless-signature-schema.html">seamless-signature Schema</a>
                   </li>
@@ -150,9 +174,10 @@
 </ul>
 <h2 id="directories-deep-identity">Directories (deep identity)</h2>
 <ul>
-<li>A directory can be represented by a <em>structured</em> identity: a mapping from relative paths to file checksums.</li>
-<li>This acts like a “directory index” that commits to the directory’s contents.</li>
-<li>Treat it as a deep checksum / Merkle-ish identity: you can refer to the whole directory without materializing every file immediately (depending on how execution/materialization is implemented).</li>
+<li>A directory is represented by a <strong>deep checksum</strong>: the checksum of an <strong>index</strong>, which is a <strong>flat</strong> JSON object mapping string keys to 64-character lowercase hex checksums, serialized and parsed by the <code>plain</code> rules. Nesting is not part of the contract, and the keys are opaque strings that routinely contain <code>/</code>.</li>
+<li>The index commits to the directory's contents by reference: a deep checksum can be held, compared and passed around <strong>without any child buffer being present</strong>, and holding it materializes nothing.</li>
+<li>The celltypes that carry this identity are <code>deepfolder</code> (the index; the contents stay by reference) and <code>folder</code> (the contents; the consumer wants the bytes), alongside <code>deepcell</code> for a keyed collection of Seamless values. A <code>folder</code> index buffer and a <code>deepfolder</code> index buffer of the same directory are <strong>byte-identical</strong>, so the conversion between them is free in both directions.</li>
+<li>The exact buffer format, the member typing of each celltype, the legal conversions, the one-string-item path rule, and the fact that <strong>none of it is enforced by the code yet</strong>, are all in <code>contracts/deep-celltypes.md</code>. Do not re-derive them here.</li>
 </ul>
 <h2 id="practical-limitations-to-keep-in-mind">Practical limitations to keep in mind</h2>
 <ul>

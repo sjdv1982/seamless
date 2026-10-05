@@ -55,6 +55,28 @@
               <ul class="current">
                   <li class="toctree-l1"><a class="reference internal" href="identity-and-caching.html">Identity and Caching</a>
                   </li>
+                  <li class="toctree-l1"><a class="reference internal" href="celltypes-and-conversion.html">Celltypes, Null, and Conversion</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="hashtype.html">HashType</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="deep-celltypes.html">Deep Celltypes</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="expressions.html">Expressions</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="cells.html">Cells</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="pins.html">Pins</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="workflow-context.html">Workflow Context</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="node-state-lifecycle.html">Node State Lifecycle</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="attachments.html">Attachments</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="mounts.html">File Mounts</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="cancellation.html">Cancellation</a>
+                  </li>
                   <li class="toctree-l1"><a class="reference internal" href="direct-delayed-and-transformation.html">direct/delayed/Transformation</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="modules-and-closures.html">Modules and Closures</a>
@@ -76,6 +98,8 @@
                   <li class="toctree-l1"><a class="reference internal" href="compression.html">Compression</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="compiled-transformers.html">Compiled Transformers</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="compiled-pins.html">Compiled Pins</a>
                   </li>
                   <li class="toctree-l1 current"><a class="reference internal current" href="#">seamless-signature Schema</a>
     <ul class="current">
@@ -186,6 +210,9 @@ outputs:
 <p><code>inputs</code> and <code>outputs</code> are lists of parameter entries. Both keys are required
 (use an empty list if a side is absent). The compiled entry-point name is
 always <code>transform</code>.</p>
+<p><strong><code>inputs</code> and <code>outputs</code> are the only accepted top-level keys.</strong> Any other one
+raises <code>TypeError("Unknown signature keys: …")</code>; in particular there is no
+<code>function_name</code> key.</p>
 <hr />
 <h2 id="parameter-dtype">Parameter dtype</h2>
 <h3 id="scalar-dtypes">Scalar dtypes</h3>
@@ -280,10 +307,10 @@ always <code>transform</code>.</p>
 </tr>
 <tr>
 <td><code>char</code></td>
-<td><code>char</code></td>
+<td><code>unsigned char</code> ‡</td>
 <td><code>np.bytes_</code></td>
 <td><code>character(kind=c_char)</code></td>
-<td><code>c_char</code> (libc)</td>
+<td><code>u8</code> ‡</td>
 </tr>
 <tr>
 <td><code>complex64</code></td>
@@ -303,6 +330,11 @@ always <code>transform</code>.</p>
 </table>
 <p>† Fortran's <code>iso_c_binding</code> does not define unsigned integer kinds. Use the
 same bit-width signed kind and treat the bits as unsigned in your implementation.</p>
+<p>‡ The schema dtype <code>char</code> is <strong>not</strong> the C type <code>char</code>. Plain C <code>char</code> has
+implementation-defined signedness (signed on x86-64, unsigned on AArch64 Linux)
+while the transformation checksum would be identical, so the generated header
+always declares <code>unsigned char</code> (Rust <code>u8</code>) — for scalars, array element types
+and struct fields alike.</p>
 <h3 id="struct-dtypes">Struct dtypes</h3>
 <p>A struct dtype is a YAML mapping with a <code>fields</code> key:</p>
 <pre><code class="language-yaml">dtype:
@@ -421,8 +453,7 @@ argument order of the generated <code>transform()</code> declaration:</p>
 <p>Return value: <code>int</code> (must be 0 on success).</p>
 <p>A concrete example with one input wildcard (<code>N</code>), one output-only wildcard
 (<code>K</code>), one scalar input, one array input, and one array output:</p>
-<pre><code class="language-yaml">function_name: filter
-inputs:
+<pre><code class="language-yaml">inputs:
   - name: threshold
     dtype: float32
   - name: data
@@ -434,8 +465,7 @@ outputs:
     shape: [K]
 </code></pre>
 <p>Generated header:</p>
-<pre><code class="language-c">/* Auto-generated from filter.yaml; do not edit. */
-#include &lt;stdint.h&gt;
+<pre><code class="language-c">#include &lt;stdint.h&gt;
 #include &lt;stdbool.h&gt;
 
 int transform(
@@ -543,7 +573,7 @@ and argument-order rules above provide all the information needed.</p>
             </div>
           </div><footer>
     <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
-        <a href="compiled-transformers.html" class="btn btn-neutral float-left" title="Compiled Transformers"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="compiled-pins.html" class="btn btn-neutral float-left" title="Compiled Pins"><span class="icon icon-circle-arrow-left"></span> Previous</a>
         <a href="../api/python/seamless.html" class="btn btn-neutral float-right" title="seamless">Next <span class="icon icon-circle-arrow-right"></span></a>
     </div>
 
@@ -567,7 +597,7 @@ and argument-order rules above provide all the information needed.</p>
   <span class="rst-current-version" data-toggle="rst-current-version">
     
     
-      <span><a href="compiled-transformers.html" style="color: #fcfcfc">&laquo; Previous</a></span>
+      <span><a href="compiled-pins.html" style="color: #fcfcfc">&laquo; Previous</a></span>
     
     
       <span><a href="../api/python/seamless.html" style="color: #fcfcfc">Next &raquo;</a></span>

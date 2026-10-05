@@ -55,6 +55,28 @@
               <ul class="current">
                   <li class="toctree-l1"><a class="reference internal" href="identity-and-caching.html">Identity and Caching</a>
                   </li>
+                  <li class="toctree-l1"><a class="reference internal" href="celltypes-and-conversion.html">Celltypes, Null, and Conversion</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="hashtype.html">HashType</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="deep-celltypes.html">Deep Celltypes</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="expressions.html">Expressions</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="cells.html">Cells</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="pins.html">Pins</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="workflow-context.html">Workflow Context</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="node-state-lifecycle.html">Node State Lifecycle</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="attachments.html">Attachments</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="mounts.html">File Mounts</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="cancellation.html">Cancellation</a>
+                  </li>
                   <li class="toctree-l1"><a class="reference internal" href="direct-delayed-and-transformation.html">direct/delayed/Transformation</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="modules-and-closures.html">Modules and Closures</a>
@@ -110,6 +132,8 @@
     <li class="toctree-l2"><a class="reference internal" href="#reference-map-load-only-as-needed">Reference Map (load only as needed)</a>
     </li>
     </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="compiled-pins.html">Compiled Pins</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="seamless-signature-schema.html">seamless-signature Schema</a>
                   </li>
@@ -210,7 +234,7 @@
 <li><strong>Fortran</strong>: add <code>bind(C, name="transform")</code> to the function declaration and use <code>iso_c_binding</code> types</li>
 <li><strong>Rust</strong>: declare the function as <code>#[no_mangle] pub unsafe extern "C" fn transform(...)</code></li>
 </ul>
-<p><code>seamless-signature</code> currently only generates C headers. For non-C languages, derive the function declaration from the schema or from the generated C header — in practice, a human may pase the schema YAML or <code>tf.header</code> and ask you for the equivalent declaration in their language.</p>
+<p><code>seamless-signature</code> currently only generates C headers. For non-C languages, derive the function declaration from the schema or from the generated C header — in practice, a human may paste the schema YAML or <code>tf.header</code> and ask you for the equivalent declaration in their language.</p>
 <p>For the full schema YAML format, dtype-to-language type mappings, and worked examples of deriving Fortran and Rust signatures, load <code>contracts/seamless-signature-schema.md</code>.</p>
 <h2 id="the-schema">The schema</h2>
 <p>The schema is a YAML string in the seamless-signature format. <code>seamless-signature</code> is a separate package that parses the schema and generates the C header — it is the single source of truth from which the C header, the Python callable signature, and all type marshalling are derived. The schema YAML is the user-authored artifact; the C header (<code>tf.header</code>) is a derived artifact that is never hand-edited.</p>
@@ -256,12 +280,12 @@ outputs:
 </ul>
 <h2 id="input-type-rules">Input type rules</h2>
 <ul>
-<li>Plain Python scalars (<code>int</code>, <code>float</code>, <code>bool</code>) are accepted for scalar parameters.</li>
-<li>NumPy scalars are accepted if they have the correct dtype and native byte order.</li>
-<li>NumPy arrays must be native-endian, C-contiguous, and aligned.</li>
-<li>Non-native-endian inputs are rejected with an explicit <code>TypeError</code> (not silently reinterpreted).</li>
+<li><strong>Numeric scalar parameters</strong> admit values by <strong>kind and range, not by exact dtype</strong>: a JSON scalar (Python <code>int</code>, <code>float</code>, <code>bool</code>) or a zero-dimensional <code>binary</code> scalar of the matching kind, within the native range of the schema type. A zero-dimensional scalar's dtype is not compared with the schema dtype and its byte order plays no part.</li>
+<li><strong>Arrays, structured values and character data</strong> keep <strong>exact dtype</strong>: an array is passed as a pointer to its buffer, so its dtype is its memory layout. NumPy arrays must be native-endian, C-contiguous, and aligned.</li>
+<li>Non-native-endian array inputs are rejected with an explicit <code>TypeError</code> (not silently reinterpreted).</li>
 <li><strong>Struct parameters</strong> (scalar or array) must be supplied as NumPy structured arrays or scalars with a compatible dtype.</li>
 </ul>
+<p>Which pin celltypes may be declared for a given schema parameter, which values each declaration admits (including the exact scalar admission and range rules, character data and nulls), and where validation runs are the compiled-pin contract: <code>contracts/compiled-pins.md</code>. The general pin layer — how pins are reached, which pins exist, pin celltypes, optional pins and the null rules — is documented in <code>contracts/pins.md</code>; a compiled pin's celltype is governed by the schema, so that page's celltype and null rules do not carry over unchanged.</p>
 <h2 id="struct-type-rules">Struct type rules</h2>
 <p>A schema parameter with a <code>StructDType</code> maps to a C struct in the generated header (e.g. <code>ItemStruct</code>). The struct name is the parameter name in CamelCase with <code>Struct</code> appended.</p>
 <p><strong>NumPy side</strong>: the runtime constructs an aligned NumPy structured dtype from the schema fields using <code>np.dtype([...], align=True)</code>. Input values must be supplied as:</p>
@@ -322,13 +346,15 @@ define_compiled_language(
 <ul>
 <li><code>contracts/seamless-signature-schema.md</code> — full schema YAML format, dtype tables, wildcard rules, shape constraints, and language-native derivation examples</li>
 <li><code>contracts/identity-and-caching.md</code> — load-bearing vs orthogonal key split, caching model, referential transparency</li>
+<li><code>contracts/pins.md</code> — the pin layer: reaching pins, the pin set, pin celltypes, optional pins and the null rules, and conversion at the pin boundary</li>
+<li><code>contracts/compiled-pins.md</code> — the compiled-pin contract: declarable pin celltypes per schema parameter, schema-bound <code>mixed</code>, scalar and character admission rules, validation stages and errors</li>
 </ul>
               
             </div>
           </div><footer>
     <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
         <a href="compression.html" class="btn btn-neutral float-left" title="Compression"><span class="icon icon-circle-arrow-left"></span> Previous</a>
-        <a href="seamless-signature-schema.html" class="btn btn-neutral float-right" title="seamless-signature Schema">Next <span class="icon icon-circle-arrow-right"></span></a>
+        <a href="compiled-pins.html" class="btn btn-neutral float-right" title="Compiled Pins">Next <span class="icon icon-circle-arrow-right"></span></a>
     </div>
 
   <hr/>
@@ -354,7 +380,7 @@ define_compiled_language(
       <span><a href="compression.html" style="color: #fcfcfc">&laquo; Previous</a></span>
     
     
-      <span><a href="seamless-signature-schema.html" style="color: #fcfcfc">Next &raquo;</a></span>
+      <span><a href="compiled-pins.html" style="color: #fcfcfc">Next &raquo;</a></span>
     
   </span>
 </div>

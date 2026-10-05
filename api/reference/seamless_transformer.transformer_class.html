@@ -111,19 +111,31 @@
     <ul class="current">
     <li class="toctree-l3"><a class="reference internal" href="#argswrapper">ArgsWrapper</a>
     </li>
+    <li class="toctree-l3"><a class="reference internal" href="#bashtransformer">BashTransformer</a>
+    </li>
     <li class="toctree-l3"><a class="reference internal" href="#celltypeswrapper">CelltypesWrapper</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="#directtransformer">DirectTransformer</a>
+    <li class="toctree-l3"><a class="reference internal" href="#directbashtransformer">DirectBashTransformer</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#directcallmixin">DirectCallMixin</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#directpythontransformer">DirectPythonTransformer</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#globalswrapper">GlobalsWrapper</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#moduleswrapper">ModulesWrapper</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#pythonbashbasetransformer">PythonBashBaseTransformer</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#pythonbashbasetransformerlanguage">PythonBashBaseTransformer.language</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#pythonmixin">PythonMixin</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#pythonmixincode">PythonMixin.code</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#pythonmixinlanguage">PythonMixin.language</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#pythontransformer">PythonTransformer</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#transformer">Transformer</a>
     </li>
@@ -133,13 +145,25 @@
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#transformercoreargs">TransformerCore.args</a>
     </li>
+    <li class="toctree-l3"><a class="reference internal" href="#transformercoreblock_reason">TransformerCore.block_reason</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#transformercorebuild">TransformerCore.build</a>
+    </li>
     <li class="toctree-l3"><a class="reference internal" href="#transformercorecelltypes">TransformerCore.celltypes</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#transformercoreclear_exception">TransformerCore.clear_exception</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#transformercorecomputation">TransformerCore.computation</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#transformercorecompute">TransformerCore.compute</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#transformercoredirect_print">TransformerCore.direct_print</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#transformercoredriver">TransformerCore.driver</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#transformercoreenvironment">TransformerCore.environment</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#transformercoreexception">TransformerCore.exception</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#transformercoreglobals">TransformerCore.globals</a>
     </li>
@@ -151,7 +175,33 @@
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#transformercoremodules">TransformerCore.modules</a>
     </li>
+    <li class="toctree-l3"><a class="reference internal" href="#transformercoreoptional_pins">TransformerCore.optional_pins</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#transformercorepins">TransformerCore.pins</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#transformercoreprune">TransformerCore.prune</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#transformercoreresult">TransformerCore.result</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#transformercorerun">TransformerCore.run</a>
+    </li>
     <li class="toctree-l3"><a class="reference internal" href="#transformercorescratch">TransformerCore.scratch</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#transformercorestate">TransformerCore.state</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#transformercoretask">TransformerCore.task</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#transformercoretransformation">TransformerCore.transformation</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#_class_attribute">_class_attribute</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#_clone_transformer_builder">_clone_transformer_builder</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#_failed_transformation">_failed_transformation</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#_freeze_modules">_freeze_modules</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#_no_such_attribute">_no_such_attribute</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#delayed">delayed</a>
     </li>
@@ -204,19 +254,37 @@
 <li>kind: <code>class</code></li>
 <li>signature: <code>ArgsWrapper</code></li>
 </ul>
-<p>Wrapper around an imperative transformer's arguments.</p>
+<p>Fresh whole-pin handles over Transformer-owned input references.</p>
+<h2 id="bashtransformer"><code>BashTransformer</code></h2>
+<ul>
+<li>kind: <code>class</code></li>
+<li>signature: <code>BashTransformer</code></li>
+</ul>
+<p>Delayed Bash transformer.</p>
 <h2 id="celltypeswrapper"><code>CelltypesWrapper</code></h2>
 <ul>
 <li>kind: <code>class</code></li>
 <li>signature: <code>CelltypesWrapper</code></li>
 </ul>
 <p>Wrapper around an imperative transformer's celltypes.</p>
-<h2 id="directtransformer"><code>DirectTransformer</code></h2>
+<h2 id="directbashtransformer"><code>DirectBashTransformer</code></h2>
 <ul>
 <li>kind: <code>class</code></li>
-<li>signature: <code>DirectTransformer</code></li>
+<li>signature: <code>DirectBashTransformer</code></li>
 </ul>
-<p>Transformer that computes immediately.</p>
+<p>Direct Bash transformer.</p>
+<h2 id="directcallmixin"><code>DirectCallMixin</code></h2>
+<ul>
+<li>kind: <code>class</code></li>
+<li>signature: <code>DirectCallMixin</code></li>
+</ul>
+<p>Call-mode mixin that computes a built Transformation immediately.</p>
+<h2 id="directpythontransformer"><code>DirectPythonTransformer</code></h2>
+<ul>
+<li>kind: <code>class</code></li>
+<li>signature: <code>DirectPythonTransformer</code></li>
+</ul>
+<p>Direct Python transformer.</p>
 <h2 id="globalswrapper"><code>GlobalsWrapper</code></h2>
 <ul>
 <li>kind: <code>class</code></li>
@@ -229,6 +297,18 @@
 <li>signature: <code>ModulesWrapper</code></li>
 </ul>
 <p>Wrapper around an imperative transformer's imported modules.</p>
+<h2 id="pythonbashbasetransformer"><code>PythonBashBaseTransformer</code></h2>
+<ul>
+<li>kind: <code>class</code></li>
+<li>signature: <code>PythonBashBaseTransformer</code></li>
+</ul>
+<p>Shared implementation for ordinary Python and Bash transformers.</p>
+<h2 id="pythonbashbasetransformerlanguage"><code>PythonBashBaseTransformer.language</code></h2>
+<ul>
+<li>kind: <code>method</code></li>
+<li>signature: <code>language(self, _value)</code></li>
+</ul>
+<p><em>No docstring.</em></p>
 <h2 id="pythonmixin"><code>PythonMixin</code></h2>
 <ul>
 <li>kind: <code>class</code></li>
@@ -247,12 +327,18 @@
 <li>signature: <code>language(self, lang)</code></li>
 </ul>
 <p><em>No docstring.</em></p>
+<h2 id="pythontransformer"><code>PythonTransformer</code></h2>
+<ul>
+<li>kind: <code>class</code></li>
+<li>signature: <code>PythonTransformer</code></li>
+</ul>
+<p>Delayed Python transformer.</p>
 <h2 id="transformer"><code>Transformer</code></h2>
 <ul>
 <li>kind: <code>class</code></li>
 <li>signature: <code>Transformer</code></li>
 </ul>
-<p>Ordinary Python/bash transformer.</p>
+<p>Factory for Python, Bash, and compiled Transformer builders.</p>
 <h2 id="transformercore"><code>TransformerCore</code></h2>
 <ul>
 <li>kind: <code>class</code></li>
@@ -271,12 +357,46 @@
 <li>signature: <code>args(self)</code></li>
 </ul>
 <p>Pre-bound transformer arguments.</p>
+<h2 id="transformercoreblock_reason"><code>TransformerCore.block_reason</code></h2>
+<ul>
+<li>kind: <code>method</code></li>
+<li>signature: <code>block_reason(self)</code></li>
+</ul>
+<p>Return sorted input pins responsible for the current pending state.</p>
+<p>Applies to <code>unwired</code>, <code>blocked</code>, and <code>waiting</code>; includes <code>code</code>
+when applicable. Mixed inputs use precedence <code>unwired</code>, then
+<code>blocked</code>, then <code>waiting</code>; only pins in that category are listed.
+Returns None for other states.</p>
+<h2 id="transformercorebuild"><code>TransformerCore.build</code></h2>
+<ul>
+<li>kind: <code>method</code></li>
+<li>signature: <code>build(self, *args, **kwargs)</code></li>
+</ul>
+<p>Build a delayed Transformation without executing it.</p>
 <h2 id="transformercorecelltypes"><code>TransformerCore.celltypes</code></h2>
 <ul>
 <li>kind: <code>method</code></li>
 <li>signature: <code>celltypes(self)</code></li>
 </ul>
 <p>The celltypes.</p>
+<h2 id="transformercoreclear_exception"><code>TransformerCore.clear_exception</code></h2>
+<ul>
+<li>kind: <code>method</code></li>
+<li>signature: <code>clear_exception(self)</code></li>
+</ul>
+<p><em>No docstring.</em></p>
+<h2 id="transformercorecomputation"><code>TransformerCore.computation</code></h2>
+<ul>
+<li>kind: <code>method</code></li>
+<li>signature: <code>computation(self, timeout)</code></li>
+</ul>
+<p><em>No docstring.</em></p>
+<h2 id="transformercorecompute"><code>TransformerCore.compute</code></h2>
+<ul>
+<li>kind: <code>method</code></li>
+<li>signature: <code>compute(self, timeout)</code></li>
+</ul>
+<p><em>No docstring.</em></p>
 <h2 id="transformercoredirect_print"><code>TransformerCore.direct_print</code></h2>
 <ul>
 <li>kind: <code>method</code></li>
@@ -295,6 +415,12 @@
 <li>signature: <code>environment(self)</code></li>
 </ul>
 <p>Execution environment for this transformer.</p>
+<h2 id="transformercoreexception"><code>TransformerCore.exception</code></h2>
+<ul>
+<li>kind: <code>method</code></li>
+<li>signature: <code>exception(self)</code></li>
+</ul>
+<p>Return the exception associated with a failed workflow transformer.</p>
 <h2 id="transformercoreglobals"><code>TransformerCore.globals</code></h2>
 <ul>
 <li>kind: <code>method</code></li>
@@ -325,22 +451,106 @@
 <li>signature: <code>modules(self)</code></li>
 </ul>
 <p>Imported Python modules.</p>
+<h2 id="transformercoreoptional_pins"><code>TransformerCore.optional_pins</code></h2>
+<ul>
+<li>kind: <code>method</code></li>
+<li>signature: <code>optional_pins(self)</code></li>
+</ul>
+<p>Read-only Python signature defaults, with per-name enable/disable.</p>
+<h2 id="transformercorepins"><code>TransformerCore.pins</code></h2>
+<ul>
+<li>kind: <code>method</code></li>
+<li>signature: <code>pins(self)</code></li>
+</ul>
+<p>Pre-bound transformer inputs.</p>
+<h2 id="transformercoreprune"><code>TransformerCore.prune</code></h2>
+<ul>
+<li>kind: <code>method</code></li>
+<li>signature: <code>prune(self)</code></li>
+</ul>
+<p><em>No docstring.</em></p>
+<h2 id="transformercoreresult"><code>TransformerCore.result</code></h2>
+<ul>
+<li>kind: <code>method</code></li>
+<li>signature: <code>result(self)</code></li>
+</ul>
+<p><em>No docstring.</em></p>
+<h2 id="transformercorerun"><code>TransformerCore.run</code></h2>
+<ul>
+<li>kind: <code>method</code></li>
+<li>signature: <code>run(self)</code></li>
+</ul>
+<p><em>No docstring.</em></p>
 <h2 id="transformercorescratch"><code>TransformerCore.scratch</code></h2>
 <ul>
 <li>kind: <code>method</code></li>
 <li>signature: <code>scratch(self, value)</code></li>
 </ul>
 <p><em>No docstring.</em></p>
+<h2 id="transformercorestate"><code>TransformerCore.state</code></h2>
+<ul>
+<li>kind: <code>method</code></li>
+<li>signature: <code>state(self)</code></li>
+</ul>
+<p>Return the node state of a bound workflow transformer.</p>
+<p>The six-state vocabulary of the node itself: <code>unwired</code>, <code>blocked</code>,
+<code>waiting</code>, <code>computing</code>, <code>complete</code>, <code>failed</code>.  With
+:attr:<code>block_reason</code> this is the whole of a node's lifecycle report;
+the display string <code>status</code> used to return is gone, because it
+collapsed <code>waiting</code> and <code>computing</code> into one word.  For a summary,
+<code>repr</code> of the handle carries the state.</p>
+<h2 id="transformercoretask"><code>TransformerCore.task</code></h2>
+<ul>
+<li>kind: <code>method</code></li>
+<li>signature: <code>task(self)</code></li>
+</ul>
+<p><em>No docstring.</em></p>
+<h2 id="transformercoretransformation"><code>TransformerCore.transformation</code></h2>
+<ul>
+<li>kind: <code>method</code></li>
+<li>signature: <code>transformation(self, *args, **kwargs)</code></li>
+</ul>
+<p>Build a delayed Transformation from the current transformer state.</p>
+<h2 id="_class_attribute"><code>_class_attribute</code></h2>
+<ul>
+<li>kind: <code>function</code></li>
+<li>signature: <code>_class_attribute(cls, name)</code></li>
+</ul>
+<p><em>No docstring.</em></p>
+<h2 id="_clone_transformer_builder"><code>_clone_transformer_builder</code></h2>
+<ul>
+<li>kind: <code>function</code></li>
+<li>signature: <code>_clone_transformer_builder(source, target_cls)</code></li>
+</ul>
+<p>Clone a standalone builder with independent lifecycle ownership.</p>
+<h2 id="_failed_transformation"><code>_failed_transformation</code></h2>
+<ul>
+<li>kind: <code>function</code></li>
+<li>signature: <code>_failed_transformation(result_celltype, exc, *, scratch)</code></li>
+</ul>
+<p>Return a transformation that reports a pin error on construction.</p>
+<h2 id="_freeze_modules"><code>_freeze_modules</code></h2>
+<ul>
+<li>kind: <code>function</code></li>
+<li>signature: <code>_freeze_modules(modules)</code></li>
+</ul>
+<p>Copy module mappings without attempting to pickle module objects.</p>
+<h2 id="_no_such_attribute"><code>_no_such_attribute</code></h2>
+<ul>
+<li>kind: <code>function</code></li>
+<li>signature: <code>_no_such_attribute(obj, name)</code></li>
+</ul>
+<p><em>No docstring.</em></p>
 <h2 id="delayed"><code>delayed</code></h2>
 <ul>
 <li>kind: <code>function</code></li>
-<li>signature: <code>delayed(func, language)</code></li>
+<li>signature: <code>delayed(func)</code></li>
 </ul>
 <p>Return a Transformation object that can be executed later.</p>
 <h2 id="direct"><code>direct</code></h2>
 <ul>
 <li>kind: <code>function</code></li>
-<li>signature: <code>direct(func, language)</code></li>
+<li>signature: <code>direct(func)</code></li>
 </ul>
 <p>Execute immediately, returning the result value.</p>
               

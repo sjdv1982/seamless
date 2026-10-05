@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <link rel="shortcut icon" href="../img/favicon.ico" />
+    <title>Workflow Context - Seamless — Agent Documentation</title>
+    <link rel="stylesheet" href="../css/theme.css" />
+    <link rel="stylesheet" href="../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "Workflow Context";
+        var mkdocs_page_input_path = "contracts/workflow-context.md";
+        var mkdocs_page_url = null;
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href="../index.html" class="icon icon-home"> Seamless — Agent Documentation
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../index.html">Home</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../overview.html">Agent Docs Overview</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../repos/index.html">Workspace Repos</a>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Contracts</span></p>
+              <ul class="current">
+                  <li class="toctree-l1"><a class="reference internal" href="identity-and-caching.html">Identity and Caching</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="celltypes-and-conversion.html">Celltypes, Null, and Conversion</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="hashtype.html">HashType</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="deep-celltypes.html">Deep Celltypes</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="expressions.html">Expressions</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="cells.html">Cells</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="pins.html">Pins</a>
+                  </li>
+                  <li class="toctree-l1 current"><a class="reference internal current" href="#">Workflow Context</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#constructing-and-closing">Constructing and closing</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#nodes-names-and-namespaces">Nodes, names and namespaces</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#what-an-assignment-means">What an assignment means</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#the-controller-one-thread-sequenced-ingress">The controller: one thread, sequenced ingress</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#barriers-compute-and-computation">Barriers: compute and computation</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#writes-through-the-context">Writes through the Context</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#speculation-control-prune">Speculation control: prune</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#execution">Execution</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#graph-serialization">Graph serialization</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#the-context-surface-which-calls-wait-and-which-errors-mean-what">The Context surface: which calls wait, and which errors mean what</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#implementation-status-and-current-limitations">Implementation status and current limitations</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#non-goals">Non-goals</a>
+    </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="node-state-lifecycle.html">Node State Lifecycle</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="attachments.html">Attachments</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="mounts.html">File Mounts</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="cancellation.html">Cancellation</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="direct-delayed-and-transformation.html">direct/delayed/Transformation</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="modules-and-closures.html">Modules and Closures</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="scratch-witness-audit.html">Scratch/Witness/Audit</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="seamless-run-and-argtyping.html">seamless-run/Argtyping</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="cache-storage-and-limits.html">Cache Storage and Limits</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="content-addressed-files-and-dirs.html">Content-addressed Files and Dirs</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="execution-backends.html">Execution Backends</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="execution-records.html">Execution Records</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="service-management.html">Service Management</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="compression.html">Compression</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="compiled-transformers.html">Compiled Transformers</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="compiled-pins.html">Compiled Pins</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="seamless-signature-schema.html">seamless-signature Schema</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">API</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/python/seamless.html">seamless</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/python/seamless.transformer.html">seamless.transformer</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/python/seamless.buffer_class.html">seamless.buffer_class</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/python/seamless.checksum_class.html">seamless.checksum_class</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/python/seamless_config.select.html">seamless_config.select</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/python/seamless_config.tools.html">seamless_config.tools</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/python/seamless_transformer.transformation_class.html">seamless_transformer.transformation_class</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/python/seamless_transformer.transformer_class.html">seamless_transformer.transformer_class</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">CLI</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/cli/seamless-run.html">seamless-run</a>
+                  </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Seamless — Agent Documentation</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../index.html" class="icon icon-home" aria-label="Docs"></a></li>
+          <li class="breadcrumb-item">Contracts</li>
+      <li class="breadcrumb-item active">Workflow Context</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h1 id="the-workflow-context-contract">The workflow Context (Contract)</h1>
+<p><strong>A <code>Context</code> is a DAG of nodes plus a runtime that keeps it in equilibrium.</strong> Its essence fits in one sentence: <strong>reactivity is re-building with fresh snapshots.</strong> When a node takes a new value, the Context builds new immutable <code>Expression</code> / <code>Transformation</code> definitions from the new snapshot and fires them; the content-addressed cache reuses every sub-result that did not actually change. <strong>The functional layer never mutates, and nothing below the Context knows a Context exists</strong> — a Transformation the Context submits is indistinguishable from one submitted by hand, and its identity and caching are exactly those of <code>contracts/identity-and-caching.md</code>.</p>
+<p>Four consequences are contract in their own right:</p>
+<ul>
+<li><strong>The Context stores only nodes.</strong> It holds no <code>Cell</code>, no <code>Expression</code> and no <code>Transformation</code>. Expressions and Transformations are <em>private to the Context</em>: materialized per tick from the edge path plus the current upstream checksum, fired, and discarded. <code>Cell</code> and <code>Transformer</code> are <strong>views over a node</strong>, as <code>contracts/cells.md</code> and <code>contracts/pins.md</code> state from the handle's side.</li>
+<li><strong>Binding is a move, not a copy.</strong> Assigning a standalone builder into a Context migrates its private state into the node and abandons the private shadow; the node is then the single source of truth. There is no dual-write window, and two handles for one node are deliberate aliases.</li>
+<li><strong>Handle identity carries no meaning.</strong> <code>ctx.a is not ctx.a</code>. Dependencies are captured by content — a node path on an edge — never by view identity, so <code>id()</code>-keyed caches over handles must not be used. A handle whose node is gone raises <code>StaleWorkflowHandleError</code> on its next use.</li>
+<li><strong>Re-building is cheap.</strong> The per-tick materialization cost is bounded to the invalidated cone, and is a small hash over checksum-sized inputs — never a re-hash of buffers.</li>
+</ul>
+<p>This page is the Context as a <strong>runtime and an API</strong>. The <strong>node state lifecycle</strong> — the six node states (<code>unwired</code>, <code>blocked</code>, <code>waiting</code>, <code>computing</code>, <code>complete</code>, <code>failed</code>), the glitch-free cascade, block reasons, speculative supersession and grace holds — is <code>contracts/node-state-lifecycle.md</code> and is deliberately not specified here; this page names states only where a rule depends on them. Cells are <code>contracts/cells.md</code>, pins are <code>contracts/pins.md</code>, the attachment framework — sensing external state into a node, actuating a node's value out of it — is <code>contracts/attachments.md</code>, and the file driver is <code>contracts/mounts.md</code>.</p>
+<p>Code locations:</p>
+<table>
+<thead>
+<tr>
+<th>Concern</th>
+<th>Module / symbol</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>The Context itself</td>
+<td><code>seamless_workflow.context.Context</code> (a composition of <code>RuntimeAPI</code>, <code>Reactive</code> and <code>AttachmentRuntime</code>)</td>
+</tr>
+<tr>
+<td>Durable graph</td>
+<td><code>seamless_workflow.graph</code> (<code>ContextGraph</code>, <code>Node</code>, <code>NodeState</code>, <code>CellConfig</code>, <code>TransformerConfig</code>)</td>
+</tr>
+<tr>
+<td>Controller thread and sequenced ingress</td>
+<td><code>seamless_workflow.controller.Controller</code>; <code>seamless_workflow.ingress</code> (<code>controller_method</code>, <code>_wait</code>, <code>_wait_async</code>, <code>_edit</code>, <code>_prepare_assignment</code>)</td>
+</tr>
+<tr>
+<td>Reactive derivation and execution</td>
+<td><code>seamless_workflow.reactive.Reactive</code></td>
+</tr>
+<tr>
+<td>Barriers, snapshots, leases</td>
+<td><code>seamless_workflow.runtime_api.RuntimeAPI</code> (<code>_install_wait</code>, <code>_check_barriers</code>, <code>_snapshot_transformer</code>)</td>
+</tr>
+<tr>
+<td>Transient run records and speculation</td>
+<td><code>seamless_workflow.scheduler</code> (<code>ContextRuntime</code>, <code>RunRecord</code>, <code>Scheduler</code>)</td>
+</tr>
+<tr>
+<td>Bound handles</td>
+<td><code>seamless_workflow.builder_state</code> (<code>BoundCellBackend</code>, <code>BoundPinBackend</code>, <code>BoundTransformerBackend</code>)</td>
+</tr>
+<tr>
+<td>Namespaces</td>
+<td><code>seamless_workflow.views</code> (<code>MissingView</code>, <code>SubContextView</code>)</td>
+</tr>
+<tr>
+<td>Local projection and join workers</td>
+<td><code>seamless_workflow.sidework</code> (<code>evaluate_cell</code>, <code>evaluate_projection</code>, <code>Lease</code>, <code>SideLoop</code>)</td>
+</tr>
+<tr>
+<td>Errors</td>
+<td><code>seamless_workflow.errors</code></td>
+</tr>
+<tr>
+<td>Process-level registry and shutdown</td>
+<td><code>seamless_workflow.lifecycle</code></td>
+</tr>
+</tbody>
+</table>
+<h2 id="constructing-and-closing">Constructing and closing</h2>
+<pre><code class="language-python">ctx = Context(expression_execution=&quot;auto&quot;)   # &quot;auto&quot; | &quot;local&quot; | &quot;remote&quot;
+
+with Context() as ctx:
+    ...
+</code></pre>
+<ul>
+<li><code>expression_execution</code> is <strong>keyword-only</strong> and fixes the placement policy for every Expression job this Context fires; any other value raises <code>ValueError</code>. What the three values mean, and the fact that only <code>"auto"</code> may downgrade, is <code>contracts/expressions.md</code>.</li>
+<li>A Context can only be constructed while Seamless is open.</li>
+<li><strong><code>Context.close()</code> is idempotent</strong>, and is also the context-manager exit. It closes admission first, then runs one ordered shutdown turn: registered barriers fail, outstanding Expression and Transformation memberships are cancelled, the side loop drains, graph and runtime roles are released, and both Context threads are joined. Late notifications arriving after that turn are discarded and their payload ownership released.</li>
+<li>A bound handle used after close raises <code>ClosedContextError</code>.</li>
+<li>Every Context is kept in a weak process-level registry, so <code>seamless.close()</code> closes the Contexts too.</li>
+</ul>
+<h2 id="nodes-names-and-namespaces">Nodes, names and namespaces</h2>
+<ul>
+<li><strong>A node is created by assignment to a name that does not exist yet.</strong> <code>ctx.a</code> afterwards returns a fresh handle for that node.</li>
+<li><strong>A name that is not a node is a namespace placeholder, not an error.</strong> <code>ctx.foo</code> for an unknown path returns a <em>view</em> whose attribute and item access extend the path, so <code>ctx.foo.bar = 1</code> creates the node at path <code>("foo", "bar")</code>. Item access stringifies its key: <code>ctx["a"]</code> and <code>ctx.a</code> are the same node.</li>
+<li><strong><code>ctx.sub = Context()</code> declares a namespace</strong>, not a nested runtime: it marks the path as a namespace of <em>this</em> Context. Assigning a namespace view copies that subtree. A genuine sub-Context — one with its own controller and its own equilibrium — is out of scope (see <em>Non-goals</em>).</li>
+<li><strong><code>mounts</code> is reserved.</strong> <code>ctx.mounts</code> is the Context's mount API — the external synchronization barrier and the per-mount error map — and assigning to it raises <code>AttributeError("mounts is reserved for the Context mount API")</code>. A graph node at that path is refused with <code>PathError</code>. See <code>contracts/mounts.md</code>.</li>
+<li><code>del ctx.a</code> deletes the node, and deleting a namespace path deletes its whole subtree. Deleting a node cancels its remaining run memberships (softly — see <em>Speculation control</em>).</li>
+</ul>
+<h2 id="what-an-assignment-means">What an assignment means</h2>
+<p><code>ctx.a = X</code> is dispatched by the type of <code>X</code> and by whether <code>a</code> already exists:</p>
+<table>
+<thead>
+<tr>
+<th><code>X</code></th>
+<th>On a new name</th>
+<th>On an existing node</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>a <strong>bound source</strong> (another node's handle, or a projection of one)</td>
+<td>creates a cell node with the source's celltype and an edge from it</td>
+<td>on a cell: replaces the incoming edge (detaching). On a transformer: <strong>converts the node to a cell</strong>, cancelling its runs and releasing its producers</td>
+</tr>
+<tr>
+<td>a standalone <strong><code>Cell</code></strong> builder</td>
+<td>creates a cell node from the builder</td>
+<td>replaces the cell's configuration; on a transformer node it is a <code>NodeError</code></td>
+</tr>
+<tr>
+<td>a standalone <strong><code>Transformer</code></strong> builder</td>
+<td>creates a transformer node</td>
+<td>replaces the transformer's configuration; on a cell node it is a <code>NodeError</code></td>
+</tr>
+<tr>
+<td>a <strong>callable</strong>, a code string, or a transformer configuration</td>
+<td>creates a transformer node</td>
+<td>sets the transformer's code; on a cell node it raises <code>NodeError("Cannot replace a cell node with transformer code")</code></td>
+</tr>
+<tr>
+<td>a <strong><code>Context</code></strong></td>
+<td>declares a namespace</td>
+<td>—</td>
+</tr>
+<tr>
+<td>a <strong>namespace view</strong></td>
+<td>copies that subtree</td>
+<td>—</td>
+</tr>
+<tr>
+<td>anything else (a value)</td>
+<td>creates a cell node holding that value</td>
+<td>writes the value, detaching any incoming edge</td>
+</tr>
+</tbody>
+</table>
+<p>Two rules are worth stating separately:</p>
+<ul>
+<li><strong>Connecting is always assignment.</strong> There is no <code>connect()</code> and no source setter. <code>contracts/cells.md</code> and <code>contracts/pins.md</code> give the two write families — <em>declare the input</em> versus <em>write what you own</em> — and the authority rule that decides when an assignment may detach an existing producer.</li>
+<li><strong>A transformer's result is read-only as a target.</strong> A producer operation aimed at it raises <code>ReadOnlyEndpointError</code>.</li>
+</ul>
+<p><strong>Cycles are rejected at declaration time.</strong> Adding an edge checks reachability from the target back to the source and raises <code>DependencyError</code> if the new edge would close a cycle. Parallel edges into different pins of one transformer are not a cycle and are accepted.</p>
+<p><strong>Connection targets are limited to the root or one level below it</strong> — a mapping key, an attribute name, or an integer sequence index — and a slice is never a connection target. That rule, the read-modify-set model for sub-path writes, and cell-level joins belong to <code>contracts/cells.md</code> and are not repeated here.</p>
+<h2 id="the-controller-one-thread-sequenced-ingress">The controller: one thread, sequenced ingress</h2>
+<ul>
+<li><strong>One controller thread per Context is the sole mutator of the graph.</strong> Every public operation is routed through it and executed in a turn, and nothing interleaves with a turn. That is what makes invalidation atomic and what makes binding free of a dual-write window.</li>
+<li><strong>Ingress is sequenced.</strong> Envelopes are immutable, acceptance order is monotonic, and operations are prioritized by class: barrier installation and withdrawal, ordinary reads, conditional commits, and the continuations that carry results back each have their own place in that order. A result arriving from execution is handled in a later turn, synchronously on the controller, exactly like an edit.</li>
+<li><strong>A controller turn never materializes.</strong> A read taken in a turn returns a <strong>lease</strong> — a snapshot of a checksum plus its celltype, with its reference already claimed — and resolution to a buffer or a value happens on the caller's side, outside the turn. Projections, joins and other local value work run on a separate <strong>side loop</strong>, never on the controller thread.</li>
+<li><strong>Public re-entry is forbidden.</strong> Calling a public Context operation, or a bound handle, from inside a controller turn raises <code>ReentrantContextError</code>.</li>
+<li><strong>An internal failure poisons ingress.</strong> If a continuation fails unexpectedly, the Context raises <code>ControllerFailedError</code> for subsequent ingress, fails pending barrier predicates and cancels adapters. This is deliberate: an asynchronous error must never leave an invisible stalled barrier. <code>close()</code> still works on a poisoned Context; nothing else does.</li>
+<li><strong>Ordinary reads never wait.</strong> A bound <code>.checksum</code> / <code>.buffer</code> / <code>.value</code> reports current availability and returns <code>None</code> when nothing is published; waiting is the job of the explicit barriers below. <code>contracts/cells.md</code> states the same rule from the handle's side, and marks it as the one place where bound and standalone reads deliberately differ.</li>
+</ul>
+<h2 id="barriers-compute-and-computation">Barriers: <code>compute</code> and <code>computation</code></h2>
+<table>
+<thead>
+<tr>
+<th>Call</th>
+<th>Waits until</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>ctx.compute(timeout=None)</code> / <code>await ctx.computation(timeout=None)</code></td>
+<td><strong>no node in the Context</strong> is <code>waiting</code> or <code>computing</code></td>
+</tr>
+<tr>
+<td><code>node.compute(timeout=None)</code> / <code>await node.computation(timeout=None)</code> (a Cell, Pin or Transformer handle)</td>
+<td><strong>that node and its upstream cone</strong> are no longer <code>waiting</code> or <code>computing</code> — for a Pin, which has no node of its own, this is its <strong>owning Transformer's</strong> barrier (<code>contracts/pins.md</code>)</td>
+</tr>
+<tr>
+<td><code>ctx.mounts.sync(timeout=None)</code> / <code>await ctx.mounts.synchronization(timeout=None)</code></td>
+<td>the <strong>external</strong> cut is settled: every external change before the final cut has been sensed and propagated, the graph is quiescent, and every complete node value has been delivered to its resource or its attachment reports why not. Returns a <code>SyncReport</code>. The barrier is driver-generic (<code>contracts/attachments.md</code>); it is spelled <code>mounts</code> because the file driver is the only production one (<code>contracts/mounts.md</code>)</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li>A barrier is a <strong>predicate installed in a turn</strong> and satisfied in the turn that makes it true; the caller is released then.</li>
+<li><strong>A barrier timeout raises <code>TimeoutError</code>.</strong> Both a timeout and an async cancellation <strong>withdraw the predicate without cancelling any graph work</strong>: a barrier is a wait, never a control operation.</li>
+<li>A barrier on a path whose node has been deleted raises <code>StaleWorkflowHandleError</code>.</li>
+<li>A <strong>reading</strong> barrier — the form behind a bound <code>compute()</code> that returns a checksum — additionally reports the outcome. If the node settles in <code>unwired</code> or <code>blocked</code> it raises a <code>NodeError</code> naming the state and the block reason; if it settles in <code>failed</code> it raises the node's own recorded exception.</li>
+<li><strong>Quiescence is a property of node states only.</strong> A <code>complete</code> node may still have a superseded run in flight; see <em>Speculation control</em> below, and <code>contracts/node-state-lifecycle.md</code> for what the states mean.</li>
+<li><strong><code>compute()</code> stays graph-only and never waits for external state.</strong> External settlement is a separate barrier, <code>ctx.mounts.sync()</code>, and it is stateful: it cuts, waits for quiescence, waits for deliveries, and starts another round if anything moved. <code>contracts/attachments.md</code> specifies it; there is deliberately no <code>settled()</code> predicate.</li>
+</ul>
+<h2 id="writes-through-the-context">Writes through the Context</h2>
+<p>The write families and the authority rule that separates them are in <code>contracts/cells.md</code>. What belongs here is what the Context does with them.</p>
+<ul>
+<li><strong>Serialization happens before ingress.</strong> A value is serialized, and transformer code and builders are prepared, on the caller's side; the controller receives checksums.</li>
+<li><strong>A whole-checksum write is validated against the node celltype using HashType metadata, and then installed without resolving it.</strong> The buffer need not be present. The consequences of an unresolvable checksum appear later, at a read (<code>contracts/hashtype.md</code>, <code>contracts/cells.md</code>).</li>
+<li><strong>A sub-path write is one optimistic transaction.</strong> Lease the current root checksum in a turn, resolve and modify it off the controller, then commit conditionally against the base checksum and the node revision. A losing commit retries, <strong>at most eight times</strong>, and then raises <code>ConcurrentUpdateError</code>. If the root has no checksum and the node is <code>waiting</code>, the write waits on a barrier and retries; otherwise it raises <code>ValueUnavailableError</code> — except that a string/attribute path into an <em>unwired</em> cell starts from an empty mapping. This is the read-modify-set model of <code>contracts/cells.md</code>, and the Context is what serializes it. (A sub-path write always targets a cell node, which is never <code>computing</code> — <code>contracts/node-state-lifecycle.md</code>.)</li>
+<li><strong>Assignment detaches edges covered by the write; an explicit <code>set</code> does not</strong> — again <code>contracts/cells.md</code>, and again a root-level act only.</li>
+</ul>
+<h2 id="speculation-control-prune">Speculation control: <code>prune</code></h2>
+<p>The Context <strong>launches replacement work immediately and delays only the cancellation of the superseded run</strong>. Obsolete runs may therefore still occupy backend slots after every node has reached equilibrium: <strong>node-state quiescence does not by itself mean the cluster is idle.</strong></p>
+<ul>
+<li><strong><code>ctx.prune()</code></strong> closes that gap. It <strong>softcancels every superseded or grace-held run immediately</strong>, leaving only the current wavefront, and returns <code>{"cancelled": &lt;count&gt;}</code>. It is lightweight and repeatable — not a freeze, and not a commit.</li>
+<li><strong><code>ctx.a.prune()</code></strong> does the same for <code>ctx.a</code> and its <strong>downstream cone</strong> only. <code>ctx.prune()</code> is that same call at the graph root. This is the user's manual control over which superseded work to reclaim; the scheduler does not guess a tighter policy.</li>
+<li><strong>The Context only ever softcancels</strong>, including on node deletion, because a running transformation may legitimately be shared with sibling nodes, with superseded runs, and with other processes. <strong>Hard cancellation is never issued by the reactive layer.</strong> What soft and hard mean is <code>contracts/cancellation.md</code>; <code>contracts/expressions.md</code> states the same soft-only rule for Expressions.</li>
+<li>The hold policy that decides <em>how long</em> a superseded run is kept before <code>prune()</code> or the scheduler reclaims it is part of the node state lifecycle; see that page.</li>
+</ul>
+<h2 id="execution">Execution</h2>
+<ul>
+<li><strong>The workflow layer never invokes a raw callable.</strong> It submits immutable, checksum-wired snapshots built through the ordinary Transformer/Transformation path, and the ordinary transformation cache executes them (<code>contracts/direct-delayed-and-transformation.md</code>, <code>contracts/execution-backends.md</code>). A cache hit is not a shortcut around the runtime: it still arrives through a later controller turn.</li>
+<li>A node is <code>computing</code> <strong>from dispatch onwards, including the window in which its transformation identity is being constructed.</strong> There is no separate "constructing" state, and <code>computing</code> is not delayed until the identity exists.</li>
+<li><strong>Expression jobs</strong> — projections, and conversions on edges — use the ordinary asynchronous evaluator with the Context's placement policy (<code>expression_execution</code>), with member-scoped cancellation; their results re-enter through a controller turn like any other.</li>
+<li><strong>Determinism is assumed.</strong> The Context's compare-and-reuse loop assumes that the same inputs give the same result checksum. Irreproducible transformations are out of scope for workflows. Accidental nondeterminism being masked by the content-addressed cache is a universal Seamless property, not a Context hazard (<code>contracts/identity-and-caching.md</code>, <code>contracts/scratch-witness-audit.md</code>).</li>
+</ul>
+<h2 id="graph-serialization">Graph serialization</h2>
+<ul>
+<li><strong><code>ctx.get_graph()</code> returns the durable graph</strong>: nodes, configurations, edges and literal producers — never runtime state.</li>
+<li><strong><code>ctx.set_graph(graph)</code> replaces it wholesale.</strong> It is ordered so that the new graph's claims are acquired <strong>before</strong> any live role is released. It cancels every current and superseded run, detaches mount sessions, and resets the runtime.</li>
+<li><strong><code>ctx.set_graph(graph, mounts=True)</code> — the default — also attaches every mount spec in the new graph, and therefore blocks and can write files.</strong> Reservations and initial reads are prepared in parallel on the caller's side, one message replaces the graph and all sessions atomically, and the call waits for every initial acknowledgement. <code>mounts=False</code> strips the specs; <strong>graphs of unknown origin must be loaded that way</strong> (<code>contracts/mounts.md</code>).</li>
+<li><strong>Run generations are never reused across a replacement</strong>, and node revisions are bumped for the same reason: a late completion from the old graph can never be mistaken for a run at the same path in the new one.</li>
+<li><strong>Graph loading never executes code to reconstruct callables.</strong></li>
+</ul>
+<h2 id="the-context-surface-which-calls-wait-and-which-errors-mean-what">The Context surface: which calls wait, and which errors mean what</h2>
+<p>Only the operations this page specifies are listed; handle-level calls are in <code>contracts/cells.md</code> and <code>contracts/pins.md</code>.</p>
+<table>
+<thead>
+<tr>
+<th>Call</th>
+<th>Waits?</th>
+<th>Returns</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>ctx.a = X</code>, <code>del ctx.a</code>, and every write</td>
+<td>no — one controller turn, serialization done before ingress</td>
+<td><code>None</code></td>
+</tr>
+<tr>
+<td><code>ctx.a</code>, <code>ctx.foo.bar</code> (unknown path)</td>
+<td>no</td>
+<td>a fresh handle, or a namespace view</td>
+</tr>
+<tr>
+<td><code>ctx.compute()</code> / <code>await ctx.computation()</code></td>
+<td><strong>yes</strong> — graph-wide barrier</td>
+<td><code>None</code>, or raises <code>TimeoutError</code></td>
+</tr>
+<tr>
+<td><code>node.compute()</code> / <code>await node.computation()</code></td>
+<td><strong>yes</strong> — that node's upstream cone</td>
+<td>the node's checksum for a reading barrier; raises on <code>unwired</code>, <code>blocked</code> or <code>failed</code></td>
+</tr>
+<tr>
+<td><code>ctx.mounts.sync()</code> / <code>await ctx.mounts.synchronization()</code></td>
+<td><strong>yes</strong> — the external cut barrier</td>
+<td>a <code>SyncReport</code>; raises <code>TimeoutError</code></td>
+</tr>
+<tr>
+<td><code>ctx.mounts.errors</code></td>
+<td>no</td>
+<td><code>{node path: error}</code>, computed without a cut</td>
+</tr>
+<tr>
+<td><code>ctx.prune()</code>, <code>ctx.a.prune()</code></td>
+<td>no</td>
+<td><code>{"cancelled": &lt;count&gt;}</code></td>
+</tr>
+<tr>
+<td><code>ctx.get_graph()</code></td>
+<td>no</td>
+<td>the durable graph</td>
+</tr>
+<tr>
+<td><code>ctx.set_graph(graph, mounts=False)</code></td>
+<td>no — but it cancels every run</td>
+<td><code>None</code></td>
+</tr>
+<tr>
+<td><code>ctx.set_graph(graph)</code> (i.e. <code>mounts=True</code>)</td>
+<td><strong>yes</strong> — it blocks through every mount's initial read and first delivery acknowledgement, <strong>and it can write files</strong></td>
+<td><code>None</code></td>
+</tr>
+<tr>
+<td><code>ctx.close()</code></td>
+<td><strong>yes</strong> — one ordered shutdown turn, joining both threads</td>
+<td><code>None</code>; idempotent</td>
+</tr>
+</tbody>
+</table>
+<table>
+<thead>
+<tr>
+<th>Error</th>
+<th>Raised when</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>ValueError</code></td>
+<td><code>expression_execution</code> is not <code>"auto"</code>, <code>"local"</code> or <code>"remote"</code></td>
+</tr>
+<tr>
+<td><code>ClosedContextError</code></td>
+<td>a bound handle is used after <code>close()</code></td>
+</tr>
+<tr>
+<td><code>ControllerFailedError</code></td>
+<td>ingress is poisoned by an internal continuation failure; only <code>close()</code> still works</td>
+</tr>
+<tr>
+<td><code>ReentrantContextError</code></td>
+<td>a public Context operation or a bound handle is called from inside a controller turn</td>
+</tr>
+<tr>
+<td><code>StaleWorkflowHandleError</code></td>
+<td>a handle — or a barrier — names a node that has been deleted</td>
+</tr>
+<tr>
+<td><code>NodeError</code></td>
+<td>an assignment mismatches the node kind, or a reading barrier settles in <code>unwired</code> or <code>blocked</code></td>
+</tr>
+<tr>
+<td><code>ReadOnlyEndpointError</code></td>
+<td>a producer operation targets a transformer's result</td>
+</tr>
+<tr>
+<td><code>DependencyError</code></td>
+<td>a new edge would close a cycle</td>
+</tr>
+<tr>
+<td><code>ValueUnavailableError</code></td>
+<td>a sub-path write finds no root checksum and the node is not <code>waiting</code></td>
+</tr>
+<tr>
+<td><code>ConcurrentUpdateError</code></td>
+<td>a sub-path commit loses eight times</td>
+</tr>
+<tr>
+<td><code>TimeoutError</code></td>
+<td>a barrier times out; the predicate is withdrawn and no graph work is cancelled</td>
+</tr>
+<tr>
+<td><code>AuthorityError</code>, <code>PathError</code></td>
+<td>the handle-level rules of <code>contracts/cells.md</code>; also the attachment topology rules (<code>contracts/attachments.md</code>)</td>
+</tr>
+<tr>
+<td><code>MountError</code></td>
+<td>never raised — <em>reported</em>, as an object on <code>ctx.a.mount.error</code> and as a string on <code>ctx.a.exception</code> (<code>contracts/attachments.md</code>)</td>
+</tr>
+<tr>
+<td><code>ConflictError</code></td>
+<td>a <code>MountError</code> subclass; also never raised, and latched on the mount when the oscillation detector trips</td>
+</tr>
+</tbody>
+</table>
+<h2 id="implementation-status-and-current-limitations">Implementation status and current limitations</h2>
+<p>Settled contract that the code does not yet implement, or implements differently. Where a design document and the code disagree, <strong>the code wins</strong>, and the disagreement is listed here.</p>
+<ul>
+<li><strong>Future-wiring is not implemented; the runtime is checksum-wired only.</strong> A node leaves <code>waiting</code> for <code>computing</code> exactly when all of its inputs are concrete checksums. The design's future-wired Expressions and Transformations — a registered continuation keyed by its upstream's identity, which would let a <code>waiting</code> cone advance before the checksums exist — is deferred to the fire-and-forget milestone, together with the delayed cancellation that would let a checksum-wired submission latch onto it.</li>
+<li><strong>Fire-and-forget is deferred.</strong> Detaching the Context process while a cluster advances the workflow headlessly needs future-wiring and is not available. <code>prune()</code> — the first half of it — is.</li>
+<li><strong>There is no dependency-declaration contract.</strong> How a declared dependency edge is picked up, and how it transitions between the future-wired and checksum-wired regimes, is an open design question; nothing may depend on an answer.</li>
+<li><strong>A bound public read does not validate and does not record</strong>, and a bound read of a non-existent projection raises rather than reporting. <code>contracts/cells.md</code> states both; in each case the standalone behaviour is the intended contract.</li>
+<li><strong>Buffer arrival has no subscription primitive.</strong> A missing buffer becomes a visible <code>failed</code> node, and the retry is <code>clear_exception()</code> after the caller has made the buffer available. The Context deliberately does not invent a buffer-availability event, and deliberately does not treat cancellation as an authoritative result.</li>
+<li><strong>Individual graph construction reconciles the whole graph.</strong> Building a large graph node by node is much slower than one <code>set_graph</code>.</li>
+<li><strong>Tests are run one process per file.</strong> Process-global cache and refholder state carries between files, so combining Seamless test files in one pytest run produces spurious failures.</li>
+</ul>
+<h2 id="non-goals">Non-goals</h2>
+<ul>
+<li><strong>Sub-contexts.</strong> A namespace is a path prefix inside one Context, with one controller and one equilibrium. A nested Context with its own runtime is not a feature.</li>
+<li><strong>Non-eager mode and activation leases.</strong> Unratified; nothing may depend on them.</li>
+<li><strong>Cycles.</strong> Out of scope, not merely rejected as an implementation limit: the cascade assumes a DAG, and a new edge that would close one is refused at declaration time (<code>DependencyError</code>).</li>
+<li><strong>A transient-failure state.</strong> <code>failed</code> is one state, and the block-reason vocabulary has exactly two members. Classifying a failure as transient and retrying it is a Transformation/backend concern, not Context logic.</li>
+<li><strong>Mandatory preemption.</strong> Reclaiming a slot from a superseded run in favour of a current run elsewhere is, at most, an optional nicety; <code>prune()</code> is the supported control.</li>
+<li><strong>Epoch-stamping of the invalidation cone.</strong> The cone is marked eagerly; a generation/epoch scheme was considered and rejected.</li>
+<li><strong>Storing Cells, Expressions or Transformations.</strong> The Context holds nodes. Anything that looks like a stored Expression is a snapshot it fired and discarded.</li>
+<li><strong>Handle identity.</strong> As for Cells and Pins: views are interchangeable, and nothing may be keyed on them.</li>
+</ul>
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="pins.html" class="btn btn-neutral float-left" title="Pins"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="node-state-lifecycle.html" class="btn btn-neutral float-right" title="Node State Lifecycle">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+    
+      <span><a href="pins.html" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="node-state-lifecycle.html" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script src="../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "..";</script>
+    <script src="../js/theme_extra.js"></script>
+    <script src="../js/theme.js"></script>
+      <script src="../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>

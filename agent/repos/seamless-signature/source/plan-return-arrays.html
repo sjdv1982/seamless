@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <link rel="shortcut icon" href="../../../img/favicon.ico" />
+    <title>Plan: return-array allocation in seamless-signature - Seamless — Agent Documentation</title>
+    <link rel="stylesheet" href="../../../css/theme.css" />
+    <link rel="stylesheet" href="../../../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "Plan: return-array allocation in seamless-signature";
+        var mkdocs_page_input_path = "repos/seamless-signature/source/plan-return-arrays.md";
+        var mkdocs_page_url = null;
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../../../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href="../../../index.html" class="icon icon-home"> Seamless — Agent Documentation
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../../index.html">Home</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../../overview.html">Agent Docs Overview</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../index.html">Workspace Repos</a>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Contracts</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/identity-and-caching.html">Identity and Caching</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/celltypes-and-conversion.html">Celltypes, Null, and Conversion</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/hashtype.html">HashType</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/deep-celltypes.html">Deep Celltypes</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/expressions.html">Expressions</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/cells.html">Cells</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/pins.html">Pins</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/workflow-context.html">Workflow Context</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/node-state-lifecycle.html">Node State Lifecycle</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/attachments.html">Attachments</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/mounts.html">File Mounts</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/cancellation.html">Cancellation</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/direct-delayed-and-transformation.html">direct/delayed/Transformation</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/modules-and-closures.html">Modules and Closures</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/scratch-witness-audit.html">Scratch/Witness/Audit</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/seamless-run-and-argtyping.html">seamless-run/Argtyping</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/cache-storage-and-limits.html">Cache Storage and Limits</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/content-addressed-files-and-dirs.html">Content-addressed Files and Dirs</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/execution-backends.html">Execution Backends</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/execution-records.html">Execution Records</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/service-management.html">Service Management</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/compression.html">Compression</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/compiled-transformers.html">Compiled Transformers</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/compiled-pins.html">Compiled Pins</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/seamless-signature-schema.html">seamless-signature Schema</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">API</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../api/python/seamless.html">seamless</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../api/python/seamless.transformer.html">seamless.transformer</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../api/python/seamless.buffer_class.html">seamless.buffer_class</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../api/python/seamless.checksum_class.html">seamless.checksum_class</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../api/python/seamless_config.select.html">seamless_config.select</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../api/python/seamless_config.tools.html">seamless_config.tools</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../api/python/seamless_transformer.transformation_class.html">seamless_transformer.transformation_class</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../api/python/seamless_transformer.transformer_class.html">seamless_transformer.transformer_class</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">CLI</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../api/cli/seamless-run.html">seamless-run</a>
+                  </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">Seamless — Agent Documentation</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../../../index.html" class="icon icon-home" aria-label="Docs"></a></li>
+      <li class="breadcrumb-item active">Plan: return-array allocation in seamless-signature</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h1 id="plan-return-array-allocation-in-seamless-signature">Plan: return-array allocation in <code>seamless-signature</code></h1>
+<h2 id="context">Context</h2>
+<p>Follow-up to the main <a href="idempotent-sprouting-kernighan.md">seamless-signature plan</a>. That plan describes the YAML schema language and C header generator but glosses over how output arrays are handled. This file captures the missing piece.</p>
+<p>Seamless owns all memory for output arrays. A compiled function matching a signature generated from this schema <strong>must not</strong> allocate the storage that backs any output array — anything <code>malloc</code>'d inside the function is purely scratch and must be <code>free</code>'d before the function returns. The caller (Seamless) pre-allocates every output buffer and passes it in as a pointer, and the function is expected to fill it. This dogma is load-bearing for reproducible caching and for crossing the C ↔ Python boundary without ownership ambiguity.</p>
+<p>This splits output arrays into two cases.</p>
+<h2 id="case-a-static-sized-output-easy">Case A — static-sized output (easy)</h2>
+<p>Every dim in the output <code>shape</code> is either a literal int or a wildcard that already appears in the <code>inputs</code> section. The caller knows the full output length before the call, pre-allocates it, and passes the pointer in. No schema extension needed beyond what the main plan already specifies.</p>
+<p>Example test fixture — <code>tests/fixtures/static_return.yaml</code>:</p>
+<pre><code class="language-yaml">function_name: pairwise_distance
+inputs:
+  - {name: coords, dtype: float32, shape: [N, 3]}
+outputs:
+  - {name: dist,   dtype: float32, shape: [N, N]}   # N comes from inputs
+</code></pre>
+<h2 id="case-b-dynamic-sized-output-the-hard-one">Case B — dynamic-sized output (the hard one)</h2>
+<p>The output <code>shape</code> contains a wildcard that does <strong>not</strong> appear in any input — its value only becomes known <em>as the function runs</em>. The function still must not allocate the output: somebody has to tell Seamless how large the buffer has to be before the call.</p>
+<p>Example test fixture — <code>tests/fixtures/dynamic_return.yaml</code>:</p>
+<pre><code class="language-yaml">function_name: find_peaks
+inputs:
+  - name: signal
+    dtype: float32
+    shape: [N]
+  - name: threshold
+    dtype: float32
+outputs:
+  - name: peak_positions
+    dtype: int32
+    shape: [K]          # K is a new wildcard, not present in inputs
+  - name: peak_values
+    dtype: float32
+    shape: [K]          # same K — shared by name, just like input wildcards
+</code></pre>
+<p>Here <code>N</code> is known from <code>signal.shape[0]</code> at call time, but <code>K</code> (the number of peaks found) is only knowable after the computation. Seamless cannot pre-allocate <code>peak_positions</code> / <code>peak_values</code> without further information.</p>
+<h2 id="mechanism">Mechanism</h2>
+<p>No YAML schema extension is needed — the existing syntax already expresses everything. The mechanism lives in three places: classification of wildcard dims, the C header emission rule, and the Python wrapper generated by the Seamless runtime glue.</p>
+<h3 id="wildcard-classification">Wildcard classification</h3>
+<p>After a <code>Signature</code> is parsed, its wildcard dim names partition into two disjoint sets:</p>
+<ul>
+<li><strong>input-derived</strong>: appears in the shape of at least one <code>inputs[*]</code> parameter.</li>
+<li><strong>output-only</strong>: appears only in <code>outputs[*]</code> parameters, never in any input.</li>
+</ul>
+<p>The <code>Signature</code> dataclass grows two derived properties:</p>
+<pre><code class="language-python">@property
+def input_wildcards(self) -&gt; tuple[str, ...]: ...
+@property
+def output_wildcards(self) -&gt; tuple[str, ...]: ...
+</code></pre>
+<p>Both preserve first-seen order. A name cannot be in both sets — a collision is a <code>TypeError</code> at <code>__post_init__</code> time.</p>
+<h3 id="c-header-emission">C header emission</h3>
+<p>For each output-only wildcard <code>K</code>, the generated C signature carries <strong>two</strong> extra parameters:</p>
+<ol>
+<li><code>unsigned int maxK</code> — caller-provided upper bound on <code>K</code>, declared alongside the other input integers.</li>
+<li><code>unsigned int *K</code> — written by the function with the actual count. Declared alongside the other output pointers.</li>
+</ol>
+<p>The function uses <code>maxK</code> to bail out with a nonzero return code if it would otherwise overflow, and writes the final count through <code>*K</code> (which must satisfy <code>*K &lt;= maxK</code>).</p>
+<p><strong>Full <code>transform()</code> argument order</strong> (supersedes step 3 of C header generation in the main plan):</p>
+<ol>
+<li>Input-derived wildcard ints — one <code>unsigned int &lt;name&gt;</code> per unique name.</li>
+<li>Output-only wildcard capacity bounds — one <code>unsigned int max&lt;Name&gt;</code> per unique name.</li>
+<li>Each input parameter in YAML order — scalar by value, or <code>const &lt;elem_t&gt; *</code> for arrays.</li>
+<li>Output-only wildcard actual-count pointers — one <code>unsigned int *&lt;name&gt;</code> per unique name.</li>
+<li>Each output parameter in YAML order — scalar <code>&lt;ctype&gt; *</code> or <code>&lt;elem_t&gt; *</code> for arrays.</li>
+</ol>
+<p>The <code>max&lt;Name&gt;</code> / <code>*&lt;Name&gt;</code> names are produced by literal string concatenation (<code>"max" + name</code> / <code>name</code>) so the user's YAML naming is preserved verbatim.</p>
+<h3 id="example-generated-header-for-find_peaks">Example: generated header for <code>find_peaks</code></h3>
+<p>From the <code>dynamic_return.yaml</code> fixture above:</p>
+<pre><code class="language-c">/* Auto-generated from dynamic_return.yaml — do not edit. */
+#include &lt;stdint.h&gt;
+#include &lt;stdbool.h&gt;
+
+int transform(
+    unsigned int N,
+    unsigned int maxK,
+    const float *signal,
+    float threshold,
+    unsigned int *K,
+    int32_t *peak_positions,
+    float *peak_values
+);
+</code></pre>
+<p>Contract for the function author:</p>
+<ul>
+<li>Reads <code>N</code>, <code>maxK</code>, <code>signal</code>, <code>threshold</code>.</li>
+<li>Writes at most <code>maxK</code> entries into <code>peak_positions</code> and <code>peak_values</code>.</li>
+<li>Writes the actual count through <code>*K</code>, and must satisfy <code>*K &lt;= maxK</code>.</li>
+<li>Returns <code>0</code> on success, nonzero on error (including "more than <code>maxK</code> results would be produced").</li>
+<li>Any scratch memory <code>malloc</code>'d inside the function must be <code>free</code>'d before return. The function does <strong>not</strong> allocate <code>peak_positions</code> or <code>peak_values</code>.</li>
+</ul>
+<h3 id="python-wrapper">Python wrapper</h3>
+<p>The Seamless runtime glue (not this package — <code>seamless-signature</code> only generates the C header and exposes the classification properties on <code>Signature</code>) produces a Python-facing wrapper whose signature is:</p>
+<ul>
+<li>Inputs positionally in YAML order, with input-derived wildcard ints <strong>elided</strong> — they come from <code>input.shape[i]</code> automatically.</li>
+<li>One required keyword-only argument <code>max&lt;Name&gt;</code> per output-only wildcard.</li>
+</ul>
+<p>For <code>find_peaks</code>:</p>
+<pre><code class="language-python">def find_peaks(signal, threshold, *, maxK): ...
+</code></pre>
+<p>Wrapper behavior on call:</p>
+<ol>
+<li>Derive input-derived wildcards from argument <code>.shape</code> (here, <code>N = signal.shape[0]</code>).</li>
+<li>Pre-allocate each output array with output-only wildcards substituted by their <code>max&lt;Name&gt;</code> values — here, <code>np.empty((maxK,), dtype=np.int32)</code> and <code>np.empty((maxK,), dtype=np.float32)</code>.</li>
+<li>Allocate one <code>uint</code> scratch cell per output-only wildcard for the written-back count.</li>
+<li>Call the C <code>transform(...)</code> with all pointers wired up.</li>
+<li>On success, read back each written count (here, <code>K</code>) and trim each output array down to the actual shape according to the global <strong>trim mode</strong> setting (see next subsection). The caller receives an array of shape <code>(K, ...)</code>; <code>K</code> is implicit in that shape and not returned separately.</li>
+<li>On nonzero return code, raise a Seamless-level error reporting the <code>max&lt;Name&gt;</code> values so the caller can retry with larger bounds.</li>
+</ol>
+<h3 id="trim-mode-global-setting">Trim mode (global setting)</h3>
+<p>Shrinking the oversized <code>maxK</code> buffer down to the actual <code>K</code> is controlled by a global Seamless setting <code>dynamic_output_trim_mode</code> with two values:</p>
+<ul>
+<li><strong><code>"copy"</code></strong> — default, safe. <code>np.array(arr[:K])</code>. Allocates a fresh buffer of the true size, copies the first <code>K</code> elements, and lets the oversized original go out of scope. Peak memory briefly holds both buffers during the copy; behavior is defined regardless of any stray Python- or C-level references to the original.</li>
+<li><strong><code>"inplace_unsafe"</code></strong> — opt-in, fast. <code>arr.resize((K, ...), refcheck=False)</code> after explicitly dropping any binding intermediaries from the C call. Shrinks via <code>PyDataMem_RENEW</code> (realloc) with no copy and no doubled peak. <strong>Unsafe in the C sense</strong>: if any Python- or C-level reference to the buffer outlives the resize, the realloc may move the buffer and those references become use-after-free. Only flip this on after profiling shows the copy is a real cost and the wrapper's reference discipline has been audited.</li>
+</ul>
+<p>Default is <code>"copy"</code>. The setting lives as a module-level variable in the Seamless runtime glue — exact storage (plain module attribute, <code>seamless-config</code> YAML entry, environment variable, or all three) is the runtime glue's concern and outside <code>seamless-signature</code>'s scope. <code>seamless-signature</code> itself does not read or act on this setting; it is documented here only because the wrapper-generation contract the C header implies has to be described somewhere.</p>
+<h3 id="mixed-output-shapes">Mixed output shapes</h3>
+<p>The trailing-fixed rule from the main plan still applies. Examples:</p>
+<ul>
+<li><code>shape: [K, 3]</code> with <code>K</code> output-only → element typedef <code>float32_3[3]</code>, C parameter <code>float32_3 *name</code>, pre-allocation shape <code>(maxK, 3)</code>, trim to <code>result[:K]</code>.</li>
+<li><code>shape: [K, N]</code> with <code>K</code> output-only and <code>N</code> input-derived → pre-allocation <code>(maxK, N)</code>, trim to <code>result[:K]</code>. <code>N</code> is fine as a leading wildcard in element-shape terms because it's known at call time.</li>
+<li><code>shape: [N, K]</code> (input-derived outermost, output-only innermost) — pre-allocation <code>(N, maxK)</code>, trim to <code>result[:, :K]</code>. Non-contiguous sub-view, still valid.</li>
+</ul>
+<h2 id="scope-of-changes-to-the-main-plan">Scope of changes to the main plan</h2>
+<p>The main <a href="idempotent-sprouting-kernighan.md">seamless-signature plan</a> needs these amendments once this sub-plan is accepted:</p>
+<ul>
+<li><strong>Dataclasses</strong>: add <code>input_wildcards</code> / <code>output_wildcards</code> properties on <code>Signature</code>, and enforce the input-vs-output-only disjointness in <code>__post_init__</code>.</li>
+<li><strong>C header generation algorithm</strong>: extend the argument ordering to the 5-step sequence above (currently the main plan has a 3-bullet rule that only handles input-derived wildcards).</li>
+<li><strong>Tests</strong>: add <code>static_return.yaml</code> and <code>dynamic_return.yaml</code> fixtures plus golden-header comparisons; add negative case for a name that is both input-derived and output-only.</li>
+<li><strong>Explicit non-goals</strong>: nothing to remove; dynamic-return support is in scope for iteration 1 under this sub-plan.</li>
+</ul>
+<h2 id="verification">Verification</h2>
+<ol>
+<li><code>pytest seamless-signature/tests/test_schema.py -k dynamic_return</code> passes.</li>
+<li><code>pytest seamless-signature/tests/test_c_header.py -k dynamic_return</code> matches the golden C header for the <code>find_peaks</code> fixture.</li>
+<li>End-to-end: a hand-written C <code>find_peaks</code> that respects the dogma (scratch <code>malloc</code> freed before return) loads through the Seamless runtime glue and returns the expected <code>peak_positions</code> / <code>peak_values</code> arrays to Python.</li>
+</ol>
+              
+            </div>
+          </div><footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+    
+    
+  </span>
+</div>
+    <script src="../../../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "../../..";</script>
+    <script src="../../../js/theme_extra.js"></script>
+    <script src="../../../js/theme.js"></script>
+      <script src="../../../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>

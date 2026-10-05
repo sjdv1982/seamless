@@ -1,0 +1,703 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <link rel="shortcut icon" href="../../../img/favicon.ico" />
+    <title>Handoff Implementation Plan: seamless-share replay - Seamless — Agent Documentation</title>
+    <link rel="stylesheet" href="../../../css/theme.css" />
+    <link rel="stylesheet" href="../../../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "Handoff Implementation Plan: seamless-share replay";
+        var mkdocs_page_input_path = "repos/seamless-share/source/replay-implementation-plan.md";
+        var mkdocs_page_url = null;
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../../../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href="../../../index.html" class="icon icon-home"> Seamless — Agent Documentation
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../../index.html">Home</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../../overview.html">Agent Docs Overview</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../index.html">Workspace Repos</a>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Contracts</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/identity-and-caching.html">Identity and Caching</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/celltypes-and-conversion.html">Celltypes, Null, and Conversion</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/hashtype.html">HashType</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/deep-celltypes.html">Deep Celltypes</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/expressions.html">Expressions</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/cells.html">Cells</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/pins.html">Pins</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/workflow-context.html">Workflow Context</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/node-state-lifecycle.html">Node State Lifecycle</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/attachments.html">Attachments</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/mounts.html">File Mounts</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/cancellation.html">Cancellation</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/direct-delayed-and-transformation.html">direct/delayed/Transformation</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/modules-and-closures.html">Modules and Closures</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/scratch-witness-audit.html">Scratch/Witness/Audit</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/seamless-run-and-argtyping.html">seamless-run/Argtyping</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/cache-storage-and-limits.html">Cache Storage and Limits</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/content-addressed-files-and-dirs.html">Content-addressed Files and Dirs</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/execution-backends.html">Execution Backends</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/execution-records.html">Execution Records</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/service-management.html">Service Management</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/compression.html">Compression</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/compiled-transformers.html">Compiled Transformers</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/compiled-pins.html">Compiled Pins</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/seamless-signature-schema.html">seamless-signature Schema</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">API</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../api/python/seamless.html">seamless</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../api/python/seamless.transformer.html">seamless.transformer</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../api/python/seamless.buffer_class.html">seamless.buffer_class</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../api/python/seamless.checksum_class.html">seamless.checksum_class</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../api/python/seamless_config.select.html">seamless_config.select</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../api/python/seamless_config.tools.html">seamless_config.tools</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../api/python/seamless_transformer.transformation_class.html">seamless_transformer.transformation_class</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../api/python/seamless_transformer.transformer_class.html">seamless_transformer.transformer_class</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">CLI</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../api/cli/seamless-run.html">seamless-run</a>
+                  </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">Seamless — Agent Documentation</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../../../index.html" class="icon icon-home" aria-label="Docs"></a></li>
+      <li class="breadcrumb-item active">Handoff Implementation Plan: seamless-share replay</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h1 id="handoff-implementation-plan-seamless-share-replay">Handoff Implementation Plan: <code>seamless-share replay</code></h1>
+<p>This is a self-contained implementation plan for the replay-mode verifier described in <code>seamless-share/replay-plan.md</code>. The work has two layers:</p>
+<ol>
+<li>Seamless runtime replay mode: enforcement and instrumentation inside Seamless execution, cache lookup, buffer resolution, and remote dispatch paths.</li>
+<li><code>seamless-share replay</code>: a read-only harness, CLI, Python API, report schema, renderers, fixtures, and tests.</li>
+</ol>
+<p>The harness must not invent cache-discipline policy. It configures replay mode, runs the user script, and serializes findings emitted by the runtime hooks.</p>
+<h2 id="repository-orientation">Repository Orientation</h2>
+<p>Relevant existing code:</p>
+<ul>
+<li><code>seamless-share/pyproject.toml</code>: package metadata and <code>seamless-share = seamless_share.cli:main</code> console script.</li>
+<li><code>seamless-share/seamless_share/cli.py</code>: existing argparse CLI with <code>transformation-diff</code> and <code>why-not</code> subcommands.</li>
+<li><code>seamless-share/seamless_share/why_not/</code>: existing Pattern 2 implementation. Reuse <code>why_not()</code> for unexpected-miss diffs and reuse deterministic serialization style from <code>why_not.models.to_json</code>.</li>
+<li><code>seamless-share/tests/</code>: existing pytest suite for CLI/API/schema/read-only behavior.</li>
+<li><code>seamless-transformer/seamless_transformer/transformation_cache.py</code>: central non-Dask transformation cache lookup, local execution, worker dispatch, remote jobserver dispatch, and database writes.</li>
+<li><code>seamless-dask/seamless_dask/transformation_mixin.py</code>: Dask submission path, driver detection, database-cache checks, dependency/input fingertipping, and local fallback.</li>
+<li><code>seamless-dask/seamless_dask/client.py</code>: worker-side Dask tasks, fat/fat-finger checksum materialization, database writes, hashserver writes, and remote-client checks.</li>
+<li><code>seamless-dask/seamless_dask/types.py</code>: <code>TransformationSubmission</code> and input metadata passed to Dask.</li>
+<li><code>seamless-remote/seamless_remote/{database_remote.py,buffer_remote.py,jobserver_remote.py}</code>: remote database/hashserver/jobserver facades used by runtime paths.</li>
+<li><code>seamless-share/usage-patterns.md</code>: contract source for Pattern 3. If this plan and Pattern 3 disagree, Pattern 3 wins.</li>
+</ul>
+<h2 id="v1-deliverables">V1 Deliverables</h2>
+<p>Add these files:</p>
+<ul>
+<li><code>seamless-share/seamless_share/replay/__init__.py</code></li>
+<li><code>seamless-share/seamless_share/replay/api.py</code></li>
+<li><code>seamless-share/seamless_share/replay/models.py</code></li>
+<li><code>seamless-share/seamless_share/replay/auth.py</code></li>
+<li><code>seamless-share/seamless_share/replay/config.py</code></li>
+<li><code>seamless-share/seamless_share/replay/report.py</code></li>
+<li><code>seamless-share/seamless_share/replay/render.py</code></li>
+<li><code>seamless-share/seamless_share/replay/schema.json</code></li>
+<li><code>seamless-share/seamless_share/replay/README.md</code></li>
+<li><code>seamless-share/seamless_share/replay/CHANGELOG.md</code></li>
+<li><code>seamless-share/seamless_share/replay/findings.md</code></li>
+<li><code>seamless-share/tests/replay/</code> with fixtures, scenario tests, schema tests, determinism tests, exit-code tests, and CLI/API equivalence tests.</li>
+<li>Runtime hook module(s), preferably in <code>seamless-transformer</code>, for replay state and events. Suggested names: <code>seamless_transformer/replay_runtime.py</code> and, if needed, lightweight adapters in <code>seamless_dask/replay_runtime.py</code>.</li>
+<li>Contract documentation under <code>seamless/docs/agent/contracts/</code>, e.g. <code>seamless/docs/agent/contracts/replay-mode.md</code>.</li>
+</ul>
+<p>Update these files:</p>
+<ul>
+<li><code>seamless-share/seamless_share/cli.py</code>: add the <code>replay</code> subcommand.</li>
+<li><code>seamless-share/pyproject.toml</code>: include replay package data and any test extras needed for subprocess/schema tests.</li>
+<li><code>seamless-transformer/seamless_transformer/transformation_cache.py</code>: consult replay mode during cache lookup/execution/remote dispatch/write attempts.</li>
+<li><code>seamless-dask/seamless_dask/transformation_mixin.py</code>: consult replay mode for driver cache bypass, non-driver cache misses, Dask submissions, and fingertip authorization.</li>
+<li><code>seamless-dask/seamless_dask/client.py</code>: consult replay mode in worker-side cache lookup, materialization, fingertipping, and write paths.</li>
+</ul>
+<h2 id="public-contract">Public Contract</h2>
+<h3 id="cli">CLI</h3>
+<p>Implement:</p>
+<pre><code class="language-text">seamless-share replay &lt;script&gt; [script-args ...]
+    --artifact &lt;path-to-seamless.db&gt;
+    --bufferdir &lt;path&gt;
+    [--authorization &lt;path&gt;]
+    [--driver-cache {bypass,enabled}]
+    [--report &lt;path&gt;]
+    [--report-format {json,text}]
+    [--config &lt;path&gt;]
+    [--inherit-config]
+    [--allow-remote]
+    [--fail-on {none,any,unauthorized-only}]
+    [--timeout &lt;seconds&gt;]
+    [--verbose | -v] [--quiet | -q]
+</code></pre>
+<p>Argparse detail: add <code>replay_parser.add_argument("script")</code> and <code>replay_parser.add_argument("script_args", nargs=argparse.REMAINDER)</code>. Do not parse or transform script args.</p>
+<p>Exit codes:</p>
+<ul>
+<li><code>0</code>: tool ran and produced a report, unless <code>--fail-on</code> remaps findings.</li>
+<li><code>2</code>: usage error, including missing <code>--artifact</code>, missing <code>--bufferdir</code>, unreadable script, or invalid enum flag.</li>
+<li><code>3</code>: setup error, including unreadable artifact/bufferdir, malformed authorization, or config synthesis failure.</li>
+<li><code>4</code>: script crashed or exited non-zero through a non-Seamless code path.</li>
+<li><code>5</code>: findings matched <code>--fail-on</code>.</li>
+<li><code>6</code>: timeout.</li>
+<li><code>1</code>: unexpected harness failure.</li>
+</ul>
+<p>Defaults:</p>
+<ul>
+<li><code>--driver-cache bypass</code></li>
+<li><code>--fail-on none</code></li>
+<li>stdout report uses <code>text</code> unless <code>--report-format json</code> is explicit.</li>
+<li>file report uses <code>json</code> unless <code>--report-format text</code> is explicit.</li>
+<li>no <code>--authorization</code> means only the supplied bufferdir is authorized; no fingertips; driver-cache remains controlled by <code>--driver-cache</code>.</li>
+<li>no <code>--inherit-config</code> means synthesize an isolated config that resolves only the supplied artifact and bufferdir.</li>
+</ul>
+<h3 id="python-api">Python API</h3>
+<p>Expose from <code>seamless_share.replay</code>:</p>
+<pre><code class="language-python">from seamless_share.replay import AuthorizationSpec, ReplayConfig, ReplayReport, replay
+
+report = replay(
+    script=&quot;path/to/client.py&quot;,
+    script_args=[&quot;--input&quot;, &quot;foo&quot;],
+    artifact=&quot;path/to/seamless.db&quot;,
+    bufferdir=&quot;path/to/bufferdir&quot;,
+    authorization=AuthorizationSpec.from_file(&quot;auth.json&quot;),
+    driver_cache=&quot;bypass&quot;,
+    config=ReplayConfig.synthesized(),
+    timeout=None,
+    allow_remote=False,
+)
+</code></pre>
+<p>Return a typed <code>ReplayReport</code> dataclass that mirrors JSON exactly after conversion through <code>to_plain()</code> / <code>to_json()</code>.</p>
+<h2 id="report-model">Report Model</h2>
+<p>Create dataclasses in <code>replay/models.py</code>:</p>
+<ul>
+<li><code>ArtifactInfo</code></li>
+<li><code>AuthorizationSummary</code></li>
+<li><code>ReplayConfigInfo</code></li>
+<li><code>Outcome</code></li>
+<li><code>ReplayCounts</code></li>
+<li><code>PostRunAssertions</code></li>
+<li><code>Finding</code></li>
+<li><code>ReplayReport</code></li>
+</ul>
+<p>Use <code>SCHEMA_VERSION = "0.1.0"</code> for V1.</p>
+<p>Required top-level JSON:</p>
+<pre><code class="language-json">{
+  &quot;tool&quot;: &quot;replay&quot;,
+  &quot;version&quot;: &quot;0.1.0&quot;,
+  &quot;artifact&quot;: {
+    &quot;seamless_db&quot;: &quot;...&quot;,
+    &quot;seamless_db_checksum&quot;: &quot;...&quot;,
+    &quot;bufferdir&quot;: &quot;...&quot;,
+    &quot;bufferdir_checksum&quot;: &quot;...&quot;
+  },
+  &quot;authorization_summary&quot;: {},
+  &quot;config&quot;: {
+    &quot;synthesized&quot;: true,
+    &quot;endpoints_resolved&quot;: {},
+    &quot;driver_cache&quot;: &quot;bypass&quot;
+  },
+  &quot;outcome&quot;: {
+    &quot;phase&quot;: &quot;completed&quot;,
+    &quot;wall_ms&quot;: 0,
+    &quot;script_exit_code&quot;: 0
+  },
+  &quot;counts&quot;: {
+    &quot;drivers_executed&quot;: 0,
+    &quot;drivers_short_circuited&quot;: 0,
+    &quot;transformations_submitted&quot;: 0,
+    &quot;cache_hits&quot;: 0,
+    &quot;buffers_materialized_from_bufferdir&quot;: 0,
+    &quot;buffers_materialized_via_authorized_fingertip&quot;: 0,
+    &quot;findings_by_kind&quot;: {}
+  },
+  &quot;findings&quot;: [],
+  &quot;post_run_assertions&quot;: {
+    &quot;seamless_db_unchanged&quot;: true,
+    &quot;bufferdir_unchanged&quot;: true
+  }
+}
+</code></pre>
+<p>Serialization requirements:</p>
+<ul>
+<li>Use <code>json.dumps(..., sort_keys=True, separators=(",", ":"))</code>.</li>
+<li>Omit <code>None</code> values from dataclass serialization, matching <code>why_not.models.to_plain</code>.</li>
+<li>Sort findings by <code>(script_position or "", kind, tf_checksum or "", id)</code>.</li>
+<li>Sort per-finding lists such as <code>chain</code> and <code>result_checksums</code> lexicographically unless their semantic order is a dependency trail. For dependency trails, keep trail order and make it deterministic at construction.</li>
+<li>Put timing and volatile annotations under <code>context</code>; they must not contribute to finding IDs.</li>
+</ul>
+<p>Finding IDs:</p>
+<ul>
+<li>Stable hash over finding <code>kind</code> plus required fields only.</li>
+<li>Use canonical JSON bytes and SHA-256; store a short or full hex digest, but keep the choice stable and documented.</li>
+<li>Changes to <code>context</code> must not change the ID.</li>
+</ul>
+<p>Finding kinds and required fields:</p>
+<ul>
+<li><code>unexpected_miss</code>: <code>tf_checksum</code>, <code>script_position</code>, <code>driver_context</code>, <code>diff</code></li>
+<li><code>unauthorized_materialization</code>: <code>checksum</code>, <code>requested_by</code>, <code>script_position</code>, <code>available_authorizations</code></li>
+<li><code>unauthorized_fingertip</code>: <code>consumer_tf_checksum</code>, <code>missing_input_checksum</code>, <code>producer_tf_checksum</code>, <code>script_position</code></li>
+<li><code>authorized_materialization_unsatisfied_dependency</code>: <code>authorized_target</code>, <code>unsatisfied_dependency</code>, <code>chain</code>, <code>script_position</code></li>
+<li><code>remote_delegation_observed</code>: <code>backend</code>, <code>dispatched_work</code>, <code>script_position</code></li>
+<li><code>unexpected_heavy_compute</code>: <code>tf_checksum</code>, <code>was_driver</code>, <code>observed_cost_ms</code>, <code>correlated_miss</code></li>
+<li><code>irreproducible_only_hit</code>: <code>tf_checksum</code>, <code>row_count</code>, <code>result_checksums</code>, <code>script_position</code></li>
+<li><code>authorization_incoherent</code>: <code>authorization</code>, <code>reason</code></li>
+</ul>
+<h2 id="authorization">Authorization</h2>
+<p>Implement <code>AuthorizationSpec</code> in <code>replay/auth.py</code>.</p>
+<p>V1 file format should be JSON for predictable tests:</p>
+<pre><code class="language-json">{
+  &quot;fingertips&quot;: [&quot;&lt;checksum&gt;&quot;],
+  &quot;driver_cache&quot;: &quot;bypass&quot;
+}
+</code></pre>
+<p>Rules:</p>
+<ul>
+<li>The supplied <code>--bufferdir</code> is always an authorization source.</li>
+<li>Any checksum whose bytes are present in the bufferdir may be materialized from that bufferdir.</li>
+<li>Fingertip authorizations are explicit checksum strings.</li>
+<li>A fingertip authorization is incoherent if the artifact cannot identify a cached producer transformation for the authorized checksum.</li>
+<li>Driver cache is ultimately controlled by CLI/API <code>driver_cache</code>. If the auth file also contains <code>driver_cache</code>, reject contradictory values or emit <code>authorization_incoherent</code> with reason <code>conflicting_driver_cache</code> and continue only if the behavior is unambiguous.</li>
+</ul>
+<p>Use a small <code>AuthorizationDecision</code> helper with:</p>
+<ul>
+<li><code>allowed: bool</code></li>
+<li><code>source: "bufferdir" | "fingertip" | None</code></li>
+<li><code>reason: str</code></li>
+<li><code>considered: list[dict]</code></li>
+</ul>
+<p>Every materialization attempt must produce either a positive trace in the report or an authorization finding.</p>
+<h2 id="isolated-config">Isolated Config</h2>
+<p>Implement <code>ReplayConfig</code> in <code>replay/config.py</code>.</p>
+<p>Required modes:</p>
+<ul>
+<li><code>ReplayConfig.synthesized()</code>: no remote endpoints; database reads resolve to <code>artifact</code>; buffer reads resolve to <code>bufferdir</code>; writes are disabled.</li>
+<li><code>ReplayConfig.from_file(path)</code>: explicit isolated config file supplied with <code>--config</code>.</li>
+<li><code>ReplayConfig.inherit()</code>: opt into normal environment/config. The report must mark this prominently with a top-level warning such as <code>config_inherited</code>.</li>
+</ul>
+<p>The runtime needs enough environment to run a child script under replay mode. Prefer subprocess execution for V1 because it isolates global Seamless state and lets timeout handling be robust.</p>
+<p>Suggested child environment:</p>
+<ul>
+<li><code>SEAMLESS_REPLAY_MODE=1</code></li>
+<li><code>SEAMLESS_REPLAY_ARTIFACT=&lt;abs path&gt;</code></li>
+<li><code>SEAMLESS_REPLAY_BUFFERDIR=&lt;abs path&gt;</code></li>
+<li><code>SEAMLESS_REPLAY_AUTH=&lt;serialized temp JSON path&gt;</code></li>
+<li><code>SEAMLESS_REPLAY_DRIVER_CACHE=bypass|enabled</code></li>
+<li><code>SEAMLESS_REPLAY_ALLOW_REMOTE=0|1</code></li>
+<li><code>SEAMLESS_REPLAY_REPORT_EVENTS=&lt;temp event JSONL path&gt;</code></li>
+<li><code>SEAMLESS_REPLAY_CONFIG_MODE=synthesized|file|inherit</code></li>
+<li><code>SEAMLESS_REPLAY_CONFIG=&lt;path&gt;</code> when applicable</li>
+</ul>
+<p>The runtime hook module should read these lazily and no-op when <code>SEAMLESS_REPLAY_MODE</code> is absent.</p>
+<h2 id="runtime-hook-design">Runtime Hook Design</h2>
+<p>Add a low-level runtime event API, preferably in <code>seamless-transformer/seamless_transformer/replay_runtime.py</code>:</p>
+<pre><code class="language-python">def active() -&gt; bool: ...
+def config() -&gt; ReplayRuntimeConfig: ...
+def emit(event: ReplayEvent) -&gt; None: ...
+def cache_lookup(tf_checksum, *, is_driver, transformation_dict, tf_dunder, script_position): ...
+def materialization_request(checksum, *, requested_by, script_position, intent): ...
+def fingertip_request(consumer_tf_checksum, missing_input_checksum, producer_tf_checksum, script_position): ...
+def remote_dispatch(backend, dispatched_work, script_position): ...
+def transformation_started(tf_checksum, *, is_driver): ...
+def transformation_finished(tf_checksum, *, is_driver, observed_cost_ms, cache_hit): ...
+</code></pre>
+<p>Write events as deterministic JSON Lines to <code>SEAMLESS_REPLAY_REPORT_EVENTS</code>. Flush after each event so a crash or timeout still preserves partial findings.</p>
+<p>Do not import <code>seamless_share</code> from runtime packages. Keep the runtime dependency direction clean:</p>
+<ul>
+<li>Runtime packages emit neutral events.</li>
+<li><code>seamless-share</code> parses events and builds the canonical report/finding dataclasses.</li>
+</ul>
+<h3 id="runtime-enforcement-points">Runtime Enforcement Points</h3>
+<p>In <code>seamless-transformer/seamless_transformer/transformation_cache.py</code>:</p>
+<ol>
+<li>At the start of <code>TransformationCache.run()</code>, compute <code>is_driver</code> from <code>tf_dunder</code> / <code>transformation_dict["__meta__"]["driver"]</code>.</li>
+<li>Before in-memory or remote cache hit return, emit cache-hit event and increment later via harness aggregation.</li>
+<li>On database miss for non-driver transformations, emit <code>unexpected_miss</code> event with the transformation dict path/payload needed for the harness to call <code>why_not</code>.</li>
+<li>If <code>is_driver</code> and driver cache is <code>bypass</code>, skip cached <code>result_checksum</code> return and execute the driver locally.</li>
+<li>If <code>is_driver</code> and driver cache is <code>enabled</code>, allow short-circuit and emit <code>driver_short_circuited</code>.</li>
+<li>Before remote database/hashserver/jobserver operations, emit <code>remote_delegation_observed</code>. If the implementation elects to preemptively refuse remote dispatch when <code>allow_remote</code> is false, still emit the finding first.</li>
+<li>Disable writes to the artifact-backed database and bufferdir. Any call path to <code>database_remote.set_transformation_result()</code>, <code>set_execution_record()</code>, hashserver writes, or buffer writes must be blocked or redirected to scratch storage under replay.</li>
+</ol>
+<p>In <code>seamless-dask/seamless_dask/transformation_mixin.py</code>:</p>
+<ol>
+<li>Apply the same driver cache policy in <code>_compute_with_dask()</code>, <code>_compute_with_dask_async()</code>, and <code>_ensure_dask_futures()</code>.</li>
+<li>For non-driver submissions, a missing cache entry is <code>unexpected_miss</code>.</li>
+<li>For <code>allow_input_fingertip</code>, emit/authorize <code>unauthorized_fingertip</code> before fat-finger futures are created.</li>
+<li>Preserve <code>driver_context</code>: when a driver submits children, include a stack of parent driver <code>tf_checksum</code>s in emitted events. Use a <code>contextvars.ContextVar</code> in <code>replay_runtime.py</code> so nested execution works across async code.</li>
+</ol>
+<p>In <code>seamless-dask/seamless_dask/client.py</code>:</p>
+<ol>
+<li>Guard <code>_fat_checksum_task</code> and <code>_fat_finger_checksum_task</code> materializations.</li>
+<li>Emit <code>unauthorized_materialization</code> when bytes are requested but unavailable from authorized sources.</li>
+<li>Emit <code>authorized_materialization_unsatisfied_dependency</code> when fingertipping is authorized but a transitive input/dependency is not available or not authorized.</li>
+<li>Block or redirect worker-side <code>database_remote.set_*</code> and <code>buffer_remote.write_buffer()</code> during replay.</li>
+<li>Emit remote findings when Dask scheduling or remote clients are used as remote backends.</li>
+</ol>
+<p>In <code>seamless-remote</code>, avoid broad changes if runtime hook checks in callers are sufficient. Add tests that prove remote facades are not written to when replay mode is active.</p>
+<h2 id="harness-flow">Harness Flow</h2>
+<p>Implement <code>replay()</code> in <code>seamless-share/seamless_share/replay/api.py</code>:</p>
+<ol>
+<li>Validate inputs:</li>
+<li>script exists and is readable.</li>
+<li>artifact exists and opens read-only as SQLite.</li>
+<li>bufferdir exists and is a directory.</li>
+<li>driver cache is <code>bypass</code> or <code>enabled</code>.</li>
+<li>authorization file parses.</li>
+<li>Compute pre-run digests:</li>
+<li><code>seamless_db_checksum</code>: SHA-256 of file bytes.</li>
+<li><code>bufferdir_checksum</code>: deterministic manifest hash: sorted relative file paths, file modes if useful, sizes, and SHA-256 of file bytes.</li>
+<li>Build authorization summary and detect startup incoherence.</li>
+<li>Build isolated or inherited config summary.</li>
+<li>Create temp event JSONL path and serialized runtime config/auth file.</li>
+<li>Run the script as a subprocess:</li>
+<li>executable: <code>sys.executable</code></li>
+<li>argv: <code>[sys.executable, script, *script_args]</code></li>
+<li>cwd: default to current working directory unless API adds <code>cwd</code> later.</li>
+<li>env: parent env plus replay variables for synthesized/file/inherited config.</li>
+<li>timeout: subprocess timeout; on timeout, terminate, then kill if needed.</li>
+<li>Parse event JSONL into counters and findings.</li>
+<li>For each <code>unexpected_miss</code> event, call <code>seamless_share.why_not.why_not()</code> with:</li>
+<li>the emitted transformation dict or temp JSON reference for the missed transformation.</li>
+<li>endpoint set containing the artifact.</li>
+<li>candidate omitted unless the event can supply a better candidate.</li>
+<li><code>deep=False</code> initially unless a later test requires deep diffs.</li>
+<li>Query the artifact for irreproducible-only hits when the runtime emits a relevant lookup event or when a lookup misses the normal table.</li>
+<li>Compute post-run digests and fill <code>post_run_assertions</code>.</li>
+<li>Set <code>outcome.phase</code>:</li>
+<li><code>completed</code> if script exit code is <code>0</code>.</li>
+<li><code>script_error</code> if script exit code is non-zero.</li>
+<li><code>timeout</code> on timeout.</li>
+<li><code>setup_error</code> for setup failures.</li>
+<li>Sort findings and counts deterministically.</li>
+<li>Return <code>ReplayReport</code>.</li>
+</ol>
+<p>Setup and timeout errors must still create a schema-shaped report object. If a report file cannot be written because setup failed before path handling, emit the JSON object on stderr from the CLI.</p>
+<h2 id="cli-rendering">CLI Rendering</h2>
+<p>In <code>replay/render.py</code>, implement:</p>
+<ul>
+<li><code>render_replay_text(report, quiet=False, verbose=False) -&gt; str</code></li>
+<li><code>to_json(report) -&gt; str</code> or reuse a shared serializer from <code>replay.models</code>.</li>
+</ul>
+<p>Text rendering is presentation only. Keep it stable enough for tests, but make JSON/Python objects canonical.</p>
+<p>Minimum text contents:</p>
+<ul>
+<li>artifact paths</li>
+<li>outcome phase and script exit code</li>
+<li>counts summary</li>
+<li>findings grouped by kind, with IDs and key checksums</li>
+<li>read-only assertion result</li>
+<li>inherited-config warning if present</li>
+</ul>
+<h2 id="json-schema">JSON Schema</h2>
+<p>Create <code>seamless-share/seamless_share/replay/schema.json</code>.</p>
+<p>Schema must validate:</p>
+<ul>
+<li>top-level report shape</li>
+<li>enum values for <code>outcome.phase</code>, <code>driver_cache</code>, and finding kinds</li>
+<li>required fields per finding kind using <code>oneOf</code></li>
+<li>required count fields</li>
+<li><code>post_run_assertions</code></li>
+</ul>
+<p>Update <code>seamless-share/pyproject.toml</code> package data:</p>
+<pre><code class="language-toml">seamless_share = [
+  &quot;why_not/schema.json&quot;,
+  &quot;why_not/README.md&quot;,
+  &quot;why_not/CHANGELOG.md&quot;,
+  &quot;replay/schema.json&quot;,
+  &quot;replay/README.md&quot;,
+  &quot;replay/CHANGELOG.md&quot;,
+  &quot;replay/findings.md&quot;,
+]
+</code></pre>
+<h2 id="test-implementation-plan">Test Implementation Plan</h2>
+<p>Build tests in layers. Mark tests that require full runtime hooks as expected failures only during the first scaffolding commit; remove xfails before V1.</p>
+<h3 id="unit-tests">Unit Tests</h3>
+<p>Add <code>seamless-share/tests/replay/test_models.py</code>:</p>
+<ul>
+<li>deterministic JSON serialization</li>
+<li>finding ID stability</li>
+<li>finding sort order</li>
+<li>volatile <code>context</code> does not affect ID</li>
+</ul>
+<p>Add <code>seamless-share/tests/replay/test_auth.py</code>:</p>
+<ul>
+<li>empty auth means bufferdir-only</li>
+<li>malformed auth raises setup error</li>
+<li>fingertip auth summary</li>
+<li>incoherent fingertip auth emits <code>authorization_incoherent</code></li>
+<li>conflicting driver cache is rejected or reported consistently</li>
+</ul>
+<p>Add <code>seamless-share/tests/replay/test_digests.py</code>:</p>
+<ul>
+<li>database file digest changes when bytes change</li>
+<li>bufferdir manifest digest is sorted and stable</li>
+<li>nested bufferdir layouts hash deterministically</li>
+</ul>
+<p>Add <code>seamless-share/tests/replay/test_schema.py</code>:</p>
+<ul>
+<li>every generated report validates against <code>replay/schema.json</code></li>
+<li>each finding kind validates with required fields</li>
+<li>missing required fields fail validation</li>
+</ul>
+<h3 id="cliapi-tests">CLI/API Tests</h3>
+<p>Add <code>seamless-share/tests/replay/test_cli.py</code>:</p>
+<ul>
+<li>missing <code>--artifact</code> exits <code>2</code></li>
+<li>missing <code>--bufferdir</code> exits <code>2</code></li>
+<li>unreadable/missing script exits <code>2</code></li>
+<li>malformed auth exits <code>3</code> and emits schema-shaped setup report</li>
+<li>invalid <code>--driver-cache</code> exits <code>2</code></li>
+<li><code>--report</code> defaults to JSON</li>
+<li>stdout defaults to text</li>
+<li><code>--fail-on none|any|unauthorized-only</code> maps exit codes correctly</li>
+</ul>
+<p>Add <code>seamless-share/tests/replay/test_api_cli_equivalence.py</code>:</p>
+<ul>
+<li>for each fixture scenario, compare CLI JSON report and Python API report modulo timing/context fields.</li>
+</ul>
+<h3 id="runtime-scenario-fixtures">Runtime Scenario Fixtures</h3>
+<p>Place fixture builders under <code>seamless-share/tests/replay/fixtures/</code>.</p>
+<p>Minimum builders:</p>
+<ul>
+<li><code>R1</code>: trivial happy path, cached transformation, result buffer present.</li>
+<li><code>R2</code>: R1 with changed transformation dict, causing <code>unexpected_miss</code>.</li>
+<li><code>R3</code>: driver with three cached sub-transformations.</li>
+<li><code>R4</code>: R3 with one perturbed sub-transformation.</li>
+<li><code>R5</code>: nested drivers depth 3.</li>
+<li><code>R6</code>: missing buffer, no fingertip authorization.</li>
+<li><code>R7</code>: R6 with fingertip authorization and cached producer.</li>
+<li><code>R8</code>: R7 with producer input absent/unauthorized.</li>
+<li><code>R10</code>: irreproducible-only row.</li>
+<li><code>R11</code>: heavy driver needing bulk input present in bufferdir.</li>
+<li><code>R12</code>: R11 with bulk input absent.</li>
+<li><code>R13</code>: multiple independent issues.</li>
+<li><code>R14</code>: cached hit with inflated wall-clock but no recomputation.</li>
+<li><code>R15</code>: parallel sub-transformations for determinism.</li>
+<li><code>R16</code>: authorization names checksum whose producer is absent.</li>
+<li><code>R17</code>: same artifact under <code>driver_cache=bypass</code> and <code>enabled</code>.</li>
+<li><code>R18</code>: driver body depends on env var so sub-transformations drift across runs.</li>
+</ul>
+<p>The existing <code>tests/test_api_cli.py</code> has helper patterns for creating a minimal SQLite <code>transformation</code> table and adjacent bufferdir. Reuse that style for unit-level fixtures, then add full Seamless fixtures as runtime hooks mature.</p>
+<h3 id="contract-tests">Contract Tests</h3>
+<p>Implement the C/S/P cases from <code>replay-plan.md</code> as pytest modules:</p>
+<ul>
+<li><code>test_contract_clean_and_miss.py</code>: C1, C2</li>
+<li><code>test_contract_drivers.py</code>: C3, C4, C12, C13, S1, S2, S3, S6</li>
+<li><code>test_contract_authorization.py</code>: C5, C6, C7, C8, C9, S4</li>
+<li><code>test_contract_remote_config.py</code>: C14, S7, S8, P8</li>
+<li><code>test_contract_failures.py</code>: S9, S10, failure-shape cases 1-9</li>
+<li><code>test_contract_properties.py</code>: C11, P1, P2, P3, P4, P5, P6, P7, P9, P10, P11, P12</li>
+</ul>
+<p>Do not add tests that assert fixed wall-clock budgets, automatic remediation, silent remote success, artifact mutation, scheduler iteration order, or recursive cascade diagnosis beyond one <code>why-not</code> step.</p>
+<h2 id="static-no-write-check">Static No-Write Check</h2>
+<p>Add a CI test, e.g. <code>seamless-share/tests/replay/test_no_write_static.py</code>, that scans replay modules for forbidden calls against artifact paths:</p>
+<ul>
+<li><code>set_transformation_result</code></li>
+<li><code>set_execution_record</code></li>
+<li><code>undo_transformation_result</code></li>
+<li><code>write_buffer</code></li>
+<li>direct SQLite write modes for the artifact</li>
+<li>direct <code>open(..., "w")</code> / <code>Path.write_*</code> to artifact or bufferdir paths</li>
+</ul>
+<p>This test is not a substitute for runtime read-only assertions. It catches accidental harness write paths.</p>
+<h2 id="implementation-sequence">Implementation Sequence</h2>
+<h3 id="phase-1-reportapicli-skeleton">Phase 1: Report/API/CLI Skeleton</h3>
+<ol>
+<li>Create replay package and dataclasses.</li>
+<li>Add deterministic serialization and schema.</li>
+<li>Add CLI parser and route in <code>seamless_share.cli</code>.</li>
+<li>Implement input validation, digest calculation, setup-error reports, and report writing.</li>
+<li>Add unit, schema, and CLI tests.</li>
+</ol>
+<p>Acceptance for Phase 1: the replay command can run a no-op Python script, produce a valid empty report, handle setup errors, and pass model/schema/CLI tests.</p>
+<h3 id="phase-2-runtime-event-plumbing">Phase 2: Runtime Event Plumbing</h3>
+<ol>
+<li>Add <code>seamless_transformer.replay_runtime</code> with environment parsing and JSONL event emission.</li>
+<li>Add no-op-safe imports in <code>transformation_cache.py</code>, <code>transformation_mixin.py</code>, and <code>client.py</code>.</li>
+<li>Emit cache lookup, cache hit, transformation started/finished, remote dispatch, materialization, fingertip, and write-block events.</li>
+<li>Add tests with monkeypatched runtime paths to prove events are emitted and replay mode is inert when env vars are absent.</li>
+</ol>
+<p>Acceptance for Phase 2: harness parses runtime events into counts/findings without enforcing all policy yet.</p>
+<h3 id="phase-3-cache-discipline-and-authorization-enforcement">Phase 3: Cache Discipline and Authorization Enforcement</h3>
+<ol>
+<li>Implement driver cache bypass/enabled behavior in non-Dask and Dask paths.</li>
+<li>Implement materialization authorization checks.</li>
+<li>Implement fingertip authorization checks.</li>
+<li>Implement remote delegation findings and optional preemptive refusal.</li>
+<li>Block or redirect all writes during replay.</li>
+<li>Add read-only before/after assertions around full script runs.</li>
+</ol>
+<p>Acceptance for Phase 3: C1-C8, C11-C14, S1-S4, S7-S8 pass.</p>
+<h3 id="phase-4-why-not-integration-and-irreproducible-handling">Phase 4: <code>why-not</code> Integration and Irreproducible Handling</h3>
+<ol>
+<li>On <code>unexpected_miss</code>, feed the emitted transformation dict into <code>why_not()</code>.</li>
+<li>Validate <code>diff</code> against the existing why-not schema.</li>
+<li>Detect irreproducible-only hits using existing local SQLite endpoint logic or a replay-local helper.</li>
+<li>Add <code>irreproducible_only_hit</code> findings with row counts and sorted result checksums.</li>
+</ol>
+<p>Acceptance for Phase 4: C2, C10, P10, I2-style diff equivalence pass.</p>
+<h3 id="phase-5-determinism-failure-modes-and-scale">Phase 5: Determinism, Failure Modes, and Scale</h3>
+<ol>
+<li>Normalize sorting for findings, counts, and authorization summaries.</li>
+<li>Preserve partial findings on script crash and timeout.</li>
+<li>Complete exit-code matrix.</li>
+<li>Add large-run fixture and determinism tests.</li>
+<li>Add <code>--help</code> caveat test documenting no parallel replays of the same artifact.</li>
+</ol>
+<p>Acceptance for Phase 5: P1-P12 and all failure-shape tests pass.</p>
+<h3 id="phase-6-documentation-and-contract-review">Phase 6: Documentation and Contract Review</h3>
+<ol>
+<li>Write <code>replay/README.md</code> quickstart.</li>
+<li>Write <code>replay/findings.md</code> as canonical finding-kind reference.</li>
+<li>Write <code>replay/CHANGELOG.md</code> with schema version policy.</li>
+<li>Add <code>seamless/docs/agent/contracts/replay-mode.md</code>.</li>
+<li>Review against Pattern 3 in <code>usage-patterns.md</code> line by line and record any intentional refinements.</li>
+</ol>
+<p>Acceptance for Phase 6: docs are packaged, help output is stable, and CI runs schema plus static no-write checks.</p>
+<h2 id="open-implementation-decisions-to-resolve-locally">Open Implementation Decisions to Resolve Locally</h2>
+<p>No user questions are required, but implementers must make and document these choices:</p>
+<ul>
+<li>Whether runtime remote dispatch is preemptively refused when <code>allow_remote=False</code> or merely observed and reported. The finding must be emitted either way.</li>
+<li>Exact JSON auth file shape beyond <code>fingertips</code> and optional <code>driver_cache</code>.</li>
+<li>Whether finding IDs use full SHA-256 or a shortened prefix.</li>
+<li>How to represent <code>script_position</code> when Python stack information is unavailable. Use <code>null</code> or a stable best-effort string, but keep sorting deterministic.</li>
+<li>Whether subprocess mode is the only V1 execution mode. Prefer subprocess for V1; in-process can be added later if needed.</li>
+</ul>
+<h2 id="v1-definition-of-done">V1 Definition of Done</h2>
+<ul>
+<li><code>seamless-share replay</code> CLI and <code>seamless_share.replay.replay()</code> Python API are implemented.</li>
+<li>Reports validate against <code>seamless_share/replay/schema.json</code>.</li>
+<li>Runtime replay mode enforces read-only artifact behavior and emits all required findings.</li>
+<li>Driver cache bypass is default and <code>enabled</code> short-circuits only drivers.</li>
+<li>Every materialization is traced to bufferdir authorization or explicit fingertip authorization, or becomes a finding.</li>
+<li><code>unexpected_miss.diff</code> is produced by the existing <code>why_not()</code> primitive.</li>
+<li>Remote dispatch is always visible as <code>remote_delegation_observed</code>.</li>
+<li>Script crashes and timeouts preserve partial reports.</li>
+<li>CLI/Python API outputs match modulo timing.</li>
+<li>Read-only assertions and static no-write checks are in CI.</li>
+<li>Documentation and contract files are packaged and tested.</li>
+</ul>
+              
+            </div>
+          </div><footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+    
+    
+  </span>
+</div>
+    <script src="../../../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "../../..";</script>
+    <script src="../../../js/theme_extra.js"></script>
+    <script src="../../../js/theme.js"></script>
+      <script src="../../../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>

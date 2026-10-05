@@ -61,6 +61,28 @@
               <ul>
                   <li class="toctree-l1"><a class="reference internal" href="contracts/identity-and-caching.html">Identity and Caching</a>
                   </li>
+                  <li class="toctree-l1"><a class="reference internal" href="contracts/celltypes-and-conversion.html">Celltypes, Null, and Conversion</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="contracts/hashtype.html">HashType</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="contracts/deep-celltypes.html">Deep Celltypes</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="contracts/expressions.html">Expressions</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="contracts/cells.html">Cells</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="contracts/pins.html">Pins</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="contracts/workflow-context.html">Workflow Context</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="contracts/node-state-lifecycle.html">Node State Lifecycle</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="contracts/attachments.html">Attachments</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="contracts/mounts.html">File Mounts</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="contracts/cancellation.html">Cancellation</a>
+                  </li>
                   <li class="toctree-l1"><a class="reference internal" href="contracts/direct-delayed-and-transformation.html">direct/delayed/Transformation</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="contracts/modules-and-closures.html">Modules and Closures</a>
@@ -82,6 +104,8 @@
                   <li class="toctree-l1"><a class="reference internal" href="contracts/compression.html">Compression</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="contracts/compiled-transformers.html">Compiled Transformers</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="contracts/compiled-pins.html">Compiled Pins</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="contracts/seamless-signature-schema.html">seamless-signature Schema</a>
                   </li>
@@ -160,6 +184,50 @@
 <td>Content-addressing, checksum stability, cache invalidation</td>
 </tr>
 <tr>
+<td><code>contracts/celltypes-and-conversion.md</code></td>
+<td>The 13 celltypes; celltype hierarchy as a checksum hierarchy; canonical null and virtual values; reference parser; conversion rule table and <code>convert_checksum</code></td>
+</tr>
+<tr>
+<td><code>contracts/hashtype.md</code></td>
+<td><code>HashType</code> checksum classification (replaces <code>BufferInfo</code>); false-negative property; tightening; <code>hash_type</code> database table; <code>deserializable_as</code>/<code>capabilities</code>/<code>conversion_feasible</code></td>
+</tr>
+<tr>
+<td><code>contracts/deep-celltypes.md</code></td>
+<td><code>deepcell</code>/<code>deepfolder</code>/<code>folder</code>: the flat index buffer, member typing, legal conversions and the one-step path rule (<code>module</code> is not deep)</td>
+</tr>
+<tr>
+<td><code>contracts/expressions.md</code></td>
+<td>Expressions: the 4-tuple identity, the dummy Expression, path syntax, placement (<code>execution="auto"</code>), the error envelope, uncached failures, dedup and softcancel</td>
+</tr>
+<tr>
+<td><code>contracts/cells.md</code></td>
+<td>Cells as deferred Expressions, bound or standalone: <code>celltype</code> vs read-only <code>input_celltype</code>, <code>.source</code>/<code>.checksum</code>, the two write families and the 3×2 matrix, null and <code>None</code>, standalone reads, failures on the handle, projections and connection targets, cell-level joins</td>
+</tr>
+<tr>
+<td><code>contracts/pins.md</code></td>
+<td>Transformer pins: <code>tf.pins.x</code>, the <code>pin.celltype</code>/<code>tf.celltypes.x</code> link, pins hold checksums, conversion at the pin, optional pins and the null rules, a Pin is not a source</td>
+</tr>
+<tr>
+<td><code>contracts/workflow-context.md</code></td>
+<td>The reactive workflow <code>Context</code>: a DAG of nodes with Cells/Transformers as views, assignment and edges, the controller thread and sequenced ingress, barriers and timeouts, optimistic sub-path commits, <code>prune()</code>, <code>get_graph</code>/<code>set_graph</code></td>
+</tr>
+<tr>
+<td><code>contracts/node-state-lifecycle.md</code></td>
+<td>The six node states and how each is derived, connectivity, block reasons and their precedence, the glitch-free cascade, speculative supersession and the three grace holds, <code>prune</code>, and states through barriers</td>
+</tr>
+<tr>
+<td><code>contracts/attachments.md</code></td>
+<td>The attachment framework: sense as an authoritative write and actuate as a post-turn delivery, durable spec vs ephemeral session, the topology rules a sensing attachment imposes, latest delivery discipline, the three-way error model, the oscillation detector, the cut barrier, and the driver roster</td>
+</tr>
+<tr>
+<td><code>contracts/mounts.md</code></td>
+<td>File mounts: the <code>ctx.a.mount</code> API, <code>mode</code>/<code>authority</code>/<code>persistent</code>, the initial decision table, observation classification against one disk belief, canonical bytes and null files, fingerprints and conditional atomic writes, directory mounts (<code>deepfolder</code> is sense-only), <code>ctx.mounts.sync()</code>, graph serialization and limits</td>
+</tr>
+<tr>
+<td><code>contracts/cancellation.md</code></td>
+<td>The cancellation substrate: one membership set per deduplication site, <code>softcancel</code> = deregister vs hard <code>cancel</code> = kill-all, softness cascading to the leaf, no liveness machinery, and the soft-only reactive policy</td>
+</tr>
+<tr>
 <td><code>contracts/service-management.md</code></td>
 <td><code>seamless-service-resolve</code>, <code>rhl-*</code> helpers, false-pass protocol</td>
 </tr>
@@ -173,11 +241,31 @@
 </tr>
 <tr>
 <td><code>contracts/scratch-witness-audit.md</code></td>
-<td>Scratch, witness, and audit trail semantics</td>
+<td>Scratch, witness, and audit trail semantics; fingertipping as recompute-on-absence</td>
+</tr>
+<tr>
+<td><code>contracts/seamless-run-and-argtyping.md</code></td>
+<td>The <code>seamless-run</code> CLI: argtyping, <code>--var</code> vs <code>--metavar</code>, canonicalization, manual remote deployment</td>
+</tr>
+<tr>
+<td><code>contracts/cache-storage-and-limits.md</code></td>
+<td>What is cached at a high level; the local buffer cache and its memory pressure</td>
+</tr>
+<tr>
+<td><code>contracts/content-addressed-files-and-dirs.md</code></td>
+<td>Files and directories as checksums; the deep index as a directory identity</td>
+</tr>
+<tr>
+<td><code>contracts/modules-and-closures.md</code></td>
+<td>Content-bound code: embedding modules, environment envelopes, closures as implicit inputs</td>
 </tr>
 <tr>
 <td><code>contracts/compiled-transformers.md</code></td>
 <td>C/C++/Fortran/Rust + open language set; identity model and pure-function constraint</td>
+</tr>
+<tr>
+<td><code>contracts/compiled-pins.md</code></td>
+<td>Compiled transformer input pins: the C ABI rules, schema-derived celltypes and the declaration whitelist, <code>mixed</code> as auto, the two validation stages and where they run, scalar and character admission, null, errors</td>
 </tr>
 <tr>
 <td><code>contracts/seamless-signature-schema.md</code></td>
@@ -237,5 +325,5 @@
 
 <!--
 MkDocs version : 1.6.1
-Build Date UTC : 2026-06-12 09:29:36.805110+00:00
+Build Date UTC : 2026-10-05 12:57:11.304173+00:00
 -->

@@ -157,15 +157,35 @@
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#transformationerror">TransformationError</a>
     </li>
+    <li class="toctree-l3"><a class="reference internal" href="#_await_task_any_loop">_await_task_any_loop</a>
+    </li>
     <li class="toctree-l3"><a class="reference internal" href="#_compute_executor_max_workers">_compute_executor_max_workers</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#_dask_available">_dask_available</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#_dependency_computation">_dependency_computation</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#_dependency_exception">_dependency_exception</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#_dependency_message">_dependency_message</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#_dependency_result_checksum">_dependency_result_checksum</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#_ensure_loop_running">_ensure_loop_running</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#_format_exception">_format_exception</a>
     </li>
+    <li class="toctree-l3"><a class="reference internal" href="#_is_expression">_is_expression</a>
+    </li>
     <li class="toctree-l3"><a class="reference internal" href="#_readonly_recursive">_readonly_recursive</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#_record_exception">_record_exception</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#_start_dependency">_start_dependency</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#_sync_task_loop">_sync_task_loop</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#_thread_loop_is_running">_thread_loop_is_running</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#compute_transformation_sync">compute_transformation_sync</a>
     </li>
@@ -361,7 +381,7 @@ Raise RuntimeError in case of an exception.</p>
 <h2 id="transformationstart"><code>Transformation.start</code></h2>
 <ul>
 <li>kind: <code>method</code></li>
-<li>signature: <code>start(self, *, loop)</code></li>
+<li>signature: <code>start(self, *, loop, _internal)</code></li>
 </ul>
 <p>Ensure the computation task is scheduled; return self for chaining.</p>
 <h2 id="transformationstatus"><code>Transformation.status</code></h2>
@@ -396,6 +416,12 @@ Raise RuntimeError in case of an exception.</p>
 <li>signature: <code>TransformationError</code></li>
 </ul>
 <p><em>No docstring.</em></p>
+<h2 id="_await_task_any_loop"><code>_await_task_any_loop</code></h2>
+<ul>
+<li>kind: <code>function</code></li>
+<li>signature: <code>_await_task_any_loop(task)</code></li>
+</ul>
+<p>Await a task that may belong to a loop running in another thread.</p>
 <h2 id="_compute_executor_max_workers"><code>_compute_executor_max_workers</code></h2>
 <ul>
 <li>kind: <code>function</code></li>
@@ -406,6 +432,30 @@ Raise RuntimeError in case of an exception.</p>
 <ul>
 <li>kind: <code>function</code></li>
 <li>signature: <code>_dask_available()</code></li>
+</ul>
+<p><em>No docstring.</em></p>
+<h2 id="_dependency_computation"><code>_dependency_computation</code></h2>
+<ul>
+<li>kind: <code>function</code></li>
+<li>signature: <code>_dependency_computation(dep, *, require_value, scratch)</code></li>
+</ul>
+<p><em>No docstring.</em></p>
+<h2 id="_dependency_exception"><code>_dependency_exception</code></h2>
+<ul>
+<li>kind: <code>function</code></li>
+<li>signature: <code>_dependency_exception(dep)</code></li>
+</ul>
+<p><em>No docstring.</em></p>
+<h2 id="_dependency_message"><code>_dependency_message</code></h2>
+<ul>
+<li>kind: <code>function</code></li>
+<li>signature: <code>_dependency_message(name, dependency, error)</code></li>
+</ul>
+<p><em>No docstring.</em></p>
+<h2 id="_dependency_result_checksum"><code>_dependency_result_checksum</code></h2>
+<ul>
+<li>kind: <code>function</code></li>
+<li>signature: <code>_dependency_result_checksum(dep, *, scratch)</code></li>
 </ul>
 <p><em>No docstring.</em></p>
 <h2 id="_ensure_loop_running"><code>_ensure_loop_running</code></h2>
@@ -420,12 +470,50 @@ Raise RuntimeError in case of an exception.</p>
 <li>signature: <code>_format_exception(exc)</code></li>
 </ul>
 <p><em>No docstring.</em></p>
+<h2 id="_is_expression"><code>_is_expression</code></h2>
+<ul>
+<li>kind: <code>function</code></li>
+<li>signature: <code>_is_expression(value)</code></li>
+</ul>
+<p><em>No docstring.</em></p>
 <h2 id="_readonly_recursive"><code>_readonly_recursive</code></h2>
 <ul>
 <li>kind: <code>function</code></li>
 <li>signature: <code>_readonly_recursive(value)</code></li>
 </ul>
 <p><em>No docstring.</em></p>
+<h2 id="_record_exception"><code>_record_exception</code></h2>
+<ul>
+<li>kind: <code>function</code></li>
+<li>signature: <code>_record_exception(exc)</code></li>
+</ul>
+<p><em>No docstring.</em></p>
+<h2 id="_start_dependency"><code>_start_dependency</code></h2>
+<ul>
+<li>kind: <code>function</code></li>
+<li>signature: <code>_start_dependency(dep, *, loop, scratch)</code></li>
+</ul>
+<p><em>No docstring.</em></p>
+<h2 id="_sync_task_loop"><code>_sync_task_loop</code></h2>
+<ul>
+<li>kind: <code>function</code></li>
+<li>signature: <code>_sync_task_loop()</code></li>
+</ul>
+<p>Return the loop on which a sync caller schedules in-process computations.</p>
+<p>A thread without a running loop uses its own loop, run in a background
+thread. Transformer bodies run in executor threads, so nested sync calls
+each get a separate loop and default executor: blocked parents never
+starve their children of executor threads.</p>
+<p>A thread whose own loop is running (Jupyter, or sync code inside a
+coroutine) cannot block on a task of that loop. Its computations go to a
+shared background driver loop instead. Only such top-level callers use it,
+which is what the plain-script main-thread loop is used for as well.</p>
+<h2 id="_thread_loop_is_running"><code>_thread_loop_is_running</code></h2>
+<ul>
+<li>kind: <code>function</code></li>
+<li>signature: <code>_thread_loop_is_running()</code></li>
+</ul>
+<p>Whether the calling thread runs an event loop it cannot block on.</p>
 <h2 id="compute_transformation_sync"><code>compute_transformation_sync</code></h2>
 <ul>
 <li>kind: <code>function</code></li>

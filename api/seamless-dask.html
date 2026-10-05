@@ -211,6 +211,10 @@
 </ol>
 <p>If the cluster is at capacity, permission requests may be denied; when remote execution is optional, the caller retries and may eventually fall back to local execution.</p>
 <p>Under <code>record: true</code>, record-write failures propagate to the Dask caller (no silent swallowing). Under <code>record: false</code>, minimal-record write failures are best-effort for narrow transport/storage errors and emit a warning; programmer errors and <code>RecordBucketError</code> always propagate.</p>
+<p>Transformation input specs may refer to concrete checksums, transformation
+futures, or expression futures. Expression inputs use <code>kind="expression"</code> and
+are evaluated as cache-aware checksum futures before the downstream
+transformation is submitted.</p>
 <h3 id="worker-plugin">Worker plugin</h3>
 <p><code>SeamlessWorkerPlugin</code> (a Dask <code>WorkerPlugin</code>) runs inside each Dask worker. On setup it:</p>
 <ul>

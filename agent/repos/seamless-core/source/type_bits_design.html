@@ -1,0 +1,1957 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <link rel="shortcut icon" href="../../../img/favicon.ico" />
+    <title>Type bits design - Seamless — Agent Documentation</title>
+    <link rel="stylesheet" href="../../../css/theme.css" />
+    <link rel="stylesheet" href="../../../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "Type bits design";
+        var mkdocs_page_input_path = "repos/seamless-core/source/type_bits_design.md";
+        var mkdocs_page_url = null;
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../../../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href="../../../index.html" class="icon icon-home"> Seamless — Agent Documentation
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../../index.html">Home</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../../overview.html">Agent Docs Overview</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../index.html">Workspace Repos</a>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Contracts</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/identity-and-caching.html">Identity and Caching</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/celltypes-and-conversion.html">Celltypes, Null, and Conversion</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/hashtype.html">HashType</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/deep-celltypes.html">Deep Celltypes</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/expressions.html">Expressions</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/cells.html">Cells</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/pins.html">Pins</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/workflow-context.html">Workflow Context</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/node-state-lifecycle.html">Node State Lifecycle</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/attachments.html">Attachments</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/mounts.html">File Mounts</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/cancellation.html">Cancellation</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/direct-delayed-and-transformation.html">direct/delayed/Transformation</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/modules-and-closures.html">Modules and Closures</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/scratch-witness-audit.html">Scratch/Witness/Audit</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/seamless-run-and-argtyping.html">seamless-run/Argtyping</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/cache-storage-and-limits.html">Cache Storage and Limits</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/content-addressed-files-and-dirs.html">Content-addressed Files and Dirs</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/execution-backends.html">Execution Backends</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/execution-records.html">Execution Records</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/service-management.html">Service Management</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/compression.html">Compression</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/compiled-transformers.html">Compiled Transformers</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/compiled-pins.html">Compiled Pins</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/seamless-signature-schema.html">seamless-signature Schema</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">API</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../api/python/seamless.html">seamless</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../api/python/seamless.transformer.html">seamless.transformer</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../api/python/seamless.buffer_class.html">seamless.buffer_class</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../api/python/seamless.checksum_class.html">seamless.checksum_class</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../api/python/seamless_config.select.html">seamless_config.select</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../api/python/seamless_config.tools.html">seamless_config.tools</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../api/python/seamless_transformer.transformation_class.html">seamless_transformer.transformation_class</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../api/python/seamless_transformer.transformer_class.html">seamless_transformer.transformer_class</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">CLI</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../api/cli/seamless-run.html">seamless-run</a>
+                  </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">Seamless — Agent Documentation</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../../../index.html" class="icon icon-home" aria-label="Docs"></a></li>
+      <li class="breadcrumb-item active">Type bits design</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <p>Canonical JSON null (<code>b"null\n"</code>, checksum <code>38e0b9de…</code>) is accepted in every celltype and converts to itself. Resolving it as <code>bytes</code> returns <code>b""</code>; every other celltype returns <code>None</code>. Empty byte values canonicalize to that same null checksum.</p>
+<h1 id="typebits-a-bit-flag-description-of-not-quite-seamless-types">TypeBits — a bit-flag description of "not-quite Seamless types"</h1>
+<p>Status: design note. Supersedes <code>BufferInfo</code> (see <a href="buffer_info.py"><code>buffer_info.py</code></a>).
+Grounded in the celltype lattice of <a href="conversion.py"><code>conversion.py</code></a>.</p>
+<h2 id="1-purpose-scope">1. Purpose &amp; scope</h2>
+<p><code>TypeBits</code> is a compact bit-flag classification of a <strong>checksum</strong> (equivalently,
+of its buffer's content). It is "not quite" a Seamless type because it answers
+two questions that a single celltype name does not:</p>
+<ol>
+<li><strong>Deserializability</strong> — <em>may this checksum be deserialized into a value using
+   celltype X?</em> This is upward-closed in the subtype lattice: a buffer that
+   deserializes as <code>python</code> also deserializes as <code>ipython</code>, <code>text</code>, <code>bytes</code>.</li>
+<li><strong>Expression capability</strong> — <em>can this expression be evaluated on the value?</em>
+   Not every celltype supports integer-indexing/slicing, and not every celltype
+   supports string/attribute access. <code>TypeBits</code> records which <strong>kinds of access</strong>
+   the root value admits, so a path step can be statically rejected (<code>[3]</code> on an
+   <code>int</code>, <code>.foo</code> on a list) before any buffer is fetched.</li>
+</ol>
+<p>These two are orthogonal; they share one small integer (§4.1).</p>
+<p><code>TypeBits</code> is <strong>self-contained</strong>: there is no wrapping struct of side fields. The
+non-boolean metadata that <code>BufferInfo</code> carried as plain fields (<code>length</code>,
+<code>dtype</code>, <code>shape</code>, <code>members</code>) is folded into the word in <strong>reduced</strong> form —
+small enums that retain exactly the resolution the queries in §§5–7 need
+(<code>Length</code>, <code>DType</code>, <code>Rank</code>; <code>members</code> is dropped — §4.3). And its information
+<strong>only grows</strong>: a word either settles every field, or says explicitly how far it
+was tested, at one of three untested levels (§4.1). A stored word can only be
+replaced by a tighter one (§8.1).</p>
+<p>What <code>TypeBits</code> deliberately does <strong>not</strong> carry:</p>
+<ul>
+<li><strong>Cached conversion results</strong> (<code>str2text</code>, <code>text2str</code>, <code>bytes2binary</code>,
+  <code>binary2json</code>, <code>json2binary</code> in the old <code>BufferInfo</code>). Each is just a cheap
+  <strong>Expression</strong> with an empty path —
+  <code>Expression(checksum, path="", input_celltype=source, celltype=target)</code> —
+  whose result checksum is cached in <code>seamless.db</code> under
+  <code>database_key = (input_checksum, "", source, target)</code>, exactly like a
+  Transformation. They are recovered from the Expression cache and must not be
+  duplicated here. <code>TypeBits</code> answers <em>whether</em> a conversion is feasible; the
+  Expression cache holds <em>what</em> the resulting checksum is.</li>
+<li><strong>Unbounded metadata</strong>. The exact <code>length</code>, the full numpy <code>dtype</code> string, the
+  literal <code>shape</code> tuple, and the deep-cell member <em>count</em> are not stored. Their
+  query-relevant residue survives as the <code>Length</code>/<code>DType</code>/<code>Rank</code> enums (§4.3);
+  the precise values are read from the buffer/value on the rare path that needs
+  them.</li>
+</ul>
+<h2 id="2-the-subtype-lattice-and-the-deserializability-closure">2. The subtype lattice and the deserializability closure</h2>
+<p><code>conversion.py</code> already encodes the checksum-preserving subtype upcasts in
+<code>conversion_trivial</code> (each pair is <code>(sub, super)</code>):</p>
+<pre><code>text  ⊂ bytes
+ipython ⊂ text        python ⊂ ipython        python ⊂ text
+yaml ⊂ text           plain ⊂ yaml
+plain ⊂ bytes         plain ⊂ mixed
+binary ⊂ mixed
+str, int, float, bool ⊂ plain
+int, float, bool ⊂ str        int ⊂ float        float ⊂ int
+</code></pre>
+<p><strong>Subtypes are subtypes of checksums.</strong> A celltype is a subtype of another when
+every checksum it accepts is also accepted by the other. It says nothing about
+values: <code>"42"</code> is the string <code>"42"</code> as <code>plain</code> and 42 as <code>int</code>. Under the
+reference parser (§5), <code>int</code> and <code>float</code> accept exactly the same checksums, and
+<code>bool</code> shares no checksum with either. A conversion between nested celltypes
+keeps the checksum; the value comes from the target's parser.</p>
+<p>Deserializability uses <strong>two more edges</strong> than the trivial-conversion relation:</p>
+<pre><code>deserializability_edges = conversion_trivial  ∪  {(binary, bytes), (mixed, bytes)}
+</code></pre>
+<p><code>(binary→bytes)</code> and <code>(mixed→bytes)</code> live in <code>conversion_reformat</code> — they <em>may
+change the checksum</em>, so <code>conversion.py</code> rightly refuses to call them trivial.
+But every binary/mixed buffer <strong>is</strong> a valid bytes buffer, so for the purpose of
+<em>deserializability</em> the edges hold. Precisely:</p>
+<blockquote>
+<p><strong>deserializability-closure ⊇ trivial-conversion-closure</strong>, the surplus being
+exactly the <code>binary→bytes</code> and <code>mixed→bytes</code> reformat edges.</p>
+</blockquote>
+<p><code>bytes</code> is therefore the top of the deserializability lattice and is always set.
+<code>checksum</code> is a special case: its <em>value</em> is a single 64-hex-digit string. The
+bits still <strong>screen</strong> it — a <code>checksum</code> buffer is <code>UTF8 ∧ Length == EQ64</code> (§9) —
+but the <em>sufficient</em> validation (are all 64 characters hex digits?) lives
+elsewhere, as in <code>BufferInfo</code> today. (Deep cells are separate celltypes, not a
+form of <code>checksum</code>; §9.)</p>
+<h2 id="3-economy-store-predicates-not-supertypes">3. Economy: store predicates, not supertypes</h2>
+<p>Legal deserializability masks are exactly the upward-closed sets of the lattice,
+so supertype bits are never stored — they are <em>derived</em> by closing upward from a
+small set of <strong>discriminating predicates</strong> (the join-irreducibles). Closing from
+a single generator recovers a 4–6 element up-set:</p>
+<table>
+<thead>
+<tr>
+<th>generator</th>
+<th>deserializes as …</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>python</code></td>
+<td>python, ipython, text, bytes</td>
+</tr>
+<tr>
+<td><code>int</code></td>
+<td>int, plain, yaml, mixed, text, bytes</td>
+</tr>
+<tr>
+<td><code>binary</code></td>
+<td>binary, mixed, bytes</td>
+</tr>
+<tr>
+<td><code>seamless_mixed</code></td>
+<td>mixed, bytes</td>
+</tr>
+</tbody>
+</table>
+<p>A raw "most-specific celltype" antichain is rejected because scalars explode it
+(<code>"42"</code> is most-specifically <code>{int, float, str}</code> — three incomparable
+generators). Orthogonal predicates (<code>Kind = JSON_NUMBER</code> + <code>NUMERIC_SCALAR</code>)
+encode the same fact in fixed width. This is the same choice <code>BufferInfo</code> already
+makes with <code>is_json</code> / <code>json_type</code> / <code>is_json_numeric_scalar</code>; <code>TypeBits</code> just
+makes it principled and complete.</p>
+<p>The <em>minimum</em> of that up-set — the most specific celltype — is the buffer's
+<strong>most-informative celltype</strong> (MIC), which §8 uses to materialize a value when
+a peek is not available.</p>
+<h2 id="4-logical-predicates">4. Logical predicates</h2>
+<p>Semantically, <code>TypeBits</code> is the predicates below. Physically they pack into one
+small integer (§4.1), where the mutually-exclusive ones collapse into a single
+enum field instead of one bit each.</p>
+<ul>
+<li><strong>Container kind</strong> — a buffer is at most one of JSON / NUMPY / SEAMLESS_MIXED,
+  and a JSON buffer has exactly one value kind, so all of this is <strong>one enum</strong>
+  (<code>Kind</code>, §4.1), not separate flags: <code>RAW_BYTES</code> (non-UTF-8 bytes) or <code>RAW_TEXT</code>
+  (non-JSON UTF-8 text), <code>NUMPY</code> (<code>.npy</code> magic), <code>SEAMLESS_MIXED</code> (mixed magic), or
+  <code>JSON</code> <em>with</em> its value kind <code>object</code> / <code>array</code> / <code>string</code> / <code>number</code>. <code>UTF8</code>,
+  <code>JSON</code>, <code>NUMPY</code>, <code>SEAMLESS_MIXED</code>, and <code>json_type</code> are derived accessors over
+  <code>Kind</code> (§4.1).</li>
+<li><strong>Length</strong> — the buffer length, <strong>bucketed</strong> into an enum (<code>Length</code>, §4.3) with
+  breakpoints at 64 (a checksum value's hex length) and 1000 (the numeric-scalar
+  gate). The only length facts the queries use are "is it the &gt;1000 over-long
+  case?" and "is it checksum-shaped (==64)?"; the bucket keeps exactly those.</li>
+<li><strong>UTF8</strong> — <code>buffer.decode()</code> succeeds. It informed only <code>RAW</code> (text vs pure
+  bytes) — <code>JSON ⟹ UTF8</code>, and <code>NUMPY</code>/<code>SEAMLESS_MIXED</code> are binary — so rather than
+  a flag it is <strong>folded into <code>Kind</code></strong>: <code>RAW</code> splits into <code>RAW_TEXT</code> (UTF-8) and
+  <code>RAW_BYTES</code> (not), and <code>UTF8</code> is derived by membership (§4.1).</li>
+<li><strong>NUMERIC_SCALAR</strong> — value converts to <code>int</code>/<code>float</code> (meaningful for
+  <code>Kind ∈ {number, string}</code>).</li>
+<li><strong>DType</strong> — for <code>Kind = NUMPY</code>, the dtype <em>class</em> as an enum (<code>DType</code>, §4.3):
+  <code>NUMERIC</code>, <code>NONNUMERIC</code> (bytes <code>S</code> / unicode <code>U</code> / object <code>O</code>), or <code>STRUCTURED</code>
+  (a record dtype → field access by name). <code>NA</code> otherwise. This replaces both the
+  old full-<code>dtype</code> field <strong>and</strong> the first draft's <code>NUMPY_STRUCTURED</code> flag
+  (<code>STRUCTURED</code> is now a <code>DType</code> value).</li>
+<li><strong>Rank</strong> — for <code>Kind = NUMPY</code>, the ndim <strong>bucket</strong> (<code>Rank</code>, §4.3): <code>SCALAR</code>
+  (0-d), <code>D1</code>, <code>D2</code>, <code>D3PLUS</code>. It distinguishes the scalar case (needed by
+  <code>binary→int/float</code> and by capability) and bounds the depth of a chained
+  positional path (§7.2). Replaces the literal <code>shape</code> tuple.</li>
+<li><strong>NUMPY_BYTES</strong> — single (<code>Rank = SCALAR</code>) dtype-<code>S</code> array, the one case where
+  binary↔bytes <em>changes</em> the checksum (<code>Kind = NUMPY</code>). It refines
+  <code>DType = NONNUMERIC</code>. It does <strong>not</strong> change <code>deserializable_as(bytes)</code> (still
+  universally True); it only records that <em>value-via-<code>bytes</code></em> (the <code>.npy</code> buffer)
+  differs from <em>value-via-<code>binary</code></em><code>.tobytes()</code>.</li>
+<li><strong>SEMANTIC</strong> — the checksum is a <em>semantic</em> (AST-derived) identity of code, not
+  a literal text buffer (§4.2). This is provenance, not buffer content (§8.5).</li>
+</ul>
+<p><strong>Expression capability needs no flag.</strong> A <em>true</em> mixed value (JSON combined with
+Numpy) always has a <strong>container</strong> root — a dict or a list/array, never a scalar
+(a bare scalar is <code>plain</code>, a bare array is <code>binary</code>). So the mixed magic splits
+into two <code>Kind</code> values, <code>MIXED_OBJECT</code> and <code>MIXED_ARRAY</code>, and the root structure
+rides along inside <code>Kind</code> at no extra cost (§4.1). Every <code>SEQ</code>/<code>MAP</code> capability
+then follows from <code>Kind</code> (plus <code>Rank</code>/<code>DType</code> for arrays) alone (§7) — Region 5
+vanishes entirely.</p>
+<p><strong><code>bool</code> / <code>null</code> are not stored at all.</strong> Exactly three buffers serialize to
+them — <code>true</code>, <code>false</code>, <code>null</code> — so their checksums are three module constants
+(<code>CHECKSUM_TRUE</code>, <code>CHECKSUM_FALSE</code>, <code>CHECKSUM_NULL</code>); membership is a direct
+checksum comparison, which is why <code>Kind</code> needs no <code>bool</code>/<code>null</code> value. Their full
+<code>TypeBits</code> is likewise pre-tabulated, so they too are concrete (§8.1).</p>
+<p>Dropped from the first draft: the text-language <strong>validity</strong> flags
+(<code>IS_YAML</code>/<code>IS_IPYTHON</code>/<code>IS_PYTHON</code>) — out of scope, validity stays in
+<code>text_validation_celltype_cache</code>; <strong><code>JSON_NUMERIC_ARRAY</code></strong> — saved almost
+nothing; <strong><code>J_BOOL</code>/<code>J_NULL</code></strong> — the three constants above; <strong><code>SEQ</code>/<code>MAP</code></strong> (and
+the <code>MIXED_KEYED</code> residue) — fully derived, the mixed-root case now living in
+<code>Kind</code> (§7); <strong><code>NUMPY_STRUCTURED</code></strong> — folded into <code>DType.STRUCTURED</code> (§4.1); the
+<strong><code>UTF8</code></strong> flag — folded into <code>Kind</code> by splitting <code>RAW</code> into <code>RAW_TEXT</code>/<code>RAW_BYTES</code>
+(§4.1); <strong><code>members</code> / <code>DEEP</code></strong> — dropped: the member count is read by no <code>TypeBits</code>
+query, and "deepness" is not a fact about the bytes — a deep cell is a <em>distinct
+celltype</em> (<code>deepcell</code>/<code>deepfolder</code>/…) serialized as plain JSON, so its buffer is
+already a <code>JSON_OBJECT</code>/<code>JSON_ARRAY</code> <code>Kind</code>; the deep-vs-plain identity is that
+declared celltype, a higher layer, out of scope here (§9).</p>
+<h3 id="41-storage-scheme-enum-packed">4.1 Storage scheme (enum-packed)</h3>
+<pre><code class="language-python">from enum import IntEnum, IntFlag
+
+class Kind(IntEnum):           # bits 0–3, range 0–11  (4 bits)
+    RAW_BYTES     = 0          # non-UTF-8 bytes, no magic bytes
+    NUMPY         = 1          # .npy magic
+    MIXED_OBJECT  = 2          # mixed magic, dict root
+    MIXED_ARRAY   = 3          # mixed magic, list/array root
+    RAW_TEXT      = 4          # UTF-8 text, not JSON
+    JSON_OBJECT   = 5
+    JSON_ARRAY    = 6
+    JSON_STRING   = 7
+    JSON_NUMBER   = 8
+    UNTESTED      = 9          # nothing tested: any of 0–8
+    UTF8_UNTESTED = 10         # UTF-8, JSON not tested: one of 4–8
+    JSON_UNTESTED = 11         # JSON, which JSON type not tested: one of 5–8
+
+class Length(IntEnum):         # bits 4–5, range 0–3  (2 bits)
+    SHORT  = 0                 # &lt; 64 bytes
+    EQ64   = 1                 # exactly 64 (checksum-digest length)
+    MEDIUM = 2                 # 65 .. 1000
+    LONG   = 3                 # &gt; 1000  (numeric-scalar conversion forbidden)
+
+class DType(IntEnum):          # bits 6–7, range 0–3  (2 bits); NA unless Kind == NUMPY
+    NA          = 0
+    NUMERIC     = 1            # bool / int / uint / float / complex
+    NONNUMERIC  = 2            # bytes 'S', unicode 'U', object 'O'
+    STRUCTURED  = 3            # record dtype with named fields
+
+class Rank(IntEnum):           # bits 8–9, range 0–3  (2 bits); SCALAR unless Kind == NUMPY
+    SCALAR = 0                 # 0-d
+    D1     = 1
+    D2     = 2
+    D3PLUS = 3                 # 3 or more dimensions (bucket saturates)
+
+class Flag(IntFlag):           # bits 10–12
+    NUMERIC_SCALAR = 1 &lt;&lt; 0
+    NUMPY_BYTES    = 1 &lt;&lt; 1
+    SEMANTIC       = 1 &lt;&lt; 2
+</code></pre>
+<p>Packed into <strong>13 bits — a 2-byte word</strong> (3 bits spare for future predicates):</p>
+<pre><code>bit 0–3  : Kind             (0–11)
+bit 4–5  : Length           (0–3)
+bit 6–7  : DType            (0–3)
+bit 8–9  : Rank             (0–3)
+bit 10   : NUMERIC_SCALAR
+bit 11   : NUMPY_BYTES
+bit 12   : SEMANTIC
+</code></pre>
+<p>Derived accessors (no stored bit):</p>
+<pre><code class="language-python">UTF8           = kind in (RAW_TEXT, JSON_OBJECT, JSON_ARRAY, JSON_STRING, JSON_NUMBER,
+                          UTF8_UNTESTED, JSON_UNTESTED)
+JSON           = kind in (JSON_OBJECT, JSON_ARRAY, JSON_STRING, JSON_NUMBER, JSON_UNTESTED)
+UNTESTED_LEVEL = kind in (UNTESTED, UTF8_UNTESTED, JSON_UNTESTED)
+RAW            = kind in (Kind.RAW_BYTES, Kind.RAW_TEXT)
+json_type      = (&quot;object&quot;, &quot;array&quot;, &quot;string&quot;, &quot;number&quot;)[kind - Kind.JSON_OBJECT] if JSON else None
+NUMPY          = kind == Kind.NUMPY
+SEAMLESS_MIXED = kind in (Kind.MIXED_OBJECT, Kind.MIXED_ARRAY)
+is_bool        = checksum in (CHECKSUM_TRUE, CHECKSUM_FALSE)
+is_null        = checksum == CHECKSUM_NULL
+</code></pre>
+<p><code>UTF8</code> and <code>JSON</code> are set membership. Among the concrete kinds they would be <code>≥</code>
+thresholds, but the three untested kinds sit above them, and renumbering the
+existing kinds would change every stored word. The old <code>UTF8</code> flag is gone — it
+was <code>Kind</code>-derived for every kind <em>except</em> <code>RAW</code>, and splitting <code>RAW</code> into
+<code>RAW_TEXT</code>/<code>RAW_BYTES</code> supplies that one missing bit inside <code>Kind</code> (the 4th <code>Kind</code>
+bit is paid for by the dropped flag — still 13 bits total).</p>
+<p><strong>The untested levels.</strong> A producer that hasn't tested how far a buffer goes
+stores one of three untested kinds instead of a guess. The kinds form a tree, and
+testing moves a word down it:</p>
+<table>
+<thead>
+<tr>
+<th>untested kind</th>
+<th>means</th>
+<th>narrows to</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>UNTESTED</code></td>
+<td>nothing tested</td>
+<td><code>UTF8_UNTESTED</code>, <code>RAW_BYTES</code>, <code>NUMPY</code>, <code>MIXED_*</code></td>
+</tr>
+<tr>
+<td><code>UTF8_UNTESTED</code></td>
+<td>UTF-8; JSON not tested</td>
+<td><code>JSON_UNTESTED</code>, <code>RAW_TEXT</code></td>
+</tr>
+<tr>
+<td><code>JSON_UNTESTED</code></td>
+<td>JSON; which JSON type not tested</td>
+<td><code>JSON_OBJECT</code> … <code>JSON_NUMBER</code></td>
+</tr>
+</tbody>
+</table>
+<p>The binary kinds need no intermediate level, because their magic bytes are
+recognized in constant time. At an untested level, <code>Length</code> is still known,
+<code>DType</code> is <code>NA</code>, <code>Rank</code> is <code>SCALAR</code>, and every flag is 0. <code>NUMERIC_SCALAR</code> is
+untested there. It needs no "tested" bit: confirming a concrete JSON kind requires
+the value, and the <code>float(value)</code> probe then costs nothing (§8.2), so it is always
+tested for a concrete JSON kind.</p>
+<p>Determining <code>MIXED_OBJECT</code> vs <code>MIXED_ARRAY</code> is a one-token peek at the mixed
+skeleton (the byte after the magic is <code>{</code> or <code>[</code>), done while classifying <code>Kind</code>
+— so the capability is populated for free, not deferred. The numpy <code>DType</code>,
+<code>Rank</code>, and <code>NUMPY_BYTES</code> come from the <code>.npy</code> <em>header</em> the same way (§8.3): a
+peek, never a load. <code>Length</code>, <code>DType</code>, and <code>Rank</code> are the reduced forms of the
+old <code>length</code>/<code>dtype</code>/<code>shape</code> fields (§4.3); <code>members</code> is dropped. Nothing lives
+outside this word.</p>
+<h3 id="42-semantic-checksums">4.2 Semantic checksums</h3>
+<p>Code cells carry two identities: the checksum of the literal source buffer, and a
+<strong>semantic checksum</strong> computed from the parsed AST, so that comment / whitespace /
+formatting changes don't bust the transformation cache. <code>SEMANTIC</code> marks a
+checksum as the latter. Consequences here:</p>
+<ul>
+<li>A semantic checksum identifies a canonical AST-derived form, so
+  <code>deserializable_as</code> for it is restricted to the code celltypes (<code>python</code>,
+  <code>ipython</code>, and <code>text</code>/<code>bytes</code> as their serialization).</li>
+<li>The literal↔semantic relationship is, like every cheap conversion in this
+  design, an <strong>Expression</strong> (empty path) cached in <code>seamless.db</code> — not a stored
+  field. <code>SEMANTIC</code> records only <em>which side</em> a checksum is on.</li>
+<li>It is orthogonal to <code>Kind</code> (it co-occurs with <code>Kind = RAW_TEXT</code>, UTF-8 code), so
+  it is a flag, not a <code>Kind</code> value. If a deployment ever stores the marshalled AST
+  <em>as the buffer</em>, that would instead warrant a new <code>Kind</code> value; layering
+  <code>SEMANTIC</code> on text is the lighter option and is recommended.</li>
+<li>It is <strong>provenance, not content</strong>: no buffer inspection reveals it, so it is
+  supplied by the construction path (§8.5), defaulting to <code>False</code>.</li>
+</ul>
+<h3 id="43-reduced-metadata-enums">4.3 Reduced metadata enums</h3>
+<p>The four <code>BufferInfo</code> side fields are kept only to the resolution the queries
+need, and folded into the word.</p>
+<p><strong><code>Length</code>.</strong> The methods consult length for exactly two facts: the numeric
+<code>&gt; 1000</code> gate (§6) and "is this checksum-shaped?". 64 is the sweet spot — the
+mandatory length of a <code>checksum</code>-celltype <em>value</em> (a 64-hex-digit string) and of
+each leaf of a deep cell. So the bucket boundaries sit at 64 and 1000:
+<code>SHORT (&lt;64)</code>, <code>EQ64 (==64, the only exact bucket)</code>, <code>MEDIUM (65–1000)</code>,
+<code>LONG (&gt;1000)</code>. <code>LONG</code> is the over-long case that forbids numeric coercion;
+<code>EQ64</code> is the buffer-length signature of checksum-shaped content. Everything
+between is one undifferentiated bucket, because nothing else reads the length.</p>
+<p><strong><code>DType</code>.</strong> Reduced to the three classes the queries distinguish —
+<code>NUMERIC</code> / <code>NONNUMERIC</code> / <code>STRUCTURED</code> (plus <code>NA</code> off the numpy branch). This
+absorbs <code>NUMPY_STRUCTURED</code> (now <code>DType.STRUCTURED</code>). The one precision cost of
+merging <code>S</code>/<code>U</code>/<code>O</code> into <code>NONNUMERIC</code> is <code>binary→plain</code>: an object-dtype array is
+infeasible (<code>json_encode</code> fails) while an <code>S</code>/<code>U</code> array is feasible-but-changing,
+and the merged enum can no longer tell them apart — so that one cell becomes <code>?</code>
+instead of a split <code>✗</code>/<code>≠</code> (§6.1). This is an accepted trade: <code>binary→plain</code> is a
+rare conversion. <code>NUMPY_BYTES</code> still pins the scalar-<code>S</code> sub-case that the
+binary↔bytes reformat hinges on.</p>
+<p><strong><code>Rank</code>.</strong> Reduced to <code>SCALAR / D1 / D2 / D3PLUS</code> — "0-d, 1, 2, 3+ dimensions".
+Beyond distinguishing the scalar case (for <code>binary→int/float</code> and capability), the
+dimension count is what lets a <em>chained</em> positional path be validated statically:
+a rank-<code>r</code> array admits <code>r</code> positional-item steps before bottoming out at a scalar
+(§7.2). <code>D3PLUS</code> saturates: at three or more dims the exact rank is no longer
+tracked, so a path deeper than three is answered <code>None</code> rather than rejected.</p>
+<p><strong><code>members</code></strong> is <strong>dropped</strong>. No <code>TypeBits</code> query reads the member count, and
+"deepness" is not a fact about the bytes: a deep cell is a <em>distinct celltype</em>
+(<code>deepcell</code>/<code>deepfolder</code>/…) that serializes as plain JSON, byte-identical to an
+ordinary dict/list of 64-hex strings. Its buffer's <code>Kind</code> is therefore already
+<code>JSON_OBJECT</code>/<code>JSON_ARRAY</code>, which is all capability needs (§7); which plain-JSON
+buffers are <em>deep</em> is the cell's declared celltype — a higher layer, out of scope
+here (§9).</p>
+<h2 id="5-method-1-deserializable_ascelltype-bool-none-strict-role-1">5. Method 1 — <code>deserializable_as(celltype) -&gt; bool | None</code> (strict, Role 1)</h2>
+<p>"Strict" = <em>the reference parser accepts the buffer as that celltype.</em>
+<code>parse_buffer</code> implements the reference parser, and <code>deserializable_as</code> predicts
+it. Parsing is enough: the value is not re-serialized to check for a round trip.
+So one value can have several checksums: <code>42</code> and <code>"42"</code> are both the int 42.
+Identity stays with the checksum; two transformations that differ only in such a
+pin have different checksums and the same result.</p>
+<p><strong>Three outcomes.</strong></p>
+<table>
+<thead>
+<tr>
+<th>result</th>
+<th>meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>True</code></td>
+<td>the parser accepts it (up to the value-level checks † and ‡)</td>
+</tr>
+<tr>
+<td><code>False</code></td>
+<td>a negative is proven: the parser would reject it</td>
+</tr>
+<tr>
+<td><code>None</code></td>
+<td>the word is at an untested level (§4.1); <code>parse_buffer</code> decides at materialization</td>
+</tr>
+</tbody>
+</table>
+<p>A concrete kind never gives <code>None</code>, and an untested level never gives <code>False</code>
+unless a known fact (<code>Length</code>, the checksum) proves it.</p>
+<p><strong>The reference parser.</strong></p>
+<ul>
+<li><strong>null</strong>: the checksums of <code>null</code> and <code>null\n</code> are <code>None</code> for every celltype
+  (<code>b""</code> for <code>bytes</code>). Only <code>null\n</code> is the canonical null. Accepted before the
+  tables below, for every celltype. Function pins and results apply their
+  stricter null boundary separately; HashType describes storage compatibility.</li>
+<li><strong>bool</strong>: the checksums of <code>true</code> and <code>false</code>, with or without a trailing
+  newline. Any other checksum is rejected.</li>
+<li><strong>plain</strong>: <code>orjson</code>. It rejects <code>NaN</code>, <code>Infinity</code> and numbers beyond the float
+  range, so every JSON number is finite; it returns integers beyond 64 bits as
+  floats.</li>
+<li><strong>str</strong>: parsed as <code>plain</code>. A string, a number or a boolean becomes
+  <code>str(value)</code>, so <code>42</code> is <code>"42"</code> and <code>true</code> is <code>"True"</code>. An object, an array or
+  null is rejected.</li>
+<li><strong>int, float</strong>: the buffer is at most 1000 bytes, and the value is numeric: a
+  number that isn't a boolean, or a string whose <code>float()</code> is finite. A <code>float</code> is
+  <code>float(value)</code>. An <code>int</code> is <code>int(value)</code>, or else <code>int(float(value))</code>, so <code>"42"</code>
+  is 42 and <code>4.5</code> is 4.</li>
+</ul>
+<p>The null and bool parsers are virtual: they work on the checksum and never fetch
+a buffer. The numeric check is made on the value, never on a stored flag, so
+<code>parse_buffer</code> doesn't depend on whether a HashType is known.</p>
+<p><strong>Concrete kinds.</strong></p>
+<table>
+<thead>
+<tr>
+<th>celltype</th>
+<th>predicate</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>bytes</code></td>
+<td>always True (lattice top)</td>
+</tr>
+<tr>
+<td><code>text</code></td>
+<td><code>UTF8</code></td>
+</tr>
+<tr>
+<td><code>yaml</code> / <code>ipython</code> / <code>python</code></td>
+<td><code>UTF8</code> (validity checked at parse time) †</td>
+</tr>
+<tr>
+<td><code>plain</code></td>
+<td><code>JSON</code></td>
+</tr>
+<tr>
+<td><code>str</code></td>
+<td><code>Kind ∈ {JSON_STRING, JSON_NUMBER}</code>, or a bool/null checksum</td>
+</tr>
+<tr>
+<td><code>int</code> / <code>float</code></td>
+<td><code>Length ≠ LONG ∧ NUMERIC_SCALAR</code></td>
+</tr>
+<tr>
+<td><code>bool</code></td>
+<td>the checksum is one of the bool checksums</td>
+</tr>
+<tr>
+<td><code>binary</code></td>
+<td><code>Kind == NUMPY</code></td>
+</tr>
+<tr>
+<td><code>mixed</code></td>
+<td><code>¬RAW</code> (i.e. <code>Kind ∉ {RAW_BYTES, RAW_TEXT}</code>)</td>
+</tr>
+<tr>
+<td><code>checksum</code></td>
+<td><code>Kind ∈ {RAW_TEXT, JSON_NUMBER} ∧ Length == EQ64</code> (all-hex test is value-level) ‡</td>
+</tr>
+</tbody>
+</table>
+<p><code>NUMERIC_SCALAR</code> means a finite number: a JSON number, or a JSON string whose
+<code>float()</code> is finite, so <code>"nan"</code>, <code>"inf"</code> and <code>"1e999"</code> don't get it. There is no
+integer bit: <code>int</code> and <code>float</code> accept exactly the same checksums. <code>true</code> and
+<code>false</code> are classified as <code>JSON_STRING</code> without <code>NUMERIC_SCALAR</code>; a non-canonical
+null such as <code>null</code> gets the same word, so HashType allows it as <code>str</code> and
+<code>parse_buffer</code> rejects it.</p>
+<p><strong>Untested levels.</strong> "?" is <code>None</code>.</p>
+<table>
+<thead>
+<tr>
+<th>celltype</th>
+<th><code>UNTESTED</code></th>
+<th><code>UTF8_UNTESTED</code></th>
+<th><code>JSON_UNTESTED</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>bytes</code></td>
+<td>yes</td>
+<td>yes</td>
+<td>yes</td>
+</tr>
+<tr>
+<td><code>text</code>, <code>python</code>, <code>ipython</code>, <code>yaml</code></td>
+<td>?</td>
+<td>yes †</td>
+<td>yes †</td>
+</tr>
+<tr>
+<td><code>plain</code>, <code>mixed</code></td>
+<td>?</td>
+<td>?</td>
+<td>yes</td>
+</tr>
+<tr>
+<td><code>str</code></td>
+<td>? (yes for a bool/null checksum)</td>
+<td>? (same)</td>
+<td>? (same)</td>
+</tr>
+<tr>
+<td><code>int</code>, <code>float</code></td>
+<td>? (no if <code>LONG</code>)</td>
+<td>? (no if <code>LONG</code>)</td>
+<td>? (no if <code>LONG</code>)</td>
+</tr>
+<tr>
+<td><code>binary</code></td>
+<td>?</td>
+<td>no</td>
+<td>no</td>
+</tr>
+<tr>
+<td><code>checksum</code></td>
+<td>? (no unless <code>EQ64</code>)</td>
+<td>? (no unless <code>EQ64</code>)</td>
+<td>? (no unless <code>EQ64</code>) ‡</td>
+</tr>
+<tr>
+<td><code>bool</code></td>
+<td>by checksum</td>
+<td>by checksum</td>
+<td>by checksum</td>
+</tr>
+</tbody>
+</table>
+<p>A path step on an untested level is never rejected, because its capabilities
+(§7) are not yet known.</p>
+<p>† <code>yaml</code>/<code>ipython</code>/<code>python</code> <strong>validity</strong> is not classified (the Region-4 flags
+were dropped, §4), so these report only the necessary <code>UTF8</code> condition; the exact
+check stays in <code>text_validation_celltype_cache</code>. When it fails, <code>parse_buffer</code>
+raises <code>HashTypeValidationError</code>, exactly like a HashType failure. A <code>SEMANTIC</code>
+code checksum is deserializable as its code celltype.</p>
+<p>‡ A <code>checksum</code> buffer is the bare 64-byte hex digest. A digest with <code>a</code>–<code>f</code> is
+<code>RAW_TEXT</code>; one of only decimal digits is a <code>JSON_NUMBER</code>. The bits give that
+necessary screen; a non-hex value raises <code>HashTypeValidationError</code> at parse time,
+and a parsed value is a <code>Checksum</code> (§9). Deep cells are separate celltypes (§9),
+not a form of <code>checksum</code>.</p>
+<p><code>mixed = ¬RAW</code> falls straight out: <code>NUMPY</code>, <code>SEAMLESS_MIXED</code>, and every <code>JSON_*</code>
+kind are mixed-deserializable; only <code>RAW_BYTES</code> (pure bytes) and <code>RAW_TEXT</code>
+(non-JSON text) are not.</p>
+<h2 id="6-method-2-convertible_tosource-target-preservingtrue">6. Method 2 — <code>convertible_to(source, target, *, preserving=True)</code></h2>
+<p>The conversion-aware query. It assumes a fixed <code>source</code> celltype (the buffer may
+be deserializable as several) and reports feasibility of <code>source → target</code>,
+mirroring <code>conversion.py</code>'s categories:</p>
+<ul>
+<li><code>preserving=True</code> — restrict to checksum-preserving conversions
+  (<code>conversion_trivial</code>, plus <code>conversion_reinterpret</code> that the bits confirm).</li>
+<li><code>preserving=False</code> — also allow checksum-changing-but-feasible
+  (<code>conversion_reformat</code>, <code>conversion_possible</code>, value conversions).</li>
+</ul>
+<p>Return contract, inherited from <code>convert_from_buffer_info</code> but <strong>without</strong> the
+cached-checksum branch (that now comes from the Expression cache, §1):</p>
+<table>
+<thead>
+<tr>
+<th>result</th>
+<th>meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>True</code></td>
+<td>feasible and (if <code>preserving</code>) checksum-preserving</td>
+</tr>
+<tr>
+<td><code>-1</code></td>
+<td>surely feasible, but resulting checksum unknown from bits</td>
+</tr>
+<tr>
+<td><code>None</code></td>
+<td>may or may not be feasible (needs the value)</td>
+</tr>
+<tr>
+<td><code>False</code></td>
+<td>surely infeasible (<code>conversion_forbidden</code>, or bits contradict it)</td>
+</tr>
+</tbody>
+</table>
+<p>The actual resulting checksum, when it changes, is <strong>not</strong> returned here — it is
+<code>Expression(checksum, "", source, target).result</code> from <code>seamless.db</code>.</p>
+<p><strong>Expression executes this table.</strong> The conversion engine
+(<a href="seamless/checksum/convert.py"><code>convert.py</code></a>) follows the categories below: a
+trivial conversion keeps the checksum, a reinterpretation keeps it once the
+target's parser accepts it, and a reformat follows its written rule. Path
+expressions still work on values. Trivial conversions, and conversions of a null
+or bool checksum, need no buffer.</p>
+<p><strong>The <code>?</code>/<code>None</code> budget.</strong> Every <code>?</code>/<code>None</code> that <code>BufferInfo</code> returned because a
+<em>field was missing</em> is gone: a word either settles <code>Kind</code>, <code>DType</code> and <code>Rank</code>, or
+names its untested level. What stays <code>?</code> is genuine <em>value-level</em> uncertainty —
+text-language validity, the checksum all-hex test, and the merged-dtype
+<code>binary→plain</code> ambiguity (§4.3) — plus the untested levels: there, the
+reinterpretations follow §5's untested table, and the possible and value
+conversions are <code>?</code>, except a numeric target on a <code>LONG</code> buffer, which is <code>✗</code>.</p>
+<h3 id="61-the-full-table">6.1 The full table</h3>
+<p>The source-validity gate is applied first: if <code>deserializable_as(source)</code> is
+provably <code>False</code>, raise <code>SeamlessConversionError</code> (as <code>convert_from_buffer_info</code>
+does today). Otherwise each ordered pair classifies into one of four outcomes,
+which the two <code>preserving</code> modes read off as follows:</p>
+<table>
+<thead>
+<tr>
+<th>glyph</th>
+<th>meaning</th>
+<th><code>preserving=False</code></th>
+<th><code>preserving=True</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>=</code></td>
+<td>feasible, checksum <strong>preserved</strong> (result == input checksum)</td>
+<td><code>True</code></td>
+<td><code>True</code></td>
+</tr>
+<tr>
+<td><code>≠</code></td>
+<td>feasible, checksum <strong>changes</strong> (result via Expression cache)</td>
+<td><code>-1</code></td>
+<td><code>False</code></td>
+</tr>
+<tr>
+<td><code>?</code></td>
+<td><strong>maybe</strong> — needs the value</td>
+<td><code>None</code></td>
+<td><code>None</code></td>
+</tr>
+<tr>
+<td><code>✗</code></td>
+<td>provably <strong>infeasible</strong></td>
+<td><code>False</code></td>
+<td><code>False</code></td>
+</tr>
+</tbody>
+</table>
+<p><code>preserving=True</code> is the stricter query: every definite <code>≠</code> becomes <code>False</code>,
+while <code>=</code>/<code>?</code>/<code>✗</code> are unchanged. A <code>?</code> under <code>preserving=True</code> means "might be
+preserving."</p>
+<p><strong>Trivial</strong> — all <code>=</code> (checksum-preserving by definition):
+<code>text→bytes</code>, <code>ipython→text</code>, <code>python→text</code>, <code>python→ipython</code>, <code>yaml→text</code>,
+<code>plain→yaml</code>, <code>plain→bytes</code>, <code>binary→mixed</code>, <code>plain→mixed</code>, <code>str→plain</code>,
+<code>int→plain</code>, <code>float→plain</code>, <code>bool→plain</code>, <code>int↔float</code>, <code>int→str</code>, <code>float→str</code>,
+<code>bool→str</code>.</p>
+<p><strong>Forbidden</strong> — all <code>✗</code>:
+<code>python→{yaml,int,float,bool}</code>, <code>ipython→{yaml,int,float,bool}</code>,
+<code>yaml→{python,ipython}</code>, <code>int→{python,ipython}</code>, <code>float→{python,ipython}</code>,
+<code>bool→{python,ipython}</code>.</p>
+<p><strong>Reinterpret</strong> (target-validated; preserving whenever feasible). A concrete
+word decides all of these except the value-level validity triple:</p>
+<table>
+<thead>
+<tr>
+<th>pair</th>
+<th>result</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>bytes→text</code></td>
+<td><code>=</code> if <code>UTF8</code> else <code>✗</code></td>
+</tr>
+<tr>
+<td><code>bytes→plain</code></td>
+<td><code>=</code> if <code>JSON</code> else <code>✗</code> (<code>RAW</code>/<code>NUMPY</code>/<code>SEAMLESS_MIXED</code> are not JSON)</td>
+</tr>
+<tr>
+<td><code>text→yaml</code> / <code>text→ipython</code> / <code>text→python</code></td>
+<td><code>?</code> — validity is value-level</td>
+</tr>
+<tr>
+<td><code>mixed→binary</code></td>
+<td><code>=</code> if <code>NUMPY</code> else <code>✗</code></td>
+</tr>
+<tr>
+<td><code>mixed→plain</code></td>
+<td><code>=</code> if <code>JSON</code> else <code>✗</code></td>
+</tr>
+<tr>
+<td><code>plain→str</code></td>
+<td><code>=</code> if <code>Kind ∈ {JSON_STRING, JSON_NUMBER}</code> or a bool/null checksum, else <code>✗</code></td>
+</tr>
+<tr>
+<td><code>plain→int/float</code>, <code>str→int/float</code></td>
+<td><code>Length == LONG</code> → <code>✗</code>; <code>NUMERIC_SCALAR</code> → <code>=</code>; else <code>✗</code> †</td>
+</tr>
+<tr>
+<td><code>plain→bool</code>, <code>str→bool</code></td>
+<td><code>=</code> if a bool checksum, else <code>✗</code></td>
+</tr>
+</tbody>
+</table>
+<p><code>text→{yaml,ipython,python}</code> stay <code>?</code>: code/YAML <strong>validity</strong> is out of scope
+(Region 4 dropped, §4), so the bits can neither confirm nor refute them — the
+same <code>?</code> <code>BufferInfo</code> returns. They resolve at parse time via
+<code>text_validation_celltype_cache</code>. The other four rows no longer return the
+field-absent <code>?</code> <code>BufferInfo</code> did, because <code>UTF8</code>/<code>JSON</code>/<code>NUMPY</code> are always known.</p>
+<p><strong>Reformat</strong> (always feasible given a valid source — never <code>?</code> or <code>✗</code>):</p>
+<table>
+<thead>
+<tr>
+<th>pair</th>
+<th><code>=</code> when</th>
+<th>otherwise</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>bytes→binary</code></td>
+<td><code>NUMPY</code></td>
+<td><code>≠</code> (wrap as <code>S</code>-array)</td>
+</tr>
+<tr>
+<td><code>bytes→mixed</code></td>
+<td><code>NUMPY ∨ SEAMLESS_MIXED</code></td>
+<td><code>≠</code></td>
+</tr>
+<tr>
+<td><code>binary→bytes</code></td>
+<td><code>¬NUMPY_BYTES</code></td>
+<td><code>≠</code> (<code>value.tobytes()</code>)</td>
+</tr>
+<tr>
+<td><code>mixed→bytes</code></td>
+<td><code>¬NUMPY ∨ (NUMPY ∧ ¬NUMPY_BYTES)</code></td>
+<td><code>≠</code></td>
+</tr>
+<tr>
+<td><code>plain→text</code></td>
+<td><code>Kind ∉ {JSON_STRING}</code> (object/array/number, and bool/null constants)</td>
+<td><code>≠</code> (strip quotes)</td>
+</tr>
+<tr>
+<td><code>text→plain</code></td>
+<td>never from the word: only a source that is already the canonical <code>plain</code> buffer (the null/boolean checksums are decided by checksum)</td>
+<td><code>≠</code> (canonical re-dump of JSON; other text wrapped as a JSON string)</td>
+</tr>
+<tr>
+<td><code>text→str</code></td>
+<td>—</td>
+<td>always <code>≠</code> (add quotes)</td>
+</tr>
+<tr>
+<td><code>str→text</code></td>
+<td>—</td>
+<td>always <code>≠</code> (remove quotes)</td>
+</tr>
+<tr>
+<td><code>yaml→plain</code></td>
+<td>—</td>
+<td>always <code>≠</code> (re-dump as canonical JSON)</td>
+</tr>
+<tr>
+<td><code>ipython→python</code></td>
+<td>—</td>
+<td>always <code>≠</code> (expand magics)</td>
+</tr>
+</tbody>
+</table>
+<p><code>NUMPY_BYTES</code> already means "scalar dtype-<code>S</code> array" (<code>DType = NONNUMERIC</code>,
+<code>Rank = SCALAR</code>), so <code>binary→bytes</code>/<code>mixed→bytes</code> read it directly — the old
+<code>shape</code>/<code>dtype</code> lookups collapse into the one flag.</p>
+<p><strong>Possible</strong> (may change <em>and</em> not guaranteed). For numeric targets,
+<code>Length == LONG</code> ⟹ <code>✗</code> first.</p>
+<table>
+<thead>
+<tr>
+<th>pair(s)</th>
+<th>rule</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>mixed→str</code></td>
+<td><code>Kind = JSON_STRING</code> → <code>=</code>; <code>Kind = JSON_NUMBER</code> (and bool/null constants) → <code>≠</code>; <code>Kind ∈ {JSON_OBJECT, JSON_ARRAY}</code> → <code>✗</code></td>
+</tr>
+<tr>
+<td><code>mixed→float</code></td>
+<td><code>Kind ∈ {JSON_OBJECT, JSON_ARRAY}</code> or <code>Length == LONG</code> → <code>✗</code>; <code>NUMERIC_SCALAR</code> → <code>≠</code>; else <code>✗</code></td>
+</tr>
+<tr>
+<td><code>mixed→int</code></td>
+<td>as <code>→float</code>, but a feasible numeric is <code>?</code> (integrality of the value is value-level), not <code>≠</code></td>
+</tr>
+<tr>
+<td><code>binary→int/float</code></td>
+<td><code>DType.NUMERIC ∧ Rank.SCALAR</code> → <code>≠</code>; otherwise <code>✗</code></td>
+</tr>
+</tbody>
+</table>
+<p><code>bool</code> <em>targets</em> are decided by direct comparison against the bool checksums
+(§4), plus numeric coercion (<code>number→bool</code> via <code>NUMERIC_SCALAR</code>); they need no
+per-pair bit logic.</p>
+<p><strong>Values, non-checksum</strong> (need the value or its cached Expression):</p>
+<table>
+<thead>
+<tr>
+<th>pair</th>
+<th>rule</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>binary→plain</code></td>
+<td><code>DType ∈ {NUMERIC, STRUCTURED}</code> → <code>≠</code> (<code>json_encode</code>); <code>DType = NONNUMERIC</code> → <code>?</code> (object would be <code>✗</code>, bytes-<code>S</code>/<code>U</code> <code>≠</code> — the merge can't tell, §4.3)</td>
+</tr>
+<tr>
+<td><code>plain→binary</code></td>
+<td><code>Kind = JSON_OBJECT</code> → <code>✗</code>; <code>Kind = JSON_NUMBER</code> (scalar → 0-d array) → <code>≠</code>; <code>Kind = JSON_ARRAY</code> → <code>?</code> (homogeneous-numeric no longer tracked — <code>JSON_NUMERIC_ARRAY</code> dropped); else <code>?</code></td>
+</tr>
+<tr>
+<td><code>int/float→bool</code>, <code>bool→int/float</code></td>
+<td>the value is converted, so the checksum changes (<code>≠</code>); whether a number converts to <code>bool</code> is value-level (<code>?</code>)</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Checksum</strong> — <em>not</em> a blanket <code>?</code>. A <code>checksum</code> value is a single bare 64-hex-digit
+string, so its buffer is <code>Kind == RAW_TEXT ∧ Length == EQ64</code> (a digest with
+<code>a</code>–<code>f</code> is not JSON), which the bits screen directly (§9):</p>
+<ul>
+<li><code>(*, checksum)</code> → <code>✗</code> when the buffer fails that screen (numpy/mixed, wrong-length
+  text, a quoted/scalar JSON string or number); <code>?</code> once it passes (the exact
+  all-hex test is value-level).</li>
+<li><code>(checksum, *)</code> → the source is a 64-hex string <code>conversion.py</code> may promote to
+  any celltype; feasibility follows the text/str rules, but the result checksum is
+  value-level — recovered as an Expression in <code>seamless.db</code> (<code>-1</code>/<code>?</code>).</li>
+</ul>
+<p>Deep cells are <strong>separate</strong> celltypes, not a dict/list form of <code>checksum</code>; their
+plain-JSON buffers are classified by <code>Kind</code> like any other and are out of scope
+for this base-celltype table (§9).</p>
+<p><strong>Equivalent / chain</strong> (structural redirects, resolved before classification):</p>
+<ul>
+<li><code>conversion_equivalent[(A,B)]</code> → evaluate the table at the canonical pair.</li>
+<li><code>conversion_chain[(A,C)] = B</code> → multi-hop <code>A→B→C</code>; <code>convertible_to</code> raises
+  ("handled upstream"), exactly as <code>convert_from_buffer_info</code> does today.</li>
+</ul>
+<blockquote>
+<p><strong>† Scalars keep the checksum.</strong> An earlier version of this table gave
+<code>int↔float</code>, <code>int/float/bool→str</code> and <code>plain/str→int/float</code> as <code>≠</code>/<code>?</code>,
+because it assumed the source buffer is re-serialized (<code>3</code>→<code>3.0</code>, <code>"3"</code>→<code>3</code>).
+Under the reference parser (§5) nothing is re-serialized: <code>int</code> and <code>float</code>
+accept the same checksums, and both are subtypes of <code>str</code> (§2). So these
+conversions keep the checksum, and the value comes from the target's parser:
+<code>3</code> read as <code>float</code> is <code>3.0</code>, and <code>"3"</code> read as <code>int</code> is 3. Only the
+conversions between <code>bool</code> and a number still change the checksum.</p>
+</blockquote>
+<h2 id="7-method-3-expression-capability-role-4">7. Method 3 — expression capability (Role 4)</h2>
+<p>A path step from <a href="expression_class.py"><code>expression_class.py</code></a> is either an
+<strong>item</strong> (<code>.name</code> / <code>["key"]</code>, built by <code>Expression.item</code>) or a <strong>slice</strong>
+(<code>[a:b:c]</code>, <code>Expression.slice</code>). An item with an identifier key is
+mapping/attribute access (<strong>MAP</strong>); an item with an integer key, and every slice,
+is positional (<strong>SEQ</strong>).</p>
+<p>Capability is <strong>relative to the expression's <code>source_celltype</code></strong> (the <code>celltype</code>
+field of the <code>Expression</code>), not to the value's intrinsic type — the path operates
+on the buffer <em>read as that celltype</em>. So it is a function of <code>(ti, source)</code>, gated
+by <code>deserializable_as(source)</code> (§5):</p>
+<pre><code class="language-python">FLAT_SEQ = {&quot;text&quot;, &quot;str&quot;, &quot;python&quot;, &quot;ipython&quot;, &quot;yaml&quot;}   # UTF-8 character sequences
+
+def capabilities(ti, source) -&gt; set[str]:    # ⊆ {&quot;SEQ&quot;,&quot;MAP&quot;}; assumes deserializable_as(source)
+    if source == &quot;bytes&quot;:      return {&quot;SEQ&quot;}      # byte sequence — available for ANY checksum
+    if source in FLAT_SEQ:     return {&quot;SEQ&quot;}      # character sequence
+    if source == &quot;binary&quot;:
+        caps = {&quot;SEQ&quot;} if ti.rank != Rank.SCALAR else set()
+        if ti.dtype == DType.STRUCTURED: caps.add(&quot;MAP&quot;)   # field access by name
+        return caps
+    if source in (&quot;plain&quot;, &quot;mixed&quot;):
+        k = ti.kind
+        if k in (Kind.JSON_OBJECT, Kind.MIXED_OBJECT): return {&quot;MAP&quot;}
+        if k in (Kind.JSON_ARRAY,  Kind.MIXED_ARRAY):  return {&quot;SEQ&quot;}
+        if k == Kind.JSON_STRING:                       return {&quot;SEQ&quot;}   # characters
+        return set()                                    # JSON_NUMBER → scalar
+    return set()                                  # int / float / bool / checksum → scalar
+</code></pre>
+<p>The <strong>structural</strong> sources (<code>binary</code>/<code>plain</code>/<code>mixed</code>) read the access kind off
+<code>Kind</code>/<code>Rank</code>/<code>DType</code> — Region 5 stays empty, the mixed root riding in <code>Kind</code> (§4).
+The <strong>flat</strong> sources are the practical point: <strong><code>bytes</code> slices any checksum</strong> (the
+buffer is a byte sequence) and <code>text</code>/<code>str</code>/code slice any UTF-8 buffer, both
+independent of <code>Kind</code>. So a <code>JSON_NUMBER</code> — a scalar, no SEQ when read as <code>plain</code> —
+is <em>still</em> sliceable by an expression whose <code>source_celltype</code> is <code>bytes</code>. The
+intrinsic, MIC-relative capability (<code>capabilities(ti, MIC(ti))</code>) describes the
+value's <em>own</em> structure; an expression may opt into a flatter view where slicing
+always works.</p>
+<h3 id="71-item-type-accessors">7.1 Item-type accessors</h3>
+<p>What a positional step <em>yields</em> is likewise <code>(ti, source)</code>-relative, so an
+expression can be typed — and statically accepted or rejected — one step at a time.
+Each is <code>True</code> / <code>False</code> / <code>None</code> (<code>None</code> = the bits can't say; the child must be
+materialized):</p>
+<table>
+<thead>
+<tr>
+<th>accessor</th>
+<th><code>True</code></th>
+<th><code>None</code></th>
+<th>else <code>False</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>has_slicing(ti, source)</code></td>
+<td><code>"SEQ" in capabilities(ti, source)</code></td>
+<td>— (structural)</td>
+<td>otherwise</td>
+</tr>
+<tr>
+<td><code>has_numeric_items(ti, source)</code></td>
+<td><code>source == "bytes"</code> (<code>b[i]</code> is an int); or <code>source == "binary" ∧ DType.NUMERIC ∧ Rank ≥ D1</code></td>
+<td><code>source ∈ {plain, mixed} ∧ Kind ∈ {JSON_ARRAY, MIXED_ARRAY}</code> (element type untracked)</td>
+<td>flat-text / <code>JSON_STRING</code> / structured / scalar</td>
+</tr>
+<tr>
+<td><code>has_string_items(ti, source)</code></td>
+<td><code>source ∈ FLAT_SEQ</code> (characters); or <code>source ∈ {plain, mixed} ∧ JSON_STRING</code></td>
+<td><code>source == "binary" ∧ DType.NONNUMERIC</code> (<code>S</code>/<code>U</code> strings, <code>O</code> not); JSON/mixed arrays</td>
+<td><code>bytes</code> (ints) / numeric / structured / scalar</td>
+</tr>
+</tbody>
+</table>
+<p><code>has_slicing</code> is total. The item-type pair is <code>None</code> exactly where the dropped
+JSON-array element typing or the merged non-numeric dtype (§4.3) hides the element
+type — resolvable only by materializing the child.</p>
+<h3 id="72-rank-bounds-the-chain-depth-source-binary">7.2 Rank bounds the chain depth (<code>source == "binary"</code>)</h3>
+<p>For a <code>binary</code> source, <code>Rank</code> lets a <em>multi-step</em> positional path be checked
+without fetching the value. A positional <strong>item</strong> step lowers an array's rank by
+one; a <strong>slice</strong> preserves it. So a path with <code>k</code> positional-item steps is valid
+iff <code>k ≤ rank</code>:</p>
+<table>
+<thead>
+<tr>
+<th><code>Rank</code></th>
+<th>positional-item steps statically allowed</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>SCALAR</code></td>
+<td>0 — any <code>[i]</code>/<code>[:]</code> on the root is rejected</td>
+</tr>
+<tr>
+<td><code>D1</code></td>
+<td>1 — <code>a[i]</code> ok, <code>a[i][j]</code> rejected</td>
+</tr>
+<tr>
+<td><code>D2</code></td>
+<td>2</td>
+</tr>
+<tr>
+<td><code>D3PLUS</code></td>
+<td>≥3 — confirmable up to 3; a 4th positional item is <code>None</code> (the bucket saturated)</td>
+</tr>
+</tbody>
+</table>
+<p>Slices never exhaust the budget (they preserve rank). The flat sources have trivial
+depth: <code>bytes[i]</code>/<code>text[i]</code> yields a scalar (one positional step, then stop), though
+slices chain freely. For JSON/mixed <em>nesting</em> (a list of lists, a dict of dicts) the
+bits carry no depth — only <code>Kind</code>, which types the <strong>first</strong> step; each deeper step
+needs the child's <code>TypeBits</code>, i.e. a materialization. Numpy is the one container
+whose entire chain depth is static, and that is exactly the <code>1/2/3+</code> resolution
+<code>Rank</code> keeps.</p>
+<h3 id="73-why-the-earlier-irreducible-bit-claim-fails">7.3 Why the earlier "irreducible bit" claim fails</h3>
+<p>My first draft kept a <code>MIXED_KEYED</code> flag, justified thus: two <code>SEAMLESS_MIXED</code>
+checksums, one rooted <code>{...}</code> and one <code>[...]</code>, are identical in every other field
+yet differ in MAP vs SEQ. That holds only under an <em>impoverished</em> <code>Kind</code> that
+lumps both mixed roots into one value. Since a true mixed root is <strong>always</strong> a
+dict or a list/array (§4), splitting the magic into <code>MIXED_OBJECT</code>/<code>MIXED_ARRAY</code>
+moves that one bit into <code>Kind</code> for free (<code>Kind</code> had spare range), and the two
+checksums now differ in <code>Kind</code>. The information is real, but it is a <code>Kind</code>
+distinction, not a separate flag — so Region 5 is empty. Deep cells need no bit
+either: a deep cell is a distinct celltype that serializes as a plain JSON
+dict/list, so its buffer's <code>Kind</code> is already <code>JSON_OBJECT</code>/<code>JSON_ARRAY</code>
+(→ MAP/SEQ) and its deep-vs-plain identity (a celltype fact, §9) is irrelevant to
+capability.</p>
+<h2 id="8-untested-levels-tightening-and-the-two-fill-procedures">8. Untested levels, tightening, and the two fill procedures</h2>
+<h3 id="81-information-only-grows">8.1 Information only grows</h3>
+<p><code>BufferInfo</code> permitted every field to be <code>None</code>: a value could be
+half-classified, and queries returned <code>None</code>/<code>?</code> whenever a field they needed
+happened to be absent. <code>TypeBits</code> <strong>forbids</strong> that. A <code>TypeBits</code> is either
+<em>absent</em> (not yet computed for a checksum) or a word in one of two forms:</p>
+<ul>
+<li><strong>Concrete</strong>: every field — <code>Kind</code>, <code>Length</code>, <code>DType</code>, <code>Rank</code>, and all flags —
+  holds a definite value. "Not applicable" is itself a definite value
+  (<code>DType.NA</code>, <code>Rank.SCALAR</code> for non-arrays, the flags <code>False</code>), never a stand-in
+  for "unknown".</li>
+<li><strong>Untested level</strong> (§4.1): <code>Length</code> is known, and the kind says explicitly how
+  far the buffer was tested: nothing, UTF-8, or JSON. A producer may store such a
+  word instead of testing further, for example "UTF-8" without testing for JSON.
+  It never causes a rejection that the buffer wouldn't (§5).</li>
+</ul>
+<p>So a word is never a guess: every fact it states was tested.</p>
+<p><strong>A stored word can only be tightened.</strong> A word is tighter when it implies the
+stored word, for example <code>JSON_OBJECT</code> replacing <code>JSON_UNTESTED</code>.</p>
+<ul>
+<li>A tighter write replaces the stored word.</li>
+<li>An equal or looser write changes nothing.</li>
+<li>A contradictory write is a conflict: it is logged, raises <code>ValueError</code>, and keeps
+  the stored word. That includes a disagreement about <code>Length</code> or
+  <code>NUMERIC_SCALAR</code>, or between two concrete words. A word is a function of the
+  buffer, so correct producers never contradict each other; only a bug, or a change
+  in the classification rules, can.</li>
+</ul>
+<p>The local cache (<code>set_hash_type</code>) follows this rule. The database must follow it
+too; today it rejects every differing word (celltype-rename review decisions
+§10.6).</p>
+<p>Consequences: information only grows, so a stored "can't be deserialized" fact is
+never erased. A wrong stored word can't be repaired by writing a correct one,
+because that write conflicts. So when the classification rules change — including
+any change in what the reference parser (§5) accepts, such as an <code>orjson</code>
+upgrade — the <code>hash_type</code> table, which is a cache, must be cleared.</p>
+<h3 id="82-the-most-informative-celltype-mic">8.2 The most-informative celltype (MIC)</h3>
+<p>The celltypes a buffer deserializes as form an up-set in the lattice (§2); its
+<strong>minimum</strong> — the most specific celltype — carries the most structure. The MIC is
+a <strong>total function of <code>Kind</code></strong>: every one of the twelve <code>Kind</code>s has exactly one MIC,
+and a word has exactly one <code>Kind</code>, so look up the row and stop — never a priority
+scan, never a tie.</p>
+<p>Each <code>Kind</code> needs only <strong>one</strong> MIC. The two scalar cases that looked like
+antichains collapse: <code>JSON_NUMBER</code>'s MIC is <code>float</code> — choosing <code>int</code> instead
+changes no stored bit (both set <code>NUMERIC_SCALAR</code>, and int-vs-float canonicality is
+not tracked, §6.1); and a <code>JSON_STRING</code>'s <code>NUMERIC_SCALAR</code> is a <code>float(value)</code>
+<em>probe on the <code>str</code></em>, not a second deserialization. So "multiple MICs" is never
+actually needed.</p>
+<table>
+<thead>
+<tr>
+<th><code>Kind</code></th>
+<th>MIC</th>
+<th>reads off the value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>RAW_BYTES</code></td>
+<td><code>bytes</code></td>
+<td>— (all fields already peeked)</td>
+</tr>
+<tr>
+<td><code>RAW_TEXT</code></td>
+<td><code>text</code></td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>NUMPY</code></td>
+<td><code>binary</code></td>
+<td><code>dtype</code>→<code>DType</code>, <code>shape</code>→<code>Rank</code>, <code>NUMPY_BYTES</code></td>
+</tr>
+<tr>
+<td><code>MIXED_OBJECT</code>/<code>MIXED_ARRAY</code></td>
+<td><code>mixed</code></td>
+<td>root already in <code>Kind</code></td>
+</tr>
+<tr>
+<td><code>JSON_OBJECT</code>/<code>JSON_ARRAY</code></td>
+<td><code>plain</code></td>
+<td>container ⟹ <code>NUMERIC_SCALAR = False</code></td>
+</tr>
+<tr>
+<td><code>JSON_STRING</code></td>
+<td><code>str</code></td>
+<td><code>NUMERIC_SCALAR ← float(value)</code> probe</td>
+</tr>
+<tr>
+<td><code>JSON_NUMBER</code></td>
+<td><code>float</code></td>
+<td><code>NUMERIC_SCALAR = True</code></td>
+</tr>
+<tr>
+<td><code>UNTESTED</code></td>
+<td><code>bytes</code></td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>UTF8_UNTESTED</code></td>
+<td><code>text</code></td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>JSON_UNTESTED</code></td>
+<td><code>plain</code></td>
+<td>—</td>
+</tr>
+</tbody>
+</table>
+<p>The three <code>bool</code>/<code>null</code> constants are recognised by checksum and carry
+pre-tabulated <code>TypeBits</code> (§4) — they need no MIC.</p>
+<h3 id="83-procedure-a-the-cheap-peek-o1-never-jsonloads">8.3 Procedure A — the cheap peek (<code>O(1)</code>; never <code>json.loads</code>)</h3>
+<p>A peek inspects the raw bytes <strong>without deserializing</strong>, and in particular <strong>never
+calls <code>json.loads</code></strong> — on a gigabyte buffer that allocates a gigabyte-plus parse
+tree. It reads only a bounded amount, and is <em>authoritative</em> for the fields it can
+settle that way:</p>
+<ol>
+<li>If the checksum equals one of the three bool/null constants → its pre-tabulated
+   <code>TypeBits</code> (§4). An <code>O(1)</code> 32-byte compare.</li>
+<li><code>len(buffer)</code> → <code>Length</code>. <code>O(1)</code>.</li>
+<li>The first ≤14 <strong>magic</strong> bytes:</li>
+<li><code>\x93NUMPY</code> → <code>Kind = NUMPY</code>. The <code>.npy</code> header is a short ASCII dict at a
+     fixed offset (6 magic + 2 version + 2/4 length bytes), read <strong>without touching
+     the array payload</strong> — still <code>O(1)</code>: the <code>descr</code> dtype letter gives <code>DType</code>
+     (<code>b/i/u/f/c</code>→<code>NUMERIC</code>, <code>S/U/O</code>→<code>NONNUMERIC</code>, a <code>descr</code> field list→
+     <code>STRUCTURED</code>), <code>len(shape)</code> gives <code>Rank</code> (capped at <code>D3PLUS</code>), and an <code>S</code>-dtype
+     with <code>shape == ()</code> sets <code>NUMPY_BYTES</code>.</li>
+<li><code>\x94SEAMLESS-MIXED</code> → first skeleton token → <code>MIXED_OBJECT</code> / <code>MIXED_ARRAY</code>;
+     <code>DType = NA</code>, <code>Rank = SCALAR</code>.</li>
+<li>Otherwise a bounded <strong>head/tail token</strong> read (skip leading/trailing whitespace):
+   a JSON document must open with one of <code>{ [ " - 0-9</code> and close with the matching
+   <code>} ] "</code> / digit. A first byte outside that set, or head/tail that don't pair, is
+   <strong>decisive — not JSON → <code>RAW</code></strong> (<code>RAW_TEXT</code> if the bytes are UTF-8, else
+   <code>RAW_BYTES</code> — the one <code>O(n)</code> bit, settled in §8.4). A pairing instead yields only
+   a <em>candidate</em> <code>JSON_OBJECT</code>/<code>ARRAY</code>/<code>STRING</code>/<code>NUMBER</code>: the interior may still be
+   malformed, so the candidate is <strong>not stored</strong> until confirmed (§8.4/§8.6).</li>
+<li><code>SEMANTIC ←</code> provenance (§8.5); a peeked literal buffer is always <code>False</code>.</li>
+</ol>
+<p>So the cheap peek is authoritative, at <code>O(1)</code>, for <code>Length</code>, the two magic kinds
+with <strong>all</strong> their numpy sub-fields, and the <strong>negative</strong> "not JSON → <code>RAW</code>"
+verdict. It leaves exactly two things open: for a <code>RAW</code> buffer, the
+<code>RAW_TEXT</code>-vs-<code>RAW_BYTES</code> split (an <code>O(n)</code> UTF-8 validation — formerly the <code>UTF8</code>
+flag); and for a JSON candidate, its <em>confirmation</em> and <code>NUMERIC_SCALAR</code>. Both are
+settled for free when a value is in hand (§8.4), and only otherwise — as a last
+resort — by an <code>O(n)</code> pass.</p>
+<h3 id="84-procedure-b-read-off-the-value-in-hand-the-fill-priority">8.4 Procedure B — read off the value in hand; the fill priority</h3>
+<p><code>TypeBits</code> totality is computed <strong>once, when the checksum is first computed</strong>. At
+that moment the buffer is present by construction, and — because a checksum is
+normally taken right after serializing a value, or right before/after deserializing
+one — <strong>a typed value is usually present too</strong>. Reading the fields off that value
+is the cheapest authoritative route for exactly what the cheap peek left open: the
+JSON family and the <code>RAW_TEXT</code>-vs-<code>RAW_BYTES</code> split.</p>
+<ul>
+<li>A value whose celltype is the MIC (or any <code>plain</code>/<code>text</code>/<code>str</code>/number value)
+  settles <code>Kind</code>/<code>json_type</code>/<code>UTF8</code>/<code>NUMERIC_SCALAR</code> from <code>type(value)</code> — <strong>no
+  parse</strong>, so §8.3's would-be <code>json.loads</code> is skipped entirely.</li>
+<li>The value need <strong>not</strong> be the MIC. A <em>less</em>-informative value still settles every
+  field at or above its own celltype; only strictly-lower fields fall back to the
+  peek — and for the numpy sub-fields that fallback is the <code>O(1)</code> header anyway, so
+  even holding the buffer merely as <code>bytes</code> loses nothing.</li>
+<li><strong>Materializing</strong> into the MIC (an actual <code>parse_buffer</code>) is the <strong>last resort</strong> —
+  reached only when no value is in hand <em>and</em> a JSON candidate survived §8.3. Each
+  <code>Kind</code> has a single MIC (§8.2), so this is <strong>one</strong> deserialization; a
+  <code>JSON_STRING</code>'s <code>NUMERIC_SCALAR</code> rides on that same <code>str</code> via <code>float(value)</code>.</li>
+</ul>
+<p>Putting §8.3 and this together, a concrete <code>TypeBits</code> is filled by a per-field race to
+the cheapest authoritative source, run once:</p>
+<ol>
+<li><code>Length</code>, the magic kinds, the numpy sub-fields, and the <code>not-JSON → RAW</code>
+   verdict — from the <code>O(1)</code> peek, always.</li>
+<li>The JSON family and the <code>RAW</code> text/bytes split — from an in-hand value if present
+   (free); else from the head/tail filter, which usually <strong>discards</strong> JSON (→ <code>RAW</code>).</li>
+<li><strong>Only</strong> a surviving JSON candidate with no value in hand forces the <code>O(n)</code> last
+   resort: one UTF-8 validation and/or one streaming parse to confirm <code>Kind</code> and read
+   <code>NUMERIC_SCALAR</code>. Rare path, not the default.</li>
+</ol>
+<p><code>SEMANTIC</code> is filled by neither route — it is provenance (§8.5).</p>
+<h3 id="85-semantic-is-provenance-not-content">8.5 <code>SEMANTIC</code> is provenance, not content</h3>
+<p>No buffer inspection can reveal whether a checksum is a literal source buffer or
+the AST-canonical form of code — they are <em>different</em> checksums. So <code>SEMANTIC</code> is
+supplied by the construction path: peek/materialization of an ordinary buffer
+always sets it <code>False</code>; the AST-canonicalizer, when it emits the semantic
+checksum, constructs <em>that</em> checksum's <code>TypeBits</code> with <code>SEMANTIC = True</code> and fills
+the remaining fields by peeking the canonical text buffer (<code>Kind = RAW_TEXT</code>).
+Either way the field is definite — totality holds.</p>
+<h3 id="86-agreement">8.6 Agreement</h3>
+<p>The peek and the value are two sources for the same concrete <code>TypeBits</code>; where both
+can settle a field they must agree — the natural correctness test (a cheap audit:
+re-peek a stored <code>TypeBits</code>'s buffer and compare). Two consequences sharpen "no
+partial definition":</p>
+<ul>
+<li>A field is always filled by the <em>cheapest source that can settle it</em> — never left
+  open, but also never stored as a <strong>guess</strong>. The peek's JSON <em>candidate</em> (§8.3) is
+  promoted to a stored <code>Kind</code> only once a value or an <code>O(n)</code> parse confirms it. An
+  unconfirmed candidate may be stored only at the untested level that <em>was</em>
+  confirmed (§8.1): <code>UTF8_UNTESTED</code> once the bytes are known to be UTF-8, otherwise
+  <code>UNTESTED</code> — never <code>JSON_UNTESTED</code>, which asserts that the buffer is JSON.</li>
+<li>A <code>TypeBits</code> whose <code>Kind</code> disagrees with a re-peek of its own buffer is, by
+  definition, ill-formed.</li>
+</ul>
+<h2 id="9-checksum-celltype">9. <code>checksum</code> celltype</h2>
+<p>A <code>checksum</code> <em>value</em> is a <code>Checksum</code> object; its buffer is the bare 64-hex-digit
+string (<a href="../checksum_class.py"><code>checksum_class.py</code></a> <code>.hex()</code> — a 32-byte digest),
+without quotes. That buffer is UTF-8 of exactly that length. A digest containing
+<code>a</code>–<code>f</code> does not parse as JSON, so it is <code>RAW_TEXT</code>; a digest of only decimal
+digits is a <code>JSON_NUMBER</code>. This is exactly why §4.3 spends an exact bucket on 64.
+So <code>checksum</code> is a real may-be predicate, not a blanket out-of-scope <code>?</code>:</p>
+<ul>
+<li><code>deserializable_as(checksum)</code> → may-be when
+  <code>Kind ∈ {RAW_TEXT, JSON_NUMBER} ∧ Length == EQ64</code>; the residual "are all 64
+  characters hex digits?" test is value-level, in the same spirit as
+  text-language validity (§5), and a failure raises <code>HashTypeValidationError</code>.
+  Otherwise <code>✗</code>.</li>
+<li><code>convertible_to(·, checksum)</code> / <code>convertible_to(checksum, ·)</code> are screened by the
+  same predicate (§6.1): <code>✗</code> when a buffer cannot be a 64-hex digest, <code>?</code> once it
+  passes, with the result checksum recovered as an Expression (§1).</li>
+</ul>
+<p>What stays out of scope is only the <em>sufficient</em> hex validation — never the
+necessary screen the bits now provide. <code>BufferInfo</code> required only <code>is_utf8</code> for
+<code>checksum</code>; <code>TypeBits</code> adds the <code>Kind</code> and <code>Length == EQ64</code> half it left implicit.</p>
+<p><strong>Deep cells are not <code>checksum</code>.</strong> A deep cell (<code>deepcell</code>, <code>deepfolder</code>, <code>folder</code>,
+<code>module</code>) is a <em>distinct, explicit</em> celltype in Seamless 1.x — not a "dict/list
+form" of <code>checksum</code>, and not the legacy "hash pattern" attached to an ordinary
+cell. It serializes as plain JSON (it maps to <code>plain</code> in
+<a href="../buffer_class.py"><code>buffer_class.py</code></a>), so its buffer is an ordinary
+<code>JSON_OBJECT</code>/<code>JSON_ARRAY</code> <code>Kind</code> — classified like any other plain buffer, with
+its 64-hex leaves landing in <code>EQ64</code>. Which plain-JSON buffers are <em>deep</em> is the
+cell's declared celltype, a layer above this base-celltype classification, and out
+of scope here just as the deep celltypes are absent from <code>conversion.py</code>'s
+13-celltype lattice.</p>
+<h2 id="10-migration-from-bufferinfo">10. Migration from <code>BufferInfo</code></h2>
+<table>
+<thead>
+<tr>
+<th><code>BufferInfo</code> field</th>
+<th>becomes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>is_utf8</code></td>
+<td><strong>derived</strong> by membership: <code>RAW_TEXT</code>, the JSON kinds, <code>UTF8_UNTESTED</code>, <code>JSON_UNTESTED</code> — no stored flag (§4.1)</td>
+</tr>
+<tr>
+<td><code>is_json</code></td>
+<td>membership: the JSON kinds and <code>JSON_UNTESTED</code></td>
+</tr>
+<tr>
+<td><code>json_type</code></td>
+<td><code>Kind</code> (<code>JSON_OBJECT</code>..<code>JSON_NUMBER</code>, 5–8); <code>bool</code>/<code>null</code> via the three checksum constants (§4)</td>
+</tr>
+<tr>
+<td><code>is_json_numeric_scalar</code></td>
+<td><code>Flag.NUMERIC_SCALAR</code></td>
+</tr>
+<tr>
+<td><code>is_json_numeric_array</code></td>
+<td><strong>dropped</strong> (saved little)</td>
+</tr>
+<tr>
+<td><code>is_numpy</code></td>
+<td><code>Kind == NUMPY</code></td>
+</tr>
+<tr>
+<td><code>is_seamless_mixed</code></td>
+<td><code>Kind ∈ {MIXED_OBJECT, MIXED_ARRAY}</code></td>
+</tr>
+<tr>
+<td>mixed root (dict vs list)</td>
+<td>folded into <code>Kind</code> (<code>MIXED_OBJECT</code>/<code>MIXED_ARRAY</code>) — no flag (§7)</td>
+</tr>
+<tr>
+<td><code>dtype</code></td>
+<td><strong><code>DType</code> enum</strong> (<code>NA</code>/<code>NUMERIC</code>/<code>NONNUMERIC</code>/<code>STRUCTURED</code>); absorbs the old <code>NUMPY_STRUCTURED</code> flag (§4.3)</td>
+</tr>
+<tr>
+<td><code>shape</code></td>
+<td><strong><code>Rank</code> enum</strong> (<code>SCALAR</code>/<code>D1</code>/<code>D2</code>/<code>D3PLUS</code>) (§4.3)</td>
+</tr>
+<tr>
+<td><code>length</code></td>
+<td><strong><code>Length</code> enum</strong> (<code>SHORT</code>/<code>EQ64</code>/<code>MEDIUM</code>/<code>LONG</code>); the <code>&gt;1000</code> numeric gate is now <code>Length == LONG</code> (§4.3)</td>
+</tr>
+<tr>
+<td><code>members</code></td>
+<td><strong>dropped</strong> (count read by no query; deep cells are distinct celltypes serialized as plain JSON, §4.3)</td>
+</tr>
+<tr>
+<td><code>NUMPY_BYTES</code></td>
+<td>retained as <code>Flag.NUMPY_BYTES</code> (scalar dtype-<code>S</code>; refines <code>DType = NONNUMERIC</code>)</td>
+</tr>
+<tr>
+<td><code>str2text</code>, <code>text2str</code>, <code>bytes2binary</code>, <code>binary2json</code>, <code>json2binary</code></td>
+<td><strong>removed</strong> — empty-path Expressions in <code>seamless.db</code>, keyed <code>(checksum, "", source, target)</code></td>
+</tr>
+<tr>
+<td>yaml/ipython/python validity (<code>text_validation_celltype_cache</code>)</td>
+<td><strong>not ported</strong> — stays where it is (out of scope)</td>
+</tr>
+<tr>
+<td><em>(new)</em> <code>SEMANTIC</code></td>
+<td>AST-identity of code (§4.2), provenance (§8.5)</td>
+</tr>
+<tr>
+<td><em>(new invariant)</em> any-field-<code>None</code></td>
+<td><strong>forbidden</strong> — a word is concrete or names its untested level (§8.1); the <code>None</code>-from-missing-field branches collapse</td>
+</tr>
+</tbody>
+</table>
+<p><code>validate_buffer_info</code> / <code>verify_buffer_info</code> / <code>convert_from_buffer_info</code>
+collapse into queries over <code>TypeBits</code> (§§5–7) plus Expression-cache lookups —
+one source of truth instead of scattered booleans plus cached fields.</p>
+<h2 id="11-sketch">11. Sketch</h2>
+<pre><code class="language-python">from enum import IntEnum, IntFlag
+
+class Kind(IntEnum):
+    RAW_BYTES = 0; NUMPY = 1; MIXED_OBJECT = 2; MIXED_ARRAY = 3; RAW_TEXT = 4
+    JSON_OBJECT = 5; JSON_ARRAY = 6; JSON_STRING = 7; JSON_NUMBER = 8
+    UNTESTED = 9; UTF8_UNTESTED = 10; JSON_UNTESTED = 11
+
+class Length(IntEnum):
+    SHORT = 0; EQ64 = 1; MEDIUM = 2; LONG = 3
+
+class DType(IntEnum):
+    NA = 0; NUMERIC = 1; NONNUMERIC = 2; STRUCTURED = 3
+
+class Rank(IntEnum):
+    SCALAR = 0; D1 = 1; D2 = 2; D3PLUS = 3
+
+class Flag(IntFlag):
+    NUMERIC_SCALAR = 1 &lt;&lt; 0; NUMPY_BYTES = 1 &lt;&lt; 1; SEMANTIC = 1 &lt;&lt; 2
+
+UNTESTED_KINDS = {Kind.UNTESTED, Kind.UTF8_UNTESTED, Kind.JSON_UNTESTED}
+JSON_KINDS = {Kind.JSON_OBJECT, Kind.JSON_ARRAY, Kind.JSON_STRING, Kind.JSON_NUMBER}
+def JSON(k):  return k in JSON_KINDS | {Kind.JSON_UNTESTED}
+def UTF8(k):  return JSON(k) or k in (Kind.RAW_TEXT, Kind.UTF8_UNTESTED)
+
+# bool/null need no bit: their checksums, with and without a trailing newline
+NULL_CHECKSUMS = {checksum_of(b&quot;null\n&quot;), checksum_of(b&quot;null&quot;)}
+BOOL_CHECKSUMS = {checksum_of(b) for b in (b&quot;true\n&quot;, b&quot;true&quot;, b&quot;false\n&quot;, b&quot;false&quot;)}
+
+
+def deserializable_as(ti, checksum, celltype: str) -&gt; bool | None:
+    if checksum in NULL_CHECKSUMS: return True  # storage, not function boundary
+    k = ti.kind
+    long = ti.length == Length.LONG
+    if celltype == &quot;bytes&quot;:  return True
+    if celltype == &quot;bool&quot;:   return checksum in BOOL_CHECKSUMS
+    if k in UNTESTED_KINDS:                     # None = not tested; never a guess
+        if celltype in (&quot;text&quot;, &quot;yaml&quot;, &quot;ipython&quot;, &quot;python&quot;):
+            return True if UTF8(k) else None
+        if celltype in (&quot;plain&quot;, &quot;mixed&quot;):
+            return True if JSON(k) else None
+        if celltype == &quot;str&quot;:
+            return True if checksum in BOOL_CHECKSUMS else None
+        if celltype in (&quot;int&quot;, &quot;float&quot;):
+            return False if long else None
+        if celltype == &quot;binary&quot;:
+            return None if k == Kind.UNTESTED else False
+        if celltype == &quot;checksum&quot;:
+            return None if ti.length == Length.EQ64 else False  # JSON is no proof (‡)
+        return False
+    if celltype in (&quot;text&quot;, &quot;yaml&quot;, &quot;ipython&quot;, &quot;python&quot;):
+        return UTF8(k)                          # validity checked at parse time
+    if celltype == &quot;plain&quot;:  return JSON(k)
+    if celltype == &quot;str&quot;:
+        return k in (Kind.JSON_STRING, Kind.JSON_NUMBER) or checksum in BOOL_CHECKSUMS
+    if celltype in (&quot;int&quot;, &quot;float&quot;):
+        return not long and bool(ti.flags &amp; Flag.NUMERIC_SCALAR)
+    if celltype == &quot;binary&quot;: return k == Kind.NUMPY
+    if celltype == &quot;mixed&quot;:  return k not in (Kind.RAW_BYTES, Kind.RAW_TEXT)
+    if celltype == &quot;checksum&quot;:                  # single-checksum screen (§9)
+        return k in (Kind.RAW_TEXT, Kind.JSON_NUMBER) and ti.length == Length.EQ64
+    return False
+
+
+FLAT_SEQ = {&quot;text&quot;, &quot;str&quot;, &quot;python&quot;, &quot;ipython&quot;, &quot;yaml&quot;}
+
+def capabilities(ti, source) -&gt; set[str]:       # §7 — relative to source_celltype
+    if source == &quot;bytes&quot;:  return {&quot;SEQ&quot;}
+    if source in FLAT_SEQ: return {&quot;SEQ&quot;}
+    if source == &quot;binary&quot;:
+        caps = {&quot;SEQ&quot;} if ti.rank != Rank.SCALAR else set()
+        if ti.dtype == DType.STRUCTURED: caps.add(&quot;MAP&quot;)
+        return caps
+    if source in (&quot;plain&quot;, &quot;mixed&quot;):
+        k = ti.kind
+        if k in (Kind.JSON_OBJECT, Kind.MIXED_OBJECT): return {&quot;MAP&quot;}
+        if k in (Kind.JSON_ARRAY,  Kind.MIXED_ARRAY):  return {&quot;SEQ&quot;}
+        if k == Kind.JSON_STRING:                       return {&quot;SEQ&quot;}
+        return set()
+    return set()
+</code></pre>
+<h2 id="12-enumeration-of-the-valid-typebits">12. Enumeration of the valid <code>TypeBits</code></h2>
+<p>The raw field cross-product (<code>12 × 4 × 4 × 4 × 2 × 2 × 2</code>) is mostly unreachable;
+the <strong>cross-field invariants</strong> below define which words are valid. They are the
+well-formedness predicate an implementation should assert. For a concrete kind it
+is exactly "this <code>TypeBits</code> equals the peek of <em>some</em> buffer"; an untested level is
+a valid prefix of such a peek (§8.1).</p>
+<p><strong>Invariants</strong> (a <code>TypeBits</code> is valid iff all hold):</p>
+<ul>
+<li><code>DType ≠ NA  ⟺  Kind == NUMPY</code>. (Non-numpy ⟹ <code>DType = NA</code>.)</li>
+<li><code>Rank ≠ SCALAR  ⟹  Kind == NUMPY</code>. (Non-numpy ⟹ <code>Rank = SCALAR</code>.)</li>
+<li><code>NUMPY_BYTES  ⟹  Kind == NUMPY ∧ DType == NONNUMERIC ∧ Rank == SCALAR</code>.</li>
+<li><code>Kind == JSON_NUMBER  ⟹  NUMERIC_SCALAR</code>; and <code>NUMERIC_SCALAR  ⟹  Kind ∈ {JSON_NUMBER, JSON_STRING}</code>.</li>
+<li><code>SEMANTIC  ⟹  Kind == RAW_TEXT</code>.</li>
+<li><code>UTF8</code> and <code>JSON</code> are derived by membership (§4.1), never independent.</li>
+<li><code>Length</code> is free per the §12.2 reachability rule.</li>
+</ul>
+<p>The invariants already force an untested kind to <code>DType = NA</code>, <code>Rank = SCALAR</code> and
+no flags.</p>
+<h3 id="121-structural-witness-classes">12.1 Structural witness classes</h3>
+<p>Holding <code>Length</code> aside (§12.2), the invariants leave <strong>29</strong> structural classes.
+Each row is one distinct <code>TypeBits</code>, with a buffer (or a snippet that builds one);
+<code>np</code>/<code>Buffer</code> are <code>numpy</code> / <code>seamless.Buffer</code>. <code>NUM</code>/<code>NB</code>/<code>SEM</code> =
+<code>NUMERIC_SCALAR</code>/<code>NUMPY_BYTES</code>/<code>SEMANTIC</code> (blank = <code>False</code>).</p>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Kind</th>
+<th>DType</th>
+<th>Rank</th>
+<th>NUM</th>
+<th>NB</th>
+<th>SEM</th>
+<th>example buffer</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td><code>RAW_BYTES</code></td>
+<td>NA</td>
+<td>SCALAR</td>
+<td></td>
+<td></td>
+<td></td>
+<td><code>b"\x00\xff\xfe"</code> (not UTF-8)</td>
+</tr>
+<tr>
+<td>2</td>
+<td><code>RAW_TEXT</code></td>
+<td>NA</td>
+<td>SCALAR</td>
+<td></td>
+<td></td>
+<td></td>
+<td><code>b"hello, world"</code> (UTF-8, not JSON)</td>
+</tr>
+<tr>
+<td>3</td>
+<td><code>RAW_TEXT</code></td>
+<td>NA</td>
+<td>SCALAR</td>
+<td></td>
+<td></td>
+<td>✓</td>
+<td>semantic checksum of <code>ast.parse("x = 1")</code> — <code>SEMANTIC</code> set by the producer (§4.2)</td>
+</tr>
+<tr>
+<td>4</td>
+<td><code>NUMPY</code></td>
+<td>NUMERIC</td>
+<td>SCALAR</td>
+<td></td>
+<td></td>
+<td></td>
+<td><code>Buffer(np.array(3.0), "binary")</code> (0-d)</td>
+</tr>
+<tr>
+<td>5</td>
+<td><code>NUMPY</code></td>
+<td>NUMERIC</td>
+<td>D1</td>
+<td></td>
+<td></td>
+<td></td>
+<td><code>Buffer(np.array([1,2,3]), "binary")</code></td>
+</tr>
+<tr>
+<td>6</td>
+<td><code>NUMPY</code></td>
+<td>NUMERIC</td>
+<td>D2</td>
+<td></td>
+<td></td>
+<td></td>
+<td><code>Buffer(np.zeros((2,3)), "binary")</code></td>
+</tr>
+<tr>
+<td>7</td>
+<td><code>NUMPY</code></td>
+<td>NUMERIC</td>
+<td>D3PLUS</td>
+<td></td>
+<td></td>
+<td></td>
+<td><code>Buffer(np.zeros((2,3,4)), "binary")</code></td>
+</tr>
+<tr>
+<td>8</td>
+<td><code>NUMPY</code></td>
+<td>NONNUMERIC</td>
+<td>SCALAR</td>
+<td></td>
+<td>✓</td>
+<td></td>
+<td><code>Buffer(np.array(b"abc"), "binary")</code> (0-d <code>S</code> → binary↔bytes special case)</td>
+</tr>
+<tr>
+<td>9</td>
+<td><code>NUMPY</code></td>
+<td>NONNUMERIC</td>
+<td>SCALAR</td>
+<td></td>
+<td></td>
+<td></td>
+<td><code>Buffer(np.array("abc"), "binary")</code> (0-d <code>&lt;U3</code>); or <code>np.array(None, dtype=object)</code></td>
+</tr>
+<tr>
+<td>10</td>
+<td><code>NUMPY</code></td>
+<td>NONNUMERIC</td>
+<td>D1</td>
+<td></td>
+<td></td>
+<td></td>
+<td><code>Buffer(np.array([b"a", b"bb"]), "binary")</code> (<code>S2</code>, non-scalar ⟹ <code>NB=False</code>)</td>
+</tr>
+<tr>
+<td>11</td>
+<td><code>NUMPY</code></td>
+<td>NONNUMERIC</td>
+<td>D2</td>
+<td></td>
+<td></td>
+<td></td>
+<td><code>Buffer(np.array([["a"],["b"]]), "binary")</code> (<code>U</code>)</td>
+</tr>
+<tr>
+<td>12</td>
+<td><code>NUMPY</code></td>
+<td>NONNUMERIC</td>
+<td>D3PLUS</td>
+<td></td>
+<td></td>
+<td></td>
+<td><code>Buffer(np.array([b"x"]*8).reshape(2,2,2), "binary")</code></td>
+</tr>
+<tr>
+<td>13</td>
+<td><code>NUMPY</code></td>
+<td>STRUCTURED</td>
+<td>SCALAR</td>
+<td></td>
+<td></td>
+<td></td>
+<td><code>Buffer(np.array((1,2.0), dtype=[("a","&lt;i4"),("b","&lt;f8")]), "binary")</code></td>
+</tr>
+<tr>
+<td>14</td>
+<td><code>NUMPY</code></td>
+<td>STRUCTURED</td>
+<td>D1</td>
+<td></td>
+<td></td>
+<td></td>
+<td>same dtype, <code>shape (2,)</code></td>
+</tr>
+<tr>
+<td>15</td>
+<td><code>NUMPY</code></td>
+<td>STRUCTURED</td>
+<td>D2</td>
+<td></td>
+<td></td>
+<td></td>
+<td>same dtype, <code>shape (2,2)</code></td>
+</tr>
+<tr>
+<td>16</td>
+<td><code>NUMPY</code></td>
+<td>STRUCTURED</td>
+<td>D3PLUS</td>
+<td></td>
+<td></td>
+<td></td>
+<td>same dtype, <code>shape (2,2,2)</code></td>
+</tr>
+<tr>
+<td>17</td>
+<td><code>MIXED_OBJECT</code></td>
+<td>NA</td>
+<td>SCALAR</td>
+<td></td>
+<td></td>
+<td></td>
+<td><code>Buffer({"a": np.arange(3)}, "mixed")</code> (dict root)</td>
+</tr>
+<tr>
+<td>18</td>
+<td><code>MIXED_ARRAY</code></td>
+<td>NA</td>
+<td>SCALAR</td>
+<td></td>
+<td></td>
+<td></td>
+<td><code>Buffer([np.arange(3), {"x": 1}], "mixed")</code> (list root)</td>
+</tr>
+<tr>
+<td>19</td>
+<td><code>JSON_OBJECT</code></td>
+<td>NA</td>
+<td>SCALAR</td>
+<td></td>
+<td></td>
+<td></td>
+<td><code>b'{"a": 1}'</code></td>
+</tr>
+<tr>
+<td>20</td>
+<td><code>JSON_ARRAY</code></td>
+<td>NA</td>
+<td>SCALAR</td>
+<td></td>
+<td></td>
+<td></td>
+<td><code>b'[1, 2, 3]'</code></td>
+</tr>
+<tr>
+<td>21</td>
+<td><code>JSON_STRING</code></td>
+<td>NA</td>
+<td>SCALAR</td>
+<td></td>
+<td></td>
+<td></td>
+<td><code>b'"hello"'</code> (non-numeric)</td>
+</tr>
+<tr>
+<td>22</td>
+<td><code>JSON_STRING</code></td>
+<td>NA</td>
+<td>SCALAR</td>
+<td>✓</td>
+<td></td>
+<td></td>
+<td><code>b'"42"'</code> (numeric string)</td>
+</tr>
+<tr>
+<td>23</td>
+<td><code>JSON_NUMBER</code></td>
+<td>NA</td>
+<td>SCALAR</td>
+<td>✓</td>
+<td></td>
+<td></td>
+<td><code>b'3.14'</code></td>
+</tr>
+<tr>
+<td>24</td>
+<td><em>(const)</em></td>
+<td>—</td>
+<td>—</td>
+<td>—</td>
+<td>—</td>
+<td>—</td>
+<td><code>b"true\n"</code> → <code>CHECKSUM_TRUE</code>, pre-tabulated (§4)</td>
+</tr>
+<tr>
+<td>25</td>
+<td><em>(const)</em></td>
+<td>—</td>
+<td>—</td>
+<td>—</td>
+<td>—</td>
+<td>—</td>
+<td><code>b"false\n"</code> → <code>CHECKSUM_FALSE</code></td>
+</tr>
+<tr>
+<td>26</td>
+<td><em>(const)</em></td>
+<td>—</td>
+<td>—</td>
+<td>—</td>
+<td>—</td>
+<td>—</td>
+<td><code>b"null\n"</code> → <code>CHECKSUM_NULL</code></td>
+</tr>
+<tr>
+<td>27</td>
+<td><code>UNTESTED</code></td>
+<td>NA</td>
+<td>SCALAR</td>
+<td></td>
+<td></td>
+<td></td>
+<td>any buffer, stored before any test (§8.1)</td>
+</tr>
+<tr>
+<td>28</td>
+<td><code>UTF8_UNTESTED</code></td>
+<td>NA</td>
+<td>SCALAR</td>
+<td></td>
+<td></td>
+<td></td>
+<td>any UTF-8 buffer, stored before the JSON test</td>
+</tr>
+<tr>
+<td>29</td>
+<td><code>JSON_UNTESTED</code></td>
+<td>NA</td>
+<td>SCALAR</td>
+<td></td>
+<td></td>
+<td></td>
+<td>any JSON buffer, stored before its JSON type is tested</td>
+</tr>
+</tbody>
+</table>
+<p>Rows 24–26 cover the canonical buffers; <code>true</code>, <code>false</code> and <code>null</code> without a
+trailing newline are recognized by checksum too (§5).</p>
+<p>Rows that the invariants make <strong>unreachable</strong> (worth stating, since they are the
+common bugs): <code>DType</code>/<code>Rank ≠ NA</code>/<code>SCALAR</code> with a non-<code>NUMPY</code> <code>Kind</code>; <code>NUMPY_BYTES</code>
+with anything but a scalar <code>S</code> array (rows 5–7, 9–16 all have <code>NB=False</code>);
+<code>NUMERIC_SCALAR</code> on <code>JSON_OBJECT</code>/<code>ARRAY</code>/<code>RAW</code>/<code>NUMPY</code>; <code>SEMANTIC</code> off <code>RAW_TEXT</code>.</p>
+<h3 id="122-the-length-axis">12.2 The <code>Length</code> axis</h3>
+<p>Each structural class is multiplied by the <code>Length</code> buckets its buffer can take:</p>
+<table>
+<thead>
+<tr>
+<th>Kind</th>
+<th>reachable <code>Length</code></th>
+<th>why</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>RAW_BYTES</code>, <code>RAW_TEXT</code></td>
+<td><code>SHORT</code> / <code>EQ64</code> / <code>MEDIUM</code> / <code>LONG</code></td>
+<td>any size</td>
+</tr>
+<tr>
+<td><code>NUMPY</code></td>
+<td><code>MEDIUM</code> / <code>LONG</code></td>
+<td>the <code>.npy</code> header alone pads past 64 bytes, so never <code>SHORT</code>/<code>EQ64</code></td>
+</tr>
+<tr>
+<td><code>MIXED_*</code></td>
+<td><code>SHORT</code> (tiny) / <code>MEDIUM</code> / <code>LONG</code></td>
+<td>magic + skeleton; <code>EQ64</code> only by coincidence</td>
+</tr>
+<tr>
+<td><code>JSON_OBJECT</code>/<code>ARRAY</code>/<code>STRING</code></td>
+<td><code>SHORT</code> … <code>LONG</code></td>
+<td>any size ≥ 2</td>
+</tr>
+<tr>
+<td><code>JSON_NUMBER</code></td>
+<td><code>SHORT</code> … <code>LONG</code></td>
+<td><code>LONG</code> (&gt;1000 characters) is valid but <strong>forbids</strong> numeric conversion (§6)</td>
+</tr>
+<tr>
+<td>untested kinds</td>
+<td><code>SHORT</code> … <code>LONG</code></td>
+<td>any size</td>
+</tr>
+<tr>
+<td><code>bool</code>/<code>null</code> consts</td>
+<td>fixed (<code>SHORT</code>)</td>
+<td>4–6 bytes, with or without the newline</td>
+</tr>
+</tbody>
+</table>
+<p>Two <code>Length</code> witnesses the design leans on:</p>
+<ul>
+<li><strong><code>RAW_TEXT ∧ EQ64</code></strong> — a 64-byte UTF-8 non-JSON string: precisely a <code>checksum</code>
+  digest (<code>Checksum.hex()</code>), the §9 screen.</li>
+<li><strong><code>JSON_NUMBER ∧ LONG</code></strong> — e.g. <code>b"0." + b"1" * 1000</code>: a valid <code>JSON_NUMBER</code>
+  whose <code>Length == LONG</code> flips every <code>→int/float</code> conversion to <code>✗</code> (§6.1). It must
+  be a finite decimal: <code>orjson</code> rejects a number beyond the float range, such as
+  <code>b"1" + b"0" * 2000</code>, so that buffer is <code>RAW_TEXT</code>.</li>
+</ul>
+<p>Summing the structural classes over their reachable <code>Length</code> buckets gives on the
+order of <strong>80</strong> distinct valid <code>TypeBits</code> words — out of the 6144 the raw bit
+ranges could spell, the rest excluded by §12's invariants.</p>
+<h2 id="13-deferred-open-items">13. Deferred / open items</h2>
+<ul>
+<li><strong>Producer of <code>SEMANTIC</code></strong> — out of scope (§4.2); it is provenance, set by the
+  AST-canonicalizer, not derived from bytes (§8.5).</li>
+<li><strong>Per-Kind fill</strong> is fully specified (§8.3 peek, §8.4 materialization); the
+  <code>MIXED_OBJECT</code>/<code>MIXED_ARRAY</code> split and the numpy <code>DType</code>/<code>Rank</code>/<code>NUMPY_BYTES</code>
+  are all peeked from the magic/header — no deferred producer.</li>
+<li><strong>Exact <code>yaml</code>/<code>ipython</code>/<code>python</code> validity</strong> stays in
+  <code>text_validation_celltype_cache</code> (Region 4 dropped); <code>deserializable_as</code>
+  reports only the necessary <code>UTF8</code> "may-be" condition.</li>
+<li><strong>The merged-<code>DType</code> blind spot</strong> — <code>binary→plain</code> for a non-scalar
+  <code>NONNUMERIC</code> array is <code>?</code> (object would be <code>✗</code>, bytes-<code>S</code>/<code>U</code> <code>≠</code>). <strong>Resolved:
+  accepted</strong>, as <code>binary→plain</code> is rare. The 3 spare bits of the word leave room
+  for a fourth <code>DType</code> value (or a second refinement flag alongside <code>NUMPY_BYTES</code>)
+  should that ever stop being true — no escape hatch is needed now.</li>
+<li><strong>Tightening in the database</strong> — the database still rejects every differing
+  word as a conflict; accepting a tighter word is pending (§8.1).</li>
+</ul>
+              
+            </div>
+          </div><footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+    
+    
+  </span>
+</div>
+    <script src="../../../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "../../..";</script>
+    <script src="../../../js/theme_extra.js"></script>
+    <script src="../../../js/theme.js"></script>
+      <script src="../../../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>

@@ -1,0 +1,686 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <link rel="shortcut icon" href="../img/favicon.ico" />
+    <title>Node State Lifecycle - Seamless — Agent Documentation</title>
+    <link rel="stylesheet" href="../css/theme.css" />
+    <link rel="stylesheet" href="../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "Node State Lifecycle";
+        var mkdocs_page_input_path = "contracts/node-state-lifecycle.md";
+        var mkdocs_page_url = null;
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href="../index.html" class="icon icon-home"> Seamless — Agent Documentation
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../index.html">Home</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../overview.html">Agent Docs Overview</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../repos/index.html">Workspace Repos</a>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Contracts</span></p>
+              <ul class="current">
+                  <li class="toctree-l1"><a class="reference internal" href="identity-and-caching.html">Identity and Caching</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="celltypes-and-conversion.html">Celltypes, Null, and Conversion</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="hashtype.html">HashType</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="deep-celltypes.html">Deep Celltypes</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="expressions.html">Expressions</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="cells.html">Cells</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="pins.html">Pins</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="workflow-context.html">Workflow Context</a>
+                  </li>
+                  <li class="toctree-l1 current"><a class="reference internal current" href="#">Node State Lifecycle</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#the-six-states">The six states</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#equilibrium-quiescence-and-what-they-do-not-mean">Equilibrium, quiescence, and what they do not mean</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#connectivity-when-is-a-node-sufficiently-connected">Connectivity: when is a node sufficiently connected</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#how-each-state-is-derived">How each state is derived</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#transformer-nodes">Transformer nodes</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#cell-nodes">Cell nodes</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#block-reasons">Block reasons</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#precedence">Precedence</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#where-each-form-is-visible">Where each form is visible</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#transitivity">Transitivity</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#leaving-a-state">Leaving a state</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#the-cascade-and-glitch-freedom">The cascade, and glitch-freedom</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#the-glitch-freedom-invariant">The glitch-freedom invariant</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#the-negative-half-is-contract-too">The negative half is contract too</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#there-is-no-exception-for-cache-hits">There is no exception for cache hits</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#speculation-launch-immediately-delay-cancellation">Speculation: launch immediately, delay cancellation</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#a-upstream-confirmation-hold-event-driven-the-load-bearing-case">(a) Upstream-confirmation hold — event-driven; the load-bearing case</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#b-self-edit-revert-hold-a-fixed-window">(b) Self-edit revert hold — a fixed window</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#c-completed-downstream-retention-buffer-retention-event-bounded">(c) Completed-downstream retention — buffer retention, event-bounded</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#reinstatement-is-not-a-special-operation">Reinstatement is not a special operation</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#nodes-do-not-hang-on-to-completed-work">Nodes do not hang on to completed work</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#holder-policy-and-bounds">Holder policy and bounds</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#prune-reclaiming-obsolete-work">prune: reclaiming obsolete work</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#states-as-seen-through-barriers-and-handles">States as seen through barriers and handles</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#determinism-and-scope">Determinism and scope</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#implementation-status-and-current-limitations">Implementation status and current limitations</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#non-goals">Non-goals</a>
+    </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="attachments.html">Attachments</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="mounts.html">File Mounts</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="cancellation.html">Cancellation</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="direct-delayed-and-transformation.html">direct/delayed/Transformation</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="modules-and-closures.html">Modules and Closures</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="scratch-witness-audit.html">Scratch/Witness/Audit</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="seamless-run-and-argtyping.html">seamless-run/Argtyping</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="cache-storage-and-limits.html">Cache Storage and Limits</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="content-addressed-files-and-dirs.html">Content-addressed Files and Dirs</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="execution-backends.html">Execution Backends</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="execution-records.html">Execution Records</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="service-management.html">Service Management</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="compression.html">Compression</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="compiled-transformers.html">Compiled Transformers</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="compiled-pins.html">Compiled Pins</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="seamless-signature-schema.html">seamless-signature Schema</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">API</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/python/seamless.html">seamless</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/python/seamless.transformer.html">seamless.transformer</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/python/seamless.buffer_class.html">seamless.buffer_class</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/python/seamless.checksum_class.html">seamless.checksum_class</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/python/seamless_config.select.html">seamless_config.select</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/python/seamless_config.tools.html">seamless_config.tools</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/python/seamless_transformer.transformation_class.html">seamless_transformer.transformation_class</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/python/seamless_transformer.transformer_class.html">seamless_transformer.transformer_class</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">CLI</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/cli/seamless-run.html">seamless-run</a>
+                  </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Seamless — Agent Documentation</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../index.html" class="icon icon-home" aria-label="Docs"></a></li>
+          <li class="breadcrumb-item">Contracts</li>
+      <li class="breadcrumb-item active">Node State Lifecycle</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h1 id="the-node-state-lifecycle-contract">The node state lifecycle (Contract)</h1>
+<p><strong>A workflow node is always in exactly one of six states, and every one of them is <em>derived</em>, never assigned.</strong> The Context is a DAG of nodes plus a runtime that keeps it in equilibrium (<code>contracts/workflow-context.md</code>); this page is the state machine that runtime implements — what the six states mean, how each is derived from a node's own configuration and its upstreams, how a change cascades through the downstream cone without ever producing an inconsistent intermediate result, how superseded work is speculatively retained, and how a user reclaims it.</p>
+<p>A <strong>node</strong> is a Context-bound builder — <code>ctx.a</code>, <code>ctx.tf</code> — and <code>Cell</code>, <code>Pin</code> and <code>Transformer</code> handles are <em>views</em> onto one (<code>contracts/workflow-context.md</code>, <code>contracts/cells.md</code>, <code>contracts/pins.md</code>). State is a property of the node, so two handles onto one node always report the same state, and a handle carries none of it.</p>
+<p>This page owns: the state vocabulary, the derivation rules, block reasons and their precedence, the cascade and its glitch-freedom invariant, the hold/supersession policy, and what <code>prune</code> reclaims. It does <strong>not</strong> own the Context API (<code>contracts/workflow-context.md</code>), the handle-side read/write API (<code>contracts/cells.md</code>, <code>contracts/pins.md</code>), what softcancel means (<code>contracts/cancellation.md</code>), or Expression-level cancellation and materialization (<code>contracts/expressions.md</code>).</p>
+<p>Code locations:</p>
+<table>
+<thead>
+<tr>
+<th>Concern</th>
+<th>Module / symbol</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>The state vocabulary and node record</td>
+<td><code>seamless_workflow.graph</code> (<code>NodeState</code>, <code>Node.state</code>, <code>Node.block_reason</code>, <code>Node.block_pins</code>, <code>Node.pin_states</code>, <code>Node.exception</code>)</td>
+</tr>
+<tr>
+<td>Derivation pass and cell derivation</td>
+<td><code>seamless_workflow.context.Context</code> (<code>_derive_graph</code>, <code>_derive_node</code>, <code>_derive_cell</code>, <code>_apply_pending</code>, <code>_apply_upstream_state</code>, <code>_source_state</code>, <code>_demand</code>, <code>_clear_exception</code>)</td>
+</tr>
+<tr>
+<td>Transformer derivation and dispatch</td>
+<td><code>seamless_workflow.reactive.Reactive</code> (<code>_derive_transformer</code>, <code>_publish_run</code>, <code>_suspend</code>, <code>_expire_run</code>)</td>
+</tr>
+<tr>
+<td>Supersession, holds and the run ledger</td>
+<td><code>seamless_workflow.scheduler</code> (<code>Scheduler</code>, <code>ContextRuntime.supersede</code>, <code>ContextRuntime.prune</code>, <code>RunRecord</code>)</td>
+</tr>
+<tr>
+<td>Handle-side reporting</td>
+<td><code>seamless_workflow.builder_state</code> (<code>BoundCellBackend.state</code> / <code>.block_reason</code>, <code>BoundTransformerBackend.state</code> / <code>.block_reason</code> / <code>.clear_exception</code>, <code>BoundPinBackend.state</code> reading <code>Node.pin_states</code>)</td>
+</tr>
+<tr>
+<td>Barriers over states</td>
+<td><code>seamless_workflow.runtime_api.RuntimeAPI._check_barriers</code></td>
+</tr>
+</tbody>
+</table>
+<h2 id="the-six-states">The six states</h2>
+<table>
+<thead>
+<tr>
+<th>state</th>
+<th>meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>unwired</code></td>
+<td>not yet sufficiently connected</td>
+</tr>
+<tr>
+<td><code>blocked</code></td>
+<td>sufficiently connected, but some upstream is unwired, blocked or failed — <strong>not itself errored</strong></td>
+</tr>
+<tr>
+<td><code>waiting</code></td>
+<td>the node's inputs are not all concrete checksums yet</td>
+</tr>
+<tr>
+<td><code>computing</code></td>
+<td>the node's inputs are concrete and its own work has been <strong>submitted</strong> — queued behind backend concurrency, or already running</td>
+</tr>
+<tr>
+<td><code>complete</code></td>
+<td>a result checksum is available</td>
+</tr>
+<tr>
+<td><code>failed</code></td>
+<td>this node's <strong>own</strong> evaluation failed</td>
+</tr>
+</tbody>
+</table>
+<p>Three rules fix the vocabulary. They are the places where a plausible reading is wrong.</p>
+<p><strong>1. <code>waiting</code> versus <code>computing</code> is decided at dispatch, not by the backend.</strong> <code>computing</code> means <em>submitted</em>, not <em>executing</em>. No backend is asked to report start-of-execution, because jobserver and Dask may not surface it, and a state that depended on such a report would be unobtainable for some backends and racy for the rest. Two consequences:</p>
+<ul>
+<li>A transformer whose pins are all literals has nothing to wait for, so it goes <strong>straight to <code>computing</code> and is never observed <code>waiting</code></strong>. Only its downstream shows <code>waiting</code>.</li>
+<li>A node is <code>computing</code> <strong>from dispatch onwards, including the window in which its transformation identity is still being constructed.</strong> There is no separate "constructing" state, and <code>computing</code> is not delayed until the identity exists (<code>contracts/workflow-context.md</code> states the same rule from the execution side).</li>
+</ul>
+<p><strong>2. <code>computing</code> is a transformer-node state.</strong> A cell node's own work — a conversion, a projection, a validator, a cell-level join — reports <strong><code>waiting</code></strong> while it is in flight, and a <strong>cell node is never observed <code>computing</code></strong>. This is the same vocabulary the standalone subset uses in <code>contracts/cells.md</code>, where a Cell's states are <code>unwired</code>, <code>waiting</code>, <code>complete</code> and <code>failed</code>.</p>
+<p><strong>3. Upstream failure never propagates as <code>failed</code>.</strong> A dependent of a failed node is <strong><code>blocked</code></strong>, with block reason <code>blocked-by-error</code>. <code>failed</code> is reserved for a node's <strong>own</strong> evaluation, and a node's <code>.exception</code> is its own, never a borrowed copy of an upstream's. Reading a failure therefore always identifies the node that produced it; to find the cause of a <code>blocked</code> node, follow the block reason upstream.</p>
+<h2 id="equilibrium-quiescence-and-what-they-do-not-mean">Equilibrium, quiescence, and what they do not mean</h2>
+<table>
+<thead>
+<tr>
+<th>kind</th>
+<th>states</th>
+<th>leaves only via</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>equilibrium</td>
+<td><code>complete</code>, <code>failed</code>, <code>blocked</code>, <code>unwired</code></td>
+<td>an <strong>external change</strong></td>
+</tr>
+<tr>
+<td>out of equilibrium</td>
+<td><code>waiting</code>, <code>computing</code></td>
+<td><strong>autonomously</strong></td>
+</tr>
+</tbody>
+</table>
+<p>An external change perturbs; the Context relaxes. Nothing else moves a node.</p>
+<ul>
+<li><strong>Quiescence ⇔ no node is <code>waiting</code> or <code>computing</code>.</strong> Within scope — a DAG of reproducible transformations — quiescence is guaranteed reachable in finite steps after a finite burst of edits.</li>
+<li><strong>Quiescence is a property of node states only.</strong> A <code>complete</code> node may still have a <strong>superseded run in flight</strong> — work that is obsolete by construction and whose result nothing will consume. It does not count against quiescence. So <strong>quiescent ≠ cluster-idle</strong>; <code>prune</code> is what makes the two coincide (below, and <code>contracts/workflow-context.md</code>).</li>
+<li><strong>Quiescence ≠ success.</strong> Equilibrium includes <code>failed</code>, <code>blocked</code> and <code>unwired</code>. Success is the strictly stronger condition that every witness or otherwise observable node is <code>complete</code>. A graph-wide barrier returning is a statement about motion, not about outcomes.</li>
+</ul>
+<h2 id="connectivity-when-is-a-node-sufficiently-connected">Connectivity: when is a node sufficiently connected</h2>
+<p><strong>Sufficiently connected = every required pin wired, and every connected-optional pin wired.</strong> An unconnected optional pin is accepted and is simply not part of the transformation; it does not gate. The rule itself is substrate and belongs to <code>contracts/pins.md</code> (<code>sufficiently_connected</code>); the Context only consumes its verdict.</p>
+<ul>
+<li>A node reaches <code>computing</code> iff every required upstream is <code>complete</code> <strong>and</strong> every connected-optional upstream is either <code>complete</code> or definitively in its empty/dropped case — the upstream resolving to the canonical JSON null, which <strong>on a connected optional pin means that pin's absence</strong> and drops it from the transformation. "Pin absent" and "pin present-but-null" canonicalize to the same transformation checksum; that is intended and is feature 6's identity rule (<code>contracts/pins.md</code>).</li>
+<li>A connected optional pin therefore <strong>gates exactly like a required pin.</strong> Its only relaxation is that <em>resolving to null satisfies the gate</em> rather than failing it. An <strong>errored</strong> connected-optional upstream <strong>blocks</strong> the node like any other failed upstream; it is never skipped. Optionality normalizes a successful null, never an error.</li>
+<li><strong>Admitted trade-off: connected-optional pins lose laziness.</strong> The upstream always runs, even when its null is then dropped. "Optional" means "may be absent <strong>or</strong> null, but if connected, always computed" — the opposite of the intuitive reading. Optional pins can be difficult to use, and this is the reason.</li>
+</ul>
+<h2 id="how-each-state-is-derived">How each state is derived</h2>
+<p><strong>Derivation happens once per controller turn, for the whole graph, in one synchronous non-yielding pass in topological order</strong> (sources before consumers). Every state below is the outcome of that pass. <strong>No state is ever set from a background thread</strong>: a result arriving from execution enters as a continuation on the controller and is applied by the <em>next</em> pass, exactly like an edit (<code>contracts/workflow-context.md</code>).</p>
+<p>Topological order is what makes the derived states mutually consistent within one turn: a consumer is always derived against upstream states that have already been derived in the same pass, never against a half-updated picture.</p>
+<h3 id="transformer-nodes">Transformer nodes</h3>
+<p>For the code input and for every declared pin, <strong>in name order</strong>:</p>
+<ol>
+<li>A pin with <strong>no edge and no stored value</strong>, and not declared optional, is a <strong>locally missing</strong> input: the node's state is <strong><code>unwired</code></strong>, and the pin is named. The <strong>code input counts as a pseudo-pin under the name <code>"code"</code></strong> and follows the same rule.</li>
+<li>An input whose upstream node is <strong>not <code>complete</code></strong> makes the node non-current. The upstream's state maps to a pending reason:</li>
+</ol>
+<table>
+<thead>
+<tr>
+<th>Upstream state</th>
+<th>Pending reason contributed</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>failed</code>, or <code>blocked</code> with reason <code>blocked-by-error</code></td>
+<td><code>blocked-by-error</code></td>
+</tr>
+<tr>
+<td><code>unwired</code>, or <code>blocked</code> with reason <code>blocked-by-unwired</code></td>
+<td><code>blocked-by-unwired</code></td>
+</tr>
+<tr>
+<td><code>waiting</code>, <code>computing</code> (anything still progressing)</td>
+<td><code>waiting</code></td>
+</tr>
+</tbody>
+</table>
+<ol>
+<li>A pin's <strong>own</strong> failure — a null rejected by the required-pin rule, or a failed conversion from the upstream celltype to the pin celltype — fails <strong>the pin</strong>. The node is <strong><code>blocked</code></strong> with reason <code>blocked-by-error</code>, naming that pin. The pin's failure is readable on the pin handle (<code>contracts/pins.md</code>), and <strong>the transformer's own <code>.exception</code> stays <code>None</code></strong>: no transformation was built, so nothing of the transformer's own failed.</li>
+<li>With <strong>no pending input</strong>, the node is dispatched and becomes <strong><code>computing</code></strong>. When its run answers, it becomes <code>complete</code>, or — on its <strong>own</strong> failure — <code>failed</code>, with the failure as its <code>.exception</code>.</li>
+</ol>
+<p>The winning label among several pending inputs is decided by the precedence in <em>Block reasons</em> below.</p>
+<h3 id="cell-nodes">Cell nodes</h3>
+<table>
+<thead>
+<tr>
+<th>Situation</th>
+<th>State</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>no producer and no incoming edge</td>
+<td><strong><code>unwired</code></strong></td>
+</tr>
+<tr>
+<td>a literal producer, or an upstream that is <code>complete</code>, with no conversion to do</td>
+<td><strong><code>complete</code></strong></td>
+</tr>
+<tr>
+<td>a conversion, projection, validator or cell-level join that must run</td>
+<td><strong><code>waiting</code></strong> while the job is in flight, then <code>complete</code></td>
+</tr>
+<tr>
+<td>that job fails</td>
+<td><strong><code>failed</code></strong>, with the error as <code>.exception</code></td>
+</tr>
+<tr>
+<td>an upstream that is not <code>complete</code></td>
+<td><strong><code>blocked</code></strong> (or <code>waiting</code>), by the same mapping as for transformers</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li><strong>A cell's own conversion failure is <code>failed</code>, not <code>blocked</code>.</strong> This is the cell-level counterpart of a transformer's own failure: the work that failed was the cell's, so the exception is the cell's. Contrast the transformer <em>pin</em> case above, where the conversion failure belongs to the pin and the transformer node is merely <code>blocked</code>.</li>
+<li><strong>A mount that cannot sense its file fails the cell</strong> (<code>failed</code>) with the sense error, and <code>clear_exception()</code> on such a node <strong>re-polls the mount</strong> rather than re-deriving (<code>contracts/attachments.md</code>, <em>Sense errors fail the cell</em>). The stored value is kept but masked, and unmounting unmasks it.</li>
+<li><strong>A cell-level join is plain local Python — no Transformation and no Expression behind it</strong> — assembled in-process from its root value and connected sub-path sources, which is why it is never observed <code>computing</code>, only <code>waiting</code> then <code>complete</code>. This is <strong>provisional</strong>: a future re-implementation is to cache joins and evaluate them where the data is, and <strong>no join identity is promised</strong>. The full observable contract is <code>contracts/cells.md</code>, <em>Cell-level joins</em>; this table states only where a join sits in the state machine.</li>
+</ul>
+<h2 id="block-reasons">Block reasons</h2>
+<p><strong>The block reason is a first-class, queryable enumeration</strong>, with exactly two members:</p>
+<table>
+<thead>
+<tr>
+<th>reason</th>
+<th>means</th>
+<th>the user action it implies</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>blocked-by-unwired</code></td>
+<td>something upstream is not connected</td>
+<td>wire something</td>
+</tr>
+<tr>
+<td><code>blocked-by-error</code></td>
+<td>something upstream failed</td>
+<td>fix code or data</td>
+</tr>
+</tbody>
+</table>
+<p>The two members are those <strong>literal strings</strong>; <code>BlockReason</code> (and <code>NodeState</code> above) is a <code>Literal</code> type alias, not an <code>enum.Enum</code>, so compare against the string and do not expect member attributes. Both reasons are the one state <code>blocked</code> — both need an external change to leave — but they imply different user actions, so the reason must be inspectable by UIs and tests rather than recoverable only from prose.</p>
+<h3 id="precedence">Precedence</h3>
+<p>When several inputs are pending at once (author's ruling, 2026-09-18):</p>
+<pre><code>unwired  &gt;  blocked-by-unwired  &gt;  blocked-by-error  &gt;  waiting
+</code></pre>
+<ul>
+<li><strong>A <em>locally</em> missing input wins outright</strong>: the node is <code>unwired</code>, not <code>blocked</code>. A node that is not sufficiently connected is never described in terms of its upstreams.</li>
+<li><strong>Among upstreams, <code>blocked-by-unwired</code> beats <code>blocked-by-error</code>.</strong> The rationale: <strong>having all inputs wired — the correct topology — has priority over errors, which are about correct values</strong>; and an errored upstream is quite often errored <em>only</em> because something below <em>it</em> is still unwired. Report the missing wiring first, because fixing it may dissolve the error.</li>
+<li><strong><code>waiting</code> loses to every blocking reason.</strong> A node with one progressing input and one blocked input is <code>blocked</code>, not <code>waiting</code>: the progressing input will settle on its own, the blocked one will not, so the honest report is that the node is stuck.</li>
+</ul>
+<h3 id="where-each-form-is-visible">Where each form is visible</h3>
+<p>Note the deliberate asymmetry: a cell has one input, a transformer has many, so <strong>a transformer names its inputs</strong> while a cell reports the category.</p>
+<table>
+<thead>
+<tr>
+<th>Read</th>
+<th>Reports</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>a bound Cell's <code>.block_reason</code> (including <code>tf.result</code>)</td>
+<td>the <strong>enum</strong>, or <code>None</code></td>
+</tr>
+<tr>
+<td>a bound Transformer's <code>.block_reason</code></td>
+<td>the <strong>sorted list of input pin names</strong> responsible, including <code>"code"</code>; a <strong>detached copy</strong> (mutating it changes nothing); <code>None</code> unless the node is <code>unwired</code>, <code>blocked</code> or <code>waiting</code></td>
+</tr>
+</tbody>
+</table>
+<p>Which pins the transformer's list names:</p>
+<ul>
+<li>in <strong><code>unwired</code></strong> and <strong><code>waiting</code></strong>: the pins in the <strong>winning category</strong> only;</li>
+<li>in <strong><code>blocked</code></strong>: <strong>every</strong> pin blocked for either reason, so the list is the full set of inputs needing attention while the enum (on <code>tf.result.block_reason</code>) says which category won.</li>
+</ul>
+<p><strong>The precedence decides the label, never the completeness of the list.</strong> <code>contracts/pins.md</code> states the same split from the handle side.</p>
+<h3 id="transitivity">Transitivity</h3>
+<p><strong>Both reasons propagate.</strong> A consumer of an error-blocked node is itself <code>blocked-by-error</code>; a consumer of an unwired or unwired-blocked node is <code>blocked-by-unwired</code>; where both apply, the precedence above decides. A downstream node therefore reports <strong>why the graph is stuck</strong>, not merely that its immediate input is not ready — a node ten edges below a missing wire still says <code>blocked-by-unwired</code>.</p>
+<h2 id="leaving-a-state">Leaving a state</h2>
+<ul>
+<li><strong>An equilibrium state is left only by an external change</strong>: wiring or unwiring, an edit, a graph replacement, or <code>clear_exception()</code>. Nothing in the runtime retries, ages out, or re-derives an equilibrium node on its own.</li>
+<li><strong><code>clear_exception()</code> is the external change that releases <code>failed</code>.</strong> It is forwarded to the node's Context-private Expression/Transformation, and it:</li>
+<li>drops the recorded exception,</li>
+<li>discards the cached failure fact,</li>
+<li><strong>softcancels</strong> the node's current run (<code>contracts/cancellation.md</code>),</li>
+<li>re-derives the node from its <strong>current</strong> inputs.</li>
+</ul>
+<p>It is a <strong>no-op on a node with no exception</strong>. There is <strong>no automatic retry</strong>: classifying a failure as transient and retrying it is a Transformation/backend concern, not Context logic (<em>Non-goals</em>).
+- <strong>A repaired failure must revoke before it recomputes.</strong> After the edit that repairs a failure, no downstream node is left <code>complete</code> on the failed node's stale state, and <strong>a failure never survives the edit that repairs it</strong>. This is the cascade invariant below, applied to the <code>failed</code> state.
+- <strong>Only the failing node reports the exception.</strong> Its dependents report <code>blocked</code> with no exception of their own.
+- <strong>A node's failure is reported identically on the node and on its result handle</strong>: <code>ctx.tf.exception</code> and <code>ctx.tf.result.exception</code> are the same failure.
+- <strong>A failure is an event, not a string.</strong> Re-deriving after an edit produces a <strong>new</strong> failure even when the message is identical; nothing may treat two equal messages as one failure, and nothing may suppress a re-raised failure because it "looks the same".</p>
+<h2 id="the-cascade-and-glitch-freedom">The cascade, and glitch-freedom</h2>
+<p>A <strong>change</strong> is an update to a node's value, config or identity, or to connectivity. The cascade rule:</p>
+<blockquote>
+<p>On any change to a node's identity or connectivity, the node re-derives its own state. If it <strong>leaves <code>complete</code></strong>, every downstream node <strong>re-derives its own state</strong> — landing in <code>waiting</code> <em>or</em> <code>blocked</code> per its full upstream set — <strong>synchronously, before</strong> the wavefront recompute is launched.</p>
+</blockquote>
+<p>Two refinements over a blunt "all downstream become pending":</p>
+<ul>
+<li><strong>Re-derive, don't force-set.</strong> A multi-input downstream may belong in <code>blocked</code>, not <code>waiting</code>, because it also depends on a failed or unwired node. Each downstream computes its own state against its <strong>full</strong> upstream set; the cascade tells it to recompute its state, not what state to take.</li>
+<li><strong>The trigger is "leaves <code>complete</code>"</strong>, which is broader than "an input checksum changed". It includes:</li>
+<li><strong>self-edits</strong> — editing a node's code or load-bearing metadata changes its <strong>own</strong> transformation identity with no input change;</li>
+<li><strong>disconnection</strong> — removing a required pin moves a node <code>complete → unwired</code>, and its downstream to <code>blocked</code>.</li>
+</ul>
+<h3 id="the-glitch-freedom-invariant">The glitch-freedom invariant</h3>
+<blockquote>
+<p><strong>Invalidation dominates recomputation.</strong> On any change, mark the whole downstream cone non-current — revoke it from <code>complete</code> — <em>before</em> launching the wavefront recompute. <strong>Never fire a node on a stale-completed input.</strong></p>
+</blockquote>
+<p>The textbook diamond: with <code>a = 1; b = a + 1; c = a + b</code>, when <code>a → 10</code> the danger is <code>c</code> firing on the <strong>new</strong> <code>a</code> and <code>b</code>'s <strong>stale</strong> result, giving a transient <code>c = 12</code> that corresponds to no consistent state of the graph. The invariant forbids it: the instant <code>a</code> changes, <code>b</code> and <code>c</code> are synchronously revoked to <code>waiting</code>, so <code>c</code> cannot fire until <code>b</code> recompletes to <code>11</code>, and <code>c</code> then gives <code>21</code>. <strong>The only visible effect of the invariant is an honest <code>waiting</code> on <code>c</code>.</strong></p>
+<p>The two halves are decoupled and have very different costs:</p>
+<table>
+<thead>
+<tr>
+<th>half</th>
+<th>cost</th>
+<th>timing requirement</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>marking</strong> the cone non-current</td>
+<td>cheap in-process bookkeeping — state flips, no I/O</td>
+<td>must complete in <strong>one non-yielding pass before any descendant is evaluated for firing</strong></td>
+</tr>
+<tr>
+<td><strong>building and launching</strong> the refreshed work</td>
+<td>real work — identity construction, submission</td>
+<td>lazy and prioritised; <strong>need not</strong> be synchronous</td>
+</tr>
+</tbody>
+</table>
+<p>That ordering is the whole requirement. A node becomes eligible to fire only once <strong>all</strong> its inputs are current, so glitch-freedom holds regardless of when the replacement work is rebuilt.</p>
+<h3 id="the-negative-half-is-contract-too">The negative half is contract too</h3>
+<p><strong>Nothing outside the cone may leave <code>complete</code>.</strong> The cone of an edited node is its <strong>transitive consumers</strong>: two consumers of one root are not in each other's cones, and an input is never in its consumer's cone.</p>
+<p>Over-invalidation <strong>never produces a wrong answer</strong>, which is exactly what makes it insidious: a deterministic body recomputes to the same checksum, so state comparisons and checksum comparisons see nothing while work was thrown away and a cluster was kept busy. The contract is therefore <strong>both</strong> that the whole cone is revoked <strong>and</strong> that nodes outside it are untouched — including <strong>not re-executed</strong>.</p>
+<h3 id="there-is-no-exception-for-cache-hits">There is no exception for cache hits</h3>
+<p><strong>A turn that makes a node newly eligible to compute leaves it pending in that turn</strong>; its result — or its failure — is settled by a <strong>later</strong> turn. No public operation returns a freshly computed result, and <strong>a locally cached result is not allowed to install <code>complete</code> in the writing turn</strong>.</p>
+<p>The reason is that otherwise node state would become <strong>history-dependent</strong>: re-setting a pin to a previously computed value would complete in-turn, while the first setting of the same value did not, so the same graph and the same write would give different observable state depending on what the process had computed earlier.</p>
+<p>When a recompute yields the <strong>same</strong> checksum — an inert edit — downstream nodes re-complete through the <strong>ordinary content-addressed cache hit</strong>: one turn later, not zero (<code>contracts/identity-and-caching.md</code>, and <code>contracts/workflow-context.md</code> on cache hits arriving through a controller turn).</p>
+<h2 id="speculation-launch-immediately-delay-cancellation">Speculation: launch immediately, delay cancellation</h2>
+<p>On a change, for the changed node and everything downstream, <strong>launch of the replacement is never debounced; only cancellation of the superseded run is delayed.</strong> Latency is never traded for the possibility that the user is still typing. What <em>is</em> bought by delay is the avoidance of killing running work that may still be needed — an inconsequential upstream edit, a reverted edit, an oscillation.</p>
+<p>The organising fact is content-addressing: <strong>a node's transformation identity is a hash of its own code and its upstreams' <em>output</em> checksums.</strong> Two consequences drive the whole policy:</p>
+<ul>
+<li>a node's running work survives an upstream edit <strong>iff the upstream's output is unchanged</strong> — even though the upstream's <em>code</em> changed;</li>
+<li>editing a node's <strong>own</strong> code always changes its own identity, so its own running work is reusable <strong>only on a literal revert</strong>.</li>
+</ul>
+<p>That splits the holds into three cases.</p>
+<h3 id="a-upstream-confirmation-hold-event-driven-the-load-bearing-case">(a) Upstream-confirmation hold — event-driven; the load-bearing case</h3>
+<p>Node <code>B</code> is <code>computing</code>, possibly nearly finished, when a changed upstream <code>A</code> starts recomputing. <code>A</code>'s edit may be inconsequential, in which case <code>B</code>'s identity is unchanged and its in-flight run <strong>is still the current run</strong>.</p>
+<p><strong>Hold <code>B</code>'s run until the changed upstream resolves</strong>, then compare:</p>
+<table>
+<thead>
+<tr>
+<th><code>A</code> re-resolves to</th>
+<th>action on <code>B</code>'s held run</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>the <strong>same</strong> output checksum</td>
+<td><strong>reinstate</strong></td>
+</tr>
+<tr>
+<td>a <strong>different</strong> output checksum</td>
+<td><strong>cancel and relaunch</strong></td>
+</tr>
+</tbody>
+</table>
+<p>The window is <strong>event-driven</strong>, under a <strong>fixed maximum of about five minutes</strong>: if the upstream has not resolved by then, release the hold. The ceiling keeps <code>B</code> held while a genuinely slow upstream is still resolving, and stops a <em>stuck</em> upstream from pinning a superseded run indefinitely.</p>
+<h3 id="b-self-edit-revert-hold-a-fixed-window">(b) Self-edit revert hold — a fixed window</h3>
+<p>A <code>computing</code> node's <strong>own</strong> code or load-bearing metadata is edited, so its identity changes and the old run is reusable only on a revert. No upstream event governs this case; it is a <strong>behavioural bet on a revert</strong>, so a <strong>fixed human-timescale window of seconds</strong> is the right shape, <strong>independent of the run's runtime</strong>. Holding a superseded two-hour run for a few seconds is worthwhile precisely because a revert within those seconds saves the whole restart.</p>
+<p>It is a <strong>fixed lifetime</strong> — hold until a deadline, then release — with <strong>no decay curve</strong>. Decay is the buffer cache's general memory-pressure mechanism and is not duplicated here (<code>contracts/cache-storage-and-limits.md</code>). For a very expensive run the lifetime shrinks toward zero.</p>
+<h3 id="c-completed-downstream-retention-buffer-retention-event-bounded">(c) Completed-downstream retention — buffer retention, event-bounded</h3>
+<p>Node <code>Y</code> is already <code>complete</code> when an upstream changes. There is <strong>no running work to protect</strong>, and reinstating a completed node is a pure cache hit, so what is held is <strong><code>Y</code>'s output buffer</strong> (and the upstream's old output), so that the hit lands if the upstream re-resolves to the same output. Its lifetime is bounded by the <strong>same upstream event</strong>, with the <strong>same five-minute backstop</strong>. Memory pressure may evict it early; that is the correct compute-versus-memory trade-off and needs no separate policy.</p>
+<p><strong>(a) and (c) are the same event-driven downstream hold</strong>, split only by whether the downstream is still <code>computing</code> or already <code>complete</code>. <strong>(b)</strong> keeps a fixed window because no upstream event governs it.</p>
+<h3 id="reinstatement-is-not-a-special-operation">Reinstatement is not a special operation</h3>
+<p><strong>Reinstating a held run is mechanically nothing.</strong> The node re-derives the <strong>same</strong> identity and <strong>re-latches onto the still-running submission through the ordinary membership set</strong> (<code>contracts/cancellation.md</code>). There is no surgical resurrection, no rebinding of a saved future, and no separate reinstatement code path: <strong>the hold merely keeps that submission alive long enough for the re-derivation to find it.</strong></p>
+<p>A held run that had already produced a result or an error still delivers it as a <strong>later fact</strong>, through a subsequent turn — never as a cache lookup performed by the editing turn. This is the same rule as <em>There is no exception for cache hits</em> above.</p>
+<h3 id="nodes-do-not-hang-on-to-completed-work">Nodes do not hang on to completed work</h3>
+<p>Correctness and most of the performance benefit come from the <strong>content-addressed cache</strong>, which is global, shared and outlives any node. Retention of <strong>running</strong> work is a different thing and is load-bearing, because once cancelled an in-flight run's <strong>partial progress is gone</strong> and nothing in the cache can bring it back.</p>
+<h3 id="holder-policy-and-bounds">Holder policy and bounds</h3>
+<ul>
+<li><strong>A node holds at most one current run plus a small bounded set of superseded <em>in-flight</em> runs, capped at three.</strong> The cap is on in-flight runs only: when a superseded run <strong>completes</strong>, it leaves the cap, and its result is retained — if at all — by the ordinary buffer reference, not by the holder.</li>
+<li><strong>A superseded run evicted from that set is softcancelled — never hard-killed</strong>, because the submission may be shared with sibling nodes, with other runs, and with other processes (<code>contracts/cancellation.md</code>). The reactive layer never issues a hard cancel (<code>contracts/workflow-context.md</code>).</li>
+<li><strong>No global budget is needed.</strong> Only <code>computing</code> nodes have running work to supersede, and the wavefront of actually-running work is bounded by backend concurrency, so superseded in-flight runs are bounded by <strong>3 × backend concurrency</strong>, independent of graph size.</li>
+<li><strong>Preemption is optional, not contract.</strong> Reclaiming a slot from a superseded run in favour of a current run elsewhere is at most a nicety; the supported control is <code>prune</code>, because <strong>the user knows which held run is still worth keeping</strong> and the scheduler does not.</li>
+</ul>
+<h2 id="prune-reclaiming-obsolete-work"><code>prune</code>: reclaiming obsolete work</h2>
+<p>The API surface is in <code>contracts/workflow-context.md</code>; what belongs here is what it means for states and holds.</p>
+<ul>
+<li><strong><code>ctx.prune()</code> softcancels every superseded or grace-held run immediately</strong>, leaving only the current wavefront, and reports how many it cancelled. It is <strong>lightweight and repeatable</strong> — not a freeze, not a commit, and not a barrier.</li>
+<li><strong><code>ctx.a.prune()</code> does the same for <code>ctx.a</code> and its downstream cone only</strong>; <code>ctx.prune()</code> is that same call at the graph root. This is the <strong>user's manual control</strong> over which superseded work to reclaim; the scheduler does not guess a tighter automatic policy. Machinery to call it automatically — edit-rate, saturation or cost driven — can be layered on later and is <strong>not part of v1</strong>.</li>
+<li><strong><code>prune</code> changes no node state.</strong> It cancels obsolete work only; a <code>complete</code> node stays <code>complete</code> and a <code>computing</code> node's <em>current</em> run is untouched.</li>
+<li><strong>After <code>prune</code>, all running work is current work</strong>, so once the wavefront finishes the cluster is genuinely idle: <strong>quiescence == idle</strong>.</li>
+</ul>
+<h2 id="states-as-seen-through-barriers-and-handles">States as seen through barriers and handles</h2>
+<p>The barrier API itself is <code>contracts/workflow-context.md</code>; only what depends on states is stated here.</p>
+<table>
+<thead>
+<tr>
+<th>Barrier</th>
+<th>Waits until</th>
+<th>Then</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>node barrier</strong> — <code>ctx.a.compute()</code></td>
+<td>the node <strong>and its upstream cone</strong> are out of <code>waiting</code>/<code>computing</code></td>
+<td><code>failed</code> → <strong>re-raises the node's recorded exception</strong>; <code>unwired</code> or <code>blocked</code> → raises <code>NodeError</code> naming the state <strong>and the block reason</strong>; otherwise returns the checksum</td>
+</tr>
+<tr>
+<td><strong>graph-wide barrier</strong> — <code>ctx.compute()</code></td>
+<td><strong>no node</strong> is <code>waiting</code> or <code>computing</code></td>
+<td>returns; it does <strong>not</strong> raise for nodes that settled into <code>blocked</code>, <code>unwired</code> or <code>failed</code></td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li><strong>The graph-wide barrier is a statement about motion, not about outcomes.</strong> Quiescence is not success; check states afterwards.</li>
+<li>A handle whose node no longer exists raises <code>StaleWorkflowHandleError</code>.</li>
+<li><strong>Standalone handles have a narrower vocabulary.</strong> A standalone <code>Cell</code> or <code>Pin</code> reports only <code>unwired</code>, <code>waiting</code>, <code>complete</code> and <code>failed</code>, and <code>block_reason</code> is <strong>bound-only</strong>. <code>blocked</code> and <code>computing</code> are Context-node states, because only a Context has upstreams to be blocked by and a runtime to dispatch to (<code>contracts/cells.md</code>, <code>contracts/pins.md</code>).</li>
+</ul>
+<h2 id="determinism-and-scope">Determinism and scope</h2>
+<ul>
+<li><strong>Determinism is assumed.</strong> The retain-and-compare loop of the hold policy assumes that the same inputs give the same result checksum. Irreproducible transformations are out of scope for workflows, and accidental nondeterminism being <strong>masked</strong> by the content-addressed cache is a universal Seamless property, not a Context hazard (<code>contracts/identity-and-caching.md</code>, <code>contracts/scratch-witness-audit.md</code>).</li>
+<li><strong>Cycles are out of scope</strong>, not merely unimplemented: the cascade assumes a DAG. (<code>contracts/workflow-context.md</code> rejects a cycle-closing edge at declaration time.)</li>
+<li><strong>Headless advance is forward-only</strong>, and is deferred with fire-and-forget. Only the autonomous <code>waiting → computing → complete</code> transitions could occur without a live Context; the <code>failed</code> and <code>blocked</code> branches never resolve headlessly, because leaving them needs an intervention that cannot happen headless. <strong>The entire reactive apparatus — the cascade, the holds, supersession, invalidation — is online-only.</strong></li>
+</ul>
+<h2 id="implementation-status-and-current-limitations">Implementation status and current limitations</h2>
+<p><strong>This page is the contract.</strong> These notes record where today's code diverges, so that an agent reading the code is not misled into taking the code's behaviour for the rule.</p>
+<ul>
+<li><strong>Block-reason precedence is inverted in the code.</strong> Today <code>blocked-by-error</code> beats <code>blocked-by-unwired</code>, in <strong>both</strong> the transformer derivation and the cell derivation, and the A0 contract suite asserts that order. The contract is the precedence given above — <strong>topology before values</strong> — ruled 2026-09-18; the code <strong>and that test</strong> must change.</li>
+<li><strong>The three hold cases are not implemented as three.</strong> Every supersession currently gets the same <strong>fixed window — the self-edit case (b) — of 15 seconds</strong>. The event-driven upstream-confirmation hold <strong>(a)</strong> and the completed-downstream retention <strong>(c)</strong> do not exist yet, and the five-minute figure appears only as a <strong>ceiling on the expiry timer</strong>. What <em>is</em> implemented: the cap of <strong>three</strong> superseded in-flight runs, <strong>eviction-by-softcancel</strong>, <strong>reinstatement by re-latching</strong>, and <strong><code>prune</code> at both scopes</strong>.</li>
+<li><strong>Future-wiring is not implemented; the runtime is checksum-wired only.</strong> A node leaves <code>waiting</code> for <code>computing</code> exactly when all of its inputs are <strong>concrete checksums</strong>. Consequently a <code>waiting</code> node holds <strong>no submitted continuation</strong>, and fire-and-forget is deferred (<code>contracts/workflow-context.md</code>).</li>
+<li><strong>Derivation re-derives the whole graph, topologically, on every turn</strong>, rather than only the invalidated cone. This is a <strong>cost</strong> property, not a semantic one: the outcome is identical, and the design's bound-to-the-cone cost is the target.</li>
+<li><strong><code>.exception</code> holds an exception object, not a string.</strong> The settled convention is one string convention across Cell, Pin and Transformation; the same item is recorded in <code>contracts/cells.md</code> and <code>contracts/pins.md</code>.</li>
+<li><strong>The node-transition contract suite cannot currently run</strong> in this working tree — it errors during buffer writing, before it asserts anything — so the divergences above were established by <strong>reading the code</strong>, not by a red test.</li>
+</ul>
+<h2 id="non-goals">Non-goals</h2>
+<ul>
+<li><strong>A transient-failure state.</strong> <code>failed</code> is one state, and the block-reason vocabulary has exactly two members. Retry classification is a Transformation/backend concern, not Context logic.</li>
+<li><strong>Mandatory preemption</strong> of a superseded run's slot in favour of a current run elsewhere; <code>prune</code> is the supported control.</li>
+<li><strong>Epoch-stamping of the invalidation cone.</strong> The cone is marked <strong>eagerly</strong>; a generation/epoch scheme was considered and rejected.</li>
+<li><strong>A "constructing" state</strong>, and any state whose derivation depends on a backend reporting start-of-execution.</li>
+<li><strong>A single <code>status</code> string</strong> folding <code>waiting</code> and <code>computing</code> into one "pending": removed in favour of the six-state vocabulary plus <code>block_reason</code>.</li>
+<li><strong>Cycles</strong>, and <strong>automatic retry</strong> of any kind.</li>
+</ul>
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="workflow-context.html" class="btn btn-neutral float-left" title="Workflow Context"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="attachments.html" class="btn btn-neutral float-right" title="Attachments">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+    
+      <span><a href="workflow-context.html" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="attachments.html" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script src="../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "..";</script>
+    <script src="../js/theme_extra.js"></script>
+    <script src="../js/theme.js"></script>
+      <script src="../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>

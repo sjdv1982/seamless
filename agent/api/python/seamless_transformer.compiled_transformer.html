@@ -55,6 +55,28 @@
               <ul>
                   <li class="toctree-l1"><a class="reference internal" href="../../contracts/identity-and-caching.html">Identity and Caching</a>
                   </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../contracts/celltypes-and-conversion.html">Celltypes, Null, and Conversion</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../contracts/hashtype.html">HashType</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../contracts/deep-celltypes.html">Deep Celltypes</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../contracts/expressions.html">Expressions</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../contracts/cells.html">Cells</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../contracts/pins.html">Pins</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../contracts/workflow-context.html">Workflow Context</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../contracts/node-state-lifecycle.html">Node State Lifecycle</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../contracts/attachments.html">Attachments</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../contracts/mounts.html">File Mounts</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../contracts/cancellation.html">Cancellation</a>
+                  </li>
                   <li class="toctree-l1"><a class="reference internal" href="../../contracts/direct-delayed-and-transformation.html">direct/delayed/Transformation</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../../contracts/modules-and-closures.html">Modules and Closures</a>
@@ -76,6 +98,8 @@
                   <li class="toctree-l1"><a class="reference internal" href="../../contracts/compression.html">Compression</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../../contracts/compiled-transformers.html">Compiled Transformers</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../contracts/compiled-pins.html">Compiled Pins</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../../contracts/seamless-signature-schema.html">seamless-signature Schema</a>
                   </li>
@@ -129,6 +153,24 @@
               
                 <h1 id="seamless_transformercompiled_transformer">seamless_transformer.compiled_transformer</h1>
 <p>Compiled-language transformers.</p>
+<h2 id="boundmetavars"><code>BoundMetaVars</code></h2>
+<ul>
+<li>kind: <code>class</code></li>
+<li>signature: <code>BoundMetaVars</code></li>
+</ul>
+<p>Output limits stored on a bound transformer's canonical configuration.</p>
+<h2 id="boundmetavarsis_complete"><code>BoundMetaVars.is_complete</code></h2>
+<ul>
+<li>kind: <code>method</code></li>
+<li>signature: <code>is_complete(self)</code></li>
+</ul>
+<p><em>No docstring.</em></p>
+<h2 id="boundmetavarsto_dict"><code>BoundMetaVars.to_dict</code></h2>
+<ul>
+<li>kind: <code>method</code></li>
+<li>signature: <code>to_dict(self)</code></li>
+</ul>
+<p><em>No docstring.</em></p>
 <h2 id="compiledcelltypeswrapper"><code>CompiledCelltypesWrapper</code></h2>
 <ul>
 <li>kind: <code>class</code></li>
@@ -158,6 +200,12 @@
 <ul>
 <li>kind: <code>method</code></li>
 <li>signature: <code>code(self, value)</code></li>
+</ul>
+<p><em>No docstring.</em></p>
+<h2 id="compiledmixincompilation"><code>CompiledMixin.compilation</code></h2>
+<ul>
+<li>kind: <code>method</code></li>
+<li>signature: <code>compilation(self, value)</code></li>
 </ul>
 <p><em>No docstring.</em></p>
 <h2 id="compiledmixinglobals"><code>CompiledMixin.globals</code></h2>
@@ -213,6 +261,12 @@ a Fortran helper linked into a C transformer).</p>
 <li>signature: <code>schema(self, value)</code></li>
 </ul>
 <p><em>No docstring.</em></p>
+<h2 id="compiledmixinschema_celltypes"><code>CompiledMixin.schema_celltypes</code></h2>
+<ul>
+<li>kind: <code>method</code></li>
+<li>signature: <code>schema_celltypes(self)</code></li>
+</ul>
+<p>Read-only schema-derived types; declarations remain independent.</p>
 <h2 id="compiledobject"><code>CompiledObject</code></h2>
 <ul>
 <li>kind: <code>class</code></li>
@@ -254,9 +308,9 @@ Calling the transformer returns a :class:<code>Transformation</code> handle that
 be executed later — the same delayed semantics as :func:<code>delayed</code> for
 Python transformers.</p>
 <p>Basic usage::</p>
-<pre><code>from seamless_transformer import CompiledTransformer, DirectCompiledTransformer
+<pre><code>from seamless_transformer import Transformer
 
-tf = DirectCompiledTransformer("c")
+tf = Transformer("c", compiled=True, direct=True)
 tf.schema = """
 inputs:
   - name: a
@@ -277,7 +331,7 @@ int transform(int32_t a, int32_t b, int32_t *result) {
 assert tf(a=2, b=3) == 5
 </code></pre>
 <p>For a delayed (non-direct) workflow::</p>
-<pre><code>tf = CompiledTransformer("c")
+<pre><code>tf = Transformer("c", compiled=True)
 tf.schema = ...
 tf.code = ...
 t = tf(a=2, b=3)    # returns a Transformation
@@ -383,47 +437,13 @@ result. For pipeline or deferred execution, use :class:<code>CompiledTransformer
 <h2 id="_deferred_validation_hooks"><code>_deferred_validation_hooks</code></h2>
 <ul>
 <li>kind: <code>function</code></li>
-<li>signature: <code>_deferred_validation_hooks(deferred_validations)</code></li>
+<li>signature: <code>_deferred_validation_hooks(signature)</code></li>
 </ul>
-<p>Run _validate_native_numpy_value after deferred inputs are materialized.</p>
-<p>The hooks run after the transformation factory has replaced Transformation/
-Checksum pins with concrete hex checksums in its frozen prepared payload, so
-the resolved buffer carries the value actually supplied to the compiled
-runner.</p>
-<h2 id="_expected_numpy_dtype"><code>_expected_numpy_dtype</code></h2>
-<ul>
-<li>kind: <code>function</code></li>
-<li>signature: <code>_expected_numpy_dtype(dtype_spec)</code></li>
-</ul>
-<p><em>No docstring.</em></p>
-<h2 id="_is_deferred_input"><code>_is_deferred_input</code></h2>
-<ul>
-<li>kind: <code>function</code></li>
-<li>signature: <code>_is_deferred_input(value)</code></li>
-</ul>
-<p>Return True if the input must be resolved before dtype validation.</p>
-<h2 id="_numpy_dtype_matches"><code>_numpy_dtype_matches</code></h2>
-<ul>
-<li>kind: <code>function</code></li>
-<li>signature: <code>_numpy_dtype_matches(actual, expected)</code></li>
-</ul>
-<p><em>No docstring.</em></p>
+<p>Check deferred checksum facts without materializing input data.</p>
 <h2 id="_require_signature_package"><code>_require_signature_package</code></h2>
 <ul>
 <li>kind: <code>function</code></li>
 <li>signature: <code>_require_signature_package()</code></li>
-</ul>
-<p><em>No docstring.</em></p>
-<h2 id="_resolve_deferred_value"><code>_resolve_deferred_value</code></h2>
-<ul>
-<li>kind: <code>function</code></li>
-<li>signature: <code>_resolve_deferred_value(prepared_value)</code></li>
-</ul>
-<p>Resolve a prepared pin value (hex string or None) to a Python value.</p>
-<h2 id="_resolve_deferred_value_async"><code>_resolve_deferred_value_async</code></h2>
-<ul>
-<li>kind: <code>function</code></li>
-<li>signature: <code>_resolve_deferred_value_async(prepared_value)</code></li>
 </ul>
 <p><em>No docstring.</em></p>
 <h2 id="_validate_derived_compiled_dunders"><code>_validate_derived_compiled_dunders</code></h2>
@@ -436,12 +456,6 @@ runner.</p>
 for execution compatibility but excluded from transformation identity. If a
 caller or legacy path supplied them, they must agree with the schema-derived
 compiled state before they are discarded from the immutable definition.</p>
-<h2 id="_validate_native_numpy_value"><code>_validate_native_numpy_value</code></h2>
-<ul>
-<li>kind: <code>function</code></li>
-<li>signature: <code>_validate_native_numpy_value(name, value, dtype_spec, is_array)</code></li>
-</ul>
-<p><em>No docstring.</em></p>
               
             </div>
           </div><footer>

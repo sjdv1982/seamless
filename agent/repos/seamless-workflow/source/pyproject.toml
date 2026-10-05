@@ -1,0 +1,43 @@
+[build-system]
+requires = ["setuptools>=69", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "seamless-workflow"
+version = "0.1.0"
+description = "Reactive workflow Context layer for Seamless"
+readme = "README.md"
+requires-python = ">=3.10"
+license = "MIT"
+authors = [{name = "Sjoerd de Vries"}]
+dependencies = [
+    "seamless-core>=0.1.4",
+    "seamless-transformer>=0.6.1",
+]
+keywords = ["seamless", "workflow", "reactive", "checksum", "reproducible"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Science/Research",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Operating System :: OS Independent",
+    "Topic :: Scientific/Engineering",
+    "Topic :: Software Development :: Libraries",
+]
+
+[project.optional-dependencies]
+dev = ["pytest"]
+
+[project.urls]
+Homepage = "https://github.com/sjdv1982/seamless"
+Repository = "https://github.com/sjdv1982/seamless-workflow"
+Issues = "https://github.com/sjdv1982/seamless/issues"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["seamless_workflow*"]
+exclude = ["tests*"]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]

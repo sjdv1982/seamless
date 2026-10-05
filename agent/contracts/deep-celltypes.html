@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <link rel="shortcut icon" href="../img/favicon.ico" />
+    <title>Deep Celltypes - Seamless — Agent Documentation</title>
+    <link rel="stylesheet" href="../css/theme.css" />
+    <link rel="stylesheet" href="../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "Deep Celltypes";
+        var mkdocs_page_input_path = "contracts/deep-celltypes.md";
+        var mkdocs_page_url = null;
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href="../index.html" class="icon icon-home"> Seamless — Agent Documentation
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../index.html">Home</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../overview.html">Agent Docs Overview</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../repos/index.html">Workspace Repos</a>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Contracts</span></p>
+              <ul class="current">
+                  <li class="toctree-l1"><a class="reference internal" href="identity-and-caching.html">Identity and Caching</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="celltypes-and-conversion.html">Celltypes, Null, and Conversion</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="hashtype.html">HashType</a>
+                  </li>
+                  <li class="toctree-l1 current"><a class="reference internal current" href="#">Deep Celltypes</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#the-organising-principle">The organising principle</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#what-a-deep-buffer-is">What a deep buffer is</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#module-is-not-a-deep-celltype">module is not a deep celltype</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#nesting-is-not-contract">Nesting is not contract</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#conversions">Conversions</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#zero-path-conversions">Zero-path conversions</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#folder-mixed">folder → mixed</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#the-folder-note-conversion-stops-at-mixed">The folder note: conversion stops at mixed</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#paths">Paths</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#how-deep-values-reach-a-transformer">How deep values reach a transformer</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#current-status-none-of-this-is-enforced-yet">Current status: none of this is enforced yet</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#what-is-settled">What is settled</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#agent-guidance">Agent guidance</a>
+    </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="expressions.html">Expressions</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="cells.html">Cells</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="pins.html">Pins</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="workflow-context.html">Workflow Context</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="node-state-lifecycle.html">Node State Lifecycle</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="attachments.html">Attachments</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="mounts.html">File Mounts</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="cancellation.html">Cancellation</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="direct-delayed-and-transformation.html">direct/delayed/Transformation</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="modules-and-closures.html">Modules and Closures</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="scratch-witness-audit.html">Scratch/Witness/Audit</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="seamless-run-and-argtyping.html">seamless-run/Argtyping</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="cache-storage-and-limits.html">Cache Storage and Limits</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="content-addressed-files-and-dirs.html">Content-addressed Files and Dirs</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="execution-backends.html">Execution Backends</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="execution-records.html">Execution Records</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="service-management.html">Service Management</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="compression.html">Compression</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="compiled-transformers.html">Compiled Transformers</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="compiled-pins.html">Compiled Pins</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="seamless-signature-schema.html">seamless-signature Schema</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">API</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/python/seamless.html">seamless</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/python/seamless.transformer.html">seamless.transformer</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/python/seamless.buffer_class.html">seamless.buffer_class</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/python/seamless.checksum_class.html">seamless.checksum_class</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/python/seamless_config.select.html">seamless_config.select</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/python/seamless_config.tools.html">seamless_config.tools</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/python/seamless_transformer.transformation_class.html">seamless_transformer.transformation_class</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/python/seamless_transformer.transformer_class.html">seamless_transformer.transformer_class</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">CLI</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/cli/seamless-run.html">seamless-run</a>
+                  </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Seamless — Agent Documentation</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../index.html" class="icon icon-home" aria-label="Docs"></a></li>
+          <li class="breadcrumb-item">Contracts</li>
+      <li class="breadcrumb-item active">Deep Celltypes</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h1 id="deep-celltypes-deepcell-deepfolder-folder-contract">Deep Celltypes: <code>deepcell</code>, <code>deepfolder</code>, <code>folder</code> (Contract)</h1>
+<p>This page defines the three <strong>deep celltypes</strong> — <code>deepcell</code>, <code>deepfolder</code> and <code>folder</code> — as they behave under checksums, Expressions and conversion. <code>module</code> is <strong>not</strong> a deep celltype; see <a href="#module-is-not-a-deep-celltype"><code>module</code> is not a deep celltype</a>.</p>
+<p>The 13 ordinary celltypes, the reference parser and the conversion rule table are defined in <code>contracts/celltypes-and-conversion.md</code>; checksum-level classification in <code>contracts/hashtype.md</code>; the directory-identity idea in <code>contracts/content-addressed-files-and-dirs.md</code>.</p>
+<p><strong>Implementation status: the rules on this page are contract, not current behaviour.</strong> Nothing in the Expression or conversion path implements deep celltypes today. See <a href="#current-status-none-of-this-is-enforced-yet">Current status</a> before relying on any of it.</p>
+<p>Code locations:</p>
+<table>
+<thead>
+<tr>
+<th>Concern</th>
+<th>Module / symbol</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Buffer-layer mapping</td>
+<td><code>seamless.buffer_class.Buffer._map_celltype</code> (seamless-core)</td>
+</tr>
+<tr>
+<td>The deep celltype set</td>
+<td><code>seamless_transformer.transformation_utils.DEEP_CELLTYPES</code>, <code>is_deep_celltype</code></td>
+</tr>
+<tr>
+<td>Pin-level fan-out / fan-in</td>
+<td><code>seamless_transformer.transformation_utils.unpack_deep_structure</code>, <code>pack_deep_structure</code></td>
+</tr>
+<tr>
+<td>Pin presentation to a transformer</td>
+<td><code>seamless_transformer.transformation_namespace.build_transformation_namespace_sync</code>, <code>_to_checksum_dict</code></td>
+</tr>
+<tr>
+<td>Directory celltypes (mounts)</td>
+<td><code>seamless.checksum.canonical.DIRECTORY_CELLTYPES</code> (seamless-core); the mount rules are <code>contracts/mounts.md</code></td>
+</tr>
+<tr>
+<td>Mount read/write of an index</td>
+<td><code>seamless_workflow.attachments.fs.service.FileSystemService._read</code>, <code>._write_directory</code></td>
+</tr>
+<tr>
+<td>Index construction from files</td>
+<td><code>seamless_transformer.cmd.file_load</code></td>
+</tr>
+<tr>
+<td>Module definition buffers</td>
+<td><code>seamless_transformer.module_builder.pypackage_to_moduledict</code></td>
+</tr>
+</tbody>
+</table>
+<h2 id="the-organising-principle">The organising principle</h2>
+<p><strong>Within the deep celltypes, an Expression's cost class is a function of its identity tuple <code>(input_celltype, path shape, celltype)</code> alone, never of the data behind the checksum.</strong> (Over the 13 ordinary celltypes this is weaker — cost can also turn on the checksum's own nullity and its cached <code>HashType</code>, see <code>contracts/expressions.md</code>, "Cost class" — but no deep conversion below branches on anything but the declared celltypes, so here shape alone decides.)</p>
+<p>Every restriction below follows from that one rule. It is what makes the rules decidable at validation time, before any buffer is materialized: two Expressions with the same shape must cost the same, so a shape may not sometimes be a free index read and sometimes an N-child fan-out. It is also why the legal set is small: each admitted shape has exactly one cost — free (checksum-preserving), one child, or all children.</p>
+<h2 id="what-a-deep-buffer-is">What a deep buffer is</h2>
+<ul>
+<li><strong>At the buffer layer there is no deep format.</strong> <code>Buffer._map_celltype</code> maps <code>deepcell</code>, <code>deepfolder</code>, <code>folder</code> (and <code>module</code>) to <code>plain</code>. A deep buffer is ordinary plain JSON, serialized and parsed by the <code>plain</code> rules, and its checksum is an ordinary checksum.</li>
+<li><strong>A deep buffer is an index</strong>: a <strong>flat</strong> dict with string keys and 64-character lowercase hex checksum strings as values. Nothing else. Flatness is contract (see <a href="#nesting-is-not-contract">Nesting is not contract</a>).</li>
+<li><strong>Keys are opaque strings.</strong> They carry no path semantics at this layer. Only the mount layer reads <code>/</code> as a directory separator. <code>deepfolder</code> and <code>folder</code> keys routinely contain <code>/</code>.</li>
+<li>The members are <em>referenced</em>, not contained: the index commits to the child checksums, and a deep checksum can be held, compared and passed around without any child buffer being present.</li>
+</ul>
+<p>The three celltypes share this buffer shape exactly. They differ only in <strong>what their members are</strong>, and in what a consumer is declaring it wants:</p>
+<table>
+<thead>
+<tr>
+<th>Celltype</th>
+<th>A member checksum is</th>
+<th>Intent</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>deepcell</code></td>
+<td>a buffer deserializable as <code>mixed</code></td>
+<td>a collection of Seamless values, addressed by key</td>
+</tr>
+<tr>
+<td><code>deepfolder</code></td>
+<td>an arbitrary raw byte buffer</td>
+<td>the <strong>index</strong> of a directory; the contents stay by reference</td>
+</tr>
+<tr>
+<td><code>folder</code></td>
+<td>an arbitrary raw byte buffer</td>
+<td>the <strong>contents</strong> of a directory; consumers want the bytes</td>
+</tr>
+</tbody>
+</table>
+<p><code>deepfolder</code> and <code>folder</code> therefore have the same member type and differ only in intent. <code>deepcell</code> is the strict one: its member type is a subtype of the other two.</p>
+<p><strong>The intent is load-bearing at exactly one place today: <code>deepfolder</code> is sense-only on a mount.</strong> <code>folder</code> mounts in <code>r</code>, <code>w</code> and <code>rw</code>; <code>deepfolder</code> may only be mounted with <code>mode="r"</code>, because a write mount materializes every leaf onto disk — which is precisely what "the contents stay by reference" declares it does not do. The restriction costs one retype, since the conversion between the two is free in both directions, and a transformer cannot produce a <code>deepfolder</code> at all. See <code>contracts/mounts.md</code>.</p>
+<h2 id="module-is-not-a-deep-celltype"><code>module</code> is not a deep celltype</h2>
+<p><code>DEEP_CELLTYPES = ("deepcell", "deepfolder", "folder")</code>. <code>module</code> is deliberately not in it, and <strong>none of the rules on this page apply to <code>module</code>.</strong></p>
+<p>A <code>module</code> buffer is a plain JSON <em>module definition</em> holding literal code strings, not checksums:</p>
+<pre><code>{&quot;language&quot;: ..., &quot;type&quot;: &quot;interpreted&quot;,
+ &quot;code&quot;: &lt;str&gt; | {&quot;&lt;dotted.name&gt;&quot;: {&quot;language&quot;, &quot;code&quot;, &quot;dependencies&quot;}, ...}}
+</code></pre>
+<p>It travels as celltype <code>plain</code> with subcelltype <code>module</code> (<code>pretransformation</code> builds the pin as <code>{"celltype": "plain", "subcelltype": "module"}</code>), and a transformer pin declared <code>module</code> is resolved by the module builder, not by any deep unpacking. Some older notes group <code>module</code> with the deep celltypes; that grouping is wrong. The only property <code>module</code> shares with them is that <code>Buffer._map_celltype</code> sends it to <code>plain</code>.</p>
+<h2 id="nesting-is-not-contract">Nesting is not contract</h2>
+<p><code>unpack_deep_structure</code> and <code>pack_deep_structure</code> recurse through nested dicts and lists with checksums at the leaves. That generality is legacy: it has no producer and no consumer in current Seamless. <strong>A deep value whose index is not flat is invalid.</strong></p>
+<p>Nested structures must be rejected at the Expression layer <em>and</em> at pin unpacking, through one shared validator. Two independent checks would drift, and pins would then accept values that Expressions refuse — which would mean the two layers disagree about what a deep value is.</p>
+<h2 id="conversions">Conversions</h2>
+<h3 id="zero-path-conversions">Zero-path conversions</h3>
+<p>Only these are legal. Every one of them is free (checksum-level, no child touched), except <code>folder → mixed</code>.</p>
+<table>
+<thead>
+<tr>
+<th>Conversion</th>
+<th>Cost</th>
+<th>Checksum</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>identity (source celltype = target celltype)</td>
+<td>free</td>
+<td>preserved</td>
+<td>the dummy Expression; always legal</td>
+</tr>
+<tr>
+<td><code>deepcell → plain</code></td>
+<td>free</td>
+<td>preserved</td>
+<td>read the index as what it already is</td>
+</tr>
+<tr>
+<td><code>deepfolder → plain</code></td>
+<td>free</td>
+<td>preserved</td>
+<td>idem</td>
+</tr>
+<tr>
+<td><code>folder → deepfolder</code></td>
+<td>free</td>
+<td>preserved</td>
+<td>drop the intent to materialize; the index is unchanged</td>
+</tr>
+<tr>
+<td><code>deepfolder → folder</code></td>
+<td>free</td>
+<td>preserved</td>
+<td>add the intent to materialize</td>
+</tr>
+<tr>
+<td><code>deepcell → deepfolder</code></td>
+<td>free</td>
+<td>preserved</td>
+<td>widen the member type</td>
+</tr>
+<tr>
+<td><code>folder → mixed</code></td>
+<td><strong>N children</strong></td>
+<td>new buffer</td>
+<td>the only conversion in the system that materializes children</td>
+</tr>
+<tr>
+<td>everything else</td>
+<td>—</td>
+<td>—</td>
+<td><strong>rejected</strong></td>
+</tr>
+</tbody>
+</table>
+<p>Rejections worth spelling out:</p>
+<ul>
+<li><strong><code>deepfolder → deepcell</code> is forbidden.</strong> This is the celltype hierarchy (<code>contracts/celltypes-and-conversion.md</code>, "The celltype hierarchy is a checksum hierarchy") applied one level down, to members: a subtype→supertype edge means every checksum valid as the subtype is valid, unchanged, as the supertype. <code>deepcell</code> members must be deserializable as <code>mixed</code>; <code>deepfolder</code> members are arbitrary bytes. So <code>deepcell → deepfolder</code> widens and is free, and the reverse would require proving a property of every member — work proportional to N, hidden behind a shape that looks free.</li>
+<li><strong><code>folder → plain</code> is rejected</strong>, although <code>deepfolder → plain</code> is legal and they have identical buffers. Admitting it would put a free index read and an N-child fan-out under the same identity tuple, depending only on which celltype the source happened to be declared as. Convert <code>folder → deepfolder → plain</code> (both free) if the index is what you want.</li>
+<li><strong><code>plain → deepcell</code> / <code>plain → deepfolder</code> / <code>plain → folder</code></strong> are rejected: promoting an arbitrary plain value to an index would require validating every entry.</li>
+</ul>
+<h3 id="folder-mixed"><code>folder → mixed</code></h3>
+<ul>
+<li><strong>All-or-nothing.</strong> The result is the complete dict of children, or an error. There is no partial result.</li>
+<li><strong>Per-child failure is not sticky.</strong> A child that could not be resolved does not poison the deep checksum; a later attempt may succeed (for example once the buffer is reachable again).</li>
+<li><strong>Resolution order and concurrency are unspecified.</strong> Children may be resolved in any order, sequentially or in parallel. Concurrency here is an optimization, not contract. Do not depend on an observed order, and do not treat parallelism as guaranteed.</li>
+<li><strong>Child representation is settled: a 1-D NumPy <code>S1</code> array, one element per byte</strong> (<code>np.frombuffer(content, dtype="S1")</code>), <strong>never a 0-dimensional <code>S&lt;N&gt;</code> scalar.</strong> Only the 1-D form round-trips faithfully — a 0-d scalar's <code>.tobytes()</code> turns an empty child into <code>b"\x00"</code>, and <code>.item()</code> strips trailing NULs (<code>b"ab\x00\x00"</code> reads back as <code>b"ab"</code>), because NumPy's <code>S</code> dtype strips trailing NULs on scalar extraction. Serializing a dict of Python <code>bytes</code> into <code>mixed</code> produces 0-d scalars and must never be the route by which a <code>folder</code> value is serialized as <code>mixed</code>. The pin-level fan-out (<code>unpack_deep_structure</code>) handing the transformer Python <code>bytes</code> is a fine in-process presentation; it is not this serialization route.</li>
+</ul>
+<h3 id="the-folder-note-conversion-stops-at-mixed">The <code>folder</code> note: conversion stops at <code>mixed</code></h3>
+<p><strong>Conversion stops at <code>folder → mixed</code>.</strong> The children arrive as raw byte arrays — a 1-D NumPy <code>S1</code> array per child, one element per byte, not the 0-dimensional <code>S</code>-dtype scalar that serializing a Python <code>bytes</code> dict would give (see the representation rule above). <strong>There is no conversion that yields a dict of decoded strings.</strong></p>
+<p>A value-level route for <code>mixed → plain</code> was considered and rejected. <code>mixed → plain</code> is a pure <em>reinterpretation</em> (<code>conversion_reinterpret</code>: the same bytes must parse as JSON, and the checksum is preserved). Giving it a value-level route would make every <code>S</code>-array in every <code>mixed</code> buffer decode to text, everywhere in the system, and would make the pair only <em>sometimes</em> checksum-preserving. That is too much global semantics to buy one convenience.</p>
+<p>Decode it yourself instead:</p>
+<ul>
+<li><strong>per file</strong>: take the child's checksum (a one-step path, below) and run an ordinary <code>bytes → text</code> Expression on it — keyed at the child checksum, so it is shared by every parent that references that child;</li>
+<li><strong>per folder</strong>: decode inside a transformer. This is the idiomatic route: decoding N files is content transformation, not celltype reinterpretation.</li>
+</ul>
+<p><strong>Footnote (not a bug).</strong> An <em>empty</em> folder does survive the chain <code>folder → mixed → plain</code>. Its <code>mixed</code> buffer is literally <code>b"{}\n"</code>, which is valid JSON, so the reinterpretation succeeds and the checksum is preserved. Every non-empty folder serializes to a framed Seamless-mixed buffer (<code>b"\x94SEAMLESS-MIXED\x0bmixed-plain..."</code>), classified <code>MIXED_OBJECT</code>, for which <code>conversion_feasible</code> answers <code>False</code> and <code>convert_checksum</code> raises <code>SeamlessConversionError</code> — for all-UTF-8 contents exactly as much as for binary ones. So <code>{}</code> succeeds where every non-empty folder is rejected. This is a consequence of buffer identity, not a special case for empty folders.</p>
+<h2 id="paths">Paths</h2>
+<p><strong>A deep Expression admits exactly one path step, and that step is a string item.</strong> It selects one member of the index.</p>
+<table>
+<thead>
+<tr>
+<th>Source</th>
+<th><code>→ checksum</code></th>
+<th>member value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>deepcell</code></td>
+<td>the child's checksum</td>
+<td><code>→ mixed</code></td>
+</tr>
+<tr>
+<td><code>deepfolder</code></td>
+<td>the child's checksum</td>
+<td><code>→ bytes</code></td>
+</tr>
+<tr>
+<td><code>folder</code></td>
+<td>the child's checksum</td>
+<td><code>→ bytes</code></td>
+</tr>
+</tbody>
+</table>
+<p>No other target celltype is legal for the one-step result.</p>
+<p>Why:</p>
+<ul>
+<li><strong>An empty path is the fan-out.</strong> The no-step shapes are the index conversions and <code>folder → mixed</code>; the one-step shape is exactly one child. Keeping them distinct keeps the cost classes distinct.</li>
+<li><strong>A longer path would have to continue into the child.</strong> The child is a different checksum, and therefore a different Expression. A two-step deep path would smuggle a second, unrelated evaluation into one identity tuple.</li>
+<li><strong>Restricting the one-step result to the member celltype keys the child's own conversion at the child checksum.</strong> <code>deepfolder[k] → bytes → text</code> is two Expressions: the second is identified by the <em>child's</em> checksum, so its result is shared by every parent index that references that child, and by anyone holding the child checksum directly. Allowing <code>deepfolder[k] → text</code> in one step would re-key that same work under each parent.</li>
+</ul>
+<p><strong>Write the step in bracket form.</strong> Keys are opaque and routinely contain <code>/</code>, <code>.</code> and other characters that attribute access cannot express: use <code>expr["path/to/file.txt"]</code>, not <code>expr.file</code>.</p>
+<p>No new HashType capability is needed for the step itself: a flat index is a JSON object, and <code>capabilities</code> already yields <code>{"MAP"}</code> for a <code>JSON_OBJECT</code> word under <code>plain</code>/<code>mixed</code> (<code>contracts/hashtype.md</code>). Only the source-celltype dispatch would have to learn the deep celltypes, which currently fall through to the empty set.</p>
+<h2 id="how-deep-values-reach-a-transformer">How deep values reach a transformer</h2>
+<p>This is the pin layer, not the Expression layer; it is the place where the one shared flatness validator must also apply.</p>
+<table>
+<thead>
+<tr>
+<th>Pin celltype</th>
+<th>Value handed to the transformer</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>deepcell</code></td>
+<td>dict of <code>Checksum</code> objects (no resolution; <code>_to_checksum_dict</code>)</td>
+</tr>
+<tr>
+<td><code>deepfolder</code></td>
+<td>dict of <code>Checksum</code> objects (no resolution)</td>
+</tr>
+<tr>
+<td><code>folder</code></td>
+<td>dict of child <strong>contents</strong>, resolved (<code>unpack_deep_structure</code>, one buffer per child)</td>
+</tr>
+</tbody>
+</table>
+<p><code>deepfolder</code> and <code>folder</code> pins additionally carry <code>{"filesystem": {"mode": "directory"}}</code>, which is how a bash/compiled transformer gets the directory written to disk.</p>
+<p>A transformer <strong>result</strong> may be declared <code>deepcell</code> or <code>folder</code>, but not <code>deepfolder</code> and not <code>module</code> (<code>transformer_class</code>): a result names what the transformer produced, and producing an index of buffers that the transformer never wrote is not a thing it can claim. <code>pack_deep_structure</code> turns a produced dict into an index.</p>
+<p>In the workflow layer, <code>PIN_CELLTYPES = {"plain", "mixed", "deepcell", "deepfolder", "folder"}</code> is the set of Cell celltypes that admit a one-component subvalue connection (<code>seamless_workflow.context</code>) — the same "exactly one step" rule, expressed for graph edges.</p>
+<h2 id="current-status-none-of-this-is-enforced-yet">Current status: none of this is enforced yet</h2>
+<p>The rules above are the settled contract. <strong>The code does not implement them.</strong> Verified by inspection and by probing:</p>
+<ul>
+<li><strong>Deep celltypes are absent from the Expression path.</strong> <code>seamless.checksum.expression</code>, <code>seamless.expression_class</code> and <code>seamless.checksum.hash_type_validation</code> contain no mention of <code>deepcell</code>, <code>deepfolder</code>, <code>folder</code> or <code>module</code>. There is no deep conversion table, no deep path rule and no flatness validator anywhere.</li>
+<li><strong>Every deep Expression currently fails.</strong> <code>HashType.deserializable_as</code> returns <code>False</code> for any celltype outside the 13 (its final <code>return False</code>), so <code>validate_deserializable_as</code> raises <code>HashTypeValidationError</code> for a deep <code>input_celltype</code> <em>or</em> a deep target celltype. Probing confirms this for all of <code>deepfolder → plain</code>, <code>deepfolder → folder</code>, <code>deepcell → plain</code>, <code>folder → mixed</code>, the identity conversion, and any one-step path: all raise <code>HashTypeValidationError</code>, none of the legal shapes above works.</li>
+<li><strong>A deep <code>Cell</code> behaves like <code>plain</code> today.</strong> With no path and the same input celltype, <code>Cell.checksum</code> short-circuits before building an Expression, so <code>.value</code> returns the raw index dict for celltype <code>deepcell</code>, <code>deepfolder</code>, <code>folder</code> and <code>module</code> alike — no member typing, no fan-out. <code>.buffer</code> raises <code>HashTypeValidationError</code> (it calls <code>validate_deserializable_as</code> explicitly), and any projection or celltype change raises as well. A projected Cell inherits the parent's deep celltype rather than the member celltype. That short-circuit is the dummy-Expression fast path; see <code>contracts/cells.md</code> for the Cell read contract it belongs to.</li>
+<li><strong>Nesting is still accepted at the pin layer.</strong> <code>unpack_deep_structure</code> and <code>pack_deep_structure</code> recurse through nested dicts and lists. The shared flatness validator does not exist.</li>
+<li><strong>The only fan-out that exists is the pin-level one</strong>, and it is not the conversion described above: it resolves each child and returns <code>buffer.content</code>, i.e. Python <code>bytes</code>.</li>
+</ul>
+<h3 id="what-is-settled">What <em>is</em> settled</h3>
+<ul>
+<li><strong><code>folder → mixed</code> child representation, settled by ruling (2026-09-18), not yet by code.</strong> The contract requires the 1-D <code>S1</code> array form above (see "<code>folder → mixed</code>"). The conversion itself does not exist yet, so nothing in the code implements this; the only existing fan-out (<code>unpack_deep_structure</code>, at the pin layer) returns Python <code>bytes</code>, which is a different, in-process-only presentation and must not be read as evidence for the <code>mixed</code>-serialization format.</li>
+<li><strong>A <code>folder</code> index buffer is byte-identical to a <code>deepfolder</code> index buffer.</strong> There is no extra field and no per-celltype marker: the mount layer builds one index for both celltypes (<code>FileSystemService._read</code> treats <code>reg.directory</code>, i.e. either celltype, identically and emits <code>Buffer(index, 'plain')</code> with <code>{relative path: checksum hex}</code>), <code>_write_directory</code> consumes that same shape, and <code>Buffer(index, "folder")</code> and <code>Buffer(index, "deepfolder")</code> produce the same bytes and the same checksum. <code>folder → deepfolder</code> and <code>deepfolder → folder</code> are therefore genuinely checksum-preserving.</li>
+<li><strong>Directory mounts work</strong>, and they are the one deep surface that is fully implemented: index construction from a tree, per-leaf atomic writes, the <code>deepfolder</code> sense-only rule, and leaf retention on the sense path. <code>contracts/mounts.md</code> specifies them; <code>contracts/attachments.md</code> specifies the retention exception to the no-recursive-deep-ownership rule.</li>
+</ul>
+<h2 id="agent-guidance">Agent guidance</h2>
+<ul>
+<li>Treat a deep checksum as an index you may pass around freely. Holding it costs nothing and materializes nothing.</li>
+<li>Use <code>deepfolder</code> when you want to refer to a directory, <code>folder</code> only when the consumer needs the bytes. The conversion between them is free, so declare the cheap one and widen late.</li>
+<li>Never write a nested deep structure. Flat, string keys, 64-hex values.</li>
+<li>Address a member in bracket form, and take <code>→ checksum</code> when you intend further work on it: the follow-up Expression is then keyed at the child and shared.</li>
+<li>Do not expect a decoded-text view of a <code>folder</code>. Decode per file with <code>bytes → text</code>, or decode the whole folder inside a transformer.</li>
+<li>Do not depend on the order in which <code>folder → mixed</code> resolves children, nor on it being parallel.</li>
+<li>Until the rules are implemented, do not put deep celltypes on Expressions or on any Cell that is projected or retyped: it raises <code>HashTypeValidationError</code>. The working surfaces today are transformer pins and mounts.</li>
+</ul>
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="hashtype.html" class="btn btn-neutral float-left" title="HashType"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="expressions.html" class="btn btn-neutral float-right" title="Expressions">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+    
+      <span><a href="hashtype.html" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="expressions.html" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script src="../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "..";</script>
+    <script src="../js/theme_extra.js"></script>
+    <script src="../js/theme.js"></script>
+      <script src="../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>

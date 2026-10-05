@@ -103,6 +103,14 @@
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#cachemisserror">CacheMissError</a>
     </li>
+    <li class="toctree-l3"><a class="reference internal" href="#cachemisserrorchecksum">CacheMissError.checksum</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#fingertipcategory">FingertipCategory</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#fingertipcategoryfrom_wire_name">FingertipCategory.from_wire_name</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#fingertipcategorywire_name">FingertipCategory.wire_name</a>
+    </li>
     <li class="toctree-l3"><a class="reference internal" href="#ensure_open">ensure_open</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#is_worker">is_worker</a>
@@ -165,8 +173,16 @@
 <h2 id="exports">Exports</h2>
 <p>This module primarily re-exports public primitives. Export list (<code>__all__</code>):</p>
 <ul>
+<li><code>FingertipCategory</code></li>
 <li><code>Checksum</code></li>
 <li><code>Buffer</code></li>
+<li><code>Expression</code></li>
+<li><code>Cell</code></li>
+<li><code>CellBase</code></li>
+<li><code>AuthorityError</code></li>
+<li><code>ValueUnavailableError</code></li>
+<li><code>BoundStateError</code></li>
+<li><code>ProjectionError</code></li>
 <li><code>CacheMissError</code></li>
 <li><code>set_is_worker</code></li>
 <li><code>is_worker</code></li>
@@ -181,6 +197,30 @@
 <li>signature: <code>CacheMissError</code></li>
 </ul>
 <p>Exception for when a checksum cannot be mapped to a buffer</p>
+<h2 id="cachemisserrorchecksum"><code>CacheMissError.checksum</code></h2>
+<ul>
+<li>kind: <code>method</code></li>
+<li>signature: <code>checksum(self)</code></li>
+</ul>
+<p><em>No docstring.</em></p>
+<h2 id="fingertipcategory"><code>FingertipCategory</code></h2>
+<ul>
+<li>kind: <code>class</code></li>
+<li>signature: <code>FingertipCategory</code></li>
+</ul>
+<p><em>No docstring.</em></p>
+<h2 id="fingertipcategoryfrom_wire_name"><code>FingertipCategory.from_wire_name</code></h2>
+<ul>
+<li>kind: <code>method</code></li>
+<li>signature: <code>from_wire_name(cls, value)</code></li>
+</ul>
+<p><em>No docstring.</em></p>
+<h2 id="fingertipcategorywire_name"><code>FingertipCategory.wire_name</code></h2>
+<ul>
+<li>kind: <code>method</code></li>
+<li>signature: <code>wire_name(self)</code></li>
+</ul>
+<p><em>No docstring.</em></p>
 <h2 id="ensure_open"><code>ensure_open</code></h2>
 <ul>
 <li>kind: <code>function</code></li>

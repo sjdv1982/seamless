@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <link rel="shortcut icon" href="../img/favicon.ico" />
+    <title>Pins - Seamless — Agent Documentation</title>
+    <link rel="stylesheet" href="../css/theme.css" />
+    <link rel="stylesheet" href="../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "Pins";
+        var mkdocs_page_input_path = "contracts/pins.md";
+        var mkdocs_page_url = null;
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href="../index.html" class="icon icon-home"> Seamless — Agent Documentation
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../index.html">Home</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../overview.html">Agent Docs Overview</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../repos/index.html">Workspace Repos</a>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Contracts</span></p>
+              <ul class="current">
+                  <li class="toctree-l1"><a class="reference internal" href="identity-and-caching.html">Identity and Caching</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="celltypes-and-conversion.html">Celltypes, Null, and Conversion</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="hashtype.html">HashType</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="deep-celltypes.html">Deep Celltypes</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="expressions.html">Expressions</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="cells.html">Cells</a>
+                  </li>
+                  <li class="toctree-l1 current"><a class="reference internal current" href="#">Pins</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#reaching-pins">Reaching pins</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#which-pins-exist">Which pins exist</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#celltypes">Celltypes</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#pins-hold-checksums-never-values">Pins hold checksums, never values</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#writes-the-same-two-verb-families">Writes: the same two verb families</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#null-required-pins-optional-pins">Null, required pins, optional pins</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#conversion-at-the-pin">Conversion at the pin</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#reads-state-and-work">Reads, state and work</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#a-pin-is-not-a-source">A Pin is not a source</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#implementation-status-and-current-limitations">Implementation status and current limitations</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#non-goals">Non-goals</a>
+    </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="workflow-context.html">Workflow Context</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="node-state-lifecycle.html">Node State Lifecycle</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="attachments.html">Attachments</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="mounts.html">File Mounts</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="cancellation.html">Cancellation</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="direct-delayed-and-transformation.html">direct/delayed/Transformation</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="modules-and-closures.html">Modules and Closures</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="scratch-witness-audit.html">Scratch/Witness/Audit</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="seamless-run-and-argtyping.html">seamless-run/Argtyping</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="cache-storage-and-limits.html">Cache Storage and Limits</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="content-addressed-files-and-dirs.html">Content-addressed Files and Dirs</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="execution-backends.html">Execution Backends</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="execution-records.html">Execution Records</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="service-management.html">Service Management</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="compression.html">Compression</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="compiled-transformers.html">Compiled Transformers</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="compiled-pins.html">Compiled Pins</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="seamless-signature-schema.html">seamless-signature Schema</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">API</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/python/seamless.html">seamless</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/python/seamless.transformer.html">seamless.transformer</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/python/seamless.buffer_class.html">seamless.buffer_class</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/python/seamless.checksum_class.html">seamless.checksum_class</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/python/seamless_config.select.html">seamless_config.select</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/python/seamless_config.tools.html">seamless_config.tools</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/python/seamless_transformer.transformation_class.html">seamless_transformer.transformation_class</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/python/seamless_transformer.transformer_class.html">seamless_transformer.transformer_class</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">CLI</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/cli/seamless-run.html">seamless-run</a>
+                  </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Seamless — Agent Documentation</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../index.html" class="icon icon-home" aria-label="Docs"></a></li>
+          <li class="breadcrumb-item">Contracts</li>
+      <li class="breadcrumb-item active">Pins</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h1 id="pins-contract">Pins (Contract)</h1>
+<p><strong>A Pin is a Transformer's input slot, and the sister class of Cell.</strong> <code>Pin</code> and <code>Cell</code> share <code>CellBase</code> — the value, type, evaluation and ownership API — but <code>Pin</code> is <em>not</em> a subclass of <code>Cell</code>. A Pin is a <strong>deferred Expression</strong> in exactly the sense <code>contracts/cells.md</code> defines, <code>(input, input_celltype, celltype)</code>, with one difference that shapes everything else: its output is consumed by one Transformer rather than by the graph.</p>
+<p>Everything a Pin shares with a Cell is in <code>contracts/cells.md</code> and is <strong>not repeated here</strong>: the two write families and their authority rule, the <code>.source</code> / <code>.checksum</code> split, the value / buffer / checksum matrix, the "a <code>Checksum</code> is a value only for celltype <code>checksum</code>" rule, the read and materialization pipeline, and how a failure sticks to the handle until it is cleared. This page states what is Pin-specific — routing to a Transformer, which pins exist, the null rules of features 6 and 7, conversion at the pin boundary, and the ways a Pin is deliberately narrower than a Cell.</p>
+<p>The modes are the same two:</p>
+<ul>
+<li><strong>standalone</strong> — the state is private to the Transformer object;</li>
+<li><strong>bound</strong> — the state is owned by a workflow <code>Context</code> node, and the Pin handle is a <em>view</em> onto it.</li>
+</ul>
+<p><code>tf.pins.x</code> returns a <strong>fresh handle</strong> every time — standalone, compiled and bound alike, and including for a declared-but-unwired pin, which reads as an unwired Pin and never as <code>None</code>. Handle identity carries no meaning.</p>
+<p>Being a separate class is load-bearing: <code>isinstance(pin, Cell)</code> is false, so every existing source check refuses a Pin <strong>by type</strong> rather than by a per-site check (see <em>A Pin is not a source</em>).</p>
+<p>Code locations:</p>
+<table>
+<thead>
+<tr>
+<th>Concern</th>
+<th>Module / symbol</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Shared value/type/evaluation/ownership API</td>
+<td><code>seamless.cell_class.CellBase</code></td>
+</tr>
+<tr>
+<td>Pin handle</td>
+<td><code>seamless_transformer.pin_class.Pin</code> (a thin subclass of <code>CellBase</code>)</td>
+</tr>
+<tr>
+<td>Standalone pin state and reads</td>
+<td><code>seamless_transformer.pin_class.StandalonePinBackend</code></td>
+</tr>
+<tr>
+<td>Pin storage on a standalone transformer</td>
+<td><code>seamless_transformer.transformer_class.ArgsWrapper</code></td>
+</tr>
+<tr>
+<td>Pin celltypes</td>
+<td><code>seamless_transformer.transformer_class.CelltypesWrapper</code></td>
+</tr>
+<tr>
+<td>Optional-pin drop and the null rules</td>
+<td><code>seamless_transformer.transformation_utils</code> (<code>normalize_optional_pins_for_construction</code>, <code>validate_pin_null</code>, <code>json_null_checksum</code>, <code>sufficiently_connected</code>)</td>
+</tr>
+<tr>
+<td>Call-time argument conversion</td>
+<td><code>seamless_transformer.transformer_class.TransformerCore._convert_pin_arguments</code></td>
+</tr>
+<tr>
+<td>Null results</td>
+<td><code>seamless_transformer.run</code></td>
+</tr>
+<tr>
+<td>Bound pin handle and writes</td>
+<td><code>seamless_workflow.builder_state</code> (<code>BoundPinBackend</code>, <code>WorkflowTransformerPins</code>, <code>BoundTransformerBackend</code>)</td>
+</tr>
+<tr>
+<td>Bound pin derivation, blocking and conversion</td>
+<td><code>seamless_workflow.reactive.Reactive._derive_transformer</code></td>
+</tr>
+<tr>
+<td>Bound snapshot conversion</td>
+<td><code>seamless_workflow.runtime_api</code> (<code>_snapshot_transformer</code>)</td>
+</tr>
+<tr>
+<td>Pin writes through the controller</td>
+<td><code>seamless_workflow.context.Context._set_transformer_pin</code></td>
+</tr>
+</tbody>
+</table>
+<h2 id="reaching-pins">Reaching pins</h2>
+<p><strong><code>tf.pins.x</code> is the only pin path.</strong> <code>tf.args.x</code> is an exact alias: <code>args</code> and <code>pins</code> are the same object in both modes (<em>Verified:</em> <code>TransformerCore.pins</code> returns <code>self.args</code>; <code>BoundTransformerBackend.args</code> returns <code>self.pins</code>). Prefer <code>.pins</code> in new code.</p>
+<p>The old sugar is <strong>gone</strong>: there is no <code>tf.x</code> and no <code>tf["x"]</code>. Attribute assignment on a Transformer raises <code>AttributeError</code> whose message names the replacement — <code>'&lt;T&gt;' object has no attribute 'x'; transformer input pins are reached as .pins['x']</code> — and a Transformer has no <code>__getitem__</code> at all. The removal was driven by the Context's name-collision problem: a pin name could otherwise collide with any API member of the handle.</p>
+<ul>
+<li><code>tf.pins.x</code> for a name that is not a declared pin raises <code>AttributeError</code>. <code>tf.pins["x"]</code> is the same operation; the item form is not an escape hatch.</li>
+<li><strong><code>result</code> is never a valid pin name.</strong> <code>tf.pins.result</code> raises <code>AttributeError</code>, as do <code>tf.pins["result"] = v</code> and <code>del tf.pins["result"]</code>. <code>result</code> is the <em>output</em> celltype slot, <code>tf.celltypes.result</code> (below), and on a <strong>bound</strong> transformer <code>tf.result</code> is the result handle, not a pin.</li>
+</ul>
+<p><strong>One pin has one producer.</strong> A pin holds exactly one input — a literal checksum, or one connection. It therefore never faces the root-literal-plus-sub-path-edges ambiguity a Cell can face, and <code>pin.source</code> and <code>pin.checksum</code> answer unambiguously: <code>pin.source is None</code> means "nothing upstream feeds this pin", <code>pin.checksum is None</code> means "not complete", with no path to walk up in search of the responsible edge.</p>
+<h2 id="which-pins-exist">Which pins exist</h2>
+<table>
+<thead>
+<tr>
+<th>Transformer code</th>
+<th>Pin set</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>a Python callable</td>
+<td><strong>fixed</strong> by the signature</td>
+</tr>
+<tr>
+<td>signature-less code (text / bash-style)</td>
+<td><strong>declared</strong> by the user</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li>With a <strong>Python callable</strong> the signature fixes the pin set: a name outside the signature is rejected, and <code>del tf.pins.x</code> raises. (<code>ArgsWrapper</code> and <code>CelltypesWrapper</code> call this the <em>fixed</em> state.)</li>
+<li>With <strong>signature-less code</strong> the user declares the pins, so <code>tf.pins.x = v</code> or <code>tf.celltypes.x = ct</code> <strong>creates</strong> the declaration, and <code>del tf.pins.x</code> / <code>del tf.celltypes.x</code> <strong>removes</strong> it. Deleting a declaration removes the pin from <code>pins</code>, from <code>celltypes</code> and from <code>optional_pins</code>, and clears its input.</li>
+</ul>
+<p><code>del</code> therefore means "the declaration is gone", never "empty it". Clearing a pin's <em>input</em> while keeping the declaration is <code>pin.checksum = None</code> (below). This is the same <code>del</code>-versus-clear split <code>contracts/cells.md</code> states for Cells, and <strong>both modes now behave identically</strong>: the bound <code>del ctx.tf.pins.x</code> that used to clear the producer is retired.</p>
+<h2 id="celltypes">Celltypes</h2>
+<p><strong><code>pin.celltype</code> and <code>tf.celltypes.x</code> are one setting</strong>, settable from either side and linked in both directions. The Transformer owns the storage; the Pin stores none. The setter validates and normalizes the name, and accepts a Python type, reducing it to its name (<code>int</code> → <code>"int"</code>).</p>
+<p><strong><code>pin.input_celltype</code> is read-only</strong> and comes from the input, by the same rules <code>contracts/cells.md</code> gives for a Cell:</p>
+<table>
+<thead>
+<tr>
+<th>The input is</th>
+<th><code>input_celltype</code> is</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>a typed reference (Cell, Expression, Transformation, bound endpoint)</td>
+<td>that reference's own <code>celltype</code>, read <strong>live</strong> — retyping a source Cell changes the pin's <code>input_celltype</code>, and an <code>Expression</code> has resolved its own once, at construction</td>
+</tr>
+<tr>
+<td>a value, written as <code>tf.pins.x = v</code> or <code>pin.set(v)</code></td>
+<td>the celltype it was serialized in — the pin's <code>celltype</code> at that moment</td>
+</tr>
+<tr>
+<td>a bare <code>Checksum</code></td>
+<td>the celltype declared with it (<code>pin.set_checksum(cs, input_celltype=…)</code>), defaulting to the pin's <code>celltype</code></td>
+</tr>
+<tr>
+<td>absent</td>
+<td><code>None</code></td>
+</tr>
+</tbody>
+</table>
+<p>Which celltypes are accepted depends on the slot (<em>Verified:</em> <code>CelltypesWrapper.__setitem__</code>):</p>
+<table>
+<thead>
+<tr>
+<th>Slot</th>
+<th>Accepts</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>an <strong>input pin</strong></td>
+<td>every ordinary celltype, plus <code>deepcell</code>, <code>deepfolder</code>, <code>folder</code> and <code>module</code></td>
+</tr>
+<tr>
+<td>the <strong>result</strong></td>
+<td>every ordinary celltype, plus <code>deepcell</code> and <code>folder</code>; <code>deepfolder</code> and <code>module</code> are rejected with <code>TypeError</code></td>
+</tr>
+</tbody>
+</table>
+<p>Setting <code>pin.celltype</code> <strong>resets the pin's memoized result and its recorded exception</strong>, so a retype re-derives from the stored input rather than reinterpreting it.</p>
+<h2 id="pins-hold-checksums-never-values">Pins hold checksums, never values</h2>
+<p><code>tf.pins.x = v</code> is the same operation as <code>tf.pins.x.set(v)</code> except for the authority check (below).</p>
+<ul>
+<li>A <strong>literal value is serialized immediately</strong>, with the pin's <code>celltype</code>, and the pin stores the resulting checksum plus the celltype it was serialized in. An invalid value raises <strong>at assignment</strong>, exactly as <code>Cell.set</code> does; standalone and bound agree on this.</li>
+<li>A <strong>typed reference</strong> — a <code>Cell</code>, an <code>Expression</code>, a <code>Transformation</code>, a bound endpoint — is stored as a reference and is not resolved.</li>
+<li><strong>A <code>Checksum</code> is a value exactly when the pin's celltype is <code>checksum</code></strong>; for every other celltype a <code>Checksum</code> is read as a declared input reference. This is the single rule <code>contracts/cells.md</code> states, unchanged at a pin.</li>
+</ul>
+<p><strong>Pin storage never holds a raw Python object.</strong> (The pre-rename implementation stored Python objects on the standalone path and resolved them in whatever celltype they had been stored in, which went stale after a retype. That is gone.)</p>
+<h2 id="writes-the-same-two-verb-families">Writes: the same two verb families</h2>
+<p>The vocabulary, and the reason for the split, are in <code>contracts/cells.md</code>; only the pin spellings are given here.</p>
+<table>
+<thead>
+<tr>
+<th>Family</th>
+<th>Spellings on a pin</th>
+<th>On a connected pin</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Declare the input</strong></td>
+<td><code>tf.pins.x = X</code>, <code>pin.value =</code>, <code>pin.buffer =</code>, <code>pin.checksum =</code> (including <code>= None</code>)</td>
+<td><strong>make it so</strong> — replaces the producer or the edge</td>
+</tr>
+<tr>
+<td><strong>Write what you own</strong></td>
+<td><code>pin.set()</code>, <code>pin.set_buffer()</code>, <code>pin.set_checksum()</code></td>
+<td><strong>check</strong> — <code>AuthorityError</code></td>
+</tr>
+</tbody>
+</table>
+<p>The standalone <code>AuthorityError</code> message is: <code>The pin is controlled by a source; assign .value, .buffer or .checksum to replace it</code>.</p>
+<ul>
+<li><strong>Clearing.</strong> <code>pin.checksum = None</code> — and equally <code>pin.buffer = None</code> and <code>pin.set_checksum(None)</code> — removes the input and keeps the declaration. The pin then reads as <code>unwired</code>, and the transformer is blocked on it.</li>
+<li><strong>Null.</strong> <code>pin.value = None</code> and <code>pin.set(None)</code> store the <strong>null value</strong>, which for a required pin is legal only for celltypes <code>plain</code>, <code>mixed</code> and <code>bytes</code> (below). The <code>= None</code> / clear / <code>del</code> distinction is exactly the one <code>contracts/cells.md</code> draws.</li>
+<li><strong>A pin has no sub-path.</strong> There are no sub-pin targets and no projections, and therefore no sub-path writes and no augmented assignment.</li>
+</ul>
+<h2 id="null-required-pins-optional-pins">Null, required pins, optional pins</h2>
+<p><strong>One representation.</strong> Absence and the null value share the canonical JSON-null checksum (<code>b"null\n"</code>, <code>38e0b9de…</code>), which is celltype-independent and trivially resolvable; see <code>contracts/celltypes-and-conversion.md</code>. Empty bytes under celltype <code>bytes</code> <strong>canonicalize to null before any pin rule is applied</strong> (<em>Verified:</em> <code>normalize_optional_pins_for_construction</code> and <code>Reactive._derive_transformer</code> both call <code>canonicalize_checksum</code> first), so an optional <code>bytes</code> pin cannot distinguish empty from absent.</p>
+<p><strong>Strict at the function boundary, union in storage.</strong> A Cell is a slot and admits <code>None</code> whatever its celltype; a pin and a result are the function's declared interface and do not.</p>
+<table>
+<thead>
+<tr>
+<th>Position</th>
+<th>Rule</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Required pin</strong>, celltype <code>plain</code>, <code>mixed</code> or <code>bytes</code></td>
+<td>null is an ordinary value — for <code>bytes</code> it resolves as <code>b""</code></td>
+</tr>
+<tr>
+<td><strong>Required pin</strong>, any other celltype</td>
+<td>null is rejected: <code>TypeError: Required pin '&lt;name&gt;' with celltype '&lt;ct&gt;' cannot accept null</code>. A literal raises at assignment; one arriving from upstream is reported on the pin</td>
+</tr>
+<tr>
+<td><strong>Optional pin</strong>, any celltype</td>
+<td>null <strong>means that pin's absence</strong>: it is compared, then dropped, and never deserialized</td>
+</tr>
+<tr>
+<td><strong>Result</strong>, celltype <code>plain</code>, <code>mixed</code> or <code>bytes</code></td>
+<td>a <code>None</code> return is the null result</td>
+</tr>
+<tr>
+<td><strong>Result</strong>, any other celltype</td>
+<td><code>RuntimeError: Null result is not allowed for celltype '&lt;ct&gt;'</code></td>
+</tr>
+</tbody>
+</table>
+<p><em>Verified:</em> <code>validate_pin_null</code> implements the required-pin rule; <code>run.py</code> raises the result error on both the Python and the compiled path.</p>
+<p><strong>Optional pins are declared on the Transformer.</strong> <code>tf.optional_pins</code> is a settable set of pin names, and assigning any iterable replaces it. Optionality is <strong>metadata</strong>: it is deliberately kept out of the transformation payload that is hashed, because otherwise "absent" and "present but null" would hash differently.</p>
+<p><strong>With a Python callable, a parameter default declares the optional pin.</strong> Setting the code from a callable seeds <code>optional_pins</code> with exactly the parameters that have a default, so <code>def f(a, b=3)</code> gives an optional pin <code>b</code> with no further declaration; assigning <code>tf.optional_pins</code> afterwards <strong>replaces</strong> that set rather than adding to it. The default value itself stays in the code and is never a pin input: an absent pin is simply not passed at the call, so the function receives its own default. Signature-less code has no defaults, so there <code>tf.optional_pins</code> is the only declaration. (<em>Verified:</em> <code>TransformerCore.code</code> builds <code>_optional_pins</code> from <code>parameter.default is not inspect.Parameter.empty</code>; <code>cached_compile.exec_code</code> calls the function with one keyword argument per pin <strong>present in the transformation</strong>.)</p>
+<p><strong>The identity rule</strong> — the contract of feature 6:</p>
+<ul>
+<li>an <strong>unconnected</strong> optional pin is simply absent from the transformation;</li>
+<li>a <strong>connected</strong> optional pin that resolves to canonical null is <strong>dropped from the transformation dictionary before the transformation checksum is computed</strong>;</li>
+<li>therefore <em>optional pin <code>x</code> absent</em> and <em>optional pin <code>x</code> connected and resolving to null</em> produce <strong>the same transformation checksum</strong>;</li>
+<li>a connected optional pin resolving to anything else stays in the transformation and participates in its identity;</li>
+<li>a <strong>required</strong> pin holding null (legal only for <code>plain</code>, <code>mixed</code> and <code>bytes</code>) stays present, so required-null and optional-null are <strong>different</strong> identities.</li>
+</ul>
+<p><strong>What optionality does not do:</strong></p>
+<ul>
+<li>it does not make a connected pin lazy — a connected optional pin is computed exactly like a required one;</li>
+<li>a <strong>failing</strong> upstream on an optional pin is still a failure: optionality normalizes a successful null, never an error;</li>
+<li>a <strong>missing checksum blocks</strong>, whatever the pin's optionality — a connected optional pin whose source is unwired, blocked or still computing blocks the transformer exactly as a required pin would. Only an <em>unconnected</em> optional pin is skipped;</li>
+<li>the unresolved placeholder in a pin's internal tuple (<code>None</code> in the checksum slot) means "not computed", and is never absence.</li>
+</ul>
+<p>The drop happens <strong>before</strong> the pin conversion below, so an optional <code>int</code> pin fed a null is dropped rather than failing a <code>null → int</code> conversion. Absence is decided by <strong>comparing checksums, never by deserializing</strong>, which is why it works for every celltype. (An earlier design restricted optional-pin absence to <code>plain</code> and <code>mixed</code> pins; that restriction is lifted.)</p>
+<p><code>sufficiently_connected(required_pins, optional_pins, wired_pins)</code> is the low-level predicate: all required pins wired, unconnected optional pins acceptable.</p>
+<h2 id="conversion-at-the-pin">Conversion at the pin</h2>
+<p><strong>The transformation receives each input converted to the pin's celltype</strong>, through the same conversion machinery Cells use (<code>contracts/celltypes-and-conversion.md</code>, <code>contracts/expressions.md</code>). Conversion is skipped when the input celltype already equals the pin celltype.</p>
+<p>This holds for <strong>every route into a pin</strong> — a pre-bound standalone pin, a call-time argument <code>tf(x=…)</code>, and a bound edge — and <strong>reactive and snapshot runs agree</strong>, including on the resulting checksum identity: <code>ctx.tf.run()</code> and <code>ctx.tf().run()</code> produce the same transformation checksum for the same inputs. (<em>Verified:</em> <code>_convert_pin_arguments</code> wraps a <code>Transformation</code> or <code>Expression</code> call-time argument whose celltype differs in <code>Expression(arg, input_celltype=arg.celltype, celltype=&lt;pin celltype&gt;)</code>; a pre-bound pin reaches the same conversion through <code>Pin.build()</code>, which wraps <em>any</em> typed reference the same way before <code>_convert_pin_arguments</code> runs; <code>runtime_api._snapshot_transformer</code> builds the same converting Expression for a bound edge and for a stored producer; <code>Reactive._derive_transformer</code> converts through the Context's projection path. The call-time-argument route has a gap for one reference kind; see <em>Implementation status</em>.)</p>
+<p><strong>A retype converts again from the stored input</strong>; it never reinterprets the stored bytes. This is the pin counterpart of the Cell rule in <code>contracts/cells.md</code> ("retyping converts; it does not reinterpret the stored input"), and it is the reason a pin stores <code>(input, input celltype)</code> rather than a value.</p>
+<p><strong>A failed conversion is reported on the pin, before any transformation exists.</strong> The pin's state is <code>failed</code> and <code>pin.exception</code> holds the failure; the transformer is <code>blocked</code> with block reason <code>blocked-by-error</code> and the pin's name among its blocking pins; <strong>no transformation is built and none is submitted</strong>. A conversion failure is therefore never blamed on execution.</p>
+<p>A bare <code>Checksum</code> written with no <code>input_celltype=</code> is taken to be already in the pin's celltype.</p>
+<h2 id="reads-state-and-work">Reads, state and work</h2>
+<p>The read API is <code>CellBase</code>'s, so <code>contracts/cells.md</code> governs: what <code>.checksum</code> may evaluate, that <code>.buffer</code> and <code>.value</code> resolve and never fingertip, which materialization failures are recorded, and how <code>clear_exception()</code> works. Only the Pin-specific parts are stated here.</p>
+<p><strong>The surface.</strong> A Pin exposes <code>source</code>, <code>checksum</code>, <code>buffer</code>, <code>value</code>, <code>celltype</code>, <code>input_celltype</code>, <code>state</code>, <code>exception</code>, <code>clear_exception()</code>, <code>build()</code>, <code>compute()</code> / <code>compute_async()</code>, <code>run()</code>, and the write API above. It has <strong>no</strong> <code>path</code>, no projection, no <code>mount</code>, no validator and no <code>prune()</code>.</p>
+<ul>
+<li><code>pin.source</code> is the connected upstream handle, or <code>None</code>. <code>pin.checksum</code> is the pin's <strong>current converted value</strong>, and <code>None</code> when the pin is not complete — the same meaning as for a Cell.</li>
+<li><strong>Standalone.</strong> <code>pin.checksum</code> evaluates the pin's own (cheap) expression and memoizes it per <code>(input, input_celltype, celltype)</code> identity; a changed input, input celltype or pin celltype resets both the memo and the exception. <code>pin.state</code> is one of <code>unwired</code>, <code>waiting</code>, <code>complete</code>, <code>failed</code>. <code>pin.exception</code> reads <code>pin.checksum</code> first, so it is a read that can do that cheap work. Materialization failures follow the Cell rule: a <code>CacheMissError</code> on the result is re-raised and <strong>not</strong> recorded; every other failure is recorded and raised.</li>
+<li><strong>Bound.</strong> Every read is a snapshot of the controller-derived per-pin state — state, exception, source, input celltype, checksum — so a bound read never waits. <code>pin.compute()</code> / <code>pin.compute_async()</code> wait on the <strong>transformer node's</strong> barrier and then return the pin's checksum; <code>timeout=</code> is meaningful there, and a barrier timeout raises <code>TimeoutError</code>.</li>
+<li><code>pin.build()</code> returns the pin's <code>Expression</code>. Standalone it accepts a one-shot input override; bound it does not (<code>TypeError: Pin.build does not accept a replacement input</code>, and likewise for <code>compute</code>).</li>
+<li><code>pin.run()</code> computes and materializes; for celltype <code>bytes</code> it returns raw <code>bytes</code>.</li>
+</ul>
+<p><strong>Transformer-level reporting.</strong> On a bound Transformer, <code>tf.state</code> is the node state (<code>unwired</code>, <code>blocked</code>, <code>waiting</code>, <code>computing</code>, <code>complete</code>, <code>failed</code>) and <strong><code>tf.block_reason</code> is the sorted list of input pin names responsible for the current pending state</strong>, including <code>"code"</code> where applicable — a detached copy, and <code>None</code> in any other state. Note the deliberate asymmetry with a Cell, whose <code>block_reason</code> is the <em>category</em> (<code>blocked-by-unwired</code> / <code>blocked-by-error</code>): a transformer has many inputs, so it names them. When pins are in mixed states the precedence is <code>unwired</code>, then <code>blocked-by-unwired</code>, then <code>blocked-by-error</code>, then <code>waiting</code> — topology before values (<code>contracts/node-state-lifecycle.md</code>). In the <code>unwired</code> and <code>waiting</code> states only the pins in the winning category are listed; in <code>blocked</code>, <strong>every</strong> pin blocked for either reason is listed, so the list is the full set of inputs needing attention while <code>tf.result.block_reason</code> reports which category won. The state machine itself is feature 10's node state lifecycle, documented separately, and is not specified here.</p>
+<h2 id="a-pin-is-not-a-source">A Pin is not a source</h2>
+<p><strong>A Pin cannot feed anything.</strong> It is refused as a Cell input, as an Expression input, as the source of a Context assignment target, as an edge source and as a call argument. The refusal is <strong>by type</strong> — a Pin is not a <code>Cell</code> and defines none of the source protocols — and the explicit checks only improve the message, which points at <code>pin.source</code>.</p>
+<p>To route a pin's upstream elsewhere, connect <code>pin.source</code>:</p>
+<pre><code class="language-python">ctx.tf2.pins.y = ctx.tf.pins.x.source   # works
+ctx.tf2.pins.y = ctx.tf.pins.x          # TypeError, naming pin.source
+</code></pre>
+<h2 id="implementation-status-and-current-limitations">Implementation status and current limitations</h2>
+<p>Settled contract that the code does not yet implement, or implements differently. Where a design document and the code disagree, <strong>the code wins</strong> and the disagreement is listed here.</p>
+<ul>
+<li><strong>Compiled transformers have their own, stricter pin contract.</strong> A compiled pin's celltype is governed by the transformer's schema, and the rules of this page — in particular the optional-pin and null rules above — do not carry over unchanged; see the compiled-pin contract page (<code>contracts/compiled-pins.md</code>). Today's code does not yet honour a compiled pin's declared celltype; that is implementation lag, not contract.</li>
+<li><strong>A bound <code>pin.buffer</code> does not validate.</strong> The bound read resolves the checksum directly, where the standalone read validates the checksum against the pin celltype both before and after obtaining the buffer. This is the same bound/standalone divergence <code>contracts/cells.md</code> records for Cells, and the standalone behaviour is the intended one.</li>
+<li><strong>Assigning a standalone <code>Cell</code> or <code>Expression</code> directly to a bound pin fails.</strong> A bound pin has one producer slot, which cannot hold a deferred expression. This is out of scope rather than a bug; connect a bound endpoint instead.</li>
+<li><strong><code>Pin.exception</code> holds an exception object, not a string.</strong> The settled convention is one string convention across Cell, Pin and Transformation, and the code is to be changed; see the same item in <code>contracts/cells.md</code>.</li>
+<li><strong>The dummy-Expression fast path is not implemented on the Pin side.</strong> <code>contracts/cells.md</code>'s <code>.checksum</code> getter answers an identity input (no path, <code>input_celltype == celltype</code>) immediately, without entering the evaluator (<code>cell_class.py:107-146</code>, the fast path at lines 118–123). <code>StandalonePinBackend.checksum</code> (<code>pin_class.py:86-123</code>) has no such branch: it always builds and computes an <code>Expression</code>, even in the dummy case, memoizing only the <em>result</em> of that call rather than skipping it. One observable consequence: inside a running event loop, <code>RunningLoopRefusal</code> — which <code>contracts/cells.md</code> treats as a non-failure (<code>.checksum</code> returns <code>None</code>, <code>.exception</code> stays <code>None</code>, nothing recorded) — falls into <code>StandalonePinBackend.checksum</code>'s generic <code>except Exception</code> clause instead and <em>is</em> recorded as <code>.exception</code>. This is the "Pin side" of the fast path that <code>cells-and-expressions-known-issues.md</code> §2 item 7 names as not yet ported from <code>Cell</code>.</li>
+<li><strong>A call-time <code>Cell</code> argument is not converted to the pin's celltype.</strong> <code>_convert_pin_arguments</code> (above) wraps only a <code>Transformation</code> or <code>Expression</code> argument; a <code>Cell</code> passed as <code>tf(x=some_cell)</code> reaches <code>TransformerCore._convert_pin_arguments</code>'s <code>_check_input_ref</code> validation (which accepts it) but is not wrapped in a converting <code>Expression</code>, and then reaches <code>PreTransformation._prepare_pin_value</code>, which has branches for <code>Transformation</code> and <code>Expression</code> but none for <code>Cell</code>; it falls through to <code>_to_checksum</code>, which treats the unrecognized object as a literal and serializes the <code>Cell</code> instance itself under the pin's celltype rather than resolving and converting the Cell's value. A <strong>pre-bound</strong> <code>tf.pins.x = some_cell</code> is unaffected, because <code>Pin.build()</code> already wraps any typed reference — Cell included — in a converting <code>Expression</code> before <code>_convert_pin_arguments</code> ever sees it; only the call-time-argument route to a bare <code>Cell</code> is missing.</li>
+</ul>
+<h2 id="non-goals">Non-goals</h2>
+<ul>
+<li><strong>A Pin as a source.</strong> Deliberate. A future graph source kind for a pin's converted value could change this; nothing today may depend on it.</li>
+<li><strong>Sub-pin targets and projections.</strong> Whole pins only.</li>
+<li><strong>Validators and mounts on pins.</strong> Neither exists on <code>CellBase</code>'s pin side; a Pin is never mounted.</li>
+<li><strong>Per-pin settings beyond <code>celltype</code>.</strong> The legacy per-pin <code>io</code> / <code>as_</code> settings are gone; <code>optional_pins</code> lives on the Transformer, not on the pin.</li>
+<li><strong>Handle identity.</strong> As for Cells: <code>tf.pins.x is not tf.pins.x</code>, and nothing may be keyed on a handle.</li>
+</ul>
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="cells.html" class="btn btn-neutral float-left" title="Cells"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="workflow-context.html" class="btn btn-neutral float-right" title="Workflow Context">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+    
+      <span><a href="cells.html" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="workflow-context.html" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script src="../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "..";</script>
+    <script src="../js/theme_extra.js"></script>
+    <script src="../js/theme.js"></script>
+      <script src="../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>

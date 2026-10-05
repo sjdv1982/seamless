@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <link rel="shortcut icon" href="../../../img/favicon.ico" />
+    <title>Plan: replay-mode tool for seamless-share - Seamless — Agent Documentation</title>
+    <link rel="stylesheet" href="../../../css/theme.css" />
+    <link rel="stylesheet" href="../../../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "Plan: replay-mode tool for seamless-share";
+        var mkdocs_page_input_path = "repos/seamless-share/source/replay-plan.md";
+        var mkdocs_page_url = null;
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../../../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href="../../../index.html" class="icon icon-home"> Seamless — Agent Documentation
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../../index.html">Home</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../../overview.html">Agent Docs Overview</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../index.html">Workspace Repos</a>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Contracts</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/identity-and-caching.html">Identity and Caching</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/celltypes-and-conversion.html">Celltypes, Null, and Conversion</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/hashtype.html">HashType</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/deep-celltypes.html">Deep Celltypes</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/expressions.html">Expressions</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/cells.html">Cells</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/pins.html">Pins</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/workflow-context.html">Workflow Context</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/node-state-lifecycle.html">Node State Lifecycle</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/attachments.html">Attachments</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/mounts.html">File Mounts</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/cancellation.html">Cancellation</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/direct-delayed-and-transformation.html">direct/delayed/Transformation</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/modules-and-closures.html">Modules and Closures</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/scratch-witness-audit.html">Scratch/Witness/Audit</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/seamless-run-and-argtyping.html">seamless-run/Argtyping</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/cache-storage-and-limits.html">Cache Storage and Limits</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/content-addressed-files-and-dirs.html">Content-addressed Files and Dirs</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/execution-backends.html">Execution Backends</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/execution-records.html">Execution Records</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/service-management.html">Service Management</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/compression.html">Compression</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/compiled-transformers.html">Compiled Transformers</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/compiled-pins.html">Compiled Pins</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../contracts/seamless-signature-schema.html">seamless-signature Schema</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">API</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../api/python/seamless.html">seamless</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../api/python/seamless.transformer.html">seamless.transformer</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../api/python/seamless.buffer_class.html">seamless.buffer_class</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../api/python/seamless.checksum_class.html">seamless.checksum_class</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../api/python/seamless_config.select.html">seamless_config.select</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../api/python/seamless_config.tools.html">seamless_config.tools</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../api/python/seamless_transformer.transformation_class.html">seamless_transformer.transformation_class</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../api/python/seamless_transformer.transformer_class.html">seamless_transformer.transformer_class</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">CLI</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../api/cli/seamless-run.html">seamless-run</a>
+                  </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">Seamless — Agent Documentation</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../../../index.html" class="icon icon-home" aria-label="Docs"></a></li>
+      <li class="breadcrumb-item active">Plan: replay-mode tool for seamless-share</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h1 id="plan-replay-mode-tool-for-seamless-share">Plan: replay-mode tool for <code>seamless-share</code></h1>
+<p>This plan specifies <strong>what to build and how to test it</strong>, not how to implement it. The contract source is <a href="usage-patterns.html#pattern-3-replay-mode-verification-of-a-crystallized-artifact">Pattern 3 of usage-patterns.md</a>. Where this plan and that contract disagree, the contract wins; this file refines API surface and tests.</p>
+<h2 id="status-and-naming">Status and naming</h2>
+<p>The tool composes two layers, conceptually separable:</p>
+<ul>
+<li><strong>Seamless runtime mode</strong> — a mode flag (and the policy changes it controls) inside Seamless's transformation submission and buffer resolution paths. This is <em>not</em> a <code>seamless-share</code> artifact; it lives in Seamless. <code>seamless-share</code> consumes it.</li>
+<li><strong><code>seamless-share replay</code></strong> — the harness. Sets up the local materialization, configures endpoints to the crystallized artifact, launches the client script under replay mode, collects structured findings into a report.</li>
+</ul>
+<p>Implementers may pick a different command name (<code>seamless-share verify</code>, <code>seamless-share check-artifact</code>, ...) but must preserve the layering: the harness does not invent gating logic; gating happens in Seamless.</p>
+<h2 id="surfaces-in-scope">Surfaces in scope</h2>
+<p>Two surfaces, both must work and both must produce the same report:</p>
+<ol>
+<li><strong>CLI</strong>: <code>seamless-share replay …</code>, primary user-facing form.</li>
+<li><strong>Python API</strong>: <code>from seamless_share.replay import replay, ReplayConfig</code> (final import path is an implementer choice). Returns a typed <code>ReplayReport</code> object. Used by tests, by CI, and by the publisher's iteration loop.</li>
+</ol>
+<p>The structured report is the contract. The CLI's <code>text</code> rendering is a presentation aid; the JSON / Python object is canonical.</p>
+<h2 id="what-is-explicitly-out-of-scope-v1">What is explicitly out of scope (v1)</h2>
+<ul>
+<li><strong>Modifying the script under test.</strong> The harness runs the script verbatim; it does not rewrite <code>.run()</code> to <code>.compute()</code>, does not inject probes, does not swap pins. If a script change is needed to converge, that is the publisher's job between runs.</li>
+<li><strong>Modifying the crystallized artifact.</strong> Read-only on the <code>seamless.db</code> and the companion bufferdir under test. The local-materialization shape (whatever the publisher chose) is read-only during a run; the publisher may edit it <em>between</em> runs.</li>
+<li><strong>Automatically resolving findings.</strong> The harness reports; it never silently adds a checksum to a whitelist, never fetches a missing buffer in the background, never re-runs to converge.</li>
+<li><strong>Remote-delegation success.</strong> If a backend dispatch happens, it is a finding — even if the dispatched work completes correctly. The replay's self-sufficiency claim is undermined; the publisher decides what to do.</li>
+<li><strong>Cascade <code>why-not</code> recursion.</strong> Each <code>Unexpected miss</code> finding carries one diff against one candidate (via <a href="usage-patterns.html#pattern-2-cache-miss-diagnosis-why-not">Pattern 2</a>'s primitive). The publisher re-invokes <code>why-not</code> manually for cascade questions.</li>
+<li><strong>Concurrency.</strong> Two replays of the same artifact in parallel are out of scope; assumed external coordination.</li>
+</ul>
+<h2 id="cli-ergonomics">CLI ergonomics</h2>
+<pre><code>seamless-share replay &lt;script&gt; [script-args …]
+    --artifact &lt;path-to-seamless.db&gt;
+    --bufferdir &lt;path&gt;                     # the companion bufferdir
+    [--authorization &lt;path&gt;]                # authorization spec (whitelist, etc.)
+    [--driver-cache {bypass,enabled}]       # default: bypass
+    [--report &lt;path&gt;]                       # default: stdout
+    [--report-format {json,text}]           # default: json when --report is a file, text on stdout
+    [--config &lt;path&gt;]                       # isolated seamless-config; default: synthesized
+    [--inherit-config]                      # opt-in; for diagnostic purposes only
+    [--allow-remote]                        # opt-in; replay treats remote dispatch as a finding even with this set, but does not refuse to dispatch
+    [--fail-on {none,any,unauthorized-only}] # default: none (always exit 0 if the tool ran)
+    [--timeout &lt;seconds&gt;]                   # wall-clock cap; default: none
+    [--verbose | -v] [--quiet | -q]
+</code></pre>
+<h3 id="conventions">Conventions</h3>
+<ul>
+<li>The script is invoked as a child process (or in-process; implementer choice) with <code>[script-args …]</code> forwarded verbatim. Replay must not parse the script's args.</li>
+<li><code>--artifact</code> and <code>--bufferdir</code> are both required positional-equivalent flags (not positional, because forgetting one is a common failure shape worth catching at parse time with a clear message).</li>
+<li><code>--authorization</code> points at whatever shape the implementer chose for the authorization spec (a JSON file with a checksum list, a directory of authorization fragments, ...). The spec format is an implementer choice; tests pin behavior, not file shape. Absent <code>--authorization</code>, the run uses the maximally-restrictive default: only the local bufferdir is authorized, no fingertips, driver caching bypassed.</li>
+<li><code>--driver-cache bypass</code> (default) — drivers re-execute even when their <code>result_checksum</code> is cached. <code>--driver-cache enabled</code> — drivers may short-circuit on their cached <code>result_checksum</code>; their sub-transformations are not submitted. The choice must be visible in the report (count of drivers executed vs short-circuited).</li>
+<li><code>--config</code> overrides Seamless's normal endpoint resolution. Default: the harness <em>synthesizes</em> a config that resolves the database endpoint to <code>--artifact</code>, the bufferdir endpoint to <code>--bufferdir</code>, and <em>no remote endpoints</em>. <code>--inherit-config</code> opts the user back into their normal config; this is for debugging only and the report flags it prominently.</li>
+<li><code>--allow-remote</code> does <strong>not</strong> disable the <code>Remote delegation observed</code> finding. It only suppresses any preemptive refusal the implementer chose to add. Whether the implementer adds such a refusal is their choice; the test asserts the <em>finding</em> is emitted regardless.</li>
+<li><code>--fail-on</code> controls exit-code mapping only. <code>none</code> (default) — exit <code>0</code> whenever the tool ran to completion, regardless of findings. <code>any</code> — exit <code>5</code> if any finding is present. <code>unauthorized-only</code> — exit <code>5</code> if any finding of <code>Unauthorized materialization</code>, <code>Unauthorized fingertip</code>, or <code>Authorized materialization with unsatisfied dependency</code> is present. CI integrations choose; the default does not penalize having findings, because Pattern 3 explicitly frames findings as the iteration signal.</li>
+<li>Exit codes:</li>
+<li><code>0</code> — tool ran to completion and produced a report. <strong>Findings present is still <code>0</code> unless <code>--fail-on</code> says otherwise.</strong></li>
+<li><code>2</code> — usage error (bad argv, missing required flag, script path not found).</li>
+<li><code>3</code> — setup error (artifact unreadable, authorization spec malformed, config synthesis failed).</li>
+<li><code>4</code> — script crashed or returned non-zero through a non-Seamless code path. Report is still produced and lists the script error; the publisher decides whether that is a finding or a script bug.</li>
+<li><code>5</code> — findings present and <code>--fail-on</code> matched. Report produced normally.</li>
+<li><code>6</code> — timeout.</li>
+<li><code>1</code> — reserved for unexpected internal failure (crash in the harness itself).</li>
+</ul>
+<h3 id="report-file-conventions">Report file conventions</h3>
+<ul>
+<li>Default report destination: stdout, with <code>--report-format text</code>.</li>
+<li>When <code>--report &lt;path&gt;</code> is given, default report format becomes <code>json</code> and a deterministic byte-ordered JSON is written (see <a href="#determinism-and-machine-readability">Determinism</a> below).</li>
+<li>A run that produces no report file because of a setup or timeout error must still emit a structured error object on stderr in the same schema as the report (with <code>phase: "setup_error" | "timeout"</code> and an empty findings list). CI can rely on the schema.</li>
+</ul>
+<h2 id="authorization-model-api-level">Authorization model (API-level)</h2>
+<p>The authorization spec is the publisher's declaration of what materialization is allowed during replay. The plan does not pin the file format — that is an implementer choice — but the <em>model</em> below is binding.</p>
+<p>An authorization spec consists of:</p>
+<ol>
+<li><strong>Bufferdir authorizations</strong> — the companion bufferdir at <code>--bufferdir</code> is authorized by being passed. Any checksum whose buffer is present in it may be materialized.</li>
+<li><strong>Fingertip authorizations</strong> — a (possibly empty) set of checksums that are permitted to be re-derived by re-executing their producer. Each fingertip authorization implies the producer's <code>tf_checksum</code> must be cached in the artifact; if it is not, the authorization is <em>incoherent</em> (see findings).</li>
+<li><strong>Driver-cache knob</strong> — the <code>--driver-cache</code> flag (or its equivalent in the spec). Affects which drivers may serve from their cached <code>result_checksum</code>.</li>
+</ol>
+<p>Any buffer materialization during replay must trace to <strong>one</strong> of these authorizations. Anything else is a finding.</p>
+<p>The implementer is free to support additional authorization mechanisms in future versions — the contract is that each must be <strong>explicit, auditable, and verifiable</strong>, not the specific list above.</p>
+<h2 id="the-findings-model">The findings model</h2>
+<p>A replay run accumulates findings into the report; the run does not abort on the first one (unless <code>--timeout</code> fires). The finding kinds below are normative — same names, same data fields — across CLI and Python API. Adding finding kinds requires a schema version bump.</p>
+<table>
+<thead>
+<tr>
+<th>Finding kind (stable tag)</th>
+<th>Triggered by</th>
+<th>Required fields</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>unexpected_miss</code></td>
+<td>non-driver <code>tf_checksum</code> lookup misses</td>
+<td><code>tf_checksum</code>, <code>script_position</code> (best-effort), <code>driver_context</code> (parent driver <code>tf_checksum</code> chain, possibly empty), <code>diff</code> (a <a href="usage-patterns.html#pattern-2-cache-miss-diagnosis-why-not">Pattern 2</a> <code>why-not</code>-shaped object)</td>
+</tr>
+<tr>
+<td><code>unauthorized_materialization</code></td>
+<td>buffer fetch could not be served from any authorized source</td>
+<td><code>checksum</code>, <code>requested_by</code> (the <code>tf_checksum</code> that asked, if known), <code>script_position</code>, <code>available_authorizations</code> (a brief summary of which authorizations were considered and why each rejected it)</td>
+</tr>
+<tr>
+<td><code>unauthorized_fingertip</code></td>
+<td>a consumer would have triggered input fingertipping on a checksum not authorized for fingertipping</td>
+<td><code>consumer_tf_checksum</code>, <code>missing_input_checksum</code>, <code>producer_tf_checksum</code>, <code>script_position</code></td>
+</tr>
+<tr>
+<td><code>authorized_materialization_unsatisfied_dependency</code></td>
+<td>an authorized materialization cannot complete because a transitive dependency is itself not authorized or unavailable</td>
+<td><code>authorized_target</code> (checksum), <code>unsatisfied_dependency</code> (checksum), <code>chain</code> (the transitive trail), <code>script_position</code></td>
+</tr>
+<tr>
+<td><code>remote_delegation_observed</code></td>
+<td>execution dispatched to a remote backend (jobserver, daskserver, remote hashserver) during replay</td>
+<td><code>backend</code> (named tag), <code>dispatched_work</code> (what was sent), <code>script_position</code></td>
+</tr>
+<tr>
+<td><code>unexpected_heavy_compute</code></td>
+<td>a non-driver transformation ran (or a driver ran for an unexpectedly long time)</td>
+<td><code>tf_checksum</code>, <code>was_driver</code> (bool), <code>observed_cost_ms</code>, <code>correlated_miss</code> (the <code>unexpected_miss</code> finding id if applicable, else null)</td>
+</tr>
+<tr>
+<td><code>irreproducible_only_hit</code></td>
+<td>the only cache entry for the <code>tf_checksum</code> is in <code>IrreproducibleTransformation</code></td>
+<td><code>tf_checksum</code>, <code>row_count</code>, <code>result_checksums</code>, <code>script_position</code></td>
+</tr>
+<tr>
+<td><code>authorization_incoherent</code></td>
+<td>startup or run-time discovery: an authorization names a checksum whose producer is not in the cache, or a self-contradictory knob configuration</td>
+<td><code>authorization</code> (what the authorization said), <code>reason</code> (short tag)</td>
+</tr>
+</tbody>
+</table>
+<p>A finding is <code>{ "kind": "&lt;tag&gt;", "id": "&lt;stable hash of fields&gt;", ...required fields..., "context": { ... extras } }</code>. The <code>id</code> is computed from the kind plus the required fields so that two replays produce stable, comparable finding ids; <code>context</code> is extras (timing, internal annotations) that do <em>not</em> contribute to <code>id</code>.</p>
+<h3 id="finding-to-finding-cross-references">Finding-to-finding cross-references</h3>
+<p><code>unexpected_heavy_compute</code> may reference an <code>unexpected_miss</code> by id (a non-driver that missed will usually have both). This is the only cross-reference required in v1. Other kinds are independent.</p>
+<h2 id="report-schema">Report schema</h2>
+<pre><code class="language-jsonc">{
+  &quot;tool&quot;: &quot;replay&quot;,
+  &quot;version&quot;: &quot;&lt;semver&gt;&quot;,                 // schema version
+  &quot;artifact&quot;: {
+    &quot;seamless_db&quot;: &quot;&lt;path&gt;&quot;,
+    &quot;seamless_db_checksum&quot;: &quot;&lt;hex&gt;&quot;,     // pre-run checksum
+    &quot;bufferdir&quot;: &quot;&lt;path&gt;&quot;,
+    &quot;bufferdir_checksum&quot;: &quot;&lt;hex&gt;&quot;        // a deterministic digest of the bufferdir's contents; e.g., sorted manifest hash
+  },
+  &quot;authorization_summary&quot;: { ... },      // shape mirrors the chosen authorization model
+  &quot;config&quot;: {
+    &quot;synthesized&quot;: &lt;bool&gt;,
+    &quot;endpoints_resolved&quot;: { ... },       // what config the harness actually used; informational
+    &quot;driver_cache&quot;: &quot;bypass&quot; | &quot;enabled&quot;
+  },
+  &quot;outcome&quot;: {
+    &quot;phase&quot;: &quot;setup_error&quot; | &quot;running&quot; | &quot;completed&quot; | &quot;script_error&quot; | &quot;timeout&quot;,
+    &quot;wall_ms&quot;: &lt;int&gt;,
+    &quot;script_exit_code&quot;: &lt;int&gt;|null
+  },
+  &quot;counts&quot;: {
+    &quot;drivers_executed&quot;: &lt;int&gt;,
+    &quot;drivers_short_circuited&quot;: &lt;int&gt;,    // 0 when --driver-cache bypass
+    &quot;transformations_submitted&quot;: &lt;int&gt;,
+    &quot;cache_hits&quot;: &lt;int&gt;,
+    &quot;buffers_materialized_from_bufferdir&quot;: &lt;int&gt;,
+    &quot;buffers_materialized_via_authorized_fingertip&quot;: &lt;int&gt;,
+    &quot;findings_by_kind&quot;: { &quot;&lt;tag&gt;&quot;: &lt;int&gt;, ... }
+  },
+  &quot;findings&quot;: [ ... ],                   // sorted deterministically; see below
+  &quot;post_run_assertions&quot;: {
+    &quot;seamless_db_unchanged&quot;: &lt;bool&gt;,
+    &quot;bufferdir_unchanged&quot;: &lt;bool&gt;
+  }
+}
+</code></pre>
+<p>A schema validator (<code>seamless-share/replay/schema.json</code>) is part of the deliverable.</p>
+<h3 id="determinism-and-machine-readability">Determinism and machine-readability</h3>
+<p>The report's <code>findings</code> array is sorted by a tuple of stable keys: <code>(script_position or "", kind, tf_checksum or "", finding.id)</code>. Per-finding internal lists (e.g., <code>chain</code>, <code>result_checksums</code>) are sorted by their own stable order (lexicographic on hex).</p>
+<p>This guarantees: two replays of the same artifact + script + authorization + config produce a byte-identical <code>findings</code> array. CI diffs can distinguish "real change" from "concurrency noise". Tests assert byte-equality across re-runs (modulo timing fields, which live under <code>context</code> and <code>wall_ms</code> and are excluded from byte-equality checks).</p>
+<h2 id="python-api-shape">Python API shape</h2>
+<pre><code class="language-python">from seamless_share.replay import replay, ReplayConfig, AuthorizationSpec
+
+report = replay(
+    script=&quot;path/to/client.py&quot;,
+    script_args=[&quot;--input&quot;, &quot;foo&quot;],
+    artifact=&quot;path/to/crystallized/seamless.db&quot;,
+    bufferdir=&quot;path/to/crystallized/buffers/&quot;,
+    authorization=AuthorizationSpec.from_file(&quot;auth.json&quot;),
+    driver_cache=&quot;bypass&quot;,
+    config=ReplayConfig.synthesized(),    # or .from_file(path) or .inherit()
+    timeout=None,
+    allow_remote=False,
+)
+# report is a typed dataclass mirroring the JSON schema
+assert all(f.id for f in report.findings)
+</code></pre>
+<p>Final naming is an implementer choice; tests pin behavior, not symbol names.</p>
+<h2 id="behavioral-contracts-must-hold">Behavioral contracts (must hold)</h2>
+<p>These are the API-level acceptance criteria, mirroring Pattern 3's "Must hold".</p>
+<ol>
+<li><strong>Read-only on the artifact.</strong> Before-and-after checksums of the <code>seamless.db</code> and the bufferdir match exactly. The tool has no code path that writes to either. This is a structural property, enforced by a static check and a runtime assertion.</li>
+<li><strong>Findings accumulate, not abort.</strong> A run does not abort on the first finding. A clean run produces zero findings; a run with multiple independent problems produces multiple findings.</li>
+<li><strong>Driver default is bypass.</strong> Without <code>--driver-cache enabled</code>, drivers identified by the Seamless definition-time marker re-execute even when their <code>result_checksum</code> is cached. Non-drivers do not.</li>
+<li><strong>Every materialization traces to an authorization.</strong> Every byte materialized during the run is recorded as having traced to a specific authorization (bufferdir presence, authorized fingertip, ...). Anything else produces an <code>unauthorized_materialization</code> finding. The trace is auditable in the report (per-checksum, not just per-count).</li>
+<li><strong>Each <code>unexpected_miss</code> carries a <code>why-not</code>-shaped diff.</strong> The diff field of an <code>unexpected_miss</code> finding is structurally identical to a <a href="usage-patterns.html#pattern-2-cache-miss-diagnosis-why-not">Pattern 2</a> <code>why-not</code> result (lookup_state, candidate, diff). The harness invokes the <code>why-not</code> primitive; it does not invent its own diff logic.</li>
+<li><strong>Isolated config by default.</strong> Without <code>--inherit-config</code>, the run uses a synthesized config that does <em>not</em> resolve to the publisher's normal remote endpoints. The report's <code>config.endpoints_resolved</code> reflects what was actually used; tests can assert no remote endpoints appear in this field.</li>
+<li><strong>Remote delegation is always a finding.</strong> Whether <code>--allow-remote</code> is set or not, any backend dispatch produces a <code>remote_delegation_observed</code> finding. <code>--allow-remote</code> only governs whether the harness preemptively refuses, not whether it reports.</li>
+<li><strong>Determinism.</strong> Two runs with the same script, artifact, authorization, config, and <code>--driver-cache</code> flag produce byte-identical reports modulo timing fields.</li>
+<li><strong><code>Irreproducible-only hit</code> is surfaced, not refused.</strong> A <code>tf_checksum</code> reachable only via <code>IrreproducibleTransformation</code> produces a finding when the script touches it; the run continues so the publisher can see all such cases in one pass.</li>
+<li><strong>Heavy-driver mismatches surface as ordinary findings.</strong> A driver that locally re-executes and needs bulk-input materialization that is not authorized produces <code>unauthorized_materialization</code> / <code>unauthorized_fingertip</code> / <code>authorized_materialization_unsatisfied_dependency</code> findings — with the driver's <code>tf_checksum</code> in <code>driver_context</code>. No new finding kind for "heavy driver"; existing kinds compose.</li>
+</ol>
+<h2 id="must-reject-api-level">Must reject (API-level)</h2>
+<ul>
+<li><code>replay</code> invoked without <code>--artifact</code> or without <code>--bufferdir</code> — exit <code>2</code>.</li>
+<li><code>replay</code> invoked with a <code>--script</code> path that does not exist or is not readable — exit <code>2</code>.</li>
+<li><code>replay</code> invoked with an authorization spec that fails to parse — exit <code>3</code>.</li>
+<li><code>--driver-cache</code> with a value other than <code>bypass</code> or <code>enabled</code> — exit <code>2</code>.</li>
+<li>Any flag combination that would silently write to the artifact — must not be expressible at the CLI or in the Python API.</li>
+</ul>
+<h2 id="test-plan">Test plan</h2>
+<p>Three tiers, mirroring the why-not plan's structure:</p>
+<ol>
+<li><strong>Schema/contract tests</strong> — assert the report shape and the cross-cutting invariants.</li>
+<li><strong>Scenario tests</strong> — concrete replay situations from Pattern 3's failure modes.</li>
+<li><strong>Property/regression tests</strong> — read-only, determinism, exit-code matrix, isolation.</li>
+</ol>
+<h3 id="test-fixtures">Test fixtures</h3>
+<p>Each fixture is a triple of <code>(crystallized seamless.db, companion bufferdir, client script)</code>, optionally with an <code>authorization spec</code>. Fixtures are generated by <code>tests/fixtures/replay/*.py</code> scripts that materialize a fresh triple into a temp directory.</p>
+<p>Required fixtures (minimum set; numbering used in scenarios below):</p>
+<ul>
+<li><code>R1</code> — trivial happy path: a script that computes one cached transformation; bufferdir contains exactly what is needed.</li>
+<li><code>R2</code> — <code>R1</code> with the script edited so the transformation's <code>tf_checksum</code> no longer matches what is cached (parameter added). Used for <code>unexpected_miss</code> testing.</li>
+<li><code>R3</code> — a script using a driver that returns a deep checksum and produces three sub-transformations. All sub-transformations are cached; bufferdir contains their outputs.</li>
+<li><code>R4</code> — <code>R3</code> with one sub-transformation's <code>tf_checksum</code> perturbed to simulate cache drift.</li>
+<li><code>R5</code> — nested drivers, depth 3, all leaves cached.</li>
+<li><code>R6</code> — a script that requires a buffer not in the bufferdir and not authorized for fingertipping.</li>
+<li><code>R7</code> — <code>R6</code> with a fingertip authorization for that checksum; the producer is cached.</li>
+<li><code>R8</code> — <code>R7</code> but the producer's own input is itself absent and unauthorized — triggers <code>authorized_materialization_unsatisfied_dependency</code>.</li>
+<li><code>R9</code> — a script that materializes via remote hashserver in a synthesized config; replay should report <code>remote_delegation_observed</code> but only if the config inadvertently includes a remote — i.e., this fixture is a regression test for the isolated-config default. (See P-tests.)</li>
+<li><code>R10</code> — an <code>IrreproducibleTransformation</code> row reachable from the script.</li>
+<li><code>R11</code> — a heavy driver that needs to materialize a bulk input present in the bufferdir; happy path under <code>--driver-cache bypass</code>.</li>
+<li><code>R12</code> — <code>R11</code> but bulk input is <em>not</em> in the bufferdir; expected to produce <code>unauthorized_materialization</code> with driver context.</li>
+<li><code>R13</code> — a script that triggers multiple independent issues (e.g., one unauthorized fingertip + one unexpected miss in unrelated branches). Used to assert findings accumulate.</li>
+<li><code>R14</code> — empty findings, but with intentionally inflated wall-clock cost (a sleep or busy-loop in a transformation that <em>did</em> cache). Used to test that <code>unexpected_heavy_compute</code> is calibrated to <em>compute that ran</em>, not to wall-clock alone — i.e., a cached hit that took long for unrelated reasons must not produce this finding.</li>
+<li><code>R15</code> — a script that races (parallel sub-transformations); used for determinism testing.</li>
+<li><code>R16</code> — an authorization spec that names a checksum whose producer is not in the artifact. Used for <code>authorization_incoherent</code>.</li>
+<li><code>R17</code> — the same client script and artifact, but run twice with <code>--driver-cache bypass</code> vs <code>--driver-cache enabled</code>. Used for the driver-knob assertions.</li>
+</ul>
+<h3 id="cross-cutting-schemacontract-tests">Cross-cutting schema/contract tests</h3>
+<p>Numbered against Pattern 3's <a href="usage-patterns.html#must-test-2">Must test</a> list 39–54; this plan refines.</p>
+<ul>
+<li><strong>C1 (≈ Pattern 3 test 39).</strong> Clean replay: <code>R1</code> produces zero findings; report's <code>outcome.phase == "completed"</code>; <code>script_exit_code == 0</code>; <code>counts.cache_hits &gt;= 1</code>; post-run assertions both true.</li>
+<li><strong>C2 (≈ 40).</strong> Unexpected miss with diff: <code>R2</code> produces exactly one <code>unexpected_miss</code> finding. The finding's <code>diff</code> is a <code>why-not</code>-shaped object, <code>diff.lookup_state.state == "NOT_PRESENT"</code>, <code>diff.candidate != null</code>, <code>diff.identity_relevant == true</code>. Asserts the diff comes from Pattern 2's primitive (the schemas match exactly).</li>
+<li><strong>C3 (≈ 41).</strong> Driver may miss; sub-transformations may not: under default <code>--driver-cache bypass</code>, <code>R3</code> produces zero findings (the driver executes; all subs hit). <code>R4</code> produces one <code>unexpected_miss</code> attributed to the sub-transformation with <code>driver_context</code> listing <code>R3</code>'s driver <code>tf_checksum</code>.</li>
+<li><strong>C4 (≈ 42).</strong> Nested drivers: <code>R5</code> produces zero findings; each driver level executes; <code>counts.drivers_executed == 3</code>; <code>counts.cache_hits == &lt;number of leaves&gt;</code>.</li>
+<li><strong>C5 (≈ 43).</strong> Unauthorized fingertip surfaced: <code>R6</code> (no authorization) produces one <code>unauthorized_fingertip</code> or one <code>unauthorized_materialization</code> finding (the kind depends on whether the consumer was going to fingertip or just materialize — the test accepts either, but asserts <em>exactly one</em> of these is present and that no silent re-execution happened — <code>counts.transformations_submitted</code> is unchanged from the no-fingertip baseline).</li>
+<li><strong>C6 (≈ 44).</strong> Authorized fingertip succeeds: <code>R7</code> produces zero findings of the authorization-failure kinds. <code>counts.buffers_materialized_via_authorized_fingertip &gt;= 1</code>.</li>
+<li><strong>C7 (≈ 45).</strong> Authorized materialization with unsatisfied dependency: <code>R8</code> produces one <code>authorized_materialization_unsatisfied_dependency</code> finding; its <code>chain</code> lists the transitive trail; the run does not recursively cascade into more re-executions (<code>counts.transformations_submitted</code> is bounded — implementation-defined cap, but tested as ≤ N for fixture-known N).</li>
+<li><strong>C8 (≈ 46).</strong> Unauthorized materialization surfaced: a fixture where a script needs a byte for which no authorization applies produces an <code>unauthorized_materialization</code> finding naming the checksum and <code>script_position</code>; no remote fetch is attempted.</li>
+<li><strong>C9 (≈ 47).</strong> Iterative convergence: start from <code>R6</code> with empty authorization; resolve the finding by adding the buffer to the bufferdir; re-run; new run has zero findings. Test asserts both runs ran cleanly and the report shows the change.</li>
+<li><strong>C10 (≈ 48).</strong> Irreproducible-only hit: <code>R10</code> produces one <code>irreproducible_only_hit</code> finding with <code>row_count &gt;= 1</code> and a non-empty <code>result_checksums</code>.</li>
+<li><strong>C11 (≈ 49).</strong> Read-only assertion: before/after checksums of <code>seamless.db</code> and bufferdir are byte-identical for every test in this suite. <code>post_run_assertions.seamless_db_unchanged == true</code> and <code>bufferdir_unchanged == true</code>.</li>
+<li><strong>C12 (≈ 50).</strong> Driver cache bypass by default: <code>R3</code> under default <code>--driver-cache bypass</code>: the driver re-executes even though its <code>result_checksum</code> is cached. <code>counts.drivers_executed &gt;= 1</code>, <code>counts.drivers_short_circuited == 0</code>.</li>
+<li><strong>C13 (≈ 51).</strong> Driver caching knob: <code>R3</code> under <code>--driver-cache enabled</code>: the driver short-circuits on its cached entry; sub-transformations are <em>not</em> submitted. <code>counts.drivers_short_circuited &gt;= 1</code>, <code>counts.transformations_submitted &lt; default-mode count</code>. Assert the knob's effect is visible in the report.</li>
+<li><strong>C14 (≈ 52).</strong> Remote delegation observed: a fixture where a remote backend dispatch is forced (by injecting a remote endpoint into the synthesized config, only for this test) produces a <code>remote_delegation_observed</code> finding. Test does not assert whether work completed; it asserts visibility.</li>
+<li><strong>C15 (≈ 53).</strong> Execution-time visibility: report includes wall-clock and per-transformation timing under <code>context</code>. Test asserts presence of timing data, not a fixed budget.</li>
+<li><strong>C16 (≈ 54).</strong> Multiple findings in one run: <code>R13</code> produces ≥ 2 findings of different kinds in one run; tool does not abort at the first.</li>
+</ul>
+<h3 id="scenario-tests">Scenario tests</h3>
+<p>These bind specific Pattern 3 nuances to assertions on the report.</p>
+<ul>
+<li><strong>S1 (heavy driver, happy path).</strong> <code>R11</code> produces zero findings under <code>--driver-cache bypass</code>. <code>counts.buffers_materialized_from_bufferdir</code> includes the bulk input.</li>
+<li><strong>S2 (heavy driver, missing bulk input).</strong> <code>R12</code> produces an <code>unauthorized_materialization</code> finding whose <code>requested_by</code> is the driver's <code>tf_checksum</code> (or its child as appropriate) and whose <code>driver_context</code> lists the driver. No new finding kind required.</li>
+<li><strong>S3 (heavy driver with driver caching).</strong> <code>R11</code> under <code>--driver-cache enabled</code> short-circuits the driver. <code>counts.drivers_short_circuited &gt;= 1</code>. No materialization of the bulk input occurs (<code>counts.buffers_materialized_from_bufferdir</code> does <em>not</em> include it). This is the knob's intended trade-off.</li>
+<li><strong>S4 (authorization incoherent at startup).</strong> <code>R16</code> produces an <code>authorization_incoherent</code> finding. The publisher's chosen implementation may also refuse to start; if it does, the report still contains the finding and exits via the <code>phase: "setup_error"</code> path with exit <code>3</code>. Test accepts either shape (runtime or startup) but asserts the finding is present in the report.</li>
+<li><strong>S5 (heavy compute without miss).</strong> <code>R14</code> (cached hit that wall-clock-took-long) produces zero <code>unexpected_heavy_compute</code> findings. Wall-clock alone must not trigger the finding; <em>actual recomputation</em> must.</li>
+<li><strong>S6 (driver determinism mask).</strong> A fixture (call it <code>R18</code>) where a driver's body depends on an environment variable, so its sub-transformations differ across runs. Run twice with the env var changed between runs. Second run produces <code>unexpected_miss</code> findings on the sub-transformations whose <code>tf_checksum</code>s drifted. Test asserts the findings reference the driver's <code>tf_checksum</code> in <code>driver_context</code> — providing the context Pattern 3 names as the diagnostic surface for driver non-determinism. The harness is not expected to diagnose the cause; the test asserts the <em>context is reachable</em> in the report.</li>
+<li><strong>S7 (config isolation).</strong> With default <code>--config</code> (synthesized), assert <code>config.endpoints_resolved</code> contains only <code>--artifact</code> and <code>--bufferdir</code> — no remote endpoints. Run the same fixture with <code>--inherit-config</code> under a manipulated user config that includes a remote; assert the report's <code>config.endpoints_resolved</code> now lists the remote and the report flags this prominently (e.g., a <code>config_inherited</code> warning at the top level).</li>
+<li><strong>S8 (allow-remote does not suppress finding).</strong> Force a remote dispatch (as in C14) with <code>--allow-remote</code>; assert the <code>remote_delegation_observed</code> finding is still present.</li>
+<li><strong>S9 (script crash).</strong> A script that raises a Python exception during a non-Seamless code path produces <code>outcome.phase == "script_error"</code>, <code>outcome.script_exit_code != 0</code>, exit <code>4</code>. Findings collected up to the crash are still in the report.</li>
+<li><strong>S10 (timeout).</strong> A script wrapped to hang past <code>--timeout</code>; report is produced with <code>outcome.phase == "timeout"</code>, exit <code>6</code>. Read-only assertions still hold.</li>
+</ul>
+<h3 id="property-and-regression-tests">Property and regression tests</h3>
+<ul>
+<li><strong>P1 (read-only invariance).</strong> Hash <code>seamless.db</code> and every byte-file in the bufferdir before each test; assert unchanged after. Run across a randomized sample of 20+ scenarios.</li>
+<li><strong>P2 (determinism).</strong> Run each scenario twice; assert report <code>findings</code> arrays are byte-identical and <code>counts</code> are equal. Timing fields are excluded from the comparison.</li>
+<li><strong>P3 (no-write-path static check).</strong> Grep / AST check: assert no symbol importable from <code>seamless_share.replay</code> calls a known write API on <code>seamless.db</code> / hashserver pointed at the artifact paths. Wired into CI.</li>
+<li><strong>P4 (exit-code matrix).</strong> Parametrize across <code>{0, 2, 3, 4, 5, 6}</code> and <code>--fail-on</code> variants; for each, construct the minimal invocation that should produce it; assert the exit code.</li>
+<li><strong>P5 (CLI ↔ Python API equivalence).</strong> For each scenario fixture, run the CLI with <code>--report-format json</code> and the Python API; assert structured outputs are equal modulo timing.</li>
+<li><strong>P6 (schema validity).</strong> Validate every report against <code>seamless-share/replay/schema.json</code>. Schema is public contract; bumps require version bump.</li>
+<li><strong>P7 (<code>--driver-cache</code> knob is purely about drivers).</strong> Diff the two reports from <code>R17</code> (<code>bypass</code> vs <code>enabled</code>). Differences must be confined to: <code>counts.drivers_executed</code>, <code>counts.drivers_short_circuited</code>, <code>counts.transformations_submitted</code>, and the set of findings (which may shrink under <code>enabled</code> because uncached sub-transformations stop being visible). Non-driver-related fields are unchanged.</li>
+<li><strong>P8 (<code>--allow-remote</code> is purely about preemptive refusal).</strong> Compare runs with and without <code>--allow-remote</code> on a fixture that <em>doesn't</em> trigger remote dispatch. Reports are byte-identical modulo timing.</li>
+<li><strong>P9 (finding <code>id</code> stability).</strong> Compute findings' <code>id</code>s across two runs; identical findings produce identical ids. A change in <code>required fields</code> produces a different <code>id</code>. Tests pin a few example ids to a regression baseline.</li>
+<li><strong>P10 (<code>why-not</code> schema compatibility).</strong> The <code>diff</code> field inside <code>unexpected_miss</code> findings validates against the <code>why-not</code> schema. If the <code>why-not</code> schema is bumped in a breaking way, this test fails — forcing a coordinated bump.</li>
+<li><strong>P11 (large run resilience).</strong> A synthesized fixture with 500+ transformations and 100+ findings produces a complete, sorted report without truncation or memory blowup. (Catches accidental pagination, log spam, or O(n²) sorting.)</li>
+<li><strong>P12 (concurrency caveat).</strong> Pattern 3 declares concurrency out of scope. A test asserts the tool <em>documents</em> this (the <code>--help</code> output contains the caveat). No correctness assertion under concurrent invocation.</li>
+</ul>
+<h3 id="tests-that-must-not-exist">Tests that must NOT exist</h3>
+<p>The plan is also a list of things implementers should resist adding:</p>
+<ul>
+<li>Tests that assert a fixed wall-clock budget. Pattern 3 explicitly says execution time is <em>observational, not a gating threshold</em>. A test that fails when replay takes &gt; N seconds will be brittle and will be deleted.</li>
+<li>Tests that assert the harness fixes findings automatically (silently adds to a whitelist, fetches a missing buffer, etc.).</li>
+<li>Tests that assert remote dispatch is silently allowed under <code>--allow-remote</code>. It is <em>always</em> a finding.</li>
+<li>Tests that assert any modification to the artifact under test.</li>
+<li>Tests that depend on the iteration order of parallel sub-transformations (the report's determinism contract makes order stable, but assertions should target the stable shape, not the underlying scheduling).</li>
+<li>Tests that assert cascade diagnosis of <code>unexpected_miss</code> findings beyond one <code>why-not</code> step.</li>
+</ul>
+<h2 id="failure-shapes-the-test-suite-must-cover">Failure shapes the test suite must cover</h2>
+<p>Beyond the matrix above, these failure shapes must each have a dedicated test:</p>
+<ol>
+<li><strong>Artifact path missing or unreadable</strong> — exit <code>3</code>; report on stderr in the standard schema with <code>phase: "setup_error"</code> and a tag distinguishing missing vs unreadable.</li>
+<li><strong>Bufferdir path missing</strong> — exit <code>3</code> with a distinct tag.</li>
+<li><strong>Authorization spec malformed</strong> — exit <code>3</code>; report identifies the malformation.</li>
+<li><strong>Authorization spec coherent at file level but semantically incoherent</strong> (<code>R16</code>) — <code>authorization_incoherent</code> finding (see S4).</li>
+<li><strong>Script crashes mid-replay</strong> — <code>R</code>-fixture variant: <code>phase: "script_error"</code>, exit <code>4</code>, partial findings preserved.</li>
+<li><strong>Timeout fires</strong> — exit <code>6</code>, <code>phase: "timeout"</code>, partial findings preserved.</li>
+<li><strong>Driver re-execution succeeds but its inputs require unauthorized materialization</strong> (<code>R12</code>) — <code>unauthorized_materialization</code> finding with driver context (already covered by S2; called out here as a deliberate failure shape).</li>
+<li><strong>The artifact contains a <code>Transformation</code> row whose <code>result_checksum</code> cannot be materialized and whose producer is in the artifact but its inputs are unauthorized for fingertipping</strong> — should produce <code>authorized_materialization_unsatisfied_dependency</code> (<code>R8</code> / C7).</li>
+<li><strong>A driver runs to a <code>result_checksum</code> that is <em>not</em> the one previously cached</strong> — surfaces as the driver's output disagreement; the test fixture establishes whether this is treated as <code>unexpected_miss</code> on the driver or as something else (implementer decides; the test pins their choice and asserts it is visible in the report).</li>
+</ol>
+<h2 id="composition-with-prior-patterns">Composition with prior patterns</h2>
+<ul>
+<li><strong>Reads Pattern 1's output.</strong> The harness consumes a crystallized artifact as-is. No assumption that Pattern 1's tooling exists yet — the fixture generators are hand-rolled. When Pattern 1 lands, an integration test runs Pattern 1 to produce the artifact, then replay against it (<code>I1</code>).</li>
+<li><strong>Uses Pattern 2's primitive.</strong> Each <code>unexpected_miss</code> finding's <code>diff</code> is produced by calling the <code>why-not</code> Python API directly. The harness must not duplicate diff logic; if <code>why-not</code> is not yet implemented, the finding's <code>diff</code> field is <code>null</code> and the test suite is gated until <code>why-not</code> exists. Acceptance criterion (5) reflects this gate.</li>
+</ul>
+<h3 id="integration-tests-when-pattern-1-and-pattern-2-are-also-available">Integration tests (when Pattern 1 and Pattern 2 are also available)</h3>
+<ul>
+<li><strong>I1.</strong> Run Pattern 1 (<code>crystallize</code>) on a synthetic project; run replay on its output; expect zero findings.</li>
+<li><strong>I2.</strong> Run Pattern 1, then deliberately edit the client script to introduce one cache miss; run replay; expect exactly one <code>unexpected_miss</code> whose <code>diff</code> is a usable <code>why-not</code> output that, when fed back through <code>why-not</code> independently, produces the same diff.</li>
+</ul>
+<h2 id="documentation-deliverables-alongside-the-code">Documentation deliverables alongside the code</h2>
+<ul>
+<li><code>seamless-share/replay/README.md</code> — user-facing quickstart, links back to <a href="usage-patterns.html#pattern-3-replay-mode-verification-of-a-crystallized-artifact">Pattern 3</a>.</li>
+<li><code>seamless-share/replay/schema.json</code> — JSON Schema for the report.</li>
+<li><code>seamless-share/replay/CHANGELOG.md</code> — semver, schema version bumps, finding-kind additions.</li>
+<li><code>seamless-share/replay/findings.md</code> — the canonical list of finding kinds and their required fields. Drives the schema and is referenced by tests.</li>
+<li>Man-page-style <code>--help</code> text; <code>--help</code> output is itself a test fixture (regenerable, byte-stable).</li>
+</ul>
+<h2 id="acceptance-criteria-for-v1">Acceptance criteria for v1</h2>
+<p>The tool is ready for v1 cut when:</p>
+<ol>
+<li>All tests above pass, with Pattern 2's <code>why-not</code> available so <code>unexpected_miss</code> findings have populated diff bodies.</li>
+<li>The schema validator (P6) is wired into CI.</li>
+<li>The static no-write-path check (P3) is wired into CI.</li>
+<li>A real-world smoke test exists: a small Seamless project's crystallized artifact runs through replay with both <code>--driver-cache bypass</code> and <code>--driver-cache enabled</code>, and the publisher confirms findings (or absence of findings) match expectations.</li>
+<li>The schema and CLI are reviewed against <a href="usage-patterns.html#pattern-3-replay-mode-verification-of-a-crystallized-artifact">Pattern 3</a> line-by-line; any deviation is either fixed or recorded as an intentional refinement in this file.</li>
+<li>The replay-mode runtime hooks in Seamless itself are merged and documented in the relevant contract under <a href="seamless/docs/agent/contracts/">seamless/docs/agent/contracts/</a>. Without the Seamless-side mode, the harness cannot enforce the cache discipline that Pattern 3 requires.</li>
+</ol>
+              
+            </div>
+          </div><footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+    
+    
+  </span>
+</div>
+    <script src="../../../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "../../..";</script>
+    <script src="../../../js/theme_extra.js"></script>
+    <script src="../../../js/theme.js"></script>
+      <script src="../../../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>

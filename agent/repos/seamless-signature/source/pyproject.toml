@@ -1,0 +1,36 @@
+[build-system]
+requires = ["setuptools>=69", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "seamless-signature"
+version = "0.1.0"
+description = "YAML signature schemas and C header generation for Seamless kernels"
+readme = "README.md"
+requires-python = ">=3.10"
+license = "MIT"
+authors = [{name = "Sjoerd de Vries"}]
+dependencies = [
+    "PyYAML",
+]
+keywords = ["seamless", "signature", "schema", "c"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Science/Research",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Operating System :: OS Independent",
+    "Topic :: Scientific/Engineering",
+    "Topic :: Software Development :: Libraries",
+]
+
+[project.urls]
+Homepage = "https://github.com/sjdv1982/seamless"
+Repository = "https://github.com/sjdv1982/seamless-signature"
+Issues = "https://github.com/sjdv1982/seamless/issues"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["seamless_signature*"]
+exclude = ["tests*"]

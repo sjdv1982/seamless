@@ -55,6 +55,28 @@
               <ul>
                   <li class="toctree-l1"><a class="reference internal" href="../../contracts/identity-and-caching.html">Identity and Caching</a>
                   </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../contracts/celltypes-and-conversion.html">Celltypes, Null, and Conversion</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../contracts/hashtype.html">HashType</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../contracts/deep-celltypes.html">Deep Celltypes</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../contracts/expressions.html">Expressions</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../contracts/cells.html">Cells</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../contracts/pins.html">Pins</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../contracts/workflow-context.html">Workflow Context</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../contracts/node-state-lifecycle.html">Node State Lifecycle</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../contracts/attachments.html">Attachments</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../contracts/mounts.html">File Mounts</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../contracts/cancellation.html">Cancellation</a>
+                  </li>
                   <li class="toctree-l1"><a class="reference internal" href="../../contracts/direct-delayed-and-transformation.html">direct/delayed/Transformation</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../../contracts/modules-and-closures.html">Modules and Closures</a>
@@ -77,6 +99,8 @@
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../../contracts/compiled-transformers.html">Compiled Transformers</a>
                   </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../contracts/compiled-pins.html">Compiled Pins</a>
+                  </li>
                   <li class="toctree-l1"><a class="reference internal" href="../../contracts/seamless-signature-schema.html">seamless-signature Schema</a>
                   </li>
               </ul>
@@ -98,6 +122,8 @@
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#bufferdecref">Buffer.decref</a>
     </li>
+    <li class="toctree-l2"><a class="reference internal" href="#bufferdecref_refholder">Buffer.decref_refholder</a>
+    </li>
     <li class="toctree-l2"><a class="reference internal" href="#bufferfrom_async">Buffer.from_async</a>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#bufferget_checksum">Buffer.get_checksum</a>
@@ -110,11 +136,17 @@
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#bufferincref">Buffer.incref</a>
     </li>
+    <li class="toctree-l2"><a class="reference internal" href="#bufferincref_refholder">Buffer.incref_refholder</a>
+    </li>
     <li class="toctree-l2"><a class="reference internal" href="#bufferload">Buffer.load</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#buffermark_scratch">Buffer.mark_scratch</a>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#buffersave">Buffer.save</a>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#buffertempref">Buffer.tempref</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#buffertransfer_write">Buffer.transfer_write</a>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#bufferwrite">Buffer.write</a>
     </li>
@@ -191,7 +223,13 @@
 <li>kind: <code>method</code></li>
 <li>signature: <code>decref(self)</code></li>
 </ul>
-<p>Decrement normal refcount in the buffer cache. If no refs remain (and no tempref), may be uncached.</p>
+<p>Decrement a normal cache ref and return whether one was held.</p>
+<h2 id="bufferdecref_refholder"><code>Buffer.decref_refholder</code></h2>
+<ul>
+<li>kind: <code>method</code></li>
+<li>signature: <code>decref_refholder(self)</code></li>
+</ul>
+<p>Release an internal lifecycle reference for this buffer's checksum.</p>
 <h2 id="bufferfrom_async"><code>Buffer.from_async</code></h2>
 <ul>
 <li>kind: <code>method</code></li>
@@ -232,12 +270,25 @@ It must not be modified.</p>
 <li>signature: <code>incref(self)</code></li>
 </ul>
 <p>Increment normal refcount in the buffer cache.</p>
+<h2 id="bufferincref_refholder"><code>Buffer.incref_refholder</code></h2>
+<ul>
+<li>kind: <code>method</code></li>
+<li>signature: <code>incref_refholder(self, *, scratch)</code></li>
+</ul>
+<p>Acquire an internal lifecycle reference for this buffer's checksum.</p>
 <h2 id="bufferload"><code>Buffer.load</code></h2>
 <ul>
 <li>kind: <code>method</code></li>
 <li>signature: <code>load(cls, filename)</code></li>
 </ul>
 <p>Loads the buffer from a file</p>
+<h2 id="buffermark_scratch"><code>Buffer.mark_scratch</code></h2>
+<ul>
+<li>kind: <code>method</code></li>
+<li>signature: <code>mark_scratch(self)</code></li>
+</ul>
+<p>Record a producer's decision that this buffer is scratch.
+See BufferCache.mark_scratch.</p>
 <h2 id="buffersave"><code>Buffer.save</code></h2>
 <ul>
 <li>kind: <code>method</code></li>
@@ -247,10 +298,19 @@ It must not be modified.</p>
 <h2 id="buffertempref"><code>Buffer.tempref</code></h2>
 <ul>
 <li>kind: <code>method</code></li>
-<li>signature: <code>tempref(self, interest, fade_factor, fade_interval, scratch)</code></li>
+<li>signature: <code>tempref(self, interest, fade_factor, fade_interval)</code></li>
 </ul>
 <p>Add or refresh a single tempref. Only one tempref allowed per checksum.</p>
-<p>If scratch is True, keep the tempref scratch-only (no remote registration).</p>
+<p>A tempref is always scratch (bounded, ephemeral, no remote
+registration). To publish this buffer remotely on a requester's
+behalf, call <code>transfer_write</code> explicitly.</p>
+<h2 id="buffertransfer_write"><code>Buffer.transfer_write</code></h2>
+<ul>
+<li>kind: <code>method</code></li>
+<li>signature: <code>transfer_write(self)</code></li>
+</ul>
+<p>Publish this buffer to the remote store (the "transfer write").
+See BufferCache.transfer_write for the full contract.</p>
 <h2 id="bufferwrite"><code>Buffer.write</code></h2>
 <ul>
 <li>kind: <code>method</code></li>

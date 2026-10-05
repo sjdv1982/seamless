@@ -55,6 +55,28 @@
               <ul>
                   <li class="toctree-l1"><a class="reference internal" href="../../contracts/identity-and-caching.html">Identity and Caching</a>
                   </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../contracts/celltypes-and-conversion.html">Celltypes, Null, and Conversion</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../contracts/hashtype.html">HashType</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../contracts/deep-celltypes.html">Deep Celltypes</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../contracts/expressions.html">Expressions</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../contracts/cells.html">Cells</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../contracts/pins.html">Pins</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../contracts/workflow-context.html">Workflow Context</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../contracts/node-state-lifecycle.html">Node State Lifecycle</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../contracts/attachments.html">Attachments</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../contracts/mounts.html">File Mounts</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../contracts/cancellation.html">Cancellation</a>
+                  </li>
                   <li class="toctree-l1"><a class="reference internal" href="../../contracts/direct-delayed-and-transformation.html">direct/delayed/Transformation</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../../contracts/modules-and-closures.html">Modules and Closures</a>
@@ -77,6 +99,8 @@
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../../contracts/compiled-transformers.html">Compiled Transformers</a>
                   </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../contracts/compiled-pins.html">Compiled Pins</a>
+                  </li>
                   <li class="toctree-l1"><a class="reference internal" href="../../contracts/seamless-signature-schema.html">seamless-signature Schema</a>
                   </li>
               </ul>
@@ -96,6 +120,8 @@
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#checksumdecref">Checksum.decref</a>
     </li>
+    <li class="toctree-l2"><a class="reference internal" href="#checksumdecref_refholder">Checksum.decref_refholder</a>
+    </li>
     <li class="toctree-l2"><a class="reference internal" href="#checksumfind">Checksum.find</a>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#checksumfingertip">Checksum.fingertip</a>
@@ -106,7 +132,11 @@
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#checksumincref">Checksum.incref</a>
     </li>
+    <li class="toctree-l2"><a class="reference internal" href="#checksumincref_refholder">Checksum.incref_refholder</a>
+    </li>
     <li class="toctree-l2"><a class="reference internal" href="#checksumload">Checksum.load</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#checksummark_scratch">Checksum.mark_scratch</a>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#checksumresolution">Checksum.resolution</a>
     </li>
@@ -115,6 +145,8 @@
     <li class="toctree-l2"><a class="reference internal" href="#checksumsave">Checksum.save</a>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#checksumtempref">Checksum.tempref</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#checksumtransfer_write">Checksum.transfer_write</a>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#_run_coro_in_new_loop">_run_coro_in_new_loop</a>
     </li>
@@ -182,7 +214,13 @@ Seamless checksums are calculated as SHA-256 hashes of buffers.</p>
 <li>kind: <code>method</code></li>
 <li>signature: <code>decref(self)</code></li>
 </ul>
-<p>Decrement normal refcount in the buffer cache. If no refs remain (and no tempref), may be uncached.</p>
+<p>Decrement a normal cache ref and return whether one was held.</p>
+<h2 id="checksumdecref_refholder"><code>Checksum.decref_refholder</code></h2>
+<ul>
+<li>kind: <code>method</code></li>
+<li>signature: <code>decref_refholder(self)</code></li>
+</ul>
+<p>Release an internal lifecycle reference for this checksum.</p>
 <h2 id="checksumfind"><code>Checksum.find</code></h2>
 <ul>
 <li>kind: <code>method</code></li>
@@ -195,7 +233,7 @@ An URL info can be an URL string, or a dict with additional information.</p>
 <li>kind: <code>method</code></li>
 <li>signature: <code>fingertip(self, celltype)</code></li>
 </ul>
-<p>Return a resolvable buffer/value, recomputing locally if needed.</p>
+<p>Resolve locally, or report the highest failure encountered in recovery.</p>
 <h2 id="checksumfingertip_sync"><code>Checksum.fingertip_sync</code></h2>
 <ul>
 <li>kind: <code>method</code></li>
@@ -215,6 +253,13 @@ An URL info can be an URL string, or a dict with additional information.</p>
 </ul>
 <p>Increment normal refcount in the buffer cache.</p>
 <p>If scratch is True, keep the ref scratch-only (no remote registration).</p>
+<h2 id="checksumincref_refholder"><code>Checksum.incref_refholder</code></h2>
+<ul>
+<li>kind: <code>method</code></li>
+<li>signature: <code>incref_refholder(self, *, scratch)</code></li>
+</ul>
+<p>Acquire an internal lifecycle reference for this checksum.</p>
+<p><code>scratch=None</code> is a neutral claim; see BufferCache.incref_refholder.</p>
 <h2 id="checksumload"><code>Checksum.load</code></h2>
 <ul>
 <li>kind: <code>method</code></li>
@@ -222,6 +267,13 @@ An URL info can be an URL string, or a dict with additional information.</p>
 </ul>
 <p>Loads the checksum from a .CHECKSUM file.</p>
 <p>If the filename doesn't have a .CHECKSUM extension, it is added</p>
+<h2 id="checksummark_scratch"><code>Checksum.mark_scratch</code></h2>
+<ul>
+<li>kind: <code>method</code></li>
+<li>signature: <code>mark_scratch(self)</code></li>
+</ul>
+<p>Record a producer's decision that this checksum is scratch.
+See BufferCache.mark_scratch.</p>
 <h2 id="checksumresolution"><code>Checksum.resolution</code></h2>
 <ul>
 <li>kind: <code>method</code></li>
@@ -247,10 +299,19 @@ If celltype is provided, a value is returned instead.</p>
 <h2 id="checksumtempref"><code>Checksum.tempref</code></h2>
 <ul>
 <li>kind: <code>method</code></li>
-<li>signature: <code>tempref(self, interest, fade_factor, fade_interval, scratch)</code></li>
+<li>signature: <code>tempref(self, interest, fade_factor, fade_interval)</code></li>
 </ul>
 <p>Add or refresh a single tempref. Only one tempref allowed per checksum.</p>
-<p>If scratch is True, keep the tempref scratch-only (no remote registration).</p>
+<p>A tempref is always scratch (bounded, ephemeral, no remote
+registration). To publish this checksum's buffer remotely on a
+requester's behalf, call <code>transfer_write</code> explicitly.</p>
+<h2 id="checksumtransfer_write"><code>Checksum.transfer_write</code></h2>
+<ul>
+<li>kind: <code>method</code></li>
+<li>signature: <code>transfer_write(self, buffer)</code></li>
+</ul>
+<p>Publish this checksum's buffer to the remote store (the "transfer
+write"). See BufferCache.transfer_write for the full contract.</p>
 <h2 id="_run_coro_in_new_loop"><code>_run_coro_in_new_loop</code></h2>
 <ul>
 <li>kind: <code>function</code></li>

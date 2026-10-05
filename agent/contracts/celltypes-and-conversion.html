@@ -1,0 +1,642 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <link rel="shortcut icon" href="../img/favicon.ico" />
+    <title>Celltypes, Null, and Conversion - Seamless — Agent Documentation</title>
+    <link rel="stylesheet" href="../css/theme.css" />
+    <link rel="stylesheet" href="../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "Celltypes, Null, and Conversion";
+        var mkdocs_page_input_path = "contracts/celltypes-and-conversion.md";
+        var mkdocs_page_url = null;
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href="../index.html" class="icon icon-home"> Seamless — Agent Documentation
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../index.html">Home</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../overview.html">Agent Docs Overview</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../repos/index.html">Workspace Repos</a>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Contracts</span></p>
+              <ul class="current">
+                  <li class="toctree-l1"><a class="reference internal" href="identity-and-caching.html">Identity and Caching</a>
+                  </li>
+                  <li class="toctree-l1 current"><a class="reference internal current" href="#">Celltypes, Null, and Conversion</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#celltypes">Celltypes</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#the-celltype-hierarchy-is-a-checksum-hierarchy">The celltype hierarchy is a checksum hierarchy</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#checksum-identity-vs-values">Checksum identity vs values</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#canonical-null">Canonical null</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#virtual-values-null-true-false">Virtual values (null, true, false)</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#reference-parser-_parse_buffer">Reference parser (_parse_buffer)</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#canonical-serialization-_serialize">Canonical serialization (_serialize)</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#conversion-engine">Conversion engine</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#principle">Principle</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#rule-table-seamlesschecksumconversion">Rule table (seamless.checksum.conversion)</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#reformat-rules-as-executed">Reformat rules (as executed)</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#executor-seamlesschecksumconvert">Executor (seamless.checksum.convert)</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#implementation-status-and-current-limitations">Implementation status and current limitations</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#agent-guidance">Agent guidance</a>
+    </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="hashtype.html">HashType</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="deep-celltypes.html">Deep Celltypes</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="expressions.html">Expressions</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="cells.html">Cells</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="pins.html">Pins</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="workflow-context.html">Workflow Context</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="node-state-lifecycle.html">Node State Lifecycle</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="attachments.html">Attachments</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="mounts.html">File Mounts</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="cancellation.html">Cancellation</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="direct-delayed-and-transformation.html">direct/delayed/Transformation</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="modules-and-closures.html">Modules and Closures</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="scratch-witness-audit.html">Scratch/Witness/Audit</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="seamless-run-and-argtyping.html">seamless-run/Argtyping</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="cache-storage-and-limits.html">Cache Storage and Limits</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="content-addressed-files-and-dirs.html">Content-addressed Files and Dirs</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="execution-backends.html">Execution Backends</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="execution-records.html">Execution Records</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="service-management.html">Service Management</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="compression.html">Compression</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="compiled-transformers.html">Compiled Transformers</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="compiled-pins.html">Compiled Pins</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="seamless-signature-schema.html">seamless-signature Schema</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">API</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/python/seamless.html">seamless</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/python/seamless.transformer.html">seamless.transformer</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/python/seamless.buffer_class.html">seamless.buffer_class</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/python/seamless.checksum_class.html">seamless.checksum_class</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/python/seamless_config.select.html">seamless_config.select</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/python/seamless_config.tools.html">seamless_config.tools</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/python/seamless_transformer.transformation_class.html">seamless_transformer.transformation_class</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/python/seamless_transformer.transformer_class.html">seamless_transformer.transformer_class</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">CLI</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/cli/seamless-run.html">seamless-run</a>
+                  </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Seamless — Agent Documentation</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../index.html" class="icon icon-home" aria-label="Docs"></a></li>
+          <li class="breadcrumb-item">Contracts</li>
+      <li class="breadcrumb-item active">Celltypes, Null, and Conversion</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h1 id="celltypes-null-and-conversion-contract">Celltypes, Null, and Conversion (Contract)</h1>
+<p>This page defines what a celltype means, how the canonical null works, and how the checksum-level conversion engine converts a checksum from one celltype to another. The companion page <code>contracts/hashtype.md</code> defines the <code>HashType</code> classification that the engine and the parser use to reject impossible work without touching buffers. The deep celltypes (<code>deepcell</code>, <code>deepfolder</code>, <code>folder</code>), which are outside the rule table below, are defined in <code>contracts/deep-celltypes.md</code>.</p>
+<p>Code locations (all in <code>seamless-core</code>):</p>
+<table>
+<thead>
+<tr>
+<th>Concern</th>
+<th>Module / symbol</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Celltype list</td>
+<td><code>seamless.checksum.celltypes.celltypes</code></td>
+</tr>
+<tr>
+<td>Reference parser</td>
+<td><code>seamless.checksum.parse_buffer._parse_buffer</code> (used by <code>parse_buffer</code>, <code>parse_buffer_sync</code>, <code>Buffer.get_value</code>, <code>Checksum.resolve(celltype)</code>)</td>
+</tr>
+<tr>
+<td>Serializer</td>
+<td><code>seamless.checksum.serialize._serialize</code> (used by <code>serialize</code>, <code>serialize_sync</code>, <code>Buffer(value, celltype)</code>)</td>
+</tr>
+<tr>
+<td>Canonical null</td>
+<td><code>seamless.checksum.null</code> (<code>NULL_BUFFER</code>, <code>NULL_CHECKSUM</code>, <code>is_null</code>, <code>is_null_value</code>, <code>canonicalize_checksum</code>)</td>
+</tr>
+<tr>
+<td>Virtual values</td>
+<td><code>seamless.checksum.virtual</code> (<code>NULL_CHECKSUMS</code>, <code>TRUE_CHECKSUMS</code>, <code>FALSE_CHECKSUMS</code>, <code>virtual_value</code>, <code>NOT_VIRTUAL</code>)</td>
+</tr>
+<tr>
+<td>Rule table</td>
+<td><code>seamless.checksum.conversion</code> (<code>conversion_*</code> sets/dicts, <code>SeamlessConversionError</code>)</td>
+</tr>
+<tr>
+<td>Executor</td>
+<td><code>seamless.checksum.convert</code> (<code>convert_checksum</code>, <code>conversion_needs_buffer</code>)</td>
+</tr>
+</tbody>
+</table>
+<p>Out of scope here: Expressions, Cells, pins, mounts, and the workflow Context. The engine's only caller is empty-path Expression evaluation (<code>seamless.checksum.expression</code>), which has its own docs. How a celltype is chosen, declared and converted on a handle — <code>celltype</code> as the output type, the read-only <code>input_celltype</code>, retyping, and where null and empty <code>bytes</code> show up in writes and reads — is in <code>contracts/cells.md</code>.</p>
+<h2 id="celltypes">Celltypes</h2>
+<p><code>seamless.checksum.celltypes.celltypes</code> has exactly 13 entries:</p>
+<p><code>binary</code>, <code>mixed</code>, <code>text</code>, <code>python</code>, <code>ipython</code>, <code>plain</code>, <code>yaml</code>, <code>str</code>, <code>bytes</code>, <code>int</code>, <code>float</code>, <code>bool</code>, <code>checksum</code></p>
+<p>These are the only celltypes that the parser, serializer and conversion engine accept. <code>convert_checksum</code> raises <code>TypeError</code> for anything else.</p>
+<ul>
+<li><strong>Storage celltypes</strong>: <code>bytes</code> (raw), <code>binary</code> (NumPy <code>.npy</code> buffer), <code>mixed</code> (Seamless-mixed format, or pure JSON, or <code>.npy</code>), <code>plain</code> (JSON).</li>
+<li><strong>Text celltypes</strong>: <code>text</code> (UTF-8), with the code/markup subtypes <code>python</code>, <code>ipython</code> and <code>yaml</code>.</li>
+<li><strong>Scalar celltypes</strong>: <code>str</code>, <code>int</code>, <code>float</code> and <code>bool</code> are <em>readings</em> of JSON-compatible buffers, not separate storage formats.</li>
+<li><strong><code>checksum</code></strong>: the value is a <code>Checksum</code>. The buffer is the bare 64-character lowercase hex digest, with no trailing newline.</li>
+<li><strong>Deep and structural celltypes</strong> (<code>deepcell</code>, <code>deepfolder</code>, <code>folder</code>, <code>module</code>) are not in this list. They are distinct celltypes whose buffers are plain JSON: <code>Buffer._map_celltype</code> serializes and parses them as <code>plain</code>. Conversion between them and the 13 celltypes is not part of the rule table. The deep celltypes are <code>deepcell</code>, <code>deepfolder</code> and <code>folder</code>; <code>module</code> is not one of them. Their own conversion and path rules are in <code>contracts/deep-celltypes.md</code>.</li>
+</ul>
+<h2 id="the-celltype-hierarchy-is-a-checksum-hierarchy">The celltype hierarchy is a checksum hierarchy</h2>
+<p>A subtype→supertype edge means: <strong>every checksum that is valid as the subtype is valid, unchanged, as the supertype.</strong> The hierarchy is about sets of valid checksums, not about values. The edges are exactly the pairs in <code>conversion_trivial</code>:</p>
+<table>
+<thead>
+<tr>
+<th>Subtype</th>
+<th>Supertype(s)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>python</code></td>
+<td><code>ipython</code>, <code>text</code></td>
+</tr>
+<tr>
+<td><code>ipython</code>, <code>yaml</code></td>
+<td><code>text</code></td>
+</tr>
+<tr>
+<td><code>text</code></td>
+<td><code>bytes</code></td>
+</tr>
+<tr>
+<td><code>plain</code></td>
+<td><code>yaml</code>, <code>mixed</code>, <code>bytes</code></td>
+</tr>
+<tr>
+<td><code>binary</code></td>
+<td><code>mixed</code></td>
+</tr>
+<tr>
+<td><code>str</code>, <code>int</code>, <code>float</code>, <code>bool</code></td>
+<td><code>plain</code></td>
+</tr>
+<tr>
+<td><code>int</code>, <code>float</code>, <code>bool</code></td>
+<td><code>str</code></td>
+</tr>
+<tr>
+<td><code>int</code> ↔ <code>float</code></td>
+<td>each other (both directions are trivial)</td>
+</tr>
+</tbody>
+</table>
+<p>Consequences:</p>
+<ul>
+<li><code>bytes</code> is not a universal supertype. <code>mixed → bytes</code> and <code>binary → bytes</code> are <em>reformat</em> rules: a zero-dimensional dtype-<code>S</code> NumPy array becomes its raw bytes.</li>
+<li><code>yaml → plain</code> is not trivial. It runs the YAML parser and writes a new canonical <code>plain</code> buffer.</li>
+<li><code>int</code> and <code>float</code> accept the same checksums. Which one you use decides only the reading.</li>
+<li><code>checksum</code> is outside the hierarchy. It has no trivial edges, and every conversion to or from it is value-level.</li>
+<li><strong>The canonical null is valid for every celltype</strong> (see below).</li>
+</ul>
+<h2 id="checksum-identity-vs-values">Checksum identity vs values</h2>
+<ul>
+<li><strong>Identity stays with the checksum.</strong> One value can have several checksums. Examples: <code>b"true"</code> and <code>b"true\n"</code>; compact and indented JSON for the same object; <code>b"4.5\n"</code> read as <code>int</code> (value <code>4</code>) and the canonical <code>int</code> buffer <code>b"4\n"</code>.</li>
+<li>A checksum-preserving conversion (trivial or reinterpret) keeps the source checksum, even when the target celltype's serializer would write different bytes for the resulting value. Seamless never replaces a checksum with the checksum of the re-serialized value. The one exception is empty bytes → null (below).</li>
+<li><strong>"Deserializable as X"</strong> means the reference parser (<code>_parse_buffer</code>) accepts the buffer as X. It does <strong>not</strong> mean that re-serializing the value as X gives back the same checksum.</li>
+</ul>
+<h2 id="canonical-null">Canonical null</h2>
+<ul>
+<li><code>NULL_BUFFER = b"null\n"</code>. <code>NULL_CHECKSUM</code> is its SHA-256: <code>38e0b9de817f645c4bec37c0d4a3e58baecccb040f5718dc069a72c7385a0bed</code>.</li>
+<li><strong>Serialization.</strong> <code>_serialize(None, celltype)</code> returns <code>NULL_BUFFER</code> for every celltype. Serializing <code>b""</code> as <code>bytes</code> also returns <code>NULL_BUFFER</code>, so <code>Buffer(b"", "bytes")</code> has <code>NULL_CHECKSUM</code>.</li>
+<li><strong>Canonicalization of empty bytes.</strong> <code>canonicalize_checksum(checksum, celltype)</code> maps <code>sha256(b"")</code> to <code>NULL_CHECKSUM</code> <strong>only when <code>celltype == "bytes"</code></strong>. Expression keys apply it to their input checksum and input celltype. A raw <code>Buffer(b"")</code> made without a celltype still has checksum <code>sha256(b"")</code>: canonicalization is not applied to raw buffers.</li>
+<li><strong>Reading.</strong> A null checksum reads as <code>b""</code> for <code>bytes</code> and as <code>None</code> for every other celltype, including <code>str</code> and <code>checksum</code>. <code>virtual_value</code> treats both <code>sha256(b"null")</code> and <code>sha256(b"null\n")</code> as null. Only <code>b"null\n"</code> is canonical, and the two remain distinct identities.</li>
+<li><strong>Predicates.</strong> <code>is_null(cs)</code> is true only for <code>NULL_CHECKSUM</code>. <code>is_null_value(cs)</code> is true for either null checksum.</li>
+<li><strong>Collisions with real content.</strong> Null is decided by checksum, so some non-null content is indistinguishable from null:</li>
+<li>Under <code>bytes</code>, content that is exactly <code>b"null\n"</code> has <code>NULL_CHECKSUM</code>, the same checksum and buffer as empty bytes, and reads as <code>b""</code>. Content <code>b"null"</code> has the non-canonical null checksum and also reads as <code>b""</code>, although serializing empty bytes never produces it.</li>
+<li>Under the text celltypes (<code>text</code>, <code>python</code>, <code>ipython</code>, <code>yaml</code>), the string <code>"null"</code> serializes to <code>b"null\n"</code> and reads back as <code>None</code>. The empty string is not affected: it is stored as <code>b"\n"</code> and reads as <code>""</code>.</li>
+<li><code>str</code> and <code>plain</code> are not affected: the string <code>"null"</code> is written as the JSON string <code>"null"</code>.</li>
+<li><strong>Display.</strong> <code>str(Checksum(NULL_CHECKSUM))</code> is <code>"NULL"</code>, and nothing else is displayed that way. <code>repr()</code> and <code>.hex()</code> give the hex digest. Machine-readable output (JSON, wire, database, filenames) must use <code>.hex()</code>, never <code>str()</code>.</li>
+</ul>
+<h2 id="virtual-values-null-true-false">Virtual values (null, true, false)</h2>
+<p>Some checksums fully determine their value, so <code>virtual_value(checksum, celltype)</code> resolves them without a buffer cache or remote lookup. It returns <code>NOT_VIRTUAL</code> when the checksum does not determine the value.</p>
+<table>
+<thead>
+<tr>
+<th>Checksum set</th>
+<th>Reading</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>NULL_CHECKSUMS</code> (<code>b"null"</code>, <code>b"null\n"</code>)</td>
+<td><code>b""</code> for <code>bytes</code>; <code>None</code> for all other celltypes</td>
+</tr>
+<tr>
+<td><code>TRUE_CHECKSUMS</code> / <code>FALSE_CHECKSUMS</code> (with and without <code>\n</code>)</td>
+<td><code>True</code>/<code>False</code> for <code>bool</code>, <code>plain</code>, <code>mixed</code>; <code>"True"</code>/<code>"False"</code> for <code>str</code>; <code>ValueError</code> for <code>int</code>/<code>float</code>; <code>NOT_VIRTUAL</code> (parsed from the buffer) for other celltypes, e.g. <code>text</code> gives <code>"true"</code></td>
+</tr>
+<tr>
+<td>any other checksum, celltype <code>bool</code></td>
+<td><code>ValueError</code> ("checksum does not encode a boolean value"), without fetching</td>
+</tr>
+</tbody>
+</table>
+<p>Therefore <strong><code>bool</code> accepts only the four canonical boolean checksums plus null.</strong> The parser performs no content-based bool coercion.</p>
+<p>In addition, <code>seamless.checksum.calculate_checksum.TRIVIAL_CHECKSUMS</code> maps the checksums of <code>null</code>, <code>true</code>, <code>false</code>, <code>""</code>, <code>{}</code> and <code>[]</code> (each with and without a trailing newline, except <code>""</code>) to their buffers. <code>Checksum.resolve()</code> and local Expression evaluation materialize these without cache residency.</p>
+<h2 id="reference-parser-_parse_buffer">Reference parser (<code>_parse_buffer</code>)</h2>
+<p>Order of operations: (1) <code>virtual_value</code>; (2) <code>validate_deserializable_as(checksum, celltype, buffer=buffer)</code>, which raises <code>HashTypeValidationError</code> when HashType proves the reading impossible (see <code>contracts/hashtype.md</code>); (3) the per-celltype rule:</p>
+<table>
+<thead>
+<tr>
+<th>Celltype</th>
+<th>Accepts / returns</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>text</code>, <code>python</code>, <code>ipython</code>, <code>yaml</code></td>
+<td>UTF-8 decode, then strip all trailing <code>\n</code>; returns the text. <code>python</code> must pass <code>ast.parse</code>, <code>ipython</code> must pass <code>ipython2python</code>, <code>yaml</code> must pass <code>yaml.safe_load</code> (the value is still the text). Failure raises <code>HashTypeValidationError</code>.</td>
+</tr>
+<tr>
+<td><code>plain</code></td>
+<td>Decode, strip trailing <code>\n</code>, then <code>orjson.loads</code></td>
+</tr>
+<tr>
+<td><code>binary</code></td>
+<td>Seamless-mixed deserializer; storage must be <code>pure-binary</code> (an <code>.npy</code> buffer)</td>
+</tr>
+<tr>
+<td><code>mixed</code></td>
+<td>Seamless-mixed deserializer (<code>.npy</code>, Seamless-mixed format, or JSON). A zero-dimensional NumPy leaf reads back as a NumPy scalar, at the top level and nested in a dict or list alike.</td>
+</tr>
+<tr>
+<td><code>bytes</code></td>
+<td>Returns the <code>Buffer</code> object itself (the null reading is <code>b""</code>)</td>
+</tr>
+<tr>
+<td><code>str</code></td>
+<td><code>orjson</code> parse; a JSON string, number or boolean gives <code>str(value)</code> (so <code>4.5</code> → <code>"4.5"</code>, <code>1e3</code> → <code>"1000.0"</code>); objects and arrays are rejected</td>
+</tr>
+<tr>
+<td><code>int</code>, <code>float</code></td>
+<td>Buffers over 1000 bytes are rejected. <code>orjson</code> parse; accepts a finite JSON number, or a JSON string that parses as a finite float. <code>float</code> → <code>float(v)</code>. <code>int</code> → <code>int(v)</code>, falling back to <code>int(float(v))</code>.</td>
+</tr>
+<tr>
+<td><code>bool</code></td>
+<td>Only virtual values (above); anything else raises</td>
+</tr>
+<tr>
+<td><code>checksum</code></td>
+<td>Decode; must construct a <code>Checksum</code> (64 hex characters)</td>
+</tr>
+</tbody>
+</table>
+<p><strong><code>int</code> truncates.</strong> Reading <code>b"4.5\n"</code> as <code>int</code> succeeds and returns <code>4</code>. The JSON string <code>"4.5"</code> also gives <code>4</code>, and <code>-4.5</code> gives <code>-4</code>. Serializing a value as <code>int</code> truncates the same way (<code>Buffer(-4.5, "int")</code> → <code>b"-4\n"</code>).</p>
+<p><strong>Large integers.</strong> Numbers are parsed by <code>orjson</code>, which returns a float for an integer outside the unsigned 64-bit range. <code>int</code> and <code>plain</code> readings of such integers therefore lose precision.</p>
+<h2 id="canonical-serialization-_serialize">Canonical serialization (<code>_serialize</code>)</h2>
+<table>
+<thead>
+<tr>
+<th>Celltype</th>
+<th>Buffer</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>any, value <code>None</code></td>
+<td><code>b"null\n"</code></td>
+</tr>
+<tr>
+<td><code>plain</code></td>
+<td><code>orjson</code> with 2-space indent and sorted keys, plus <code>\n</code>. NaN and infinity raise.</td>
+</tr>
+<tr>
+<td><code>str</code></td>
+<td>JSON of <code>str(value)</code> plus <code>\n</code>, except that a <code>bool</code> stays a JSON boolean (<code>True</code> → <code>b"true\n"</code>)</td>
+</tr>
+<tr>
+<td><code>int</code>, <code>float</code>, <code>bool</code></td>
+<td>JSON of <code>int(v)</code> / <code>float(v)</code> / <code>bool(v)</code>, plus <code>\n</code>. A <code>bytes</code> value is decoded first. Under <code>float</code>, NaN and infinity raise.</td>
+</tr>
+<tr>
+<td><code>text</code>, <code>python</code>, <code>ipython</code>, <code>yaml</code></td>
+<td><code>str(value)</code> with trailing <code>\n</code> stripped, plus exactly one <code>\n</code> (no syntax check). A <code>bytes</code> value is decoded first.</td>
+</tr>
+<tr>
+<td><code>bytes</code></td>
+<td>A <code>bytes</code> value unchanged; otherwise <code>.tobytes()</code>; otherwise <code>str(value)</code> with trailing <code>\n</code> stripped, UTF-8 encoded. <code>b""</code> becomes <code>b"null\n"</code></td>
+</tr>
+<tr>
+<td><code>mixed</code></td>
+<td>Seamless-mixed serializer (pure JSON values serialize the same way as <code>plain</code>; NumPy arrays, zero-dimensional ones included, serialize the same way as <code>binary</code>; NumPy scalars, complex values, NaN and infinity: see below)</td>
+</tr>
+<tr>
+<td><code>binary</code></td>
+<td>A <code>bytes</code> value is taken as an already-serialized buffer and stored unchanged (it is readable as <code>binary</code> only if it is an <code>.npy</code> buffer). Anything else: <code>.npy</code> of <code>np.array(value)</code>, complex dtypes included</td>
+</tr>
+<tr>
+<td><code>checksum</code></td>
+<td>Bare hex digest, no newline; the value must be a <code>Checksum</code> or a hex <code>str</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>NumPy scalars and arrays.</strong></p>
+<ul>
+<li>Under <code>mixed</code>, a finite NumPy integer or floating-point scalar is written as a JSON number, and an <code>np.bool_</code> as a JSON boolean, so the dtype is not kept: <code>np.float32(1.5)</code> reads back as the Python float <code>1.5</code>.</li>
+<li>Under <code>binary</code>, a NumPy scalar is written as a <code>.npy</code> of its own dtype. That buffer reads back as the same NumPy scalar under both <code>binary</code> and <code>mixed</code>, and <code>binary → mixed</code> keeps its checksum.</li>
+<li>A NumPy array keeps its dtype under both <code>binary</code> and <code>mixed</code>, zero-dimensional arrays included.</li>
+<li><strong>Complex values</strong> have no JSON form. A complex scalar or array is written as the <code>.npy</code> of its own dtype, under <code>binary</code> and under <code>mixed</code>.</li>
+</ul>
+<p><strong>NaN and infinity are NumPy values.</strong> JSON cannot hold them.</p>
+<ul>
+<li>Under <code>mixed</code>, a top-level NaN or ±infinity (a Python <code>float</code>, or a NumPy floating-point scalar of any precision) is written as a zero-dimensional <code>float64</code> <code>.npy</code>. Inside a dict or list, it is written as a NumPy value inside the Seamless-mixed format. In both positions it reads back as <code>np.float64(nan)</code> / <code>np.float64(inf)</code>.</li>
+<li>Under <code>plain</code> and <code>float</code>, serializing NaN or infinity raises; it is never written as <code>null</code>. A value containing NaN or infinity therefore has no <code>plain</code> or <code>float</code> checksum. <code>int</code> already raises through <code>int(v)</code>.</li>
+<li>Under <code>binary</code>, NaN and infinity are ordinary elements of a floating-point array or scalar of its own dtype.</li>
+</ul>
+<h2 id="conversion-engine">Conversion engine</h2>
+<h3 id="principle">Principle</h3>
+<p>Conversion avoids value-level work unless it is necessary. Preference order: <strong>checksum</strong> (answer from the checksum alone: trivial rule, virtual value, or a HashType disproof) → <strong>buffer</strong> (read or classify bytes) → <strong>value</strong> (deserialize, convert and re-serialize).</p>
+<h3 id="rule-table-seamlesschecksumconversion">Rule table (<code>seamless.checksum.conversion</code>)</h3>
+<p>Every ordered pair of distinct celltypes is in exactly one category. <code>check_conversions()</code> runs at import and raises <code>SeamlessConversionError</code> on a missing pair, a duplicate, or a circular mapping.</p>
+<table>
+<thead>
+<tr>
+<th>Category</th>
+<th>Checksum</th>
+<th>Guaranteed for valid input?</th>
+<th>Pairs</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>conversion_trivial</code></td>
+<td>same</td>
+<td>yes, no validation and no buffer</td>
+<td>the hierarchy edges above (18 pairs)</td>
+</tr>
+<tr>
+<td><code>conversion_reinterpret</code></td>
+<td>same</td>
+<td>no; the target reading is validated</td>
+<td>reverse of each trivial edge whose reverse is not itself trivial, minus <code>ipython→python</code> and <code>yaml→plain</code>: <code>bytes→text</code>, <code>bytes→plain</code>, <code>text→python</code>, <code>text→ipython</code>, <code>text→yaml</code>, <code>mixed→binary</code>, <code>mixed→plain</code>, <code>plain→str</code>, <code>plain→int</code>, <code>plain→float</code>, <code>plain→bool</code>, <code>str→int</code>, <code>str→float</code>, <code>str→bool</code></td>
+</tr>
+<tr>
+<td><code>conversion_reformat</code></td>
+<td>may change</td>
+<td>yes</td>
+<td><code>bytes→binary</code>, <code>bytes→mixed</code>, <code>binary→bytes</code>, <code>mixed→bytes</code>, <code>plain→text</code>, <code>text→plain</code>, <code>text→str</code>, <code>str→text</code>, <code>yaml→plain</code>, <code>ipython→python</code></td>
+</tr>
+<tr>
+<td><code>conversion_possible</code></td>
+<td>new buffer</td>
+<td>no</td>
+<td><code>binary→int/float/bool</code>, <code>mixed→str/int/float/bool</code></td>
+</tr>
+<tr>
+<td><code>conversion_values</code></td>
+<td>new buffer (or dereference)</td>
+<td>no</td>
+<td><code>binary↔plain</code>; <code>bool↔int</code>, <code>bool↔float</code>; every <code>X→checksum</code> and <code>checksum→X</code></td>
+</tr>
+<tr>
+<td><code>conversion_equivalent</code></td>
+<td>—</td>
+<td>mapped to another pair</td>
+<td>e.g. <code>text/python/ipython/yaml→mixed</code> and <code>python/ipython/yaml→str</code> → <code>text→str</code> (not via <code>plain</code>); <code>python/ipython→plain</code> → <code>text→str</code>; <code>str/int/float/bool→mixed</code> → <code>…→plain</code>; <code>int/float/bool→text</code> → <code>plain→text</code></td>
+</tr>
+<tr>
+<td><code>conversion_chain</code></td>
+<td>—</td>
+<td><code>A→B→C</code></td>
+<td>e.g. <code>mixed→text</code> via <code>plain</code>; <code>binary→str</code> via <code>bytes</code>; <code>bytes→str/int/float/bool</code> via <code>plain</code>; <code>text→binary</code> via <code>mixed</code>; <code>text/yaml→int/float/bool</code> via <code>plain</code></td>
+</tr>
+<tr>
+<td><code>conversion_forbidden</code></td>
+<td>—</td>
+<td>always fails</td>
+<td><code>python/ipython↔yaml</code>, <code>python/ipython→int/float/bool</code>, <code>int/float/bool→python/ipython</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="reformat-rules-as-executed">Reformat rules (as executed)</h3>
+<table>
+<thead>
+<tr>
+<th>Pair</th>
+<th>Behaviour</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>bytes→binary</code></td>
+<td>Always fetches the buffer. <code>.npy</code> magic: validate as <code>binary</code> and keep the checksum. Otherwise: new <code>.npy</code> of a 0-d dtype-<code>S</code> array holding the bytes.</td>
+</tr>
+<tr>
+<td><code>bytes→mixed</code></td>
+<td>Null/boolean checksum, or cached HashType says <code>mixed</code>: keep. Otherwise fetch and classify; if it is <code>mixed</code>-deserializable, validate and keep. Otherwise, if UTF-8: new <code>str</code> buffer of the text (trailing <code>\n</code> stripped). Otherwise: new dtype-<code>S</code> <code>.npy</code>.</td>
+</tr>
+<tr>
+<td><code>binary→bytes</code></td>
+<td>Parse as <code>binary</code>; a 0-d dtype-<code>S</code> array becomes <code>value.tobytes()</code>; anything else keeps the checksum</td>
+</tr>
+<tr>
+<td><code>mixed→bytes</code></td>
+<td><code>.npy</code> magic: as <code>binary→bytes</code>. Otherwise validate as <code>mixed</code> and keep.</td>
+</tr>
+<tr>
+<td><code>plain→text</code></td>
+<td>Value is a JSON string: new <code>text</code> buffer of that string. Otherwise keep.</td>
+</tr>
+<tr>
+<td><code>text→plain</code></td>
+<td>Null/boolean checksum, or text that <code>orjson</code> accepts: keep. Otherwise: new <code>plain</code> buffer holding the text as a JSON string.</td>
+</tr>
+<tr>
+<td><code>text→str</code>, <code>str→text</code></td>
+<td>Re-serialize the same value under the target celltype</td>
+</tr>
+<tr>
+<td><code>yaml→plain</code></td>
+<td><code>yaml.safe_load</code>, then canonical <code>plain</code></td>
+</tr>
+<tr>
+<td><code>ipython→python</code></td>
+<td><code>ipython2python</code></td>
+</tr>
+</tbody>
+</table>
+<p><code>conversion_possible</code> parses the source value, rejects <code>dict</code>/<code>list</code>/non-scalar arrays, and serializes <code>builtins.&lt;target&gt;(value)</code>. A <code>float</code> target must produce a finite result; a non-finite result raises <code>SeamlessConversionError</code> instead of being serialized as JSON <code>null</code>. Value rules: <code>binary→plain</code> goes through <code>orjson</code> numpy encoding and then canonical <code>plain</code> (it rejects non-finite floats first, so NaN and infinity raise here as they do in direct <code>plain</code> serialization, instead of being written as JSON <code>null</code> by <code>orjson</code>); <code>plain→binary</code> requires an int, float, bool or list whose <code>np.array</code> is not dtype <code>object</code>; <code>bool↔int/float</code> apply the builtin.</p>
+<p><strong>Conversions involving <code>checksum</code></strong> (current behaviour):</p>
+<ul>
+<li><code>X→checksum</code> produces a <code>checksum</code>-celltype buffer whose value is <strong>the source checksum itself</strong> (its hex digest). It does not parse the source as a hex string.</li>
+<li><code>checksum→X</code> <strong>dereferences</strong>: it reads the stored checksum and returns it as the result, with no new buffer. The referenced checksum is not validated as <code>X</code> at this point.</li>
+</ul>
+<h3 id="executor-seamlesschecksumconvert">Executor (<code>seamless.checksum.convert</code>)</h3>
+<p><code>convert_checksum(checksum, source, target, get_buffer) -&gt; (Checksum, Buffer | None)</code></p>
+<ul>
+<li><code>source</code> and <code>target</code> must be in <code>celltypes</code>, otherwise <code>TypeError</code>. <code>get_buffer</code> must be a zero-argument callable that returns a <code>Buffer</code> or <code>bytes</code>-like object.</li>
+<li><code>get_buffer</code> is called <strong>only</strong> when a rule needs content, and <strong>at most once</strong> per call (memoized). The engine knows nothing about buffer caches or remotes.</li>
+<li><code>source == target</code>: returns <code>(checksum, None)</code> without validation.</li>
+<li>Return value: <code>(checksum, None)</code> when the checksum is kept; <code>(new_checksum, new_buffer)</code> when new content is serialized.</li>
+<li>Resolving a source value (<code>_value_of</code>) tries <code>virtual_value</code> first, then <code>validate_deserializable_as(checksum, celltype)</code> without a buffer (fails early on a HashType disproof from the local cache, or from the database when no event loop is running), and only then calls <code>get_buffer()</code> and <code>_parse_buffer</code>.</li>
+<li>Errors: <code>CacheMissError</code> from <code>get_buffer</code> propagates unchanged, because a missing buffer is not a failed conversion. <code>SeamlessConversionError</code> (a <code>ValueError</code> subclass) propagates. Any other exception, including <code>HashTypeValidationError</code>, is wrapped in <code>SeamlessConversionError("&lt;hex&gt; cannot be converted from &lt;source&gt; to &lt;target&gt;", …)</code>.</li>
+<li>The executor does not special-case null for <code>checksum</code>: <code>convert_checksum(NULL_CHECKSUM, "plain", "checksum", …)</code> produces a checksum buffer. Empty-path Expression evaluation short-circuits a null input to a null result for every celltype pair before it calls the executor.</li>
+<li><strong>The engine's only caller is empty-path Expression evaluation</strong>, and a new buffer it produces is not a private side effect: it is recorded as the result of that empty-path Expression — <code>(checksum, "", source, target)</code> — in the process-local Expression cache and, when configured, the database <code>expression</code> table. A later conversion between the same two celltypes for the same checksum is therefore an Expression-identity cache hit, not a second value-level conversion. See <code>contracts/expressions.md</code>.</li>
+</ul>
+<p><code>conversion_needs_buffer(checksum, source, target) -&gt; bool</code> is a dry run. It returns <code>True</code> only if the conversion would call <code>get_buffer</code>. A conversion that succeeds or fails from the checksum alone (trivial rule, virtual value, or cached HashType disproof) returns <code>False</code>. Expression evaluation uses it to decide whether an empty-path expression can be evaluated locally or must run where the data is.</p>
+<h2 id="implementation-status-and-current-limitations">Implementation status and current limitations</h2>
+<p>These are current behaviour, not scheduled fixes — each is described in full where it first comes up above; this section only collects them:</p>
+<ul>
+<li><strong><code>checksum → X</code> is not validated against <code>X</code>.</strong> See "Conversions involving <code>checksum</code>" above.</li>
+<li><strong>Large integers lose precision.</strong> <code>orjson</code> turns an integer outside the unsigned 64-bit range into a float, so <code>int</code> and <code>plain</code> readings of it are imprecise. See "Large integers" above.</li>
+<li><strong><code>bytes</code> reads return inconsistent types.</strong> A non-null reading returns a <code>Buffer</code> object; the null reading returns <code>b""</code>. See the reference-parser table above.</li>
+<li><strong>The <code>str</code> spelling of a boolean is not symmetric.</strong> Reading the <code>true</code> buffer as <code>str</code> gives <code>"True"</code> (the virtual-values table), while serializing <code>True</code> as <code>str</code> writes <code>b"true\n"</code> (the serialization table), so a <code>bool</code> does not round-trip through <code>str</code>.</li>
+</ul>
+<p>The false-rejection family that HashType used to cause (<code>X → checksum</code>, the <code>int</code>/<code>float</code> targets, the never-disproved chains, <code>deserializable_as("bool")</code>, the broken <code>SEMANTIC</code> flag) is fixed; see <code>contracts/hashtype.md</code>, "Current limitations", for what is left there.</p>
+<h2 id="agent-guidance">Agent guidance</h2>
+<ul>
+<li>Compare identities by checksum, never by deserialized value.</li>
+<li>For values of the same celltype, you can normally assume that one value has one checksum <em>if the buffer was serialized by Seamless</em>. For arbitrary files/buffers, you can never assume this.</li>
+<li>Prefer conversions along hierarchy edges (trivial) when you want to avoid buffer I/O; reinterpretations need a parse unless a virtual value or HashType settles them.</li>
+<li>Do not print <code>str(checksum)</code> into machine-readable output; use <code>.hex()</code>.</li>
+<li>Expect <code>int</code> readings to truncate, and <code>bool</code> readings to accept only canonical boolean checksums.</li>
+</ul>
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="identity-and-caching.html" class="btn btn-neutral float-left" title="Identity and Caching"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="hashtype.html" class="btn btn-neutral float-right" title="HashType">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+    
+      <span><a href="identity-and-caching.html" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="hashtype.html" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script src="../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "..";</script>
+    <script src="../js/theme_extra.js"></script>
+    <script src="../js/theme.js"></script>
+      <script src="../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>

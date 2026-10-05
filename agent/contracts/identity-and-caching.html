@@ -57,8 +57,14 @@
     <ul class="current">
     <li class="toctree-l2"><a class="reference internal" href="#transformation-identity">Transformation identity</a>
     </li>
+    <li class="toctree-l2"><a class="reference internal" href="#checksums-values-and-celltypes">Checksums, values, and celltypes</a>
+    </li>
     <li class="toctree-l2"><a class="reference internal" href="#caching">Caching</a>
         <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#transformations-are-not-the-only-thing-cached">Transformations are not the only thing cached</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#caching-masks-accidental-nondeterminism">Caching masks accidental nondeterminism</a>
+    </li>
     <li class="toctree-l3"><a class="reference internal" href="#concurrent-submissions-of-the-same-checksum">Concurrent submissions of the same checksum</a>
     </li>
         </ul>
@@ -68,6 +74,28 @@
     <li class="toctree-l2"><a class="reference internal" href="#forcing-recomputation-auditing">Forcing recomputation / auditing</a>
     </li>
     </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="celltypes-and-conversion.html">Celltypes, Null, and Conversion</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="hashtype.html">HashType</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="deep-celltypes.html">Deep Celltypes</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="expressions.html">Expressions</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="cells.html">Cells</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="pins.html">Pins</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="workflow-context.html">Workflow Context</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="node-state-lifecycle.html">Node State Lifecycle</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="attachments.html">Attachments</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="mounts.html">File Mounts</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="cancellation.html">Cancellation</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="direct-delayed-and-transformation.html">direct/delayed/Transformation</a>
                   </li>
@@ -90,6 +118,8 @@
                   <li class="toctree-l1"><a class="reference internal" href="compression.html">Compression</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="compiled-transformers.html">Compiled Transformers</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="compiled-pins.html">Compiled Pins</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="seamless-signature-schema.html">seamless-signature Schema</a>
                   </li>
@@ -166,6 +196,12 @@ computation runs (<code>__meta__</code> including local-vs-remote placement, <co
 <code>__compilation__</code>, scratch policy, …). Those change execution, not the denoted
 result. If the platform allows environment-dependent semantics, it should record
 an <strong>environment signature</strong> as provenance (see <code>contracts/scratch-witness-audit.md</code>).</p>
+<h2 id="checksums-values-and-celltypes">Checksums, values, and celltypes</h2>
+<ul>
+<li>The checksum is the identity; a deserialized value is not. One value may have several checksums (e.g. <code>b"true"</code> vs <code>b"true\n"</code>, compact vs indented JSON), and Seamless does not re-canonicalize a checksum by re-serializing its value — the only canonicalization is empty <code>bytes</code> → the canonical null <code>b"null\n"</code>.</li>
+<li>A celltype is an interpretation of a checksum. The celltype hierarchy is a hierarchy of valid checksums: a checksum valid as a subtype is valid, unchanged, as its supertype, so such a conversion keeps the checksum (and hence cache identity).</li>
+<li>See <code>contracts/celltypes-and-conversion.md</code> (celltypes, null, parser, conversion engine) and <code>contracts/hashtype.md</code> (checksum-level classification used to reject impossible deserializations/conversions without buffers).</li>
+</ul>
 <h2 id="caching">Caching</h2>
 <p>Caching is valid only to the extent that the step is referentially transparent under the identity definition above.</p>
 <p>Practical rules:</p>
@@ -175,8 +211,24 @@ an <strong>environment signature</strong> as provenance (see <code>contracts/scr
 <li>Content-addressed reads are not semantic side effects: resolving a pre-declared checksum is materialization, not “reading whatever is on disk”.</li>
 <li>Compression (<code>.zst</code>, <code>.gz</code>) is a materialization detail — it does not affect identity or caching. A compressed and uncompressed form of the same buffer have the same checksum and are cache-equivalent. See <code>contracts/compression.md</code>.</li>
 </ul>
+<h3 id="transformations-are-not-the-only-thing-cached">Transformations are not the only thing cached</h3>
+<p>This page defines the <em>Transformation</em> identity and its cache. Three other kinds of entry are keyed and stored by their own identity, and none of them is a transformation-cache entry:</p>
+<ul>
+<li><strong>Expression results.</strong> An Expression's identity is the 4-tuple <code>(input_checksum, path, input_celltype, celltype)</code>, and a successful result is recorded under it — in a process-global cache and in the database <code>expression</code> table, with <code>rev_expression</code> as its reverse index. Failures are <strong>not</strong> cached, deliberately, unlike a Transformation's exception. See <code>contracts/expressions.md</code>.</li>
+<li><strong>Conversion results.</strong> A buffer-level celltype conversion that produces a new buffer is recorded as an <strong>empty-path Expression</strong>, so a later conversion between the same two celltypes for the same checksum is an Expression cache hit, not a second conversion. See <code>contracts/celltypes-and-conversion.md</code>.</li>
+<li><strong>HashType words.</strong> The checksum-level classification of a buffer is cached per checksum, locally and in the database <code>hash_type</code> table, and only ever tightens. It is metadata about a checksum, never a result. See <code>contracts/hashtype.md</code>.</li>
+</ul>
+<p>The local buffer cache, its strong/weak strategy and its eviction pressure are <code>contracts/cache-storage-and-limits.md</code>; which buffers may not be evicted at all is the checksum reference lifecycle (<code>contracts/internal/checksum-reference-lifecycle.md</code>).</p>
+<h3 id="caching-masks-accidental-nondeterminism">Caching masks accidental nondeterminism</h3>
+<p>A direct consequence of “same <code>tf_checksum</code> ⇒ reuse the cached result”: Seamless <strong>does not, by default, observe</strong> accidental nondeterminism (wall-clock reads, unordered-set iteration, non-associative parallel reductions, data races). A transformation is computed <strong>once</strong>, its result is cached under its <code>tf_checksum</code>, and every later request is a <strong>cache hit</strong> — the code is never re-run, so a divergent result is never seen.</p>
+<p>Accidental nondeterminism therefore surfaces <strong>only when a result is recomputed</strong>:</p>
+<ul>
+<li><strong>deliberately</strong>, by forcing a recomputation for an audit (see “Forcing recomputation / auditing” below), or</li>
+<li><strong>incidentally</strong>, by <strong>fingertipping</strong> — when a requested buffer is <em>absent</em> (evicted from the store, <strong>or</strong> <code>scratch</code> and so never stored), Seamless regenerates it by recomputing its producer (recomputation-using-provenance). A non-reproducible producer then yields a <em>different</em> checksum on regeneration, breaking the consuming step's input identity. Note this is a property of fingertipping (the recompute), not of scratch as such — an evicted non-<code>scratch</code> buffer is exposed the same way (see <code>contracts/scratch-witness-audit.md</code>).</li>
+</ul>
+<p>A <code>result_checksum</code> that differs for the same <code>tf_checksum</code> is a <strong>referential-transparency violation</strong>, not a Seamless feature; that is what <code>IrreproducibleTransformation</code> records (see <code>contracts/execution-records.md</code>). Determinism is a contract the user must uphold; Seamless's silence on a cache hit is not evidence of it.</p>
 <h3 id="concurrent-submissions-of-the-same-checksum">Concurrent submissions of the same checksum</h3>
-<p>Because orthogonal-only differences are cache-equivalent, a second submission of an already-running <code>tf_checksum</code> under a different orthogonal envelope does not start a second execution. By default it <strong>latches on</strong>: it attaches to the running submission, adopts that submission's envelope, and returns its result <em>value</em> (not the latcher's envelope side-effects, e.g. its own direct-print, placement, or record request). A caller that requires its own envelope to execute can opt into <code>strict</code> mode (e.g. <code>--strict</code> for the CLI), which instead fails while a differently-dundered submission is active — the prior submission must finish or be canceled (<code>seamless-cancel &lt;tf_checksum&gt;</code>) first. This reflects a backend limitation — the same <code>tf_checksum</code> cannot execute concurrently under two different envelopes — not a property of the identity model.</p>
+<p>Because orthogonal-only differences are cache-equivalent, a second submission of an already-running <code>tf_checksum</code> under a different orthogonal envelope does not start a second execution. By default it <strong>latches on</strong>: it attaches to the running submission, adopts that submission's envelope, and returns its result <em>value</em> (not the latcher's envelope side-effects, e.g. its own direct-print, placement, or record request). A caller that requires its own envelope to execute can opt into <code>strict</code> mode (<code>strict_dunder=True</code> in Python; <code>--strict</code> on <code>seamless-run-transformation</code>, which is the only CLI that offers it), which instead fails while a differently-dundered submission is active — the prior submission must finish or be canceled (<code>seamless-cancel &lt;tf_checksum&gt;</code>) first. This reflects a backend limitation — the same <code>tf_checksum</code> cannot execute concurrently under two different envelopes — not a property of the identity model.</p>
 <h2 id="load-bearing-vs-orthogonal-keys-in-a-transformation-dict">Load-bearing vs orthogonal keys in a transformation dict</h2>
 <p>Internally, a transformation is represented as a dict. A dunder (double-underscore) key is <strong>not</strong> automatically excluded from the checksum — each key is classified as one of three kinds:</p>
 <p><strong>Load-bearing</strong> (determinant) — included in the transformation checksum (the cache key). Changing the value produces a different transformation identity and bypasses the cache. This is every plain pin (<code>code</code>, <code>arg1</code>, <code>objects</code>, …) <strong>and</strong> the load-bearing dunders: <code>__language__</code> (code interpretation/execution semantics), <code>__output__</code> (output name/celltype), <code>__as__</code> (pin namespace mapping, observable by code), <code>__format__</code> (pin materialization), and <code>__schema__</code> (compiled function ABI/signature; not derivable from <code>code</code>).</p>
@@ -202,7 +254,7 @@ an <strong>environment signature</strong> as provenance (see <code>contracts/scr
           </div><footer>
     <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
         <a href="../repos/index.html" class="btn btn-neutral float-left" title="Workspace Repos"><span class="icon icon-circle-arrow-left"></span> Previous</a>
-        <a href="direct-delayed-and-transformation.html" class="btn btn-neutral float-right" title="direct/delayed/Transformation">Next <span class="icon icon-circle-arrow-right"></span></a>
+        <a href="celltypes-and-conversion.html" class="btn btn-neutral float-right" title="Celltypes, Null, and Conversion">Next <span class="icon icon-circle-arrow-right"></span></a>
     </div>
 
   <hr/>
@@ -228,7 +280,7 @@ an <strong>environment signature</strong> as provenance (see <code>contracts/scr
       <span><a href="../repos/index.html" style="color: #fcfcfc">&laquo; Previous</a></span>
     
     
-      <span><a href="direct-delayed-and-transformation.html" style="color: #fcfcfc">Next &raquo;</a></span>
+      <span><a href="celltypes-and-conversion.html" style="color: #fcfcfc">Next &raquo;</a></span>
     
   </span>
 </div>

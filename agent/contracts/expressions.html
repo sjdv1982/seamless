@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <link rel="shortcut icon" href="../img/favicon.ico" />
+    <title>Expressions - Seamless — Agent Documentation</title>
+    <link rel="stylesheet" href="../css/theme.css" />
+    <link rel="stylesheet" href="../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "Expressions";
+        var mkdocs_page_input_path = "contracts/expressions.md";
+        var mkdocs_page_url = null;
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href="../index.html" class="icon icon-home"> Seamless — Agent Documentation
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../index.html">Home</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../overview.html">Agent Docs Overview</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../repos/index.html">Workspace Repos</a>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Contracts</span></p>
+              <ul class="current">
+                  <li class="toctree-l1"><a class="reference internal" href="identity-and-caching.html">Identity and Caching</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="celltypes-and-conversion.html">Celltypes, Null, and Conversion</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="hashtype.html">HashType</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="deep-celltypes.html">Deep Celltypes</a>
+                  </li>
+                  <li class="toctree-l1 current"><a class="reference internal current" href="#">Expressions</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#the-definition">The definition</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#path-syntax">Path syntax</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#identity">Identity</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#the-dummy-expression">The dummy Expression</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#cost-class">Cost class</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#results-and-caching">Results and caching</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#placement-an-expression-is-evaluated-where-the-data-is">Placement: an Expression is evaluated where the data is</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#errors">Errors</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#expression-failures-are-not-cached">Expression failures are not cached</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#deduplication">Deduplication</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#cancellation">Cancellation</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#the-linger">The linger</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#why-deregistration-not-task-cancellation">Why deregistration, not task cancellation</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#api">API</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#implementation-status">Implementation status</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#deep-checksums">Deep checksums</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#current-limitations">Current limitations</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#non-goals">Non-goals</a>
+    </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="cells.html">Cells</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="pins.html">Pins</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="workflow-context.html">Workflow Context</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="node-state-lifecycle.html">Node State Lifecycle</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="attachments.html">Attachments</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="mounts.html">File Mounts</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="cancellation.html">Cancellation</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="direct-delayed-and-transformation.html">direct/delayed/Transformation</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="modules-and-closures.html">Modules and Closures</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="scratch-witness-audit.html">Scratch/Witness/Audit</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="seamless-run-and-argtyping.html">seamless-run/Argtyping</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="cache-storage-and-limits.html">Cache Storage and Limits</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="content-addressed-files-and-dirs.html">Content-addressed Files and Dirs</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="execution-backends.html">Execution Backends</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="execution-records.html">Execution Records</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="service-management.html">Service Management</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="compression.html">Compression</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="compiled-transformers.html">Compiled Transformers</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="compiled-pins.html">Compiled Pins</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="seamless-signature-schema.html">seamless-signature Schema</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">API</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/python/seamless.html">seamless</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/python/seamless.transformer.html">seamless.transformer</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/python/seamless.buffer_class.html">seamless.buffer_class</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/python/seamless.checksum_class.html">seamless.checksum_class</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/python/seamless_config.select.html">seamless_config.select</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/python/seamless_config.tools.html">seamless_config.tools</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/python/seamless_transformer.transformation_class.html">seamless_transformer.transformation_class</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/python/seamless_transformer.transformer_class.html">seamless_transformer.transformer_class</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">CLI</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/cli/seamless-run.html">seamless-run</a>
+                  </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Seamless — Agent Documentation</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../index.html" class="icon icon-home" aria-label="Docs"></a></li>
+          <li class="breadcrumb-item">Contracts</li>
+      <li class="breadcrumb-item active">Expressions</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h1 id="expressions-contract">Expressions (Contract)</h1>
+<p>An <strong>Expression</strong> is the structural, immutable counterpart of a Transformation: a closed, pure codebook over one input checksum — get-attribute, get-item, slice, celltype conversion — with <strong>no execution environment</strong>. It has no code, no pins, no dunders, no <code>__env__</code>; it cannot run user code and cannot fail nondeterministically.</p>
+<p>Expressions and Transformations share one lazy, content-addressed DAG: an Expression's input may be a Checksum, a Cell, or another Expression, and an Expression result may feed a transformation pin, exactly as a transformation result may feed an Expression.</p>
+<p>A <strong>Cell is a deferred Expression</strong>: the mutable builder for the same recipe, either standalone or bound to a workflow Context node. Everything Cell-side — <code>celltype</code> versus read-only <code>input_celltype</code>, <code>.source</code> / <code>.checksum</code>, the write families, null, standalone reads, failures on the handle, projections and cell-level joins — is in <code>contracts/cells.md</code>.</p>
+<p>Expressions and the conversion engine are entangled: buffer-level conversion results are cached as <strong>empty-path Expressions</strong>, so every conversion that produces a new buffer is recorded under an Expression identity (see <code>contracts/celltypes-and-conversion.md</code>).</p>
+<p>Code locations:</p>
+<table>
+<thead>
+<tr>
+<th>Concern</th>
+<th>Module / symbol</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Definition container</td>
+<td><code>seamless.expression_class</code> (<code>Expression</code>, <code>normalize_path</code>, <code>append_item_path</code>, <code>append_slice_path</code>); re-exported as <code>seamless.Expression</code></td>
+</tr>
+<tr>
+<td>Evaluation, cache, placement, dedup, cancellation</td>
+<td><code>seamless.checksum.expression</code> (<code>ExpressionKey</code>, <code>ExpressionEvaluationError</code>, <code>evaluate_expression</code>, <code>evaluate_expression_async</code>, <code>evaluate_expression_remote</code>, <code>choose_expression_evaluation_location</code>, <code>get_expression_cache</code>, <code>parse_path</code>, <code>resolve_expression_value</code>, <code>softcancel_expression</code>, <code>cancel_expression</code>, <code>wait_for_active_expression</code>)</td>
+</tr>
+<tr>
+<td>Checksum-level pre-validation</td>
+<td><code>seamless.checksum.hash_type_validation.validate_expression[_async]</code></td>
+</tr>
+<tr>
+<td>Error envelope</td>
+<td><code>seamless.error_envelope</code> (<code>encode_error</code>, <code>decode_error</code>, <code>error_kind</code>, <code>WorkflowExecutionError</code>, <code>RunningLoopRefusal</code>)</td>
+</tr>
+<tr>
+<td>Remote dispatch</td>
+<td><code>seamless_remote.jobserver_remote.run_expression</code> / <code>has_jobserver</code>, <code>seamless_remote.daskserver_remote.run_expression</code> / <code>has_daskserver</code>, <code>seamless_transformer.worker.dispatch_expression</code></td>
+</tr>
+<tr>
+<td>Server endpoint</td>
+<td>seamless-jobserver <code>GET /run-expression</code></td>
+</tr>
+<tr>
+<td>Database</td>
+<td>seamless-database <code>Expression</code> model → table <code>expression</code>; request types <code>expression</code> (GET/PUT) and <code>rev_expression</code> (GET only); protocol <code>("seamless", "database", "2.2")</code></td>
+</tr>
+</tbody>
+</table>
+<h2 id="the-definition">The definition</h2>
+<p><code>Expression</code> is a frozen, slotted dataclass:</p>
+<pre><code class="language-python">Expression(input_ref, path=&quot;&quot;, *, input_celltype=None, celltype=None,
+           validator=None, validator_language=None)
+</code></pre>
+<ul>
+<li><code>input_ref</code> is a <code>Checksum</code>, a <code>Cell</code> (built at construction into its builder state), another <code>Expression</code>, or anything a <code>Checksum</code> accepts.</li>
+<li><code>input_celltype</code> defaults to the typed source's celltype, else <code>celltype</code>, else <code>"mixed"</code>; it must agree with a typed source or construction raises <code>ValueError</code>.</li>
+<li><code>celltype</code> defaults to <code>input_celltype</code>. It is the <strong>output</strong> celltype (see the <code>celltype</code> / <code>input_celltype</code> naming rule for Cells).</li>
+<li>Builders return new Expressions and never mutate: <code>.item(key)</code>, <code>.slice(start, stop, step)</code>, <code>.as_celltype(ct)</code>, <code>expr[key]</code>, <code>expr[a:b]</code>, <code>expr.name</code>. Attribute access is projection, so retired API names are rejected before projection, and names starting with <code>_</code> raise <code>AttributeError</code>.</li>
+</ul>
+<h3 id="path-syntax">Path syntax</h3>
+<p>The path is stored as a string and parsed at evaluation time (<code>parse_path</code>):</p>
+<table>
+<thead>
+<tr>
+<th>Form</th>
+<th>Step</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>.name</code> or a leading bare <code>name</code></td>
+<td><code>("item", "name")</code></td>
+</tr>
+<tr>
+<td><code>[token]</code>, <code>token</code> containing <code>:</code></td>
+<td><code>("slice", slice(...))</code></td>
+</tr>
+<tr>
+<td><code>[token]</code>, otherwise</td>
+<td><code>("item", ast.literal_eval(token))</code></td>
+</tr>
+</tbody>
+</table>
+<p><code>append_item_path</code> writes a string key in dotted form when it is a Python identifier, otherwise in bracket form with <code>repr()</code>; any non-identifier key (including one containing <code>/</code>) therefore has to be written in bracket form.</p>
+<p>Applying a step (<code>_apply_step</code>): a string item key indexes a <code>dict</code> or a structured NumPy array, and otherwise falls back to <code>getattr</code>; any other key indexes. A step that raises becomes <code>ExpressionEvaluationError</code>.</p>
+<h2 id="identity">Identity</h2>
+<p><strong>The identity of an Expression is the 4-tuple <code>(input_checksum, path, input_celltype, celltype)</code>.</strong></p>
+<ul>
+<li><code>Expression.identity_key</code> is the in-process form; <code>__eq__</code> and <code>__hash__</code> use it. Its first element is <code>("checksum", hex)</code> for a concrete input, <code>("expression", …)</code> for an Expression input, and <code>("object", id(...))</code> for an unresolved source, so an Expression over an uncomputed source is identical only to itself.</li>
+<li><code>Expression.database_key</code> is the wire form <code>(input_checksum.hex(), path, input_celltype, celltype)</code>. It raises <code>ValueError</code> when the input is not yet a concrete checksum.</li>
+<li><code>ExpressionKey</code> canonicalizes the input checksum against the input celltype on construction, so <code>sha256(b"")</code> as <code>bytes</code> and the canonical null are one identity (see <code>contracts/celltypes-and-conversion.md</code>).</li>
+<li>The seamless-database <code>Expression</code> row has exactly this 4-tuple as its <strong>composite primary key</strong>, with <code>result</code> as the payload. A second write of the same key is accepted only when the stored <code>result</code> agrees; otherwise the row is kept and the request answered with a conflict.</li>
+<li>The same 4-tuple is the <strong>reverse index</strong> that fingertipping walks: <code>rev_expression</code> (database) plus the process-local expression cache. Given a wanted result checksum, Seamless finds Expressions that produce it, fingertips their inputs and re-evaluates them (see <code>contracts/scratch-witness-audit.md</code>).</li>
+<li>Wire/storage limits: the database stores <code>path</code> JSON-encoded in a 100-character column and each celltype in a 20-character column; longer values are refused as a malformed expression request.</li>
+</ul>
+<p><strong>Validators are excluded from identity.</strong> <code>validator</code> / <code>validator_language</code> are fields of the container and columns of the database row, but they are <strong>not</strong> part of the primary key, and <code>evaluate_expression*</code> carries an explicit TODO recording that exclusion. Validators are <strong>deferred</strong>: the reject-only contract is settled, and every evaluation entry point raises <code>NotImplementedError</code> when a validator is supplied. Nothing currently writes the two columns.</p>
+<h3 id="the-dummy-expression">The dummy Expression</h3>
+<p>An Expression with an <strong>empty path and <code>input_celltype == celltype</code></strong> is the identity (dummy) expression. It resolves to its input checksum without any work: no buffer is fetched, no conversion runs, and the input checksum is recorded as the result. Checksum-level validation still applies — a known structural incompatibility is rejected without source content — but nothing else happens. (A null input short-circuits earlier still: an empty-path Expression whose canonicalized input is null yields the canonical null result for every celltype pair.)</p>
+<p>This is load-bearing for the <code>.set_checksum</code> contract. <code>Cell.set_checksum</code> and <code>Pin.set_checksum</code> are the Checksum variant of the three setters; they set the <strong>input</strong> checksum, not <code>.checksum</code>. <code>.checksum</code> is therefore normally <code>None</code> immediately afterwards, with two exceptions:</p>
+<ol>
+<li>the underlying Expression is a dummy — <code>.checksum</code> returns the argument (as a <code>Checksum</code>) immediately, without evaluation;</li>
+<li>the Cell is unbound — <code>.checksum</code> is then a computed property performing a synchronous evaluation of the underlying Expression. This does not change the semantics of <code>set_checksum</code>.</li>
+</ol>
+<p>The dummy case is a required special case, not an optimization: <code>.set_checksum</code> is instantaneous, so <code>.checksum</code> must answer immediately, without entering the evaluator.</p>
+<p><em>Verified:</em> the standalone <code>CellBase.checksum</code> getter implements exactly this fast path, including the empty-<code>bytes</code> → null canonicalization.</p>
+<h2 id="cost-class">Cost class</h2>
+<p><strong>An Expression's cost class is decided from checksum-level facts alone, never from the buffer content behind the checksum.</strong> A non-empty path always costs one buffer, regardless of which checksum is at the root — shape alone decides. An empty path is not always free, though: whether it needs a buffer also turns on the specific checksum's nullity and on what its cached <code>HashType</code> already proves, so two Expressions with the same <code>(input_celltype, path shape, celltype)</code> shape are not guaranteed the same cost (contrast the deep celltypes, <code>contracts/deep-celltypes.md</code>, where no conversion branches on anything but the declared celltypes, so shape alone does decide). An agent can always decide cost class without touching a buffer; that is why deep fan-out is restricted (below) and why placement can be decided before any buffer is touched.</p>
+<p>Concretely, an Expression needs a buffer if and only if:</p>
+<ul>
+<li>the path is non-empty; or</li>
+<li>the path is empty, the celltypes differ, the input is not null, and <code>conversion_needs_buffer(checksum, input_celltype, celltype)</code> is <code>True</code> — that is, the conversion is not decidable from the checksum, the rule table and the cached HashType alone.</li>
+</ul>
+<p>Before evaluation, <code>validate_expression[_async]</code> checks the source celltype, then the path capability, then (for an empty path) <code>conversion_feasible</code>, rejecting impossible work at checksum level with <code>HashTypeValidationError</code> (see <code>contracts/hashtype.md</code>).</p>
+<h2 id="results-and-caching">Results and caching</h2>
+<ul>
+<li>Successful results are recorded in a process-global dict <code>get_expression_cache()</code>, keyed by the 4-tuple, value = result checksum; and, when <code>seamless_remote</code> is importable, in the database <code>expression</code> table.</li>
+<li>A newly produced result buffer is kept in a weak-valued map, given a buffer-cache tempref, and <strong>classified</strong>: <code>register_hash_type_for_buffer</code> runs in the process that produced the buffer.</li>
+<li><code>Expression.checksum</code> is an alias of <code>Expression.result</code>: the published result checksum or <code>None</code>. Reading it also expresses user result interest (a refholder claim on the result; <code>contracts/internal/checksum-reference-lifecycle.md</code>).</li>
+<li><code>Expression.compute(execution="auto")</code> / <code>compute_async(execution="auto")</code> return the result checksum. <code>Expression.run()</code> (also <code>expr()</code>) computes and then materializes the value: local buffers first, then <code>Checksum.resolve()</code>, which asks the hashserver and raises <code>CacheMissError</code> when no buffer is found. <code>run()</code> does not fingertip.</li>
+</ul>
+<h2 id="placement-an-expression-is-evaluated-where-the-data-is">Placement: an Expression is evaluated where the data is</h2>
+<p>Placement <strong>is</strong> contract. A jobserver/daskserver counts as closer to the hashserver than the client, so an input the client does not hold is evaluated there rather than downloaded. What is contract is the <em>rule for choosing</em> where to evaluate; placement is no more part of an Expression's identity than it is part of a Transformation's — the identity is the 4-tuple above, and the result must not depend on where the Expression ran (below).</p>
+<p><code>execution</code> takes <code>"auto"</code>, <code>"local"</code> or <code>"remote"</code>. <strong>These three values are an argument on an Expression, not the <code>execution:</code> configuration key that selects a transformation backend</strong> (<code>contracts/execution-backends.md</code>); the words <code>local</code> and <code>remote</code> mean something narrower here. <code>"auto"</code> is the default on every path that evaluates an Expression: <code>Expression.compute</code> / <code>compute_async</code> / <code>run</code>, transformation dependencies, pin preparation, and workflow Context projections (<code>Context(expression_execution=...)</code> overrides it for one Context).</p>
+<ul>
+<li><strong><code>"local"</code> means <em>in this process's memory</em>.</strong> <strong><code>"remote"</code> means <em>not in this process's memory</em>, independently of backend availability.</strong> <code>choose_expression_evaluation_location</code> answers only that question: local if no buffer is needed, or if the input buffer is already resolvable from process-local caches; remote otherwise.</li>
+</ul>
+<p>Resolution order (<code>evaluate_expression_remote</code>):</p>
+<ol>
+<li>process-local Expression cache;</li>
+<li>database Expression result;</li>
+<li>local evaluation, when no buffer is needed or the input is in process memory;</li>
+<li>jobserver/daskserver dispatch, when it is not and a server is configured;</li>
+<li>local materialization from the hashserver, when none is configured (the local async evaluator resolves the input through <code>Checksum.resolution()</code>, and <code>CacheMissError</code> propagates if it cannot);</li>
+<li>resolution of the result checksum — through the hashserver if necessary — when a value is wanted.</li>
+</ol>
+<p>Rules:</p>
+<ul>
+<li><strong>No silent fallback once a <em>configured</em> server fails.</strong> Availability is queried side-effect-free (<code>has_jobserver()</code> / <code>has_daskserver()</code>); a missing backend downgrades <code>"auto"</code> to local <em>before</em> dispatch, but connection, restart and evaluation errors from a configured server propagate.</li>
+<li><strong>Explicit <code>"local"</code> and <code>"remote"</code> never fall back.</strong> <code>"remote"</code> raises when <code>seamless_remote</code> is unavailable (<code>ExpressionEvaluationError</code>) or when no client is configured (<code>RuntimeError</code>); <code>"local"</code> never dispatches. Only <code>"auto"</code> may downgrade.</li>
+<li><strong>Client-side dispatch target.</strong> A configured jobserver is used first; a client with no jobserver but a configured daskserver submits the Expression to the Dask scheduler itself. Only <code>ClientRestartRequiredError</code> is retried (once, then the next client); a decoded job failure is never retried.</li>
+<li><strong>Synchronous evaluation inside a running event loop is refused, not failed.</strong> <code>Expression.compute()</code> in a running loop evaluates only when the location is local; otherwise it raises <code>RunningLoopRefusal</code>. A standalone Cell getter turns that refusal into <code>None</code> with the Cell left <code>waiting</code>, no exception recorded and nothing dispatched. Outside a loop, the synchronous path drives the full asynchronous path through <code>asyncio.run</code>.</li>
+<li><strong>A daskserver is a jobserver <em>mode</em>, not a competing backend.</strong> Both modes expose the same checksum, error, caching and HashType contracts. In a jobserver, <code>dispatch_expression</code> evaluates in-process when no Dask client is configured, and otherwise submits the Expression to a Dask worker, passing only the identity fields; the jobserver does not download the input in order to forward it.</li>
+</ul>
+<p>Two derived rules:</p>
+<ul>
+<li><strong>The result, including the exception type, must not depend on where the Expression ran.</strong> That is what the structured error envelope buys (below).</li>
+<li><strong>HashType classification is owned by whichever process holds the buffer</strong>: the client for local evaluation, the jobserver for direct evaluation, the Dask worker for daskserver evaluation. A process that receives only a checksum classifies nothing and uploads nothing. Jobserver/daskserver responses are checksum-only; HashTypes travel through the database.</li>
+</ul>
+<p><strong>Open placement questions</strong> (documented as open; do not assume an answer):</p>
+<ol>
+<li>Whether "where the data is" includes a locally mounted read buffer directory. Today locality is decided by process memory alone, so a buffer available on local disk still counts as remote and is dispatched.</li>
+<li>Where a fingertip chain triggered by an Expression runs. It is the case whose cost is unbounded, because the chain may contain Transformations. Today the reverse-index walk re-evaluates the chain locally in the requesting process, but this is code behaviour, not a ratified contract.</li>
+</ol>
+<h2 id="errors">Errors</h2>
+<p>Expression errors cross process boundaries as a structured envelope (<code>seamless.error_envelope</code>):</p>
+<pre><code class="language-json">{&quot;error&quot;: {&quot;kind&quot;: &quot;cache_miss&quot;, &quot;message&quot;: &quot;...&quot;, &quot;checksum&quot;: &quot;64-hex-digest&quot;}}
+</code></pre>
+<ul>
+<li>Kinds with a reconstructable class: <code>cache_miss</code> (<code>CacheMissError</code>), <code>hash_type_validation</code> (<code>HashTypeValidationError</code>), <code>expression_evaluation</code> (<code>ExpressionEvaluationError</code>), <code>conversion</code> (<code>SeamlessConversionError</code>), <code>canceled</code> (<code>ExecutionCanceledError</code>, also produced by <code>asyncio.CancelledError</code>). Any other exception encodes as kind <code>execution</code>; a well-formed envelope with an unrecognized kind decodes to <code>WorkflowExecutionError</code> carrying the message and the kind — a deterministic execution failure, never a connection error.</li>
+<li><code>CacheMissError</code> <strong>keeps its checksum in <code>args[0]</code></strong>: the encoder takes the digest from the first argument, and the decoder reconstructs <code>CacheMissError(Checksum(hex))</code>. Agents may rely on <code>exc.args[0]</code> being the <code>Checksum</code>, not its display string.</li>
+<li>A job that answered — success, failure, or cancellation — is an <strong>HTTP 200</strong> response carrying either the result checksum or the envelope. 4xx/5xx mean <em>no job answered</em> and surface as <code>ClientConnectionError</code>, as do transport failures and malformed 200 bodies. A decoded job failure therefore never triggers a client retry or restart.</li>
+</ul>
+<h3 id="expression-failures-are-not-cached">Expression failures are not cached</h3>
+<p><strong>Nothing about an Expression is sticky.</strong> Only successful results are recorded — in the process cache and in the database. A failed Expression records nothing and is simply retried on the next request.</p>
+<p>This is deliberately unlike a Transformation, which caches its exception: an Expression is cheap to redo, so caching a failure would only risk poisoning a checksum. Materialization failure must not be sticky either: "not found anywhere" is a real terminal answer, but it is the trigger for fingertipping, not a cached failure.</p>
+<p>Two things not to conflate with it:</p>
+<ul>
+<li><strong>Deduplication</strong> is not caching. Concurrent callers for one Expression identity share a single in-flight evaluation and all receive the same result <em>or the same error</em>; the shared entry is removed after success, failure <strong>or</strong> cancellation, so the next caller starts fresh.</li>
+<li><strong><code>Cell._standalone_exception</code></strong> is the <em>Cell</em> holding a failure (exposed as <code>.exception</code>, cleared by <code>clear_exception()</code>). That is Cell state, not the Expression layer caching anything.</li>
+</ul>
+<h2 id="deduplication">Deduplication</h2>
+<p>One in-flight evaluation per Expression identity, with a membership set of interested callers:</p>
+<ul>
+<li>a caller that arrives while an evaluation is in flight <strong>joins</strong> it rather than starting a second one, and awaits a shielded view of the shared future;</li>
+<li>a direct jobserver inherits this because it calls the core evaluator in its own process; the jobserver endpoint owns no active-expression map of its own;</li>
+<li>in daskserver mode the same ownership is preserved by giving equivalent submissions a deterministic Dask task identity, so duplicate requests resolve to one Dask evaluation;</li>
+<li>active work is process-local/scheduler-local and is never recorded in the database.</li>
+</ul>
+<p>A caller identifies itself to the set by a member id: a standalone <code>Expression</code> uses <code>id(self)</code>, and the workflow Context uses its demand key, which it deregisters when its own job is cancelled (node supersession, <code>Context.close()</code>). Two <code>Expression</code> objects with the same identity are therefore two members of one evaluation.</p>
+<h2 id="cancellation">Cancellation</h2>
+<p><strong>The cancellation mechanism does not belong to Expressions.</strong> The only cancellable work is remote materialization of a buffer, which Expressions share with transformation input resolution, <code>.buffer</code> reads and mounts. Expression evaluation proper — deserialize, walk the path, convert, serialize, hash — is cheap and CPU-bound.</p>
+<p>The settled model:</p>
+<ul>
+<li><strong>A waiting set per in-flight materialization, keyed by checksum</strong>, held at the materialization site in the buffer layer.</li>
+<li><strong>Latch-on</strong>: a second requester for the same checksum joins the in-flight fetch instead of starting a second one.</li>
+<li><strong>Softcancel = deregister.</strong> The fetch is aborted only when the set is empty, and then only after a <strong>linger</strong>; a requester arriving during the linger re-registers and the fetch continues.</li>
+<li><strong>No hard cancel at all</strong> — a documented non-feature. The only leaf a hard cancel could kill is a shared fetch, which would merely make the other waiters fail and re-fetch. A single waiter pressing Ctrl-C is already covered: with one member, softcancel aborts the fetch.</li>
+<li><strong>No cancel point once the buffer is present.</strong> Evaluation then runs to completion and its result is recorded.</li>
+<li><strong>Failure is not sticky</strong> (above).</li>
+<li><strong>Soft deregistration cascades down fingertip chains</strong>; a step shared with a live chain survives, because it still has a member of its own.</li>
+<li>Vocabulary: <strong>waiting set</strong>, not refcount. It tracks who still wants a fetch that has not finished, which is a different thing with a different lifetime from the checksum reference lifecycle. The two meet in one place: the site holds a lifecycle claim for the duration of the linger.</li>
+</ul>
+<h3 id="the-linger">The linger</h3>
+<p>The linger is an internal constant — "a few seconds, not contractual" — at most a test hook, and is <strong>not user-visible</strong>. Its observable consequences are contract:</p>
+<ul>
+<li>after the last waiter leaves, a fetch may run on for a few seconds;</li>
+<li>it may still complete, and its result is then recorded and usable;</li>
+<li>the site holds a lifecycle claim meanwhile, so a <code>seamless.close()</code> landing in that window can block briefly or report an outstanding claim.</li>
+</ul>
+<h3 id="why-deregistration-not-task-cancellation">Why deregistration, not task cancellation</h3>
+<p>Cancelling the caller's <code>asyncio</code> task is the right way to make it abandon an Expression — it unwinds the caller's own awaits — but task cancellation is not itself the deregistration mechanism, for four reasons:</p>
+<ul>
+<li><strong>it does not deregister</strong>: cancellation knows nothing about the waiting set, so each site must leave the set in its own cleanup path, synchronously or under a shield, since an <code>await</code> inside an already-cancelled task raises at once;</li>
+<li><strong>it does not protect shared work</strong>: if the caller's task <em>owns</em> the fetch rather than merely awaiting it, cancelling that task kills the fetch for every latched waiter too — a hard cancel in disguise. Shared work must instead be owned by a task belonging to the materialization site, with each waiter awaiting a derived or shielded future;</li>
+<li><strong>it does not stop what is not an <code>await</code></strong>: a thread (<code>asyncio.to_thread</code>), a subprocess, a jobserver request or a Dask future all keep running and keep holding their resource once the awaiting task is abandoned — the Dask case in <em>Implementation status</em> below is one instance of this;</li>
+<li><strong>it gives no delay</strong>: a linger is by definition not "cancel the child the moment the parent is cancelled", so the site's task must outlive every individual waiter.</li>
+</ul>
+<h3 id="api">API</h3>
+<p><strong>The rule is about the checksum-addressed substrate verbs</strong>: <code>softcancel</code> means <strong>deregister</strong> everywhere in Seamless, and <code>cancel</code> means <strong>hard kill</strong> everywhere. A verb on a <em>handle</em> means something narrower — "this handle gives up": terminal for the handle, soft at the substrate, which is why <code>Transformation.cancel()</code> keeps its name (<code>contracts/cancellation.md</code>). An Expression handle has nothing terminal to mark and no hard operation to offer, so it carries only <code>softcancel()</code>.</p>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Status</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>Expression.softcancel()</code></td>
+<td>the only cancellation verb on an Expression</td>
+</tr>
+<tr>
+<td><code>Expression.cancel</code></td>
+<td>retired; raises, pointing at <code>softcancel()</code> and stating that Expressions have no hard cancel</td>
+</tr>
+<tr>
+<td><code>seamless.checksum.expression.softcancel_expression</code></td>
+<td>the module-level entry point</td>
+</tr>
+<tr>
+<td><code>seamless.checksum.expression.cancel_expression</code></td>
+<td>dropped (it was an alias of <code>softcancel_expression</code>)</td>
+</tr>
+</tbody>
+</table>
+<p><code>softcancel()</code> returns <code>bool</code>, meaning <strong>"I was a registered waiter and have now left"</strong>:</p>
+<ul>
+<li><code>False</code> when the Expression was not waiting — already complete, never started, or past the buffer into the CPU phase;</li>
+<li><code>False</code> again on a second call (idempotent);</li>
+<li><strong>it never means the work stopped.</strong> With other waiters, or during the linger, the fetch continues, and a result that arrives anyway is recorded and usable.</li>
+</ul>
+<p>There is no "cancelled" state to clear. Results are content-addressed and failures are not cached, so a caller that changes its mind simply asks again.</p>
+<h3 id="implementation-status">Implementation status</h3>
+<p>The settled model above is <strong>ahead of the code</strong>. What exists today:</p>
+<ul>
+<li>The waiting set lives at the <strong>Expression</strong> layer (<code>_active_expressions</code> in <code>seamless.checksum.expression</code>), not at the materialization site in the buffer layer, and buffer resolution itself is <strong>not</strong> deduplicated by checksum.</li>
+<li>There is <strong>no linger</strong>: when the last member deregisters, the in-flight remote request is aborted at once and the awaiting task receives <code>CancelledError</code>.</li>
+<li><code>Expression.cancel()</code> exists and is soft; <code>Expression.softcancel()</code> does not exist yet, <code>cancel</code> is not retired, and <code>cancel_expression</code> is still an alias of <code>softcancel_expression</code>.</li>
+<li><code>Expression.cancel()</code> is a <strong>silent no-op for local in-flight evaluations</strong>: <code>evaluate_expression_async</code> registers members under a 7-tuple key <code>("local", hex, path, input_celltype, celltype, str(validator), validator_language)</code>, while <code>cancel_expression</code> looks up the 4-tuple identity key. The call returns <code>False</code> while the evaluation keeps running. Only the remote path (<code>evaluate_expression_remote</code>, which registers under the 4-tuple with <code>member_id=id(self)</code>) can be deregistered.</li>
+<li><strong>Dask-dispatched Expressions cannot be interrupted mid-flight</strong>: <code>dispatch_expression</code> awaits <code>asyncio.to_thread(thin.result)</code>, so cancelling the awaiting task neither cancels the Dask future nor frees the thread, which stays blocked until the remote side finishes.</li>
+<li>No soft-deregistration cascade down fingertip chains exists.</li>
+<li>Repo tests cover the remote path only: one member leaving keeps a shared request alive and both callers get the result; the last member leaving aborts the request; <code>cancel()</code> on an idle Expression returns <code>False</code>. There is no test for local in-flight cancellation.</li>
+</ul>
+<h2 id="deep-checksums">Deep checksums</h2>
+<p>An Expression over a deep checksum (<code>deepcell</code>, <code>deepfolder</code>, <code>folder</code>) is <strong>restricted</strong>, by the cost-class rule above: exactly <strong>one string-item step</strong> is allowed, yielding either the child's checksum or the child's value at its member celltype, and longer paths are rejected (a further step continues into the child, which is a different checksum and therefore a different Expression). The zero-path conversions are index-level and free, with <strong><code>folder → mixed</code> the only conversion that materializes children</strong>. The conversion table, the member-celltype rules, the flatness requirement and the reasons are in <code>contracts/deep-celltypes.md</code>; do not re-derive them here. <strong>Status: settled contract, not yet enforced</strong> — the Expression path contains no deep-celltype rules at all, and a deep celltype on either side of an Expression currently raises <code>HashTypeValidationError</code> before evaluation.</p>
+<h2 id="current-limitations">Current limitations</h2>
+<ul>
+<li><strong>Validators are not implemented.</strong> Supplying <code>validator</code> or <code>validator_language</code> raises <code>NotImplementedError</code> from every evaluation entry point. The reject-only semantics are settled; the identity exclusion is already decided and marked in the code.</li>
+<li><strong>No forensic "irreproducible expression" analogue exists.</strong> There is no Expression counterpart of <code>IrreproducibleTransformation</code> (see <code>contracts/execution-records.md</code>); an Expression that yields a different result for the same identity tuple is not recorded anywhere.</li>
+<li><strong>Cancellation</strong> — see the implementation-status list above.</li>
+<li><strong>Deep-checksum restrictions are unenforced</strong> — see above.</li>
+<li><strong>The process-local Expression cache is unbounded</strong> and result-only; it is cleared only by process exit or an explicit <code>get_expression_cache().clear()</code>.</li>
+</ul>
+<h2 id="non-goals">Non-goals</h2>
+<ul>
+<li><strong>Execution environment.</strong> An Expression has no code, environment, meta or scratch policy. Anything that needs one is a Transformation.</li>
+<li><strong>Hard cancellation.</strong> See above; it is a deliberate non-feature.</li>
+<li><strong>Failure caching.</strong> See above; it is deliberate, not a missing optimization.</li>
+<li><strong>Value-level canonicalization.</strong> An Expression produces whatever checksum its steps and target celltype produce; it does not re-serialize a result to normalize it (see <code>contracts/identity-and-caching.md</code>).</li>
+</ul>
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="deep-celltypes.html" class="btn btn-neutral float-left" title="Deep Celltypes"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="cells.html" class="btn btn-neutral float-right" title="Cells">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+    
+      <span><a href="deep-celltypes.html" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="cells.html" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script src="../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "..";</script>
+    <script src="../js/theme_extra.js"></script>
+    <script src="../js/theme.js"></script>
+      <script src="../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>
