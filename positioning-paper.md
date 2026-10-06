@@ -16,8 +16,6 @@ This motivates two separate concepts.
 
 **Semantic strength** is the set of justified conclusions that the framework can draw about computations within that scope: in particular about dependency, computational identity, validity, equivalence and reuse.
 
-A conclusion may be justified deductively, because it follows from the assumptions built into the framework's design, or empirically, because it has survived independent tests. The second kind will matter when the execution environment is discussed. And because strength is a set of conclusions, frameworks are not ranked on a single scale: two frameworks can each draw conclusions that the other cannot.
-
 In existing frameworks, scope and strength tend to pull in different directions. Airflow has an exceptionally broad semantic scope: almost anything that can be expressed as an operation or task can participate in an Airflow workflow. But Airflow deliberately assumes little about what those tasks mean, and therefore has relatively weak semantics for computational identity and validity.
 
 Frameworks such as Bazel, Nix and Unison make the opposite trade. They restrict the objects over which they reason, but obtain much stronger semantics inside those boundaries. Bazel reasons about declared actions and artifacts; Nix about derivations and their recursively identified inputs; Unison about Unison code and values.
@@ -28,13 +26,11 @@ It is only after making this distinction that it becomes useful to ask which fra
 
 ## The superdomain of deterministic computation
 
-For the remainder of the comparison, it is useful to set aside intrinsically stateful or effectful activities such as sending an email, charging a credit card, waiting for human approval, or querying “the current weather.” They remain important computations in the operational sense, but the notions of identity and reuse that concern us become much weaker. State can still be given an identity, but only an opaque one: redun, for example, identifies the state of a database by the causal history of the calls applied to it. Such an identity cannot be reduced to concrete values. The identities that concern us here are transparent: a checksum of a buffer or of a value.
+For the remainder of the comparison, it is useful to set aside intrinsically stateful or effectful activities such as sending an email, charging a credit card, waiting for human approval, or querying “the current weather.” They remain important computations in the operational sense, but the notions of identity and reuse that concern us become much weaker. State can still be given an identity, but only an opaque one: redun, for example, identifies the state of a database by the causal history of the calls applied to it. Such an identity cannot be reduced to concrete values.
 
 Instead, consider the **superdomain of deterministic computation**: computations for which an identifiable set of determinants is assumed to establish an identifiable result.
 
 Within this superdomain, reuse is potentially much stronger than “this task ran successfully before.” If the determinants of a computation are known, a framework may be able to decide that a previous result remains valid without executing the computation again.
-
-This is where the important differences between workflow systems, build systems, package systems and content-addressed programming models emerge.
 
 What defines this superdomain is **referential transparency**: a computation can be replaced by its result, and a result by any computation that yields it. Every framework that reuses work relies on this, whether or not it says so. A computation is described by its **recipe**: its code together with its inputs. Referential transparency is then a relation between two identities that recur throughout this comparison, the identity of a recipe and the identity of a result. Each recipe yields exactly one result, but one result may be yielded by many recipes.
 
@@ -145,15 +141,15 @@ Different frameworks employ different **reuse predicates**: conditions under whi
 The classic filesystem predicate is temporal. If the inputs and recipe have apparently not changed since the output was created, accept the output.
 
 A content-based workflow can use a stronger predicate: if the identified input contents, parameters and recipe have not changed, accept the previous output.
-The decisive difference is whether a recipe is identified by the hashes of its input *values*, as in Bazel and content-based workflows, or by the hashes of its input *recipes*, recursively, as in Nix and Unison.
+The decisive difference is whether a recipe is identified by the hashes of its input *values*, as in Bazel, or by the hashes of its input *recipes*, recursively, as in Nix and Unison.
 
 Mokhov, Mitchell and Peyton Jones (2018, §4.2) call these constructive and deep constructive traces. A constructive trace, the shallow kind, keys each step on the results it consumes; a deep trace keys it on the terminal inputs alone. A recursive recipe hash is a deep trace in this sense, folding in every intermediate recipe but no intermediate result. What separates them is early cutoff. When a comment is added to a source file, the recompiled object file is unchanged, and a shallow trace stops the rebuild there; a deep trace never sees the unchanged intermediate and rebuilds everything downstream. In return, a deep trace knows the identity of an end product before anything runs, so the product can be fetched in a single lookup. For a build system, which mostly wants its end products, that is a reasonable trade.²
 
-For scientific computation it is a bad trade. Scientific databases undergo constant growth and revision, but the underlying experimental data (e.g. protein coordinates or sequences) are updated only rarely. Expensive steps typically lie downstream of cheap ones that extract that data. Conversely, downstream of expensive steps lie cheap steps such as plotting or statistical analysis, modified frequently and often interactively. This requires intermediate results to be available for reuse. Thanks to this and to early cutoff, a revision reruns only the cheap steps, whose result is unchanged; without it, every cosmetic revision repeats the expensive work.&#32;
+For scientific computation it is a bad trade. Scientific databases undergo constant growth and revision, but the underlying experimental data (e.g. protein coordinates or sequences) are updated only rarely. Expensive steps typically lie downstream of cheap ones that extract that data. Conversely, downstream of expensive steps lie cheap steps such as plotting or statistical analysis, modified frequently and often interactively. This requires intermediate results to be available for reuse. With this and with early cutoff, a revision reruns only the cheap steps, whose result is unchanged; without it, every cosmetic revision repeats the expensive work.&#32;
 
 A strong reuse model is therefore shallow: it keys each recipe on the results it consumes, and keeps the identity of a recipe *and* the identity of its result (not only for the final result but for intermediates as well). These are the two directions of referential transparency: caching goes from recipe to result, while recomputation and provenance go from a result back to the recipes that yield it. Walked back from any result, the recorded mappings form its provenance graph.&#32;
 
-Content-addressed shallow constructive traces are not common. Bazel uses result identity for early cutoff, but only inside its cache. Nix, Snakemake and redun have added content-addressed modes, which remain limited or experimental because they work against an input-addressed core. In none of these systems is result identity first-class: something a computation can take as input, pass on and produce for others. To the best of my knowledge, Seamless is the first framework where checksums are central, and files and values are just materialized checksums.
+Content-addressed shallow constructive traces are not common. Bazel uses result identity for early cutoff, but only inside its cache. Nix, Snakemake and redun have added content-addressed modes, which remain limited or experimental because they work against an input-addressed core. Only in Seamless is result identity first-class: something a computation can take as input, pass on and produce for others.
 
 ## Attitudes toward the environment
 
@@ -169,7 +165,7 @@ Unison takes a different, almost **mathematical** approach. Because code, types 
 
 Make, and by default most workflow systems, take yet another position: they ignore the environment. A cached result is reused wherever it is found. The generalization is made, but never tested. This is **neglect**.
 
-A further position is possible: a **scientific or Popperian** treatment of deterministic computation. This is one of the design choices made by Seamless, and it is the point at which Seamless enters the comparison naturally. Until now the taxonomy applies independently of it.
+A further position is possible, the one adopted by Seamless: a **scientific or Popperian** treatment of deterministic computation.
 
 Here, a deterministic transformation expresses a falsifiable claim:
 
@@ -227,9 +223,9 @@ Thus several notions can be separated:
 
 A value may be known by identity without being locally materialized.
 
-A transformation may depend on it without triggering immediate transfer.
+A computation may depend on it without triggering immediate transfer.
 
-If execution eventually needs the bytes, they can be obtained by **fingertipping** from an available source.
+If execution eventually needs the bytes, they can be obtained by recomputation (**fingertipping**) from an available source.
 
 An intermediate result may be **scratch**: computationally valid and fully identified, yet not promoted merely for that reason into permanent storage.
 
@@ -255,7 +251,7 @@ A shared build cache says:
 
 Federated content identity can support a stronger statement:
 
-> This transformation yields this result.
+> This computation yields this result.
 
 That statement does not depend on who computed the result, or where it is stored. And that difference is important for science.
 
@@ -265,7 +261,7 @@ A pathname cannot serve this role. `/home/alice/results/model.dat` derives its i
 
 An action-cache entry is more portable, but remains interpreted through the computational system and action identity that produced it.
 
-A first-class checksum identifies the result independently of any system. The claim that a transformation yields it is what makes it a fact.
+A first-class checksum identifies the result independently of any system. The claim that a computation yields it is what makes it a fact.
 
 Another researcher can use that identity directly as the input to further computation. They may materialize the value only if necessary. They may obtain it from another repository. They may recompute it independently.
 
@@ -297,7 +293,7 @@ Bazel has checksums and buffers. Its objects are files, and a file's identity is
 
 A framework with all three needs a type system to relate buffers and values. The decisive question is then whether that type system is **open** or **closed**: whether every buffer is admissible, with types as interpretations applied on top, or whether a buffer acquires identity only after conversion into the framework's own data model.
 
-IPLD, and the Homestar runtime built on it, is the clearest closed case. Its data model is language-neutral, and its DAG-CBOR codec is canonical in principle: map keys are sorted, and each value has a single encoding. But admission is conditional. Floats are always encoded at 64-bit precision; NaN and the infinities are not part of the data model and must be rejected; there is no array type, so a numerical array becomes opaque bytes plus a convention. The codec is part of the content identifier, so one value has different identities under different codecs, and a large file is chunked into a graph whose identifier depends on import parameters rather than on its bytes alone. Arbitrary JSON or a `.npy` file from outside is not a typed value until it has been converted. Homestar shows that a closed universe need not be tied to one language, since anything that compiles to WebAssembly can participate. It is still closed. Homestar does offer something Seamless does not: checked interface contracts between components, through WebAssembly Interface Types. These concern the safety of composition, not identity or reuse.
+IPLD, and the Homestar runtime built on it, is the clearest closed case. Its data model is language-neutral, and its DAG-CBOR codec is canonical in principle: map keys are sorted, and each value has a single encoding. But admission is conditional. Floats are always encoded at 64-bit precision; NaN and the infinities are not part of the data model and must be rejected; there is no array type, so a numerical array becomes opaque bytes plus a convention. The codec is part of the content identifier, so one value has different identities under different codecs, and a large file is chunked into a graph whose identifier depends on import parameters rather than on its bytes alone. Arbitrary JSON or a `.npy` file from outside is not a typed value until it has been converted. Homestar shows that a closed universe need not be tied to one language, since anything that compiles to WebAssembly can participate. It is still closed. While Homestar offers checked interface contracts between components (through WebAssembly Interface Types), these concern the safety of composition, not identity or reuse.
 
 A type system can also fail in the other direction. redun identifies Python values by hashing their pickle serialization. This admits almost any Python object, but the identity belongs to Python and depends on the environment: dictionary insertion order changes the bytes, and so can a change in a library's internal module layout, as happened with NumPy 2. Two environments that compute the same value can then report different identities. Replications fail to converge, and apparent falsifications may be artifacts of serialization. The claim that a result holds across environments cannot even be stated. A canonical, language-neutral identity of values is therefore a precondition for Popperian strength.
 
