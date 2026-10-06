@@ -1,10 +1,12 @@
 # Semantic Scope, Semantic Strength, and Portable Scientific Facts
 
-Consider two programs. One downloads the latest weather observations, combines them with a forecast model, produces a map, uploads the result, and sends a notification if severe weather is detected. The other calculates the first billion digits of \(\pi\).
+Oct 6, 2026 · @Sjoerd
+
+Consider two programs. One downloads the latest weather observations, combines them with a forecast model, produces a map, uploads the result, and sends a notification if severe weather is detected. The other calculates the first billion digits of π.
 
 Both are computations, but they make very different demands on a framework that attempts to reason about them. The weather program interacts continuously with an external world. “Run the same computation again” is already an ambiguous instruction: the latest observations have changed, remote services may have changed, and some of its actions deliberately alter external state. A framework such as Airflow is quite comfortable with this. It can coordinate downloads, database queries, scripts, web services, retries and notifications without requiring the whole process to behave as a deterministic function.
 
-The calculation of \(\pi\) lies near the other extreme. Its inputs and algorithm can, in principle, determine its result completely. If it is run twice and produces different digits, something has gone wrong. Here much stronger questions become meaningful. Is this exactly the same computation as one performed earlier? Which changes to its code or dependencies would make it a different computation? Is a result obtained elsewhere still valid? If somebody has already calculated the required digits, can they be reused without repeating the computation?
+The calculation of π lies near the other extreme. Its inputs and algorithm can, in principle, determine its result completely. If it is run twice and produces different digits, something has gone wrong. Here much stronger questions become meaningful. Is this exactly the same computation as one performed earlier? Which changes to its code or dependencies would make it a different computation? Is a result obtained elsewhere still valid? If somebody has already calculated the required digits, can they be reused without repeating the computation?
 
 Between these extremes lies a large range of scientific and technical computation. A molecular-dynamics simulation may be deterministic given suitable code, parameters and starting state, yet depend on a complex software environment. A genomics pipeline may consist of command-line programs connected by files. A Python analysis may pass nested arrays and JSON-like values between scripts. Compiled programs may communicate through typed binary interfaces and shared libraries. These are all deterministic computations in a useful sense, but frameworks differ greatly in how much of their structure they can see and reason about.
 
@@ -36,7 +38,7 @@ This is where the important differences between workflow systems, build systems,
 
 What defines this superdomain is **referential transparency**: a computation can be replaced by its result, and a result by any computation that yields it. Every framework that reuses work relies on this, whether or not it says so. A computation is described by its **recipe**: its code together with its inputs. Referential transparency is then a relation between two identities that recur throughout this comparison, the identity of a recipe and the identity of a result. Each recipe yields exactly one result, but one result may be yielded by many recipes.
 
-Recipe identity is meant here extensionally.[^1]
+Recipe identity is meant here extensionally.¹
 
 The superdomain contains several **domains of computation**, distinguished by the kind of object that passes between computations: files, structured values, typed components, or the definitions of a single unified language. A domain is a region of computation, not a property of a framework. A framework's semantic scope can then be described by which domains it covers, and by how far its identity semantics penetrate within them.
 
@@ -50,11 +52,9 @@ The classic Make algorithm contains a remarkably effective trick for reasoning a
 
 In simplified form:
 
-\[
-\max\bigl(t(\text{inputs}),t(\text{recipe dependencies})\bigr)
-<
-t(\text{output})
-\]
+```latex
+\max\bigl(t(\text{inputs}),t(\text{recipe dependencies})\bigr) < t(\text{output})
+```
 
 suggests that the existing output remains valid.
 
@@ -62,9 +62,9 @@ The system has not proved that the computation would produce the same bytes. It 
 
 This idea underlies an extraordinarily successful family of systems. Snakemake, Nextflow and related scientific workflow frameworks considerably enrich the model with explicit rules, parameters, software environments, provenance information and more sophisticated invalidation criteria, but the underlying semantic universe remains recognizably Unix-like:
 
-\[
+```latex
 \text{artifacts} + \text{processes} \rightarrow \text{artifacts}.
-\]
+```
 
 Within this universe, remarkably strong automation is possible.
 
@@ -140,49 +140,20 @@ This ordering is not a progression that frameworks climb, nor a ranking of seman
 
 ## Semantic strength: what licenses reuse?
 
-Within any of these domains, semantic strength becomes most concrete when deciding whether previously obtained work can be reused.
-
 Different frameworks employ different **reuse predicates**: conditions under which an existing result is accepted in place of executing a computation again.
 
 The classic filesystem predicate is temporal. If the inputs and recipe have apparently not changed since the output was created, accept the output.
 
 A content-based workflow can use a stronger predicate: if the identified input contents, parameters and recipe have not changed, accept the previous output.
+The decisive difference is whether a recipe is identified by the hashes of its input *values*, as in Bazel and content-based workflows, or by the hashes of its input *recipes*, recursively, as in Nix and Unison.
 
-Bazel strengthens this into action identity. If the action and all determinants represented by its action key are identical, an existing result associated with that action may be reused.
+Mokhov, Mitchell and Peyton Jones (2018, §4.2) call these constructive and deep constructive traces. A constructive trace, the shallow kind, keys each step on the results it consumes; a deep trace keys it on the terminal inputs alone. A recursive recipe hash is a deep trace in this sense, folding in every intermediate recipe but no intermediate result. What separates them is early cutoff. When a comment is added to a source file, the recompiled object file is unchanged, and a shallow trace stops the rebuild there; a deep trace never sees the unchanged intermediate and rebuilds everything downstream. In return, a deep trace knows the identity of an end product before anything runs, so the product can be fetched in a single lookup. For a build system, which mostly wants its end products, that is a reasonable trade.²
 
-Nix uses recursively defined recipe provenance. An output belongs to a derivation whose identity follows from the recipe and identified dependency closure. Unison identifies code in the same way: its hashes name recipes, not values.
+For scientific computation it is a bad trade. Scientific databases undergo constant growth and revision, but the underlying experimental data (e.g. protein coordinates or sequences) are updated only rarely. Expensive steps typically lie downstream of cheap ones that extract that data. Conversely, downstream of expensive steps lie cheap steps such as plotting or statistical analysis, modified frequently and often interactively. This requires intermediate results to be available for reuse. Thanks to this and to early cutoff, a revision reruns only the cheap steps, whose result is unchanged; without it, every cosmetic revision repeats the expensive work.&#32;
 
-The decisive difference is whether a recipe is identified by the hashes of its input *values*, as in Bazel and content-based workflows, or by the hashes of its input *recipes*, recursively, as in Nix and Unison. Mokhov, Mitchell and Peyton Jones call these constructive and deep constructive traces, and show that the deep kind cannot support early cutoff. Its advantage is that identities are known before execution, so that end products can be fetched without their intermediates. That suits a build system. Scientific computation needs the shallow kind, which also yields a provenance graph, by walking the recorded mappings back from a result. Dhall is the exception that proves the rule: by hashing normal forms it identifies results rather than recipes, but only because it is a total language in which normalization can stand in for evaluation.
+A strong reuse model is therefore shallow: it keys each recipe on the results it consumes, and keeps the identity of a recipe *and* the identity of its result (not only for the final result but for intermediates as well). These are the two directions of referential transparency: caching goes from recipe to result, while recomputation and provenance go from a result back to the recipes that yield it. Walked back from any result, the recorded mappings form its provenance graph.&#32;
 
-Suppose one comment is changed in a source repository used to build a low-level library. A source checksum changes, causing a new derivation or build action. The resulting library may nevertheless be byte-for-byte identical. If so, two computational histories have **converged**.
-
-This exposes two fundamentally different reuse questions:
-
-> Has an equivalent computation already been performed?
-
-and
-
-> Does the required result already exist?
-
-A deep recipe hash can answer only the first question. A shallow one can also answer the second, because each recipe is keyed on the results it consumes: downstream of the converged library, everything is reused.
-
-Bazel's early cutoff is central to its design, but its result identity stays internal to its cache. Nix, Snakemake and redun have added content-addressed modes, but these remain limited or experimental, because they work against an input-addressed core. In none of these systems is result identity first-class: something a computation can take as input, pass on and produce for others.
-
-This distinction becomes increasingly important in scientific computation. The same dataset may be produced by different software implementations, by different environments, or by independent research groups. If the result has a content identity of its own, these paths can converge onto the same object.
-
-A strong reuse model therefore keeps two identities distinct:
-
-\[
-\text{identity of the recipe}
-\]
-
-and
-
-\[
-\text{identity of the result}.
-\]
-
-These are the two sides of referential transparency. Caching uses one direction, from recipe to result; recomputation and provenance use the other, from a result to the recipes that yield it. Convergence is the many-to-one structure of the relation. The central issue is what equivalences the framework can recognize and therefore what reuse it can justify.
+Content-addressed shallow constructive traces are not common. Bazel uses result identity for early cutoff, but only inside its cache. Nix, Snakemake and redun have added content-addressed modes, which remain limited or experimental because they work against an input-addressed core. In none of these systems is result identity first-class: something a computation can take as input, pass on and produce for others. To the best of my knowledge, Seamless is the first framework where checksums are central, and files and values are just materialized checksums.
 
 ## Attitudes toward the environment
 
@@ -202,25 +173,21 @@ A further position is possible: a **scientific or Popperian** treatment of deter
 
 Here, a deterministic transformation expresses a falsifiable claim:
 
-\[
+```latex
 T \rightarrow R.
-\]
+```
 
-The execution environment is not necessarily absorbed into the identity of \(T\). Instead, different compatible environments can provide independent tests of the same claim:
+The execution environment is not necessarily absorbed into the identity of T. Instead, different compatible environments can provide independent tests of the same claim:
 
-\[
-(T,E_1)\rightarrow R
-\]
+```latex
+(T,E_1)\rightarrow R \qquad (T,E_2)\rightarrow R'.
+```
 
-\[
-(T,E_2)\rightarrow R'.
-\]
+If R′ = R, the deterministic claim survives this replication.
 
-If \(R'=R\), the deterministic claim survives this replication.
+If R′ ≠ R, the assumption that the environmental difference was irrelevant has been falsified.
 
-If \(R'\neq R\), the assumption that the environmental difference was irrelevant has been falsified.
-
-The claim \(T \rightarrow R\) is a claim of referential transparency, and two things can falsify it: the computation may not be deterministic at all, or its result may depend on the environment. Determinism, like independence from the environment, is treated as an assumption about a computation, not a property certified in advance. Even the weather program becomes deterministic once its observations are captured as inputs, and an assumed set of determinants can turn out to be incomplete. Seamless is Popperian about both claims. A transformation found to give different results in the same environment is recorded as irreproducible, which falsifies its determinism; replication across environments tests its independence from the environment.
+The claim T → R is a claim of referential transparency, and two things can falsify it: the computation may not be deterministic at all, or its result may depend on the environment. Determinism, like independence from the environment, is treated as an assumption about a computation, not a property certified in advance. Even the weather program becomes deterministic once its observations are captured as inputs, and an assumed set of determinants can turn out to be incomplete. Seamless is Popperian about both claims. A transformation found to give different results in the same environment is recorded as irreproducible, which falsifies its determinism; replication across environments tests its independence from the environment.
 
 The cost of each position can be stated in terms of errors. Keying identity on every possible cause is sound but extremely conservative. Changing a comment in a source file, or upgrading the Python interpreter, rarely changes a result checksum, yet both produce a new identity and force a recomputation: a false negative, a valid result that is not reused. The Popperian position accepts the opposite risk, a false positive: reusing a result that would have differed. Replication measures how often this happens, and for most environmental dimensions it is rare. Checksum identity makes the test strict, since legitimate numerical variation, such as a different BLAS or a different order of GPU reductions, also changes a checksum. Such a mismatch falsifies bitwise determinism rather than the scientific result, and it identifies an environmental dimension that matters.
 
@@ -236,7 +203,7 @@ The positions amount to a dilemma: generalization across real environments, or s
 
 **Seamless exposes environmental independence to empirical test.**
 
-The choice is not symmetric. Because Seamless keeps the environment outside the identity of \(T\), results obtained in \(E_1\) and \(E_2\) remain two observations of the same claim, which can be compared. Bazel's conservatism can be enforced inside Seamless as a reuse policy, by discarding cache entries from foreign environments, without changing what a transformation is. The converse fails: removing the environment from Bazel's action key produces neglect rather than testing, because nothing records or compares the outcomes. In terms of strength, Seamless's conclusions about the environment contain Bazel's, and add corroborated generalizations that Bazel's design rules out. Unison's guarantee by semantics cannot be emulated this way; its limitation is one of scope, discussed below.
+The choice is not symmetric. Because Seamless keeps the environment outside the identity of T, results obtained in E₁ and E₂ remain two observations of the same claim, which can be compared. Bazel's conservatism can be enforced inside Seamless as a reuse policy, by discarding cache entries from foreign environments, without changing what a transformation is. The converse fails: removing the environment from Bazel's action key produces neglect rather than testing, because nothing records or compares the outcomes. In terms of strength, Seamless's conclusions about the environment contain Bazel's, and add corroborated generalizations that Bazel's design rules out. Unison's guarantee by semantics cannot be emulated this way; its limitation is one of scope, discussed below.
 
 The Popperian environment model is therefore not merely another point on an existing scale; it is a distinct design choice about what computational identity means.
 
@@ -252,7 +219,7 @@ Seamless instead makes checksums **first-class computational objects**. By first
 
 This changes the semantics of distribution.
 
-Suppose a computation depends on a large value \(X\), identified by checksum \(H(X)\). Knowing \(H(X)\) is enough to establish the identity of the dependency even if the bytes of \(X\) are not locally present.
+Suppose a computation depends on a large value X, identified by checksum H(X). Knowing H(X) is enough to establish the identity of the dependency even if the bytes of X are not locally present.
 
 Thus several notions can be separated:
 
@@ -378,4 +345,11 @@ The eventual goal is consequently stronger than efficient caching or reproducibl
 
 It is an environment in which computational results can become **portable scientific facts**: precisely identified, reusable across computational boundaries, capable of convergent discovery, independently replicable and falsifiable, and suitable as foundations for further computation.
 
-[^1]: That is, what matters is the mapping a computation realizes: any implementation that produces the same result from the same inputs counts as the same computation, however it divides the work and whichever algorithm or compiler it uses. This is the notion that referential transparency presupposes. A stricter, *intensional* notion identifies a computation with one particular execution: one program image running one instruction trace. Verifiable computation, as in zero-knowledge virtual machines, certifies identity in this sense, without trusting whoever performed the execution. That is a stronger guarantee about a single execution, but a narrower notion of identity: a result is certified for one trace, not for any recipe that yields it.
+## Notes
+
+1. That is, what matters is the mapping a computation realizes: any implementation that produces the same result from the same inputs counts as the same computation, however it divides the work and whichever algorithm or compiler it uses. This is the notion that referential transparency presupposes. A stricter, *intensional* notion identifies a computation with one particular execution: one program image running one instruction trace. Verifiable computation, as in zero-knowledge virtual machines, certifies identity in this sense, without trusting whoever performed the execution. That is a stronger guarantee about a single execution, but a narrower notion of identity: a result is certified for one trace, not for any recipe that yields it.
+2. Two qualifications. Dhall is the exception that proves the rule: by hashing normal forms it identifies results rather than recipes, but only because it is a total language, in which normalization can stand in for evaluation. Mokhov et al. (2018, §4.2.4 and §6.4) also note that deep traces are correct only for deterministic tasks. If a step is non-deterministic, an end product fetched from the cache can end up next to a recomputed intermediate that it does not match, a “Frankenbuild”. A shallow trace keys each step on the result it actually consumed, and so stays consistent even when determinism is merely assumed.
+
+## References
+
+Mokhov, A., Mitchell, N. and Peyton Jones, S. (2018). Build systems à la carte. *Proceedings of the ACM on Programming Languages* 2 (ICFP), Article 79. <https://doi.org/10.1145/3236774>
