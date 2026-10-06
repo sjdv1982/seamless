@@ -13,8 +13,11 @@ REPOS=(
   "seamless-dask"
   "seamless-jobserver"
   "seamless-database"
-  "seamless-cluster-config"
+  "hashserver"
   "remote-http-launcher"
+  "seamless-share"
+  "seamless-signature"
+  "seamless-workflow"
 )
 
 mkdir -p "${DEST_BASE}"

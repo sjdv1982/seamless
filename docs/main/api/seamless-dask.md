@@ -24,6 +24,11 @@ If the cluster is at capacity, permission requests may be denied; when remote ex
 
 Under `record: true`, record-write failures propagate to the Dask caller (no silent swallowing). Under `record: false`, minimal-record write failures are best-effort for narrow transport/storage errors and emit a warning; programmer errors and `RecordBucketError` always propagate.
 
+Transformation input specs may refer to concrete checksums, transformation
+futures, or expression futures. Expression inputs use `kind="expression"` and
+are evaluated as cache-aware checksum futures before the downstream
+transformation is submitted.
+
 ### Worker plugin
 
 `SeamlessWorkerPlugin` (a Dask `WorkerPlugin`) runs inside each Dask worker. On setup it:

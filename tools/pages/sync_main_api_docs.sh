@@ -11,14 +11,18 @@ DEST="${ROOT_DIR}/docs/main/api"
 GITHUB_BASE="https://github.com/sjdv1982/seamless/blob/main"
 
 REPOS=(
-  seamless-core
-  seamless-transformer
-  seamless-config
-  seamless-remote
-  seamless-dask
-  seamless-jobserver
-  seamless-database
-  remote-http-launcher
+  "seamless-core"
+  "seamless-config"
+  "seamless-remote"
+  "seamless-transformer"
+  "seamless-dask"
+  "seamless-jobserver"
+  "seamless-database"
+  "hashserver"
+  "remote-http-launcher"
+  "seamless-share"
+  "seamless-signature"
+  "seamless-workflow"
 )
 
 mkdir -p "${DEST}"
