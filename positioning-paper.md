@@ -341,6 +341,40 @@ The eventual goal is consequently stronger than efficient caching or reproducibl
 
 It is an environment in which computational results can become **portable scientific facts**: precisely identified, reusable across computational boundaries, capable of convergent discovery, independently replicable and falsifiable, and suitable as foundations for further computation.
 
+## Glue, and giving up control
+
+The domains above were named in part after their glue: scripts connect structured values, linkers connect typed components. This section looks at glue itself. Picture a computation as a graph. Execution passes through components (command-line tools, functions, compiled kernels), and **glue** is whatever connects them: it determines which result goes where, and in what form. The question is who decides where execution goes next.
+
+One answer is that the program does. An ordinary program calls a step, looks at the result, and decides what to call next. Steps are evaluated **on the fly**, and the glue is the host language itself.
+
+Two of the three ways into Seamless, its *faces*, work like this. On the command-line face, `seamless-run` wraps a command inside a shell script. On the Python face, `direct` and `delayed` wrap a function call inside a Python program: `direct` evaluates at once and `delayed` returns a handle to evaluate later, but in both cases the program stays in charge. Either way, each wrapped call becomes a transformation with the identity described above. redun works on the fly too, as does Prefect since its second version.
+
+A framework built around a directed acyclic graph, a **DAG framework**, asks you to give up control. You build the whole graph first and hand it over; the framework decides what runs and when. In exchange, it sees the entire computation at once.
+
+The price is paid as soon as the shape of the graph depends on a result. A standard scientific case: cluster something (sequences, coordinates, neurons), then run a pipeline on each cluster. The number of pipelines is unknown when the graph is built, and a loop in the host language cannot help: it runs during the build, before any result exists. Having taken control, a framework must offer its own way to say it: checkpoints and input functions in Snakemake, channel operators in Nextflow, `scatter` in CWL and WDL, mapped tasks in Airflow. This is why DAG frameworks come with a **domain-specific language** (DSL), whether a language of their own or a set of constructs inside a host language.
+
+How much the DSL must carry depends on scope. Where a step is a process that reads and writes files, logic over lists and dictionaries has no step to live in. Splitting, regrouping and selecting end up in the DSL, and the clustering tool must write its result in a form the DSL can read: a JSON file, or one file per cluster. The DSL is a crutch for what the steps cannot express: glue grows thick where scope is narrow.
+
+Seamless's third face is a DAG framework too. A workflow is a graph of *cells*, which hold values, and steps, which compute them; it is built first and then kept up to date by a runtime, so control is given up here as well. But this face needs no DSL, because it needs no crutch: between them, its steps and its type system cover what a DSL would otherwise have to carry.
+
+First, steps are not confined to the file system, so logic over values is itself a step in an ordinary language. A transformation may launch further transformations while it runs; such a transformation is called a *driver*. The fan-out over clusters is a driver whose code is an ordinary loop, launching one pipeline per cluster. The set of languages a step can be written in is open, where a DSL is closed.
+
+Second, the type system is fine-grained enough for what remains. The clustering step returns its native result as one structured value: say two index arrays, one with the size of each cluster and one with their members. What an edge does is an **expression**: select part of a value, then convert its celltype at most once. One expression selects the sizes, another the members. An expression runs no user code and has no environment, which makes this glue nearly as thin as linking object files.
+
+The graph itself is plain JSON. Seamless builds it from Python, by ordinary assignment, but any language could write it.
+
+A DAG is optional in Seamless, since the other two faces do without one. There, the clustering case is a shell loop around `seamless-run`, or a Python loop around a `delayed` call, with each pipeline cached under its own identity. What, then, does a DAG buy?
+
+In any framework, a DAG turns glue into data, and data can be recorded. In a program that evaluates on the fly, the provenance walk described above stops wherever host code computed a value between two steps: one cluster's members, sliced out by the loop, have no recorded origin. On the DAG face, expressions are themselves identified and recorded. A driver gives this up for whatever happens inside it.
+
+In Seamless, thin glue over content identity buys two further things. The first is **reactivity**. The topology is defined once, and the graph then responds to changes in values, as a spreadsheet does, wherever they come from. A cell can be *mounted* to a file, so that editing the file changes the cell, or it can be changed by an HTTP request. Edit the clustering threshold, and clusters are recomputed, but one whose members did not change reuses its pipeline. Staleness is decided by the reuse predicate, so it depends on what the values are, not on when they changed. Snakemake, whose results live in named files, and Airflow, whose tasks have effects, must reconstruct what an edit invalidated.
+
+The second is a generic server. The graph is plain data with no glue code to execute, so a graph plus a list of endpoints, the cells that may be read or written from outside, suffices to serve a collaborative, reactive API. (Today the DAG face reacts to mounted files; HTTP serving is being ported from the previous architecture.)
+
+The cost is the control given up, and it can be bought back where needed, because the three faces nest in any direction. A driver is an island of on-the-fly evaluation inside a DAG. A driver can also go the other way: since a graph is JSON, it can receive one as an ordinary input and evaluate it once per cluster, several at a time. And a shell or Python script built on `seamless-run` or `direct` can be wrapped whole as a single node, which makes it reactive without a rewrite. The limits are those of any step: the script may read only its declared inputs, these are delivered again on every run, and the graph cannot see inside. Steps can then be moved out into nodes one at a time.
+
+A step has the same identity on every face, so results are shared across them. Keep control where it is needed, and give it up where a DAG pays.
+
 ## Notes
 
 1. That is, what matters is the mapping a computation realizes: any implementation that produces the same result from the same inputs counts as the same computation, however it divides the work and whichever algorithm or compiler it uses. This is the notion that referential transparency presupposes. A stricter, *intensional* notion identifies a computation with one particular execution: one program image running one instruction trace. Verifiable computation, as in zero-knowledge virtual machines, certifies identity in this sense, without trusting whoever performed the execution. That is a stronger guarantee about a single execution, but a narrower notion of identity: a result is certified for one trace, not for any recipe that yields it.
