@@ -47,7 +47,7 @@ ctx.set_graph(graph, mounts=True)
 | `state` | `"active"`, `"tripped"` (the detector has fired) or `"closing"` |
 | `node_checksum` | the node's checksum hex if the node is `complete`, else `None` |
 | `disk_checksum` | the believed file checksum: a 64-hex string, or one of the two sentinel strings `"ABSENT"` and `"INVALID"` (`attachments.policy.ABSENT` / `.INVALID`) |
-| `in_sync` | `node_checksum` is not `None`, equals `disk_checksum` (a null node value with an absent file also counts), and there is no sense error |
+| `in_sync` | `node_checksum` is not `None`, and either equals `disk_checksum` or the two match the latest acknowledged source/canonical-file checksum pair (a null node value with an absent file also counts), and there is no sense error |
 | `pending` | a delivery is queued but not dispatched |
 | `in_flight` | a delivery has been dispatched and not yet acknowledged |
 | `sense_error` | the `MountError` currently failing the cell, or `None` |
@@ -100,7 +100,7 @@ An unmountable celltype raises at attach time and at graph load.
 | Celltype | Mounts as | `canon_T` on read | Notes |
 |---|---|---|---|
 | `text`, `python`, `ipython`, `yaml` | file | strict UTF-8; the trailing newline is normalized to exactly one; **no syntax check** | no CRLF conversion — CRLF is content. Code text is checked **exactly as an assignment checks it** (*Canonical bytes*): a `python` file with a syntax error is sensed as `complete` |
-| `plain` | file | JSON parse, canonical re-serialization | JSON only. User formatting survives until the value changes |
+| `plain` | file | JSON parse, canonical re-serialization | JSON only. `rw` canonicalizes sensed files; `r` leaves formatting untouched |
 | `str` | file | JSON parse (with the deserializer's `str()` coercion), re-serialize | the file holds a **quoted** JSON string; use `text` for raw text |
 | `int`, `float`, `bool` | file | JSON parse with coercion, re-serialize | |
 | `bytes` | file | identity for non-empty content; empty → null | null resolves back as `b""` |
@@ -151,6 +151,11 @@ At attach time the controller evaluates one decision against the node's value **
 | 5 | `r`, `rw` | any | zero-byte / empty directory | node ← null |
 | 6 | `r`, `rw` | any | *F* | node ← *F* |
 
+For a **file** mount in `rw`, adopting *F* also schedules a conditional write
+when the observed bytes are non-canonical. This applies even when an existing
+node already has the same canonical checksum: checksum equality does not
+suppress the normalization write. In `r`, adoption leaves the file bytes alone.
+
 **The node has a complete value *N*:**
 
 | # | mode | authority | file | action |
@@ -183,10 +188,10 @@ Every observation carries a **watch sequence** (`ws`), owned by the transport an
 | `unchanged` | the checksum equals the belief (for `ABSENT`/`INVALID`, the fingerprint too) | update the fingerprint only. Identical-content rewrites and `touch` end here |
 | `rejected` | unreadable, or not canonicalizable as the celltype | belief := `INVALID`; modes with `r`: sense error; `w`: reassert |
 | `absent` | the file is missing | the node is left unchanged; `file-strict`: sense error, otherwise any sense error is cleared; `w`: reassert |
-| `echo` | the checksum equals the **in-flight** delivery's checksum | our own write, seen before its acknowledgement: adopt it as the belief |
+| `echo` | the checksum equals the **in-flight** delivery's canonical file checksum | our own write, seen before its acknowledgement: adopt it as the belief |
 | `foreign` | anything else | modes with `r`: sense it; `w`: reassert |
 
-A `foreign` observation in a sensing mode installs the checksum and sets both the belief and the actuation baseline in the same turn — so the value is not written straight back — and clears the sense error. A zero-byte file maps to null; an emptied directory maps to `{}`.
+A `foreign` observation in a sensing mode installs the checksum and sets both the belief and the actuation baseline in the same turn — so canonical content is not written straight back; for `rw`, non-canonical file bytes instead request a conditional canonical write — and clears the sense error. A zero-byte file maps to null; an emptied directory maps to `{}`.
 
 Four rules make this converge:
 
@@ -199,17 +204,26 @@ Four rules make this converge:
 
 For each mountable celltype *T* the mount uses exactly two functions, both defined by the **existing serializer and deserializer**:
 
-- **write:** the canonical buffer of the node's checksum, byte for byte (compressed, if the path carries a compression suffix);
+- **write:** resolve the node's buffer and canonicalize it with `canon_T` before writing (compressed, if the path carries a compression suffix). The node checksum is preserved; the delivered file checksum is the checksum of the canonical bytes (ruled 2026-10-07);
 - **read:** `canon_T(bytes) = serialize(deserialize(bytes, T), T)`, and the observed checksum is the checksum of `canon_T(bytes)`. If deserialization raises, the observation is `rejected`. For the code celltypes (`text`, `python`, `ipython`, `yaml`), *deserialize* here is the strict UTF-8 decode only: `canon_T` does not run the syntax check of the reference parser, exactly as the serializer an assignment uses does not (ruled 2026-09-28; `contracts/celltypes-and-conversion.md`, the serializer table).
 
 Four consequences:
 
-- a file written by the mount **reads back as an exact echo**;
+- a file written by the mount **reads back as an exact echo of the canonical delivery**, without changing the node checksum. The acknowledgement records the source checksum and canonical file checksum as a synchronized pair. `node_checksum` and `disk_checksum` may therefore differ while `in_sync=True`. The filesystem transport sends this acknowledgement under its I/O lock before any readback observation can be sent, so that readback compares against the canonical file belief. A later foreign observation is compared against the current file belief, not a history of deliveries;
 - a user-formatted file maps to **the checksum of its value**, so reformatting JSON by hand is not a change;
 - **there is no mount-local parsing.** A mount parses neither more leniently nor more strictly than a user assignment of the same value: it checks exactly what an assignment checks. **For the code celltypes that excludes syntax** (ruled 2026-09-28). `ctx.a.set("def (:\n")` is accepted as `complete`, and so is a mounted file with that content; neither is a sense error. The syntax error surfaces downstream: a transformer that runs the code fails with the `SyntaxError` as its own failure, and a `.value` read raises `HashTypeValidationError` on every read without failing the cell (`contracts/cells.md`, *`.buffer` and `.value`*). Fixing the file is an ordinary change, sensed like any other.
-- **non-canonical bytes are never rewritten.** User formatting survives until the node's value actually changes. `canon_T` is idempotent, and that is property-tested.
+- **`rw` canonicalizes non-canonical file bytes after sensing**, including initial adoption by an empty cell and formatting-only edits (ruled 2026-10-07). The canonical checksum installed in the cell then equals the checksum of the decompressed file bytes. This write uses the ordinary fingerprint conflict guard; `r` mounts leave the file untouched. `canon_T` is idempotent, and that is property-tested.
 
 *T* is always the cell's **output `celltype`**, including for a connected cell; the producer's input type is stored separately (`contracts/cells.md`). Retyping while mounted is refused (*Errors*).
+
+For example, an empty `Cell("plain")` mounted with `mode="rw"` on a file
+containing `{"a":1}` adopts `{"a": 1}` and rewrites the file using canonical
+`plain` serialization. After a successful `ctx.mounts.sync()`, the cell checksum
+equals `seamless-checksum mounted-file.json`; canonicalizing only the cell
+buffer while leaving the original JSON bytes on disk does **not** satisfy this
+rule. Later formatting-only edits are rewritten canonically as well, without
+changing the cell checksum. With `mode="r"`, the original file bytes remain.
+For compressed files, the equality is over the decompressed bytes.
 
 ### Null files
 
@@ -408,7 +422,7 @@ The former public `NodeError` and empty-builder detach gaps now satisfy the cont
 
 - **Durability.** No `fsync`; a mount serves live editing.
 - **Cross-process exclusivity or locking.** The registry is a within-process safety net; across processes the tools are conditional writes and the detector.
-- **Rewriting a file into canonical form.** User formatting survives until the value changes; a mount does not fight the editor.
+- **Preserving formatting on a writable mount.** `rw` deliberately rewrites non-canonical sensed file bytes into canonical form; use `r` to preserve external formatting.
 - **Recreating a file the user deleted, on its own.** Deletion leaves a sensing node unchanged; an actuating mount rewrites the file at the *next* value change, or at the next reassert in `w` mode.
 - **Mounting a whole (sub)context to a directory, automatic child paths, or file-extension inference.**
 - **Continuous external ownership** (`edit_policy="external-owned"`). Deferred with a condition: it must not be expressed by redefining `authority="file"`.
