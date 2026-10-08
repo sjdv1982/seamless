@@ -354,12 +354,15 @@ continues measuring events. A reconnecting client catches up from retained
 state. Dask owns subscription cleanup when a client disconnects; per-run
 output subscriptions still end on completion or explicit futures release.
 
-The worker's active-stream count sets a shared minimum interval of
-`max(configured_interval, active_transformations / 2)` for both streams of
-every active transformation. The count and all child limits are refreshed on
-stream start and end; limiting only newly started streams would leave older
-streams outside the shared worker cap. Mandatory final flushes can produce
-short completion bursts above the soft cap.
+The worker's active-source count sets a shared minimum interval of
+`max(configured_interval, active_sources / 4)` for every active transformation.
+Each transformation contributes stdout and stderr; each open progress bar
+contributes one additional source in Phase 2. With text only, this reduces to
+`max(configured_interval, active_transformations / 2)`. Counts and all child
+limits refresh on transformation and bar start/end. Limiting only newly
+started sources would leave older streams outside the shared worker cap.
+Mandatory final flushes can produce short completion bursts above the soft
+cap.
 
 The scheduler-side rate counter ignores `tqdm` chunks vs. text chunks; from
 its perspective each event has equal cost. Phase 2 messages flow through the
@@ -412,7 +415,8 @@ same topic and counter without changes.
   initial throttle state through `SeamlessWorkerPlugin.setup`.
 - add: `seamless-dask/seamless_dask/stream_throttle.py`
   — `SeamlessStreamThrottlePlugin` scheduler plugin + `Client.run` worker
-  state update helper; the public client relay lives in `client.py`.
+  state update helper; the public client relay lives in the `StreamingMixin`
+  in `streaming.py`.
 - modify: tests under `seamless-dask/tests/` — new
   `test_streaming.py` covering: streaming on/off, truncation-at-head,
   per-stream prefix, no-streaming-on-cache-hit, parallel transformations get
@@ -491,10 +495,18 @@ already imported; if `tqdm` is imported later by user code, we use a thin
 `sys.meta_path` finder hook installed at patch time that re-applies the
 patch after first import.
 
+The import hook defers wrapping until the main tqdm package and derived
+classes finish importing. This preserves the original class hierarchy used
+by `tqdm.auto` while it builds its hybrid class and lets all patched module
+aliases restore exactly on exit, including a first import during a request.
+
 ## 2.2 Client-side: render proxy tqdm bars
 
-In `SeamlessDaskClient.submit_transformation`, the same stream handler that
-prints text now dispatches on the chunk type:
+Client streaming code lives in
+[`seamless_dask/streaming.py`](../../seamless-dask/seamless_dask/streaming.py).
+Its public `StreamingMixin` is inherited by `SeamlessDaskClient`; the public
+`TqdmStreamRenderer` manages progress proxies. `submit_transformation` uses
+the mixin's per-topic handler, which dispatches on chunk type:
 
 - `"stream"` (phase 1) → `print(...)` as before.
 - `"tqdm_open"` → create a local `tqdm.tqdm` instance bound to
@@ -519,12 +531,40 @@ draws it), so phase-1 prints and phase-2 bars interleave correctly. We must
 (else we'd duplicate the bar through phase 1), so the patch redirects its
 `file=` to `os.devnull` and inhibits ANSI control writes.
 
+Before an ordinary progress frame is emitted, older pending text from the
+same transformation drains at its normal cadence. The progress frame retains
+a text-write watermark once it is eligible and waiting for that text; newer
+text cannot postpone the frame indefinitely. The child flusher visits text
+taps before progress bars. Opening and closing a bar, including its initial
+and final state, may force the same transformation's pending text to drain
+at the lifecycle boundary. Ordinary progress refreshes must not force text
+flushes or bypass its interval.
+
+The client writes text through `TqdmStreamRenderer.write_text`, using the
+public tqdm `external_write_mode` context to clear and redraw active terminal
+bars around the exact text chunk. This includes bars from other transformation
+topics sharing stdout/stderr. Prefixes and truncation markers are preserved;
+the optional-tqdm fallback writes the same text directly.
+
 ## 2.4 Throttle interaction
 
 `tqdm_update` chunks count as 1 event per emission in the scheduler's rate
 counter. Per-bar rate is throttled by the same `min_interval` as text. Many
 nested bars on one transformation share the per-transformation interval; the
 flusher emits at most one event per (stream/bar, tick) per interval.
+
+The existing lazy child flusher also drains pending progress state when user
+code is silent, so an update does not wait for another `update()` call or for
+completion. Bar creation and closure refresh the worker's shared source
+budget in §1.5; opening many bars must not bypass the worker's soft event cap.
+Open/close and mandatory final-state messages may create short lifecycle
+bursts.
+
+Progress metadata is bounded in bytes before worker-to-scheduler forwarding,
+using the current payload limit and the 10 240-byte hard ceiling. Descriptive
+fields may be shortened or removed. Operational bar and topic identifiers
+remain stable across open/update/close; an event whose required fields cannot
+fit is skipped rather than sending an oversized or mismatched event.
 
 ## 2.5 Files to add or modify (phase 2)
 
@@ -533,9 +573,11 @@ flusher emits at most one event per (stream/bar, tick) per interval.
 - modify: `seamless-transformer/seamless_transformer/worker.py`
   — wire `install_tqdm_patch(notifier)` into
   `_execute_transformation_request` when `streaming=True`.
-- modify: `seamless-dask/seamless_dask/client.py` — extend the topic
-  handler to dispatch on chunk kind and manage per-bar local tqdm
-  instances. Keep all phase-1 behavior intact.
+- add: `seamless-dask/seamless_dask/streaming.py` — public
+  `TqdmStreamRenderer` and `StreamingMixin`, containing text/progress dispatch,
+  the throttle relay, and per-topic subscription and cleanup helpers.
+- modify: `seamless-dask/seamless_dask/client.py` — inherit `StreamingMixin`
+  and use its helpers. Keep all phase-1 submission behavior intact.
 - modify: tests — `test_streaming_tqdm.py`:
   1. A 10-iteration tqdm loop with sleep produces ≥ 2 update events and
      the local bar's `n` reaches 10 by the time the transformation ends.
@@ -570,7 +612,8 @@ flusher emits at most one event per (stream/bar, tick) per interval.
    no-op server side (chunks logged but not yet forwarded), assert
    `tf_checksum` invariance.
 3. Land the child `_StreamingTap` + `_dispatch` forwarder + client subscribe.
-4. Land the scheduler-side throttle plugin and worker subscriber.
+4. Land the scheduler-side throttle plugin, public client relay, and worker
+   state initialization.
 5. Land phase-2 tqdm patch and client-side bar renderer.
 
 Each step is independently shippable and individually testable.

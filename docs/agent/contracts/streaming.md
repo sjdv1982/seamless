@@ -63,3 +63,22 @@ Late clients read the latest retained control event after subscribing, and
 joining workers receive the scheduler's current state. Duplicate or older
 control revisions are ignored on the worker. Adaptive updates are best-effort
 with retries; a failed relay does not stop transformation execution.
+
+With streaming enabled, terminal progress bars created through `tqdm`,
+`tqdm.std`, and `tqdm.auto` use the same event channel. The client renders
+separate local bars for nested progress bars, including bars without a known
+total. The child suppresses its terminal bar output so progress is not also
+duplicated as captured stderr. Ordinary stdout/stderr continues to stream.
+The client clears and redraws active terminal bars around streamed text,
+including bars from parallel transformations.
+
+Progress updates coalesce to the latest state at the configured cadence and
+share the streaming throttle limits. Completion sends the final count and
+closes each bar. Topic cleanup also closes bars left open by interruption.
+The child restores patched tqdm aliases and its import hook on normal return
+or exception. The patch is active only during a streaming request.
+
+The client does not require tqdm: when it is unavailable, progress falls back
+to text counts. `tqdm.notebook`, other progress libraries, and compiled-language
+subprocess output remain outside the current scope. Progress streaming does
+not change the transformation checksum, cache behavior, or supported backend.
