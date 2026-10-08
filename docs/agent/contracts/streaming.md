@@ -6,15 +6,66 @@ transformations.
 The [streaming plan](../../../plans/streaming-plan.md) describes the transport,
 throttle limits, and implementation phases.
 
-Enable it per transformation:
+Enable it on a Transformation, or on the Transformer that builds it:
 
 ```python
-tf.streaming = True
+t = f(1, 2)          # f is a delayed Transformer, t a Transformation
+t.streaming = True   # this Transformation only
+
+f.streaming = True   # every Transformation that f builds from now on
 ```
 
-The flag is read at submission time. Changing it after `.compute()`, `.run()`,
-`.start()`, or `.task()` has submitted the transformation does not affect the
-in-flight run.
+Both flags default to `False`.
+
+**A Transformer's flag is the starting value for the Transformations it
+builds.** `build()` copies the Transformer's current flag onto the new
+Transformation. So does every operation layered on `build()`: calling the
+Transformer, and its `.compute()`, `.computation()`, `.run()` and `.task()`
+([Transformers](transformers.md), *Building a Transformation*). Changing the
+Transformer's flag afterwards affects later builds only. A built
+Transformation keeps its own flag, which stays assignable.
+
+A direct Transformer builds and runs in one call, so the Transformer's flag is
+the only way to stream a direct call:
+
+```python
+@direct
+def g(n): ...
+
+g.streaming = True
+g(10)                # the Transformation behind this call has streaming on
+```
+
+The Transformation's flag is read at submission time. Changing it after
+`.compute()`, `.run()`, `.start()`, or `.task()` has submitted the
+transformation does not affect the in-flight run.
+
+Every Transformer has the flag: ordinary and compiled, delayed and direct,
+standalone and bound. `direct(f)` and `delayed(f)` copy it to the clone.
+
+**A bound Transformer's flag belongs to its workflow Context node.** Every
+view of `ctx.tf` reads and writes the one value. Binding a standalone
+Transformer carries its flag into the node. `ctx.tf.build()` copies the flag
+onto the detached Transformation, as a standalone build does.
+
+The Context reads the node's flag each time it submits a run for the node.
+
+**Assigning the node's flag never re-runs the node.** It applies from the
+node's next run. A Context submits a run as soon as a node's inputs are
+complete, so set the flag before completing the inputs:
+
+```python
+ctx.tf = f
+ctx.tf.streaming = True   # before the pins: the first run streams
+ctx.tf.pins.a = 1
+```
+
+Assigned after the last input, the flag is stored, but the run already in
+flight does not stream. Neither does a node that is already complete.
+
+The node's flag is not part of the durable graph. `ctx.get_graph()` does not
+contain it, and a graph loaded with `ctx.set_graph()` starts with streaming
+off on every node.
 
 Streaming does not change transformation identity:
 
@@ -23,6 +74,10 @@ Streaming does not change transformation identity:
   `__compilation__`
 - it does not change `tf_checksum`
 - it does not change persistent cache identity
+
+The same holds for the Transformer's flag, standalone or bound. It is not part
+of the Transformer's `meta`, and a Transformer builds the same `tf_checksum`
+with the flag on or off.
 
 Cached runs do not stream. If a daskserver worker can return the result from
 the database cache, the transformation completes immediately and emits no
