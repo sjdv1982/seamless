@@ -255,6 +255,8 @@ Every other entry of the index is unchanged, and the parent's new checksum is th
 
 In the workflow layer, `seamless_workflow.context.PIN_CELLTYPES = {"plain", "mixed", "deepcell", "deepfolder", "folder"}` is — despite its name — about Cells, not transformer pins. It is the set of Cell celltypes that may be the **target of a sub-path edge**, such as the join `ctx.c["k"] = ctx.x`. A sub-path edge into a Cell of any other celltype is refused with `PathError("Cell subvalue connections require a container-capable Cell")`.
 
+For a deep target, `ctx.d["k"] = ctx.x` requires the source to carry the target's member celltype: `mixed` for `deepcell`, `bytes` for `deepfolder` and `folder`. Other source celltypes are refused with `TypeError` before the graph changes; a non-string target key is refused with `ValueError`. The edge contributes the member checksum directly to the flat index, with no conversion to the root celltype and no member resolution. A literal root index may supply other entries; a root source cannot coexist with sub-path edges. Later changes to either celltype that make the member combination incompatible make the join `miswired`. Compatible failed members leave it `blocked` with `blocked-by-error`. See `contracts/cells.md`, *Cell-level joins*, for an executable example and reactive behavior.
+
 This rule is not the deep one-step path rule. It applies to `plain` and `mixed` as much as to the deep celltypes, and its one-level limit comes from the general rule that a connection target is the root or one level below it (`contracts/cells.md`, *Projections*). The two rules only happen to stop at the same depth.
 
 ## How deep values reach a transformer
