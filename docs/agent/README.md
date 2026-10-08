@@ -30,6 +30,9 @@ Contract pages (hand-maintained, normative):
 - `contracts/node-state-lifecycle.md`
 - `contracts/attachments.md`
 - `contracts/mounts.md`
+- `contracts/shares.md`
+- `contracts/widgets.md`
+- `contracts/streaming.md`
 - `contracts/cancellation.md`
 - `contracts/scratch-witness-audit.md`
 - `contracts/direct-delayed-and-transformation.md`

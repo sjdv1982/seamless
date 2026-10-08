@@ -316,7 +316,7 @@ Contrast files, which always converge: a null value truncates the file to zero b
 
 The semantics, the round structure and the *settled through the final cut* guarantee of `ctx.mounts.sync()` / `await ctx.mounts.synchronization()` are in `contracts/attachments.md`, *The cut barrier*. What is file-specific is the report.
 
-**`SyncReport` is a `dict` subclass keyed by `(node_path, driver)`**, where `node_path` is a tuple and `driver` is `"file"` or `"widget"` for supported public attachments. The internal test-only `ManualDriver` may use `"manual"` in protocol tests. The report includes every attachment session, and each value is a detached copy of that session's status dict, plus two properties:
+**`SyncReport` is a `dict` subclass keyed by `(node_path, driver)`**, where `node_path` is a tuple and `driver` is `"file"`, `"widget"` or `"share"` for supported public attachments. The internal test-only `ManualDriver` may use `"manual"` in protocol tests. The report includes every attachment session, and each value is a detached copy of that session's status dict, plus two properties:
 
 | Member | Value |
 |---|---|
@@ -352,7 +352,7 @@ Unmounting, and what it clears, is in `contracts/attachments.md`, *Attach, detac
 
 ## Graph serialization
 
-- **Format.** The contract format is **`0.5`**, which adds the top-level `anonymous_nodes` table (`contracts/cells.md`, *Connecting*; `contracts/workflow-context.md`). `0.2`, `0.3` and `0.4` graphs load; an unknown version raises `PathError("Unsupported workflow graph version: …")`.
+- **Format.** The contract format is **`0.6`**, which adds serialized share specs to the `0.5` graph format (`contracts/shares.md`, *Graph serialization*; `contracts/workflow-context.md`). `0.2` to `0.5` graphs load; an unknown version raises `PathError("Unsupported workflow graph version: …")`.
 - **The mount entry** is `{"path", "mode", "authority", "persistent"}` on a cell entry — the spec after normalization, without the driver. Only `driver == "file"` is serialized at all, so manual and widget sessions leave no entry.
 - **Every mount entry is validated by `prepare_graph`, before `mounts` is consulted at all.** Unknown fields, a bad mode or authority, an illegal `file-strict` combination, an unmountable celltype, a `w`/`rw` `deepfolder`, a mount on a non-cell node and a connection into a sensing-mounted node are all refused as `PathError` — **including when `mounts=False`**, because a malformed spec makes the graph malformed whether or not this loader attaches it.
 - **`mounts=False` strips the (valid) specs** and loads the graph as an ordinary one.

@@ -209,7 +209,7 @@ Stated as current behaviour, with no claim about what any earlier version did:
 
 ## Current limitations
 
-- **One file slot and one widget hub slot per node.** Several widgets share the same hub; additional file mounts are refused.
+- **One file slot, one widget hub slot and one share slot per node.** Several widgets share the same hub; additional file mounts are refused.
 - **`ctx.a.mount` addresses only the file slot.** `.mount.spec`, `.mount.status` and `.mount.error` are `None` when no file slot exists, and `del ctx.a.mount` is then a no-op. Use `t.status`, `t.error`, `t.clear_error()` and `t.destroy()` for the widget slot.
 - **The barrier is spelled `ctx.mounts`.** `ctx.mounts.sync()` cuts every session, and its `SyncReport` and `ctx.mounts.errors` use `(node_path, driver)` keys for all entries, including file-only and widget-only nodes. A hub's key is `(("a",), "widget")` for `ctx.a`, in the `status` shape of `contracts/mounts.md`.
 - **Idle delivery wakeups are Context-owned.** A deadline timer wakes pending throttled deliveries and due retries without a user call.

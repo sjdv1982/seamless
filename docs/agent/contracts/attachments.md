@@ -7,7 +7,7 @@ An **attachment** connects one Context cell node to an external resource, in one
 
 This page is the framework: scope, the durable spec and the ephemeral session, the topology rules, the sense and actuate disciplines, the error model, the oscillation detector, the cut barrier, the lifecycle and leaf retention. The **file driver** — bytes, paths, celltype canonicalization, fingerprints, atomic writes, directories, limits — is `contracts/mounts.md`. The seam is **direction and discipline versus bytes and filesystem**: `contracts/mounts.md` never restates a rule from this page; it only says where the file driver specializes one.
 
-**This page specifies the guaranteed behaviour of the attachments that exist; it is not a supported plugin API.** File mounts and Jupyter widgets are supported through their public APIs. Widget attachments use `seamless_workflow.jupyter`; `WidgetDriver` remains an internal transport. `ManualDriver` is a test instrument, and third-party drivers are not supported. There is a real transport boundary and it is worth understanding, but nothing below is a stable extension point, and the "generic" layer is still file-shaped in four named places (*Current limitations*, below).
+**This page specifies the guaranteed behaviour of the attachments that exist; it is not a supported plugin API.** File mounts, Jupyter widgets and HTTP shares are supported through their public APIs. Widget attachments use `seamless_workflow.jupyter`; `WidgetDriver` remains an internal transport. `ManualDriver` is a test instrument, and third-party drivers are not supported. There is a real transport boundary and it is worth understanding, but nothing below is a stable extension point, and the "generic" layer is still file-shaped in four named places (*Current limitations*, below).
 
 **"Authority" has two unrelated meanings**, both inherited from the code's own naming. Keep them apart:
 
@@ -23,9 +23,11 @@ Code locations:
 | Session and messages | `seamless_workflow.attachments.session` (`MountSession`, `Observation`, `Delivery`, `DeliveryAck`, `MountLease`, `SyncReport`, `MountError`, `ConflictError`) |
 | Controller mixin | `seamless_workflow.attachments.runtime` (`AttachmentRuntime`, `SyncPredicate`) |
 | Public handles | `seamless_workflow.attachments.api` (`MountHandle`, `ContextMounts`, `make_sink`, `load_graph`) |
+| Public share API | `seamless_workflow.attachments.share.api` (`ShareHandle`, `ContextShares`); `seamless_workflow.shareserver` |
 | Transport implementations | `seamless_workflow.attachments.fs.service` (`FileSystemService`, `Registration`), `…attachments.widget.WidgetDriver` (internal widget transport), `…attachments.manual.ManualDriver` |
+| Share spec and transport | `seamless_workflow.attachments.share.spec` (`ShareSpec`); `…attachments.share.driver.ShareDriver` |
 | Public widget API | `seamless_workflow.jupyter` (`traitlet`, `output`); `WidgetDriver` itself is internal |
-| Node field and graph entry | `Node.mount` stores the serialized file spec; runtime-only non-file specs use `Node.attachments`; `Context.get_graph` / `set_graph`; `serialization.prepare_graph` |
+| Node field and graph entry | `Node.mount` stores the serialized file spec; `Node.attachments` holds non-file specs by driver, of which only the share spec is serialized; `Context.get_graph` / `set_graph`; `serialization.prepare_graph` |
 | Cell handle | `seamless.cell_class.Cell.mount` (property plus deleter, seamless-core) |
 | Diagnostics | `seamless_workflow.diagnostics.record_attachments` |
 
@@ -45,7 +47,7 @@ An attachment attaches to a **whole cell node of a workflow Context**, and to no
 | a missing node, or a transformer node | `NodeError("Mounts require an existing whole cell node")` |
 | a node whose slot for this driver is already occupied | `ValueError("Cell is already mounted; unmount first")` |
 
-A node has one **file** slot and one **widget** slot. They may coexist. A second attachment for a driver that already has a slot is refused; `ctx.a.mount.*` addresses only the file slot, and `traitlet(ctx.a)` addresses only the widget slot.
+A node has one **file** slot, one **widget** slot and one **share** slot. They may coexist. A second attachment for a driver that already has a slot is refused; `ctx.a.mount.*`, `traitlet(ctx.a)` and `ctx.a.share.*` address only their respective slots.
 
 The messages `"Only whole Context cell nodes can be mounted"` and `"Cell is already mounted; unmount first"` are contract, and so is the `NodeError` message.
 
@@ -59,7 +61,7 @@ The messages `"Only whole Context cell nodes can be mounted"` and `"Cell is alre
 
 An attachment is two objects with two different lifetimes.
 
-**The file spec is durable node state.** It is a frozen dataclass stored in the dedicated `Node.mount` field — deliberately *not* in `CellConfig`, so that the parameterized configuration path cannot reach it. Only attaching and detaching change it. It is what `get_graph()` serializes and what `set_graph()` restores. Runtime-only non-file specs are held in `Node.attachments`, keyed by driver; they are neither serialized nor restored.
+**The file spec is durable node state.** It is a frozen dataclass stored in the dedicated `Node.mount` field — deliberately *not* in `CellConfig`, so that the parameterized configuration path cannot reach it. Only attaching and detaching change it. It is what `get_graph()` serializes and what `set_graph()` restores. Non-file specs are held in `Node.attachments`, keyed by driver; only the share spec is serialized and restored. Widget specs remain runtime-only.
 
 - The spec **survives value writes and every configuration edit that leaves the node a cell** — with one exception: replacing the cell with an **empty builder of the same celltype** detaches it (*Detach*).
 - It is removed, and the session closed, when the attachment is **unmounted**, when the node is **deleted**, and when the graph is **replaced** by `set_graph()`. Every one of those paths is a detach (*Detach*).
@@ -69,7 +71,7 @@ An attachment is two objects with two different lifetimes.
 
 - **A fresh `session_id` per session, never reused**, plays the role of a generation. Detaching and re-attaching, or reloading the graph, closes the old session and opens a new one.
 - **Every late message from an old session is discarded**, and the payload claims it carries are released. Every handler matches the session id first.
-- Therefore a `get_graph()` / `set_graph()` round trip carries only the file spec: after a reload, a file session senses from a fresh initial read, and runtime-only widget attachments are absent.
+- Therefore a `get_graph()` / `set_graph()` round trip carries the file spec and share spec. After a reload, file and share sessions start fresh, and runtime-only widget attachments are absent.
 
 ## The topology rules an attachment imposes
 
@@ -106,6 +108,7 @@ Sensing deliberately does **not** do three things:
 
 - **Invalid external state does not stop sensing.** It fails the cell and monitoring continues; the next valid observation recovers it with no user action.
 - **Only what a user assignment checks is rejected; nothing more.** A mount checks exactly what a user assignment of the same value would check — no more leniently, no more strictly (`contracts/mounts.md`, *Canonical bytes*). **For the code celltypes that excludes syntax** (ruled 2026-09-28): an assignment does not parse `python`, `ipython` or `yaml` text (`contracts/cells.md`, *`.buffer` and `.value`*), so a sensed file with a syntax error is not a sense error. The cell is `complete`, the bytes are its value, and the syntax error surfaces downstream: a transformer that runs the code fails with the `SyntaxError` as its own failure, and a `.value` read raises it on every read without failing the cell. Content that parses but is wrong for the program, such as a `python` file that raises at runtime, is handled the same way.
+- **A transport may reject data before it becomes an observation.** The share driver refuses an invalid PUT body at the HTTP boundary and sends no observation (`contracts/shares.md`, *Writing: PUT*).
 - **Disappearance does not clear the node.** Removing a value is an explicit graph operation.
 
 ## Actuate: delivery after a turn
@@ -132,7 +135,7 @@ if N is not None and N != session.last_synced:
 
 ### A delivery resolves; it never computes
 
-**The payload is resolved through `Checksum.resolution()`: the local buffer cache, then the remote buffer server, then `CacheMissError`. It never fingertips.** A delivery therefore has exactly the powers of `.buffer` — **nothing in the attachment layer does work behind your back except an explicit `compute()`.**
+**The payload is resolved through `Checksum.resolution()`: the local buffer cache, then the remote buffer server, then `CacheMissError`. It never fingertips.** A file delivery therefore has exactly the powers of `.buffer` — **nothing in the attachment layer does work behind your back except an explicit `compute()`.** A share delivery does not even resolve the payload; it moves the checksum, and the server resolves bytes only when a client requests them (`contracts/shares.md`, *Cell to share* and *Reading: GET and HEAD*).
 
 Consequences worth stating, because the tempting reading is the wrong one:
 
@@ -296,11 +299,12 @@ Directory celltypes and index shape are `contracts/deep-celltypes.md`; the file 
 | Driver | Status |
 |---|---|
 | **file** (`fs.service.FileSystemService`) | supported through the mount API; `contracts/mounts.md` |
+| **share** (`share.driver.ShareDriver`) | supported through `Cell.share`; serializable; `contracts/shares.md` |
 | `manual.ManualDriver` | **test-only.** It keeps the file driver's policy half and replaces its transport with a queue the test controls, so every interleaving of user edits, results, observations, acknowledgements, detaching and close can be forced deterministically. Never serialized |
 | `widget.WidgetDriver` | **internal transport** for the supported `seamless_workflow.jupyter` widget API. Never serialized |
 | anything else | **not supported.** There is no registration mechanism, no versioned protocol and no compatibility promise |
 
-Only `driver == "file"` is serializable; `AttachmentSpec.to_graph()` raises `ValueError("Only file mounts are serializable")` for anything else, and a manual or widget session leaves no `"mount"` entry in `get_graph()`.
+Only `driver == "file"` is serialized through `AttachmentSpec.to_graph()`; shares use their own serializable `ShareSpec`. Manual and widget sessions leave no graph entry.
 
 `seamless_workflow.diagnostics.record_attachments(ctx)` records the immutable event stream for each `(node_path, driver)` session — each observation's classification, each delivery request, dispatch and acknowledgement, each reassert and the detector's verdict. It exists because an echo misclassified as foreign usually re-installs the checksum the node already has, which no state or value assertion can see.
 
@@ -319,7 +323,9 @@ These are properties of the code that the rules above permit. None is test-pinne
 3. **`WidgetDriver` borrows the file service.** It constructs an `fs.service.Registration`, and it uses `get_service()` for its thread pool and for payload resolution — so the "second driver" is not independent of the first.
 4. **The only external barrier is spelled `ctx.mounts`.** There is no driver-neutral name for it, and manual and widget sessions are cut through it all the same.
 
-**The boundary is nonetheless real**, and that is the evidence for it: three implementations satisfy one transport protocol —
+The share driver owns its HTTP server and private I/O pool; it does not borrow the file service. `SyncReport` and `ctx.mounts.errors` include the driver value `"share"` (`contracts/mounts.md`, *`sync()` and the report*).
+
+**The boundary is nonetheless real**, and that is the evidence for it: four implementations satisfy one transport protocol —
 
 | Transport call | Meaning |
 |---|---|
