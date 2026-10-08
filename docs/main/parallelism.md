@@ -83,6 +83,8 @@ import seamless.config
 seamless.config.set_nparallel(4)
 ```
 
+The limit travels with transformations submitted to Dask: a transformation runs with the `nparallel` of the process that submitted it, so a `parallel()` call inside a nested (driver) transformation needs no configuration of its own. Calling `set_nparallel()` inside a transformation changes the limit for the transformations it submits in turn. The value is held per worker process, which runs several transformations at once; if they were submitted with different limits, the most recently started one determines the value.
+
 Synchronous usage:
 
 ```python
