@@ -28,7 +28,7 @@ report progress while the transformation is running.
 - **child process** — the Seamless transformer child that actually executes the
   user code (spawned by `seamless_transformer.worker._WorkerManager`).
 - **owner_dask_key** — the deterministic Dask task key of a transformation's
-  `base` future; already passed end-to-end ([client.py:1067-1080](seamless-dask/seamless_dask/client.py#L1067-L1080), [worker.py:626-674](seamless-transformer/seamless_transformer/worker.py#L626-L674)). Used as the
+  `base` future; already passed end-to-end ([client.py:1067-1080](../../seamless-dask/seamless_dask/client.py#L1067-L1080), [worker.py:626-674](../../seamless-transformer/seamless_transformer/worker.py#L626-L674)). Used as the
   streaming topic key.
 
 ## Choice of Dask transport: structured events (`log_event` / `subscribe_topic`)
@@ -90,7 +90,7 @@ fine in production.
 
 ### 1.1.1 New attribute on `Transformation`
 
-In [seamless-transformer/seamless_transformer/transformation_class.py](seamless-transformer/seamless_transformer/transformation_class.py):
+In [seamless-transformer/seamless_transformer/transformation_class.py](../../seamless-transformer/seamless_transformer/transformation_class.py):
 
 ```python
 # in __init__
@@ -110,13 +110,13 @@ def streaming(self, value: bool) -> None:
 
 ### 1.1.2 Plumb through to `TransformationSubmission`
 
-In [seamless-dask/seamless_dask/types.py](seamless-dask/seamless_dask/types.py) add `streaming: bool = False`
+In [seamless-dask/seamless_dask/types.py](../../seamless-dask/seamless_dask/types.py) add `streaming: bool = False`
 to `TransformationSubmission`.
 
-In [seamless-dask/seamless_dask/transformation_mixin.py](seamless-dask/seamless_dask/transformation_mixin.py) `_build_dask_submission`,
+In [seamless-dask/seamless_dask/transformation_mixin.py](../../seamless-dask/seamless_dask/transformation_mixin.py) `_build_dask_submission`,
 pass `streaming=getattr(self, "_streaming", False)`.
 
-In [seamless-dask/seamless_dask/client.py](seamless-dask/seamless_dask/client.py) `submit_transformation`, copy
+In [seamless-dask/seamless_dask/client.py](../../seamless-dask/seamless_dask/client.py) `submit_transformation`, copy
 `submission.streaming` into the `payload` dict under key `"streaming"`. The
 field is **not** placed in `transformation_dict` and **not** placed in
 `tf_dunder`, so it has no impact on `tf_get_buffer` / `tf_checksum` / dunder
@@ -161,14 +161,14 @@ env knob `SEAMLESS_STREAM_COLOR=1` enables a per-stream color.
 
 ## 1.3 Dask worker side: forward child notifications to scheduler
 
-In [seamless-dask/seamless_dask/client.py](seamless-dask/seamless_dask/client.py) `_run_base`:
+In [seamless-dask/seamless_dask/client.py](../../seamless-dask/seamless_dask/client.py) `_run_base`:
 
 - Extract `streaming = bool(payload.get("streaming", False))`.
 - Pass `streaming=streaming` into `transformer_worker.dispatch_to_workers(...)`.
 - No log_event calls happen here directly; the Dask-worker-side glue lives in
   `_WorkerManager` (see below). `_run_base` only forwards the flag.
 
-In [seamless-transformer/seamless_transformer/worker.py](seamless-transformer/seamless_transformer/worker.py):
+In [seamless-transformer/seamless_transformer/worker.py](../../seamless-transformer/seamless_transformer/worker.py):
 
 - `dispatch_to_workers` and `_WorkerManager.run_transformation_async` /
   `run_transformation_sync` / `_dispatch` each take a new `streaming: bool`
@@ -194,11 +194,11 @@ In [seamless-transformer/seamless_transformer/worker.py](seamless-transformer/se
 
 The child today wraps `sys.stdout` / `sys.stderr` with `TextIOWrapper`s only
 on the exception path; it does not emit anything mid-run
-([worker.py:561-619](seamless-transformer/seamless_transformer/worker.py#L561-L619)). We extend that.
+([worker.py:561-619](../../seamless-transformer/seamless_transformer/worker.py#L561-L619)). We extend that.
 
 ### 1.4.1 Extend the child channel with one-way notifications
 
-[seamless-transformer/seamless_transformer/process/channel.py](seamless-transformer/seamless_transformer/process/channel.py) currently
+[seamless-transformer/seamless_transformer/process/channel.py](../../seamless-transformer/seamless_transformer/process/channel.py) currently
 supports request/response only. Add a third message kind `"event"`:
 
 ```python
@@ -218,7 +218,7 @@ between submit and finalize).
 
 ### 1.4.2 Streaming-aware stdout/stderr wrapper
 
-In [seamless-transformer/seamless_transformer/worker.py](seamless-transformer/seamless_transformer/worker.py) (new module
+In [seamless-transformer/seamless_transformer/worker.py](../../seamless-transformer/seamless_transformer/worker.py) (new module
 `stream_capture.py` so the diff stays small):
 
 ```python
@@ -291,8 +291,8 @@ Responsibilities:
    scheduler's loop), look at `scheduler.events` for any topic starting with
    `"seamless-stream-"` over the last sliding 5-second window, computing:
    - global aggregate events/sec
-   - per-worker events/sec (using `scheduler.events`' implicit per-event
-     `_worker` field that `log_event` from a Worker stamps automatically)
+   - per-worker events/sec (using the `worker` field that the scheduler stamps
+     on dictionary messages received through `Worker.log_event`)
 2. **Decide throttle.** Compare against thresholds:
    - If `aggregate < target` (50 msg/s): use defaults
      (`max_payload=8192`, `min_interval=2.0`).
@@ -307,12 +307,59 @@ Responsibilities:
    3 seconds; don't relax (loosen) more than once every 10 seconds. Don't emit
    a throttle event if nothing changed.
 
-Each Dask worker (via `SeamlessWorkerPlugin`) subscribes to
-`"seamless-stream-throttle"` and updates module-level
-`_STREAM_THROTTLE = {"max_payload": ..., "min_interval": ...}`.
-`_WorkerManager._dispatch` reads from this cell when forwarding a chunk and
-forwards in-band to the child via `stream_throttle` notifications when it
-changes.
+Structured-event subscriptions are a **Client API**. Current Dask workers do
+not expose `Worker.subscribe_topic`; the historic distributed Pub/Sub API is
+also absent in the supported installed Dask version. Throttle delivery uses
+the documented client relay:
+
+1. The scheduler plugin publishes with
+   `scheduler.log_event("seamless-stream-throttle", payload)`.
+2. A live `SeamlessDaskClient` subscribes with
+   `Client.subscribe_topic("seamless-stream-throttle", async_handler)`.
+3. The async handler awaits `Client.run(update_worker_state, payload,
+   workers=...)` to apply state on the Dask workers.
+
+The worker update selects its address-specific parameters and merges them
+with the global parameters using the smaller payload size and larger interval.
+It updates module-level
+`_STREAM_THROTTLE = {"max_payload": ..., "min_interval": ...}` and pushes the
+change to active child channels using `stream_throttle` notifications.
+`_WorkerManager._dispatch` also reads this cell for initial child parameters
+and when forwarding chunks. This control path does not add custom Dask
+scheduler or worker RPC handlers. The child-process `Endpoint` event extension
+in §1.4.1 remains the required child↔worker transport.
+
+The relay has a lifecycle separate from each output topic. A distributed
+`Client` owns one throttle subscription even when several `SeamlessDaskClient`
+wrappers share it. Different connected clients may relay the same state;
+worker updates are idempotent. Late clients subscribe before reading the
+latest retained throttle event with public `Client.get_events` to catch up.
+Failed worker updates are retried without stopping future control events.
+Control payloads carry a scheduler-plugin epoch and increasing state revision.
+Worker-side application is serialized and rejects older or duplicate revisions
+within an epoch, so delayed retries from another client cannot overwrite a
+newer limit. These control fields do not enter transformation identity.
+
+`SeamlessWorkerPlugin.setup` initializes worker limits from the configured
+defaults. The scheduler plugin emits its current state at startup and on
+worker addition so a joining worker receives the current aggregate limit
+through the same public relay. Applying the state uses the `dask_worker`
+argument injected by `Client.run`, rather than task-local `get_worker()`.
+All current workers must receive updates, including clusters larger than the
+default five-worker summary returned by `Client.scheduler_info`.
+
+Adaptive updates require at least one live subscribed client. If all clients
+disconnect, workers retain their last applied limits and the scheduler
+continues measuring events. A reconnecting client catches up from retained
+state. Dask owns subscription cleanup when a client disconnects; per-run
+output subscriptions still end on completion or explicit futures release.
+
+The worker's active-stream count sets a shared minimum interval of
+`max(configured_interval, active_transformations / 2)` for both streams of
+every active transformation. The count and all child limits are refreshed on
+stream start and end; limiting only newly started streams would leave older
+streams outside the shared worker cap. Mandatory final flushes can produce
+short completion bursts above the soft cap.
 
 The scheduler-side rate counter ignores `tqdm` chunks vs. text chunks; from
 its perspective each event has equal cost. Phase 2 messages flow through the
@@ -341,31 +388,31 @@ same topic and counter without changes.
 
 ## 1.7 Files to add or modify (phase 1)
 
-- modify: [seamless-transformer/seamless_transformer/transformation_class.py](seamless-transformer/seamless_transformer/transformation_class.py)
+- modify: [seamless-transformer/seamless_transformer/transformation_class.py](../../seamless-transformer/seamless_transformer/transformation_class.py)
   — add `streaming` attribute and property.
-- modify: [seamless-transformer/seamless_transformer/worker.py](seamless-transformer/seamless_transformer/worker.py)
+- modify: [seamless-transformer/seamless_transformer/worker.py](../../seamless-transformer/seamless_transformer/worker.py)
   — extend `_execute_transformation_request`, `_dispatch`,
   `run_transformation_async`/`_sync`, `dispatch_to_workers` to thread the
   `streaming` flag and the per-call stream handlers.
-- modify: [seamless-transformer/seamless_transformer/process/channel.py](seamless-transformer/seamless_transformer/process/channel.py)
+- modify: [seamless-transformer/seamless_transformer/process/channel.py](../../seamless-transformer/seamless_transformer/process/channel.py)
   — add `kind: "event"` (one-way) message support and
   `add_event_handler` / `notify` methods on `Endpoint` (mirrored on
   `ChildChannel`).
 - add: `seamless-transformer/seamless_transformer/stream_capture.py`
   — `_StreamingTap` + lazy background flusher thread.
-- modify: [seamless-dask/seamless_dask/types.py](seamless-dask/seamless_dask/types.py) — `streaming` field on
+- modify: [seamless-dask/seamless_dask/types.py](../../seamless-dask/seamless_dask/types.py) — `streaming` field on
   `TransformationSubmission`.
-- modify: [seamless-dask/seamless_dask/transformation_mixin.py](seamless-dask/seamless_dask/transformation_mixin.py) —
+- modify: [seamless-dask/seamless_dask/transformation_mixin.py](../../seamless-dask/seamless_dask/transformation_mixin.py) —
   set `streaming` on submission.
-- modify: [seamless-dask/seamless_dask/client.py](seamless-dask/seamless_dask/client.py) — copy
+- modify: [seamless-dask/seamless_dask/client.py](../../seamless-dask/seamless_dask/client.py) — copy
   `streaming` into `_run_base` payload; in `submit_transformation`,
   subscribe/unsubscribe the topic; in `_run_base`, pass `streaming` into
   `dispatch_to_workers`.
-- modify: [seamless-dask/seamless_dask/worker_setup.py](seamless-dask/seamless_dask/worker_setup.py) — register
-  the throttle subscriber on each Dask worker.
+- modify: [seamless-dask/seamless_dask/worker_setup.py](../../seamless-dask/seamless_dask/worker_setup.py) — register
+  initial throttle state through `SeamlessWorkerPlugin.setup`.
 - add: `seamless-dask/seamless_dask/stream_throttle.py`
-  — `SeamlessStreamThrottlePlugin` scheduler plugin + worker subscriber
-  helper.
+  — `SeamlessStreamThrottlePlugin` scheduler plugin + `Client.run` worker
+  state update helper; the public client relay lives in `client.py`.
 - modify: tests under `seamless-dask/tests/` — new
   `test_streaming.py` covering: streaming on/off, truncation-at-head,
   per-stream prefix, no-streaming-on-cache-hit, parallel transformations get
