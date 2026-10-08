@@ -41,7 +41,7 @@ out = output(ctx.c, layout=None, mimetype=None)   # an OutputWidget; display(out
 
 ## The hub: one attachment, any number of widgets
 
-**The attached resource is the hub, never a widget.** `CellTraitlet` is a `traitlets.HasTraits` object with one trait, `value`. It is the single attachment of its cell node (`contracts/attachments.md`, *Scope*), and widgets are tied to it by ordinary in-process links that the attachment layer never sees.
+**The attached resource is the hub, never a widget.** `CellTraitlet` is a `traitlets.HasTraits` object with one trait, `value`. It occupies the node's single widget slot and may coexist with its single file slot (`contracts/attachments.md`, *Scope*). Widgets are tied to it by ordinary in-process links that the attachment layer never sees.
 
 - **Several widgets on one cell are several links on one hub.** A slider and a text box linked to the same hub stay in step with each other and with the cell.
 - **The session keeps the hub alive, the hub keeps its links alive, and a link keeps its widget alive.** The return values of `traitlet()`, `link()` and `connect()` may be dropped.
@@ -55,9 +55,10 @@ The widget driver uses the `mode` and `authority` fields of the generic spec (`c
 
 - **A hub is created in mode `w`.** `traitlet()`, `connect()`, `observe()` and `output()` only read the cell, so they are legal on a **connected** cell — that is how a computed value is displayed.
 - **The first `link()` upgrades the hub to mode `rw`.** A sensing attachment is the node's producer, so the upgrade is refused with `AuthorityError("Sensing mount cannot have incoming edges; unmount first")` when the cell has an incoming edge. **A refused upgrade changes nothing:** the hub stays attached in `w`, and its existing links and observers keep working.
-- **The upgrade is a detach followed by an attach**, so it opens a new session; the hub and its links are carried over.
+- **The upgrade is a detach followed by an attach in the widget slot**, so it opens a new widget session; the hub and its links are carried over. A file session on the same node is preserved.
 - **There is no downgrade.** A hub that has been linked stays in `rw` after its last bidirectional link is removed, until it is destroyed. While it is in `rw`, adding an incoming edge to the cell raises `AuthorityError("Sensing mount is the producer; unmount first")`; call `traitlet(cell).destroy()` first.
 - **The `authority` field is always `"cell"`.**
+- **Every sensing slot protects the node's topology.** Destroying the hub releases its own guard; an `r` or `rw` file mount still refuses incoming edges until it is unmounted too.
 
 ## The initial decision
 
@@ -82,13 +83,15 @@ The last row is row 4 of the no-value table and not a widget rule: an absent res
 Delivery follows `contracts/attachments.md`, *Actuate*, without exception. What that means for a widget:
 
 - **A widget shows `complete` values only.** While the cell is `waiting`, `blocked` or `failed`, nothing is delivered and **the widget keeps the last value it showed**. There is no "pending" or "failed" rendering; read `ctx.a.state` and `ctx.a.exception` for that.
-- **Intermediate values are not queued.** A rapid series of cell changes reaches the widget as its last value.
+- **Intermediate values are not queued.** A rapid series of cell changes reaches the widget as its last value. Cell-to-attachment delivery starts are spaced by at least **2/3 second per session**. The first delivery is immediate, later pending values coalesce to the latest, and file and widget slots have independent delivery clocks. `ctx.mounts.sync()` waits for throttled pending deliveries, subject to its timeout.
 - **The value is the cell's value as its own `celltype`**: the same object `.value` would return, resolved from the checksum by the transport. Resolution never computes (*A delivery resolves; it never computes*).
 - **A null cell value sets `hub.value` to `None`**, which links do not forward (*`None` is absence*): linked widgets keep what they showed.
 
 ## Widget to cell
 
 A change to a bidirectionally linked widget is sensed as in `contracts/attachments.md`, *Sense*: a non-detaching authoritative write with no privilege over a user assignment, and none under it.
+
+When the same cell has both a sensing file mount and a bidirectional widget hub, **the newest accepted write wins**. An actual valid write from either resource or from the user clears every sense error on that node. Merely observing unchanged valid content from the other resource does not recover a failed sensor. The delivery interval does not delay sensing.
 
 - **The value is serialized as the cell's celltype, exactly as an assignment of the same value would be.** A value that an assignment would reject is a **sense error**: the cell is `failed`, monitoring continues, and the next valid widget value recovers it with no user action. A `Text` widget linked to an `int` cell fails the cell while the text is not a number.
 - **Changes are debounced.** The cell is written once, after the widget has been quiet for the debounce interval (*Limits*), with the widget's value at that moment. Dragging a slider produces one write, not one per step.
@@ -119,7 +122,7 @@ Assigning `t.value` on a hub in mode `w` is a foreign change to an output the Co
 
 - **Every public call is an ordinary public Context operation.** `traitlet()`, `link()` when it upgrades, `destroy()`, `output()` and `clear_error()` block the caller, raise `ReentrantContextError` from the controller thread and `ClosedContextError` after `close()`.
 - **Delivery callbacks to hub observers, and delivery updates of linked widgets, run on a transport worker thread** — not on the thread that created the widget, and not on the Jupyter kernel's event loop. The immediate initial call from `observe()` runs on its caller's thread, as do notifications from a direct hub assignment and the initial update in `link()` or `connect()`. Setting an ipywidgets value from a worker thread is supported by ipywidgets; a handler that needs the kernel loop must hand over to it itself.
-- **A handler must not wait for the attachment layer.** It runs inside the delivery it was called for, so `ctx.mounts.sync()`, `destroy()`, `link()` and `del ctx.a.mount` called from a handler wait on that same delivery and block until their timeout. Reading and assigning cells from a handler is fine.
+- **A delivery handler must not wait for its own attachment.** It runs inside the delivery it was called for, so `ctx.mounts.sync()`, destroying that hub, or upgrading its link can wait on the same delivery and block until their timeout. Reading and assigning cells from a handler is fine.
 - **Widget-side change handlers do no Seamless work.** They arm the debounce and return, so a kernel that is busy in a blocking Context call still loses no widget change.
 
 ## Errors
@@ -140,7 +143,7 @@ Raised at the call:
 |---|---|
 | `AttributeError("Widgets attach to whole Context cell nodes")` | a standalone `Cell`; a sub-path projection (`ctx.a.b`); a read-only handle, **including a transformer's result, `ctx.tf.result`** |
 | `NodeError("Mounts require an existing whole cell node")` | the node does not exist or is not a cell |
-| `ValueError("Cell is already mounted; unmount first")` | the cell already has another attachment, such as a file mount |
+| `ValueError("Cell is already mounted; unmount first")` | the widget slot is occupied by a different widget transport; an existing public hub is returned instead |
 | `TypeError("Celltype '<ct>' is not mountable")` | `checksum`, `deepcell`, `module` |
 | `AuthorityError` | `link()` on a cell with an incoming edge; an incoming edge into a linked cell; clearing an attached cell |
 | `ImportError` | `traitlets`, or for `output()` `ipywidgets`, is not installed |
@@ -151,6 +154,7 @@ The remedy for every scope refusal is the usual one: **attach a cell and connect
 
 - **A widget attachment is never serialized.** `get_graph()` writes no entry for it, and `set_graph()` restores none. After loading a graph, call `traitlet(...).link(...)` again.
 - **Every detach destroys the hub.** `t.destroy()`, deleting the node, an empty same-celltype builder, `set_graph()` and `ctx.close()` all end in the same detach (`contracts/attachments.md`, *Attach, detach, close*). The hub then drops all its links and becomes inert; its widgets keep the values they last showed and are no longer tied to anything.
+- **Slot detach is independent.** `t.destroy()` removes only the widget slot, and `del ctx.a.mount` removes only the file slot. Node deletion, an empty same-celltype builder, graph replacement and Context close detach all slots.
 - **A later `traitlet(cell)` creates a fresh hub**, in mode `w`, with no links.
 - **A detached hub does not address a replacement attachment.** Its `status` and `error` are `None`; repeating `destroy()` or `clear_error()` leaves any new hub or file mount alone.
 - **The celltype is frozen and clearing is refused** while the hub exists, as for any attachment.
@@ -205,10 +209,11 @@ Stated as current behaviour, with no claim about what any earlier version did:
 
 ## Current limitations
 
-- **One attachment per node.** A cell with a hub cannot be file-mounted, and a mounted cell cannot get a hub: the second attach raises `ValueError("Cell is already mounted; unmount first")`. For display, the remedy is a connected copy — `ctx.a_view = ctx.a; output(ctx.a_view)`. For a cell that should be driven by a file and a widget at once there is no remedy.
-- **`ctx.a.mount` on a cell that has a hub is unspecified.** `.mount.spec`, `.mount.status`, `.mount.error` and `del ctx.a.mount` are the file mount's surface. Use `t.status`, `t.error`, `t.clear_error()` and `t.destroy()`; do not depend on what the `mount` handle answers.
-- **The barrier is spelled `ctx.mounts`.** `ctx.mounts.sync()` cuts widget sessions like any other, and its `SyncReport` and `ctx.mounts.errors` carry an entry per hub, keyed by node path, in the `status` shape of `contracts/mounts.md`.
-- **A failed delivery is retried only when something else causes a turn.** The widget driver sends no tick, so on an idle Context a due retry waits for the next cell change, widget change or `ctx.mounts.sync()` (`contracts/attachments.md`, *Current limitations*).
+- **One file slot and one widget hub slot per node.** Several widgets share the same hub; additional file mounts are refused.
+- **`ctx.a.mount` addresses only the file slot.** `.mount.spec`, `.mount.status` and `.mount.error` are `None` when no file slot exists, and `del ctx.a.mount` is then a no-op. Use `t.status`, `t.error`, `t.clear_error()` and `t.destroy()` for the widget slot.
+- **The barrier is spelled `ctx.mounts`.** `ctx.mounts.sync()` cuts every session, and its `SyncReport` and `ctx.mounts.errors` use `(node_path, driver)` keys for all entries, including file-only and widget-only nodes. A hub's key is `(("a",), "widget")` for `ctx.a`, in the `status` shape of `contracts/mounts.md`.
+- **Idle delivery wakeups are Context-owned.** A deadline timer wakes pending throttled deliveries and due retries without a user call.
+- **The oscillation detector is per session.** Cross-attachment loops are not detected as a node-wide loop.
 - **The debounce interval is not a public parameter.**
 - **Directory celltypes are unspecified.** `folder` passes celltype admission and its hub value is the index; `deepfolder` is refused, because a hub attaches in mode `w`. Do not depend on either.
 

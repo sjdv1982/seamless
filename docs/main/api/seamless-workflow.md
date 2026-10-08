@@ -121,5 +121,9 @@ display(output(ctx.c))
 traitlet(ctx.a).link(slider)
 ```
 
+The widget hub has its own runtime attachment slot and can coexist with
+`ctx.a.mount("a.txt")` on the same cell. `ctx.mounts.sync()` reports both
+sessions; `del ctx.a.mount` detaches only the file slot.
+
 Widget attachments are runtime state and are never serialized. The underlying
 `attachments.widget.WidgetDriver` remains an internal transport.
