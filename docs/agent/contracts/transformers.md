@@ -61,6 +61,7 @@ The common builder state comprises:
 - the result celltype;
 - modules and globals, where the language supports them;
 - metadata, environment, scratch, direct-print and placement settings;
+- the streaming flag, which is operational: it is copied onto each built Transformation, is never part of a snapshot's identity, and is not stored in the durable graph (`contracts/streaming.md`);
 - the call mode: delayed or direct.
 
 Compiled Transformers add schema, header-derived state, compilation configuration, metavariables and additional objects. `contracts/compiled-transformers.md` alone specifies those additions, including which of them affect transformation identity.

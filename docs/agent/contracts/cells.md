@@ -590,9 +590,23 @@ ctx.join.right = ctx.right
 
 **A cell with sub-path edges may hold only a checksum at its root — a literal — never a source.** A root edge and sub-path edges on one cell are refused, in either order: `ctx.join = ctx.base; ctx.join["k"] = ctx.other` is refused at the sub-path assignment, and `ctx.join["k"] = ctx.other; ctx.join = ctx.base` is refused at the root assignment, rather than silently detaching the sub-path edge. A literal root with sub-path edges, as above, stays a legal join. **The exception class is deferred**; rely only on the assignment raising.
 
-**Join members convert to the join's celltype before insertion.** For an assignable member of a `mixed` or `plain` join, `ctx.j["left"] = ctx.t; a = ctx.j.value` and the root connection `ctx.j = ctx.t; b = ctx.j.value` must give the same value for `a["left"]` and `b` after computation. For example, a `text` source containing `"[1,2]"` contributes the list `[1, 2]` to a `plain` join, not the source string. A heterogeneous member source must be pathless: the conversion cannot share its link with a source projection (*Connecting*). A conversion failure is an evaluation failure, as for a root conversion.
+**Members of a `mixed` or `plain` join convert to the join's celltype before insertion.** For an assignable member, `ctx.j["left"] = ctx.t; a = ctx.j.value` and the root connection `ctx.j = ctx.t; b = ctx.j.value` must give the same value for `a["left"]` and `b` after computation. For example, a `text` source containing `"[1,2]"` contributes the list `[1, 2]` to a `plain` join, not the source string. A heterogeneous member source must be pathless: the conversion cannot share its link with a source projection (*Connecting*). A conversion failure is an evaluation failure, as for a root conversion.
 
-**Current implementation: a join is plain local Python.** It is assembled directly in the Context, in-process: the root value is resolved, each connected sub-path source's value is resolved and assigned into a detached copy, and the aggregate is re-serialized. **There is no Transformation and no Expression behind it.** *Verified:* `Context._derive_cell` takes this branch when there are sub-path edges and no root edge, and hands `sidework.evaluate_cell` to `_demand`, which runs it in a worker thread; `evaluate_cell` calls `Checksum.resolve`, `_assign_path` and `checksum_for_value`, and nothing else.
+**Deep joins insert member checksums.** For `ctx.d["k"] = ctx.x`, a `deepcell` target requires a `mixed` source; a `deepfolder` or `folder` target requires a `bytes` source. The key must be a string. Other source celltypes are refused at assignment, even if an ordinary conversion would be possible, and the graph is unchanged. An explicitly converted source is legal if its resulting celltype is the required member celltype; this conversion is preserved rather than collapsed into a root conversion. The join inserts the source's checksum as `index[k]`, preserving its identity without resolving or reserializing the member. It does not convert the member to the deep root celltype. For example:
+
+```python
+ctx.d = Cell("deepcell")
+ctx.x = Cell("mixed")
+ctx.x.set({"a": 1})
+ctx.d["k"] = ctx.x
+ctx.compute()
+assert ctx.d.value == {"k": ctx.x.checksum}
+assert ctx.d["k"].value == {"a": 1}
+```
+
+A literal deep root supplies the base index; unrelated entries remain unchanged. Root-source and sub-path-source edges remain mutually exclusive. Compatibility is checked again when either celltype changes: an incompatible member edge makes the join `miswired`, with no execution exception. Changing the target to an ordinary celltype also invalidates a deep member edge; changing both cells back to a compatible deep/member combination repairs it. Graph serialization preserves this member-insertion intent with `deep_member: true` on the connection, so reloads retain the same miswiring behavior. A compatible but failed member blocks the join with `blocked-by-error`, as for ordinary joins.
+
+**Current implementation: a join is plain local Python.** It is assembled directly in the Context, in-process: the root value is resolved, each connected sub-path source's value (or checksum for a deep join) is assigned into a detached copy, and the aggregate is re-serialized. **There is no Transformation and no Expression behind it.** *Verified:* `Context._derive_cell` takes this branch when there are sub-path edges and no root edge, and hands `sidework.evaluate_cell` to `_demand`, which runs it in a worker thread; `evaluate_cell` calls `Checksum.resolve`, `_assign_path` and `checksum_for_value`, and nothing else.
 
 Observable behaviour — stable, and the only thing promised:
 
