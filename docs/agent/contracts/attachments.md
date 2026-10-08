@@ -7,7 +7,7 @@ An **attachment** connects one Context cell node to an external resource, in one
 
 This page is the framework: scope, the durable spec and the ephemeral session, the topology rules, the sense and actuate disciplines, the error model, the oscillation detector, the cut barrier, the lifecycle and leaf retention. The **file driver** — bytes, paths, celltype canonicalization, fingerprints, atomic writes, directories, limits — is `contracts/mounts.md`. The seam is **direction and discipline versus bytes and filesystem**: `contracts/mounts.md` never restates a rule from this page; it only says where the file driver specializes one.
 
-**This page specifies the guaranteed behaviour of the attachments that exist; it is not a supported plugin API.** The file driver is the only production driver. `ManualDriver` is a test instrument, `WidgetDriver` is experimental, and third-party drivers are not supported. There is a real transport boundary and it is worth understanding, but nothing below is a stable extension point, and the "generic" layer is still file-shaped in four named places (*Current limitations*, below).
+**This page specifies the guaranteed behaviour of the attachments that exist; it is not a supported plugin API.** File mounts and Jupyter widgets are supported through their public APIs. Widget attachments use `seamless_workflow.jupyter`; `WidgetDriver` remains an internal transport. `ManualDriver` is a test instrument, and third-party drivers are not supported. There is a real transport boundary and it is worth understanding, but nothing below is a stable extension point, and the "generic" layer is still file-shaped in four named places (*Current limitations*, below).
 
 **"Authority" has two unrelated meanings**, both inherited from the code's own naming. Keep them apart:
 
@@ -23,7 +23,8 @@ Code locations:
 | Session and messages | `seamless_workflow.attachments.session` (`MountSession`, `Observation`, `Delivery`, `DeliveryAck`, `MountLease`, `SyncReport`, `MountError`, `ConflictError`) |
 | Controller mixin | `seamless_workflow.attachments.runtime` (`AttachmentRuntime`, `SyncPredicate`) |
 | Public handles | `seamless_workflow.attachments.api` (`MountHandle`, `ContextMounts`, `make_sink`, `load_graph`) |
-| Transport implementations | `seamless_workflow.attachments.fs.service` (`FileSystemService`, `Registration`), `…attachments.widget.WidgetDriver`, `…attachments.manual.ManualDriver` |
+| Transport implementations | `seamless_workflow.attachments.fs.service` (`FileSystemService`, `Registration`), `…attachments.widget.WidgetDriver` (internal widget transport), `…attachments.manual.ManualDriver` |
+| Public widget API | `seamless_workflow.jupyter` (`traitlet`, `output`); `WidgetDriver` itself is internal |
 | Node field and graph entry | `seamless_workflow.graph.Node.mount`; `seamless_workflow.context.Context.get_graph` / `set_graph`; `seamless_workflow.serialization.prepare_graph` |
 | Cell handle | `seamless.cell_class.Cell.mount` (property plus deleter, seamless-core) |
 | Diagnostics | `seamless_workflow.diagnostics.record_attachments` |
@@ -290,9 +291,9 @@ Directory celltypes and index shape are `contracts/deep-celltypes.md`; the file 
 
 | Driver | Status |
 |---|---|
-| **file** (`fs.service.FileSystemService`) | the **only production driver**; `contracts/mounts.md` |
+| **file** (`fs.service.FileSystemService`) | supported through the mount API; `contracts/mounts.md` |
 | `manual.ManualDriver` | **test-only.** It keeps the file driver's policy half and replaces its transport with a queue the test controls, so every interleaving of user edits, results, observations, acknowledgements, detaching and close can be forced deterministically. Never serialized |
-| `widget.WidgetDriver` | **experimental.** A traitlets-style callback widget attached through the same session protocol, built to show that the boundary is real. Never serialized |
+| `widget.WidgetDriver` | **internal transport** for the supported `seamless_workflow.jupyter` widget API. Never serialized |
 | anything else | **not supported.** There is no registration mechanism, no versioned protocol and no compatibility promise |
 
 Only `driver == "file"` is serializable; `AttachmentSpec.to_graph()` raises `ValueError("Only file mounts are serializable")` for anything else, and a manual or widget session leaves no `"mount"` entry in `get_graph()`.

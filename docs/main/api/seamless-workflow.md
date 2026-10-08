@@ -109,8 +109,17 @@ controllable `attachments.manual.ManualDriver` for ordering tests.
 
 Set `SEAMLESS_MOUNT_NATIVE=1` before the first mount to enable Linux inotify hints
 alongside polling. Unsupported platforms and failed watches retain polling.
-The experimental `attachments.widget.WidgetDriver(widget).attach(ctx.cell)`
-exercises the same session protocol with a traitlets-style callback widget;
-widget and manual-driver sessions are never serialized. This is an experimental
-second transport, not a promise that arbitrary external services share file
-mount conflict policy.
+
+For notebooks, install `seamless-workflow[jupyter]` and use the public widget
+helpers:
+
+```python
+from IPython.display import display
+from seamless_workflow.jupyter import traitlet, output
+
+display(output(ctx.c))
+traitlet(ctx.a).link(slider)
+```
+
+Widget attachments are runtime state and are never serialized. The underlying
+`attachments.widget.WidgetDriver` remains an internal transport.
