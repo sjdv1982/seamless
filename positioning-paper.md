@@ -48,9 +48,9 @@ The classic Make algorithm contains a remarkably effective trick for reasoning a
 
 In simplified form:
 
-```latex
+$$
 \max\bigl(t(\text{inputs}),t(\text{recipe dependencies})\bigr) < t(\text{output})
-```
+$$
 
 suggests that the existing output remains valid.
 
@@ -58,9 +58,9 @@ The system has not proved that the computation would produce the same bytes. It 
 
 This idea underlies an extraordinarily successful family of systems. Snakemake, Nextflow and related scientific workflow frameworks considerably enrich the model with explicit rules, parameters, software environments, provenance information and more sophisticated invalidation criteria, but the underlying semantic universe remains recognizably Unix-like:
 
-```latex
+$$
 \text{artifacts} + \text{processes} \rightarrow \text{artifacts}.
-```
+$$
 
 Within this universe, remarkably strong automation is possible.
 
@@ -169,15 +169,15 @@ A further position is possible, the one adopted by Seamless: a **scientific or P
 
 Here, a deterministic transformation expresses a falsifiable claim:
 
-```latex
+$$
 T \rightarrow R.
-```
+$$
 
 The execution environment is not necessarily absorbed into the identity of T. Instead, different compatible environments can provide independent tests of the same claim:
 
-```latex
+$$
 (T,E_1)\rightarrow R \qquad (T,E_2)\rightarrow R'.
-```
+$$
 
 If R′ = R, the deterministic claim survives this replication.
 
