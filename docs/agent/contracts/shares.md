@@ -220,6 +220,7 @@ The last row is row 4 of the no-value table and not a share rule: an absent reso
 | `text`, `python`, `ipython`, `yaml` | `{"type": "string"}` |
 | `bytes`, `binary`, `mixed` | binary content, no schema |
 
+- PUT request schemas additionally accept null, and the request body is optional because an omitted or empty body writes null (*Writing: PUT*). GET value schemas remain as listed above; `mode=checksum` additionally returns `text/plain` checksum text.
 - A `mimetype` argument replaces the content type; the schema is then a string for text types and binary otherwise.
 - Each operation carries `x-seamless-celltype` and `x-seamless-node` (the node path).
 - The websocket is described in `info.description` and by `x-seamless-updates` (`{"<namespace>": "/<namespace>"}`); OpenAPI itself cannot express it.
