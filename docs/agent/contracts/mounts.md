@@ -414,7 +414,7 @@ The former public `NodeError` and empty-builder detach gaps now satisfy the cont
 - `mount-design.md` §17.3, the row "clearing an `r`/`rw` cell's value stays cleared": clearing a mounted cell is **refused** with `AuthorityError("Cannot clear a mounted cell; unmount first")`, in every mode, except through an empty same-celltype builder, which unmounts and clears (*Unmount, persistence and close*).
 - `mount-design.md`'s promise that a `set_graph` does not delete a non-persistent file only "when the new graph re-attaches the same path" is too narrow: a `set_graph` never deletes it.
 - `mount-design.md` §16's "naming is provisional": the names are now fixed.
-- `mount-implementation.md` says graph format `0.3`; the contract format, which the code writes, is `0.5` (*Graph serialization*).
+- `mount-implementation.md` says graph format `0.3`; the current workflow graph format written by the code is `0.6` (*Graph serialization*), which includes shares as well as mounts.
 - `attachments-and-mount-design.md` Part II §21 still discusses a `settled()` predicate and spells the barrier `ctx.mount.sync()` (singular). Both are dead. Where that document and `mount-design.md` differ, this page wins.
 - **Every "legacy Seamless" claim anywhere in the design documents is unverified.** The 0.x characterization never ran, so this page carries **no** comparison with it — including in the decision table, whose "legacy" column is not reproduced here.
 

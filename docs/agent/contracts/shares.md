@@ -331,7 +331,7 @@ Stated as current behaviour, with no claim about what any earlier version did:
 
 ## Implementation status and current limitations
 
-This page is written ahead of the implementation; `seamless-workflow/tests/test_contract_shares.py` pins it.
+The share API, HTTP/WebSocket server, persistence, OpenAPI description and browser client implement this contract. Focused tests in `seamless-workflow/tests/test_contract_shares.py`, `test_share_transport.py` and `test_share_client_js.py` pin the behavior. Interactive browser acceptance remains pending.
 
 - **Topology refusals raised by generic code say "mount".** An incoming edge into a writably shared cell raises `AuthorityError("Sensing mount is the producer; unmount first")`, and clearing raises `AuthorityError("Cannot clear a mounted cell; unmount first")`. The remedy is `del ctx.a.share`.
 - **The barrier is spelled `ctx.mounts`.**
