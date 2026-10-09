@@ -6,6 +6,8 @@ A **node** is a Context-bound builder, such as `ctx.a` or `ctx.tf`. `Cell`, `Pin
 
 This page owns the state vocabulary, the derivation rules, block reasons and their precedence, the shape of `block_reason`, the cascade and its glitch-freedom invariant, the hold and supersession policy, and what `prune` reclaims. It does **not** own the Context API (`contracts/workflow-context.md`), the handle-side read and write API (`contracts/cells.md`, `contracts/pins.md`), what softcancel means (`contracts/cancellation.md`), or Expression-level cancellation and materialization (`contracts/expressions.md`).
 
+The share server exposes these handle-reported states in the whole Context snapshot described in [HTTP shares, *The state graph*](shares.md#the-state-graph).
+
 Code locations:
 
 | Concern | Module / symbol |
