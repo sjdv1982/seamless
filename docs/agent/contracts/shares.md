@@ -90,6 +90,7 @@ A node has one **share** slot, beside its file slot and its widget slot (`contra
 
 | Request | Answer |
 |---|---|
+| `GET`, `HEAD` `/<namespace>/state-graph` | the Context node state graph |
 | `GET`, `HEAD`, `PUT` `/<namespace>/<path>` | a share |
 | `GET`, `HEAD`, `PUT` `/<path>` | a `toplevel` share |
 | `GET /<namespace>` with a websocket upgrade | the namespace's update stream |
@@ -99,7 +100,25 @@ A node has one **share** slot, beside its file slot and its widget slot (`contra
 | `GET /<namespace>/` | `302` to `/<namespace>/index.html` when that share exists, else `404` |
 | `OPTIONS` anything | the CORS preflight answer |
 
-`openapi.json`, `seamless-client.js` and every claimed namespace name are reserved top-level keys; a namespace cannot take the name of an existing top-level share. A key is matched whole: there is no access below a share.
+`openapi.json`, `seamless-client.js` and every claimed namespace name are reserved top-level keys; a namespace cannot take the name of an existing top-level share. `state-graph` is a reserved namespace key: a non-top-level share with that exact path raises `ValueError`. A top-level share named `state-graph` remains legal. A key is matched whole: there is no access below a share.
+
+## The state graph
+
+**Once a Context has its first share, `GET /<namespace>/state-graph` serves its whole node state graph until the Context closes**, including after its last share is removed. Changing the namespace after final unshare releases the old namespace and its URL; the next share establishes the new one. A Context that never shared anything has no state-graph URL. Exposure is always on: every node's path, celltype or transformer language, state, checksum and error text is served to anyone who can reach the server, including nodes whose values are not shared.
+
+The JSON object has `nodes`, `anonymous_nodes` and `connections`. Each named node has `type`, `path`, `state`, `block_reason`, `exception` and `checksum`; cells additionally have `celltype`, transformers `language`. `state`, `block_reason` and `exception` match the bound handle's reporting. Checksums are hex strings or null. `connections` and `anonymous_nodes` have exactly the graph-format structure written by `get_graph()`, so node identities and anonymous source references can be resolved in the same way.
+
+```json
+{"nodes":[{"type":"cell","path":["a"],"celltype":"plain","state":"complete","block_reason":null,"exception":null,"checksum":"<hex>"},{"type":"transformer","path":["add"],"language":"python","state":"blocked","block_reason":{"a":"blocked-by-error"},"exception":null,"checksum":null}],"anonymous_nodes":{},"connections":[{"type":"connection","source":["a"],"target":["add","a"]}]}
+```
+
+The payload omits transformer code and configuration, per-pin states and the run ledger (generation, hold deadlines and superseded runs). It never resolves values or buffers, performs derivation or computes a result.
+
+- **The digest is the SHA-256 of canonical JSON** (sorted keys, compact separators). It is a change token only; the body is not stored in the buffer cache or hashserver.
+- **The marker increases only when the published digest changes**, for the lifetime of the Context. A client adopts the server's markers on reconnect.
+- **GET and HEAD answer `200 application/json`**, with `ETag: "<digest>"`, `X-Seamless-Marker` and `Cache-Control: no-cache`. `If-None-Match` matching the digest answers `304`. HEAD omits the body. PUT answers `405`; an unavailable or closing Context answers `404`; a refresh timeout answers `503`.
+- **At most one snapshot is built per half-second per Context**, regardless of request rate. A snapshot may be up to one interval old. A GET reuses a publication younger than the interval, and refreshes an older dirty publication or the first publication. A connected namespace client requests a dirty refresh each interval; a clean Context returns the cached publication without a controller turn.
+- **Without websocket clients or GET requests, no snapshot work runs.** Snapshot reads run on the controller thread as read turns, and never poison the Context on failure. Standard graphs of a few hundred nodes require a single small pass over nodes and edges, without copying transformer configuration.
 
 ## The record and the marker
 
@@ -124,7 +143,7 @@ The served state of a share is a **record**: a checksum, or none, and a **marker
 - **`?mode=checksum`** returns the checksum hex as `text/plain` instead of the value.
 - **`HEAD` never resolves bytes**; it answers from the record.
 - **A GET resolves; it never computes.** It has exactly the powers of `.buffer`: the local buffer cache, then the remote buffer server. A value whose checksum arrived without its bytes — a remote result, a cache hit, a scratch result that was evicted — answers `503` until the bytes become resolvable (`contracts/attachments.md`, *A delivery resolves; it never computes*).
-- **Only complete values are served.** While the cell is `waiting`, `blocked` or `failed`, the share keeps answering with the last value it served, under the same marker. Before the first complete value it answers `404`. Node state is read from the cell handle, not over HTTP.
+- **Only complete values are served.** While the cell is `waiting`, `blocked` or `failed`, the share keeps answering with the last value it served, under the same marker. Before the first complete value it answers `404`. The node state graph reports the current state separately (*The state graph*).
 
 ### Content types
 
@@ -197,8 +216,10 @@ The last row is row 4 of the no-value table and not a share rule: an absent reso
 1. `["Seamless share update server", "1.0"]` — once, first.
 2. `["shares", {<key>: {"url": "/ctx/a", "readonly": true, "content_type": "application/json", "binary": false, "checksum": "<hex>" | null, "marker": 3}, …}]` — the full state, after the handshake and again whenever a share is added to or removed from the namespace. It includes the namespace's top-level shares.
 3. `["update", [<key>, "<checksum hex>", <marker>]]` — on every change of a record.
+4. `["state-graph", ["<digest>", <marker>]]` — announces a state graph publication; GET the state-graph URL for its body.
 
 - **A client needs no request to learn the current state**: the first `shares` message carries every checksum and marker.
+- **A new client receives its first state-graph announcement within one half-second interval after the initial share snapshot.** Further announcements arrive at most once per interval and only when the published digest differs from the last digest sent to that client. Changes that return to the previously published graph inside one interval produce no announcement.
 - **`binary`** is `false` for `text/*`, `application/json`, `application/yaml`, `application/javascript`, `application/xml` and the `+json` / `+xml` types, and `true` otherwise.
 - Liveness uses websocket ping frames, not a message.
 - When the Context closes, its connections are closed with code `1001`.
@@ -207,6 +228,7 @@ The last row is row 4 of the no-value table and not a share rule: an absent reso
 
 `GET /openapi.json` returns an **OpenAPI 3.1** document generated from the shares that exist at the moment of the request, for every namespace. `ctx.shares.openapi()` returns the same document restricted to one Context, and `shareserver.openapi()` the whole one, without a request.
 
+- **One state-graph path item per live Context namespace**, with GET and HEAD and the responses described in *The state graph*.
 - **One path item per share**, at its URL: `get` and `head` always, `put` when the share is writable, with the status codes of this page.
 - **Content type and schema follow the celltype:**
 
@@ -224,7 +246,7 @@ The last row is row 4 of the no-value table and not a share rule: an absent reso
 - A `mimetype` argument replaces the content type; the schema is then a string for text types and binary otherwise.
 - Each operation carries `x-seamless-celltype` and `x-seamless-node` (the node path).
 - The websocket is described in `info.description` and by `x-seamless-updates` (`{"<namespace>": "/<namespace>"}`); OpenAPI itself cannot express it.
-- **The document describes shares, not the graph.** Cells that are not shared, and transformers, do not appear.
+- Individual value endpoints describe only shared cells; the state-graph endpoint includes all named cells and transformers.
 
 ## `seamless-client.js`
 
@@ -239,11 +261,12 @@ ctx.a.set("5")                               // PUT
 ```
 
 - **`connect_seamless(update_server=null, rest_server=null, share_namespace="ctx")`.** The first two arguments name the one server and are aliases; `null` means the page's own origin. Each accepts a port number or a URL. If both are given and differ, the second wins and a warning is logged.
-- **One entry per share whose mapped property is distinct and is not `self`**, `ctx[<key>]` with `/` written as `__`: `value`, `checksum`, `marker`, `binary`, `content_type`, `readonly`, `auto_read`, `set(value)`, `oninput`, `onchange`. `ctx.self` holds `sharelist`, `onsharelist`, `oninput`, `onchange`, `get_value()`, `connect()`, `ws`, `server` and `share_namespace`. The property-mapping limitation is listed under *Implementation status and current limitations*.
+- **One entry per share whose mapped property is distinct and is not `self`**, `ctx[<key>]` with `/` written as `__`: `value`, `checksum`, `marker`, `binary`, `content_type`, `readonly`, `auto_read`, `set(value)`, `oninput`, `onchange`. `ctx.self` holds `sharelist`, `onsharelist`, `oninput`, `onchange`, `get_value()`, `connect()`, `ws`, `server`, `share_namespace`, `stategraph` and `onstategraph`. The property-mapping limitation is listed under *Implementation status and current limitations*.
 - **`value` is text, or a `Blob` when the share is binary**; `null` for a null value. JSON is not parsed for you.
 - **`auto_read`** is `false` for keys containing a `.` — pages, scripts, images — and `true` otherwise; only auto-read shares are fetched on change.
 - **`set()` sends one PUT per key at a time**, conditional on the marker it last saw, and keeps only the latest value set meanwhile. On `409` the local change is dropped and the server's value is fetched.
 - **Entries survive a new `shares` message**: handlers stay attached, and only added and removed keys change.
+- **`ctx.self.onstategraph` enables state graph reads.** When set, an announcement triggers a GET of `/<namespace>/state-graph`; the parsed object is stored in `ctx.self.stategraph`, then the handler is called. Responses older than the newest marker seen are dropped, and marker memory resets on reconnect. Pages without the handler do no extra reads.
 - **A lost connection is retried with backoff**; on reconnect the client adopts the server's markers.
 
 ## The barrier
@@ -335,14 +358,12 @@ The share API, HTTP/WebSocket server, persistence, OpenAPI description and brows
 
 - **Topology refusals raised by generic code say "mount".** An incoming edge into a writably shared cell raises `AuthorityError("Sensing mount is the producer; unmount first")`, and clearing raises `AuthorityError("Cannot clear a mounted cell; unmount first")`. The remedy is `del ctx.a.share`.
 - **The barrier is spelled `ctx.mounts`.**
-- **Node state is not served.** A client cannot tell `waiting` from `failed`; it sees the last value.
 - **A writable share cannot be made on a cell that should stay empty** (*The initial decision*).
 - **The browser client's property mapping cannot represent every legal share key.** `a/b` and `a__b` both map to `ctx.a__b`, and `self` collides with the client control API. These remain valid HTTP share paths. For a namespace containing such keys, choose distinct share paths or use the HTTP endpoints through a custom client.
 
 ## Non-goals
 
 - **Generating a web page or form from the graph.** A page is a `text` cell that you write and share.
-- **A status graph.** Deferred; node states and the graph structure are not served.
 - **Access below a share** (`/ctx/a/x`). Share a connected cell that holds the projection: `ctx.x = ctx.a.x; ctx.x.share()`.
 - **PUT by checksum.** Deferred with a named condition: it needs the check that `ctx.a.checksum = …` performs, which a transport cannot perform today.
 - **Directory and deep shares.** `folder`, `deepfolder` and `deepcell` cells are not shareable.

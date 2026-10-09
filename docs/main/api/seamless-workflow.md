@@ -170,6 +170,14 @@ function submit(value) {
 }
 ```
 
+Once a Context has shared a cell, `GET /<namespace>/state-graph` serves all of
+its named nodes and graph connections, with each node's state, block reason,
+exception and checksum. Snapshots can be up to half a second old. Set
+`remote.self.onstategraph = () => renderGraph(remote.self.stategraph)` to fetch
+and display snapshots when the namespace WebSocket announces a change. This
+exposes node paths and error text for the entire Context to anyone who can
+reach the server, including cells whose values are not shared.
+
 The client keeps the latest value while one PUT per key is in flight and
 refreshes after a stale-marker `409`.
 
