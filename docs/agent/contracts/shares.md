@@ -239,7 +239,7 @@ ctx.a.set("5")                               // PUT
 ```
 
 - **`connect_seamless(update_server=null, rest_server=null, share_namespace="ctx")`.** The first two arguments name the one server and are aliases; `null` means the page's own origin. Each accepts a port number or a URL. If both are given and differ, the second wins and a warning is logged.
-- **One entry per share**, `ctx[<key>]` with `/` written as `__`: `value`, `checksum`, `marker`, `binary`, `content_type`, `readonly`, `auto_read`, `set(value)`, `oninput`, `onchange`. `ctx.self` holds `sharelist`, `onsharelist`, `oninput`, `onchange`, `get_value()`, `connect()`, `ws`, `server` and `share_namespace`.
+- **One entry per share whose mapped property is distinct and is not `self`**, `ctx[<key>]` with `/` written as `__`: `value`, `checksum`, `marker`, `binary`, `content_type`, `readonly`, `auto_read`, `set(value)`, `oninput`, `onchange`. `ctx.self` holds `sharelist`, `onsharelist`, `oninput`, `onchange`, `get_value()`, `connect()`, `ws`, `server` and `share_namespace`. The property-mapping limitation is listed under *Implementation status and current limitations*.
 - **`value` is text, or a `Blob` when the share is binary**; `null` for a null value. JSON is not parsed for you.
 - **`auto_read`** is `false` for keys containing a `.` — pages, scripts, images — and `true` otherwise; only auto-read shares are fetched on change.
 - **`set()` sends one PUT per key at a time**, conditional on the marker it last saw, and keeps only the latest value set meanwhile. On `409` the local change is dropped and the server's value is fetched.
@@ -337,6 +337,7 @@ This page is written ahead of the implementation; `seamless-workflow/tests/test_
 - **The barrier is spelled `ctx.mounts`.**
 - **Node state is not served.** A client cannot tell `waiting` from `failed`; it sees the last value.
 - **A writable share cannot be made on a cell that should stay empty** (*The initial decision*).
+- **The browser client's property mapping cannot represent every legal share key.** `a/b` and `a__b` both map to `ctx.a__b`, and `self` collides with the client control API. These remain valid HTTP share paths. For a namespace containing such keys, choose distinct share paths or use the HTTP endpoints through a custom client.
 
 ## Non-goals
 
