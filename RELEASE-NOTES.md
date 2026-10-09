@@ -1,5 +1,18 @@
 # Seamless Release Notes
 
+## Unreleased
+
+### HTTP shares for workflow Contexts
+
+Whole Context cells can now be served through a process-wide HTTP and WebSocket
+server. Shares are read-only by default; writable shares accept raw HTTP PUT
+values with marker-based compare-and-set. The server publishes a live OpenAPI
+description at `openapi.json` and includes a dependency-free browser client at
+`seamless-client.js`. Use `Cell.share()` to publish a cell. Share specs are
+stored in workflow graph format `0.6`; loading a graph with `shares=False`
+validates and strips them without opening endpoints. Install
+`seamless-workflow[share]` to include the server dependency.
+
 ## version 1.4
 
 - A `Transformation` is now explicitly an **immutable computation definition

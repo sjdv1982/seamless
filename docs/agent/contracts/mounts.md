@@ -28,19 +28,19 @@ ctx.a.mount.clear_error()
 
 report = ctx.mounts.sync(timeout=None)
 report = await ctx.mounts.synchronization(timeout=None)
-ctx.mounts.errors           # {node path: error}
+ctx.mounts.errors           # {(node_path, driver): error}
 
 ctx.set_graph(graph, mounts=True)
 ```
 
-- **`mount` is a class attribute of `Cell`** — a property with a deleter — so `del ctx.a.mount` reaches the deleter and never sub-path deletion. The cost is that a value key named `mount` is reachable only as `ctx.a["mount"]`, as for `value` or `checksum` (`contracts/cells.md`, *API-name arbitration*).
+- **`mount` is a class attribute of `Cell`** — a property with a deleter — so `del ctx.a.mount` reaches the deleter and never sub-path deletion. It addresses the file slot only; a Jupyter widget attachment is detached through its hub. The cost is that a value key named `mount` is reachable only as `ctx.a["mount"]`, as for `value` or `checksum` (`contracts/cells.md`, *API-name arbitration*).
 - **`mounts` is reserved on the Context.** `ctx.mounts = x` raises `AttributeError("mounts is reserved for the Context mount API")`, and a graph node at path `("mounts",)` is refused with `PathError("mounts is a reserved Context API name")`. The plural is deliberate: it cannot be mistaken for mounting the Context itself.
-- **`mount()` blocks through the initial read and the first delivery attempt, and raises only for an invalid *request*** — never for the state of the file (`contracts/attachments.md`, *Attach, detach, close*).
+- **`mount()` blocks through the initial read and the first delivery attempt, and raises only for an invalid *request*** — never for the state of the file (`contracts/attachments.md`, *Attach, detach, close*). A widget slot may coexist with this file slot; a second file mount on the same node is refused.
 - **`path` normalization.** Anything `os.fspath` accepts — a `str` or an `os.PathLike` — is accepted; an empty path or one containing a NUL raises `ValueError("mount path must be a nonempty text path")`. The spec stores the path **as given**, and `spec.path` is that string. The registry resolves it against the current working directory **at attach time** (absolute, with symlinks in the parent chain resolved; see *The path-overlap registry*). Whether the mount is a file or a directory follows from the **celltype**, not from a flag or from the path.
 
 ### `status`
 
-`ctx.a.mount.status` is `None` on an unmounted cell; otherwise it is a dict whose keys are contract:
+`ctx.a.mount.status` is `None` when the file slot is unoccupied; otherwise it is a dict whose keys are contract. Widget-slot status is available from its hub:
 
 | Key | Value |
 |---|---|
@@ -70,7 +70,7 @@ The three messages quoted in full below are contract and pinned by tests: `"Only
 | `ReentrantContextError` | `mount()`, `clear_error()`, unmounting or the barrier called from the controller thread |
 | `ClosedContextError` | any of the same calls after `close()` (`contracts/attachments.md`, *Scope*) |
 | `TimeoutError` | `sync()` / `synchronization()` expiry; the predicate is withdrawn and nothing is cancelled |
-| `KeyError` | `clear_error()` on an unmounted cell. **Whether this is contract is deferred**: the rest of the unmounted surface answers `None` or is a no-op, so the `KeyError` reads as an inconsistency rather than a designed refusal. Do not depend on the exception type |
+| `KeyError` | `clear_error()` when the file slot is unoccupied. It addresses only the file slot and does not clear a widget session's error. **Whether this is contract is deferred**: the rest of the unoccupied file-slot surface answers `None` or is a no-op, so the `KeyError` reads as an inconsistency rather than a designed refusal. Do not depend on the exception type |
 | `MountError` | never raised; it is *reported*, on the cell as a string or on the mount as an object |
 
 **The general split: an invalid *request* raises `TypeError` / `ValueError`; the same fault inside a *graph* raises `PathError`.**
@@ -316,15 +316,15 @@ Contrast files, which always converge: a null value truncates the file to zero b
 
 The semantics, the round structure and the *settled through the final cut* guarantee of `ctx.mounts.sync()` / `await ctx.mounts.synchronization()` are in `contracts/attachments.md`, *The cut barrier*. What is file-specific is the report.
 
-**`SyncReport` is a `dict` subclass keyed by node path** (a tuple, as everywhere in the Context), whose values are detached copies of the `status` dict above, plus two properties:
+**`SyncReport` is a `dict` subclass keyed by `(node_path, driver)`**, where `node_path` is a tuple and `driver` is `"file"`, `"widget"` or `"share"` for supported public attachments. The internal test-only `ManualDriver` may use `"manual"` in protocol tests. The report includes every attachment session, and each value is a detached copy of that session's status dict, plus two properties:
 
 | Member | Value |
 |---|---|
-| `report[node_path]` | that mount's `status` dict at the moment the cut resolved |
-| `report.errors` | `{node path: error or sense_error}` for every entry that has one |
+| `report[(node_path, driver)]` | that attachment's status dict at the moment the cut resolved |
+| `report.errors` | `{(node_path, driver): error or sense_error}` for every entry that has one |
 | `report.in_sync` | `True` when **every** entry has `in_sync` true and no `error` |
 
-`ctx.mounts.errors` is the same mapping as `report.errors`, computed on demand **without** a cut — a cheap status read, not a barrier.
+`ctx.mounts.errors` is the same tuple-keyed mapping as `report.errors`, computed on demand **without** a cut — a cheap status read, not a barrier.
 
 A Context with no mounts returns an empty report immediately.
 
@@ -352,7 +352,7 @@ Unmounting, and what it clears, is in `contracts/attachments.md`, *Attach, detac
 
 ## Graph serialization
 
-- **Format.** The contract format is **`0.5`**, which adds the top-level `anonymous_nodes` table (`contracts/cells.md`, *Connecting*; `contracts/workflow-context.md`). `0.2`, `0.3` and `0.4` graphs load; an unknown version raises `PathError("Unsupported workflow graph version: …")`.
+- **Format.** The contract format is **`0.6`**, which adds serialized share specs to the `0.5` graph format (`contracts/shares.md`, *Graph serialization*; `contracts/workflow-context.md`). `0.2` to `0.5` graphs load; an unknown version raises `PathError("Unsupported workflow graph version: …")`.
 - **The mount entry** is `{"path", "mode", "authority", "persistent"}` on a cell entry — the spec after normalization, without the driver. Only `driver == "file"` is serialized at all, so manual and widget sessions leave no entry.
 - **Every mount entry is validated by `prepare_graph`, before `mounts` is consulted at all.** Unknown fields, a bad mode or authority, an illegal `file-strict` combination, an unmountable celltype, a `w`/`rw` `deepfolder`, a mount on a non-cell node and a connection into a sensing-mounted node are all refused as `PathError` — **including when `mounts=False`**, because a malformed spec makes the graph malformed whether or not this loader attaches it.
 - **`mounts=False` strips the (valid) specs** and loads the graph as an ordinary one.
@@ -414,7 +414,7 @@ The former public `NodeError` and empty-builder detach gaps now satisfy the cont
 - `mount-design.md` §17.3, the row "clearing an `r`/`rw` cell's value stays cleared": clearing a mounted cell is **refused** with `AuthorityError("Cannot clear a mounted cell; unmount first")`, in every mode, except through an empty same-celltype builder, which unmounts and clears (*Unmount, persistence and close*).
 - `mount-design.md`'s promise that a `set_graph` does not delete a non-persistent file only "when the new graph re-attaches the same path" is too narrow: a `set_graph` never deletes it.
 - `mount-design.md` §16's "naming is provisional": the names are now fixed.
-- `mount-implementation.md` says graph format `0.3`; the contract format, which the code writes, is `0.5` (*Graph serialization*).
+- `mount-implementation.md` says graph format `0.3`; the current workflow graph format written by the code is `0.6` (*Graph serialization*), which includes shares as well as mounts.
 - `attachments-and-mount-design.md` Part II §21 still discusses a `settled()` predicate and spells the barrier `ctx.mount.sync()` (singular). Both are dead. Where that document and `mount-design.md` differ, this page wins.
 - **Every "legacy Seamless" claim anywhere in the design documents is unverified.** The 0.x characterization never ran, so this page carries **no** comparison with it — including in the decision table, whose "legacy" column is not reproduced here.
 

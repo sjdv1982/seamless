@@ -1,11 +1,11 @@
 # Workflow Authorizer — Design
 
-> **Status.** Design-level plan for a future feature. Not an implementation handoff.
+> **Status.** Design-level plan for a future feature; workflow authorization remains deferred. Not an implementation handoff.
 >
-> **Depends on** the reactive `Context` runtime (phase A4 of
-> [attachments-and-mount-design.md](attachments-and-mount-design.md)) and a shareserver
-> (HTTP/websocket attachment driver, not yet present). The feature is most useful on top of
-> the shareserver, and this document is scoped to that use.
+> **Prerequisites.** The reactive `Context` runtime and the
+> [`seamless_workflow.shareserver`](../docs/agent/contracts/shares.md) HTTP/WebSocket
+> server are implemented. The authorizer API and runtime behavior described here are not.
+> This design is scoped to scientific web servers using HTTP shares.
 >
 > **Terminology** follows [context-internals-design-pass3.md](context-internals-design-pass3.md)
 > (node states, grace holds, `softcancel`) and

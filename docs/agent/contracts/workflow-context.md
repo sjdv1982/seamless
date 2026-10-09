@@ -50,7 +50,7 @@ with Context() as ctx:
 - **A name that is not a node is a namespace placeholder, not an error.** `ctx.foo` for an unknown path returns a *view* whose attribute and item access extend the path, so `ctx.foo.bar = 1` creates the node at path `("foo", "bar")`. Item access stringifies its key: `ctx["a"]` and `ctx.a` are the same node.
 - **An anonymous node exists while an edge refers to its recipe.** `ctx.a[3]`, `ctx.a.b` and `ctx.b.as_celltype("plain")` each return a handle to the recipe of an **anonymous** cell node: it has a symbol and no name, never appears in the Context's attribute namespace, and is reached only through a handle or as the source of an edge. A handle neither creates nor holds it: it is created, and its symbol assigned, when an edge or another entry first refers to the recipe, and it is held by those references only. References to the same recipe share one node. Symbols, fusion and elision are `contracts/cells.md`, *Connecting*.
 - **`ctx.sub = Context()` declares a namespace**, not a nested runtime: it marks the path as a namespace of *this* Context. Assigning a namespace view copies that subtree. A genuine sub-Context — one with its own controller and its own equilibrium — is out of scope (see *Non-goals*).
-- **`mounts` is reserved.** `ctx.mounts` is the Context's mount API — the external synchronization barrier and the per-mount error map — and assigning to it raises `AttributeError("mounts is reserved for the Context mount API")`. A graph node at that path is refused with `PathError`. See `contracts/mounts.md`.
+- **`mounts` and `shares` are reserved.** `ctx.mounts` is the Context's mount API — the external synchronization barrier and the per-mount error map — and assigning to it raises `AttributeError("mounts is reserved for the Context mount API")`. `ctx.shares` is the share API; assigning to it raises `AttributeError("shares is reserved for the Context share API")`. A graph node at either path is refused with `PathError`. See `contracts/mounts.md` and `contracts/shares.md`.
 - `del ctx.a` deletes the node, and deleting a namespace path deletes its whole subtree. Deleting a node softcancels its remaining run memberships (*Speculation control*).
 
 ## What an assignment means
@@ -141,11 +141,11 @@ The Context **launches replacement work immediately and delays only the cancella
 
 ## Graph serialization
 
-- **`ctx.get_graph()` returns the durable graph, in format `0.5`**: nodes, configurations, edges and literal producers — never runtime state. Named nodes are stored under `nodes`; anonymous nodes are stored under the top-level key **`anonymous_nodes`**, the symbol table, and never duplicated in `nodes`. The entry schema and the `<ref>` form edges use to name a node or a symbol are `contracts/cells.md`, *Connecting*.
+- **`ctx.get_graph()` returns the durable graph, in format `0.6`**: nodes, configurations, edges and literal producers — never runtime state. Named nodes are stored under `nodes`; anonymous nodes are stored under the top-level key **`anonymous_nodes`**, the symbol table, and never duplicated in `nodes`. The entry schema and the `<ref>` form edges use to name a node or a symbol are `contracts/cells.md`, *Connecting*.
 - **Only reachable entries are serialized.** `anonymous_nodes` holds every entry that an edge, or another serialized entry, names. An entry held only by a live handle is runtime state and is excluded: after a reload nothing could reach it.
 - **Elision is not serialized.** An elided anonymous node stays in `anonymous_nodes`, unmarked; whether it is elided is re-derived at runtime.
 - **`ctx.set_graph(graph)` replaces the graph wholesale.** It checks the wiring rule on `anonymous_nodes` entries exactly as on edges. It is ordered so that the new graph's claims are acquired **before** any live role is released. It softcancels every current and superseded run, detaches mount sessions, and resets the runtime.
-- **`ctx.set_graph(graph, mounts=True)` — the default — also attaches every mount spec in the new graph, and therefore blocks and can write files.** Reservations and initial reads are prepared in parallel on the caller's side, one message replaces the graph and all sessions atomically, and the call waits for every initial acknowledgement. `mounts=False` strips the specs; **graphs of unknown origin must be loaded that way** (`contracts/mounts.md`).
+- **`ctx.set_graph(graph, mounts=True, shares=True)` — the default — also attaches every mount and share spec in the new graph, so it blocks and can write files or open HTTP endpoints.** Reservations and initial reads are prepared in parallel on the caller's side, one message replaces the graph and all sessions atomically, and the call waits for every initial acknowledgement. `mounts=False` strips mount specs; `shares=False` strips share specs. **Graphs of unknown origin must be loaded with both disabled** (`contracts/mounts.md`, `contracts/shares.md`).
 - **Run generations are never reused across a replacement**, and node revisions are bumped for the same reason: a late completion from the old graph can never be mistaken for a run at the same path in the new one.
 - **Graph loading never executes code to reconstruct callables.**
 
@@ -164,11 +164,12 @@ Only the operations this page specifies are listed; handle-level calls are in `c
 | `node.run()` on a named node | **yes** — as `node.compute()` | the materialized value; raises the recorded exception on `failed`, `NodeError` on `unwired`, `miswired` or `blocked`, and any materialization failure |
 | `x.compute()` on an anonymous or projection handle | not a barrier — only for the handle's own dispatched evaluation | the handle's checksum, or `None` when the parent has none |
 | `ctx.mounts.sync()` / `await ctx.mounts.synchronization()` | **yes** — the external cut barrier | a `SyncReport`; raises `TimeoutError` |
+| `ctx.shares.namespace = name` | **yes** — the Context's share namespace | `None`, or raises `ValueError` if the name is taken |
 | `ctx.mounts.errors` | no | `{node path: error}`, computed without a cut |
 | `ctx.prune()`, `ctx.a.prune()` | no | `{"cancelled": <count>}` |
 | `ctx.get_graph()` | no | the durable graph |
-| `ctx.set_graph(graph, mounts=False)` | no — but it softcancels every run | `None` |
-| `ctx.set_graph(graph)` (i.e. `mounts=True`) | **yes** — it blocks through every mount's initial read and first delivery acknowledgement, **and it can write files** | `None` |
+| `ctx.set_graph(graph, mounts=False, shares=False)` | no — but it softcancels every run | `None` |
+| `ctx.set_graph(graph)` (i.e. `mounts=True, shares=True`) | **yes** — it blocks through every attachment's first delivery acknowledgement, **and it can write files or open HTTP endpoints** | `None` |
 | `ctx.close()` | **yes** — one ordered shutdown turn, joining both threads | `None`; idempotent |
 
 | Error | Raised when |

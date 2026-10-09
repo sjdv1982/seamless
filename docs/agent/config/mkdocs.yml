@@ -23,6 +23,9 @@ nav:
       - Node State Lifecycle: contracts/node-state-lifecycle.md
       - Attachments: contracts/attachments.md
       - File Mounts: contracts/mounts.md
+      - HTTP Shares: contracts/shares.md
+      - Jupyter Widgets: contracts/widgets.md
+      - Streaming: contracts/streaming.md
       - Cancellation: contracts/cancellation.md
       - direct/delayed/Transformation: contracts/direct-delayed-and-transformation.md
       - Modules and Closures: contracts/modules-and-closures.md
@@ -37,4 +40,3 @@ nav:
       - Compiled Transformers: contracts/compiled-transformers.md
       - seamless-signature Schema: contracts/seamless-signature-schema.md
   - API (generated): api/
-

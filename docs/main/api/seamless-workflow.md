@@ -95,22 +95,108 @@ atomically. Mounts follow a target symlink and preserve it; atomic file writes
 break hardlink sharing. Cross-process exclusion and filesystem aliases such as
 hardlinks are not covered by the registry.
 
-Graphs retain mount specifications (format `0.4`). Legacy 0.2/0.3 graphs load
-only when `target_celltype` is absent or equals `celltype`; conflicting graphs
-raise `PathError`. Constant producers retain their input encoding as `value.celltype`. **Loading a graph can write
-files:** use `ctx.set_graph(graph, mounts=False)` for graphs of unknown origin.
-Sensing cells cannot receive incoming edges; mounted celltypes cannot change.
-Unmount first. Standalone cells, sub-path projections, transformer pins and code
-handles cannot be mounted directly: mount a whole cell and connect it instead.
+Workflow graphs are written in format `0.6`, which stores mount and share
+specifications. Graphs in formats `0.2` through `0.5` continue to load; older
+`0.2`/`0.3` graphs require `target_celltype` to be absent or equal to
+`celltype`. Constant producers retain their input encoding as `value.celltype`.
+Loading a graph can write files or open share endpoints. For a graph of unknown
+origin, use `ctx.set_graph(graph, mounts=False, shares=False)` to validate and
+strip both kinds of attachment spec. Sensing cells cannot receive incoming
+edges; mounted celltypes cannot change. Unmount first. Standalone cells,
+sub-path projections, transformer pins and code handles cannot be mounted
+directly: mount a whole cell and connect it instead.
 
-The transport currently uses polling and a bounded daemon I/O pool. Diagnostics
+File mounts currently use polling and a bounded daemon I/O pool. Diagnostics
 include `seamless_workflow.diagnostics.record_attachments(ctx)` and the
 controllable `attachments.manual.ManualDriver` for ordering tests.
 
 Set `SEAMLESS_MOUNT_NATIVE=1` before the first mount to enable Linux inotify hints
 alongside polling. Unsupported platforms and failed watches retain polling.
-The experimental `attachments.widget.WidgetDriver(widget).attach(ctx.cell)`
-exercises the same session protocol with a traitlets-style callback widget;
-widget and manual-driver sessions are never serialized. This is an experimental
-second transport, not a promise that arbitrary external services share file
-mount conflict policy.
+
+## HTTP shares
+
+Share a whole Context cell to expose its served value over HTTP. Shares are
+read-only by default; writable shares accept external edits and must be on a
+cell with no incoming graph edge. Install `seamless-workflow[share]` to include
+the HTTP server dependency.
+
+```python
+from seamless_workflow import Cell, Context, shareserver
+
+shareserver.configure(host="127.0.0.1", port=0)  # before the first share
+with Context() as ctx:
+    ctx.input = Cell("int")
+    ctx.input.set(4)
+    ctx.input.share(readonly=False)
+
+    ctx.result = Cell("text")
+    ctx.result.set("ready")
+    ctx.result.share()  # readonly=True
+
+    print(ctx.input.share.url)
+```
+
+`share(path=None, readonly=True, *, mimetype=None, toplevel=False)` returns
+`None`; `del ctx.input.share` removes that URL. The default path follows the
+Context node path, and `ctx.shares.namespace` selects the Context's runtime URL
+prefix while it has no shares. A read-only share can serve a connected computed
+cell.
+
+One process-wide server serves every Context on one port, with REST and
+WebSockets on its own thread. It starts on the first share and remains until
+`seamless.close()`. The default bind is `0.0.0.0:5813`; configure it before the
+first share or set `SEAMLESS_SHARE_HOST` and `SEAMLESS_SHARE_PORT`. Use port `0`
+to request a free port and read the selected value from `shareserver.port`.
+
+The share URL supports GET and HEAD for the current canonical cell buffer and
+PUT for writes. Bodies are raw bytes, without a JSON envelope or base64. A
+writable PUT can include `?marker=<last-seen-marker>` for compare-and-set; a
+stale marker receives `409`, and an accepted response arrives after the cell has
+taken the value. A null value is `204`; a share with no value is `404`. GET
+resolves the already-served checksum and never recomputes the cell. The namespace WebSocket provides an initial full share snapshot and
+subsequent checksum/marker updates. `GET /openapi.json` describes active shares;
+`ctx.shares.openapi()` and `shareserver.openapi()` return the same descriptions
+in Python. The browser client is served at `/seamless-client.js` and connects
+with `connect_seamless()`:
+
+```javascript
+const remote = connect_seamless();
+remote.self.onsharelist = (keys) => {
+  if (!keys.includes("input")) return;
+  remote.input.onchange = () => render(remote.input.value);
+};
+function submit(value) {
+  if (remote.input) remote.input.set(value);
+}
+```
+
+The client keeps the latest value while one PUT per key is in flight and
+refreshes after a stale-marker `409`.
+
+Share specifications are serialized with workflow graph format `0.6`. The
+default `ctx.set_graph(graph)` attaches them and can start the HTTP server;
+`ctx.set_graph(graph, shares=False)` validates then strips share specs. Use that
+with `mounts=False` for graphs from an unknown source.
+
+The server has no built-in authentication or TLS, and permits cross-origin
+requests. Its default wildcard bind makes shares reachable to hosts that can
+reach the machine; bind to `127.0.0.1` or place a reverse proxy in front when
+they should not be publicly reachable.
+
+For notebooks, install `seamless-workflow[jupyter]` and use the public widget
+helpers:
+
+```python
+from IPython.display import display
+from seamless_workflow.jupyter import traitlet, output
+
+display(output(ctx.c))
+traitlet(ctx.a).link(slider)
+```
+
+The widget hub has its own runtime attachment slot and can coexist with
+`ctx.a.mount("a.txt")` on the same cell. `ctx.mounts.sync()` reports both
+sessions; `del ctx.a.mount` detaches only the file slot.
+
+Widget attachments are runtime state and are never serialized. The underlying
+`attachments.widget.WidgetDriver` remains an internal transport.
