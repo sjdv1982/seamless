@@ -41,7 +41,9 @@ Agent porting implication: do not replace a compact, reliable producer implement
 Fingertipping is a **Checksum → Buffer resolution mode**, and is *distinct* from scratch — scratch is a **storage policy** ("do not durably store this buffer"), fingertipping is a **retrieval-with-recomputation-fallback**. When a buffer is requested with fingertipping enabled, Seamless:
 
 1. tries normal **retrieval** first — the local buffer cache, then the hashserver;
-2. **only if the buffer is absent**, falls back to **fingertipping proper**: *recomputation-using-provenance*. It consults the **reverse-checksum cache** (`rev_transformations` / `rev_expression`) to find a transformation/expression that *produces* the requested checksum, recomputes it — recursively fingertipping that producer's own inputs — and so regenerates the buffer.
+2. **only if the buffer is absent**, falls back to **fingertipping proper**: *recomputation-using-provenance*. It consults the **reverse-checksum cache** (`rev_transformations` / `rev_expression`, and the reverse rows of cell joins) to find a transformation, an Expression or a cell join that *produces* the requested checksum, recomputes it — recursively fingertipping that producer's own inputs — and so regenerates the buffer.
+
+**In a fingertip chain, a cell join is a link like any other.** A cell join is the Expression behind a cell-level join (`contracts/expressions.md`, *Cell joins*). When a fingertip reaches one through its reverse row, the celljoin JSON is read from this process or from the hashserver (the database holds none), its inputs are fingertipped and it is re-evaluated in the process that wants the buffer. An ordinary evaluation of a cell join is different: there, an input whose buffer is neither local nor on the hashserver is a final `CacheMissError`, with no recomputation. A deep join needs only its root index, so recovering its result never fingertips a member.
 
 A buffer is **absent** — and so triggers the recomputation fallback — in two distinct cases:
 
@@ -97,6 +99,41 @@ Fingertipping a large parent in order to keep one small item is the case where l
 - **Make an item-addressed large parent deep.** A path step over a `deepcell` / `deepfolder` / `folder` checksum selects a **sub-checksum without materializing the parent** (`contracts/deep-celltypes.md`), so the item is reachable without the parent ever existing as a buffer. A large `plain` blob that consumers index into is the shape to avoid.
 
 **Fingertipping is where accidental nondeterminism surfaces.** Step 1 (retrieval) is pure lookup and can never diverge. Step 2 **re-executes the producer**; a different result checksum breaks the requested input identity, reports `irreproducible_transformation`, and adds an automatic irreproducible row while preserving the original forward result. A normally stored, never evicted result hides such nondeterminism until recomputation (see `contracts/identity-and-caching.md`, "Caching masks accidental nondeterminism"). Practical rule: **any buffer that may be fingertipped — every `scratch` producer, and in principle any evictable buffer — must be reproducible.**
+
+## Provenance: the derivation graph
+
+**The provenance of a result is its derivation: the graph of productions that leads to it.** A node is a recorded producer, of which there are three kinds: a Transformation, an Expression, and a cell join. An edge exists wherever one producer's result checksum is another producer's input. This graph is the object of study. Materialization, placement and cache reuse are out of scope: where a step ran, whether a buffer was stored, and which session reused a recorded result are not part of a result's provenance. An execution record still says where and when the recorded production ran (`contracts/execution-records.md`).
+
+**The walk.** It starts from a result checksum, chosen by whoever wants to know where that result came from, and uses the same reverse rows as fingertipping (*Fingertipping*), without recomputing anything:
+
+| Producer | Found through | What it tells |
+|---|---|---|
+| Transformation | its reverse row, then the transformation dict on the hashserver | each pin by name, with its celltype and checksum; the language, the output and, for compiled code, the schema; the code checksum, which resolves to the source |
+| Expression | its reverse row, which is the recipe itself | the input checksum, the path and the two celltypes |
+| cell join | its reverse row, then the celljoin JSON on the hashserver | which input went under which key, and the root |
+
+A deep index resolves to its member names. A module pin and a compiled-objects pin are self-describing: the source is in the buffer. The execution record adds the environment.
+
+**In a workflow Context the derivation is complete.** Every step by which a Context derives one checksum from others is one of the three producers, so the walk reaches the leaves without a break. The cell join closes the derivation by recording the root and member checksums as a producer for the join's result (`contracts/expressions.md`, *Cell joins*).
+
+**Implementation status.** Cell joins now record forward and reverse producer rows in the database, and queue their definitions to the hashserver when both write services are configured. The database holds checksums and celltypes only. Fingertip traversal uses these reverse rows to recover a join locally from its required inputs, without dispatch or result publication. Ordinary placement and remote dispatch are also implemented (`contracts/expressions.md`, *Implementation status*).
+
+**What it is sufficient for.** The derivation is enough to reconstruct the completed workflow as a DAG and to tell what was computed, in a sense that is not specific to Seamless, provided the transformation code is readable. It is not the Context graph, and it is not meant to be. Node names, and configuration outside identity such as scratch policy and environment, are saved by `get_graph()` and are not in the derivation; pin names and join keys are. A checksum may have several recorded producers, because computations converge: each of them is a valid derivation.
+
+**A leaf is original data, or a coverage gap.** A leaf is a checksum with no recorded producer. Ideally the leaves are the original data: the diffraction patterns, not the coordinate file derived from them. A leaf that is in fact a computed value marks a **coverage gap**, a derivation that happened outside Seamless:
+
+- a value computed by an external tool and brought in as an input;
+- host-language glue between recorded steps: a result that is read into Python in a script or a notebook, modified, and passed on as a new value. A workflow Context has no such glue, since its wiring consists of Expressions and cell joins;
+- a sub-path write of a checksum, which embeds that checksum's value into the root literal (`contracts/cells.md`, *Projections*). It is a one-off assembly, and the link is not kept.
+
+Inside a driver transformation, glue between the transformations it launches is part of the driver's own code, so it can be read from the source. **The link from a driver to the transformations it launched belongs to the derivation**: it is what lets a walk open a driver up into the steps it ran. It is not recorded yet (*Gaps*, below).
+
+**Seamless is meant to federate.** An identity is content-addressed, so it means the same thing in every database, and a row recorded in one `seamless.db` is valid in any other. There is one logical database of derivations, of which each `seamless.db` holds a shard. A leaf in one shard may be a result in another, and the walk then continues there. Two shards that record different results for one identity do not conflict: that is an observation of irreproducibility (`contracts/execution-records.md`).
+
+**Whether the bytes are still there is a different question.** Whether a leaf's buffer can still be retrieved, how a leaf is described, and whether the definitions the walk reads are kept, are matters of data stewardship (FAIR), not of computation provenance. Seamless contributes one guarantee to it: a transformation's definition is published whatever its scratch policy (*Scratch*), and a celljoin JSON is written to the hashserver whenever it is recorded (`contracts/expressions.md`, *Cell joins*).
+
+**Gaps.** The driver link remains unrecorded:
+- **The driver link is not recorded.** A transformation launched by a driver's code is recorded as a producer in its own right, and its inputs and result connect to other producers by checksum as usual. That the driver launched it is recorded nowhere, so a walk sees the driver as one opaque step and cannot open it up, and the launched transformations cannot be attributed to it. All a launched transformation carries is a boolean, `__meta__["driver"]`, set when it is built while a driver is running; it is outside identity and names no parent. The parent's `tf_checksum` is not passed along when the launch is submitted, and neither the database nor the execution record has a place for the link (`contracts/execution-records.md`).
 
 ## Witness outputs (do not scratch)
 
