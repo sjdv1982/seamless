@@ -28,7 +28,8 @@ Code locations:
 | Bound backend | `seamless_workflow.builder_state.BoundCellBackend` |
 | Bound writes, reads, barriers | `seamless_workflow.ingress` (`controller_method`, `_edit`, `_wait`, `_wait_async`, `_prepare_assignment`) |
 | Bound graph operations | `seamless_workflow.context.Context` (`_assign`, `_cell_operation`, `_validate_write`, `_cell_delete_path`, `_derive_cell`, `_apply_pending`, `_projection`, `_demand`, `_build_cell_expression`, `_effective_input_celltype`, `_public_cell_source`, `_get_checksum`/`_get_buffer`/`_get_value`, `_clear_exception`) |
-| Local join and projection workers | `seamless_workflow.sidework` (`evaluate_cell`, `evaluate_projection`, `Lease`, `SideLoop`) |
+| Cell join formation and evaluation | `seamless.celljoin_class.CellJoin`; `seamless.checksum.celljoin` (`evaluate_celljoin_local_async`, `evaluate_celljoin_placed`) |
+| Local projection workers and leases | `seamless_workflow.sidework` (`evaluate_projection`, `Lease`, `SideLoop`) |
 | Value-form classification | `seamless_workflow.adapters.checksum_for_value` |
 
 ## The definition
@@ -648,9 +649,7 @@ The former gaps in bound scratch policy, wiring, join conversion, null writes, r
 
 Expression fusion and elision across named and anonymous intermediates satisfy the contract. Focused coverage is in `seamless-workflow/tests/test_contract_bound_fusion.py` and `seamless-workflow/tests/test_contract_cells_handles.py`.
 
-### Gaps
-
-- **Cell joins have Context integration, database recording, placement and remote dispatch; recovery remains pending** (*Cell-level joins*; `contracts/expressions.md`, *Cell joins*). Workflow joins now form canonical `CellJoin` Expressions and demand them through the shared process cache and active/lingering member sets. The Context memoizes definitions, tracks jobs and facts, leases the definition and required inputs, and softcancels superseded demands. Literal roots and value members convert locally before formation; value-member projections request non-scratch materialization; forbidden target keys are refused at assignment and make loaded edges `miswired`. Definitions are queued to the hashserver when both write services are configured; database forward/reverse rows store only the identity and result checksums, with atomic conflict refusal. Process-cache and database hits answer before resolving inputs, without recovering an evicted result buffer. The three-step placement rule is implemented with server-only batched presence checks: all local inputs evaluate here, server-only inputs select remote, and a reachable mixture evaluates here after fetching. Deep joins stay local and need only their root index. Explicit remote requests check writable services and every input's server presence, with no local fallback. Remote demands now share one dispatch with input and definition claims and the Expression linger. Dispatch awaits the definition write, carries only the identity and scratch request, and propagates failures without local fallback. Jobserver and Dask executors publish non-scratch results. A fingertip route through a join remains pending.
+Cell joins now satisfy the formation, Context integration, recording, placement, dispatch and recovery contract (*Cell-level joins*; `contracts/expressions.md`, *Cell joins*). Fingertip recovery traverses process or database reverse rows and materializes locally, recovering only the root index of a deep join. Ordinary evaluation still treats an absent input as a final cache miss. Focused coverage is in the celljoin tests across core, workflow, remote, database, jobserver and Dask.
 
 ### Current limitations (not gaps)
 

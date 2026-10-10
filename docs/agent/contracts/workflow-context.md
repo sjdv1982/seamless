@@ -25,7 +25,8 @@ Code locations:
 | Transient run records and speculation | `seamless_workflow.scheduler` (`ContextRuntime`, `RunRecord`, `Scheduler`) |
 | Bound handles | `seamless_workflow.builder_state` (`BoundCellBackend`, `BoundPinBackend`, `BoundTransformerBackend`) |
 | Namespaces | `seamless_workflow.views` (`MissingView`, `SubContextView`) |
-| Local projection and join workers | `seamless_workflow.sidework` (`evaluate_cell`, `evaluate_projection`, `Lease`, `SideLoop`) |
+| Cell join formation and evaluation | `seamless.celljoin_class.CellJoin`; `seamless.checksum.celljoin` (`evaluate_celljoin_local_async`, `evaluate_celljoin_placed`) |
+| Local projection workers and leases | `seamless_workflow.sidework` (`evaluate_projection`, `Lease`, `SideLoop`) |
 | Errors | `seamless_workflow.errors`; `ValueUnavailableError` is defined in seamless-core (`seamless.cell_errors`, exported as `seamless.ValueUnavailableError`) and re-exported here |
 | Process-level registry and shutdown | `seamless_workflow.lifecycle` |
 

@@ -114,9 +114,9 @@ Fingertipping a large parent in order to keep one small item is the case where l
 
 A deep index resolves to its member names. A module pin and a compiled-objects pin are self-describing: the source is in the buffer. The execution record adds the environment.
 
-**In a workflow Context the derivation is complete.** Every step by which a Context derives one checksum from others is one of the three producers, so the walk reaches the leaves without a break. The cell join is what closes it: until cell joins are implemented, a join's result has no producer row and the walk stops there (`contracts/cells.md`, *Gaps*).
+**In a workflow Context the derivation is complete.** Every step by which a Context derives one checksum from others is one of the three producers, so the walk reaches the leaves without a break. The cell join closes the derivation by recording the root and member checksums as a producer for the join's result (`contracts/expressions.md`, *Cell joins*).
 
-**Implementation status.** Cell joins now record forward and reverse producer rows in the database, and queue their definitions to the hashserver when both write services are configured. The database holds checksums and celltypes only. The reverse lookup API is implemented, but fingertip traversal through a cell join remains pending; the rows alone do not yet let the recovery walk cross a join. Remote placement and dispatch also remain pending (`contracts/expressions.md`, *Implementation status*).
+**Implementation status.** Cell joins now record forward and reverse producer rows in the database, and queue their definitions to the hashserver when both write services are configured. The database holds checksums and celltypes only. Fingertip traversal uses these reverse rows to recover a join locally from its required inputs, without dispatch or result publication. Ordinary placement and remote dispatch are also implemented (`contracts/expressions.md`, *Implementation status*).
 
 **What it is sufficient for.** The derivation is enough to reconstruct the completed workflow as a DAG and to tell what was computed, in a sense that is not specific to Seamless, provided the transformation code is readable. It is not the Context graph, and it is not meant to be. Node names, and configuration outside identity such as scratch policy and environment, are saved by `get_graph()` and are not in the derivation; pin names and join keys are. A checksum may have several recorded producers, because computations converge: each of them is a valid derivation.
 
@@ -132,9 +132,7 @@ Inside a driver transformation, glue between the transformations it launches is 
 
 **Whether the bytes are still there is a different question.** Whether a leaf's buffer can still be retrieved, how a leaf is described, and whether the definitions the walk reads are kept, are matters of data stewardship (FAIR), not of computation provenance. Seamless contributes one guarantee to it: a transformation's definition is published whatever its scratch policy (*Scratch*), and a celljoin JSON is written to the hashserver whenever it is recorded (`contracts/expressions.md`, *Cell joins*).
 
-**Gaps.** Two parts of the derivation are not recorded today:
-
-- **Cell joins are not implemented.** A join's result has no producer row, so a walk stops at every join (`contracts/cells.md`, *Gaps*).
+**Gaps.** The driver link remains unrecorded:
 - **The driver link is not recorded.** A transformation launched by a driver's code is recorded as a producer in its own right, and its inputs and result connect to other producers by checksum as usual. That the driver launched it is recorded nowhere, so a walk sees the driver as one opaque step and cannot open it up, and the launched transformations cannot be attributed to it. All a launched transformation carries is a boolean, `__meta__["driver"]`, set when it is built while a driver is running; it is outside identity and names no parent. The parent's `tf_checksum` is not passed along when the launch is submitted, and neither the database nor the execution record has a place for the link (`contracts/execution-records.md`).
 
 ## Witness outputs (do not scratch)
