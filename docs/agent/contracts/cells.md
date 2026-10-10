@@ -650,7 +650,7 @@ Expression fusion and elision across named and anonymous intermediates satisfy t
 
 ### Gaps
 
-- **Cell joins are not implemented** (*Cell-level joins*; `contracts/expressions.md`, *Cell joins*). A join is still assembled in-process: `Context._derive_cell` hands `sidework.evaluate_cell` to `_demand`, which runs it in a worker thread under a per-Context memo key, and `evaluate_cell` calls `Checksum.resolve`, `_assign_path` and `checksum_for_value`. There is no cell join identity, no database row, no placement and no fingertip route through a join. Three behaviours differ from the contract in the meantime:
+- **Cell joins are not yet integrated into the Context** (*Cell-level joins*; `contracts/expressions.md`, *Cell joins*). Canonical celljoin formation, parsing and the pure evaluator are implemented in `seamless-core`, but a workflow join is still assembled in-process: `Context._derive_cell` hands `sidework.evaluate_cell` to `_demand`, which runs it in a worker thread under a per-Context memo key, and `evaluate_cell` calls `Checksum.resolve`, `_assign_path` and `checksum_for_value`. There is no cell join identity, no database row, no placement and no fingertip route through a join. The following behaviours differ from the contract in the meantime:
   - a literal root whose `input_celltype` differs from the join's `celltype` is not converted, so a `text` root under a `plain` join fails with `'str' object does not support item assignment`;
   - a member connected through an explicit `as_celltype` is not converted to the join's celltype: `ctx.j["k"] = ctx.p.as_celltype("text")` into a `plain` join inserts the string;
   - a member conversion is requested under the join Cell's own scratch flag and may be dispatched;
