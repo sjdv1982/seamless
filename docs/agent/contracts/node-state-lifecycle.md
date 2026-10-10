@@ -35,10 +35,11 @@ Code locations:
 
 ### `miswired` is a static defect, not a failure
 
-A node is `miswired` when an incoming link is statically ill-formed. There are two criteria, depending on the source:
+A node is `miswired` when an incoming link is statically ill-formed. There are two criteria that depend on the source, and one on the target:
 
 - **Ordinary sources: a path and a conversion on one link.** The edge projects into its source *and* the source's celltype differs from the target's `celltype` (the wiring rule, `contracts/cells.md`, *Connecting*). **A symbol whose entry carries a path counts as a path-carrying source**, so routing a projection through an anonymous node does not escape the rule.
 - **Deep sources: the deep table.** When the source is `deepcell`, `deepfolder` or `folder`, the criterion is the table of legal deep links in `contracts/deep-celltypes.md`. A link outside that table is ill-formed in the same way, and the outcome is the same. The carve-out covers only the link whose source is deep; everything downstream of the resulting child checksum is ordinary wiring again.
+- **Any source: a forbidden connection target key.** A one-level target whose key is neither a string nor a non-negative integer (a `bool` is not an integer here), or is one of the reserved names `"<root>"` and `"<numeric>"` (`contracts/cells.md`, *Projections*). The message for this case is unspecified.
 
 No work is attempted, so there is no exception. The node carries a repair description naming the edge, the two celltypes and the two disambiguating spellings; that message text is contract and is specified in `contracts/cells.md`, *Connecting*.
 
@@ -129,7 +130,7 @@ If any input has an entry, the node's state and label are the maximum entry unde
 - **A cell's own conversion failure is `failed`, not `blocked`.** This is the cell-level counterpart of a transformer's own failure: the work that failed was the cell's, so the exception is the cell's. Contrast the transformer *pin* case above, where a conversion into the pin celltype leaves the pin with no valid checksum, so the failure belongs to the pin and the transformer node is merely `blocked`.
 - **A mount that cannot sense its file fails the cell** (`failed`) with the sense error, and `clear_exception()` on such a node **re-polls the mount** rather than re-deriving (`contracts/attachments.md`, *Sense errors fail the cell*). The stored value is kept but masked, and unmounting unmasks it.
 - **A root edge and sub-path edges are mutually exclusive.** If a cell has sub-path edges, its root may hold only a checksum (a literal), never a source. So `ctx.join = ctx.base; ctx.join["k"] = ctx.other` is **refused**, and so is the reverse order; a literal root with sub-path edges is a legal join. The exception class is unspecified (deferred). `contracts/cells.md` states the same rule from the wiring side.
-- **A cell-level join is plain local Python, with no Transformation and no Expression behind it.** It is assembled in-process from its root value and its connected sub-path sources, which is why it is never observed `computing`, only `waiting` then `complete`. This is **provisional**: a future re-implementation is to cache joins and evaluate them where the data is, and **no join identity is promised**. The full observable contract is `contracts/cells.md`, *Cell-level joins*; this table states only where a join sits in the state machine.
+- **A cell-level join is evaluated as a cell join: an Expression of its own kind, not a Transformation** (`contracts/expressions.md`, *Cell joins*). It is the cell node's own work, which is why it is never observed `computing`, only `waiting` then `complete`, whether the cell join is evaluated in this process or dispatched. A failure of that work makes the node `failed`: a conversion of the root or of a member, or an input whose buffer is neither in this process nor on the hashserver (`CacheMissError`). The full observable contract is `contracts/cells.md`, *Cell-level joins*; this table states only where a join sits in the state machine.
 
 ### Elided anonymous nodes
 

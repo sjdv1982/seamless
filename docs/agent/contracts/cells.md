@@ -563,7 +563,9 @@ This costs nothing at evaluation time: a run of path links fuses back into one E
 
 **Projection depth is unlimited; connection targets are not.** A projection path may be arbitrarily deep wherever the underlying Expression path and source celltype support it. A **connection target** — a graph location that may receive a bound source — is the **root or one level below it, and nothing deeper**. A one-level target is a single point selection: a mapping key, an attribute name, or an integer sequence index. A slice may be read or value-updated but is never a connection target, because it denotes several positions. `ctx.a.b.c = ctx.x` raises `PathError: Cell connection targets are limited to one point component`.
 
-A mapping-key connection can bootstrap an unwired cell as a mapping. An integer-index connection requires an existing compatible sequence; it never infers or grows a list, and the check happens when the value is assembled (`evaluate_cell` raises `TypeError("Integer Cell connection targets require an existing sequence")`).
+A mapping-key connection can bootstrap an unwired cell as a mapping. An integer-index connection requires an existing compatible sequence; it never infers or grows a list, and the check happens when the join is evaluated, which fails with `TypeError("Integer Cell connection targets require an existing sequence")`. This holds for a `mixed` join exactly as for a `plain` one: an integer target over a mapping root is refused, never stored under a string key (*Cell-level joins*).
+
+**A connection target key is a string or a non-negative integer.** A negative integer, a `bool`, a key of any other kind, and the reserved names `"<root>"` and `"<numeric>"` are refused at assignment, before the graph changes. An edge with such a target that arrives through a loaded graph makes the cell `miswired` (`contracts/node-state-lifecycle.md`). The two names are reserved because a join's inputs are recorded under them (*Cell-level joins*). **The exception classes are deferred**; rely only on the assignment raising. A join whose targets mix integer and string keys is not refused at assignment: no cell join is formed, and the join is `failed`. Value writes are not connection targets and keep Python's rules: `ctx.a[-1] = 5` updates the last item of the root value.
 
 **A sub-path write is an atomic read-modify-set of the root value**, not persistent path-overlay state and not a sub-value producer. One serialized transaction:
 
@@ -606,19 +608,25 @@ assert ctx.d["k"].value == {"a": 1}
 
 A literal deep root supplies the base index; unrelated entries remain unchanged. Root-source and sub-path-source edges remain mutually exclusive. Compatibility is checked again when either celltype changes: an incompatible member edge makes the join `miswired`, with no execution exception. Changing the target to an ordinary celltype also invalidates a deep member edge; changing both cells back to a compatible deep/member combination repairs it. Graph serialization preserves this member-insertion intent with `deep_member: true` on the connection, so reloads retain the same miswiring behavior. A compatible but failed member blocks the join with `blocked-by-error`, as for ordinary joins.
 
-**Current implementation: a join is plain local Python.** It is assembled directly in the Context, in-process: the root value is resolved, each connected sub-path source's value (or checksum for a deep join) is assigned into a detached copy, and the aggregate is re-serialized. **There is no Transformation and no Expression behind it.** *Verified:* `Context._derive_cell` takes this branch when there are sub-path edges and no root edge, and hands `sidework.evaluate_cell` to `_demand`, which runs it in a worker thread; `evaluate_cell` calls `Checksum.resolve`, `_assign_path` and `checksum_for_value`, and nothing else.
+**A join is evaluated as a cell join.** Once every member is complete, the Context forms one **cell join**: an Expression of its own kind, whose input is the dict of the join's input checksums. The root is entered under `"<root>"` and each member under its key, and `"<numeric>"` marks a join whose keys are integer indices. `contracts/expressions.md`, *Cell joins*, owns the definition. Its identity is the pair `(celljoin checksum, celltype)`, so a join is content-addressed: the same root and members at the same celltype are one cell join in every Context and every process, and it is recorded, cached and deduplicated like any other Expression. **There is no Transformation behind it.** (The design text in `context-internals-followup-design.md` that a join "may require a join `Transformation` followed by a projected `Expression`" is superseded.)
 
-Observable behaviour — stable, and the only thing promised:
+**The root has the same status as a member.** A literal root whose `input_celltype` differs from the join's `celltype` (*The 3×2 matrix at the root* lists the three acts that make them differ) is converted to the join's celltype before it enters the cell join, exactly as the same literal is converted on a cell without sub-path edges. The conversions of the root and of the members are evaluated in this process and are never dispatched (`contracts/expressions.md`, *Cell joins*).
+
+**Where a join is evaluated.** A `mixed` or `plain` join is evaluated in this process when all its inputs are local, dispatched when all of them are on the hashserver, and evaluated in this process again when each input is in one of those two places, fetching the ones that are not local. A deep join is a `deepcell` or `deepfolder` cell join, a `folder` join being a `deepfolder` one with byte-identical results. It is always evaluated in this process and needs no member buffer, however large the members are: only the root index, when there is one, must be reachable from here.
+
+**Inputs are expected to be small and reachable.** An input that is neither in this process nor on the hashserver fails the join with `CacheMissError`, and an ordinary evaluation does not fingertip it. So a scratch cell or a scratch transformer that feeds a join directly, and whose result was computed elsewhere, fails the join: **do not scratch what feeds a join.** A member edge that carries a path is protected from the join Cell's own policy: the last link of `ctx.j["a"] = ctx.big[3]` is a non-scratch value request whatever the join Cell's `scratch`, so the projection is evaluated where the data is and a dispatched one writes its result to the hashserver. A fingertip is the exception to the cache miss. `fingertip()` on a join's result walks through the cell join and fingertips its inputs like those of any other link (`contracts/scratch-witness-audit.md`).
+
+Observable behaviour:
 
 - the value is correct, and it is the value of the assembled aggregate at the Cell's own `celltype`;
 - it recomputes reactively when an upstream changes;
 - reverting an upstream reproduces the checksum;
+- a failure of the join's own work makes it **`failed`**, and is not cached: a conversion of the root or of a member, an integer key over a root that is not a sequence, or an input that is in neither store;
+- like any Cell's, the join's result checksum does not imply a result buffer (*`.buffer` and `.value`*). A recorded result completes the join without evaluating it, and a dispatched join under a scratch Cell leaves its buffer on the executing side;
 - an upstream that is stuck leaves the join **`blocked`**, never `failed`, with a `block_reason` dict naming each stuck edge (*State and `block_reason`*): a failed or error-blocked upstream gives `blocked-by-error`, an unwired or unwired-blocked one `blocked-by-unwired`, and a miswired or miswiring-blocked one `blocked-by-miswiring`. An upstream that is still progressing contributes no entry, so a join whose other members are all complete stays `waiting`. A member edge that is itself missing or ill-formed makes the join `unwired` or `miswired`, not `blocked`;
 - **no transformation is observed** — not in the observation log, not in the transformation cache;
-- the node goes straight from `waiting` to `complete` and is **never seen `computing`**, because `computing` belongs to the transformer path alone;
+- the node goes straight from `waiting` to `complete` and is **never seen `computing`**, wherever the cell join is evaluated, because `computing` belongs to the transformer path alone;
 - `build()` on a join does **not** return a recipe: with no root edge to follow, it snapshots the join's *current* checksum as a dummy Expression.
-
-**This is provisional.** A future re-implementation is to cache joins and evaluate them where the data is. Depend only on the observable behaviour above; **no join identity is promised** — the in-process memoization key is internal and per-Context, and nothing about a join is content-addressed beyond its result. (The design text in `context-internals-followup-design.md` that a join "may require a join `Transformation` followed by a projected `Expression`" is superseded.)
 
 ## Deep celltypes on a Cell
 
@@ -640,10 +648,18 @@ The former gaps in bound scratch policy, wiring, join conversion, null writes, r
 
 Expression fusion and elision across named and anonymous intermediates satisfy the contract. Focused coverage is in `seamless-workflow/tests/test_contract_bound_fusion.py` and `seamless-workflow/tests/test_contract_cells_handles.py`.
 
+### Gaps
+
+- **Cell joins are not implemented** (*Cell-level joins*; `contracts/expressions.md`, *Cell joins*). A join is still assembled in-process: `Context._derive_cell` hands `sidework.evaluate_cell` to `_demand`, which runs it in a worker thread under a per-Context memo key, and `evaluate_cell` calls `Checksum.resolve`, `_assign_path` and `checksum_for_value`. There is no cell join identity, no database row, no placement and no fingertip route through a join. Three behaviours differ from the contract in the meantime:
+  - a literal root whose `input_celltype` differs from the join's `celltype` is not converted, so a `text` root under a `plain` join fails with `'str' object does not support item assignment`;
+  - a member connected through an explicit `as_celltype` is not converted to the join's celltype: `ctx.j["k"] = ctx.p.as_celltype("text")` into a `plain` join inserts the string;
+  - a member conversion is requested under the join Cell's own scratch flag and may be dispatched;
+  - a member edge's own link carries the join Cell's scratch flag as a checksum request, so a projected member under a scratch join Cell may be dispatched as scratch and end up unreachable;
+  - forbidden connection target keys are accepted: a reserved name is an ordinary key, `-1` sets the last item of a sequence root, `True` sets item 1, and a `float` or `None` key is stored under its string form.
+
 ### Current limitations (not gaps)
 
 - **Validators are deferred.** `validator` and `validator_language` are accepted by the constructor, by `with_validator()` and by `CellConfig`, and are excluded from Expression identity, but every evaluation entry point raises `NotImplementedError("Expression validators are not implemented yet")`, which a Cell records as `.exception` (wrapped as `WorkflowExecutionError`). The reject-only semantics are settled; nothing writes the database's validator columns. A validator must be a `Checksum` (or hex); a validator given as source text fails with a `fromhex` error, not a useful message.
-- **The join implementation is provisional** (*Cell-level joins*). Caching and placement are to change; only the observable behaviour is contract.
 - **Standalone `clear_exception()` does not clear a memoized result.** It clears only `_standalone_exception`, and inspection stays passive: `.exception` remains `None` until a pulling read or explicit computation meets the failure again.
 - **`context-internals-followup-design.md` is stale on two points.** It makes `.checksum`, `.buffer` and `.value` bound-only (superseded by the standalone-read contract above), and it makes a projection's `input_ref` its owning root endpoint (that meaning belongs to the private `_input_ref`; the public split is `.source` / `.checksum`).
 
@@ -657,6 +673,7 @@ The author has deferred these. Do not rely on either answer; where a test exists
 - **`block_reason` of a cell with no input at all.** Owned by `contracts/node-state-lifecycle.md` (*Unspecified*) (*State and `block_reason`*).
 - **`.exception` string format.** Whether every `.exception` string carries the class name (*Failures*).
 - **Standalone `del c.b`**, the attribute spelling of `del c["b"]` (*Projections*).
+- **Connection target keys** (*Projections*): the exception classes for a forbidden key.
 
 *Resolved 2026-09-28:* bound `.buffer` / `.value` on a `failed` named node. Reads and `compute()` answer `None` for a recorded failure in both modes, and `run()` raises it (*Failures*, *How a failure is delivered*).
 

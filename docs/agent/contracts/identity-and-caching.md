@@ -45,9 +45,10 @@ Practical rules:
 
 ### Transformations are not the only thing cached
 
-This page defines the *Transformation* identity and its cache. Three other kinds of entry are keyed and stored by their own identity, and none of them is a transformation-cache entry:
+This page defines the *Transformation* identity and its cache. Four other kinds of entry are keyed and stored by their own identity, and none of them is a transformation-cache entry:
 
 - **Expression results.** An Expression's identity is the 4-tuple `(input_checksum, path, input_celltype, celltype)`, and a successful result is recorded under it — in a process-global cache and in the database `expression` table, with `rev_expression` as its reverse index. Failures are **not** cached, deliberately, unlike a Transformation's exception. See `contracts/expressions.md`.
+- **Cell join results.** A cell join, the Expression behind a cell-level join, has an identity of its own: the pair `(celljoin checksum, celltype)`, where the celljoin checksum is that of the JSON dict of its input checksums. A successful result is recorded under that pair like any other Expression's, with a forward and a reverse row in the database, and failures are not cached. The JSON itself is stored on the hashserver only. See `contracts/expressions.md`, *Cell joins*.
 - **Conversion results.** A buffer-level celltype conversion that produces a new buffer is recorded as an **empty-path Expression**, so a later conversion between the same two celltypes for the same checksum is an Expression cache hit, not a second conversion. See `contracts/celltypes-and-conversion.md`.
 - **HashType words.** The checksum-level classification of a buffer is cached per checksum, locally and in the database `hash_type` table, and only ever tightens. It is metadata about a checksum, never a result. See `contracts/hashtype.md`.
 

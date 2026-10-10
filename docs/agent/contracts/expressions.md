@@ -102,7 +102,7 @@ The order is vacuous in exactly two cases, because there is nothing to sequence:
 
 ## Identity
 
-**The identity of an Expression is the 4-tuple `(input_checksum, path, input_celltype, celltype)`.** The tuple names a recipe's ingredients, not the order in which they are combined. That order (project, then convert) is fixed by evaluation and cannot be recovered from the tuple alone.
+**The identity of an Expression is the 4-tuple `(input_checksum, path, input_celltype, celltype)`.** The one exception is a cell join, whose identity is the pair `(celljoin checksum, celltype)` (*Cell joins*). The tuple names a recipe's ingredients, not the order in which they are combined. That order (project, then convert) is fixed by evaluation and cannot be recovered from the tuple alone.
 
 - **In process.** `Expression.identity_key` is the in-process form, and `__eq__` and `__hash__` use it. Its first element is `("checksum", hex)` for a concrete input, `("expression", …)` for an Expression input and `("object", id(...))` for an unresolved source. An unresolved dummy Expression stays an Expression input, so separate unresolved sources never collapse onto a shared identity of `None`.
 - **Wire form.** `Expression.database_key` is `(input_checksum.hex(), path, input_celltype, celltype)`. It raises `ValueError` while the input is not yet a concrete checksum.
@@ -296,7 +296,7 @@ So each conversion keeps its own identity 4-tuple and its own cache entry, and t
 
 - a **conversion**. A checksum-preserving one is absorbed into the run's `input_celltype`; any other is left outside the run. At most one can ever be absorbed, because an Expression has exactly one `input_celltype`;
 - a **deep step** (the barrier above);
-- a **join**, which is not an Expression at all but plain local Python (`contracts/cells.md`);
+- a **join**: a cell join has several inputs and no path, so it forms no pair (*Cell joins*);
 - the end of the chain: a concrete checksum.
 
 The run becomes one Expression, `(the run's root checksum, the concatenated path, input_celltype, the cell's own celltype)`, and is evaluated where the root's data is. Intermediates **inside** a run get no Expression, no identity and no cache entry. A *named* intermediate still gets its own Expression, because its checksum is demanded on its own account; that is a second, separate recipe, not a member of this run.
@@ -542,6 +542,31 @@ An Expression whose `input_celltype` or `celltype` is `deepcell`, `deepfolder` o
 
 **Enforced.** `validate_expression_shape` applies the deep conversion and path rules at construction. Deep buffers are checked for flatness when they are read, and `deserializable_as` raises `ValueError` if it is given a deep celltype (`contracts/hashtype.md`).
 
+## Cell joins
+
+**A cell join is an Expression of its own kind: many inputs, no path, and an identity of its own.** A cell-level join (`contracts/cells.md`, *Cell-level joins*) is evaluated as a **cell join**, a subclass of `Expression`. Its input is not one checksum but a dict of input checksums with string keys: one entry per member, the special key `"<root>"` for the join's literal root when it has one, and the special key `"<numeric>"`, with value null, when all member keys are integer indices. A member key is a string or a non-negative integer, and the two special names cannot be member keys (`contracts/cells.md`, *Projections*). That dict, serialized as Seamless `plain` like a deep index, is the **celljoin JSON**, and its checksum is the **celljoin checksum**. A cell join also has a **celltype**: `mixed`, `plain`, `deepcell` or `deepfolder`. A join into a `folder` cell is a `deepfolder` cell join; the two give byte-identical results. **The identity is the pair `(celljoin checksum, celltype)`**: there is no path and no `input_celltype`, and the celltype is not in the celljoin JSON. The pair stands wherever this page speaks of the 4-tuple, so a cell join is tracked exactly as any other Expression is: the process cache, the member set (*Deduplication*), the linger and soft cancellation (*Cancellation*), result recording, and failures that are never cached (*Expression failures are not cached*). Like any Expression it has no scratch policy of its own.
+
+**What it computes depends on the celltype.** For `mixed` and `plain`, the root and each member are first converted to that celltype by an ordinary Expression, so the inputs are the converted checksums. The root has the same status as a member here. The result is the root value with every member's value inserted under its key, serialized at the celltype. For `deepcell` and `deepfolder`, the deep joins, members keep their checksum: the result is the root index with each member's checksum inserted, and no member is ever resolved. Integer keys need a sequence root. A cell join that carries `"<numeric>"` over a mapping root fails, for `mixed` exactly as for `plain`.
+
+**Recording.** Whenever a celljoin JSON is computed it is checksummed, and it is written to the hashserver when a hashserver and a database are both configured. The database stores a forward row, `(celljoin checksum, celltype)` → result checksum, with that pair as its composite key, and a reverse row from the result back to the pair, as it does for Transformations. The database never receives the celljoin JSON: it holds checksums only, as it does for a Transformation, and the JSON is stored on the hashserver alone.
+
+**Placement follows its own rule, deliberately different from *Placement*.** A deep join is always evaluated in this process. It needs no member buffer, only its root index when it has one, and that buffer must be reachable from here. A `mixed` or `plain` cell join takes the first of these that applies, with *local* as defined in *Placement*:
+
+1. every input is local: evaluate here;
+2. every input is on the hashserver: dispatch. The dispatch carries only the identity, and the executing side reads the celljoin JSON from the hashserver, where it always is because remote execution requires a database;
+3. every input is local or on the hashserver: evaluate here, fetching the ones that are not local;
+4. otherwise, `CacheMissError`.
+
+Explicit `execution="remote"` takes case 2 or nothing: the cell join is dispatched only when every input is on the hashserver, and otherwise raises `CacheMissError`, with no local fallback. It raises `RuntimeError` when no writable hashserver and database are configured.
+
+The asymmetry is intended. An Expression has one input that may be huge, so it goes to the data. A cell join has inputs that may be numerous but are expected to be small, never scratch and never behind a remote read folder, so fetching them is cheap.
+
+**A conversion that produces an input is never dispatched.** The conversion of the root or of a member to the join's celltype is a scratch value request (`scratch=True`, `materialize=True`): its own input is fetched when it is only on the hashserver, and the conversion is evaluated in this process, so a buffer it produces is here. A cell join with such an input is therefore normally evaluated here, under case 1 or 3. A checksum-preserving conversion produces no buffer: its result is its input, which stays where it was, so case 2 remains available.
+
+**A projection that produces an input is a value request.** The last link of a member edge that carries a path (`ctx.j["a"] = ctx.big[3]`) is requested non-scratch, whatever the join Cell's scratch policy, like the input of a non-scratch pin (`contracts/pins.md`, *Scratch at the pin*): the projection is evaluated where the data is, and a dispatched one writes its result to the hashserver.
+
+**In an ordinary evaluation a cache miss on an input is final**: a cell join does not fingertip its inputs. **In a fingertip chain a cell join is an ordinary link**: a wanted result is traced to its cell join through the reverse row, the celljoin JSON is read from this process or from the hashserver, the inputs are fingertipped like those of any other link, and the cell join is re-evaluated in the process that wants the buffer (*Fingertipping is exempt from "where the data is"*). A cell join whose JSON is no longer on the hashserver cannot serve as a candidate, as a Transformation without its definition cannot. A cell join candidate that raises, or that returns a different checksum, is reported as `irreproducible_expression` (*What a failed fingertip reports*). A `CacheMissError` is exempt: it keeps its own category, `materialization` unless a nested fingertip reported a higher one.
+
 ## Implementation status and current limitations
 
 This section lists where the code does not yet implement the contract above, where it implements it differently, and what is still open. **The contract wins**: the rules above are the test oracle.
@@ -549,6 +574,7 @@ This section lists where the code does not yet implement the contract above, whe
 **Current limitations** (not contract violations):
 
 - **Validators are not implemented.** See *Validators are deferred*: supplying `validator` or `validator_language` raises `NotImplementedError` from every evaluation entry point, before any cache lookup.
+- **Cell joins are not implemented.** A cell-level join is still assembled in-process by the workflow Context (`sidework.evaluate_cell`), under a per-Context memo key: there is no `Expression` subclass, no celljoin JSON, no database row and no placement (*Cell joins*).
 - **Irreproducible Expressions normally do not exist.** An Expression runs no user code, so for a given implementation its result is a function of its identity tuple. But the celltype contract under it relies on reference implementations: `orjson` (`plain`, the JSON part of `mixed`), NumPy's `.npy` format (`binary`, the arrays in `mixed`), PyYAML (`yaml`), IPython's input transformer (`ipython`) and CPython's parser (`python`). Drift across versions or hosts can give one identity two results. There is no Expression counterpart of `IrreproducibleTransformation` (`contracts/execution-records.md`): the second result is returned unrecorded and logged, and a fingertip that encounters it reports `irreproducible_expression`.
 - **The process-local Expression cache is unbounded** and result-only. It is cleared only at process exit or by an explicit `get_expression_cache().clear()`.
 - **A reachability check costs a hashserver query.** Under `scratch=False`, a cached result checksum without a local buffer is confirmed with `buffer_remote.get_buffer_lengths` before it is returned.
