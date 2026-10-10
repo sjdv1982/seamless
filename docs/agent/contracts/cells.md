@@ -650,12 +650,7 @@ Expression fusion and elision across named and anonymous intermediates satisfy t
 
 ### Gaps
 
-- **Cell joins are not yet integrated into the Context** (*Cell-level joins*; `contracts/expressions.md`, *Cell joins*). Canonical celljoin formation, parsing, the pure evaluator and locally tracked `CellJoin` Expressions are implemented in `seamless-core`, but a workflow join is still assembled in-process: `Context._derive_cell` hands `sidework.evaluate_cell` to `_demand`, which runs it in a worker thread under a per-Context memo key, and `evaluate_cell` calls `Checksum.resolve`, `_assign_path` and `checksum_for_value`. There is no cell join identity, no database row, no placement and no fingertip route through a join. The following behaviours differ from the contract in the meantime:
-  - a literal root whose `input_celltype` differs from the join's `celltype` is not converted, so a `text` root under a `plain` join fails with `'str' object does not support item assignment`;
-  - a member connected through an explicit `as_celltype` is not converted to the join's celltype: `ctx.j["k"] = ctx.p.as_celltype("text")` into a `plain` join inserts the string;
-  - a member conversion is requested under the join Cell's own scratch flag and may be dispatched;
-  - a member edge's own link carries the join Cell's scratch flag as a checksum request, so a projected member under a scratch join Cell may be dispatched as scratch and end up unreachable;
-  - forbidden connection target keys are accepted: a reserved name is an ordinary key, `-1` sets the last item of a sequence root, `True` sets item 1, and a `float` or `None` key is stored under its string form.
+- **Cell joins have local Context integration; remote recording and recovery remain pending** (*Cell-level joins*; `contracts/expressions.md`, *Cell joins*). Workflow joins now form canonical `CellJoin` Expressions and demand them through the shared process cache and active/lingering member sets. The Context memoizes definitions, tracks jobs and facts, leases the definition and required inputs, and softcancels superseded demands. Literal roots and value members convert locally before formation; value-member projections request non-scratch materialization; forbidden target keys are refused at assignment and make loaded edges `miswired`. Definition publication, database forward/reverse rows, the three-step placement rule, remote dispatch and a fingertip route through a join are not implemented yet. A completed local join may answer from the process checksum cache without recovering an evicted result buffer.
 
 ### Current limitations (not gaps)
 
