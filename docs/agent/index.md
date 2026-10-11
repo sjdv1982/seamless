@@ -30,6 +30,7 @@ Looking for legacy Seamless (0.x)? Use the legacy docs at `/legacy/`.
 | `contracts/shares.md` | HTTP shares: `Cell.share`, REST and websocket behavior, marker-based conditional writes, live OpenAPI, the browser client, and graph persistence |
 | `contracts/widgets.md` | Jupyter widget attachments: traitlet hubs and links, widget-to-cell sensing, cell-to-widget delivery, `ctx.mounts.sync()`, lifecycle and output widgets |
 | `contracts/streaming.md` | Opt-in streaming for `remote: daskserver` transformations and how Transformer and Transformation flags affect submitted work |
+| `contracts/transformation-logs.md` | `Transformation.logs` and bound `ctx.tf.logs`: the captured stdout and stderr of a successful run plus its execution time, the failure text, the per-process store keyed by `tf_checksum` (a cache hit has no log), the exact layout and truncation, and what each backend captures, including bash and compiled output |
 | `contracts/cancellation.md` | The cancellation substrate: one membership set per deduplication site, `softcancel` = deregister vs hard `cancel` = kill-all, softness cascading to the leaf, no liveness machinery, and the soft-only reactive policy |
 | `contracts/service-management.md` | `seamless-service-resolve`, `rhl-*` helpers, false-pass protocol |
 | `contracts/execution-records.md` | Per-transformation records in `seamless.db`; minimal vs full mode, write-once semantics |

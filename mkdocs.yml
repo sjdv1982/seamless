@@ -31,6 +31,7 @@ nav:
       - HTTP Shares: contracts/shares.md
       - Jupyter Widgets: contracts/widgets.md
       - Streaming: contracts/streaming.md
+      - Transformation Logs: contracts/transformation-logs.md
       - Cancellation: contracts/cancellation.md
       - direct/delayed/Transformation: contracts/direct-delayed-and-transformation.md
       - Modules and Closures: contracts/modules-and-closures.md

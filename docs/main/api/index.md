@@ -56,7 +56,7 @@ The table below classifies every user-facing Python symbol by how central it is 
 | `.driver` | **Advanced** |
 | `.environment` | **Advanced** |
 | `.allow_input_fingertip` | Specialized/utility |
-| `.direct_print` | Specialized/utility |
+| `.streaming` | Specialized/utility |
 | `.meta` | Specialized/utility |
 
 ### From `seamless.config` (seamless-config)

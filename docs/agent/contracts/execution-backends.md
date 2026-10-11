@@ -31,6 +31,23 @@ This page defines the minimum operational model an agent may rely on when discus
    - Supports opt-in live stdout/stderr streaming per transformation; see
      [Streaming](streaming.md).
 
+### Output and logs per backend
+
+A transformation's stdout and stderr are captured on every backend. After a successful run they are in `Transformation.logs`, followed by the execution time. After a failure they are in the trailers of `.exception`. Backends differ in where the capture happens and in whether the output is also visible while the run is in flight:
+
+| Backend | Streams in the success log | Live output while the run is in flight |
+|---|---|---|
+| `process` | captured by a tee in the caller's process | on the caller's stdout and stderr |
+| `spawn` | captured in the worker child | none |
+| `remote: jobserver` | captured in the worker child, returned in the jobserver's response | none |
+| `remote: daskserver` | captured in the worker child, returned to the client with the result | only with `streaming` |
+
+- **Streaming is Dask-only.** `process`, `spawn` and `remote: jobserver` ignore the flag (`contracts/streaming.md`).
+- **A log exists only for a run that executed.** A result that comes from a cache or from the database has no log, on any backend.
+- **The execution time in the log is the dispatcher's measurement**, the same number as `wall_time_seconds` in the execution record. It includes queueing, inter-process transfer and input resolution.
+
+The log's layout, its per-process store, what is and is not captured, and the rules for bash and compiled transformers are `contracts/transformation-logs.md`.
+
 ### Current limitation: fingertipping in a worker needs Dask
 
 In `spawn` and `remote: jobserver`, a transformation runs in a worker process that cannot see its parent's fingertip candidates: neither the parent's reverse caches nor its database. A fingertip in such a worker tries only the producers that the worker itself launched (nested transformations). If those do not recover the buffer, it raises `NotImplementedError`, and the job fails with that error in its traceback. It does not report a `CacheMissError`, because the search was incomplete.

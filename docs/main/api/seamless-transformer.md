@@ -201,8 +201,13 @@ seamless-run-transformation transformation.json.CHECKSUM
 When the argument is a `*.CHECKSUM` file, the command automatically reads
 `dunder.json` from the same directory if it exists. You can override that with
 `--dunder PATH`. The dunder payload is merged into the execution envelope, while
-`--scratch`, `--fingertip`, `--direct-print`, and `--strict` are passed into the
+`--scratch`, `--fingertip`, `--streaming`, and `--strict` are passed into the
 synthetic `Transformation` execution path.
+
+`--streaming` shows the transformation's stdout and stderr while it runs. It
+has an effect only with `remote: daskserver`. The streamed text is written to
+stderr, because stdout carries the result checksum. `seamless-run` has the same
+flag.
 
 There are two common producer paths.
 

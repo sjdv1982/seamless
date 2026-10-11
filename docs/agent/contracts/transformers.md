@@ -60,7 +60,7 @@ The common builder state comprises:
 - the pin declarations, pin celltypes, optional-pin set and pre-bound pin inputs;
 - the result celltype;
 - modules and globals, where the language supports them;
-- metadata, environment, scratch, direct-print and placement settings;
+- metadata, environment, scratch and placement settings;
 - the streaming flag, which is operational: it is copied onto each built Transformation, is never part of a snapshot's identity, and is not stored in the durable graph (`contracts/streaming.md`);
 - the call mode: delayed or direct.
 
@@ -129,7 +129,9 @@ The table holds for direct Transformers exactly as for delayed ones. On a direct
 
 ## Live-node members
 
-`result`, `state`, `block_reason` and `exception` describe a live workflow node, so only a bound Transformer has them. **On a standalone Transformer, reading any of the four raises `AttributeError`.** The corresponding facts for a detached computation live on the Transformation that `build()` returns.
+`result`, `state`, `block_reason`, `exception` and `logs` describe a live workflow node, so only a bound Transformer has them. **On a standalone Transformer, reading any of the five raises `AttributeError`.** The corresponding facts for a detached computation live on the Transformation that `build()` returns.
+
+`logs` is the node's failure text, or the captured output and execution time of its current run. Its contract is `contracts/transformation-logs.md`, *Bound Transformers*.
 
 `prune()` and `clear_exception()` are different: they exist as attributes on a standalone Transformer, and only calling them raises `AttributeError` (*Named work methods*). So `hasattr(tf, "prune")` is `True` in both modes and cannot tell the modes apart.
 
