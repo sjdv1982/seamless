@@ -48,6 +48,34 @@ def pipeline(data, use_fast_path):
 
 Because the driver itself is a cached transformation, changing `use_fast_path` from `True` to `False` (with the same `data`) produces a new driver transformation checksum and re-executes the driver. The slow path runs; the fast path never runs. On the next call with `use_fast_path=True`, the driver is a cache hit and the fast-path result is returned immediately.
 
+### Nesting needs no declaration
+
+A transformation that launches other transformations is written like any other. Nothing has to be declared.
+
+By default, the code of a transformation runs while holding the lock of its process, so that one transformation runs at a time per process (see [Local parallelism](parallelism.md)). A driver that kept this lock while it waits would block its own sub-transformations. It does not keep it. The first time its code launches a transformation, the driver gives the lock up, and it does not take it again. A launch is `.start()`, `.run()`, `.compute()`, `.task()`, a call of a `direct` function, or `parallel()`. In the fan-out example above, `process_all` holds the lock until its first `tf.start()`. From then on, the `process_one` transformations can run in the driver's process as well.
+
+Two things follow:
+
+- What the driver does before its first launch, it does with its process to itself. What it does afterwards, such as combining the results, it does next to other transformations.
+- The launch must come from the driver's own thread, or from a coroutine of its event loop. If the driver starts a thread of its own and launches from there, the lock stays held, and the pipeline can hang without an error. Give such a driver `process_lock = False`, or declare it as a driver (below).
+
+### Declaring a driver: `.driver = True`
+
+```python
+process_all.driver = True
+```
+
+This says that the code mainly launches other transformations and waits for them. The declaration adds two things:
+
+- **The driver never takes the lock.** It starts at once, even while another transformation runs in its process, and it holds nothing up while it prepares its first launch. Setting `.driver = True` also sets `.process_lock` to `False`.
+- **On a Dask cluster, its launches are not held back.** Seamless limits how fast a transformation that runs on the cluster can submit further transformations, so that the cluster does not fill up with parents that wait for their children. Launches made by a declared driver skip this limit.
+
+The declaration applies to the driver alone. The transformations that it launches are ordinary transformations with their own settings.
+
+Declare a driver when its own work is negligible. A driver that does substantial work before its first launch is better left undeclared, so that this work has the process to itself.
+
+For a `seamless-run` command that itself calls `seamless-run`, the flag is `--driver`. The flag is needed only when the inner command runs over `ssh` or inside a container. Otherwise the outer command gives up its lock by itself.
+
 ---
 
 ## Module inclusion

@@ -2,9 +2,47 @@
 
 Seamless provides three related mechanisms for parallel work: for Python transformations, there are worker processes and bounded batch draining of large transformation lists; for bash CLI workflows, there is a queue server .
 
+## One transformation per process at a time
+
+By default, the code of a transformation has its process to itself while it runs. Every process has one lock, the *process lock*, and a transformation's code runs while holding it. This protects code that changes process-wide state, such as the working directory or environment variables. It also means that the number of processes is the number of transformations that run at once:
+
+| Execution | Transformations that run their code at once |
+|---|---|
+| `execution: process` (the current Python process; the default without a cluster) | 1 |
+| `execution: spawn`, or `spawn(N)`, with N workers | N |
+
+In `process` mode, twenty transformations that are started together therefore run one after the other. To run them in parallel, use a worker pool (below) or a remote backend.
+
+Only the code itself runs one at a time. Several transformations in one process still download their inputs and upload their results at the same time.
+
+### Opting out: `process_lock = False`
+
+Some code is safe to run next to other code in the same process, typically because it spends its time waiting: for I/O, or for an external program. Turn the lock off for such a transformer:
+
+```python
+from seamless.transformer import delayed
+
+@delayed
+def convert(data):
+    import subprocess
+    # the work happens in the external program; this code only waits for it
+    proc = subprocess.run(["mytool"], input=data, capture_output=True, check=True)
+    return proc.stdout
+
+convert.process_lock = False
+```
+
+For `seamless-run`, the flag is `--no-process-lock`.
+
+Transformations with the lock off run next to each other, and next to the one transformation that holds the lock. A worker process accepts up to three transformations at once, so `spawn(N)` runs up to 3N of them. In `process` mode the lock no longer limits them at all.
+
+The setting is not part of a transformation's checksum, so it has no effect on caching.
+
+A transformation that launches other transformations needs no setting: it gives up the lock by itself when it launches the first one. See [Composition](composition.md).
+
 ## `execution: spawn` — local worker pool
 
-Setting `execution: spawn` in your configuration tells Seamless to run transformations in a pool of separate worker processes rather than in the current Python process. The number of workers defaults to the number of logical CPU cores.
+Setting `execution: spawn` in your configuration tells Seamless to run transformations in a pool of separate worker processes rather than in the current Python process. The number of workers defaults to the number of logical CPU cores. Each worker runs the code of one transformation at a time, unless the transformation has `process_lock = False`.
 
 In `seamless.yaml` or `seamless.profile.yaml`:
 

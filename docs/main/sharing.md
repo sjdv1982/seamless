@@ -131,7 +131,7 @@ With `--upload`, `seamless-run` uploads the prepared transformation dict and the
 seamless-run-transformation --dunder X/dunder.json X/transformation.json.CHECKSUM
 ```
 
-The `--scratch`, `--fingertip`, `--direct-print`, and `--strict` options are applied to the synthetic `Transformation` execution envelope.
+The `--scratch`, `--fingertip`, `--streaming`, and `--strict` options change how the synthetic `Transformation` executes, never its checksum. `--streaming` shows the transformation's stdout and stderr on stderr while it runs, and has an effect only with `remote: daskserver`.
 
 ### Replaying a delayed Python transformation
 

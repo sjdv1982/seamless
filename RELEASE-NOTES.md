@@ -13,6 +13,40 @@ stored in workflow graph format `0.6`; loading a graph with `shares=False`
 validates and strips them without opening endpoints. Install
 `seamless-workflow[share]` to include the server dependency.
 
+### Transformation logs
+
+`Transformation.logs` returns the captured stdout and stderr of a successful
+run, followed by its execution time. After a failure it returns the same text
+as `.exception`. A bound Transformer has `ctx.tf.logs`. Logs work on every
+backend: `process`, `spawn`, jobserver and Dask.
+
+- Logs are kept in memory, per process, keyed by transformation checksum. A
+  result that comes from a cache has no log, and `.logs` is then `None`.
+- The execution time is the dispatcher's measurement, the same number as
+  `wall_time_seconds` in the execution record. It includes queueing and input
+  resolution, so it is not comparable to the execution time of Seamless 0.x.
+- A bash command's stdout and stderr are captured as two separate streams, and
+  stderr is kept on success too.
+- In `process` mode, output still goes live to your terminal and is also kept
+  for the log.
+- In worker processes, the C-level output of compiled transformers is captured.
+  A worker process therefore runs one compiled call at a time.
+
+See `docs/agent/contracts/transformation-logs.md`.
+
+### `direct_print` is removed; `--direct-print` becomes `--streaming`
+
+`streaming` supersedes `direct_print`. The `Transformer.direct_print` property
+and the `direct_print` constructor keyword are gone, and so is the
+`__direct_print__` meta key. Workflow graphs no longer store a `direct_print`
+key; a graph that has one still loads, and the key is ignored.
+
+`seamless-run --direct-print` and `seamless-run-transformation --direct-print`
+are replaced by `--streaming`, which shows the transformation's stdout and
+stderr while it runs. Both commands write the streamed text to stderr, because
+stdout carries the result. Streaming works with `remote: daskserver` only; the
+other backends ignore the flag.
+
 ## version 1.4
 
 - A `Transformation` is now explicitly an **immutable computation definition
@@ -53,8 +87,8 @@ second submission attaches to the running one and returns its result, with the
 active envelope authoritative. Pass `--strict` (`seamless-run-transformation`) or
 `strict_dunder=True` (Python / Dask / jobserver) to require your own envelope
 instead — it is rejected while another submission is active and may proceed only
-once that one is done, failed, or canceled. CLI flags like `--direct-print`,
-`--fingertip`, and `--scratch` affect the envelope only, never the checksum.
+once that one is done, failed, or canceled. CLI flags like `--fingertip` and
+`--scratch` affect the envelope only, never the checksum.
 
 ### seamless-core: transparent checksumming of compressed files
 

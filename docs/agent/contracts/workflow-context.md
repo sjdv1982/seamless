@@ -137,6 +137,7 @@ The Context **launches replacement work immediately and delays only the cancella
 
 - **The workflow layer never invokes a raw callable.** It submits immutable, checksum-wired snapshots built through the ordinary Transformer builder path (`contracts/transformers.md`); the ordinary transformation cache executes them (`contracts/direct-delayed-and-transformation.md`, `contracts/execution-backends.md`). A cache hit is not a shortcut around the runtime: it still arrives through a later controller turn.
 - A node is `computing` **from dispatch onwards, including the window in which its transformation identity is being constructed.** There is no separate "constructing" state, and `computing` is not delayed until the identity exists.
+- **`ctx.tf.logs` reads the log of the node's current run.** On a `failed` node it is `ctx.tf.exception`. Otherwise it is the log that this process holds for the current run's transformation identity: the captured stdout and stderr, followed by the execution time. It is `None` when the node has no current run, and when this process holds no log for the run, as after a cache hit. It is a passive read, like `.state` and `.exception`: it never waits and never demands the node. The log's layout, its per-process store and what each backend captures are `contracts/transformation-logs.md`.
 - **Expression jobs** — projections, and conversions on edges — use the ordinary asynchronous evaluator with the Context's placement policy (`expression_execution`), with member-scoped cancellation; their results re-enter through a controller turn like any other.
 - **Determinism is assumed.** The Context's compare-and-reuse loop assumes that the same inputs give the same result checksum. Irreproducible transformations are out of scope for workflows. Accidental nondeterminism being masked by the content-addressed cache is a universal Seamless property, not a Context hazard (`contracts/identity-and-caching.md`, `contracts/scratch-witness-audit.md`).
 
@@ -149,6 +150,7 @@ The Context **launches replacement work immediately and delays only the cancella
 - **`ctx.set_graph(graph, mounts=True, shares=True)` — the default — also attaches every mount and share spec in the new graph, so it blocks and can write files or open HTTP endpoints.** Reservations and initial reads are prepared in parallel on the caller's side, one message replaces the graph and all sessions atomically, and the call waits for every initial acknowledgement. `mounts=False` strips mount specs; `shares=False` strips share specs. **Graphs of unknown origin must be loaded with both disabled** (`contracts/mounts.md`, `contracts/shares.md`).
 - **Run generations are never reused across a replacement**, and node revisions are bumped for the same reason: a late completion from the old graph can never be mistaken for a run at the same path in the new one.
 - **Graph loading never executes code to reconstruct callables.**
+- **A `direct_print` key in a transformer entry is ignored.** `get_graph()` does not write one, and a graph that carries one still loads.
 
 ## The Context surface: which calls wait, and which errors mean what
 
@@ -160,6 +162,7 @@ Only the operations this page specifies are listed; handle-level calls are in `c
 | a sub-path write | only when the node is `waiting` (it waits on a barrier and retries) | `None` |
 | `ctx.a`, `ctx.foo.bar` (unknown path) | no | a fresh handle, or a namespace view |
 | `ctx.a.checksum` / `.buffer` / `.value` on a named node | no | the current result, or `None` when the node is not `complete` |
+| `ctx.tf.logs` | no | the failure string when the node is `failed`; otherwise the stored log of the node's current run, or `None` when the node has no current run or this process holds no log for it (`contracts/transformation-logs.md`, *Bound Transformers*) |
 | `ctx.compute()` / `await ctx.computation()` | **yes** — graph-wide barrier | `None`, or raises `TimeoutError` |
 | `node.compute()` / `await node.computation()` on a named node | **yes** — that node's upstream cone | the node's checksum, or `None` when it settles in any other state; never raises for the node's state |
 | `node.run()` on a named node | **yes** — as `node.compute()` | the materialized value; raises the recorded exception on `failed`, `NodeError` on `unwired`, `miswired` or `blocked`, and any materialization failure |

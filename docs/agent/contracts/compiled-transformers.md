@@ -40,6 +40,8 @@ Code like `load_model()` or `open_database_session()` **cannot be wrapped** as a
 
 **Tolerated:** side effects that do *not* affect the return value — logging, diagnostic output, writing dashboards. The runtime does not police these.
 
+Diagnostic output that native code writes to stdout or stderr is captured into the transformation's log when the call runs in a worker process. A worker process therefore runs one compiled call at a time. In `process` mode that output is not captured. See `contracts/transformation-logs.md`, *Compiled transformers*.
+
 **The runtime will not detect violations.** The consequence is **silently incorrect caching**: the same inputs return a stale cached result instead of re-executing with the invisibly changed persistent state.
 
 ## Architecture
@@ -216,6 +218,7 @@ These settings propagate to the worker as part of the transformation's `__env__`
 ## Reference Map (load only as needed)
 
 - `contracts/transformers.md` — common Transformer builder, binding and snapshot semantics
+- `contracts/transformation-logs.md` — `.logs`, and how a compiled call's C-level stdout and stderr are captured
 - `contracts/seamless-signature-schema.md` — full schema YAML format, dtype tables, wildcard rules, shape constraints, and language-native derivation examples
 - `contracts/identity-and-caching.md` — load-bearing vs orthogonal key split, caching model, referential transparency
 - `contracts/pins.md` — the pin layer: reaching pins, the pin set, pin celltypes, optional pins and the null rules, and conversion at the pin boundary

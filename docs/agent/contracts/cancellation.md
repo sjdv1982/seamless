@@ -18,6 +18,7 @@ Code locations:
 | In-process membership set, both operations | `seamless_transformer.transformation_cache` (`TransformationCache`, `_ActiveSubmission`, `_run_active_or_execute`, `_detach_active_member`, `softcancel_by_checksum` and its `_async` form, `_softcancel_leaf`, `cancel_by_checksum`) |
 | Handle verb | `seamless_transformer.transformation_class.Transformation` (`cancel`, `cancel_async`, `_cancel_local_futures`, `_mark_cancelled`); see `contracts/direct-delayed-and-transformation.md` |
 | Worker slots | `seamless_transformer.worker` (`cancel_by_checksum`) |
+| Wait for the process lock | `seamless_transformer.process_lock` (`scope` and its `should_abort` argument); see `contracts/execution-backends.md`, *The process lock* |
 | Server-side set | `seamless-jobserver/jobserver.py` (`_active_transformations`, `_run_transformation`, `_softcancel_transformation`, `_detach_transformation_member`, `_cancel_transformation`, `_transformation_status`). The clients are `seamless_remote.jobserver_remote` and `seamless_remote.jobserver_client` (`softcancel_transformation(tf_checksum, member_id)`, `cancel_transformation(tf_checksum)`) |
 | Latch-on set | `seamless_dask.client` (`submit_transformation`, `release_transformation_futures`, `softcancel_by_checksum(tf_checksum, member_id)`, `cancel_by_checksum(tf_checksum)`) over `seamless_dask.types.TransformationFutures` |
 | Reactive policy | `seamless_workflow.reactive.Reactive` (`_suspend`, `_expire_run`) and `seamless_workflow.context.Context.prune`; see `contracts/workflow-context.md` |
@@ -92,6 +93,15 @@ So `Transformation.cancel()`:
 - **never invalidates the `tf_checksum`.** A later submission of the same checksum is a new submission, which latches on or starts fresh as usual.
 
 An `Expression` handle has nothing terminal to mark, which is why its only verb is `softcancel()` (`contracts/expressions.md`).
+
+## A transformation that waits for the process lock
+
+By default a transformation's code waits for the lock of its process before it runs (`contracts/execution-backends.md`, *The process lock*). A run can therefore be cancelled before its code has started. In this section a run is **cancelled** when the underlying run is stopped: by a hard `cancel`, or by the `softcancel` that empties its set. At the Dask site an emptied set does not stop the run (*The two operations*), so only a hard `cancel` counts there. A member that leaves a set that stays non-empty cancels nothing, here as everywhere on this page.
+
+- **In `process` mode, a run that is cancelled while it waits for the lock never runs its code.** The wait ends. The code does not start later, when the lock becomes free.
+- **In a worker process, a cancelled run ends because that worker process is terminated**, whether its code was waiting for the lock or running. The lock goes with the process, and the replacement worker starts with a free lock.
+- **In `process` mode, a cancel does not interrupt code that is already running.** That code keeps the lock until it returns, and the next transformation in line starts only then. Cancellation is not a guarantee that the work stopped (*What cancellation is not for*), and here the consequence is visible: the process stays occupied.
+- **Waiting for the lock changes nothing about membership.** A participant whose run waits for the lock is a member like any other, and it deregisters in the same way.
 
 ## What cancellation is *not* for
 

@@ -33,6 +33,7 @@ Contract pages (hand-maintained, normative):
 - `contracts/shares.md`
 - `contracts/widgets.md`
 - `contracts/streaming.md`
+- `contracts/transformation-logs.md`
 - `contracts/cancellation.md`
 - `contracts/scratch-witness-audit.md`
 - `contracts/direct-delayed-and-transformation.md`
