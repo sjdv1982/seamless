@@ -57,6 +57,10 @@ Assume these meanings (confirm with docs/docstrings for exact behavior):
 ## Immutability
 
 A returned `Transformation` is a frozen computation definition plus a mutable execution promise. The definition (checksum payload, orthogonal dunder envelope, dependency edges, scratch policy) is immutable: `tf.meta` is a recursively read-only view and assigning `tf.meta`, `tf.meta[...]`, or `tf.scratch` raises. Mutating the objects you passed in (the original `meta`/dunder dict, inputs) after the handle is built does not affect its checksum or execution. Only execution-promise state (computed checksums, futures, result, status, exception) changes over the handle's lifetime.
+- `process_lock` and `driver`: both are in `tf.meta` on every built handle, and
+  both are read-only there. They are set on the Transformer before the build
+  (`contracts/transformers.md`, *`process_lock` and `driver`*). What they do
+  when the handle runs is `contracts/execution-backends.md`, *The process lock*.
 - `.streaming`: when true, opt into live stdout/stderr streaming for fresh
   `remote: daskserver` executions without changing transformation identity.
   See [Streaming](streaming.md).

@@ -43,6 +43,24 @@ parameters.
 Use `--var` for any value that is part of the computation logic and should
 invalidate the cache when it changes.
 
+## Process lock flags (`--no-process-lock`, `--driver`)
+
+A command that `seamless-run` wraps is a bash transformation. By default its script runs while holding the lock of the process that executes it, so each worker process runs one script at a time (`contracts/execution-backends.md`, *The process lock*). Two flags change this. Neither changes the transformation checksum.
+
+| Flag | Written to `__meta__` | Use it when |
+|---|---|---|
+| none | `process_lock: true`, `driver: false` | the default |
+| `--no-process-lock` | `process_lock: false`, `driver: false` | the command is safe to run next to other transformations in the same process, for example I/O-bound work |
+| `--driver` | `driver: true`, `process_lock: false` | the command mainly launches other transformations and waits for them |
+
+- **`--driver` implies `--no-process-lock`.**
+- **The flags set the same two values as the `process_lock` and `driver` properties of a Transformer.** Their meaning, and the rule that both cannot be true, are in `contracts/transformers.md`, *`process_lock` and `driver`*.
+- **`seamless-run-transformation` has neither flag.** It runs an existing transformation dict and does not rewrite its `__meta__`. The two values come from the dunder file. Without one the dict carries neither value, and the transformation takes the lock.
+
+**A command that calls `seamless-run` itself needs no flag.** The outer script's environment contains `SEAMLESS_PROCESS_LOCK_NOTIFY`. The nested `seamless-run` uses it to tell the outer transformation that nested work is being submitted, and the outer transformation then gives up its lock, so that the nested job can run in the same worker process. `seamless-run --qsubmit` does the same. The nested command keeps its own defaults: it takes the lock of the process that runs it, and it is not a driver.
+
+One case does need a flag. The signal is a named pipe on the local filesystem, so it does not reach the outer transformation when the nested `seamless-run` runs over `ssh`, inside a container, or on a different filesystem. Declare such an outer command with `--driver` or `--no-process-lock`. Without the flag, the nested job can be dispatched to the process whose lock the outer script holds, and both then wait for each other without an error.
+
 ## Canonicalization
 
 For pipelines where parallelism only affects ordering:
@@ -55,6 +73,7 @@ For pipelines where parallelism only affects ordering:
 
 Agent guidance:
 - Expect practical limits to come from worker pool sizing / OS process limits / filesystem throughput.
+- A worker process runs one command at a time by default, so a pool of N workers runs N commands at once. `--no-process-lock` lifts that limit for a command (*Process lock flags*).
 - For “many short tasks”, prefer a backend designed for high task throughput (e.g. Dask-backed execution) rather than naive “fork 1000 subprocesses locally”.
 - If two submissions resolve to the **same** `tf_checksum` while one is still running (e.g. running an existing checksum with different execution-only flags), the second does not start a second execution: by default it latches onto the running one and returns its result value. `seamless-run` has no flag to opt out of that; the opt-out is `--strict` on `seamless-run-transformation` (`strict_dunder=True` in Python), which instead fails when an active submission carries a different execution envelope, so the prior submission must finish or be canceled (`seamless-cancel <tf_checksum>`) first. See `contracts/identity-and-caching.md` for the full latch-on/`strict` contract.
 

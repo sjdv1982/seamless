@@ -399,6 +399,11 @@ No phase waits on a ruling.
   in `process` mode confirmed both halves (2026-10-10).
   `_write_remote_bash_job` ([run.py:304](../../seamless-transformer/seamless_transformer/run.py#L304)) also changes the working
   directory, and does not take the lock.
+  **Resolved (2026-10-11)** by
+  [process-lock-implementation-plan.md](process-lock-implementation-plan.md), Phase A: neither `execute_bash` nor
+  `_write_remote_bash_job` changes the working directory any more. The same
+  plan replaces `global_lock` with the process lock, which every
+  transformation claims by default.
 - `_dispatch` re-dispatches a request whose worker died, for up to three times
   the number of workers attempts in total
   ([worker.py:1262](../../seamless-transformer/seamless_transformer/worker.py#L1262)). A compiled transformation that calls

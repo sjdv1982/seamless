@@ -41,6 +41,14 @@ transformation is submitted.
 
 An anti-deadlock throttle that prevents the Dask cluster from over-committing. Tracks a capacity counter based on `TRANSFORMATION_THROTTLE × workers`. When at capacity, batches new requests per 10-second epoch and grants based on system load. This prevents nested transformations from starving the cluster.
 
+A transformation that is declared a driver (`driver = True`) skips the permission request, and so do the transformations that its code submits. The mark is not inherited: a transformation launched by a driver is an ordinary transformation, and what it submits in turn asks for permission again.
+
+### Process lock
+
+The permission manager bounds the transformations that wait for nested work. The process lock of `seamless-transformer` bounds the ones that work. Each Seamless worker process has one lock, and by default a transformation runs its code while holding it, so a worker process runs the code of one transformation at a time. A transformation gives the lock up when it submits nested work and never takes it again, so a parent that waits for its children never holds a lock. The two mechanisms therefore do not interfere: the lock is not a resource that waiting parents can exhaust.
+
+A transformation with `process_lock = False`, or a declared driver, does not take the lock. The full reasoning, and what the rule does not cover, is in `anti-deadlock.txt` in the `seamless-dask` repository.
+
 ### Dummy scheduler
 
 An in-process Dask scheduler for development and testing. Creates a `Scheduler` + N `Worker` instances in a background thread, useful for local runs without a full cluster.
@@ -127,7 +135,7 @@ These tune the Dask scheduler and worker lifecycle.
 
 These control Seamless-specific behavior inside each Dask worker.
 
-- **`transformation_throttle`** — How many concurrent Seamless transformations each worker process handles. Exported as the environment variable `SEAMLESS_WORKER_TRANSFORMATION_THROTTLE` into worker job scripts. Also determines worker thread count (`cores × transformation_throttle`). Default: `3`.
+- **`transformation_throttle`** — How many Seamless transformations each worker process accepts at once. By default only one of them runs its code at a time (see *Process lock*); the other slots hold transformations that wait, for the lock or for nested work. Exported as the environment variable `SEAMLESS_WORKER_TRANSFORMATION_THROTTLE` into worker job scripts. Also determines worker thread count (`cores × transformation_throttle`). Default: `3`.
 - **`dask-resources`** — Custom Dask resource annotations for workers, passed to `distributed.worker.resources`. In exclusive mode, automatically includes `{"S": 1.0}` for resource-aware scheduling. The `"S"` resource value is also used as a scaling factor for adaptive target duration.
 
 #### Cluster parameters
@@ -239,7 +247,7 @@ dask worker \
     tcp://<scheduler_ip>:<scheduler_port>
 ```
 
-72 SLURM cores (`24 × 3`), 72 worker threads, lifetime rotation enabled (55 minutes = 60 min walltime − 4 min stagger − 1 min grace). The `SeamlessWorkerPlugin` running inside this worker will spawn 24 Seamless worker processes, each handling up to 3 transformations concurrently.
+72 SLURM cores (`24 × 3`), 72 worker threads, lifetime rotation enabled (55 minutes = 60 min walltime − 4 min stagger − 1 min grace). The `SeamlessWorkerPlugin` running inside this worker will spawn 24 Seamless worker processes, each accepting up to 3 transformations at once and, by default, running the code of one of them at a time.
 
 ---
 

@@ -1,7 +1,11 @@
 # Streaming (Contract)
 
-Streaming is an opt-in operational feature for `remote: daskserver`
-transformations.
+Streaming is an opt-in interaction feature for `remote: daskserver`
+transformations. An interaction feature configures what the submitting session
+sees of a run, not how the run is executed. The operational features
+`process_lock`, `driver` and `scratch` do the latter, and a workflow Context
+node treats the two kinds differently
+([Transformers](transformers.md), *`process_lock` and `driver`*).
 
 The [streaming plan](../../../plans/streaming-plan.md) describes the transport,
 throttle limits, and implementation phases.
