@@ -104,7 +104,8 @@ The script runs inside a container made from the image.
   are set.
 - **`HOME` is `/seamless-job`, the working directory.** It is a writable
   directory owned by the user running the job, including when the image has no
-  passwd entry for that user.
+  passwd entry for that user. Apptainer maps the job directory there with
+  `--home`; its `--env` option cannot override `HOME`.
 - **The script runs as the user that runs the job on the host.** Files it
   writes belong to that user. An image that only works as root or as a named
   user of its own may fail.

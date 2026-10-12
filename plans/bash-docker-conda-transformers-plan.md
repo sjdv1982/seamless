@@ -580,7 +580,8 @@ Where the settings come from per backend:
 
 ```
 apptainer exec --containall --cwd <mnt>
-    --bind "$PWD":<mnt> --bind <read folder>:<read folder>:ro
+    --home "$PWD":<mnt> --bind "$PWD":<mnt>
+    --bind <read folder>:<read folder>:ro
     [--nv] [SEAMLESS_CONTAINER_ARGS]
     <sif>  bash transform-inner.sh
 ```
@@ -594,6 +595,10 @@ apptainer exec --containall --cwd <mnt>
     own cache is used.
 - `--containall` is kept from legacy: own PID and IPC namespaces, no host
   environment, no host home. It makes the run comparable to the docker one.
+- `--home "$PWD":<mnt>` mounts the job directory as `/seamless-job` and sets
+  `HOME` to that path. Apptainer 1.5.4 refuses to override `HOME` with
+  `--env`; the explicit bind keeps the job mount in the same form as the
+  Docker and Podman launchers.
 - Legacy `--no-init --no-umask --no-eval --env-file` are dropped. They served
   the environment file, which the exported pins replace.
 - `--cwd` is the documented flag. Older releases call it `--pwd`, which 1.5.4
@@ -1040,8 +1045,9 @@ policing of mutable tags either.
 - **apptainer needs to create the mount point** `/seamless-job` and the read
   folder paths inside the image. That requires overlay or underlay support,
   which is the default but can be disabled by a site.
-- **Apptainer's `HOME` value is not yet implemented.** Phase 4 will set it to
-  `/seamless-job`, matching docker and podman.
+- **Apptainer sets `HOME` to `/seamless-job` with `--home`.** On Apptainer
+  1.5.4, `--env HOME=...` is rejected; the `--home` mapping also mounts the
+  writable job directory at that path.
 - **Docker Desktop** shares only some host paths with its VM. Whether the
   temporary directory is among them is unverified; a setting for the job
   directory's parent may be needed.
