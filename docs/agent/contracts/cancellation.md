@@ -100,8 +100,25 @@ By default a transformation's code waits for the lock of its process before it r
 
 - **In `process` mode, a run that is cancelled while it waits for the lock never runs its code.** The wait ends. The code does not start later, when the lock becomes free.
 - **In a worker process, a cancelled run ends because that worker process is terminated**, whether its code was waiting for the lock or running. The lock goes with the process, and the replacement worker starts with a free lock.
-- **In `process` mode, a cancel does not interrupt code that is already running.** That code keeps the lock until it returns, and the next transformation in line starts only then. Cancellation is not a guarantee that the work stopped (*What cancellation is not for*), and here the consequence is visible: the process stays occupied.
+- **In `process` mode, a cancel does not interrupt code that is already running.** That code keeps the lock until it returns, and the next transformation in line starts only then. Cancellation is not a guarantee that the work stopped (*What cancellation is not for*), and here the consequence is visible: the process stays occupied. The script of a bash transformation is the one exception, because it is a process of its own (*A bash run that is cancelled*).
 - **Waiting for the lock changes nothing about membership.** A participant whose run waits for the lock is a member like any other, and it deregisters in the same way.
+
+## A bash run that is cancelled
+
+The script of a bash transformation is a process of its own, started by the process that runs the transformation. With an environment, the script runs under `conda run` or inside a container (`contracts/environments.md`). In this section, as in the previous one, a run is **cancelled** when the underlying run is stopped: by a hard `cancel`, or by the `softcancel` that empties its set.
+
+- **A cancelled bash run has its script killed**, together with the processes that the script started. Under a conda environment, `conda run` is one of them. The kill goes to the script's process group, so a process that the script moved into a session of its own is not reached.
+- **A container is removed.** A docker or podman container belongs to a daemon or to a monitor process, not to the process that started it. Killing that process alone would leave the container running, so a cancelled run removes its container explicitly. Under apptainer the container is the script's process group, and it goes with it.
+- **There is no grace period.** The script is not given time to clean up, and a `trap` in it may not finish.
+- **The teardown happens at the leaf**, where the executor is (*Three constraints*, constraint 1). An emptied in-process set that merely leaves a jobserver set tears nothing down. The jobserver does, when its own set empties.
+- **It holds in `process`, `spawn` and `remote: jobserver`.** Within seconds of the cancel, the script's processes are gone and so is its container.
+- **In `process` mode, the body returns once its script is gone**, and it releases the process lock then. A cancelled container job does not occupy the process until the container would have finished.
+- **In a worker process, the script does not outlive its worker.** A cancelled run ends because its worker process is terminated (*A transformation that waits for the process lock*). Before the worker ends, it kills its scripts and removes its containers.
+- **A worker that is killed outright cannot clean up.** That happens when it does not end within the time it is given. The pool then removes the docker and podman containers that the worker had started. A script outside such a container can survive that kill.
+- **A hard cancel stops the bash run on `remote: daskserver` too.** In the local Dask-server harness, the hard checksum API stopped plain bash and apptainer process groups and removed docker and podman containers; each was gone in under one second in the measured runs. This is evidence for that worker/runtime arrangement, not a bound for every cluster. A softcancel never stops a Dask run (*The two operations*).
+- **A softcancel that leaves other members in the set stops nothing**, here as everywhere on this page.
+
+A run that ends by itself leaves nothing behind either: its container is removed when the script ends, however it ends (`contracts/environments.md`, *A Docker image*).
 
 ## What cancellation is *not* for
 

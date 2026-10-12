@@ -346,8 +346,10 @@ container job occupies its process for that time. `process_lock` false, or
 - **A container is removed.** It does not keep running after its job was
   cancelled.
 - **There is no grace period.** The script is not given time to clean up.
-- **This holds in `process`, `spawn` and `remote: jobserver`**, within seconds
-  of the cancel. `remote: daskserver` is under *Current limitations*.
+- **Hard cancellation tears down the environment in `process`, `spawn` and
+  `remote: jobserver`.** It also did so in `remote: daskserver` in the measured
+  local harness; see [Cancellation](cancellation.md), *A bash run that is
+  cancelled*. A softcancel never stops a Dask run.
 - **A docker or podman container that Seamless starts carries the label
   `seamless.tf=<tf_checksum>`** for as long as it exists.
   `docker ps --filter label=seamless.tf=<tf_checksum>` lists the container of a
@@ -379,8 +381,6 @@ container job occupies its process for that time. `process_lock` false, or
   apptainer.
 - **Nested Seamless commands inside a container** need Seamless in the image
   and a route to the services. Neither is provided.
-- **On `remote: daskserver`, whether a hard cancel stops a running container
-  is not specified.** A softcancel never stops a Dask run.
 
 ## Non-goals
 

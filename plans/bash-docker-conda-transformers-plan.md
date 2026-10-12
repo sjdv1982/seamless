@@ -234,10 +234,9 @@ Read on 2026-10-11. "(run)" marks a fact confirmed by running it here.
 
 - A hard cancel restarts the worker child: SIGTERM, 2 s, SIGKILL
   ([worker.py:1884](../../seamless-transformer/seamless_transformer/worker.py#L1884); [manager.py:198-199](../../seamless-transformer/seamless_transformer/process/manager.py#L198-L199)).
-- Worker children install no signal handler (no `signal.signal` in
-  `worker.py` or `process/*.py`). The bash process is in its own session.
-  When the child is terminated, the bash process group survives (inferred
-  from the code; not run).
+- Before Phase 5, worker children installed no cancellation cleanup handler.
+  A probe confirmed the orphan: after SIGTERM killed the worker, its bash
+  process group remained alive (`sleep` PID 162157 was still in `/proc`).
 
 ### 3.4 `conda run` on this machine (run, conda 26.3.2)
 
@@ -666,11 +665,16 @@ There is no grace period: a cancelled job is killed. Legacy gave
    `execution: process` container runs to completion and keeps the process
    lock until then. The executor thread itself still cannot be stopped, but
    it returns as soon as its job is gone.
-5. **Dask.** Whether a hard cancel reaches the worker child on a Dask worker
-   is not known. The phase measures it and records the answer. This is the
-   backend that apptainer on a cluster will use.
+5. **Dask.** The hard checksum API was exercised through the actual
+   `remote: daskserver` harness after each job was observed running. Cancellation
+   removed the plain-bash process group in 0.991 s, the Docker container in
+   0.952 s, the Podman container in 0.396 s, and the Apptainer process group in
+   0.88 s. This establishes behavior for the measured local Dask-server
+   arrangement; it is not a timing guarantee for every cluster. Dask softcancel
+   remains non-terminating.
 
-The first step of the phase is a probe that confirms §3.3 by running it.
+The first Phase 5 probe confirmed §3.3 by running it; the orphaned process
+group was observed before implementing cleanup.
 
 ### 4.9 Identity (D13)
 
@@ -814,8 +818,13 @@ environment, one pytest process per file.
 - **Exit:** after a hard cancel of a `sleep` job in `spawn` mode,
   `<runtime> ps --filter label=seamless.tf=<tf_checksum>` is empty for docker
   and for podman, and the process group is gone for apptainer and for plain
-  bash, all within 5 s. The same on the jobserver and in `process` mode. The
-  Dask behaviour is measured and written into the contract page.
+  bash, all within 5 s. The same on the jobserver and in `process` mode.
+  `tests/test_container_cancel.py` passed all 22 cases (55.37 s), including
+  real Docker, Podman, Apptainer, conda, process/spawn, jobserver, worker
+  SIGTERM/SIGKILL and execute-bash finally cleanup. One earlier conda-jobserver
+  attempt remained pending; its isolated retry and the subsequent complete run
+  passed. Dask hard cancellation was separately measured for plain bash and
+  all three runtimes as recorded in §4.8 and the cancellation contract.
 
 ### Phase 6 — Faces and docs
 
@@ -897,10 +906,11 @@ skip unless `nvidia-smi` exists.
 **The contract page is written.** [environments.md](../docs/agent/contracts/environments.md)
 is the contract that the phases implement and that their tests are written
 from. It is listed in `docs/agent/README.md`; `docs/agent/index.json` is
-regenerated in Phase 6. Two of its statements wait for a phase:
+regenerated in Phase 6. One of its statements waits for a phase:
 
-- Phase 5 measures the Dask cancel behaviour and replaces the "not specified"
-  line under *Current limitations*.
+- Phase 5 measured hard Dask cancellation for plain bash, Docker, Podman and
+  Apptainer in the local Dask-server harness; the cancellation contract records
+  the evidence and limits its scope to that arrangement.
 - Phase 3 confirms the docker points of §9. A difference is corrected in the
   page and in §4.5 together.
 
