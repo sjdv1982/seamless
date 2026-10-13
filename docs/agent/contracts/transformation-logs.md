@@ -99,7 +99,7 @@ Execution time: {seconds:.1f} seconds
 
 On a failed handle, `.logs` and `.exception` are the same string. That string is:
 
-1. the failure message. For Python code this is the pruned traceback. For bash it is the *Bash transformer exception* report, with the return code and the command;
+1. the failure message. For Python code this is the pruned traceback. For bash it is the *Bash transformer exception* report, with the return code and the command. A bash transformation with an environment adds to this (*Bash transformations with an environment*);
 2. a `* Standard output` trailer and a `* Standard error` trailer, each between separator lines, and each present only when that stream is non-empty.
 
 - **The trailers are not truncated.** They carry the full captured text of each stream.
@@ -156,6 +156,27 @@ Not captured on any backend: output that a Python transformation sends straight 
 - **Both are read together while the command runs**, and relayed line by line. A command that writes a large amount to stderr does not stall.
 - **The log does not record how the two streams interleaved.**
 - **Stderr is retained on success as well as on failure.**
+
+### Bash transformations with an environment
+
+A bash transformation can run in a conda environment or in a container (`contracts/environments.md`). The rules above hold unchanged:
+
+- **The script's stdout and stderr are captured as two streams and relayed line by line while it runs**, under `conda run` and under docker, podman and apptainer alike.
+- **The streams also hold what the launcher itself printed.** After a failing script, `conda run` adds one line of its own to stderr. A container runtime that cannot start the container reports that on stderr.
+
+The failure message depends on how far the job came:
+
+| What happened | The failure message |
+|---|---|
+| The environment was not entered: the conda environment does not exist, the image is absent, or the image has no `bash`. The script did not start | names the environment (the conda environment, or the runtime and the image), the exit code and the command that was run. For docker and podman a hint from the exit code is added |
+| A required binary is missing where the script runs | `Required environment binaries are unavailable: …`, followed by where they were looked for |
+| The script exited with a non-zero code | the *Bash transformer exception* report, with one more line that names the environment. For a container, exit code 137 adds a hint that the job was killed, possibly for exceeding a memory limit |
+| `RESULT` is missing or empty | the *Bash transformer exception* report, as without an environment |
+
+- **The trailers follow the message in every row.** For a job that did not enter its environment, they hold what the launcher printed, which is where the cause is.
+- **A job that was refused before anything was launched has no trailers.** Examples are an invalid image spec and a host with no working container runtime.
+
+`contracts/environments.md`, *Failures*, owns the classes and their order.
 
 ### Compiled transformers
 

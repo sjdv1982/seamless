@@ -22,9 +22,10 @@ At minimum, assume transformation identity is determined by:
 
 Identity is *not* affected by the orthogonal execution envelope — where/how the
 computation runs (`__meta__` including local-vs-remote placement, `__env__`,
-`__compilation__`, scratch policy, …). Those change execution, not the denoted
-result. If the platform allows environment-dependent semantics, it should record
-an **environment signature** as provenance (see `contracts/scratch-witness-audit.md`).
+`__compilation__`, `__handler__`, scratch policy, …). Those change execution,
+not the denoted result. If the platform allows environment-dependent semantics,
+it should record an **environment signature** as provenance (see
+`contracts/scratch-witness-audit.md`).
 
 ## Checksums, values, and celltypes
 
@@ -103,7 +104,7 @@ Internally, a transformation is represented as a dict. A dunder (double-undersco
 
 **Load-bearing** (determinant) — included in the transformation checksum (the cache key). Changing the value produces a different transformation identity and bypasses the cache. This is every plain pin (`code`, `arg1`, `objects`, …) **and** the load-bearing dunders: `__language__` (code interpretation/execution semantics), `__output__` (output name/celltype), `__as__` (pin namespace mapping, observable by code), `__format__` (pin materialization), and `__schema__` (compiled function ABI/signature; not derivable from `code`).
 
-**Orthogonal** — frozen and carried with the transformation, but excluded from the checksum. Changing the value changes the execution envelope, not identity, and must not change the denoted result value. These include `__meta__` (incl. local-vs-remote placement and compiled `metavars`), `__env__`, `__compilation__`, `__record_probe__`, `__code_checksum__`, `__code_text__`, scratch policy, the legacy `__compilers__`/`__languages__`, and any `META__*` key.
+**Orthogonal** — frozen and carried with the transformation, but excluded from the checksum. Changing the value changes the execution envelope, not identity, and must not change the denoted result value. These include `__meta__` (incl. local-vs-remote placement, and the `metavars` of compiled and handler-language transformers), `__env__`, `__compilation__`, `__handler__` (the source of the Python function that runs a handler language), `__record_probe__`, `__code_checksum__`, `__code_text__`, scratch policy, the legacy `__compilers__`/`__languages__`, and any `META__*` key.
 
 **Derived/eliminable** — not independent identity state; regenerated from load-bearing data, and only validated then discarded if a caller supplies them. These include `__header__` (generated from `__schema__` via `seamless-signature`), `__compiled__` (derived from the presence of compiled definition state), and `__deps__` (derived from the dependency graph).
 
@@ -111,9 +112,32 @@ Practical consequence: two transformations that differ only in orthogonal values
 
 - Compiler flags live in `__compilation__` (orthogonal) → switching from `-O3` to `-g` does not invalidate the cache.
 - The conda environment name lives in `__env__` (orthogonal) → activating a different environment reuses a cached result if the code and inputs are unchanged.
+- The Docker image of a bash transformation lives in `__env__` as well (orthogonal) → the same script and inputs under another image reuse the cached result, and so does an image tag that was rebuilt upstream. Which container runtime runs the image (docker, podman or apptainer) is not in the dict at all, because the executing host chooses it, so a result computed under one runtime is a cache hit under another. For work that must be reproducible, name the image by digest, `name@sha256:…` (`contracts/environments.md`, *Identity and caching*).
 - Source code lives in the plain key `code`, and the code language lives in `__language__` (load-bearing) → changing either is a cache miss. The same `code` bytes interpreted as Python versus bash are *different computations* and must not alias to one cache key.
+- The handler of a handler language lives in `__handler__`, and the backend it runs the code with lives in `__meta__` (both orthogonal) → R code that was run by an `Rscript` process and the same code run by R embedded in the Python process share one cached result.
 
 This split is the heart of the identity model: load-bearing keys capture the "what to run" identity, orthogonal keys capture the "how to run" envelope. An agent must not move load-bearing data into the orthogonal set to avoid cache misses — doing so corrupts the identity model by aliasing distinct computations to one key.
+
+### Handler languages: `__handler__` and the neutral `__format__` entry
+
+A transformation in a handler language, such as R or Julia, is run by a **handler**: a Python function that receives the code and the pins (`contracts/handler-languages.md`). Such a transformation has two keys that the split above must place.
+
+**`__handler__` is orthogonal.** It holds the checksum of the handler's source text.
+
+- It travels with the transformation, so a process that never registered the handler can run it.
+- It is outside the checksum. Identity sees the language *name*, in `__language__`. Replacing a handler, or upgrading it, is not a cache miss.
+- This puts an obligation on handlers: two handlers registered under one name must give the same result for the same code and inputs. Seamless does not check it.
+- The handler's settings are orthogonal too. They are its metavars, in `__meta__`, and the `BACKEND` that selects how the code is run is one of them. The handler contract guarantees that both backends of a language give the same result bit for bit whenever both succeed (`contracts/handler-languages.md`, *Backend parity*). That guarantee is what makes the backend orthogonal rather than load-bearing.
+
+**`__format__` gets a neutral entry.** For every pin of celltype `mixed`, `plain`, `text`, `bytes` or `binary`, the dict carries:
+
+```json
+{"filesystem": {"mode": "file", "optional": true}, "celltype": "<the pin's celltype>"}
+```
+
+- The entry says that the pin *may* be handed to the handler as a file. That happens when the pin's buffer is on file where the transformation runs. Otherwise the handler gets the value (`contracts/handler-languages.md`, *Pins on file*).
+- `__format__` is load-bearing, so the entry is in the checksum. It is **neutral**: every transformation of every handler language carries it for every such pin, whichever form is delivered and on whichever machine. It adds nothing to identity beyond the language and the pin celltypes, which are in the checksum already.
+- Identity therefore does not depend on where a buffer is stored, and neither does the result: both forms hold the same bytes.
 
 ## Forcing recomputation / auditing
 

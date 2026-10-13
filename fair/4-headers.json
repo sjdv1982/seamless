@@ -1,0 +1,35 @@
+{
+  "@context": "https://w3id.org/seamless/dataset/v1",
+  "id": "https://example.org/datasets/pdb-headers/2026-10-07",
+  "type": "Dataset",
+  "isVersionOf": "https://example.org/datasets/pdb-headers",
+  "version": "2026-10-07",
+  "created": "2026-10-09",
+  "description": "Header section of every entry, one JSON document per entry.",
+  "distribution": {
+    "id": "nih:sha-256;cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+    "type": "Distribution",
+    "checksum": {
+      "algorithm": "sha256",
+      "checksumValue": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+    },
+    "celltype": "deepcell",
+    "byteSize": 1000,
+    "keys": 10,
+    "totalByteSize": 20000,
+    "derivedFrom": [
+      {
+        "id": "nih:sha-256;aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "celltype": "deepfolder",
+        "seeAlso": "https://example.org/datasets/pdb/2026-10-07"
+      }
+    ],
+    "createdWith": {
+      "id": "https://git.example.org/lab/pdb-headers/blob/0123456789abcdef0123456789abcdef01234567/build_headers.py",
+      "checksum": {
+        "algorithm": "sha256",
+        "checksumValue": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
+      }
+    }
+  }
+}

@@ -40,6 +40,7 @@ Contract pages (hand-maintained, normative):
 - `contracts/seamless-run-and-argtyping.md`
 - `contracts/modules-and-closures.md`
 - `contracts/execution-backends.md`
+- `contracts/environments.md`
 - `contracts/execution-records.md`
 - `contracts/service-management.md`
 - `contracts/content-addressed-files-and-dirs.md`
@@ -47,6 +48,7 @@ Contract pages (hand-maintained, normative):
 - `contracts/compression.md`
 - `contracts/compiled-transformers.md`
 - `contracts/compiled-pins.md`
+- `contracts/handler-languages.md`
 - `contracts/seamless-signature-schema.md`
 
 Repo docs (source snapshots and implementation notes):

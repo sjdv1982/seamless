@@ -1,0 +1,107 @@
+{
+  "@context": {
+    "@version": 1.1,
+    "dcat": "http://www.w3.org/ns/dcat#",
+    "dct": "http://purl.org/dc/terms/",
+    "prov": "http://www.w3.org/ns/prov#",
+    "pav": "http://purl.org/pav/",
+    "spdx": "http://spdx.org/rdf/terms#",
+    "rdfs": "http://www.w3.org/2000/01/rdf-schema#",
+    "xsd": "http://www.w3.org/2001/XMLSchema#",
+    "sds": "https://w3id.org/seamless/dataset#",
+    "id": "@id",
+    "type": "@type",
+    "Dataset": "dcat:Dataset",
+    "Distribution": "dcat:Distribution",
+    "title": "dct:title",
+    "description": "dct:description",
+    "landingPage": {
+      "@id": "dcat:landingPage",
+      "@type": "@id"
+    },
+    "license": {
+      "@id": "dct:license",
+      "@type": "@id"
+    },
+    "isVersionOf": {
+      "@id": "dct:isVersionOf",
+      "@type": "@id"
+    },
+    "version": "dcat:version",
+    "previousVersion": {
+      "@id": "dcat:previousVersion",
+      "@type": "@id"
+    },
+    "issued": {
+      "@id": "dct:issued",
+      "@type": "xsd:date"
+    },
+    "created": {
+      "@id": "dct:created",
+      "@type": "xsd:date"
+    },
+    "retrievedFrom": {
+      "@id": "pav:retrievedFrom",
+      "@type": "@id"
+    },
+    "retrievedOn": {
+      "@id": "pav:retrievedOn",
+      "@type": "xsd:dateTime"
+    },
+    "distribution": {
+      "@id": "dcat:distribution",
+      "@type": "@id"
+    },
+    "checksum": "spdx:checksum",
+    "algorithm": {
+      "@id": "spdx:algorithm",
+      "@type": "@vocab",
+      "@context": {
+        "sha256": "spdx:checksumAlgorithm_sha256"
+      }
+    },
+    "checksumValue": {
+      "@id": "spdx:checksumValue",
+      "@type": "xsd:hexBinary"
+    },
+    "celltype": {
+      "@id": "dct:conformsTo",
+      "@type": "@vocab",
+      "@context": {
+        "@vocab": "https://w3id.org/seamless/celltype/"
+      }
+    },
+    "byteSize": {
+      "@id": "dcat:byteSize",
+      "@type": "xsd:nonNegativeInteger"
+    },
+    "keys": {
+      "@id": "sds:keys",
+      "@type": "xsd:nonNegativeInteger"
+    },
+    "totalByteSize": {
+      "@id": "sds:totalByteSize",
+      "@type": "xsd:nonNegativeInteger"
+    },
+    "derivedFrom": {
+      "@id": "prov:wasDerivedFrom",
+      "@type": "@id"
+    },
+    "createdWith": {
+      "@id": "pav:createdWith",
+      "@type": "@id"
+    },
+    "seeAlso": {
+      "@id": "rdfs:seeAlso",
+      "@type": "@id"
+    },
+    "format": {
+      "@id": "dct:format",
+      "@type": "@id"
+    },
+    "source": {
+      "@id": "dct:source",
+      "@type": "@id"
+    }
+  }
+}

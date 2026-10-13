@@ -157,6 +157,27 @@ With `pure_dask: true`, the `distributed.Client` is available directly after `se
 
 If you later want to adopt Seamless caching for specific steps, you can do so incrementally: remove `pure_dask: true` from the daskserver definition, add `seamless-dask` to the worker conda environment, and wrap those steps with `direct` or `delayed`.
 
+### Bash transformer environments on compute nodes
+
+For a bash transformation submitted to `remote: daskserver`, the runtime and
+image must be available on the worker node. Load Apptainer and set its image
+directory in the queue's `job_script_prologue`:
+
+```yaml
+hpc:
+  queues:
+    standard:
+      job_script_prologue:
+        - module load apptainer
+        - export SEAMLESS_CONTAINER_RUNTIME=apptainer
+        - export SEAMLESS_APPTAINER_DIR=/scratch/seamless/apptainer
+```
+
+Then a bash transformer can use `tf.environment.set_docker({"name": "ubuntu:22.04"})`,
+or submit a command with `seamless-run --docker ubuntu:22.04 ...`. The image
+must already exist as a SIF file under `SEAMLESS_APPTAINER_DIR`; this setting
+does not build or download it.
+
 ## Manual HPC execution
 
 Sometimes full remote execution is the wrong abstraction.

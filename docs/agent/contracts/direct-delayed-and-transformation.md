@@ -29,7 +29,7 @@ If you call the same transformer again with the same explicit inputs, Seamless m
 
 **The `direct` and `delayed` decorators both return a Transformer.** They do not return a Transformation and do not execute the decorated function at decoration time. Builder state, pins, binding and the mode-independent `build()` / `transformation()` operation are `contracts/transformers.md`. Calling the returned Transformer applies the call mode below. Callable versus signature-less pin declaration is `contracts/pins.md`, and compiled builders are `contracts/compiled-transformers.md`.
 
-Both functions are Python-only and accept exactly one argument: a Python function or an existing ordinary Transformer to clone into the requested call mode. They have no `language` argument. Bash and compiled builders are constructed with the `Transformer(...)` factory described in `contracts/transformers.md`.
+Both functions are Python-only and accept exactly one argument: a Python function or an existing ordinary Transformer to clone into the requested call mode. They have no `language` argument. Bash, handler-language (R, Julia) and compiled builders are constructed with the `Transformer(...)` factory described in `contracts/transformers.md`.
 
 ## `direct`
 

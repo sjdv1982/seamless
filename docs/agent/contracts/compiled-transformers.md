@@ -204,12 +204,16 @@ define_compiled_language(
 
 ## Environment
 
-`tf.environment` is an `Environment` object that controls the execution environment of the transformation worker:
+`tf.environment` is an `Environment` object. Every Transformer has one, and for a compiled transformer it offers less than for a bash transformer:
 
-- `set_conda_env("myenv")` — activate a named conda environment.
-- `set_conda(yaml_text)` — provide a full conda spec (YAML with `dependencies`).
-- `set_docker({"name": "image:tag"})` — run inside a Docker container.
-- `set_which(["gcc", "make"])` — assert that these binaries are on PATH.
+- `set_which(["gcc", "make"])` — assert that these binaries are on the `PATH` of the process that runs the transformation.
+- `set_conda(yaml_text)` — store a full conda spec (YAML with `dependencies`). It travels with the transformation, and execution does not act on it.
+
+**A compiled transformer cannot run in a conda environment or in a container.** The compiled call runs inside the worker process, and that process cannot be wrapped.
+
+- `set_conda_env("myenv")` and `set_docker({"name": "image:tag"})` apply to bash transformers only (`contracts/environments.md`).
+- A compiled Transformer that has either fails when its Transformation is built, and a transformation dict that carries either fails before the call. The message says that the two settings apply to bash transformers only.
+- A compiled transformer that needs other compilers or libraries gets them from the environment that its worker process runs in.
 
 These settings propagate to the worker as part of the transformation's `__env__` dunder, which is excluded from the cache key (execution-only, not determinant).
 

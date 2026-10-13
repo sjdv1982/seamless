@@ -35,9 +35,11 @@ nav:
       - Cache Storage and Limits: contracts/cache-storage-and-limits.md
       - Content-addressed Files and Dirs: contracts/content-addressed-files-and-dirs.md
       - Execution Backends: contracts/execution-backends.md
+      - Environments: contracts/environments.md
       - Execution Records: contracts/execution-records.md
       - Service Management: contracts/service-management.md
       - Compression: contracts/compression.md
       - Compiled Transformers: contracts/compiled-transformers.md
       - seamless-signature Schema: contracts/seamless-signature-schema.md
+      - Handler Languages: contracts/handler-languages.md
   - API (generated): api/

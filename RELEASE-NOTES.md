@@ -122,8 +122,7 @@ pin-to-argument binding, not only to compilation.
 Environment declarations remain outside identity. A fresh `Environment()`
 contributes nothing, and the ambient conda/shell environment is not
 auto-captured. `__env__` is written only for a non-empty explicit environment: a
-conda spec, a conda env name, a Docker image, a required-binaries `which` list, or
-`powers` (`tf.environment.set_*`, or CLI `--conda` / `--docker-image`).
+conda spec, a conda env name, a Docker image, or a required-binaries `which` list.
 
 If a result truly depends on the runtime environment, declare that dependency
 explicitly as an input. With `__env__` outside the cache key, identical code and

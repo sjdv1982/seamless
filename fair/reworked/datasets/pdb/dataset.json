@@ -1,0 +1,11 @@
+{
+  "@context": "../context.json",
+  "id": "",
+  "type": "Dataset",
+  "title": "Protein Data Bank archive, mmCIF entries",
+  "description": "All entries of the wwPDB archive, one mmCIF file per entry, indexed as a Seamless deepfolder.",
+  "landingPage": "https://www.wwpdb.org/",
+  "license": "https://creativecommons.org/publicdomain/zero/1.0/",
+  "source": "rsync://rsync.rcsb.org:33444/ftp_data/structures/divided/mmCIF/",
+  "createdWith": "../../workflow/mirror-pdb.sh"
+}
