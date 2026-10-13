@@ -13,9 +13,14 @@ decorate Python functions only, and `seamless-run` wraps commands, as before
 (*Faces*).
 
 This page owns the handler API, what a handler receives, what R and Julia code
-sees and returns, the two backends of each language and their parity, and
-where the handler and the backend sit in transformation identity. Other pages
-own the rest:
+sees and returns, what each backend of each language runs and needs and their
+parity, the checksum classes of R and Julia, and where the handler and the
+backend sit in transformation identity. Other pages own the rest:
+
+- the two kinds of language backend, `BACKEND`, the environment rule and the
+  two public functions that carry it: [Language
+  backends](language-backends.md);
+- deep pins and deep results: [Deep celltypes](deep-celltypes.md);
 
 - builder modes, building, binding and the named work methods:
   [Transformers](transformers.md);
@@ -184,23 +189,28 @@ unchanged.
 
 ## Backends
 
-Each of the two languages has two **backends**: two ways to run the code. The
-metavariable `BACKEND` selects one.
+Each of the two languages has two **backends**: a CLI backend and an
+in-memory backend ([Language backends](language-backends.md)). The
+metavariable `BACKEND` selects one, with the values `"cli"` and `"mem"`.
 
-| Language | CLI backend, the default | In-memory backend |
+| Language | `"cli"`, the default | `"mem"` |
 |---|---|---|
-| `r` | `"Rscript"`: an `Rscript` process per run | `"ryp"`: R embedded in the Python process, through `ryp` |
-| `julia` | `"julia"`: a `julia` process per run | `"juliacall"`: Julia embedded in the Python process, through `juliacall` |
+| `r` | an `Rscript` process per run | R embedded in the Python process, through `ryp` |
+| `julia` | a `julia` process per run | Julia embedded in the Python process, through `juliacall` |
 
 ```python
 tf = Transformer("r")
-tf.metavars.BACKEND          # "Rscript"
-tf.metavars.BACKEND = "ryp"
+tf.metavars.BACKEND          # "cli"
+tf.metavars.BACKEND = "mem"
 ```
 
 - **`tf.metavars` has the names that the handler declared.** Reading one gives
   the value that was set, or else the handler's default. Any other name
   raises, on read and on write. The exception class is not specified.
+- **`BACKEND` accepts `"cli"` and `"mem"`, and nothing else.** Any other value
+  is refused when it is assigned, and nothing is stored. The names of the
+  tools, such as `"Rscript"` or `"juliacall"`, are not values. A value that
+  arrives in a transformation dict fails when the transformation runs.
 - **A build writes every metavar into the Transformation**, defaults included,
   under `meta["metavars"]`.
 - **The backend is not part of the transformation's identity** (*Identity and
@@ -213,18 +223,19 @@ tf.metavars.BACKEND = "ryp"
 
 What a backend needs on the machine that runs the transformation:
 
-| Backend | Needs |
-|---|---|
-| `Rscript` | `Rscript` on the `PATH`; the R packages `RcppCNPy` and `jsonlite` |
-| `ryp` | the Python package `ryp`, with R and the R package `arrow`; the R package `jsonlite` |
-| `julia` | `julia` on the `PATH`; the Julia packages `NPZ` and `JSON` in the active project |
-| `juliacall` | the Python package `juliacall`; the Julia package `JSON` in the project that `juliacall` uses |
+| Language | `"cli"` needs | `"mem"` needs |
+|---|---|---|
+| `r` | `Rscript` on the `PATH`; the R packages `RcppCNPy` and `jsonlite` | the Python package `ryp`, with R and the R package `arrow`; the R package `jsonlite` |
+| `julia` | `julia` on the `PATH`; the Julia packages `NPZ` and `JSON` in the active project | the Python package `juliacall`; the Julia package `JSON` in the project that `juliacall` uses |
 
 - **Seamless installs none of these.** A tool or a package that is missing is
   a failure of the transformation.
 - **The machine that runs the transformation needs them, not the one that
   builds it**, unless they are the same. Which machine runs it follows from
   the execution backend ([Execution backends](execution-backends.md)).
+- **Under a CLI backend with a Docker image, the image needs them.** A
+  conda environment needs them too, where the transformer has one
+  (*Environments*).
 
 ### CLI backends
 
@@ -236,8 +247,9 @@ What a backend needs on the machine that runs the transformation:
   signalled.
 - **The interpreter does not read the user's startup files.** The commands are
   `Rscript --vanilla` and `julia --startup-file=no`.
-- **The transformer's conda environment is activated first**, when it has one
-  (*Environments*).
+- **The transformer's environment is entered first**, when it has one: its
+  conda environment is activated, or the interpreter is started in a container
+  made from its Docker image (*Environments*).
 - **One run at a time per process, by default**, because the run takes the
   process lock. With `tf.process_lock = False`, several run side by side in
   one process. Each has its own interpreter process, so they share no
@@ -300,14 +312,23 @@ succeed.**
   the in-memory backends too.
 - **There is no fallback encoding.** A backend that cannot carry a value fails.
   It never substitutes another representation.
+- **A deep pin has the same form under both backends**, and a deep result has
+  the same member rule (*Deep celltypes and checksum objects*). Code that
+  filters the keys of a `deepcell` pin and returns the rest gives the same
+  result under both.
+- **A path is observable.** A `deepfolder` pin gives the same strings under
+  both backends on one machine, and another machine gives other strings. Code
+  whose result depends on the string, or on the stored form of the member, and
+  not on the member's bytes, is not covered by the guarantee.
 
 Cases where one backend fails and the other succeeds:
 
 | Case | CLI backend | In-memory backend |
 |---|---|---|
 | A `mixed` pin whose value combines arrays and plain data: a buffer in the Seamless-mixed format ([Celltypes and conversion](celltypes-and-conversion.md)) | fails | accepted |
-| R: a `float32` array, or an array with more than two dimensions (*Array rules*) | `Rscript` fails | `ryp` accepts supported element types |
+| R: a `float32` array, or an array with more than two dimensions (*Array rules*) | fails | accepts supported element types |
 | A conda environment that is not the one of the process that runs the transformation (*Environments*) | runs, in that environment | fails |
+| A Docker image (*Environments*) | runs, in a container | fails |
 
 **The guarantee is about the handler, not about the code.** Code that is not
 a pure function of its pins is not made reproducible by it (*Isolation and
@@ -322,7 +343,11 @@ backends report the same failure in different words.
 | `plain`, and `mixed` whose buffer is JSON | what `jsonlite::fromJSON` returns | what `JSON.parse` returns |
 | `bytes` | a raw vector | a `Vector{UInt8}` |
 | `binary`, and `mixed` whose buffer is an array | a double or logical vector or array (*Array rules*) | an `Array` (*Array rules*) |
-| `int`, `float`, `bool`, `str`, and every other celltype that is not deep | as `plain` | as `plain` |
+| `int`, `float`, `bool`, `str`, and every other celltype that is neither deep nor `checksum` | as `plain` | as `plain` |
+| `folder` | a named list of raw vectors, one for each member's bytes | a `Dict{String, Vector{UInt8}}` |
+| `deepfolder` | a named list of strings, one path for each member | a `Dict{String, String}` |
+| `deepcell` | a named list of checksum objects | a `Dict{String, Checksum}` |
+| `checksum` | a checksum object | a `Checksum` |
 
 - **A `mixed` pin is read by what its buffer is**: an array, JSON, or a
   Seamless-mixed buffer that holds both. The handler looks at the first
@@ -331,7 +356,9 @@ backends report the same failure in different words.
   Its plain parts follow the JSON rule, and its arrays the array rule.
 - **`text` and `str` differ.** A `text` pin is the text itself. A `str` pin is
   a JSON string, and reaches the code through the JSON parser.
-- **`deepcell`, `deepfolder` and `folder` pins are refused** by both handlers.
+- **A deep pin has the same form under both backends** (*Deep celltypes and
+  checksum objects*). The code never sees a directory or a file for a `folder`
+  pin.
 - **The value is the same whether the pin arrived as a value or as a file**
   (*Pins on file*).
 
@@ -341,6 +368,8 @@ backends report the same failure in different words.
 |---|---|
 | anything, when the result celltype is `bytes` | raw bytes |
 | a numeric array, when the result celltype is `binary` or `mixed` | a C-contiguous NumPy array |
+| a named list or a `Dict` with string keys, when the result celltype is `deepcell` or `folder` | that dict, each member a value or a checksum object (*Deep celltypes and checksum objects*) |
+| a checksum object or a string of 64 hexadecimal characters, when the result celltype is `checksum` | that checksum |
 | anything else | the value that Python parses from the runtime's JSON encoding of it |
 
 - **Seamless serializes the returned value under the result celltype**, as it
@@ -352,7 +381,79 @@ backends report the same failure in different words.
   result that is itself an array is returned as an array. The R and the Julia
   handler never return a value that combines arrays and plain data.
 - **A value that the runtime cannot encode fails the transformation.**
-- **`deepcell` and `folder` results are refused** by both handlers.
+- **A checksum object is returned only as a member of a `deepcell` or `folder`
+  result, or as a `checksum` result.** Returned under any other result
+  celltype it fails the transformation.
+- **A `deepfolder` result is refused**, as for every transformer
+  ([Deep celltypes](deep-celltypes.md), *The output side*).
+
+## Deep celltypes and checksum objects
+
+Deep pins and deep results are accepted under both backends. Their forms are
+those that every non-bash backend gives
+([Deep celltypes](deep-celltypes.md), *How deep values reach a transformer*), in
+the forms of R and Julia:
+
+| Pin | R | Julia |
+|---|---|---|
+| `folder` | a named list of raw vectors | a `Dict{String, Vector{UInt8}}` |
+| `deepfolder` | a named list of path strings | a `Dict{String, String}` |
+| `deepcell` | a named list of checksum objects | a `Dict{String, Checksum}` |
+| a `deepfolder` or `deepcell` source, declared `plain` | a named list of 64-hex strings | a `Dict{String, String}` of 64-hex strings |
+
+- **The keys are the keys of the index**, which may contain `/`. An empty index
+  is an empty named list or `Dict`.
+- **A `folder` pin holds every member's bytes in memory.** The process that
+  runs the transformation resolves the members, from any buffer source, before
+  the code runs.
+- **A `deepfolder` pin gives paths, and resolves nothing.** Each path is the
+  member's buffer file in a read-buffer directory of the machine that runs the
+  transformation, as stored. A path that ends in `.zst` or `.gz` holds the
+  member compressed, and the code decompresses it. A `deepfolder` pin whose
+  members are not all on disk there fails the transformation, and no buffer
+  server is asked. Under a CLI backend in a container, a buffer file that the
+  container cannot read counts as not on disk ([Deep
+  celltypes](deep-celltypes.md)).
+- **A `deepcell` pin resolves nothing, and the code cannot resolve it.** Its
+  members are checksums. The class of R and of Julia carries a checksum and
+  has no access to a buffer. The pin serves to select members and to pass them
+  on, for example in a `deepcell` result.
+- **Declaring the pin `plain`** hands the code the index as data: strings, not
+  objects. A string that is returned from it is a value (*Results*, below).
+
+**Results.** The code returns the dict itself, and Seamless packs it into an
+index ([Deep celltypes](deep-celltypes.md), *The output side*).
+
+- **A member is a value unless it is a checksum object.** A string of 64
+  hexadecimal characters is a value, like any other string. Code that wants to
+  return a checksum wraps the string in the checksum class.
+- **A member that is a value is classified as an ordinary result is** in that
+  language: by the rule of a `mixed` result for a `deepcell`, and by the rule
+  of a `bytes` result for a `folder`.
+- **A member that is a checksum object is inserted into the index as it is.**
+  Nothing checks that the buffer exists.
+
+### Checksum classes
+
+Each language has a class that holds a checksum. It exists under both
+backends, and the runtime puts its functions in the scope of the code.
+
+| | R | Julia |
+|---|---|---|
+| Make one from a string | `seamless_checksum("…")` | `Checksum("…")` |
+| Test for one | `is_seamless_checksum(x)` | `x isa Checksum` |
+
+- **It is made from a string of 64 lowercase hexadecimal characters.** Any
+  other value is an error.
+- **It can be tested for, converted to its string, compared and printed.** Two
+  objects with the same string are equal. It can be told from a plain string.
+- **It cannot resolve.** The class carries the checksum and no access to a
+  buffer. Python code has `Checksum.resolve()`, and R and Julia code has
+  nothing like it.
+- **A `checksum` pin is one such object**, and a `checksum` result accepts one,
+  or a string of 64 hexadecimal characters.
+- **Plain data holds no objects.** A `plain` pin that is a dict of checksums
+  holds strings.
 
 ## Array rules
 
@@ -373,8 +474,9 @@ rounded. Both R backends apply the same conversion.
 - **R dimensions:** a one-dimensional input becomes a vector; an input with
   two or more dimensions retains those dimensions. A returned vector of
   length one without dimensions is a scalar.
-- **Rscript restrictions:** `float32` inputs and arrays with more than two
-  dimensions are refused. `ryp` accepts them under the normalization above.
+- **R CLI backend restrictions:** `float32` inputs and arrays with more than
+  two dimensions are refused. The R in-memory backend accepts them under the
+  normalization above.
 - **Returned arrays:** R numeric and integer arrays become NumPy `float64`,
   and logical arrays become NumPy `bool`. Julia boolean, signed integer,
   unsigned integer and floating arrays become NumPy `bool`, `int64`,
@@ -418,7 +520,7 @@ The file holds the buffer, byte for byte:
 - **The R and the Julia handler convert either form.** The code sees the same
   native value, and cannot tell the forms apart.
 - **Other pins always arrive as values.** `deepcell`, `deepfolder` and `folder`
-  pins arrive as they do for any transformation
+  pins arrive in the forms of *Deep celltypes and checksum objects*
   ([Deep celltypes](deep-celltypes.md), *How deep values reach a
   transformer*).
 
@@ -497,7 +599,11 @@ tf()                                      # -> "Hello, world!"
   those, by keyword. A parameter of another name, a positional-only parameter,
   `*args` and `**kwargs` are refused at registration.
 - **`metavars` maps each metavar that the handler understands to its
-  default.** These names are the ones that `tf.metavars` accepts.
+  default.** These names are the ones that `tf.metavars` accepts. A handler
+  that has both a CLI and an in-memory backend declares `BACKEND` among them,
+  with the default `"cli"` or `"mem"`. The builder refuses any other value of a
+  metavar of that name when it is assigned ([Language
+  backends](language-backends.md), *Selecting a backend*).
 - **`name` must not be a native or a compiled language.**
 - **Registering a name again replaces its handler.** Transformations that are
   built afterwards carry the new one.
@@ -513,7 +619,7 @@ tf()                                      # -> "Hello, world!"
 | `output_name` | the name of the result. For a Transformer it is `result` |
 | `output_celltype` | the result celltype |
 | `metavars` | a dict of every declared metavar: the transformer's value, or else the registered default |
-| `environment` | the transformer's environment, as a dict, with keys such as `conda_environment` and `docker`. It is empty when none is set |
+| `environment` | the transformer's environment, as a dict, with keys such as `conda_environment` and `docker`. It is empty when none is set. A handler honours it through one of the two public functions (*Honouring the environment*) |
 | `process_lock` | a bool: whether this run took the process lock |
 
 - **`pins` holds the input pins only.** The code is not in it.
@@ -523,6 +629,32 @@ tf()                                      # -> "Hello, world!"
   celltype, as it does for a Python transformer.
 - **An exception that the handler raises is the failure of the
   transformation.**
+
+### Honouring the environment
+
+A handler honours its `environment` argument, or the transformation does not
+honour it. Seamless offers two public functions, in
+`seamless_transformer.languages`
+([Language backends](language-backends.md), *The two public functions*):
+
+| The handler runs the code | It calls |
+|---|---|
+| in the Python process that runs the transformation, as an embedded interpreter | `check_in_memory_environment(environment, language)` before it runs the code |
+| as a process of its own | `execute_cli(command, pins_, PINS, FILESYSTEM, OUTPUTPIN, environment)` in place of starting the process itself |
+
+- **`check_in_memory_environment` raises** for a Docker image, and for a conda
+  environment that is not the one of the process. It also looks the names of
+  `set_which` up on the process's `PATH`.
+- **`execute_cli` wraps** a conda environment and a Docker image, looks
+  `set_which` up inside the environment, and is cancelled and torn down with
+  the transformation. A handler that starts a process itself gets none of it.
+- **A handler returns a Python value.** For a deep result that is a dict whose
+  members are values or `seamless.Checksum` objects. Nothing else is asked of
+  it.
+- **Both functions can be called outside a running transformation**, for
+  example when a test calls the handler directly.
+- **Nothing enforces it.** A handler that calls neither function ignores the
+  environment, and gets no `which` check.
 
 ### The handler travels with the transformation
 
@@ -564,11 +696,11 @@ tf()                                      # -> "Hello, world!"
   each of its processes about once a second, and restarts one that does not
   answer. A call into an embedded interpreter that keeps the GIL for several
   seconds makes the process miss that check: the worker is restarted, and the
-  transformation fails. The `juliacall` backend runs the Julia code with the
-  GIL released.
+  transformation fails. The Julia in-memory backend (`juliacall`) runs the
+  Julia code with the GIL released.
 - **Whether `run_in_interpreter_thread` stays has not been ruled.** The
-  `juliacall` backend uses it, and the `ryp` backend does not. Do not rely on
-  which thread runs R or Julia code.
+  Julia in-memory backend uses it, and the R in-memory backend does not. Do
+  not rely on which thread runs R or Julia code.
 
 ## Logs, failures and cancellation
 
@@ -600,43 +732,70 @@ tf()                                      # -> "Hello, world!"
 ## Environments
 
 A transformer's environment ([Environments](environments.md)) is honoured, or
-the transformation fails. It is never ignored. What a backend can honour
-differs:
+the transformation fails. It is never ignored. [Language
+backends](language-backends.md), *Environments*, has the rule. For R and
+Julia:
 
 | The transformer has | CLI backend | In-memory backend |
 |---|---|---|
 | a conda environment | activates it, and starts the interpreter in it | runs only when its process is already in exactly that environment. Otherwise the transformation fails |
-| a Docker image | not specified | the transformation fails |
+| a Docker image | starts the interpreter in a container made from the image | the transformation fails |
+| both | refused at dispatch | refused at dispatch |
 
 - **A CLI backend runs in the transformer's conda environment**, when
   `tf.environment.set_conda_env(...)` names one. The environment is activated
   before the interpreter starts, as for a bash transformation. This is how a
   transformer chooses its R or Julia installation.
+- **A CLI backend runs in a container**, when `tf.environment.set_docker(...)`
+  names an image. The image must hold the interpreter and the packages of the
+  backend (*What a backend needs*). The host does not need R or Julia. The
+  runtime, the image pull policy and the other settings are those of bash
+  transformations ([Environments](environments.md), *The runtime is chosen
+  where the job runs*).
 - **An in-memory backend cannot enter an environment.** Its interpreter is the
   one embedded in the process that runs the transformation. A conda
   environment is therefore a requirement on that process: the process must
-  already be running in exactly the environment that the transformer names.
-  The calling process must be in it in `process` mode, and the worker
-  processes otherwise. When it is not, the transformation fails.
-- **An in-memory backend fails for a Docker image**, always.
+  already be running in exactly the environment that the transformer names. A
+  specification that contains `/` is a path, compared with the process's
+  `CONDA_PREFIX`. Any other specification is a name, compared with its
+  `CONDA_DEFAULT_ENV`. The calling process must be in it in `process` mode,
+  and the worker processes otherwise. When it is not, the transformation
+  fails.
+- **An in-memory backend fails for a Docker image**, always. The message names
+  `BACKEND="cli"` as the alternative.
 - **The checks run when the transformation runs.** A result that is already
-  recorded is returned without them.
-- **What a CLI backend does with a Docker image is not specified.** Do not set
-  one and rely on the outcome.
-- **For the `julia` backend, the Julia project is the one that `JULIA_PROJECT`
-  selects** in the environment of the process that runs the transformation.
+  recorded is returned without them, and building never fails for an
+  environment.
+- **The Julia project of a CLI job** is the tracked Seamless Julia project.
+  Seamless stages its `Project.toml` and `Manifest.toml` in the job directory
+  and starts Julia with `--project=.`. `JULIA_PROJECT` does not select another
+  project. The job uses a writable depot in its own directory first, followed
+  by the depots named by `JULIA_DEPOT_PATH`, the conda installation's packaged
+  depot when present, and the user's depot. In a container the image must name
+  its packaged depot with `JULIA_DEPOT_PATH`, readable by the host user who
+  runs the job. Its precompiled packages must be compatible with the executing
+  CPU. For `juliacall` the project is the one that `juliacall` uses in the
+  process.
 - **The environment is not part of identity**, here as everywhere.
-- **`tf.environment.set_which([...])` lists binaries that must exist.** For a
-  handler language they are looked up on the `PATH` of the process that runs
-  the transformation, also when a conda environment is set. A binary that
-  exists only inside that environment does not satisfy the check.
+- **`tf.environment.set_which([...])` lists binaries that must exist.** They
+  are looked up where the code runs. For a CLI backend that is inside the
+  environment, after it is entered: a binary that exists only in the
+  environment satisfies the check, and one that exists only on the host does
+  not. For an in-memory backend it is the `PATH` of the process that runs the
+  transformation.
 
 ## Current limitations
 
-- **Deep celltypes are refused.** The R and the Julia handler raise for
-  `deepcell`, `deepfolder` and `folder` pins and results.
-- **The CLI backends cannot take a Seamless-mixed pin.** `Rscript` also
-  refuses `float32` arrays and arrays with more than two dimensions
+- **R and Julia code cannot resolve a checksum.** A `deepcell` pin serves to
+  select and pass on members.
+- **A `folder` pin holds every member in memory at once**, under both
+  backends.
+- **A `deepfolder` pin works only where the buffer directory can be read as
+  files**: on the machine of a locally launched hashserver, or with an extern
+  client that names a directory. On any other host it fails. The code reads
+  the stored form of each member, which can be compressed.
+- **The CLI backends cannot take a Seamless-mixed pin.** The R CLI backend
+  also refuses `float32` arrays and arrays with more than two dimensions
   (*Array rules*).
 - **Isolations are never dropped.** An embedded interpreter keeps every
   `transform()` isolation it has built, and Julia cannot unload a module. A
@@ -666,6 +825,7 @@ differs:
 | Concern | Module / symbol |
 |---|---|
 | The handler API and the registry | `seamless_transformer.languages` (`register_language_handler`, `get_language_handler`, `is_handler_language`, `available_languages`, `run_in_interpreter_thread`) |
+| The two functions that honour an environment | `seamless_transformer.languages` (`check_in_memory_environment`, `execute_cli`) |
 | The R and the Julia handler | `seamless_transformer.languages.handlers` (`r`, `julia`) |
 | Builders | `seamless_transformer.transformer_class` (`HandlerTransformer`, `DirectHandlerTransformer`); they are not public constructors |
 | `__handler__` and the `__format__` entries | `seamless_transformer.pretransformation.direct_transformer_to_pretransformation` |

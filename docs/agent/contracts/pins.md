@@ -81,6 +81,40 @@ Which celltypes a slot accepts (*Verified:* `CelltypesWrapper.__setitem__`):
 
 Setting `pin.celltype` **resets the pin's memoized result and its recorded exception**, so a retype re-derives from the stored input rather than reinterpreting it (*Conversion at the pin*). A retype also obeys the wiring invariant (*Wiring*).
 
+## Pins on file: the `filesystem` entry
+
+A pin can say that it may be handed over as a file or a directory, by an entry in the transformation's `__format__`:
+
+```json
+{"filesystem": {"mode": "file", "optional": true}, "celltype": "<the pin's celltype>"}
+```
+
+- **`__format__` is load-bearing**, so the entry is part of the transformation's identity ([Identity and caching](identity-and-caching.md), *Load-bearing vs orthogonal keys*). It does not depend on where a buffer is stored or on which machine runs the transformation.
+- **Who writes it:**
+
+| Writer | Pins | Entry |
+|---|---|---|
+| a builder, in every language | `folder`, `deepfolder` | mode `directory` |
+| a builder of a handler language | `mixed`, `plain`, `text`, `bytes`, `binary` | mode `file`, optional |
+| `seamless-run` | a file argument, which is a `bytes` pin | mode `file`, optional |
+| `seamless-run` | a directory argument, which is a `folder` pin | mode `directory` |
+
+- **A builder has no setting for it.** A Python or compiled pin cannot ask for an ordinary pin as a file. Only the five celltypes of a handler language, and directories, carry an entry.
+- **What the executing process does.** It looks for the pin's checksum in its **read-buffer directories**: the buffer directories that the process can read as files, which are that of a hashserver that it launched locally, and that of an extern client that names a directory. No server is asked. For mode `file` the buffer is a file `<dir>/<checksum>` or `<dir>/<first two hex digits>/<checksum>`, also with a compression suffix. For mode `directory` the lookup is by member, one file for each key of the pin's index ([Deep celltypes](deep-celltypes.md), *When a member is on disk*).
+  - **Found**: the pin's value is the path, and nothing is read. The handler's `filesystem` entry says so ([Handler languages](handler-languages.md), *The arguments*).
+  - **Not found, mode `file`, not optional**: the transformation fails with a `CacheMissError`, "could not find file".
+  - **Not found, any other case**: the pin is resolved as a value, like a pin without the entry. `optional` is read for mode `file` only. For mode `directory` what happens to a member that is not found is decided by the pin's celltype: a `folder` member is resolved, and a `deepfolder` member fails the transformation.
+- **Which backends hand a pin over as a path.** A handler language receives a path for the five celltypes (*Pins on file* in [Handler languages](handler-languages.md)). A `deepfolder` pin gives paths in every language but bash, where it is a directory of links. A bash job has every file and directory pin written or linked into its job directory ([Environments](environments.md)).
+- **A buffer file that the container cannot follow counts as not found.** It is judged where the job runs in a container ([Deep celltypes](deep-celltypes.md)).
+
+## A transformer's code receives
+
+What a pin gives the code of a transformer is by the pin's celltype and the language backend:
+
+- **A `checksum` pin is a checksum object** in every language that has one: `seamless.Checksum` in Python and the checksum classes of R and Julia ([Handler languages](handler-languages.md), *Checksum classes*). A bash transformer has no objects.
+- **A deep pin** is a dict in every language but bash ([Deep celltypes](deep-celltypes.md), *How deep values reach a transformer*).
+- **A `mixed` pin that is properly mixed**, a buffer in the Seamless-mixed format, is a Python value in memory. Under the Python CLI backend it is read through seamless-core in the job ([Language backends](language-backends.md), *Packages the job needs*).
+
 ## Pins hold checksums, never values
 
 `tf.pins.x = v` is the same operation as `tf.pins.x.set(v)` except for the authority check (*Writes*).

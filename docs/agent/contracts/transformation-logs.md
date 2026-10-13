@@ -131,7 +131,7 @@ Backend semantics are `contracts/execution-backends.md`.
 
 ## What is captured
 
-**Capture works on Python's `sys.stdout` and `sys.stderr`.** Bash commands and compiled transformers get rules of their own, below.
+**Capture works on Python's `sys.stdout` and `sys.stderr`.** Bash commands, the jobs of every other CLI backend (including a Python transformation under `BACKEND="cli"`) and compiled transformers get rules of their own, below.
 
 **Output is attributed to the transformation whose code wrote it.**
 
@@ -152,6 +152,8 @@ Not captured on any backend: output that a Python transformation sends straight 
 
 ### Bash transformations
 
+**What follows holds for every CLI backend**, not for bash only: the CLI backends of R, Julia and Python run their interpreter as a job of the same kind, so the output of the code is captured as the output of a bash script is (`contracts/language-backends.md`). The failure message of such a job is the *Bash transformer exception* report, whatever the language. Its command is the interpreter's.
+
 - **A bash command's stdout and stderr are two separate streams.** Stdout goes to the Standard output section and stderr to the Standard error section.
 - **Both are read together while the command runs**, and relayed line by line. A command that writes a large amount to stderr does not stall.
 - **The log does not record how the two streams interleaved.**
@@ -159,7 +161,7 @@ Not captured on any backend: output that a Python transformation sends straight 
 
 ### Bash transformations with an environment
 
-A bash transformation can run in a conda environment or in a container (`contracts/environments.md`). The rules above hold unchanged:
+A bash transformation can run in a conda environment or in a container (`contracts/environments.md`), and so can every other CLI job. The rules above hold unchanged:
 
 - **The script's stdout and stderr are captured as two streams and relayed line by line while it runs**, under `conda run` and under docker, podman and apptainer alike.
 - **The streams also hold what the launcher itself printed.** After a failing script, `conda run` adds one line of its own to stderr. A container runtime that cannot start the container reports that on stderr.

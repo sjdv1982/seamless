@@ -148,7 +148,10 @@ tf.environment.set_which(["gcc", "gfortran"])  # assert binaries are on PATH
 
 Compiled transformers cannot enter a conda environment or a container. Set up
 the compiler and libraries in the worker's own environment. `set_conda_env`
-and `set_docker` are rejected when the transformation is built.
+is a requirement on the worker process: the transformation runs only when the
+worker is already in exactly that conda environment, and fails otherwise.
+`set_docker` makes the transformation fail when it runs. Neither is checked
+when the transformation is built.
 
 See the [Environment API reference](api/reference/seamless_transformer.transformer_class.md) for all options.
 

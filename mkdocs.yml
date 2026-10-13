@@ -48,6 +48,7 @@ nav:
       - Compiled Pins: contracts/compiled-pins.md
       - seamless-signature Schema: contracts/seamless-signature-schema.md
       - Handler Languages: contracts/handler-languages.md
+      - Language Backends: contracts/language-backends.md
   - API:
       - seamless: api/python/seamless.md
       - seamless.transformer: api/python/seamless.transformer.md

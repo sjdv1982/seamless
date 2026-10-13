@@ -27,6 +27,16 @@ An agent should:
 - prefer explicit specification when guessing is ambiguous
 - avoid relying on CWD surprises; set/record workdir
 
+## Directory arguments and result targets
+
+A directory argument and a set of result targets are both directories that `seamless-run` carries as `folder`, the celltype for a directory whose contents are meant to be materialized ([Deep celltypes](deep-celltypes.md), *In bash*).
+
+- **A directory argument is a `folder` pin.** The directory is uploaded, and the executing host writes it into the job directory from the index and its members, from whichever buffer source holds them. It does not matter whether that host sees the buffer directory of the submitting machine.
+- **A result with result targets is a `folder` result.** `RESULT` is a directory, and each file in it is a member that holds the file's bytes. The index and the downloaded files are as for any `folder` result.
+- **A `folder` pin is not a `deepfolder` pin.** Each entry has the form that the directory's name asks for ([Compression](compression.md), *Directory pins*), and is never a link to a buffer file in another form.
+- **The celltypes are part of the transformation's identity**, through `__format__` and `__output__`.
+- **`seamless-run` is bash.** It has no handler languages, no Python transformers and no `BACKEND`. A command always runs as a CLI job ([Language backends](language-backends.md)).
+
 ## Meta variables (`--metavar`)
 
 `--metavar NAME=VALUE` injects a variable into the bash command environment
@@ -70,7 +80,7 @@ A command can run in a conda environment or in a container. `contracts/environme
 | `--conda ENV` | `--conda-env`, `--conda-environment` | in the named conda environment, as under `conda run -n ENV`. A name that contains `/` is the path of an environment |
 | `--docker IMAGE` | `--docker-image` | in a container made from the Docker image. The container runtime of the executing host starts it: docker, podman or apptainer |
 
-- **The two flags together are refused**, when the arguments are parsed.
+- **The two flags together are refused**, when the command is dispatched and not while the arguments are parsed. The command fails before anything is launched, and the message says to pick one. A command whose result is already cached returns it, and the flags are not looked at ([Language backends](language-backends.md), *The check happens at dispatch*).
 - **Neither flag changes the transformation checksum.** A result that is already cached is returned whatever the flag says, and nothing is launched.
 - **The environment must exist where the command executes.** That host needs the conda environment, or a container runtime and the image. By default no image is pulled.
 - **A command with an environment never falls back to the plain host.** It runs in the environment, or it fails.

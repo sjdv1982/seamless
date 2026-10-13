@@ -10,7 +10,8 @@ This page owns the Transformer as a **builder and workflow handle**. Other pages
 - execution and the immutable Transformation handle: `contracts/direct-delayed-and-transformation.md`;
 - Context assignment and reactive scheduling: `contracts/workflow-context.md`;
 - compiled-language additions: `contracts/compiled-transformers.md`;
-- handler languages, such as R and Julia: `contracts/handler-languages.md`.
+- handler languages, such as R and Julia: `contracts/handler-languages.md`;
+- language backends (CLI and in-memory), `BACKEND`, and what a language does with an environment: `contracts/language-backends.md`.
 
 ## Canonical construction API
 
@@ -73,14 +74,14 @@ The common builder state comprises:
 - the pin declarations, pin celltypes, optional-pin set and pre-bound pin inputs;
 - the result celltype;
 - modules and globals, where the language supports them;
-- metadata, environment, scratch and placement settings. The environment names a conda environment or a Docker image for the script of a bash transformer, and it is outside transformation identity (`contracts/environments.md`);
+- metadata, environment, scratch and placement settings. The environment names a conda environment or a Docker image. A CLI backend runs the code there, and an in-memory backend can only check that its process is already in the conda environment (`contracts/language-backends.md`, *Environments*). It is outside transformation identity (`contracts/environments.md`);
 - the `process_lock` and `driver` flags, which are part of the metadata (*`process_lock` and `driver`*);
 - the streaming flag, which is an interaction feature: it is copied onto each built Transformation, is never part of a snapshot's identity, and is not stored in the durable graph (`contracts/streaming.md`);
 - the call mode: delayed or direct.
 
 Compiled Transformers add schema, header-derived state, compilation configuration, metavariables and additional objects. `contracts/compiled-transformers.md` alone specifies those additions, including which of them affect transformation identity.
 
-Handler-language Transformers add metavariables of their own: `tf.metavars` holds the settings of the language's handler, such as the `BACKEND` that runs R or Julia code. They are part of the metadata and outside transformation identity. `contracts/handler-languages.md` alone specifies them.
+Handler-language Transformers add metavariables of their own: `tf.metavars` holds the settings of the language's handler, such as the `BACKEND` that runs R or Julia code. A Python Transformer has one metavariable, `BACKEND`, with the values `"mem"` (the default) and `"cli"`; it is part of the metadata only when it was set. They are part of the metadata and outside transformation identity. `contracts/handler-languages.md` specifies the handler settings, and `contracts/language-backends.md` specifies `BACKEND`, for Python too.
 
 The Transformer owns the pin collection, but `contracts/pins.md` alone specifies pin names, values, connections, conversion, nulls and optionality.
 
@@ -184,7 +185,7 @@ Two boolean settings say how a transformation's code shares the process that run
 
 This page specifies the two settings: their values, how they are coupled, and where they are stored. What the lock does while a transformation runs is `contracts/execution-backends.md`, *The process lock*. That section also says when a transformation gives the lock up, what a driver's launches get, and how many transformations each backend runs at once.
 
-One kind of transformation cannot run with `process_lock` false: a handler-language transformation whose backend embeds an interpreter in the process. It fails when it runs, and that covers a driver too (`contracts/handler-languages.md`, *The process lock*).
+One kind of transformation cannot run with `process_lock` false: a handler-language transformation whose backend embeds an interpreter in the process. It fails when it runs, and that covers a driver too (`contracts/handler-languages.md`, *The process lock*). A Python or compiled body in memory has no such limit.
 
 | `process_lock` | `driver` | Meaning |
 |---|---|---|
@@ -271,6 +272,8 @@ The rules on this page (modes, binding, pins, snapshots and named work methods) 
 
 The handler-language contract owns what a handler is and receives, how R and Julia code gets its pins and returns its result, the backends and their parity, and the handler's place in transformation identity. See `contracts/handler-languages.md`.
 
+The language-backends contract owns the two kinds of backend, the `BACKEND` setting, the environment rule of each kind and the Python CLI backend. See `contracts/language-backends.md`.
+
 ## Unspecified exception classes
 
 The contract says that each of the following raises. It does not say which exception class, and the author has deferred the question. Tests assert only that an exception is raised. Do not rely on the class.
@@ -294,4 +297,5 @@ The former bound task, read-only result assignment and signature-less call-time 
 - **Pin semantics.** This page names pins as builder state but does not own their declarations, writes, conversions, null rules or failures (`contracts/pins.md`).
 - **Context scheduling.** Reactive invalidation, barriers, speculation and graph serialization belong to `contracts/workflow-context.md` and `contracts/node-state-lifecycle.md`.
 - **Compiled-language semantics.** They belong to `contracts/compiled-transformers.md` and its linked schema and compiled-pin contracts.
-- **Handler-language semantics.** Handlers, the R and Julia value rules, backends and backend parity belong to `contracts/handler-languages.md`.
+- **Handler-language semantics.** Handlers, the R and Julia value rules, the tools that their backends run and their parity belong to `contracts/handler-languages.md`.
+- **Language backends.** The CLI and in-memory kinds, `BACKEND`, what an environment does under each, and the Python CLI backend belong to `contracts/language-backends.md`.
