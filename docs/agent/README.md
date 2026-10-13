@@ -40,6 +40,7 @@ Contract pages (hand-maintained, normative):
 - `contracts/seamless-run-and-argtyping.md`
 - `contracts/modules-and-closures.md`
 - `contracts/execution-backends.md`
+- `contracts/environments.md`
 - `contracts/execution-records.md`
 - `contracts/service-management.md`
 - `contracts/content-addressed-files-and-dirs.md`

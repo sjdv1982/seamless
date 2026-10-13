@@ -111,6 +111,7 @@ Practical consequence: two transformations that differ only in orthogonal values
 
 - Compiler flags live in `__compilation__` (orthogonal) → switching from `-O3` to `-g` does not invalidate the cache.
 - The conda environment name lives in `__env__` (orthogonal) → activating a different environment reuses a cached result if the code and inputs are unchanged.
+- The Docker image of a bash transformation lives in `__env__` as well (orthogonal) → the same script and inputs under another image reuse the cached result, and so does an image tag that was rebuilt upstream. Which container runtime runs the image (docker, podman or apptainer) is not in the dict at all, because the executing host chooses it, so a result computed under one runtime is a cache hit under another. For work that must be reproducible, name the image by digest, `name@sha256:…` (`contracts/environments.md`, *Identity and caching*).
 - Source code lives in the plain key `code`, and the code language lives in `__language__` (load-bearing) → changing either is a cache miss. The same `code` bytes interpreted as Python versus bash are *different computations* and must not alias to one cache key.
 
 This split is the heart of the identity model: load-bearing keys capture the "what to run" identity, orthogonal keys capture the "how to run" envelope. An agent must not move load-bearing data into the orthogonal set to avoid cache misses — doing so corrupts the identity model by aliasing distinct computations to one key.

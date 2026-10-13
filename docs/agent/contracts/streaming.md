@@ -97,7 +97,9 @@ What is streamed is what a worker child captures for the transformation's log
 ([Transformation logs](transformation-logs.md), *What is captured*):
 
 - Python `sys.stdout` and `sys.stderr` writes: live
-- a bash transformation's stdout and stderr: both live, line by line
+- a bash transformation's stdout and stderr: both live, line by line. This
+  holds also for a script that runs in a conda environment or in a container
+  ([Environments](environments.md))
 - a compiled transformer's C-level output: delivered when the compiled call
   returns, not live
 - not streamed: output that a Python transformation writes straight to file

@@ -139,12 +139,16 @@ tf.objects.append(obj)
 
 ## Compiler and environment setup
 
-Use `tf.environment` to control the execution environment:
+Compiled code runs inside the worker process. Use `tf.environment` to check
+that required compiler tools are on the worker's path:
 
 ```python
-tf.environment.set_conda_env("myenv")       # activate a named conda environment
 tf.environment.set_which(["gcc", "gfortran"])  # assert binaries are on PATH
 ```
+
+Compiled transformers cannot enter a conda environment or a container. Set up
+the compiler and libraries in the worker's own environment. `set_conda_env`
+and `set_docker` are rejected when the transformation is built.
 
 See the [Environment API reference](api/reference/seamless_transformer.transformer_class.md) for all options.
 

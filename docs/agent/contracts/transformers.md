@@ -60,7 +60,7 @@ The common builder state comprises:
 - the pin declarations, pin celltypes, optional-pin set and pre-bound pin inputs;
 - the result celltype;
 - modules and globals, where the language supports them;
-- metadata, environment, scratch and placement settings;
+- metadata, environment, scratch and placement settings. The environment names a conda environment or a Docker image for the script of a bash transformer, and it is outside transformation identity (`contracts/environments.md`);
 - the `process_lock` and `driver` flags, which are part of the metadata (*`process_lock` and `driver`*);
 - the streaming flag, which is an interaction feature: it is copied onto each built Transformation, is never part of a snapshot's identity, and is not stored in the durable graph (`contracts/streaming.md`);
 - the call mode: delayed or direct.

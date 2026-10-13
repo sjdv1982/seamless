@@ -49,6 +49,25 @@ A transformation's stdout and stderr are captured on every backend. After a succ
 
 The log's layout, its per-process store, what is and is not captured, and the rules for bash and compiled transformers are `contracts/transformation-logs.md`.
 
+### Environments are entered on the executing host
+
+A bash transformation can name a conda environment or a Docker image, and its script then runs there (`contracts/environments.md`). The **executing host** is the machine on which the script runs. It enters the environment, so it must provide it.
+
+| Backend | Executing host | Its settings are read from |
+|---|---|---|
+| `process`, `spawn` | the submitting machine | the environment of the submitting process |
+| `remote: jobserver` | the jobserver host | the environment the jobserver was started in |
+| `remote: daskserver` | the Dask worker nodes | the queue's `job_script_prologue` |
+
+- **For a conda environment, the executing host needs that environment and a conda launcher.**
+- **For a Docker image, the executing host needs a container runtime and the image.** The runtime is docker, podman or apptainer. The host chooses it, by the setting `SEAMLESS_CONTAINER_RUNTIME` or else by detection. A transformation never names a runtime. By default no image is pulled.
+- **Every backend behaves the same.** The job is wrapped where it executes, and no backend does anything of its own for an environment. A host that cannot enter the environment fails the job. No backend falls back to running the script on the plain host.
+- **A fingertip needs the environment where the buffer is wanted.** A fingertip is never dispatched, so the process that asks for the buffer enters the environment itself (`contracts/scratch-witness-audit.md`, *Fingertipping*).
+- **Python and compiled transformations are never wrapped.** Their code runs inside the process that executes them. A conda environment or a Docker image on one of them is an error, on every backend.
+- **The image spec's `gpus` does not place a job.** It gives the container access to the GPUs of the host on which the job runs. Which host that is follows from the backend and the queue, as for any transformation.
+
+`contracts/environments.md` has the settings, the failures and the limitations.
+
 ### Current limitation: fingertipping in a worker needs Dask
 
 In `spawn` and `remote: jobserver`, a transformation runs in a worker process that cannot see its parent's fingertip candidates: neither the parent's reverse caches nor its database. A fingertip in such a worker tries only the producers that the worker itself launched (nested transformations). If those do not recover the buffer, it raises `NotImplementedError`, and the job fails with that error in its traceback. It does not report a `CacheMissError`, because the search was incomplete.
@@ -110,6 +129,7 @@ Declaring a driver is never needed for correctness, because an undeclared body g
 - **The variable is set only when the body holds the lock as its script starts.** Otherwise the body removes it from the script's environment, so that a nested command never signals a process further up.
 - **The signal works for as long as the script's process runs**, also after the script has closed its stdout and stderr.
 - **The signal is a named pipe on the local filesystem.** The nested command must see the same filesystem as the body, and the signal does not cross `ssh` or a container boundary. A bash body that submits nested work through one of those must be declared a driver, or have `process_lock` false.
+- **A bash body with an environment is a bash body like any other** (`contracts/environments.md`). It takes the lock and holds it until its script ends, so a long container job occupies its process for that time. A script under a conda environment has the variable and is signalled as a plain script is. A script in a container made from the transformation's Docker image is behind a container boundary: the variable is not passed in, and the previous rule applies.
 
 ### Concurrency per backend
 
@@ -129,7 +149,7 @@ The lock is per process, so the number of bodies that run at once follows from t
 ### Current limitations of the process lock
 
 - **Dispatch does not look at the lock.** In a worker pool, a transformation can be given to a worker whose lock is held. It then waits for that lock, and it does not move when another worker becomes free.
-- **A body that hangs blocks its process, not one slot.** Every transformation that is placed in that process afterwards and takes the lock waits behind it. In a worker pool, cancelling the hung transformation terminates its worker process and frees the lock. In `process` mode a cancel does not interrupt a running body, so the lock stays held until the body returns (`contracts/cancellation.md`, *A transformation that waits for the process lock*).
+- **A body that hangs blocks its process, not one slot.** Every transformation that is placed in that process afterwards and takes the lock waits behind it. In a worker pool, cancelling the hung transformation terminates its worker process and frees the lock. In `process` mode a cancel does not interrupt a body that runs inside the process, such as Python code, a compiled call, so the lock stays held until the body returns (`contracts/cancellation.md`, *A transformation that waits for the process lock*). A bash body is different: a cancel kills its script, and the body then returns and frees the lock (`contracts/cancellation.md`, *A bash run that is cancelled*).
 
 ## Expressions are placed, not configured
 
