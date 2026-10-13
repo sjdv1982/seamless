@@ -41,4 +41,5 @@ nav:
       - Compression: contracts/compression.md
       - Compiled Transformers: contracts/compiled-transformers.md
       - seamless-signature Schema: contracts/seamless-signature-schema.md
+      - Handler Languages: contracts/handler-languages.md
   - API (generated): api/

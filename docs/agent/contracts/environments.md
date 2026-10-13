@@ -47,6 +47,17 @@ These rules hold on every face:
   manual*). It runs on the host and it does not fail for the conda environment
   or the image that it carries. A full record can therefore be made for a bash
   job that has an environment.
+- **Handler languages are a separate case.** A transformation in R or Julia is
+  not a bash transformer, and each of the two languages has two backends.
+  - The CLI backend runs the code on the machinery of bash transformations, in
+    the transformer's conda environment. What it does with a Docker image is
+    not specified.
+  - The in-memory backend runs the code inside the process, so it cannot enter
+    an environment. With a conda environment it runs only when its process is
+    already in exactly that environment, and otherwise it fails. With a Docker
+    image it fails.
+
+  [Handler languages](handler-languages.md), *Environments*, has the rules.
 - **A conda environment and a Docker image together are an error.**
   `seamless-run` refuses the two flags together. A Transformer that has both
   fails when its Transformation is built, and a transformation dict that

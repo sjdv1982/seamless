@@ -9,7 +9,8 @@ This page owns the Transformer as a **builder and workflow handle**. Other pages
 - pin behavior: `contracts/pins.md`;
 - execution and the immutable Transformation handle: `contracts/direct-delayed-and-transformation.md`;
 - Context assignment and reactive scheduling: `contracts/workflow-context.md`;
-- compiled-language additions: `contracts/compiled-transformers.md`.
+- compiled-language additions: `contracts/compiled-transformers.md`;
+- handler languages, such as R and Julia: `contracts/handler-languages.md`.
 
 ## Canonical construction API
 
@@ -23,10 +24,12 @@ There are three canonical ways to construct a Transformer in Python:
 
 `Transformer` is a factory class:
 
-- With `compiled=False`, `language` must be `"python"` or `"bash"`. The factory picks the delayed or direct Python/Bash implementation according to `direct`.
+- With `compiled=False`, `language` must be `"python"`, `"bash"` or a **handler language**. `"r"` and `"julia"` are the built-in handler languages, and `register_language_handler` adds more (`contracts/handler-languages.md`). The factory picks the delayed or direct implementation of that language according to `direct`.
 - With `compiled=True`, the factory forwards `language` to the delayed or direct compiled implementation.
 
-The concrete implementation classes are not public constructors. A builder's `language` is fixed at construction and read-only, for Python, Bash and compiled builders alike.
+So there are three kinds of language: native (Python and Bash), handler and compiled. A language name belongs to one kind. `available_languages()` in `seamless_transformer.languages` maps every `language` value that the factory accepts to its kind. Any other value raises, and the message names the three kinds.
+
+The concrete implementation classes are not public constructors. A builder's `language` is fixed at construction and read-only, for Python, Bash, handler-language and compiled builders alike.
 
 The factory is importable from `seamless_transformer`, `seamless.transformer` and `seamless.workflow`; all three names are the same class. `seamless.workflow` also exports `Context` and `Cell`.
 
@@ -42,6 +45,16 @@ tf()                   # -> "hi\n"
 ```
 
 A call-time keyword argument does not declare a pin: `tf(input="hi")` on a builder with no `input` pin does not feed `input` to the Bash code. What happens to such an argument is specified in `contracts/pins.md`.
+
+A handler-language builder is code-less in the same way. Its code is source text in its language, and its pins are declared through `tf.pins`: Seamless reads no signature from R or Julia code.
+
+```python
+tf = Transformer("r", direct=True)
+tf.code = "result <- a + b"
+tf.pins.a = 2
+tf.pins.b = 3
+tf()                   # -> 5
+```
 
 ## The two modes
 
@@ -66,6 +79,8 @@ The common builder state comprises:
 - the call mode: delayed or direct.
 
 Compiled Transformers add schema, header-derived state, compilation configuration, metavariables and additional objects. `contracts/compiled-transformers.md` alone specifies those additions, including which of them affect transformation identity.
+
+Handler-language Transformers add metavariables of their own: `tf.metavars` holds the settings of the language's handler, such as the `BACKEND` that runs R or Julia code. They are part of the metadata and outside transformation identity. `contracts/handler-languages.md` alone specifies them.
 
 The Transformer owns the pin collection, but `contracts/pins.md` alone specifies pin names, values, connections, conversion, nulls and optionality.
 
@@ -169,6 +184,8 @@ Two boolean settings say how a transformation's code shares the process that run
 
 This page specifies the two settings: their values, how they are coupled, and where they are stored. What the lock does while a transformation runs is `contracts/execution-backends.md`, *The process lock*. That section also says when a transformation gives the lock up, what a driver's launches get, and how many transformations each backend runs at once.
 
+One kind of transformation cannot run with `process_lock` false: a handler-language transformation whose backend embeds an interpreter in the process. It fails when it runs, and that covers a driver too (`contracts/handler-languages.md`, *The process lock*).
+
 | `process_lock` | `driver` | Meaning |
 |---|---|---|
 | true | false | The default. The code waits for the lock, runs while holding it, and gives it up at its first nested submission |
@@ -248,9 +265,11 @@ A change of `process_lock` or `driver` does not run the node's code again when i
 
 ## Ordinary and compiled Transformers
 
-For Python and Bash, the factory returns ordinary builders: a Python builder takes a callable, a Bash builder takes source text. `Transformer(language, compiled=True, direct=...)` extends the same builder contract with compiled-language configuration.
+For Python, Bash and the handler languages, the factory returns ordinary builders: a Python builder takes a callable, and a Bash or handler-language builder takes source text. `Transformer(language, compiled=True, direct=...)` extends the same builder contract with compiled-language configuration.
 
 The rules on this page (modes, binding, pins, snapshots and named work methods) do not vary by language. The compiled contract owns schemas, native source, generated headers, marshalling, compilation, compiled objects and compiled result packaging, and this page does not repeat them. See `contracts/compiled-transformers.md`.
+
+The handler-language contract owns what a handler is and receives, how R and Julia code gets its pins and returns its result, the backends and their parity, and the handler's place in transformation identity. See `contracts/handler-languages.md`.
 
 ## Unspecified exception classes
 
@@ -275,3 +294,4 @@ The former bound task, read-only result assignment and signature-less call-time 
 - **Pin semantics.** This page names pins as builder state but does not own their declarations, writes, conversions, null rules or failures (`contracts/pins.md`).
 - **Context scheduling.** Reactive invalidation, barriers, speculation and graph serialization belong to `contracts/workflow-context.md` and `contracts/node-state-lifecycle.md`.
 - **Compiled-language semantics.** They belong to `contracts/compiled-transformers.md` and its linked schema and compiled-pin contracts.
+- **Handler-language semantics.** Handlers, the R and Julia value rules, backends and backend parity belong to `contracts/handler-languages.md`.
