@@ -117,7 +117,7 @@ What the image or the conda environment must hold, besides `bash` in an image:
 | Python | `python3`; NumPy when an array crosses; seamless-core when a properly mixed value or a checksum crosses (*The Python CLI backend*) |
 
 - **Seamless does not install any of these.** Something that is missing is a failure of the transformation.
-- **In a container the host's environment variables are not inherited.** A variable that selects a project or a library path, such as `JULIA_PROJECT`, does not reach the job. The image decides.
+- **In a container the host's environment variables are not inherited.** The image supplies library and package depot paths. The Julia CLI backend uses the tracked Seamless Julia project staged in the job directory, regardless of `JULIA_PROJECT` ([Handler languages](handler-languages.md), *Environments*).
 
 ### Docker together with conda
 

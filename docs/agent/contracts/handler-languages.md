@@ -766,13 +766,16 @@ Julia:
 - **The checks run when the transformation runs.** A result that is already
   recorded is returned without them, and building never fails for an
   environment.
-- **The Julia project of a CLI job** is the one that `JULIA_PROJECT` selects
-  in the environment of the process that runs the transformation, as the
-  process's environment variables are inherited. **In a container nothing is
-  inherited**, so the image decides the project, and the depot in which Julia
-  finds its packages. An image whose depot is not readable by the host user, who
-  runs the job, must name one that is, with `JULIA_DEPOT_PATH`. For `juliacall`
-  the project is the one that `juliacall` uses in the process.
+- **The Julia project of a CLI job** is the tracked Seamless Julia project.
+  Seamless stages its `Project.toml` and `Manifest.toml` in the job directory
+  and starts Julia with `--project=.`. `JULIA_PROJECT` does not select another
+  project. The job uses a writable depot in its own directory first, followed
+  by the depots named by `JULIA_DEPOT_PATH`, the conda installation's packaged
+  depot when present, and the user's depot. In a container the image must name
+  its packaged depot with `JULIA_DEPOT_PATH`, readable by the host user who
+  runs the job. Its precompiled packages must be compatible with the executing
+  CPU. For `juliacall` the project is the one that `juliacall` uses in the
+  process.
 - **The environment is not part of identity**, here as everywhere.
 - **`tf.environment.set_which([...])` lists binaries that must exist.** They
   are looked up where the code runs. For a CLI backend that is inside the
