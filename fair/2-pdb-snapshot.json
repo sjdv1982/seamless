@@ -1,0 +1,23 @@
+{
+  "@context": "https://w3id.org/seamless/dataset/v1",
+  "id": "https://example.org/datasets/pdb/2026-10-07",
+  "type": "Dataset",
+  "isVersionOf": "https://example.org/datasets/pdb",
+  "version": "2026-10-07",
+  "issued": "2026-10-07",
+  "previousVersion": "https://example.org/datasets/pdb/2026-09-30",
+  "retrievedFrom": "rsync://rsync.example.org/pdb/data/structures/divided/mmCIF/",
+  "retrievedOn": "2026-10-08T03:00:00Z",
+  "distribution": {
+    "id": "nih:sha-256;aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "type": "Distribution",
+    "checksum": {
+      "algorithm": "sha256",
+      "checksumValue": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    },
+    "celltype": "deepfolder",
+    "byteSize": 1000,
+    "keys": 10,
+    "totalByteSize": 1000000
+  }
+}

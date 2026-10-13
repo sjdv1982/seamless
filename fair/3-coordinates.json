@@ -1,0 +1,35 @@
+{
+  "@context": "https://w3id.org/seamless/dataset/v1",
+  "id": "https://example.org/datasets/pdb-coordinates/2026-10-07",
+  "type": "Dataset",
+  "isVersionOf": "https://example.org/datasets/pdb-coordinates",
+  "version": "2026-10-07",
+  "created": "2026-10-09",
+  "previousVersion": "https://example.org/datasets/pdb-coordinates/2026-09-30",
+  "distribution": {
+    "id": "nih:sha-256;bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "type": "Distribution",
+    "checksum": {
+      "algorithm": "sha256",
+      "checksumValue": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+    },
+    "celltype": "deepcell",
+    "byteSize": 1000,
+    "keys": 10,
+    "totalByteSize": 500000,
+    "derivedFrom": [
+      {
+        "id": "nih:sha-256;aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "celltype": "deepfolder",
+        "seeAlso": "https://example.org/datasets/pdb/2026-10-07"
+      }
+    ],
+    "createdWith": {
+      "id": "../workflow/coordinates.seamless",
+      "checksum": {
+        "algorithm": "sha256",
+        "checksumValue": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+      }
+    }
+  }
+}

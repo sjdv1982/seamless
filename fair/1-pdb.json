@@ -1,0 +1,9 @@
+{
+  "@context": "https://w3id.org/seamless/dataset/v1",
+  "id": "https://example.org/datasets/pdb",
+  "type": "Dataset",
+  "title": "Protein Data Bank archive, mmCIF entries",
+  "description": "All entries of the wwPDB archive, one mmCIF file per entry, mirrored by rsync.",
+  "landingPage": "https://www.wwpdb.org/",
+  "license": "https://creativecommons.org/publicdomain/zero/1.0/"
+}

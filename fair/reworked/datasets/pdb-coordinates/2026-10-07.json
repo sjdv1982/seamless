@@ -1,0 +1,35 @@
+{
+  "@context": "../context.json",
+  "id": "",
+  "type": "Dataset",
+  "isVersionOf": "dataset.json",
+  "version": "2026-10-07",
+  "created": "2026-10-09",
+  "distribution": {
+    "id": "nih:sha-256;bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "type": "Distribution",
+    "checksum": {
+      "algorithm": "sha256",
+      "checksumValue": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+    },
+    "celltype": "deepcell",
+    "format": "http://edamontology.org/format_4003",
+    "byteSize": 1000,
+    "keys": 10,
+    "totalByteSize": 500000,
+    "derivedFrom": [
+      {
+        "id": "nih:sha-256;aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "celltype": "deepfolder",
+        "seeAlso": "../pdb/2026-10-07.json"
+      }
+    ],
+    "createdWith": {
+      "id": "../../workflow/coordinates.seamless",
+      "checksum": {
+        "algorithm": "sha256",
+        "checksumValue": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+      }
+    }
+  }
+}

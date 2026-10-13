@@ -1,0 +1,9 @@
+{
+  "@context": "../context.json",
+  "id": "",
+  "type": "Dataset",
+  "title": "PDB atomic coordinates as NumPy arrays",
+  "description": "One coordinate array per PDB entry.",
+  "source": "../pdb/dataset.json",
+  "createdWith": "../../workflow/coordinates.seamless"
+}

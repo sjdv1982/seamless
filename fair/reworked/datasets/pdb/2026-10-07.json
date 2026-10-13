@@ -1,0 +1,31 @@
+{
+  "@context": "../context.json",
+  "id": "",
+  "type": "Dataset",
+  "isVersionOf": "dataset.json",
+  "version": "2026-10-07",
+  "issued": "2026-10-07",
+  "previousVersion": "2026-09-30.json",
+  "retrievedFrom": "rsync://rsync.rcsb.org:33444/ftp_data/structures/divided/mmCIF/",
+  "retrievedOn": "2026-10-08T03:00:00Z",
+  "distribution": {
+    "id": "nih:sha-256;aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "type": "Distribution",
+    "checksum": {
+      "algorithm": "sha256",
+      "checksumValue": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    },
+    "celltype": "deepfolder",
+    "format": "http://edamontology.org/format_1477",
+    "byteSize": 1000,
+    "keys": 10,
+    "totalByteSize": 1000000,
+    "createdWith": {
+      "id": "../../workflow/mirror-pdb.sh",
+      "checksum": {
+        "algorithm": "sha256",
+        "checksumValue": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+      }
+    }
+  }
+}
