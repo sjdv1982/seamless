@@ -209,10 +209,12 @@ define_compiled_language(
 - `set_which(["gcc", "make"])` — assert that these binaries are on the `PATH` of the process that runs the transformation.
 - `set_conda(yaml_text)` — store a full conda spec (YAML with `dependencies`). It travels with the transformation, and execution does not act on it.
 
-**A compiled transformer cannot run in a conda environment or in a container.** The compiled call runs inside the worker process, and that process cannot be wrapped.
+**A compiled transformer cannot be wrapped in a conda environment or in a container.** The compiled call runs inside the worker process, and that process cannot be wrapped. A compiled transformer has an in-memory backend only, and the rule of every in-memory backend holds (`contracts/language-backends.md`, *The in-memory rule*):
 
-- `set_conda_env("myenv")` and `set_docker({"name": "image:tag"})` apply to bash transformers only (`contracts/environments.md`).
-- A compiled Transformer that has either fails when its Transformation is built, and a transformation dict that carries either fails before the call. The message says that the two settings apply to bash transformers only.
+- `set_conda_env("myenv")` is a **requirement on the worker process**. The transformation runs only when its process is already in exactly that conda environment: a name is compared with the process's `CONDA_DEFAULT_ENV`, and a specification that contains `/` is a path, compared with its `CONDA_PREFIX`. Otherwise the transformation fails when it runs, before the call.
+- `set_docker({"name": "image:tag"})` makes the transformation **fail when it runs**, before the call. The message names the language.
+- Neither fails when the Transformation is built, and a result that is already recorded is returned without the check.
+- A conda environment together with a Docker image is refused at dispatch, as for every language.
 - A compiled transformer that needs other compilers or libraries gets them from the environment that its worker process runs in.
 
 These settings propagate to the worker as part of the transformation's `__env__` dunder, which is excluded from the cache key (execution-only, not determinant).
@@ -227,3 +229,4 @@ These settings propagate to the worker as part of the transformation's `__env__`
 - `contracts/identity-and-caching.md` — load-bearing vs orthogonal key split, caching model, referential transparency
 - `contracts/pins.md` — the pin layer: reaching pins, the pin set, pin celltypes, optional pins and the null rules, and conversion at the pin boundary
 - `contracts/compiled-pins.md` — the compiled-pin contract: declarable pin celltypes per schema parameter, schema-bound `mixed`, scalar and character admission rules, validation stages and errors
+- `contracts/language-backends.md` — the in-memory rule that governs a compiled transformer's environment, and the CLI and in-memory kinds of language backend

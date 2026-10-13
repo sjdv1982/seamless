@@ -157,10 +157,13 @@ With `pure_dask: true`, the `distributed.Client` is available directly after `se
 
 If you later want to adopt Seamless caching for specific steps, you can do so incrementally: remove `pure_dask: true` from the daskserver definition, add `seamless-dask` to the worker conda environment, and wrap those steps with `direct` or `delayed`.
 
-### Bash transformer environments on compute nodes
+### CLI job environments on compute nodes
 
-For a bash transformation submitted to `remote: daskserver`, the runtime and
-image must be available on the worker node. Load Apptainer and set its image
+A bash transformation, and a Python, R or Julia transformation with
+`tf.metavars.BACKEND = "cli"`, runs as a job of its own and can run in a conda
+environment or a container. For such a transformation submitted to
+`remote: daskserver`, the runtime and image must be available on the worker
+node. Load Apptainer and set its image
 directory in the queue's `job_script_prologue`:
 
 ```yaml
@@ -176,7 +179,9 @@ hpc:
 Then a bash transformer can use `tf.environment.set_docker({"name": "ubuntu:22.04"})`,
 or submit a command with `seamless-run --docker ubuntu:22.04 ...`. The image
 must already exist as a SIF file under `SEAMLESS_APPTAINER_DIR`; this setting
-does not build or download it.
+does not build or download it. For a CLI backend of another language the image
+must also hold the interpreter and its packages. A transformation that runs in
+memory cannot enter an image, and fails for one.
 
 ## Manual HPC execution
 

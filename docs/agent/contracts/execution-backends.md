@@ -51,7 +51,7 @@ The log's layout, its per-process store, what is and is not captured, and the ru
 
 ### Environments are entered on the executing host
 
-A bash transformation can name a conda environment or a Docker image, and its script then runs there (`contracts/environments.md`). The **executing host** is the machine on which the script runs. It enters the environment, so it must provide it.
+A transformation can name a conda environment or a Docker image. A CLI backend, which is the bash transformer and the CLI backends of Python, R and Julia (`contracts/language-backends.md`), runs its script there (`contracts/environments.md`). The **executing host** is the machine on which the script runs. It enters the environment, so it must provide it.
 
 | Backend | Executing host | Its settings are read from |
 |---|---|---|
@@ -63,7 +63,9 @@ A bash transformation can name a conda environment or a Docker image, and its sc
 - **For a Docker image, the executing host needs a container runtime and the image.** The runtime is docker, podman or apptainer. The host chooses it, by the setting `SEAMLESS_CONTAINER_RUNTIME` or else by detection. A transformation never names a runtime. By default no image is pulled.
 - **Every backend behaves the same.** The job is wrapped where it executes, and no backend does anything of its own for an environment. A host that cannot enter the environment fails the job. No backend falls back to running the script on the plain host.
 - **A fingertip needs the environment where the buffer is wanted.** A fingertip is never dispatched, so the process that asks for the buffer enters the environment itself (`contracts/scratch-witness-audit.md`, *Fingertipping*).
-- **Python and compiled transformations are never wrapped.** Their code runs inside the process that executes them. A conda environment or a Docker image on one of them is an error, on every backend. Handler languages have rules of their own (`contracts/handler-languages.md`, *Environments*).
+- **An in-memory backend is never wrapped.** Its code runs inside the process that executes it: Python in memory, compiled transformations, and the in-memory backends of R, Julia and other handler languages. A Docker image on one is an error, on every backend. A conda environment is a requirement on that process, which must already be in exactly that environment (`contracts/language-backends.md`, *The in-memory rule*). The process is the one that the execution backend runs bodies in: the calling process in `process`, a worker process otherwise.
+- **Required binaries are looked up where the code runs.** For a CLI backend that is the executing host's environment or image, after it is entered, and for an in-memory backend the `PATH` of the executing process (`contracts/language-backends.md`, *Required binaries*).
+- **A specification that could never work is refused when the transformation is dispatched** on the submitting side: a conda environment together with a Docker image, and an unknown key of the image spec. It is checked again on the executing host before launch (`contracts/language-backends.md`, *The check happens at dispatch*).
 - **The image spec's `gpus` does not place a job.** It gives the container access to the GPUs of the host on which the job runs. Which host that is follows from the backend and the queue, as for any transformation.
 
 `contracts/environments.md` has the settings, the failures and the limitations.
@@ -78,7 +80,7 @@ In `spawn` and `remote: jobserver`, a transformation runs in a worker process th
 
 ## The process lock
 
-Two terms are used below. The **body** of a transformation is its user code: the Python function, the bash script or the compiled call. For a handler language such as R or Julia, the body is the call of the handler that runs the code (`contracts/handler-languages.md`). **Nested work** is a transformation whose execution is requested from inside a body.
+Two terms are used below. The **body** of a transformation is its user code: the Python function, the bash script or the compiled call. For a handler language such as R or Julia, the body is the call of the handler that runs the code (`contracts/handler-languages.md`). For Python under its CLI backend, the body is the run of the job. **Nested work** is a transformation whose execution is requested from inside a body.
 
 **Every process that runs bodies has one process lock, and by default a body runs while holding it.** A transformation whose `process_lock` is true waits for the lock of the process it was placed in, runs its body while holding the lock, and releases the lock when the body ends. `process_lock` is true by default (`contracts/transformers.md`, *`process_lock` and `driver`*). Among such transformations, at most one body runs at a time in any one process. This holds on every backend, and for Python, bash, handler-language and compiled transformers alike.
 
@@ -118,9 +120,18 @@ A **driver** is a transformation declared with `driver` true: its body mainly la
 - **Its submissions are marked as coming from a driver.** On `remote: daskserver`, a nested submission normally asks for permission before it goes to Dask. It can be made to wait, and it can be handed back to the submitter to run itself. This is the anti-deadlock routine described in `seamless-dask/anti-deadlock.txt`. A submission made by a driver's body skips the routine. So does the submission of a driver itself.
 - **The mark is not inherited.** A transformation launched by a driver is an ordinary transformation. It takes or leaves the lock according to its own settings, it is deduplicated as usual, and the nested work that it submits in turn asks for permission again.
 
+**Nested work from a CLI job** gets what its configuration gives it:
+
+- **A nested `seamless-run` finds its configuration** from `SEAMLESS_CACHE`, or from `SEAMLESS_REMOTE_CLIENTS` together with the Dask scheduler, or else from a configuration file in its working directory. For a job, the working directory is the job directory, which holds none.
+- **Only the Dask worker exports these variables.** Under `remote: daskserver` a nested `seamless-run` from a bash job, and a nested transformation from a Python CLI job (`contracts/language-backends.md`, *Drivers and nested work*), therefore go to the same cluster and share its caches. On `process`, `spawn` and `remote: jobserver` nothing is exported. A nested `seamless-run` there fails for lack of a configuration, unless one of the variables is in the environment that the job inherits, and a nested call in a Python CLI job runs inside the job's own process, with no cache and no dispatch.
+- **A submission from the job's own process skips the permission routine**, because the process is neither a worker nor one that has spawned workers. The mark of a driver is not what decides it.
+- **Inside a container nothing is exported and the nesting signal does not cross.** Nested work from a containerized job is not supported.
+
 Declaring a driver is never needed for correctness, because an undeclared body gives the lock up at its first nested submission. The declaration matters in two cases: when the body should not wait for the lock at all, and on Dask, where it lifts the permission routine from the body's launches.
 
 ### Bash bodies
+
+**What this section says of a bash body holds for the body of every CLI backend**: the bash transformer, and the CLI backends of Python, R and Julia (`contracts/language-backends.md`). A job in any of them is a process of its own, started by the process that runs the transformation, and is signalled and torn down in the same way.
 
 - **A bash transformation never changes the working directory of the process that runs it.** The script runs in a job directory of its own, which is its working directory. The process keeps the working directory it had, so a relative path used by other code in that process keeps its meaning.
 - **A bash body takes the lock like any other body**, unless `process_lock` is false or the transformation is a driver. For `seamless-run` these are `--no-process-lock` and `--driver` (`contracts/seamless-run-and-argtyping.md`).
@@ -133,11 +144,11 @@ Declaring a driver is never needed for correctness, because an undeclared body g
 
 ### Handler languages and embedded interpreters
 
-A handler-language transformation runs R, Julia or another registered language through a handler. The R and the Julia handler each have two ways to run the code, which this section calls a CLI backend and an in-memory backend. These are backends of the *handler*, selected per Transformer, and they are independent of the execution backends of this page. `contracts/handler-languages.md` specifies them.
+A handler-language transformation runs R, Julia or another registered language through a handler. The R and the Julia handler each have two ways to run the code, which this section calls a CLI backend and an in-memory backend. Python has both as well: in memory by default, and as a CLI job with `BACKEND="cli"`. These are **language backends**, selected per Transformer, and they are independent of the execution backends of this page. `contracts/language-backends.md` specifies the two kinds and the Python CLI backend, and `contracts/handler-languages.md` the handler ones.
 
 - **A CLI backend starts one interpreter process for each run**, on the machinery of bash transformations. *Bash bodies* holds for it: the process keeps its working directory, and the body is told when the code starts a nested `seamless-run`. By default one such run is in flight per process. With `process_lock` false they run side by side, each in its own interpreter process.
 - **An in-memory backend embeds the interpreter in the process that runs the body.** That is the caller's process in `process` mode, and each worker process otherwise. A process has one embedded interpreter per language. It starts at its first use and lives until the process ends.
-- **An in-memory backend refuses to run without the lock.** A transformation that has `process_lock` false fails when its body starts, and so does a driver. The message names the CLI backend as the alternative. A result that is already recorded is still returned, because nothing runs.
+- **An in-memory backend of a handler language refuses to run without the lock.** A transformation that has `process_lock` false fails when its body starts, and so does a driver. The message names the CLI backend as the alternative. A result that is already recorded is still returned, because nothing runs. Python and compiled bodies in memory have no such rule: they run without the lock when `process_lock` is false, as always.
 - **The process lock is the only lock around an embedded interpreter.** Among transformations that hold it, one body runs at a time in a process, so one transformation at a time uses the interpreter.
 - **An in-memory body holds the lock from its start to its end.** It cannot give the lock up: there is no nesting signal as for a bash body. Code that submits nested work, for example by running `seamless-run`, belongs under the CLI backend.
 

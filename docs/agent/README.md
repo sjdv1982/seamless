@@ -49,6 +49,7 @@ Contract pages (hand-maintained, normative):
 - `contracts/compiled-transformers.md`
 - `contracts/compiled-pins.md`
 - `contracts/handler-languages.md`
+- `contracts/language-backends.md`
 - `contracts/seamless-signature-schema.md`
 
 Repo docs (source snapshots and implementation notes):

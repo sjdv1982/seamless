@@ -1,11 +1,21 @@
 # Environments (Contract)
 
-An **environment** says where the script of a bash transformation runs: in a
-named conda environment, or in a container made from a Docker image. The
-script, its inputs and its result stay the same. Only the place changes.
+An **environment** says where the script of a CLI job runs: in a named conda
+environment, or in a container made from a Docker image. The script, its inputs
+and its result stay the same. Only the place changes.
+
+A **CLI job** is the way a bash transformation always runs, and the way a
+transformation in R, Julia or Python runs under its CLI backend ([Language
+backends](language-backends.md)). In this page "the script" is the script of a
+bash transformation, or the launcher of an interpreter for another language.
+The wrapper is the same for all of them. An in-memory backend cannot enter an
+environment, and has a rule of its own ([Language
+backends](language-backends.md), *Environments*).
 
 The [implementation plan](../../../plans/bash-docker-conda-transformers-plan.md)
-describes the launch mechanics and the phases.
+describes the launch mechanics and the phases, and the [language backends
+plan](../../../plans/language-backends-plan.md) their generalization to every
+language.
 
 ## The surface
 
@@ -26,7 +36,7 @@ clears one.
 `--conda-env` and `--conda-environment` are aliases of the first,
 `--docker-image` of the second.
 
-**Workflow Context.** A bash node that is bound from a Transformer carries that
+**Workflow Context.** A node that is bound from a Transformer carries that
 Transformer's environment, and the graph file saves it. On the bound node,
 `environment` is a read-only copy.
 
@@ -36,39 +46,37 @@ environment is the string `conda_environment` and the image is the mapping
 
 These rules hold on every face:
 
-- **An environment applies to bash transformers only.** A Python or compiled
-  transformation that carries a conda environment or a Docker image is an
-  error. It fails when the Transformation is built, and a transformation dict
-  that carries one fails before its code runs. The message says that the two
-  settings apply to bash transformers only.
+- **Every language can carry an environment, and what it does with it follows
+  from its language backend.**
+  - A CLI backend enters the environment: bash, and the CLI backends of R,
+    Julia and Python.
+  - An in-memory backend cannot. It runs only when its process is already in
+    exactly the conda environment that is asked for, and it fails for a Docker
+    image. This is the rule for compiled transformers, for Python in memory,
+    and for the in-memory backends of R and Julia.
+
+  [Language backends](language-backends.md), *Environments*, has the rules.
+  Building a Transformation with an environment never fails for this reason.
+  The check happens when the transformation runs.
 - **A record probe is exempt.** The probe that captures a job's surroundings
   for a full execution record is a Python transformation that carries the
   job's `__env__` ([Execution records](execution-records.md), *Probing is
   manual*). It runs on the host and it does not fail for the conda environment
   or the image that it carries. A full record can therefore be made for a bash
   job that has an environment.
-- **Handler languages are a separate case.** A transformation in R or Julia is
-  not a bash transformer, and each of the two languages has two backends.
-  - The CLI backend runs the code on the machinery of bash transformations, in
-    the transformer's conda environment. What it does with a Docker image is
-    not specified.
-  - The in-memory backend runs the code inside the process, so it cannot enter
-    an environment. With a conda environment it runs only when its process is
-    already in exactly that environment, and otherwise it fails. With a Docker
-    image it fails.
-
-  [Handler languages](handler-languages.md), *Environments*, has the rules.
-- **A conda environment and a Docker image together are an error.**
-  `seamless-run` refuses the two flags together. A Transformer that has both
-  fails when its Transformation is built, and a transformation dict that
-  carries both fails before its script runs. The message says to pick one. A
-  script that needs a conda environment inside an image activates it itself.
-- **Neither is ever ignored.** A bash transformation with an environment runs
-  in that environment or fails. It does not fall back to the plain host.
+- **A conda environment and a Docker image together are an error.** A
+  Transformer that has both builds, and the transformation fails when it is
+  dispatched, before anything is launched. The check is repeated before launch
+  on the executing host. `seamless-run` refuses the two flags together at
+  dispatch as well. The message says to pick one. A script that needs a conda
+  environment inside an image activates it itself.
+- **Neither is ever ignored.** A transformation with an environment runs in
+  that environment, or in an in-memory backend satisfies it as a requirement on
+  its process, or fails. It does not fall back to the plain host.
 
 ## What an environment changes, and what it does not
 
-Unchanged, with or without an environment
+Unchanged, with or without an environment, for a bash transformation
 ([seamless-run and argtyping](seamless-run-and-argtyping.md),
 [Pins](pins.md)):
 
@@ -101,8 +109,11 @@ The script runs as under `conda run -n NAME`.
 
 The script runs inside a container made from the image.
 
-- **The image must contain `bash`.** Nothing else is required of it. Seamless
-  does not need to be installed in it.
+- **The image must contain `bash`.** A bash transformation requires nothing
+  else of it. A CLI backend of another language also needs its interpreter and
+  its packages ([Language backends](language-backends.md), *The CLI rule*).
+  Seamless does not need to be installed in it, except where the code itself
+  uses Seamless, or a Python CLI job carries a value that needs seamless-core.
 - **The image's ENTRYPOINT is not used.**
 - **The job directory is the working directory, at `/seamless-job`.** That path
   is the same on every run, so `$PWD` is too.
@@ -111,6 +122,18 @@ The script runs inside a container made from the image.
   visible at their own paths, read-only. An input that Seamless provides as a
   link into such a directory therefore resolves. Every other buffer in those
   directories is readable by the image as well.
+- **A link that the container cannot follow is not used.** A buffer file in a
+  read-buffer directory can itself be a symlink to a file elsewhere, and that
+  target is not bound. Where the transformation will run in a container,
+  Seamless follows each buffer file before it links it, and treats one that
+  ends outside what the wrapper binds as a buffer that is not on disk. An
+  ordinary input and a `folder` member are then copied into the job directory,
+  and a `deepfolder` pin fails before the container starts, with a message that
+  says why ([Deep celltypes](deep-celltypes.md), *How deep values reach a
+  transformer*). What the wrapper binds is the job directory and the
+  read-buffer directories. A bind that an operator adds with
+  `SEAMLESS_CONTAINER_ARGS` is not seen, so such a bind makes a copy that was
+  not needed, and a `deepfolder` pin fail that the container could have read.
 - **The host's environment variables are not inherited.** The pin variables
   are set.
 - **`HOME` is `/seamless-job`, the working directory.** It is a writable
@@ -161,8 +184,10 @@ their image have the same checksum.
 | `gpus` | bool, default false | Give the container access to the host's NVIDIA GPUs |
 | `shm_size` | str, such as `"1g"` | Size of `/dev/shm`. Ignored under apptainer |
 
-Every other key is an error, when the spec is set and again before launch.
-For three legacy keys the message names the replacement:
+Every other key is an error. It is checked when the transformation is
+dispatched, and again before launch on the executing host. Setting the spec,
+and building a Transformation, check nothing. For three legacy keys the
+message names the replacement:
 
 - `options`: use `gpus` and `shm_size`;
 - `version`, `checksum`: use `name@sha256:<digest>`.
@@ -224,7 +249,7 @@ Where the settings are read, per backend:
 | `remote: daskserver` | the Dask worker nodes | the queue's `job_script_prologue` |
 
 **What a shared executing host exposes.** Whoever can submit a bash
-transformation to it can run any image that is present there, with GPUs if the
+transformation, or a CLI job of another language, to it can run any image that is present there, with GPUs if the
 spec asks for them, and that image can read the read-buffer directories. This
 adds little to a plain bash transformation, which already runs arbitrary code
 as the user of that host. With the pull policy `never`, the operator decides
@@ -235,12 +260,14 @@ containers off.
 
 `tf.environment.set_which([...])` lists binaries that must exist.
 
-- **For a bash transformation they are looked up where the script runs**:
-  after conda activation, or inside the image. A binary that exists only in
-  the environment satisfies the check, and one that exists only on the host
-  does not.
-- **For every other language they are looked up on the `PATH` of the process
-  that runs the code.**
+- **For a CLI backend, of every language, they are looked up where the script
+  runs**: after conda activation, or inside the image. A binary that exists
+  only in the environment satisfies the check, and one that exists only on the
+  host does not.
+- **For an in-memory backend they are looked up on the `PATH` of the process
+  that runs the code.** There is no environment to enter, so the host is where
+  the code runs ([Language backends](language-backends.md), *Required
+  binaries*).
 - **A record probe that carries a conda environment or an image does not check
   them.** The probe runs on the host, where a binary of the environment need
   not exist.
@@ -252,8 +279,9 @@ cached.
 
 **Before anything is launched**, a job is refused when:
 
-- its spec is invalid: an unknown key in the image spec, a conda environment
-  together with an image, or an environment on a transformer that is not bash;
+- its spec is invalid: an unknown key in the image spec, or a conda
+  environment together with an image. Both are found at dispatch, and checked
+  again here;
 - the executing host cannot run it: `SEAMLESS_CONTAINER_RUNTIME=none`, no
   working runtime, no conda launcher, or a Docker daemon that is not local
   (*Current limitations*).
@@ -293,11 +321,13 @@ part of the captured stderr.
 
 ## The job directory on disk
 
-Seamless materializes a job directory for every bash transformation and runs
+Seamless materializes a job directory for every CLI job and runs
 `bash transform.sh` in it. `seamless-run --dry --write-remote-job DIR` writes
 that directory without running it
 ([seamless-run and argtyping](seamless-run-and-argtyping.md)).
 
+- **Only a bash transformation can be written instead of run.** The other
+  CLI backends run their job and never write a directory for the user.
 - **`bash transform.sh` is the way to run it, with or without an environment.**
   What is written is what Seamless itself would have run.
 - **Without an environment, `transform.sh` is the script.**
@@ -336,8 +366,9 @@ of a command*). With `--conda` or `--docker`:
 
 ## The process lock, nesting and cancellation
 
-**A job with an environment is a bash body.** It takes the process lock of the
-process that runs it, like any other body, and holds it until the script ends
+**A job with an environment is a bash body**, and so is every CLI job. It
+takes the process lock of the process that runs it, like any other body, and
+holds it until the script ends
 ([Execution backends](execution-backends.md), *The process lock*). A long
 container job occupies its process for that time. `process_lock` false, or
 `seamless-run --no-process-lock`, lets it run next to others.
@@ -395,8 +426,9 @@ container job occupies its process for that time. `process_lock` false, or
 
 ## Non-goals
 
-- Running Python or compiled transformers in a container or in another conda
-  environment.
+- Running compiled transformers in a container or in another conda
+  environment. A compiled call runs inside the worker process, which cannot be
+  wrapped.
 - Creating a conda environment from a specification. `set_conda` stores one,
   and execution does not act on it.
 - Building images, or converting them to SIF files.
