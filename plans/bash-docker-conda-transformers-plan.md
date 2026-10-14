@@ -70,7 +70,7 @@ The design decisions, in one line each (§8 has the reasons):
 | D6 | the job runs as the host user |
 | D7 | no pull by default; SIF files come from `$SEAMLESS_APPTAINER_DIR` |
 | D8 | the job directory is mounted at `/seamless-job` |
-| D9 | `docker` or `conda_environment` on a Python or compiled transformer is an error |
+| D9 | Original refusal for Python and compiled transformers; superseded in part by `language-backends-plan.md` §§4.1, 4.3 and 4.8. It still applies to compiled transformers and the in-memory Python backend; Python CLI and handler CLI backends now wrap environments |
 | D10 | `which` for bash is checked inside the environment |
 | D11 | under `--docker` or `--conda`, `seamless-run` does not look the first word up on the host `PATH` |
 | D13 | the image is not part of the transformation identity |
@@ -90,9 +90,10 @@ D12 was closed by R6 and D15 by R5.
 
 **Out**
 
-- Python and compiled transformers in a container or a conda environment. They
-  run inside the worker process and cannot be wrapped. `docker` or
-  `conda_environment` on such a transformer is an error (D9).
+- Compiled transformers and in-memory Python transformers in a container or
+  another conda environment. They run in the worker process and cannot be
+  wrapped. Python CLI and the R/Julia CLI handler backends can use the wrappers
+  from this plan; see `language-backends-plan.md` §§4.1, 4.3 and 4.8.
 - Creating conda environments from a spec (`Environment.set_conda`). Legacy
   never did this either (`check_conda_power` always returned False).
 - Building or converting images. Seamless uses images that exist.
@@ -716,16 +717,22 @@ The nesting signal of §3.8 is an environment variable that holds a host path.
 
 ### 4.12 Transformers that are not bash (D9)
 
-A Python or compiled transformation whose environment has `docker` or
-`conda_environment` fails before it runs. The message says that these two keys
-apply to bash transformers only.
+**Status: D9 is superseded in part by
+`language-backends-plan.md` §§4.1, 4.3 and 4.8.** The original blanket refusal
+below now applies only to compiled transformers and Python's in-memory
+backend. Python's CLI backend and the R/Julia CLI backends honour conda and
+Docker environments through the wrapper machinery. Their environment and
+`which` checks happen where the CLI code runs. The in-memory rule is checked
+when the transformation runs; record probes remain exempt. The later plan and
+the [language-backends contract](../docs/agent/contracts/language-backends.md)
+state the current rules.
 
-- It is checked in `run_transformation_dict`, which every face and backend
-  reaches, and earlier, when a Python or compiled Transformer is frozen.
-- **A record probe is exempt.** It is a Python transformation that carries
-  its target's `__env__` (§3.5), so it would otherwise fail for every bash
-  job that has an environment.
-- `which` is not affected. For these languages it stays a check on the host.
+> Original D9: a Python or compiled transformation whose environment has
+> `docker` or `conda_environment` fails before it runs. The message says these
+> keys apply to bash transformers only. It was checked in
+> `run_transformation_dict` and earlier when a Python or compiled Transformer
+> was frozen. A record probe was exempt because it carries its target's
+> `__env__` (§3.5). `which` stayed a check on the host for these languages.
 
 ### 4.13 The first word of a `seamless-run` command (D11)
 
@@ -769,8 +776,9 @@ environment, one pytest process per file.
 - **Stopgap:** a transformation whose environment has `docker` fails before
   execution with "container execution is not implemented yet; refusing to run
   on the host". Bash loses this in Phase 3.
-- The D9 error in `run_transformation_dict` (§4.12), for `docker` and for
-  `conda_environment`, with record probes exempt.
+- The original D9 error in `run_transformation_dict` (§4.12), for `docker`
+  and `conda_environment`, with record probes exempt. This blanket error is
+  superseded for CLI backends by `language-backends-plan.md`.
 - Existing tests to adapt: the `write_bash_job` mocks in
   `test_contract_bash_output.py` return a code string and write no script.
   `execute_bash` now runs the file, so the mocks must write `transform.sh`.
@@ -841,7 +849,8 @@ environment, one pytest process per file.
 
   A saved state or an `__env__` that still has the key keeps loading: `_load`
   reads only the known properties, and nothing reads the key from `__env__`.
-- The early D9 check when a Python or compiled Transformer is frozen (§4.12).
+- The early original-D9 check when a Python or compiled Transformer is frozen
+  (§4.12); the current narrower rule is stated there.
 - The doc changes of §7 other than the contract page.
 - **Exit:** `tests/cmd/test_seamless_run_environment.py` passes; no doc says a
   non-bash transformer runs in a container or a conda environment; `powers`
@@ -887,8 +896,10 @@ runs none of the checks.
 
 Three existing files build an `__env__` with `conda_environment` or `docker`
 around transformations that are not bash: `test_execution_records.py`,
-`test_probe_index.py` and `test_probe_capture.py`. Check them against the D9
-error in Phase 1.
+`test_probe_index.py` and `test_probe_capture.py`. Under current rules, the
+record probes remain exempt; compiled and in-memory Python transformations
+fail, while Python CLI transformations honour the environment. See
+`language-backends-plan.md` and its handler and CLI-backend tests.
 
 The suite itself runs inside `seamless1`. A test that needs a binary to be
 absent from the host `PATH` removes the environment's `bin` directory from
@@ -997,8 +1008,10 @@ SIF files come from `$SEAMLESS_APPTAINER_DIR` with the literal naming rule.
   working. `/seamless-job` cannot collide with anything, and apptainer creates
   the mount point without trouble (§3.7).
 
-**D9 — `docker` or `conda_environment` on a Python or compiled transformer:
-an error** (§4.12). The author extended it to `conda_environment`.
+**D9 — Original refusal of `docker` or `conda_environment` on a Python or
+compiled transformer** (§4.12; superseded in part by
+`language-backends-plan.md`). It still applies to compiled transformers and
+Python's in-memory backend, not to CLI backends.
 - Today such a result is attributed to an environment that was never used.
 - Record probes are exempt, or recording would fail for every bash job that
   has an environment.

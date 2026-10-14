@@ -32,8 +32,11 @@ Ruled by the author (2026-10-10):
 - **R4 — Neutral filesystem config** for `mixed`, `plain`, `text`, `bytes` and
   `binary` pins: a path when the buffer is on file in a read folder, the value
   otherwise. The handler converts either form.
-- **R5 — Each handler has a `BACKEND` metavar.** The default is the CLI
-  (`Rscript`, `julia`); the alternative is in-memory (`ryp`, `juliacall`).
+- **R5 — Each handler has a `BACKEND` metavar.** The default is the CLI and
+  the alternative is in-memory. **Superseded backend values:** this draft
+  called them `"Rscript"`/`"julia"` and `"ryp"`/`"juliacall"`; the current
+  values are `"cli"` and `"mem"` in every handler language, as settled by
+  `language-backends-plan.md` §4.1. Those four names are tools, not values.
 - **R6 — Isolations are cached inside the embedded interpreter**, not in
   Seamless.
 - **R7 — The owner-thread helper is implemented for juliacall**, and a final
@@ -394,13 +397,13 @@ agree.
 - A pin on file is read in Python; a pin in memory is used as it is.
 - A `SEAMLESS-MIXED` container pin is passed as a JSON text for its plain parts
   plus its arrays, which the runtime puts back in place.
-- **Environments (R12).** With `docker` in the `environment` argument the
-  handler raises. With `conda_environment` it checks that the process already
-  runs in exactly that environment, and raises otherwise. The CLI backends
-  keep activating the conda environment (§3.5). How to compare is not ruled.
-  A suggestion: `CONDA_PREFIX` for a specification that contains `/`, which
-  names a path ([environments.md](../docs/agent/contracts/environments.md)),
-  and `CONDA_DEFAULT_ENV` for a name.
+- **Environments (R12).** For an in-memory handler, `docker` is refused and
+  `conda_environment` requires the process to already be in that exact
+  environment. The comparison is settled by
+  `language-backends-plan.md` §4.2: a specification containing `/` is a path
+  compared with the real path of `CONDA_PREFIX`; otherwise it is a name
+  compared with `CONDA_DEFAULT_ENV`. A CLI handler honours Docker and conda
+  through the shared wrapper, as set out in §4.3 of that plan.
 
 **ryp (A7).** No helper.
 
@@ -592,7 +595,10 @@ are run for ryp, which uses no helper, to check A7.
 
 ## 8. Decisions
 
-- **Open:** what a CLI backend does with a Docker specification. Not ruled.
+- **Resolved later by `language-backends-plan.md` §§4.2–4.3:** an in-memory
+  backend refuses a Docker specification; a CLI backend runs in the
+  configured container. A Docker image together with `conda_environment` is
+  refused at dispatch. The original decision that this was open is historical.
 - **Unspecified for the time being** (author, 2026-10-12): what happens when
   the pins do not match the parameters of `transform`.
 - **Comes later:** whether the helper stays, after §6.
@@ -631,9 +637,12 @@ Limits:
 - A frozen transformer for a user-registered language can only be built in a
   process where that handler is registered. The two built-in handlers always
   are.
-- The R and Julia handlers cover the five celltypes of R4 and the scalar
-  celltypes. `deepcell`, `deepfolder` and `folder` pins and results are outside
-  this plan; the two handlers raise for them.
+- **Superseded:** this plan originally excluded `deepcell`, `deepfolder` and
+  `folder` pins and results. `language-backends-plan.md` §4.6 adds them for R
+  and Julia under both backends; see
+  [Deep celltypes](../docs/agent/contracts/deep-celltypes.md) and
+  [Handler languages](../docs/agent/contracts/handler-languages.md) for the
+  current contract. R and Julia still cannot resolve checksum objects.
 
 ## 10. Notes for the implementer
 

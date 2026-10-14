@@ -2,6 +2,67 @@
 
 ## Unreleased
 
+### `seamless-run` directories and result targets now use `folder` (breaking; C10)
+
+A directory argument to `seamless-run` used to be passed to the command as a
+`deepfolder`, and a result with result targets was declared `deepfolder`.
+Both are now `folder`.
+
+**Every `seamless-run` command with a directory argument or with result
+targets gets a new transformation checksum.** The previous cached result is
+not found, so the
+first run after upgrading computes it again; later runs hit the cache. Nothing
+fails, and the result index and downloaded files are the same as before. For
+an expensive command, run it once before relying on its cache. Scripts or
+tools that stored the transformation checksum, including lookups, logs or
+records, must use the new checksum. Old cache entries stay in the database,
+unused.
+
+A `folder` pin is written from its index and members on whichever host runs
+the command. A `deepfolder` pin was resolved from buffer files on that host
+only, so a command with a directory argument failed on any host that could not
+see the buffer directory.
+
+### Naked 64-hex strings in deep results are values (breaking; C16)
+
+A transformer that returns a dict as a `deepcell` or `folder` result used to
+have every member that was a string of 64 hexadecimal characters read as a
+checksum. It is now a value, like any other string. Only a checksum object is
+a checksum: `seamless.Checksum` in Python, and the checksum classes of R and
+Julia. This holds in every language and under every backend.
+
+**Nothing fails for a `deepcell` result.** The members that were strings become
+values, so the result, and its checksum, is another deepcell than before. In
+a `folder` result such a string raises a `TypeError`. To keep the old
+meaning, wrap the string: `Checksum(s)`.
+
+### Other breaking changes
+
+- In-memory Python code receives different pins for a deep celltype: a
+  `deepfolder` pin is a dict of paths, not checksums, and a `folder` pin is
+  always a dict of contents.
+- A bash transformer refuses a `deepcell` pin. Each file of a deepcell
+  `RESULT` must parse as `mixed`; a plain text file that was treated as a
+  JSON string before now fails.
+- A conda specification together with Docker, and an unknown key in an image
+  specification, are refused at dispatch. They are no longer rejected when
+  the Transformation is built or the environment is set.
+- `BACKEND` accepts `"cli"` and `"mem"` only, where that setting is
+  available. Earlier handler tool names such as `"ryp"` and `"juliacall"`
+  were not released backend values, so no migration is needed.
+
+### New capabilities
+
+- R and Julia handlers now support deep celltype pins and results under both
+  backends, with language-specific checksum objects for checksum pins and
+  deepcell members.
+- Python transformers can select a CLI backend with
+  `tf.metavars.BACKEND = "cli"`; the default remains `"mem"`. This runs the
+  Python code in its own process.
+- R, Julia and Python CLI backends honour the transformer's conda or Docker
+  environment, and check required binaries where the code runs.
+- R and Julia use the common `"cli"` and `"mem"` backend values.
+
 ### HTTP shares for workflow Contexts
 
 Whole Context cells can now be served through a process-wide HTTP and WebSocket

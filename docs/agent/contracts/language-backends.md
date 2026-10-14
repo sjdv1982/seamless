@@ -233,6 +233,32 @@ The code is the same code. The in-memory backend and the CLI backend give it the
 - **A folder or deepcell result is the dict that the code returns.** Each member is a value or a checksum object ([Deep celltypes](deep-celltypes.md), *The output side*).
 - **Nothing that a job wrote is loaded as a pickle.** The process that runs the transformation reads a job's result as data only.
 
+The host rebuilds each CLI result and uses the in-memory serialization call.
+For a `mixed` result and for a value member of a `deepcell` result, the CLI
+accepts the same values as the in-memory backend:
+
+| Returned value | In-memory outcome | Python CLI outcome |
+|---|---|---|
+| `None`, booleans, integers, finite floats and strings | Accepted as mixed values | Accepted; carried as JSON, with the same result checksum |
+| Non-finite floats | Accepted as mixed values using NumPy storage | Accepted through `.mixed`, with the same result checksum |
+| Lists, tuples and dicts whose members are supported mixed values | Accepted as mixed values | Accepted as JSON where possible, otherwise `.mixed`, with the same result checksum |
+| `bytes` | Accepted as a mixed value | Accepted through `.bytes`; the host serializes it as mixed and gets the same result checksum |
+| A NumPy scalar or array with a supported dtype, including an aligned structured array without padding | Accepted as a mixed value | Accepted through `.mixed` or `.npy`; structured arrays use `.mixed` to preserve aligned-dtype metadata, with the same result checksum |
+| An aligned structured array with implicit padding and a supported structured dtype, directly or nested in a dict, list, or tuple result or deepcell value member | Accepted as a mixed value | Refused recursively because the NumPy mixed round trip can change padding bytes and the result checksum |
+| A structured subarray field whose base dtype has padding | Fails; the in-memory mixed serializer does not support this dtype | Refused by the recursive padding guard; both backends fail |
+| Another value accepted by `Buffer(value, "mixed")` | Accepted as a mixed value | Accepted through `.mixed`, using `seamless-core` in the job, with the same result checksum |
+| A `Checksum` object as an ordinary result | Refused for `mixed` (and other non-checksum result celltypes) | Refused with the same rule |
+| A `Checksum` object as a direct deepcell member | A checksum, not a value | A checksum entry in the index; the host rebuilds the same checksum object |
+| A `Checksum` nested inside a deepcell value member | Part of the value; mixed serialization treats it as its checksum string | Part of the `.mixed` value; host serialization gives the same member checksum |
+| A 64-character lowercase hexadecimal string as a deepcell member | A value serialized under `mixed` | A value, not a checksum; the same member checksum is produced |
+| A `set` or another value rejected by the in-memory serializer | Fails | Fails |
+
+The same direct-member rule applies to a `folder` result: a `Checksum` object is
+a checksum, and any other member is a value. In particular, a checksum-looking
+string is never promoted to a checksum. A checksum nested inside a deepcell
+member follows the mixed-value serializer's recursive handling; only a direct
+`Checksum` member gets a checksum entry.
+
 ### Parity
 
 **Both Python backends give the same result, bit for bit, when both succeed.** A backend may fail where the other succeeds. It may not succeed with a different result.
@@ -246,7 +272,8 @@ The code is the same code. The in-memory backend and the CLI backend give it the
 | modules or globals | fails | accepted |
 | a properly mixed or checksum value, with no seamless-core in the job | fails | accepted |
 | a conda environment other than the process's, or a Docker image | runs, in that environment | fails |
-| a result type that the runner cannot carry | fails | accepted |
+| a `Decimal` result with output celltype `str` | fails because the runner cannot encode it | accepted; the `str` celltype serializes `str(value)` |
+| an aligned structured array with implicit padding and a supported structured dtype, directly or nested in a dict, list, or tuple `mixed` result or deepcell value member | refused recursively because the NumPy mixed round trip cannot preserve the padding bytes and checksum | accepted as a mixed value |
 | `Checksum.resolve()` in the code, for a member of a deepcell pin | works under `remote: daskserver` only | works |
 
 - **The guarantee is about the backend, not about the code.** Code that depends on the interpreter's state, the working directory, an environment variable or a file outside its pins is not covered, as for any transformation.

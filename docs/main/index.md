@@ -74,6 +74,7 @@ seamless-run 'seq 1 10 | tac && sleep 5'    # cache hit — instant
 
 **How-to guides**
 
+- [Running R and Julia transformers](r-and-julia-transformers.md) — install the runtimes and packages for local CLI execution
 - [Caching, identity, and sharing](caching.md) — what constitutes a cache key, `Checksum` and `Buffer`, `.CHECKSUM` sidecars, the `persistent` command
 - [Composition](composition.md) — driver transformations, fan-out, `.modules` and `.globals`
 - [Local parallelism](parallelism.md) — `execution: spawn`, `spawn(N)`, `parallel()`, `TransformationList`, `seamless-queue`
