@@ -6,6 +6,7 @@ docs/main/api/reference/
 docs/agent/api/
 docs/agent/index.json
 docs/agent/repos/
+**/*.pyc
 *.egg-info/
 build/
 dist/
