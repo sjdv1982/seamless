@@ -281,6 +281,8 @@ The flush completes only deliveries that **ordinary actuation has already reques
 
 **A close triggered by garbage collection on the controller thread cannot flush.** It releases roles in place and joins in a finalizer thread, so an already-requested delivery may be dispatched but is never awaited, and its acknowledgement arrives after the session is gone. Finalization *off* the controller thread performs an ordinary, flushing close. Do not rely on garbage collection to make external state current — use `close()`, the context manager, or the cut barrier.
 
+**The share driver holds a closed Context's shares**: its server keeps serving them for a short window after `close()` returns, so that a new Context can take them over (`contracts/shares.md`, *The hold on close*). That is server state; the Context itself is closed.
+
 `seamless.close()` closes the Contexts, each flushing, and then the transport service.
 
 ## Leaf retention, on the sense path only

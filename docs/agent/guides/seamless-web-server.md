@@ -2,7 +2,7 @@
 
 This page is a **guide**, not a contract. It tells you how to build a web application whose server side is a workflow Context: how to think about it, how to develop it with hot reloading on both sides, and how to deploy it. The normative behaviour lives in `contracts/shares.md`, `contracts/mounts.md` and `contracts/workflow-context.md`; this page links to them instead of restating them.
 
-A few parts describe behaviour or tools that do not exist yet: the hold on close and the client's restart rule in the development tactics, and `seamless-serve-graph`, the pack tool and Cloudless in the deployment tactics. They are marked *(not yet implemented)* where they occur and collected under *Implementation status*.
+A few parts describe tools that do not exist yet: `seamless-serve-graph`, the pack tool and Cloudless in the deployment tactics. They are marked *(not yet implemented)* where they occur and collected under *Implementation status*.
 
 ## The idea: shared cells are the REST API
 
@@ -160,7 +160,7 @@ The front end hot-reloads by itself. The Seamless side has three mechanisms, whi
 | Context | the same object | closed, a new one built | a new process |
 | Share server | untouched | untouched | restarted |
 | State written from a browser | kept | reset to the script's defaults, unless mounted | reset, unless mounted |
-| Front end | `shares` message on the websocket | no disconnect once the hold on close exists; a brief one today | disconnect, then reconnect |
+| Front end | `shares` message on the websocket | no disconnect; only changed values are announced | disconnect, then reconnect |
 | Requires | the script kept in step | a script that is safe to re-run | mounted state; a hardened client |
 
 #### 1. Live edit in the interactive session
@@ -192,14 +192,13 @@ ctx = start()
 - **A reload resets state that browsers wrote.** The new Context starts from the script's defaults. Mount the cells that must survive (mechanism 3).
 - **Markers keep increasing across the reload.** A re-shared URL continues its marker sequence for the lifetime of the server.
 
-**Required: a hold on close** *(not yet implemented)*. The reload must not be visible in the browser for values that did not change:
+**The hold on close** keeps the reload invisible in the browser for values that did not change (`contracts/shares.md`, *The hold on close*):
 
-- The share server stores, for every endpoint, the latest content checksum and marker.
-- `ctx.close()` does not detach the shares at once. The server keeps each record for a **hold window of about 10 seconds** (a good default). The Context's teardown, which sets many checksums to `None` and would change `/openapi.json` to an empty document, is held off for that window.
-- A new Context that claims the same namespace and shares inside the window **re-attaches** to the held records. A cell whose value is unchanged produces no marker bump and therefore no websocket update. A cell whose value differs produces one ordinary update.
-- If nothing re-attaches, the shares are removed when the window ends, as on any close.
-
-Until this exists, a `%run -i` reload removes the shares at once: requests answer `404`, the websocket is closed with code `1001`, and the client reconnects with backoff and re-reads every value.
+- `ctx.close()` does not remove the shares at once. The server keeps serving them, with their checksums and markers, for a **hold window** (10 s by default), and keeps the websockets open. The Context's teardown is not visible, and `/openapi.json` does not drop to an empty document.
+- The new Context's first share takes the namespace over, and each share at a held URL **re-attaches**. A cell whose value is unchanged produces no marker bump and therefore no websocket update. A cell whose value differs produces one ordinary update.
+- A PUT sent during the reload waits for its share to be re-attached, and is then processed by the new Context.
+- A held share that the new script no longer makes is removed when the window ends, as on any close.
+- The hold serves; it never carries a value into the new Context. State that a browser wrote into an unmounted cell still returns to the script's default.
 
 #### 3. Mounts with `authority="file"`: persistent state
 
@@ -224,8 +223,8 @@ A restarted process restarts its markers. The front end must cope with a server 
 
 - **Reconnect automatically.** `seamless-client.js` retries a lost websocket with backoff (1 s, doubling, up to 30 s).
 - **Every connection starts with a `shares` message** that carries the checksum and marker of every share in the namespace.
-- **Rule for a restart** *(not yet implemented in the client)*: if, after reconnecting, the markers are **lower** than the ones the front end already holds, the server process restarted. Mounted cells were restored from their files, so the front end's own state is current: it adopts the new markers and does not re-read the values. If that was wrong (unmounted state was reset), the user reloads the page by hand.
-- **A write sent after a restart, before the client has adopted the new markers, carries the old marker.** It is normally refused with `409`; the client then drops the local change and re-reads the value. Show a disconnected state instead of letting the user edit as if connected.
+- **The client's restart rule** (`contracts/shares.md`, *`seamless-client.js`*): if, after reconnecting, the markers are **lower** than the ones the front end already holds, the server process restarted. One key that is exactly one lower, because the server has not yet processed the client's own PUT to it, does not count. Mounted cells were restored from their files, so the front end's own state is current: the client adopts the new markers and does not re-read the values. If that was wrong (unmounted state was reset), the user reloads the page by hand.
+- **A write sent after a restart, before the client has adopted the new markers, carries the old marker.** It is normally refused with `409`, and the client drops the local change. Until the reconnect lets the client conclude that the server restarted, it ignores the server's lower marker, so the page keeps showing the dropped change until the reconnect; the client then reads that value. Show a disconnected state instead of letting the user edit as if connected.
 
 ## Deployment
 
@@ -414,16 +413,15 @@ The destination of level 2 is that the **static front end and the Python backend
 
 ## Implementation status
 
-Exercised against the code: `bytes` cells shared at multi-segment paths with a pinned `mimetype`; the `share` entry in `get_graph()` and the absence of a `mount` entry for unmounted cells; `set_graph(graph, mounts=False, shares=True)` into a fresh Context under the same namespace, with markers continuing; the `ValueError` for a namespace that a live Context holds; the share server staying up, and its URLs answering `404`, after `ctx.close()`; `authority="file"` persistence of a PUT across two Contexts; the `build`/`start` example and its `%run -i` header (a PUT to `a` recomputes `c`; the old Context is closed, the namespace is re-claimed and the defaults return); and the pack and serve sketches, run in a single process over the local buffer cache. That run showed the graph holding only `value.checksum` per cell node, pinned content types, no `mount` entries, bodies equal to the files, and `GET /<ns>/` answering the `index.html` share.
+Exercised against the code: `bytes` cells shared at multi-segment paths with a pinned `mimetype`; the `share` entry in `get_graph()` and the absence of a `mount` entry for unmounted cells; `set_graph(graph, mounts=False, shares=True)` into a fresh Context under the same namespace, with markers continuing; the `ValueError` for a namespace that a live Context holds; the share server staying up after `ctx.close()`; `authority="file"` persistence of a PUT across two Contexts; the `build`/`start` example and its `%run -i` header (a PUT to `a` recomputes `c`; the old Context is closed, the namespace is re-claimed and the defaults return); and the pack and serve sketches, run in a single process over the local buffer cache. That run showed the graph holding only `value.checksum` per cell node, pinned content types, no `mount` entries, bodies equal to the files, and `GET /<ns>/` answering the `index.html` share.
 
 Not implemented, and described above as the intended behaviour:
 
-- **The hold on close** (*Required: a hold on close*): the share server keeps no record across a Context close, only a marker floor per URL, and a close detaches the shares at once.
-- **The restart rule of the browser client**: after any reconnect, `seamless-client.js` adopts the server's markers and checksums unconditionally and re-reads every auto-read share.
 - **`seamless-serve-graph`**, the **pack tool** as a shipped command (the code above is a sketch) and **Cloudless**.
 
 Not verified:
 
+- The hold on close and the client's restart rule (`contracts/shares.md`) in the reload and restart workflows above.
 - The hashserver round trip: pack and serve as separate processes, with the buffers transferred through a hashserver, and the startup check against `/has-now`.
 - Whether a Context with a read-only hashserver tries to publish the literals it fetches. Declare the hashserver read-only in the deployment configuration and look for write attempts in its log.
 - Behaviour of `Cell.set()` for a single value of several MB. The contract states a 1 GiB request limit for PUT.
