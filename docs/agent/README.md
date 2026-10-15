@@ -52,6 +52,10 @@ Contract pages (hand-maintained, normative):
 - `contracts/language-backends.md`
 - `contracts/seamless-signature-schema.md`
 
+Guide pages (hand-maintained, non-normative how-to; they link to the contracts instead of restating them):
+
+- `guides/seamless-web-server.md`
+
 Repo docs (source snapshots and implementation notes):
 
 - `repos/hashserver/` — hashserver HTTP API, compression protocol, endpoint behaviour

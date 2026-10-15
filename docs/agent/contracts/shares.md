@@ -12,7 +12,7 @@ Code locations:
 | Server configuration | `seamless_workflow.shareserver` (`configure`, `host`, `port`, `url`, `openapi`, `close`) |
 | Durable spec, celltype admission | `seamless_workflow.attachments.share.spec` (`ShareSpec`, `validate_celltype`) |
 | Transport | `seamless_workflow.attachments.share.driver.ShareDriver` |
-| Server, records, namespaces | `seamless_workflow.attachments.share.server` (`ShareServer`) |
+| Server, records, namespaces, holds | `seamless_workflow.attachments.share.server` (`ShareServer`) |
 | Content types | `seamless_workflow.attachments.share.mime` |
 | API description | `seamless_workflow.attachments.share.openapi` |
 | Browser client | `seamless_workflow/attachments/share/static/seamless-client.js` |
@@ -71,7 +71,7 @@ A node has one **share** slot, beside its file slot and its widget slot (`contra
 
 **One server per process serves every share of every Context, REST and websocket, on one port.**
 
-- **It starts with the first share** — a `share()` call, or a `set_graph` that attaches shares — and stops at `seamless.close()`. A Context that closes takes its shares with it; the server stays.
+- **It starts with the first share** — a `share()` call, or a `set_graph` that attaches shares — and stops at `seamless.close()`. A Context that closes leaves its shares served for a hold window, so that a new Context can take them over, and they go when the window ends (*The hold on close*); the server stays.
 - **It runs on its own thread and its own event loop.** It answers while user code blocks, in a script and under Jupyter, and it never runs on the caller's loop or the kernel's.
 - **Defaults: host `0.0.0.0`, port `5813`** (ruled 2026-10-09). `shareserver.configure(host=, port=)` and the environment variables `SEAMLESS_SHARE_HOST` / `SEAMLESS_SHARE_PORT` override them; `port=0` asks the operating system for a free port, read back from `shareserver.port`. `configure()` after the server has started raises `RuntimeError`.
 - **A busy port is an error.** The `share()` that would have started the server raises `OSError`, and nothing is installed.
@@ -83,7 +83,7 @@ A node has one **share** slot, beside its file slot and its widget slot (`contra
 **Every Context serves under one namespace, `ctx.shares.namespace`, default `"ctx"`** (ruled 2026-10-09).
 
 - It is **runtime state**: not in the graph, and settable only while the Context has no shares.
-- **A namespace belongs to one live Context.** The first share claims it; a second Context claiming a taken name raises `ValueError("Share namespace '<name>' is in use")`. Closing the Context releases it.
+- **A namespace belongs to one live Context.** The first share claims it; a second Context claiming a taken name raises `ValueError("Share namespace '<name>' is in use")`. **Closing the Context holds it**: the first Context that claims it inside the hold window takes it over, with its shares and its connections; otherwise it is released when the window ends (*The hold on close*).
 - The same graph can therefore be loaded into several Contexts in one process, each under its own namespace.
 
 ## URL space
@@ -100,11 +100,11 @@ A node has one **share** slot, beside its file slot and its widget slot (`contra
 | `GET /<namespace>/` | `302` to `/<namespace>/index.html` when that share exists, else `404` |
 | `OPTIONS` anything | the CORS preflight answer |
 
-`openapi.json`, `seamless-client.js` and every claimed namespace name are reserved top-level keys; a namespace cannot take the name of an existing top-level share. `state-graph` is a reserved namespace key: a non-top-level share with that exact path raises `ValueError`. A top-level share named `state-graph` remains legal. A key is matched whole: there is no access below a share.
+`openapi.json`, `seamless-client.js` and every claimed or held namespace name are reserved top-level keys; a namespace cannot take the name of an existing top-level share. `state-graph` is a reserved namespace key: a non-top-level share with that exact path raises `ValueError`. A top-level share named `state-graph` remains legal. A key is matched whole: there is no access below a share.
 
 ## The state graph
 
-**Once a Context has its first share, `GET /<namespace>/state-graph` serves its whole node state graph until the Context closes**, including after its last share is removed. Changing the namespace after final unshare releases the old namespace and its URL; the next share establishes the new one. A Context that never shared anything has no state-graph URL. Exposure is always on: every node's path, celltype or transformer language, state, checksum and error text is served to anyone who can reach the server, including nodes whose values are not shared.
+**Once a Context has its first share, `GET /<namespace>/state-graph` serves its whole node state graph until the Context closes**, including after its last share is removed, and serves its last publication through the hold that follows the close (*The hold on close*). Changing the namespace after final unshare releases the old namespace and its URL; the next share establishes the new one. A Context that never shared anything has no state-graph URL. Exposure is always on: every node's path, celltype or transformer language, state, checksum and error text is served to anyone who can reach the server, including nodes whose values are not shared.
 
 The JSON object has `nodes`, `anonymous_nodes` and `connections`. Each named node has `type`, `path`, `state`, `block_reason`, `exception` and `checksum`; cells additionally have `celltype`, transformers `language`. `state`, `block_reason` and `exception` match the bound handle's reporting. Checksums are hex strings or null. `connections` and `anonymous_nodes` have exactly the graph-format structure written by `get_graph()`, so node identities and anonymous source references can be resolved in the same way.
 
@@ -115,8 +115,8 @@ The JSON object has `nodes`, `anonymous_nodes` and `connections`. Each named nod
 The payload omits transformer code and configuration, per-pin states and the run ledger (generation, hold deadlines and superseded runs). It never resolves values or buffers, performs derivation or computes a result.
 
 - **The digest is the SHA-256 of canonical JSON** (sorted keys, compact separators). It is a change token only; the body is not stored in the buffer cache or hashserver.
-- **The marker increases only when the published digest changes**, for the lifetime of the Context. A client adopts the server's markers on reconnect.
-- **GET and HEAD answer `200 application/json`**, with `ETag: "<digest>"`, `X-Seamless-Marker` and `Cache-Control: no-cache`. `If-None-Match` matching the digest answers `304`. HEAD omits the body. PUT answers `405`; an unavailable or closing Context answers `404`; a refresh timeout answers `503`.
+- **The marker increases only when the published digest changes.** It is monotonic per namespace for the lifetime of the server: a Context that takes over a held namespace continues the sequence, and its first publication is announced only if its digest differs from the held one. A client resets its state-graph marker memory on reconnect (*`seamless-client.js`*).
+- **GET and HEAD answer `200 application/json`**, with `ETag: "<digest>"`, `X-Seamless-Marker` and `Cache-Control: no-cache`. `If-None-Match` matching the digest answers `304`. HEAD omits the body. PUT answers `405`; an unavailable Context, or a namespace that is neither claimed nor held, answers `404`; a refresh timeout answers `503`. During a hold, GET and HEAD answer the closed Context's last publication, or `404` if it never published one.
 - **At most one snapshot is built per half-second per Context**, regardless of request rate. A snapshot may be up to one interval old. A GET reuses a publication younger than the interval, and refreshes an older dirty publication or the first publication. A connected namespace client requests a dirty refresh each interval; a clean Context returns the cached publication without a controller turn.
 - **Without websocket clients or GET requests, no snapshot work runs.** Snapshot reads run on the controller thread as read turns, and never poison the Context on failure. Standard graphs of a few hundred nodes require a single small pass over nodes and edges, without copying transformer configuration.
 
@@ -125,8 +125,8 @@ The payload omits transformer code and configuration, per-pin states and the run
 The served state of a share is a **record**: a checksum, or none, and a **marker**.
 
 - **The marker is an integer that increases by one every time the served checksum changes**, by a delivery from the cell or by an accepted PUT.
-- **It is monotonic per URL for the lifetime of the server**, across unshare and re-share. It restarts with the process, which is why a client adopts the server's markers whenever it connects.
-- **The record holds a claim on the served checksum**, so a value that was resolvable when it was announced stays resolvable while it is served.
+- **It is monotonic per URL for the lifetime of the server**, across unshare, re-share and a hold. It restarts with the process, so a marker lower than one already seen at the same URL means that the server process restarted. The browser client relies on this (*`seamless-client.js`*).
+- **The record holds a claim on the served checksum**, so a value that was resolvable when it was announced stays resolvable while it is served, through a hold included.
 
 ## Reading: GET and HEAD
 
@@ -143,7 +143,7 @@ The served state of a share is a **record**: a checksum, or none, and a **marker
 - **`?mode=checksum`** returns the checksum hex as `text/plain` instead of the value.
 - **`HEAD` never resolves bytes**; it answers from the record.
 - **A GET resolves; it never computes.** It has exactly the powers of `.buffer`: the local buffer cache, then the remote buffer server. A value whose checksum arrived without its bytes — a remote result, a cache hit, a scratch result that was evicted — answers `503` until the bytes become resolvable (`contracts/attachments.md`, *A delivery resolves; it never computes*).
-- **Only complete values are served.** While the cell is `waiting`, `blocked` or `failed`, the share keeps answering with the last value it served, under the same marker. Before the first complete value it answers `404`. The node state graph reports the current state separately (*The state graph*).
+- **Only complete values are served.** While the cell is `waiting`, `blocked` or `failed`, the share keeps answering with the last value it served, under the same marker. Before the first complete value it answers `404`, unless the share re-attached a held record: it then keeps answering with the held value, under the held marker (*The hold on close*). The node state graph reports the current state separately (*The state graph*).
 
 ### Content types
 
@@ -171,12 +171,12 @@ The content type is the first of:
 |---|---|
 | `200` | accepted; JSON `{"checksum": "<hex>", "marker": <n>}` — the record after the write |
 | `400` | a malformed `marker` or `mode` parameter |
-| `404` | no such share, or its Context is closing |
+| `404` | no such share; or a held share whose hold window ended before it was re-attached (*The hold on close*) |
 | `405` | the share is read-only; `Allow: GET, HEAD` |
 | `409` | `?marker=n` does not equal the current marker; JSON `{"checksum", "marker"}` of the record |
 | `413` | the body exceeds the request limit |
 | `422` | the body is not a value of the celltype; JSON `{"error": "<reason>"}` |
-| `503` | the Context did not process the write within the wait limit (*Limits*) |
+| `503` | the Context did not process the write within the wait limit (*Limits*); for a PUT to a held share, the wait for the re-attach counts |
 
 - **The body is canonicalized with `canon_T`, and checked exactly as a user assignment of the same value is checked** — the rule of `contracts/mounts.md`, *Canonical bytes*, including that code celltypes get no syntax check. The cell holds the canonical bytes: a GET after a PUT of `{"a":1}` to a `plain` cell returns the canonical serialization.
 - **An empty body, or `null`, writes null.**
@@ -185,6 +185,7 @@ The content type is the first of:
 - **A PUT of the value already served is accepted and changes nothing**: `200`, with the unchanged marker.
 - **An accepted PUT is a sensed write** (`contracts/attachments.md`, *Sense*): a non-detaching authoritative write, with no privilege over a user assignment and none under it.
 - **The `200` is sent after the write has been installed.** A `ctx.a.checksum` read, or a `ctx.compute()`, that starts after the response sees the PUT value or a newer one.
+- **A PUT to a held share waits until the share is re-attached** (*The hold on close*), and is then processed as a PUT to the re-attached share, after that share's initial decision. If the decision changed the served value, a `?marker=` condition fails with `409`; if the share is now read-only, the answer is `405`; if the window ends first, `404`.
 - **Every websocket client is told at acceptance**, before the cell has taken the value, and without delivery pacing.
 - **A PUT beats a delivery that is in flight.** The delivery is acknowledged as a conflict, and the cell takes the PUT value.
 
@@ -209,12 +210,14 @@ The initial decision is the table of `contracts/mounts.md`, *The initial decisio
 
 The last row is row 4 of the no-value table and not a share rule: an absent resource attached in a sensing mode to a cell without a value installs null. Give the cell a value before sharing it when null is not wanted.
 
+**A share that re-attaches to a held record makes the same decision** (*The hold on close*): the held record counts as an absent file and never writes to the cell. It only gives the served side a starting point. A delivery of the held checksum therefore changes nothing — no marker bump, no `update` message — and a read-only share on a cell without a complete value keeps serving the held value until the cell completes. A writable share on a cell without a value still installs null, which is an ordinary update unless null was held.
+
 ## The websocket
 
 `GET /<namespace>` with a websocket upgrade opens the namespace's update stream. **The server only sends; anything a client sends is ignored.** Every message is a JSON array.
 
 1. `["Seamless share update server", "1.0"]` — once, first.
-2. `["shares", {<key>: {"url": "/ctx/a", "readonly": true, "content_type": "application/json", "binary": false, "checksum": "<hex>" | null, "marker": 3}, …}]` — the full state, after the handshake and again whenever a share is added to or removed from the namespace. It includes the namespace's top-level shares.
+2. `["shares", {<key>: {"url": "/ctx/a", "readonly": true, "content_type": "application/json", "binary": false, "checksum": "<hex>" | null, "marker": 3}, …}]` — the full state, after the handshake and again whenever a share is added to or removed from the namespace, or re-attached with a different `readonly`, `content_type` or `binary` (*The hold on close*). It includes the namespace's top-level shares.
 3. `["update", [<key>, "<checksum hex>", <marker>]]` — on every change of a record.
 4. `["state-graph", ["<digest>", <marker>]]` — announces a state graph publication; GET the state-graph URL for its body.
 
@@ -222,13 +225,13 @@ The last row is row 4 of the no-value table and not a share rule: an absent reso
 - **A new client receives its first state-graph announcement within one half-second interval after the initial share snapshot.** Further announcements arrive at most once per interval and only when the published digest differs from the last digest sent to that client. Changes that return to the previously published graph inside one interval produce no announcement.
 - **`binary`** is `false` for `text/*`, `application/json`, `application/yaml`, `application/javascript`, `application/xml` and the `+json` / `+xml` types, and `true` otherwise.
 - Liveness uses websocket ping frames, not a message.
-- When the Context closes, its connections are closed with code `1001`.
+- **A Context close does not close the connections.** They are held with the namespace and pass to the Context that takes it over (*The hold on close*). They are closed with code `1001` when the namespace is released — at the end of a hold that no Context took over, or when its owner changes namespace after its final unshare — and when the server stops.
 
 ## `openapi.json`
 
-`GET /openapi.json` returns an **OpenAPI 3.1** document generated from the shares that exist at the moment of the request, for every namespace. `ctx.shares.openapi()` returns the same document restricted to one Context, and `shareserver.openapi()` the whole one, without a request.
+`GET /openapi.json` returns an **OpenAPI 3.1** document generated from the shares that exist at the moment of the request, held shares included, for every namespace. `ctx.shares.openapi()` returns the same document restricted to one Context, and `shareserver.openapi()` the whole one, without a request.
 
-- **One state-graph path item per live Context namespace**, with GET and HEAD and the responses described in *The state graph*.
+- **One state-graph path item per claimed or held namespace**, with GET and HEAD and the responses described in *The state graph*.
 - **One path item per share**, at its URL: `get` and `head` always, `put` when the share is writable, with the status codes of this page.
 - **Content type and schema follow the celltype:**
 
@@ -264,10 +267,14 @@ ctx.a.set("5")                               // PUT
 - **One entry per share whose mapped property is distinct and is not `self`**, `ctx[<key>]` with `/` written as `__`: `value`, `checksum`, `marker`, `binary`, `content_type`, `readonly`, `auto_read`, `set(value)`, `oninput`, `onchange`. `ctx.self` holds `sharelist`, `onsharelist`, `oninput`, `onchange`, `get_value()`, `connect()`, `ws`, `server`, `share_namespace`, `stategraph` and `onstategraph`. The property-mapping limitation is listed under *Implementation status and current limitations*.
 - **`value` is text, or a `Blob` when the share is binary**; `null` for a null value. JSON is not parsed for you.
 - **`auto_read`** is `false` for keys containing a `.` — pages, scripts, images — and `true` otherwise; only auto-read shares are fetched on change.
-- **`set()` sends one PUT per key at a time**, conditional on the marker it last saw, and keeps only the latest value set meanwhile. On `409` the local change is dropped and the server's value is fetched.
+- **`set()` sends one PUT per key at a time**, conditional on the marker it last saw, and keeps only the latest value set meanwhile. On `409` the client drops the local change, adopts the record in the response and fetches the server's value. A record or value whose marker is lower than the client's own is adopted only once the client has concluded that the server restarted (below); before that, it is ignored.
 - **Entries survive a new `shares` message**: handlers stay attached, and only added and removed keys change.
 - **`ctx.self.onstategraph` enables state graph reads.** When set, an announcement triggers a GET of `/<namespace>/state-graph`; the parsed object is stored in `ctx.self.stategraph`, then the handler is called. Responses older than the newest marker seen are dropped, and marker memory resets on reconnect. Pages without the handler do no extra reads.
-- **A lost connection is retried with backoff**; on reconnect the client adopts the server's markers.
+- **A lost connection is retried with backoff.** A Context close loses no connection: the connection is held and passes to the Context that takes over the namespace (*The hold on close*).
+- **The first `shares` message after a reconnect tells a restarted server from the same one** (*The record and the marker*):
+  - **Restarted**: a server marker is lower than the client's, for a key the client holds, beyond **one tolerated not-yet-processed PUT in total**. The snapshot may predate the processing of a PUT whose response the client already has, because the HTTP response can overtake the websocket. So when exactly one key is lower, by exactly one, and the client's marker for that key comes from the response to its own PUT, that is no evidence of a restart; any other lower marker is. On a restart, the client adopts the server's marker for every key it holds and **reads no value**: its values and checksums stand, and no `oninput` or `onchange` is called. Mounted cells were restored from their files, so the page's own state is taken to be current; if it is not, the user reloads the page. Keys new to the client, and keys whose value it never read, are read as on a first connection. So is every key whose dropped change the client could not correct, because it ignored a `409` record with a lower marker (`set()` above).
+  - **Same server**: no marker is lower beyond that tolerance. The client adopts every server marker and checksum that is not lower than its own, and re-reads every auto-read share. The `update` for a tolerated PUT follows on the websocket.
+- **A write that reaches a restarted server before the client has adopted its markers** carries a marker of the previous process and is normally refused with `409`, and the client drops the change. If it has not concluded the restart yet, it ignores the response's record and the value it then reads, both carrying a lower marker (`set()` above): the page keeps showing the dropped change until the reconnect, when the client concludes the restart and reads that key.
 
 ## The barrier
 
@@ -290,8 +297,8 @@ Raised at the call:
 | `AttributeError("Only whole Context cell nodes can be shared")` | a sub-path projection (`ctx.a.b`); a read-only handle, **including a transformer's result, `ctx.tf.result`** |
 | `NodeError("Shares require an existing whole cell node")` | the node does not exist or is not a cell |
 | `ValueError("Cell is already shared; unshare first")` | the share slot is occupied |
-| `ValueError("Share path '<path>' is in use")` | another share of the namespace, or another top-level share, has the key; or the key is reserved |
-| `ValueError("Share namespace '<name>' is in use")` | another live Context holds the namespace |
+| `ValueError("Share path '<path>' is in use")` | another share of the namespace, or another top-level share, has the key — a held top-level share included, for every Context but the one that takes over its namespace; or the key is reserved |
+| `ValueError("Share namespace '<name>' is in use")` | another live Context has claimed the namespace |
 | `ValueError` | an invalid key; an unparseable `mimetype`; a top-level key with more than one segment |
 | `TypeError("Celltype '<ct>' is not shareable")` | *Shareable celltypes* |
 | `AuthorityError("A writable share cannot have incoming edges; share it read-only")` | `readonly=False` on a connected cell |
@@ -315,11 +322,30 @@ Of the three-way error model of `contracts/attachments.md`, a share has only the
 
 ## Lifecycle
 
-- **Every detach removes the URL.** `del ctx.a.share`, deleting the node, an empty same-celltype builder, `set_graph()` and `ctx.close()` all end in the same detach (`contracts/attachments.md`, *Attach, detach, close*). Requests then answer `404`, and the namespace's clients get a new `shares` message.
+- **Every detach removes the URL at once, except a Context close.** `del ctx.a.share`, deleting the node, an empty same-celltype builder and `set_graph()` all end in the same detach (`contracts/attachments.md`, *Attach, detach, close*). Requests then answer `404`, and the namespace's clients get a new `shares` message.
+- **`ctx.close()` holds its shares**, and removes at the end of the hold window those that no new Context re-attached (*The hold on close*).
 - **Slot detach is independent.** `del ctx.a.share` leaves a file mount and a widget hub in place.
 - **A new share on the same URL continues its marker sequence.**
 - **To change `path`, `readonly`, `mimetype` or `toplevel`, unshare and share again.**
 - `del ctx.a.share` on a cell without a share is a no-op, and `.spec`, `.url`, `.status` and `.error` answer `None`.
+
+## The hold on close
+
+**`ctx.close()` does not remove its shares at once. The server holds them for a window, 10 s by default (*Limits*), and a Context that shares the same URLs inside the window takes them over.** Re-running a serving script with `%run -i` — close the old Context, build a new one — is therefore invisible to clients for every value that did not change.
+
+- **What is held is the namespace**: every record of the closing Context, top-level ones included, each with its entry, checksum, marker and claim; the websocket connections; and the last state-graph publication. A Context that never claimed a namespace holds nothing.
+- **The hold starts when `close()` stops sensing** (`contracts/attachments.md`, *Close*, step 1). The close flush still completes the deliveries already requested, as ordinary updates. After the flush, nothing the closing Context does changes a record or sends a message: its teardown is invisible. **The window starts when `close()` returns**; `close()` does not wait for it.
+- **During the hold, held shares answer from their records.** GET, HEAD and `?mode=checksum` answer as before, and the connections stay open. A client that connects gets the handshake, a `shares` message with the held records and, if there is one, an announcement of the held state-graph publication, which the state-graph URL serves. `/openapi.json` keeps describing the held shares and the namespace's state-graph endpoint. A PUT waits for its share to be re-attached (*Writing: PUT*).
+- **The first Context that claims the namespace inside the window takes it over** — by its first share, or by a `set_graph()` that attaches shares — instead of raising `ValueError("Share namespace '<name>' is in use")`. The connections, the held records and the state-graph marker sequence pass to it. The held top-level keys are refused to every other Context.
+- **A share of that Context at the URL of a held record re-attaches to it**, whatever its node, celltype or flags. Its initial decision is that of a new share, and the held record only gives the served side its starting point (*The initial decision*):
+  - a value equal to the held one is served under the held marker: no marker bump, no `update` message;
+  - a different value is one ordinary update;
+  - a read-only share on a cell without a complete value keeps serving the held value until the cell completes; a writable one installs null, which is an ordinary update unless null was held;
+  - a `shares` message is sent only if `readonly`, `content_type` or `binary` changed.
+- **A held record that is not re-attached by the end of its window is removed**, as by any detach: requests answer `404`, a waiting PUT answers `404`, and the namespace's clients get a new `shares` message. If no Context took the namespace over, the namespace is released with its records: its connections are closed with code `1001`, and its URLs, the state-graph URL included, answer `404`.
+- **A Context that took over a namespace holds it again when it closes.** Its own records, re-attached ones included, get a new window; records still held from the earlier close keep theirs.
+- **Only `ctx.close()` holds.** Every other detach removes the URL at once (*Lifecycle*). `seamless.close()` stops the server, which ends every hold.
+- **A hold never feeds a Context.** A value that a browser wrote into an unmounted cell does not reach the new Context, which starts from its own script. State that must survive a reload belongs in a file mount (`contracts/mounts.md`).
 
 ## Limits
 
@@ -331,6 +357,7 @@ Of the three-way error model of `contracts/attachments.md`, a share has only the
 | wait for a PUT to be installed | 60 s, then `503` |
 | resolution timeout of a GET | 60 s, then `503` |
 | websocket ping interval | 10 s |
+| hold window after `ctx.close()` | 10 s |
 | delivery pacing | `contracts/attachments.md`, *Actuate* |
 
 A value is held in memory in full for the duration of a request. There are no range requests.

@@ -8,7 +8,14 @@ Looking for legacy Seamless (0.x)? Use the legacy docs at `/legacy/`.
 
 - Read the contract-oriented overview in `README.md`.
 - Browse behavior and cache contracts under `contracts/`.
+- Follow how-to guides under `guides/`.
 - See generated API reference under `api/`.
+
+## Guides
+
+| Guide | What it covers |
+|-------|----------------|
+| `guides/seamless-web-server.md` | Making a web server from a workflow Context: shared cells as the whole REST API, the development stage (dev server in front, interactive Context behind; live edit, `%run -i` reload and `authority="file"` mounts; a hardened client) and the deployment stage (script-served, or a built front end packed into a graph and served from a hashserver by a generic server) |
 
 ## Contracts quick index
 
