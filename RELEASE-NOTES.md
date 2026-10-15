@@ -19,9 +19,10 @@ records, must use the new checksum. Old cache entries stay in the database,
 unused.
 
 A `folder` pin is written from its index and members on whichever host runs
-the command. A `deepfolder` pin was resolved from buffer files on that host
-only, so a command with a directory argument failed on any host that could not
-see the buffer directory.
+the command. Before this change, a `deepfolder` pin was resolved from buffer
+files on that host only, so a command with a directory argument failed on any
+host that could not see the buffer directory. Bash now refuses `deepfolder`
+pins outright.
 
 ### Naked 64-hex strings in deep results are values (breaking; C16)
 
@@ -38,11 +39,11 @@ meaning, wrap the string: `Checksum(s)`.
 
 ### Other breaking changes
 
-- In-memory Python code receives different pins for a deep celltype: a
-  `deepfolder` pin is a dict of paths, not checksums, and a `folder` pin is
-  always a dict of contents.
-- A bash transformer refuses a `deepcell` pin. Each file of a deepcell
-  `RESULT` must parse as `mixed`; a plain text file that was treated as a
+- Outside bash, `deepfolder` pins now match `deepcell` pins: each is a dict of
+  checksum objects. Bash refuses both pin types. A `folder` pin is always a
+  dict of contents outside bash.
+- Every file of a deepcell `RESULT` must parse as `mixed`; a plain text file
+  that was treated as a
   JSON string before now fails.
 - A conda specification together with Docker, and an unknown key in an image
   specification, are refused at dispatch. They are no longer rejected when

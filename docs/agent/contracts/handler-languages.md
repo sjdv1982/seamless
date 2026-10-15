@@ -316,10 +316,8 @@ succeed.**
   the same member rule (*Deep celltypes and checksum objects*). Code that
   filters the keys of a `deepcell` pin and returns the rest gives the same
   result under both.
-- **A path is observable.** A `deepfolder` pin gives the same strings under
-  both backends on one machine, and another machine gives other strings. Code
-  whose result depends on the string, or on the stored form of the member, and
-  not on the member's bytes, is not covered by the guarantee.
+- **A `deepfolder` pin is a dict of checksum objects under both backends.**
+  Its form does not depend on where the member buffers are stored.
 
 Cases where one backend fails and the other succeeds:
 
@@ -345,7 +343,7 @@ backends report the same failure in different words.
 | `binary`, and `mixed` whose buffer is an array | a double or logical vector or array (*Array rules*) | an `Array` (*Array rules*) |
 | `int`, `float`, `bool`, `str`, and every other celltype that is neither deep nor `checksum` | as `plain` | as `plain` |
 | `folder` | a named list of raw vectors, one for each member's bytes | a `Dict{String, Vector{UInt8}}` |
-| `deepfolder` | a named list of strings, one path for each member | a `Dict{String, String}` |
+| `deepfolder` | a named list of checksum objects | a `Dict{String, Checksum}` |
 | `deepcell` | a named list of checksum objects | a `Dict{String, Checksum}` |
 | `checksum` | a checksum object | a `Checksum` |
 
@@ -397,7 +395,7 @@ the forms of R and Julia:
 | Pin | R | Julia |
 |---|---|---|
 | `folder` | a named list of raw vectors | a `Dict{String, Vector{UInt8}}` |
-| `deepfolder` | a named list of path strings | a `Dict{String, String}` |
+| `deepfolder` | a named list of checksum objects | a `Dict{String, Checksum}` |
 | `deepcell` | a named list of checksum objects | a `Dict{String, Checksum}` |
 | a `deepfolder` or `deepcell` source, declared `plain` | a named list of 64-hex strings | a `Dict{String, String}` of 64-hex strings |
 
@@ -406,18 +404,10 @@ the forms of R and Julia:
 - **A `folder` pin holds every member's bytes in memory.** The process that
   runs the transformation resolves the members, from any buffer source, before
   the code runs.
-- **A `deepfolder` pin gives paths, and resolves nothing.** Each path is the
-  member's buffer file in a read-buffer directory of the machine that runs the
-  transformation, as stored. A path that ends in `.zst` or `.gz` holds the
-  member compressed, and the code decompresses it. A `deepfolder` pin whose
-  members are not all on disk there fails the transformation, and no buffer
-  server is asked. Under a CLI backend in a container, a buffer file that the
-  container cannot read counts as not on disk ([Deep
-  celltypes](deep-celltypes.md)).
-- **A `deepcell` pin resolves nothing, and the code cannot resolve it.** Its
-  members are checksums. The class of R and of Julia carries a checksum and
-  has no access to a buffer. The pin serves to select members and to pass them
-  on, for example in a `deepcell` result.
+- **A `deepfolder` or `deepcell` pin resolves no member.** Each is a dict of
+  checksum objects. The class of R and of Julia carries a checksum and has no
+  access to a buffer. These pins serve to select members and pass them on, for
+  example in a `deepcell` result.
 - **Declaring the pin `plain`** hands the code the index as data: strings, not
   objects. A string that is returned from it is a value (*Results*, below).
 
@@ -790,10 +780,6 @@ Julia:
   select and pass on members.
 - **A `folder` pin holds every member in memory at once**, under both
   backends.
-- **A `deepfolder` pin works only where the buffer directory can be read as
-  files**: on the machine of a locally launched hashserver, or with an extern
-  client that names a directory. On any other host it fails. The code reads
-  the stored form of each member, which can be compressed.
 - **The CLI backends cannot take a Seamless-mixed pin.** The R CLI backend
   also refuses `float32` arrays and arrays with more than two dimensions
   (*Array rules*).

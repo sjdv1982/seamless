@@ -33,7 +33,7 @@ A directory argument and a set of result targets are both directories that `seam
 
 - **A directory argument is a `folder` pin.** The directory is uploaded, and the executing host writes it into the job directory from the index and its members, from whichever buffer source holds them. It does not matter whether that host sees the buffer directory of the submitting machine.
 - **A result with result targets is a `folder` result.** `RESULT` is a directory, and each file in it is a member that holds the file's bytes. The index and the downloaded files are as for any `folder` result.
-- **A `folder` pin is not a `deepfolder` pin.** Each entry has the form that the directory's name asks for ([Compression](compression.md), *Directory pins*), and is never a link to a buffer file in another form.
+- **Bash refuses `deepfolder` pins.** Other backends receive checksum objects, not a materialized directory.
 - **The celltypes are part of the transformation's identity**, through `__format__` and `__output__`.
 - **`seamless-run` is bash.** It has no handler languages, no Python transformers and no `BACKEND`. A command always runs as a CLI job ([Language backends](language-backends.md)).
 

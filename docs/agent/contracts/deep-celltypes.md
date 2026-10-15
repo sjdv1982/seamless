@@ -85,7 +85,7 @@ Two distinctions this table exists to keep straight:
 - **nothing is resolved.** No member buffer is touched, and the cost class is *free*. A `Checksum` object is not a buffer: wrapping is typing, not resolution;
 - the dict of checksum objects that a `deepcell` **pin** hands a transformer (*How deep values reach a transformer*) is therefore not a pin-layer special case — it is this rule, at the pin layer;
 - the `folder` pin's dict of child *contents* **is** a pin-layer presentation, and it is the one place that resolves children on the input side, because the pin also carries `{"filesystem": {"mode": "directory"}}`. The value-level equivalent is the explicit `folder → mixed` conversion, which is *all children* and is priced as such;
-- the `deepfolder` pin's dict of *paths* is a pin-layer presentation too, and it resolves nothing: it looks the members up as files, and the transformation fails where one is not there.
+- the `deepfolder` pin's dict of checksum objects is the same unresolved index presentation as `deepcell`; it does not look members up as files.
 
 The three celltypes share this buffer shape exactly. They differ only in **what their members are**, and in what a consumer is declaring it wants:
 
@@ -270,15 +270,15 @@ A deep pin takes one of two forms, by the backend that runs the transformation (
 
 | Pin | bash | every other backend |
 |---|---|---|
-| `deepcell` | **refused**: declare it `deepfolder`, `folder` or `plain` | **not materialized**: a dict of checksum objects. The code resolves a member itself, where it can |
+| `deepcell` | **refused**: declare it `folder` or `plain` | **not materialized**: a dict of checksum objects. The code resolves a member itself, where it can |
 | `folder` | **materialized on disk**: a directory in the job directory, with one entry for each key | **materialized in memory**: a dict of contents, each member as bytes |
-| `deepfolder` | **already on disk**: a directory in the job directory, with a link for each member, or the job fails | **already on disk**: a dict of paths, or the transformation fails |
+| `deepfolder` | **refused**: declare it `folder` or `plain` | **not materialized**: a dict of checksum objects, like `deepcell` |
 | a deep source cast to `plain` | the index: a JSON file of keys and checksums | the index: a dict of 64-hex strings |
 
 - **Both backends of a language give a deep pin the same form.** A Python transformer has the same dict under both of its backends, and so have R and Julia.
 - **The checksum object is the class of the language.** `seamless.Checksum` in Python, and the checksum classes of R and Julia ([Handler languages](handler-languages.md), *Checksum classes*).
 - **A compiled transformer is in neither column.** A deep celltype is never compatible with a compiled pin, and declaring one raises (`contracts/compiled-pins.md`).
-- **A `deepfolder` pin never asks a buffer server**, in any backend. Where its members are not files in a read-buffer directory, the transformation fails.
+- **A `deepfolder` pin resolves no member**, in any backend, just like `deepcell`.
 - **A `deepcell` pin resolves no member**, in any backend.
 
 ### When a member is on disk
@@ -292,24 +292,21 @@ A member is **on disk** when its buffer is a file in a read-buffer directory of 
 ### Outside bash
 
 - **A `folder` pin is a dict of contents.** The process that runs the transformation resolves every member, from any buffer source, before the code runs. Every member is in memory at once. Under a CLI backend the members travel to the job as a directory that the runtime reads back into a dict, and the code does not see that directory.
-- **A `deepfolder` pin is a dict from each key to a path.** The path is the member's buffer file in a read-buffer directory, as it is stored. Nothing is made for it: no directory, no link and no copy. The code deals with the stored form: a path that ends in `.zst` or `.gz` holds the member's bytes compressed. The file has no name of its own and no extension, and the key is the name. A member that is not on disk fails the transformation.
-- **A `deepcell` pin is a dict of checksum objects.** Python code can resolve a member in memory (`Checksum.resolve()`), and in a CLI job under `remote: daskserver` only: no Seamless configuration is exported to a job on another backend. R and Julia code cannot resolve one, because their checksum class carries a checksum and no access to a buffer. A `deepcell` pin serves to select members and to pass them on.
-- **A path is observable.** On one machine both backends give the same strings, and another machine gives other strings. The stored form can differ too. Code whose result depends on the string or the form, and not on the member's bytes, is not covered by any guarantee.
+- **A `deepcell` or `deepfolder` pin is a dict of checksum objects.** Python code can resolve a member in memory (`Checksum.resolve()`), and in a CLI job under `remote: daskserver` only: no Seamless configuration is exported to a job on another backend. R and Julia code cannot resolve one, because their checksum class carries a checksum and no access to a buffer. These pins serve to select members and pass them on.
 
 ### In bash
 
-A `folder` or `deepfolder` pin is a **new directory in the job directory**, with the pin's name. It is never a link to a directory in a read-buffer directory. Seamless makes one entry in it for each key of the index:
+A `folder` pin is a **new directory in the job directory**, with the pin's name. It is never a link to a directory in a read-buffer directory. Seamless makes one entry in it for each key of the index:
 
-| The member | `folder` pin | `deepfolder` pin |
-|---|---|---|
-| is on disk | a symlink to that file | a symlink to that file |
-| is not | the buffer is resolved, from any buffer source, and written | the job fails with a `CacheMissError` that names the member. No server is asked |
+| The member | `folder` pin |
+|---|---|
+| is on disk | a symlink to that file |
+| is not | the buffer is resolved, from any buffer source, and written |
 
 - **The directory lives as long as the job directory**, which is removed when the job ends.
-- **A `deepfolder` entry is never transcoded.** It is a symlink, and its name is the key with the suffix of the stored form: the member `1abc.pdb` that is stored as `<checksum>.gz` is the entry `1abc.pdb.gz`. The script reads the form from the suffix. A compression suffix in the pin's own name asks for nothing.
 - **A `folder` entry has the form that the pin's name asks for.** The pin `mydata` gets each member's bytes, and the pin `mydata.zst` gets them compressed, with `.zst` on each entry. An entry is a symlink where the stored form fits, and a file that is written in the asked form where it does not ([Compression](compression.md)).
-- **In a container**, a written entry is a file in the job directory, and a symlink points into a read-buffer directory that the wrapper binds, so it resolves there. A buffer file that the container cannot read counts as not on disk: a `folder` member is read through the link and copied into the job directory, in the form that the pin's name asks for, and a `deepfolder` pin fails before the container starts, with a message that says that the buffer file is a link that the container cannot follow.
-- **A `deepcell` pin is refused.** The message names the pin and says to declare it `deepfolder`, `folder` or `plain`. It is refused when the pin's celltype is set, and again before launch for a transformation that arrives by another road.
+- **In a container**, a written entry is a file in the job directory, and a symlink points into a read-buffer directory that the wrapper binds, so it resolves there. A buffer file that the container cannot read counts as not on disk: a `folder` member is read through the link and copied into the job directory, in the form that the pin's name asks for.
+- **A `deepcell` or `deepfolder` pin is refused.** The message names the pin and says to declare it `folder` or `plain`. It is refused when the pin's celltype is set, and again before launch for a transformation that arrives by another road.
 
 ### The casts
 
@@ -329,7 +326,7 @@ A pin gets another form when it is declared with another celltype than its sourc
 
 - **A `plain` pin holds strings, not objects.** Plain data holds no checksum objects in any language.
 - **A rule for a pin never depends on what it was cast from.**
-- **The way to get another form is a cast.** A transformer that wants the checksums of a `deepfolder` declares the pin `plain`. One that wants paths declares it `deepfolder`. One that wants contents declares it `folder`.
+- **The way to get another form is a cast.** A transformer that wants 64-hex strings declares the pin `plain`. One that wants contents declares it `folder`. `deepcell` and `deepfolder` both give checksum objects.
 
 ### The output side: a deep result is an index
 
@@ -387,5 +384,5 @@ Deep `.buffer` reads now validate both the mapped `plain` celltype and index fla
 - Do not expect a decoded-text view of a `folder`. Decode per file with `bytes → text`, or decode the whole folder inside a transformer.
 - Do not depend on the order in which `folder → mixed` resolves children, nor on it being parallel.
 - A deep **result** is an index, like a deep input: reading it resolves no children, and nothing holds a claim on the leaves.
-- Outside bash, a `folder` pin is a dict of contents, a `deepfolder` pin is a dict of paths that must exist as files, and a `deepcell` pin is a dict of checksum objects. Declare the pin `plain` to get 64-hex strings. In bash a `deepcell` pin is refused.
+- Outside bash, a `folder` pin is a dict of contents, and `deepcell` and `deepfolder` pins are dicts of checksum objects. Declare the pin `plain` to get 64-hex strings. Bash refuses `deepcell` and `deepfolder` pins.
 - Wrap a checksum that you return as a member of a deep result: a naked 64-hex string is a value.

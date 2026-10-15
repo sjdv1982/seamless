@@ -3,6 +3,14 @@
 Written 2026-10-12, revised 2026-10-13 after three more rounds of rulings by
 the author. Paths are relative to `/home/agent/seamless1`.
 
+## Current status (2026-10-14)
+
+The `deepfolder` input pin rule changed after this plan: outside bash it now
+uses the same dict-of-checksum-objects form as `deepcell`, and bash refuses
+both pin types. Earlier path and bash-directory rulings below are historical;
+the current contract is in
+[`contracts/deep-celltypes.md`](../docs/agent/contracts/deep-celltypes.md).
+
 This plan follows two plans and cuts across both:
 
 - [bash-docker-conda-transformers-plan.md](bash-docker-conda-transformers-plan.md),

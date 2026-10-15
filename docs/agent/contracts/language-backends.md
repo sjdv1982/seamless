@@ -176,7 +176,7 @@ execute_cli(command, pins_, PINS, FILESYSTEM, OUTPUTPIN, environment)
 |---|---|
 | `command` | the command that starts the interpreter, run by bash in the job directory |
 | `pins_` | the names of the files and directories to write into the job directory |
-| `PINS` | a dict from each of those names to its content: a `Buffer`, bytes, or the path of a file that exists on the executing host |
+| `PINS` | a dict from each of those names to its content: a `Buffer`, bytes, a dict of checksums, or the path of a file that exists on the executing host |
 | `FILESYSTEM` | a dict from each name to its entry, as for a pin on file (*Handler languages*, *The arguments*) |
 | `OUTPUTPIN` | the celltype in which the content of `RESULT` is read |
 | `environment` | the transformer's environment, as a dict |
@@ -301,8 +301,8 @@ A Python CLI job is in the position of a bash job.
 
 Deep celltypes follow the matrix of [Deep celltypes](deep-celltypes.md), *How deep values reach a transformer*. Bash has a column of its own, and every other backend, CLI and in-memory alike, follows the other.
 
-- **A folder pin is a dict of contents under every backend but bash**, and a deepfolder pin is a dict of paths. Under a CLI backend a folder travels to the job as a directory that the runtime reads back into a dict. The code does not see that directory.
-- **A deepcell pin is a dict of checksum objects under every backend but bash**: `seamless.Checksum` in Python, and the checksum class of the language in R and Julia ([Handler languages](handler-languages.md), *Checksum classes*).
+- **A folder pin is a dict of contents under every backend but bash**, and `deepcell` and `deepfolder` pins are dicts of checksum objects. Under a CLI backend a folder travels to the job as a directory that the runtime reads back into a dict. The code does not see that directory.
+- **A deepcell or deepfolder pin uses the checksum class of its language**: `seamless.Checksum` in Python, and the checksum class of the language in R and Julia ([Handler languages](handler-languages.md), *Checksum classes*).
 - **A deep result is a dict under every backend but bash**, and the `RESULT` directory in bash.
 - **Both backends of a language give a deep pin the same form.**
 - **A compiled transformer refuses a deep pin**, as before.
