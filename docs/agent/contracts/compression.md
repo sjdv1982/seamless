@@ -30,7 +30,7 @@ done
 | Canonical checksum | No — always decompressed bytes |
 | Transformation cache key | No |
 | `.INDEX` leaf names for deep/directory pins | No — always canonical names |
-| Entry names of a `deepfolder` pin in a bash job directory | Yes — the key followed by the suffix of the stored form |
+| Checksum objects in a `deepfolder` pin | No — the pin does not expose a member's stored form |
 | Storage path on disk | Yes — `ab/abcd.zst` vs `ab/abcd` |
 | HTTP `Content-Encoding` on GET | Yes |
 | HTTP `Content-Encoding` on PUT | Yes |
@@ -101,9 +101,9 @@ seamless-run --input file.npy.zst mycommand
 
 Pin names carry the compression suffix. The worker reads the suffix from the pin name and materializes the buffer in the matching compression format.
 
-## Directory pins: `folder` and `deepfolder`
+## Directory pins: `folder`
 
-A bash transformer gets a `folder` or a `deepfolder` pin as a new directory in its job directory, with one entry for each key of the index. The two celltypes differ in what happens to a member's stored form ([Deep celltypes](deep-celltypes.md), *How deep values reach a transformer*).
+A bash transformer gets a `folder` pin as a new directory in its job directory, with one entry for each key of the index ([Deep celltypes](deep-celltypes.md), *How deep values reach a transformer*). Bash refuses `deepcell` and `deepfolder` pins.
 
 **A `folder` pin follows the suffix in the pin's name.** The suffix applies to all entries:
 
@@ -112,15 +112,7 @@ A bash transformer gets a `folder` or a `deepfolder` pin as a new directory in i
 
 An entry is a symlink where the stored form fits the suffix, and a file that is written in the asked form where it does not (*Read-buffer materialization*).
 
-**A `deepfolder` pin is never transcoded.** Each entry is a symlink to the member's buffer file in the stored form, and its name is the key followed by the suffix of that form:
-
-- the member `file.npy` that is stored as `<checksum>.zst` is the entry `mydata/file.npy.zst`;
-- the member stored uncompressed is the entry `mydata/file.npy`;
-- a compression suffix in the pin's own name asks for nothing: `mydata.zst` and `mydata` give the same entries.
-
-The consumer reads the form from the suffix of the entry. A `deepfolder` member that is not stored as a file in a read-buffer directory fails the job. No buffer server is asked.
-
-**Outside bash, a `deepfolder` pin gives the stored paths**, `<checksum>`, `<checksum>.zst` or `<checksum>.gz`, as they are in the read-buffer directory. Nothing is made for them. A path that ends in `.zst` or `.gz` holds the member compressed. A `folder` pin there is a dict of contents, whatever its stored form.
+**Outside bash, a `deepfolder` pin gives a dict of checksum objects**, like a `deepcell` pin. It does not expose stored paths or compression form. A `folder` pin there is a dict of contents, whatever their stored form.
 
 **The index always uses canonical keys** (no compression suffixes). The directory checksum is unaffected by which compression format is used for member storage.
 
@@ -131,13 +123,13 @@ When materializing a pin from the read buffer folder:
 1. **Fast path**: if the stored form matches the requested suffix, create a symlink.
 2. **Fallback**: if only a non-matching form is available, read it, transcode (decompress and/or compress), and write the result to the pin path. No symlink.
 
-This holds for an ordinary pin and for the entries of a `folder` pin. A `deepfolder` entry never takes the fallback (*Directory pins*).
+This holds for an ordinary pin and for the entries of a `folder` pin. A `deepfolder` pin does not expose entries or stored forms.
 
 Agents should not assume that the fast path is always taken, but can assume that the resulting bytes at the path of an ordinary pin or of a `folder` entry will always match what was uploaded (decompressed if needed).
 
 Decompression failures during materialization raise an error — there is no silent fallback to corrupt data.
 
-**A buffer file that is a link which the job's container cannot follow takes the fallback too.** A buffer file can be a symlink to a file outside the read-buffer directory (`seamless-upload` has a symlink mode beside its hard-link mode). Where the job runs in a container, such a file is not linked: an ordinary pin and a `folder` entry are read through the link and written into the job directory, in the form that the pin's name asks for. A `deepfolder` pin fails. A hard-linked buffer file is an ordinary file, in a container too.
+**A buffer file that is a link which the job's container cannot follow takes the fallback too.** A buffer file can be a symlink to a file outside the read-buffer directory (`seamless-upload` has a symlink mode beside its hard-link mode). Where the job runs in a container, such a file is not linked: an ordinary pin and a `folder` entry are read through the link and written into the job directory, in the form that the pin's name asks for. A hard-linked buffer file is an ordinary file, in a container too. Bash refuses `deepfolder` pins before this lookup.
 
 ## Hashserver HTTP protocol
 
@@ -184,5 +176,4 @@ Always returns the **uncompressed** byte count, regardless of what form is store
 - When processing GET responses, check `Content-Encoding` and decompress before use.
 - Use `strip_compression_suffix` anywhere a filename may carry a compression suffix before calling `os.path.splitext` or deriving sidecar names.
 - Do not assume a specific stored form exists — the client should handle both compressed and uncompressed responses from GET.
-- The Python face (`transformer.compression.my_pin`) is deferred and not yet implemented; use the CLI face (suffix in the pin/filename) for now. Outside bash a Python transformer cannot ask for a stored form: an ordinary pin is its value, and a `deepfolder` pin gives the stored paths.
-- A script that reads a `deepfolder` pin reads the compression from the suffix of each entry. Do not assume that a `deepfolder` entry is uncompressed because the pin's name has no suffix.
+- The Python face (`transformer.compression.my_pin`) is deferred and not yet implemented; use the CLI face (suffix in the pin/filename) for now. A `deepfolder` pin gives checksum objects outside bash and is refused by bash, so it does not request or expose a stored form.

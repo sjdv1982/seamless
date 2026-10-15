@@ -94,17 +94,17 @@ A pin can say that it may be handed over as a file or a directory, by an entry i
 
 | Writer | Pins | Entry |
 |---|---|---|
-| a builder, in every language | `folder`, `deepfolder` | mode `directory` |
+| a builder, in every language | `folder` | mode `directory` |
 | a builder of a handler language | `mixed`, `plain`, `text`, `bytes`, `binary` | mode `file`, optional |
 | `seamless-run` | a file argument, which is a `bytes` pin | mode `file`, optional |
 | `seamless-run` | a directory argument, which is a `folder` pin | mode `directory` |
 
 - **A builder has no setting for it.** A Python or compiled pin cannot ask for an ordinary pin as a file. Only the five celltypes of a handler language, and directories, carry an entry.
-- **What the executing process does.** It looks for the pin's checksum in its **read-buffer directories**: the buffer directories that the process can read as files, which are that of a hashserver that it launched locally, and that of an extern client that names a directory. No server is asked. For mode `file` the buffer is a file `<dir>/<checksum>` or `<dir>/<first two hex digits>/<checksum>`, also with a compression suffix. For mode `directory` the lookup is by member, one file for each key of the pin's index ([Deep celltypes](deep-celltypes.md), *When a member is on disk*).
-  - **Found**: the pin's value is the path, and nothing is read. The handler's `filesystem` entry says so ([Handler languages](handler-languages.md), *The arguments*).
+- **What the executing process does.** It looks for the pin's checksum in its **read-buffer directories**: the buffer directories that the process can read as files, which are that of a hashserver that it launched locally, and that of an extern client that names a directory. No server is asked. For mode `file` the buffer is a file `<dir>/<checksum>` or `<dir>/<first two hex digits>/<checksum>`, also with a compression suffix. For mode `directory` a `folder` pin's members are looked up by index key and materialized ([Deep celltypes](deep-celltypes.md), *When a member is on disk*).
+  - **Found, mode `file`**: the pin's value is the path, and nothing is read. The handler's `filesystem` entry says so ([Handler languages](handler-languages.md), *The arguments*).
   - **Not found, mode `file`, not optional**: the transformation fails with a `CacheMissError`, "could not find file".
-  - **Not found, any other case**: the pin is resolved as a value, like a pin without the entry. `optional` is read for mode `file` only. For mode `directory` what happens to a member that is not found is decided by the pin's celltype: a `folder` member is resolved, and a `deepfolder` member fails the transformation.
-- **Which backends hand a pin over as a path.** A handler language receives a path for the five celltypes (*Pins on file* in [Handler languages](handler-languages.md)). A `deepfolder` pin gives paths in every language but bash, where it is a directory of links. A bash job has every file and directory pin written or linked into its job directory ([Environments](environments.md)).
+  - **Not found, any other case**: the pin is resolved as a value, like a pin without the entry. `optional` is read for mode `file` only. A `folder` member is resolved from any buffer source. `deepfolder` pins have no directory entry.
+- **Which backends hand a pin over as a path.** A handler language receives a path for the five celltypes (*Pins on file* in [Handler languages](handler-languages.md)). A `deepfolder` pin gives checksum objects outside bash and is refused by bash. A bash job writes or links ordinary file pins and materializes `folder` pins into its job directory ([Environments](environments.md)).
 - **A buffer file that the container cannot follow counts as not found.** It is judged where the job runs in a container ([Deep celltypes](deep-celltypes.md)).
 
 ## A transformer's code receives

@@ -139,7 +139,7 @@ A transformation in a handler language, such as R or Julia, is run by a **handle
 - The entry says that the pin *may* be handed to the handler as a file. That happens when the pin's buffer is on file where the transformation runs. Otherwise the handler gets the value (`contracts/handler-languages.md`, *Pins on file*).
 - `__format__` is load-bearing, so the entry is in the checksum. It is **neutral**: every transformation of every handler language carries it for every such pin, whichever form is delivered and on whichever machine. It adds nothing to identity beyond the language and the pin celltypes, which are in the checksum already.
 - Identity therefore does not depend on where a buffer is stored, and neither does the result: both forms hold the same bytes.
-- **The `folder` and `deepfolder` pins of every language carry a directory entry** in the same way, and `seamless-run` writes an entry for each file and directory argument. `contracts/pins.md`, *Pins on file*, has the entry, who writes it and what the executing process does with it. A language backend does not change it: a Python transformation under either backend carries the same `__format__`, so no transformation gets another checksum from its backend.
+- **Only `folder` pins carry a directory entry.** `seamless-run` writes one for each directory argument. A `deepfolder` pin carries checksum objects outside bash and is refused by bash, so it has no directory entry. `contracts/pins.md`, *Pins on file*, has the entry, who writes it and what the executing process does with it. A language backend does not change the pin form.
 
 ## Forcing recomputation / auditing
 

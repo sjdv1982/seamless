@@ -127,13 +127,14 @@ The script runs inside a container made from the image.
   target is not bound. Where the transformation will run in a container,
   Seamless follows each buffer file before it links it, and treats one that
   ends outside what the wrapper binds as a buffer that is not on disk. An
-  ordinary input and a `folder` member are then copied into the job directory,
-  and a `deepfolder` pin fails before the container starts, with a message that
-  says why ([Deep celltypes](deep-celltypes.md), *How deep values reach a
-  transformer*). What the wrapper binds is the job directory and the
+  ordinary input and a `folder` member are then copied into the job directory.
+  Bash refuses `deepfolder` pins before launch; handler backends carry their
+  checksum objects without needing member files in the container ([Deep
+  celltypes](deep-celltypes.md), *How deep values reach a transformer*). What
+  the wrapper binds is the job directory and the
   read-buffer directories. A bind that an operator adds with
   `SEAMLESS_CONTAINER_ARGS` is not seen, so such a bind makes a copy that was
-  not needed, and a `deepfolder` pin fail that the container could have read.
+  not needed.
 - **The host's environment variables are not inherited.** The pin variables
   are set.
 - **`HOME` is `/seamless-job`, the working directory.** It is a writable
