@@ -22,7 +22,7 @@ dependencies = [
     "hashserver>=1.1.0",
     "remote-http-launcher>=0.4.5",
     "seamless-signature>=0.1.2",
-    "seamless-workflow[share]>=0.1.0"
+    "seamless-workflow>=0.1.0"
 ]
 keywords = ["seamless", "suite", "workflow", "reproducibility", "caching", "pipeline", "HPC", "deterministic", "content-addressed"]
 classifiers = [
