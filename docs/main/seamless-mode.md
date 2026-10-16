@@ -23,13 +23,13 @@ Commands that make no sense to wrap (like `cd`, `ls`, `rm`, editors, and package
 
 ## Setup
 
-`seamless-mode-bind.sh` is installed alongside `seamless-transformer`. Source it in your shell to make the seamless-mode commands and hotkey available:
+`seamless-mode-bind.sh` is installed alongside `seamless-transformer`. Source it in interactive Bash to register the seamless-mode commands and hotkey:
 
 ```bash
-source $(which seamless-mode-bind.sh)
+source "$(command -v seamless-mode-bind.sh)"
 ```
 
-For permanent setup (so it is available every time you open a shell), see the [seamless-transformer README](api/seamless-transformer.md#setting-up-seamless-mode) for instructions specific to your environment manager (conda, venv, virtualenv, virtualenvwrapper).
+For permanent setup with Conda, POSIX venvs (including uv), and Pixi, see the [seamless-transformer README](api/seamless-transformer.md#setting-up-seamless-mode).
 
 ## Usage
 

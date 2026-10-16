@@ -62,6 +62,8 @@ seamless-run 'seq 1 10 | tac && sleep 5'    # cache hit — instant
 
 ## Seamless mode
 
+When `seamless-suite` is installed in a Conda environment, activating that environment in interactive Bash loads the Seamless mode bindings automatically. For POSIX venvs, including uv environments, run `seamless-mode-venv-hook install` once after activating the environment. In Pixi, use `pixi run seamless-mode-shell` to start an interactive Bash with the bindings loaded. Use `seamless-mode-on` and `seamless-mode-off` to enable and disable Seamless mode; `Ctrl-U U` toggles it. See the [Seamless mode setup guide](docs/main/seamless-mode.md#setup) for details.
+
 ### Automatically wrap the bash commands you type
 
 ![seamless-mode demo](docs/main/seamless-mode.gif)
