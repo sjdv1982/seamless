@@ -22,7 +22,7 @@ dependencies = [
     "hashserver>=1.1.0",
     "remote-http-launcher>=0.4.5",
     "seamless-signature>=0.1.2",
-    "seamless-workflow>=0.1.0"
+    "seamless-workflow[share]>=0.1.0"
 ]
 keywords = ["seamless", "suite", "workflow", "reproducibility", "caching", "pipeline", "HPC", "deterministic", "content-addressed"]
 classifiers = [
@@ -40,6 +40,9 @@ classifiers = [
 Homepage = "https://github.com/sjdv1982/seamless"
 Repository = "https://github.com/sjdv1982/seamless"
 Issues = "https://github.com/sjdv1982/seamless/issues"
+
+[project.scripts]
+seamless-serve-graph = "seamless_workflow.serve_graph:main"
 
 [tool.setuptools]
 packages = []
