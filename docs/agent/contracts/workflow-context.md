@@ -152,6 +152,8 @@ The Context **launches replacement work immediately and delays only the cancella
 - **Graph loading never executes code to reconstruct callables.**
 - **A `direct_print` key in a transformer entry is ignored.** `get_graph()` does not write one, and a graph that carries one still loads.
 
+The `seamless-serve-graph` launcher reads one local JSON graph and calls the public `Context.set_graph(graph, mounts=False, shares=True)`. It restores saved shares and starts derivation in the default `ctx` namespace. [Shares: Serving saved graphs](./shares.md#serving-saved-graphs) specifies its command and lifetime. The loader accepts current workflow serialization; it does not convert original legacy `__seamless__` exports.
+
 ## The Context surface: which calls wait, and which errors mean what
 
 Only the operations this page specifies are listed; handle-level calls are in `contracts/cells.md` and `contracts/pins.md`.

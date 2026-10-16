@@ -2,7 +2,7 @@
 
 This page is a **guide**, not a contract. It tells you how to build a web application whose server side is a workflow Context: how to think about it, how to develop it with hot reloading on both sides, and how to deploy it. The normative behaviour lives in `contracts/shares.md`, `contracts/mounts.md` and `contracts/workflow-context.md`; this page links to them instead of restating them.
 
-A few parts describe tools that do not exist yet: `seamless-serve-graph`, the pack tool and Cloudless in the deployment tactics. They are marked *(not yet implemented)* where they occur and collected under *Implementation status*.
+A few parts describe tools that do not exist yet: the pack tool and Cloudless in the deployment tactics. They are marked *(not yet implemented)* where they occur and collected under *Implementation status*.
 
 ## The idea: shared cells are the REST API
 
@@ -341,43 +341,21 @@ Unchanged files are never uploaded or transferred again.
 
 #### 4. Serve
 
-The serving process does nothing application-specific. Everything it needs is in the graph, the deployment configuration and its command line:
+The shipped command loads one saved graph and serves its declared shares. Install `seamless-suite` for the `seamless-serve-graph` entry point and its HTTP dependency. The implementation is `seamless_workflow.serve_graph:main`; `python -m seamless_workflow.serve_graph` is equivalent.
 
-```python
-import signal, threading
-import seamless, seamless.config
-from seamless_workflow import Context, shareserver
-
-def serve(graphs, host="127.0.0.1", port=5813):
-    seamless.config.init()
-    shareserver.configure(host=host, port=port)
-    contexts = []
-    try:
-        for namespace, graph in graphs.items():
-            preflight(graph)                  # /has-now on every checksum; refuse to start if one is missing
-            ctx = Context()
-            contexts.append(ctx)
-            ctx.shares.namespace = namespace
-            ctx.set_graph(graph, mounts=False, shares=True)
-        stop = threading.Event()
-        for sig in (signal.SIGTERM, signal.SIGINT):
-            signal.signal(sig, lambda *_: stop.set())
-        while not stop.wait(1.0):
-            pass
-    finally:
-        for ctx in contexts:
-            ctx.close()
-        seamless.close()
+```bash
+seamless-serve-graph graph.json
 ```
 
-- **`preflight(graph)` is not shown.** It reads every checksum in the graph (`value.checksum` of each cell node) and asks the hashserver `GET /has-now` for them in a batch; it raises if any is missing.
-- **`serve` installs signal handlers**, so it runs in the main thread of its process.
-- **`mounts=False`, always.** A server must never read or write files because a graph says so.
-- **The namespace is runtime state, not part of the graph.** It comes from the command line; the same graph can be loaded several times under different names in one process.
-- **Run the startup check.** Without it, a missing buffer first shows up as a `503` in a browser.
-- **Shut down on SIGTERM and SIGINT**: close the Contexts, then `seamless.close()`.
-- **There is no health endpoint.** `GET /openapi.json` answers whenever the server runs.
-- A generic command, `seamless-serve-graph --graph <ns>=<graph.json or checksum> --host 127.0.0.1 --port 5813`, is **planned** and is not ported yet *(not yet implemented)*. Until then, the code above is the whole server.
+The [share contract](../contracts/shares.md#serving-saved-graphs) defines the command's behavior. Give it a local UTF-8 JSON file containing a current workflow graph. A graph with shares uses `__seamless_workflow__: "0.6"`; older current workflow versions cannot declare shares. Original legacy exports need migration before this command can load them.
+
+The runner creates one Context in the default `ctx` namespace and calls `ctx.set_graph(graph, mounts=False, shares=True)`. Graph-declared file mounts are disabled; shares are restored. A graph can also contain transformers, which begin deriving when loaded. Open `/ctx/index.html` for a page shared there. A share declared `toplevel=True` can be served from `/index.html`.
+
+The share server uses its normal bind configuration, currently `0.0.0.0:5813` by default. Configure the listener in Python with `seamless_workflow.shareserver.configure()` if you need a different address or port in a custom serving script. The command has no listener flags. Its HTTP and websocket endpoints use the current share protocol and built-in `/seamless-client.js`.
+
+Put the desired cluster and execution mode in the usual `seamless-config` files for the directory from which you launch the command. The runner initializes that configuration before creating the Context, so a configured hashserver, database, jobserver or daskserver is used through the normal modern stack. See [Setting up a local cluster](../../main/cluster.md) and [Remote execution](../../main/remote.md). The command has no remote-service flags.
+
+The runner does not query `/has-now` for every referenced buffer. Check availability as a separate deployment step if a later browser `503` is unacceptable. SIGINT or SIGTERM closes the Context and Seamless. There is no dedicated health endpoint; `GET /openapi.json` shows the HTTP server is responding, while `GET /ctx/state-graph` reports node states.
 
 #### 5. Reverse proxy
 
@@ -392,14 +370,14 @@ The share server has no compression, no TLS and no long-lived caching. A reverse
 
 - **Every share is readable by anyone who reaches the port**, and every writable share is writable by them. Bind to loopback and let the proxy do access control.
 - **`/<ns>/state-graph` and `/openapi.json` are always served.** The state graph carries every node's path, celltype, state, checksum and error text, also for nodes that are not shared. Block the state-graph path at the proxy if it must not be public.
-- **Loading a graph opens endpoints and can run transformer code.** Load only graphs you built, named by checksum in the deployment configuration. A graph of unknown origin is loaded with `shares=False`, and `mounts=False`.
+- **Loading a graph opens endpoints and can run transformer code.** Deploy a graph file you built and verified. If an application must inspect a graph of unknown origin, load it through the Python API with `shares=False` and `mounts=False`.
 - **One Context means one shared state.** For a tool where each user has their own state, load the static graph once at a fixed namespace, and give each session its own backend Context at its own namespace, built from a template graph. The page reads the session id from its URL and calls `connect_seamless(null, null, "s-" + id)`. Sessions share the static buffers, because the checksums are the same. The share server has no custom routes, so creating sessions needs a small control listener, with idle expiry *(not yet implemented)*.
-- **A release is a graph checksum.** Store `graph.json` on the hashserver as a buffer and name its checksum in the deployment configuration. Rolling back means naming the previous checksum; its buffers are still there unless the hashserver was cleared.
+- **Keep a versioned graph file for each release.** The serving command reads a local JSON file; deploy that file and its referenced buffers together. Rolling back means launching a previous graph file whose buffers are still available.
 - **The compile step is outside Seamless identity.** The graph records what was built, not how. Record the "how" in a cell (git commit, lockfile checksum, exact Node version) and share it read-only, so the page can show it.
 
 ### Taking it further: serve a workflow as data
 
-The destination of level 2 is that the **static front end and the Python backend ship as one kind of artifact**: a graph, identified by one checksum, served by a generic server, with the backend nodes recomputed or cache-hit on the server's execution backend. That needs two things that are not ported from legacy Seamless yet *(not yet implemented)*: `seamless-serve-graph`, and Cloudless for per-session instances. Build the application so that its server side is a `build(ctx)` function: that is the part that moves into the graph unchanged.
+The destination of level 2 is that the **static front end and the Python backend ship as one kind of artifact**: a saved workflow graph, with backend nodes recomputed or cache-hit on the server's execution backend. The generic `seamless-serve-graph` command serves a local graph file now; Cloudless for per-session instances remains unimplemented. Build the application so that its server side is a `build(ctx)` function: that is the part that moves into the graph unchanged.
 
 ## Checklist
 
@@ -415,9 +393,11 @@ The destination of level 2 is that the **static front end and the Python backend
 
 Exercised against the code: `bytes` cells shared at multi-segment paths with a pinned `mimetype`; the `share` entry in `get_graph()` and the absence of a `mount` entry for unmounted cells; `set_graph(graph, mounts=False, shares=True)` into a fresh Context under the same namespace, with markers continuing; the `ValueError` for a namespace that a live Context holds; the share server staying up after `ctx.close()`; `authority="file"` persistence of a PUT across two Contexts; the `build`/`start` example and its `%run -i` header (a PUT to `a` recomputes `c`; the old Context is closed, the namespace is re-claimed and the defaults return); and the pack and serve sketches, run in a single process over the local buffer cache. That run showed the graph holding only `value.checksum` per cell node, pinned content types, no `mount` entries, bodies equal to the files, and `GET /<ns>/` answering the `index.html` share.
 
+The graph-serving command is implemented. Its focused tests cover the required graph-file argument, JSON loading into a Context, a real Context's serialized-graph path, configuration initialization, cleanup after loading fails, and signal handler restoration. The command uses current workflow serialization and the modern share protocol.
+
 Not implemented, and described above as the intended behaviour:
 
-- **`seamless-serve-graph`**, the **pack tool** as a shipped command (the code above is a sketch) and **Cloudless**.
+- The **pack tool** as a shipped command (the code above is a sketch) and **Cloudless**.
 
 Not verified:
 

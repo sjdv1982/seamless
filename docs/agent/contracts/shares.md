@@ -2,7 +2,7 @@
 
 A **share** is the attachment whose external resource is an HTTP endpoint served by this process. The cell's value is read with GET, written with PUT when the share is writable, and every change is announced over a websocket. **The attachment contract of `contracts/attachments.md` applies in full** — direction, scope, slots, spec versus session, the sense and actuate disciplines, delivery pacing, the cut barrier and the lifecycle. This page specializes it for values served over HTTP. It does not restate a rule from that page; each section says where the share driver makes a generic rule concrete.
 
-Shares exist on the **workflow Context** only. A standalone `Cell`, a `direct`/`delayed` transformer and the command-line face have no HTTP integration. **A share is unrelated to the `seamless-share` package**, which inspects and exports cached buffers and transformations.
+Shares exist on the **workflow Context** only. A standalone `Cell` and a `direct`/`delayed` transformer have no HTTP integration. The `seamless-serve-graph` command loads workflow Contexts with their declared shares (*Serving saved graphs* below). **A share is unrelated to the `seamless-share` package**, which inspects and exports cached buffers and transformations.
 
 Code locations:
 
@@ -319,6 +319,20 @@ Of the three-way error model of `contracts/attachments.md`, a share has only the
 - **`shares=True` — the default — attaches every spec exactly as `share()` does.** It starts the server if needed, and it blocks through every first delivery, like `mounts=True`. A key or namespace that is taken raises, and the graph is not replaced.
 - **The namespace is not in the graph.** Set `ctx.shares.namespace` before loading.
 - **Loading a graph with shares opens a network endpoint.** Graphs of unknown origin must be loaded with `shares=False`.
+
+## Serving saved graphs
+
+The `seamless-suite` distribution installs `seamless-serve-graph`, whose entry point is `seamless_workflow.serve_graph:main`, and includes `seamless-workflow[share]`.
+
+```bash
+seamless-serve-graph graph.json
+```
+
+- **The command takes exactly one local graph file.** It reads UTF-8 JSON and passes it to the current workflow graph loader. The graph must use the current workflow serialization; the command does not convert an original legacy `__seamless__` export. Share entries require workflow graph version `0.6`.
+- **The Context uses its default `ctx` namespace.** Shares in the saved graph become URLs under `/ctx/`; top-level shares keep their declared paths. The runner restores shares and disables file mounts. It does not require the graph to declare a share.
+- **Loading starts reactive derivation.** The runner does not perform a buffer-availability preflight. Its share server uses the ordinary modern HTTP/websocket protocol and bind configuration from `seamless_workflow.shareserver`.
+- **The runner owns shutdown.** It waits for SIGINT or SIGTERM in the main thread, restores the previous signal handlers, closes the Context, and calls `seamless.close()`.
+- **Remote storage and execution use `seamless-config`.** Define the cluster and execution mode in the normal Seamless configuration files before launch. The runner loads configuration relative to its launch directory and has no remote-service flags. See [Setting up a local cluster](../../main/cluster.md) and [Remote execution](../../main/remote.md).
 
 ## Lifecycle
 
