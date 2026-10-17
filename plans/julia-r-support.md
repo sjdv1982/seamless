@@ -440,10 +440,10 @@ agree.
   the result or re-raises its exception;
 - keys the thread by `(os.getpid(), name)`;
 - runs `func` inline when the caller already is that thread;
-- takes no lock;
-- with `SEAMLESS_INTERPRETER_THREAD=0`, runs `func` inline on the calling
-  thread. Exclusion then comes from the process lock alone, which R9
-  guarantees is held. §6 uses this switch.
+- takes no lock.
+
+The switch `SEAMLESS_INTERPRETER_THREAD=0`, which ran `func` inline on the
+calling thread for §6, was removed after §6 (see §8).
 
 It is language-agnostic: any handler that embeds an interpreter with thread
 affinity can use it.
@@ -601,7 +601,9 @@ are run for ryp, which uses no helper, to check A7.
   refused at dispatch. The original decision that this was open is historical.
 - **Unspecified for the time being** (author, 2026-10-12): what happens when
   the pins do not match the parameters of `transform`.
-- **Comes later:** whether the helper stays, after §6.
+- **Ruled after §6** (author, 2026-10-17): the helper stays, and
+  `SEAMLESS_INTERPRETER_THREAD` is removed. Results and verification:
+  [`julia-r-interpreter-thread-results.md`](julia-r-interpreter-thread-results.md).
 
 ## 9. Risks and limits
 
