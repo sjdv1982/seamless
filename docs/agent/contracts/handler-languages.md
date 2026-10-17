@@ -676,21 +676,21 @@ honour it. Seamless offers two public functions, in
   - The thread is created at the first call and lives until the process ends.
   - A call from that thread itself runs `func` at once, on that thread.
   - It takes no lock. Exclusion comes from the process lock.
-  - With the environment variable `SEAMLESS_INTERPRETER_THREAD=0`, `func` runs
-    on the calling thread.
+- **The Julia in-memory backend runs Julia on its interpreter thread.** Every
+  call into Julia goes through `run_in_interpreter_thread("juliacall", ...)`,
+  and so does Julia's exit hook when the process ends. Julia is never called
+  from another thread.
+- **The R in-memory backend does not use it.** Do not rely on which thread
+  runs R code.
 - **Output that `func` prints on the interpreter thread is not in the
   transformation's log.** Capture belongs to the thread that runs the handler
   ([Transformation logs](transformation-logs.md), *What is captured*). Return
   the text, and write it from the handler.
-- **A handler must not hold Python's GIL for seconds.** A worker pool checks
-  each of its processes about once a second, and restarts one that does not
-  answer. A call into an embedded interpreter that keeps the GIL for several
-  seconds makes the process miss that check: the worker is restarted, and the
-  transformation fails. The Julia in-memory backend (`juliacall`) runs the
-  Julia code with the GIL released.
-- **Whether `run_in_interpreter_thread` stays has not been ruled.** The
-  Julia in-memory backend uses it, and the R in-memory backend does not. Do
-  not rely on which thread runs R or Julia code.
+- **A handler may hold Python's GIL for a long time.** A worker pool checks
+  each of its processes about once a second. A worker that is running a
+  transformation is not restarted when it misses that check. It is restarted
+  only when its process exits or its connection closes. The Julia in-memory
+  backend (`juliacall`) runs the Julia code with the GIL released.
 
 ## Logs, failures and cancellation
 

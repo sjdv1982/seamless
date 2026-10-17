@@ -155,7 +155,7 @@ A handler-language transformation runs R, Julia or another registered language t
 Two facts about where bodies run matter to whoever writes a handler:
 
 - **The lock gives exclusion, not a fixed thread.** A body never runs on the main thread of its process, and successive bodies in one process run on different threads. In `process` mode the thread that ran one body may no longer exist when the next body runs. An interpreter that must always be called from the same thread gets that thread from `run_in_interpreter_thread` (`contracts/handler-languages.md`, *Threads, and `run_in_interpreter_thread`*), not from the lock.
-- **A body must not hold Python's GIL for seconds.** A worker pool checks each of its worker processes about once a second and restarts one that does not answer. A body that keeps the GIL for several seconds, as a call into an embedded interpreter can, makes its worker miss the check. The worker is restarted and the transformation fails. This holds in `spawn` and in both remote modes.
+- **A body may hold Python's GIL for a long time.** A worker pool checks each of its worker processes about once a second. A body that keeps the GIL, as a call into an embedded interpreter can, makes its worker miss the check, but a worker that is running a transformation is not restarted for that. It is restarted only when its process exits or its connection closes. This holds in `spawn` and in both remote modes.
 
 ### Concurrency per backend
 

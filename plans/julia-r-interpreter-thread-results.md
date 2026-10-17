@@ -199,3 +199,34 @@ The [Julia JSONL](artifacts/julia-r-interpreter-thread-julia-supplemental-verifi
 and [R JSONL](artifacts/julia-r-interpreter-thread-r-supplemental-verification-20261012.jsonl)
 preserve all events and captured output. The original first-attempt records
 above remain unchanged.
+
+## Ruling and final verification (2026-10-17)
+
+**Ruled by the author: the helper stays.** `run_in_interpreter_thread` is
+public handler API, and the Julia in-memory backend always calls Julia, and
+runs Julia's exit hook, on its interpreter thread. `SEAMLESS_INTERPRETER_THREAD`
+is removed; its effective value is fixed at the helper-on setting. Inline
+Julia (`helper=0`) was a negative control: on a changed caller thread it
+stalled, and with an unchanged one it hung at Python shutdown. It is not a
+supported mode, so no cell of it is retained.
+
+The spawned-worker failures with the helper on were worker health-check
+restarts (`ping timeout`) while a transformation ran. The process manager no
+longer restarts a worker that has a transformation in flight when it misses
+a ping; it restarts only on process exit or a closed connection.
+
+After both changes, all 32 helper-on cells (16 Julia, 16 R, `inprocess` and
+`spawn`, eight snippets each, three calls per cell) passed, each with one body
+PID and no worker restart. The 10-second bodies took 31–35 s per cell in total.
+Same environment as the supplemental run above (Python 3.14.4, juliacall
+0.9.36, ryp 0.5.0, NumPy 2.4.4; `JULIA_PROJECT` and `PYTHON_JULIACALL_THREADS`
+unset), run with `conda run --live-stream -n seamless1`.
+
+- [Julia helper=1 JSONL](artifacts/julia-r-interpreter-thread-julia-helper1-final-20261017.jsonl) — 16 complete records; SHA-256 `5c1f4fb9ad0e99facc83f9490f7c6617f6cbba80b7330ff82077f1e5abc3940f`.
+- [R helper=1 JSONL](artifacts/julia-r-interpreter-thread-r-helper1-final-20261017.jsonl) — 16 complete records; SHA-256 `ea41a49aa588cc27109437e6915bc3f2a751ad85a9cb71f9199a4bd84f2f41ee`.
+
+With the question settled, `seamless-transformer/tests/diagnostics/interpreter_thread_matrix.py`
+and its checked-in `interpreter-thread-matrix.jsonl` (the helper=0 record with
+15 timeouts) were removed from `seamless-transformer`; both remain in its git
+history. The supplemental runner in `artifacts/` imports that script and runs
+only against a checkout that still has it.
