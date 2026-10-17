@@ -42,7 +42,7 @@ The December attempt sent every in-process computation to one shared background 
 
 ### Caveats
 
-- **Don't wake the loop in `start()`.** A task created from another thread only runs once someone waits for it, and `construct()` relies on that to stay lazy: `_run_dependencies()` calls `self.start()`, which schedules the whole computation. When a wake-up was added, `construct()` started computing eagerly and `test_is_cached` failed with an extra database query. This behaviour exists on `cells-and-expressions` too.
+- **Keep construction lazy for the root transformation.** `construct()` starts and resolves upstream dependencies as needed to determine input checksums, but `_run_dependencies()` must not call `self.start()` for the root. Explicit execution through `start()`, `compute()`, or `run()` schedules root work. The loop wake-up in `_create_task_on_loop()` must remain enabled so tasks scheduled from another thread can run without a later wait. This keeps `construct()` and `is_cached()` from computing eagerly or issuing an extra database query.
 - **Blocking now happens inside any running loop.** Sync calls inside `asyncio.run()` scripts now block instead of raising. To keep that guard outside Jupyter, `_sync_task_loop()` could check `running_in_jupyter()`. The plain-asyncio behaviour is what allows testing without a kernel.
 - **Not tested:** the jobserver remote path, and nest_asyncio.
 - `tests/dask/dask_sync.jupyter.py` is a manual notebook check on Dask. Run it from `tests/dask` with `tests/manual/jupyter-wrapper`.
