@@ -1,17 +1,17 @@
-# version of seamless1 with better defined Python versions
-#   which otherwise gives trouble with pure Dask
+# Pinned variant aligned with the current seamless1 Python and Dask stack.
 name: seamless1-exact
 channels:
   - conda-forge
 dependencies:
-  - python=3.12.*
+  - python=3.14.4
   - aiofiles
-  - dask=2025.12.*
-  - distributed=2025.12.*
+  - dask=2026.3.0
+  - distributed=2026.3.0
   - pyyaml
   - jsonschema
-  - ipython=9.6.*
-  - numpy
+  - ipython=9.13.0
+  - numpy=2.4.4
+  - bokeh
   - pip
   - pip:
       - orjson
@@ -22,10 +22,16 @@ dependencies:
       - mkdocs
       - mkdocs-material
       - mkdocstrings[python]
-      - -e seamless-core
-      - -e remote-http-launcher
-      - -e seamless-config
-      - -e seamless-remote
-      - -e seamless-transformer
-      - -e seamless-jobserver
-      - -e seamless-dask
+      - -e ../seamless-core
+      - -e ../remote-http-launcher
+      - -e ../seamless-config
+      - -e ../seamless-remote
+      - -e ../seamless-transformer[compiled]
+      - -e ../seamless-jobserver
+      - -e ../seamless-dask
+      - -e ../seamless-database
+      - -e ../hashserver
+      - -e ../seamless-signature
+      - -e ../seamless-workflow
+      - .
+# The regular local install above places the Conda activation hook in the environment.

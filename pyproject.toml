@@ -41,8 +41,8 @@ Homepage = "https://github.com/sjdv1982/seamless"
 Repository = "https://github.com/sjdv1982/seamless"
 Issues = "https://github.com/sjdv1982/seamless/issues"
 
-[project.scripts]
-seamless-serve-graph = "seamless_workflow.serve_graph:main"
-
 [tool.setuptools]
 packages = []
+
+[tool.setuptools.data-files]
+"etc/conda/activate.d" = ["conda/activate.d/seamless-mode-bind.sh"]

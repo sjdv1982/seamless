@@ -42,7 +42,7 @@ The December attempt sent every in-process computation to one shared background 
 
 ### Caveats
 
-- **Don't wake the loop in `start()`.** A task created from another thread only runs once someone waits for it, and `construct()` relies on that to stay lazy: `_run_dependencies()` calls `self.start()`, which schedules the whole computation. When a wake-up was added, `construct()` started computing eagerly and `test_is_cached` failed with an extra database query. This behaviour exists on `cells-and-expressions` too.
+- **Keep construction lazy for the root transformation.** `construct()` starts and resolves upstream dependencies as needed to determine input checksums, but `_run_dependencies()` must not call `self.start()` for the root. Explicit execution through `start()`, `compute()`, or `run()` schedules root work. The loop wake-up in `_create_task_on_loop()` must remain enabled so tasks scheduled from another thread can run without a later wait. This keeps `construct()` and `is_cached()` from computing eagerly or issuing an extra database query.
 - **Blocking now happens inside any running loop.** Sync calls inside `asyncio.run()` scripts now block instead of raising. To keep that guard outside Jupyter, `_sync_task_loop()` could check `running_in_jupyter()`. The plain-asyncio behaviour is what allows testing without a kernel.
 - **Not tested:** the jobserver remote path, and nest_asyncio.
 - `tests/dask/dask_sync.jupyter.py` is a manual notebook check on Dask. Run it from `tests/dask` with `tests/manual/jupyter-wrapper`.
@@ -299,28 +299,37 @@ pip install seamless-transformer
 
 ### Setting up seamless-mode
 
-After installing, `seamless-mode-bind.sh` is available on your `PATH`. Source it in your shell session to activate the `seamless-mode-on`, `seamless-mode-off`, `seamless-mode-toggle` commands and the `Ctrl-U U` hotkey.
+After installing, `seamless-mode-bind.sh` is available on your `PATH`. Source it in an interactive Bash session to register the `seamless-mode-on`, `seamless-mode-off`, `seamless-mode-toggle` commands and the `Ctrl-U U` hotkey.
 
-**Manual (any environment) — add to `~/.bashrc` or `~/.zshrc`:**
+**Manual Bash setup — add to `~/.bashrc`:**
 
 ```bash
-source $(which seamless-mode-bind.sh)
+source "$(command -v seamless-mode-bind.sh)"
 ```
 
 **Conda — auto-activate with the environment:**
 
-```bash
-cp $(which seamless-mode-bind.sh) $CONDA_PREFIX/etc/conda/activate.d/
-```
-
-**venv / virtualenv — append to the environment's activate script:**
+`seamless-suite` installs its Conda activation hook automatically. If you install only `seamless-transformer`, add the binding script to the active environment:
 
 ```bash
-echo "source $(which seamless-mode-bind.sh)" >> $VIRTUAL_ENV/bin/activate
+mkdir -p "$CONDA_PREFIX/etc/conda/activate.d"
+cp "$(command -v seamless-mode-bind.sh)" "$CONDA_PREFIX/etc/conda/activate.d/"
 ```
 
-**virtualenvwrapper — add to the environment's postactivate hook:**
+**venv, uv, Poetry, virtualenvwrapper, and other POSIX venvs — install a hook once:**
 
 ```bash
-echo "source $(which seamless-mode-bind.sh)" >> $VIRTUAL_ENV/bin/postactivate
+source .venv/bin/activate  # or activate your venv as usual
+seamless-mode-venv-hook install
 ```
+
+Remove it with `seamless-mode-venv-hook remove`. The hook only binds in interactive Bash; it has no effect when the environment is activated by scripts or other shells. uv creates a standard `.venv`, so the same hook applies. Activate it with `source .venv/bin/activate` before installing the hook. `uv run` runs commands inside the environment but does not activate the calling shell.
+
+**Pixi — launch an interactive Bash in the Pixi environment:**
+
+```bash
+pixi add --pypi seamless-suite
+pixi run seamless-mode-shell
+```
+
+`seamless-mode-shell` starts Bash with the Seamless bindings loaded. Pixi activation scripts configure task environments but do not source shell functions into an interactive parent shell. If you use `pixi shell` directly, run `source "$(command -v seamless-mode-bind.sh)"` inside that shell.

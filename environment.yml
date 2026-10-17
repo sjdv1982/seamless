@@ -7,8 +7,9 @@ dependencies:
   - distributed
   - pyyaml
   - jsonschema
-  - ipython=9.6.*
+  - ipython=9.13.*
   - numpy
+  - bokeh
   - pip
   - pip:
       - orjson
@@ -19,12 +20,16 @@ dependencies:
       - mkdocs
       - mkdocs-material
       - mkdocstrings[python]
-      - -e seamless-core
-      - -e remote-http-launcher
-      - -e seamless-config
-      - -e seamless-remote
-      - -e seamless-transformer
-      - -e seamless-jobserver
-      - -e seamless-dask
-# TODO: set up seamless-mode-bind (conda):
-#  - cp $(which seamless-mode-bind.sh) $CONDA_PREFIX/etc/conda/activate.d/
+      - -e ../seamless-core
+      - -e ../remote-http-launcher
+      - -e ../seamless-config
+      - -e ../seamless-remote
+      - -e ../seamless-transformer[compiled]
+      - -e ../seamless-jobserver
+      - -e ../seamless-dask
+      - -e ../seamless-database
+      - -e ../hashserver
+      - -e ../seamless-signature
+      - -e ../seamless-workflow
+      - .
+# The regular local install above places the Conda activation hook in the environment.
