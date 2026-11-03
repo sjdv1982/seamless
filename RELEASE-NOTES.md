@@ -48,6 +48,9 @@ meaning, wrap the string: `Checksum(s)`.
 - A conda specification together with Docker, and an unknown key in an image
   specification, are refused at dispatch. They are no longer rejected when
   the Transformation is built or the environment is set.
+- A `bytes` pin reaches Python code as `bytes`, not as a `seamless.Buffer`.
+  Code that read `value.content` must use `value` itself; `value.decode()`
+  works as before.
 - `BACKEND` accepts `"cli"` and `"mem"` only, where that setting is
   available. Earlier handler tool names such as `"ryp"` and `"juliacall"`
   were not released backend values, so no migration is needed.

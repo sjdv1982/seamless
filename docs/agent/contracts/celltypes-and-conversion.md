@@ -338,7 +338,7 @@ These are contract, not limitations awaiting a fix, and tests pin them. Each is 
 
 - **`plain → yaml` is trivial, although not every JSON buffer is valid YAML.** PyYAML refuses some valid `plain` buffers. The conversion keeps their checksum without validation, and the `yaml` reading then raises (*The celltype hierarchy is a checksum hierarchy*, *Consequences*).
 - **`checksum → X` is not validated against `X`.** The dereference returns the stored checksum without checking that it is deserializable as `X` (*Possible and value rules*).
-- **A `bytes` reading returns a `Buffer`, or `b""` for null.** A non-null checksum read as `bytes` returns the `Buffer` object itself, not a Python `bytes`; the null reading is `b""` (*Reference parser*).
+- **A `bytes` reading returns a `Buffer`, or `b""` for null.** A non-null checksum read as `bytes` returns the `Buffer` object itself, not a Python `bytes`; the null reading is `b""` (*Reference parser*). A transformer's `bytes` pin is not affected: it gives the code `bytes` ([Pins](pins.md), *A transformer's code receives*).
 - **Large integers lose precision.** `orjson` turns an integer below −2⁶³ or above 2⁶⁴ − 1 into a float, so `int` and `plain` readings of it are imprecise (*Reference parser*).
 - **The `str` spelling of a boolean is asymmetric.** Reading the `true` buffer as `str` gives `"True"` (*Virtual values*), while serializing `True` as `str` writes `b"true\n"` (*Canonical serialization*), so a `bool` does not round-trip through `str`.
 

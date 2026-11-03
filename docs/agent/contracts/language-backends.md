@@ -198,8 +198,7 @@ execute_cli(command, pins_, PINS, FILESYSTEM, OUTPUTPIN, environment)
 The code is the same code. The in-memory backend and the CLI backend give it the same names with the same values:
 
 - **The code modes are the same**: a block, a function, a lambda and an expression, recognized in the same way.
-- **The pins are the same values.** The process that runs the transformation parses each pin as the in-memory backend does, and the job gets it back unchanged. Plain data, text, arrays and `bytes` cross without Seamless in the job. A deep pin has the form of *How deep values reach a transformer* ([Deep celltypes](deep-celltypes.md)) under both backends.
-- **One pin type differs.** A `bytes` pin is a `seamless.Buffer` under the in-memory backend and `bytes` under the CLI backend. Code that depends on that type is not covered by parity.
+- **The pins are the same values.** The process that runs the transformation parses each pin as the in-memory backend does, and the job gets it back unchanged. Plain data, text, arrays and `bytes` cross without Seamless in the job. A `bytes` pin is `bytes` under both backends ([Pins](pins.md), *A transformer's code receives*). A deep pin has the form of *How deep values reach a transformer* ([Deep celltypes](deep-celltypes.md)) under both backends.
 - **The result is what the code returns**, or the variable of the output name for block code, serialized under the result celltype as the in-memory backend does it.
 - **`print` and the standard streams** are relayed while the code runs, as two streams ([Transformation logs](transformation-logs.md), [Streaming](streaming.md)).
 - **The code is self-contained, as it always is** ([Modules and closures](modules-and-closures.md)).
