@@ -112,6 +112,7 @@ A pin can say that it may be handed over as a file or a directory, by an entry i
 What a pin gives the code of a transformer is by the pin's celltype and the language backend:
 
 - **A `checksum` pin is a checksum object** in every language that has one: `seamless.Checksum` in Python and the checksum classes of R and Julia ([Handler languages](handler-languages.md), *Checksum classes*). A bash transformer has no objects.
+- **A `bytes` pin is `bytes` in Python**, under both backends, and `b""` for null. It is not the `seamless.Buffer` that the reference parser returns for a `bytes` reading ([Celltypes and conversion](celltypes-and-conversion.md), *Reference parser*).
 - **A deep pin** is a dict in every language but bash ([Deep celltypes](deep-celltypes.md), *How deep values reach a transformer*).
 - **A `mixed` pin that is properly mixed**, a buffer in the Seamless-mixed format, is a Python value in memory. Under the Python CLI backend it is read through seamless-core in the job ([Language backends](language-backends.md), *Packages the job needs*).
 
