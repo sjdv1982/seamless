@@ -10,3 +10,4 @@ docs/agent/repos/
 *.egg-info/
 build/
 dist/
+.serena/
