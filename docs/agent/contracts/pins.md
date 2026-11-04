@@ -70,7 +70,7 @@ The old sugar is **gone**: there is no `tf.x` and no `tf["x"]`. Attribute assign
 | a bare `Checksum` | the celltype declared with it (`pin.set_checksum(cs, input_celltype=…)`), defaulting to the pin's `celltype` |
 | absent | `None` |
 
-Which celltypes a slot accepts (*Verified:* `CelltypesWrapper.__setitem__`):
+Which celltypes a slot accepts (*Implementation:* `CelltypesWrapper.__setitem__`):
 
 | Slot | Accepts |
 |---|---|
@@ -126,7 +126,7 @@ What a pin gives the code of a transformer is by the pin's celltype and the lang
 
 **Pin storage never holds a raw Python object.**
 
-**A handle belongs to its own mode.** An anonymous or projection handle of a bound Cell (`ctx.c[0]`, `ctx.b.as_celltype("plain")`) is refused as the input of a **standalone** pin, as it is as the source of any standalone consumer (ruling 1(g); `contracts/cells.md`, *Binding*). Its exception class is not separately ruled for pins; `contracts/cells.md` rules `DependencyError` for the Cell counterpart, `Cell(source=<handle>)`. Assigning such a handle to a pin of a transformer bound to **another** Context raises `DependencyError`, as for named nodes. In the other direction, a standalone `Cell` or `Expression` assigned to a **bound** pin fails (*Implementation status*, *Current limitations*).
+**A handle belongs to its own mode.** An anonymous or projection handle of a bound Cell (`ctx.c[0]`, `ctx.b.as_celltype("plain")`) is refused as the input of a **standalone** pin, as it is as the source of any standalone consumer (`contracts/cells.md`, *Binding*). Its exception class is not separately ruled for pins; `contracts/cells.md` rules `DependencyError` for the Cell counterpart, `Cell(source=<handle>)`. Assigning such a handle to a pin of a transformer bound to **another** Context raises `DependencyError`, as for named nodes. In the other direction, a standalone `Cell` or `Expression` assigned to a **bound** pin fails (*Implementation status*, *Current limitations*).
 
 ## Writes: the same two verb families
 
@@ -154,7 +154,7 @@ The standalone `AuthorityError` message is `The pin is controlled by a source; a
 
 ## Null, required pins, optional pins
 
-**One representation.** Absence and the null value share the canonical JSON-null checksum (`b"null\n"`, `38e0b9de…`), which is celltype-independent and trivially resolvable (`contracts/celltypes-and-conversion.md`). Empty bytes under celltype `bytes` **canonicalize to null before any pin rule is applied** (*Verified:* `normalize_optional_pins_for_construction` and `Reactive._derive_transformer` both call `canonicalize_checksum` first), so an optional `bytes` pin cannot distinguish empty from absent.
+**One representation.** Absence and the null value share the canonical JSON-null checksum (`b"null\n"`, `38e0b9de…`), which is celltype-independent and trivially resolvable (`contracts/celltypes-and-conversion.md`). Empty bytes under celltype `bytes` **canonicalize to null before any pin rule is applied** (*Implementation:* `normalize_optional_pins_for_construction` and `Reactive._derive_transformer` both call `canonicalize_checksum` first), so an optional `bytes` pin cannot distinguish empty from absent.
 
 **Strict at the function boundary, union in storage.** A Cell is a slot and admits `None` whatever its celltype; a pin and a result are the function's declared interface and do not.
 
@@ -166,7 +166,7 @@ The standalone `AuthorityError` message is `The pin is controlled by a source; a
 | **Result**, celltype `plain`, `mixed` or `bytes` | a `None` return is the null result |
 | **Result**, any other celltype | `RuntimeError: Null result is not allowed for celltype '<ct>'` |
 
-*Verified:* `validate_pin_null` implements the required-pin rule; `run.py` raises the result error on both the Python and the compiled path.
+*Implementation:* `validate_pin_null` implements the required-pin rule; `run.py` raises the result error on both the Python and the compiled path.
 
 **Optional pins exist only for Python transformers.** `tf.optional_pins` is a read-only, set-like view derived from the named parameters with defaults in the Python callable's signature, keyword-only parameters included. `*args` and `**kwargs` declare no pins. Signature-less code and non-Python transformers have no optional pins. The collection cannot be assigned or mutated as a set.
 
@@ -273,18 +273,18 @@ The read API is `CellBase`'s, so `contracts/cells.md` governs what `.checksum` m
 
 - `pin.source` is the connected upstream handle, or `None`. `pin.checksum` is the pin's **current converted value**, and `None` when the pin is not complete, as for a Cell.
 - `pin.build()` returns the pin's `Expression`. Standalone, it accepts a one-shot input override; bound, it does not (`TypeError: Pin.build does not accept a replacement input`, and likewise for `compute`).
-- `pin.run()` computes and materializes; under celltype `bytes` it returns raw `bytes`. **It is the pin call that raises** (ruled 2026-09-28; `contracts/cells.md`, *Failures*, *How a failure is delivered*): it re-raises the pin's recorded failure, and raises any failure to materialize the pin's result. Bound, a pin that settles with no checksum for any other reason makes `run()` raise `NodeError` naming the pin's state. `.checksum`, `.buffer`, `.value` and `compute()` answer `None` for a recorded failure and whenever the pin has no checksum. A failure to materialize a result that exists is the exception: `.buffer` and `.value` raise it too, on every read, and never record it (*Pin state*, below); `.checksum` and `compute()` do not materialize, so they return the checksum.
+- `pin.run()` computes and materializes; under celltype `bytes` it returns raw `bytes`. **It is the pin call that raises** (`contracts/cells.md`, *Failures*, *How a failure is delivered*): it re-raises the pin's recorded failure, and raises any failure to materialize the pin's result. Bound, a pin that settles with no checksum for any other reason makes `run()` raise `NodeError` naming the pin's state. `.checksum`, `.buffer`, `.value` and `compute()` answer `None` for a recorded failure and whenever the pin has no checksum. A failure to materialize a result that exists is the exception: `.buffer` and `.value` raise it too, on every read, and never record it (*Pin state*, below); `.checksum` and `compute()` do not materialize, so they return the checksum.
 - **`pin.fingertip()` is `Cell.fingertip()` on a pin**, with the same contract and for the same reason: a Pin is an owner, so a fingertip through it can decide whether the recovered buffer persists, where a bare `Checksum.fingertip()` cannot. It persists exactly when the pin is non-scratch (*Scratch at the pin*). It never forces `pin.checksum`, so it is a **no-op returning `None`** when the pin has no result checksum; it returns the recovered **buffer**; and it never records `.exception` (`contracts/cells.md`, *`.buffer` and `.value`*).
-- **`pin.exception` is a string or `None`**, in both modes. Whether every `.exception` string carries the exception class name, as ruled for compiled pins (`contracts/compiled-pins.md`, D5), is deferred.
+- **`pin.exception` is a string or `None`**, in both modes. Whether every `.exception` string carries the exception class name, as specified for compiled pins (`contracts/compiled-pins.md`, D5), is deferred.
 
 ### Pin state
 
 **Standalone**, `pin.state` is one of `unwired`, `miswired`, `waiting`, `complete` and `failed`. `blocked` and `computing` are Context-node states, and `block_reason` is bound-only.
 
 - `pin.checksum` evaluates the pin's own (cheap) Expression and memoizes the result per `(input, input_celltype, celltype)` identity; a changed input, input celltype or pin celltype resets both the memo and the exception.
-- **`miswired`** (ruling 5): a pin fed through a path whose upstream source is retyped, so that the link would both project and convert, is `miswired`, like a standalone Cell consumer (`contracts/cells.md`, *Connecting*). Its `.checksum` is `None`, and its `.exception` is `None`: miswiring is a static defect, not a failure, and no work is attempted. A call of the transformer constructs no transformation, as for a failed pin.
+- **`miswired`**: a pin fed through a path whose upstream source is retyped, so that the link would both project and convert, is `miswired`, like a standalone Cell consumer (`contracts/cells.md`, *Connecting*). Its `.checksum` is `None`, and its `.exception` is `None`: miswiring is a static defect, not a failure, and no work is attempted. A call of the transformer constructs no transformation, as for a failed pin.
 - **Inspection is not passive on a standalone Pin.** `pin.state` and `pin.exception` read `pin.checksum` first, so an inspection can do the pin's cheap conversion work and record its failure. This deviates from `CellBase` inspection, which is passive in both modes (`contracts/cells.md`, *Failures*). The deviation is stated here as the current rule; whether the Pin is to become passive like a Cell has not been ruled.
-- Materialization failures follow the Cell rule: a failure to materialize a result that exists — a `CacheMissError`, a validation or a deserialization failure — is raised on every read and **not** recorded, and the pin stays `complete` (ruled 2026-09-28).
+- Materialization failures follow the Cell rule: a failure to materialize a result that exists — a `CacheMissError`, a validation or a deserialization failure — is raised on every read and **not** recorded, and the pin stays `complete`.
 
 **Bound**, every read is a snapshot of the controller-derived per-pin state (state, exception, source, input celltype, checksum), so a bound read never waits. `pin.compute()` / `pin.compute_async()` wait on the **transformer node's** barrier and then return the pin's checksum, or `None` when the pin has none. They never raise for the pin's state or the transformer's (`contracts/node-state-lifecycle.md`, *States as seen through barriers and handles*); `timeout=` is meaningful there, and a barrier timeout raises `TimeoutError`. A bound materialization failure on a pin is raised and not recorded, as standalone.
 
@@ -322,7 +322,7 @@ ctx.tf2.pins.y = ctx.tf.pins.x          # TypeError, naming pin.source
 
 ## Implementation status and current limitations
 
-The rules above are the test oracle. The former optional-null identity, required-module-null, declaration deletion, miswiring, anonymous-handle wiring, block-reason and call-time keyword gaps now satisfy the contract. Focused plain tests in `seamless-transformer/tests/test_contract_pins.py`, `seamless-workflow/tests/test_contract_pins_bound.py` and `seamless-transformer/tests/test_contract_transformer_builder.py` cover them. Deep buffer reads validate the mapped celltype and flatness, and materialization failures leave Pin state and transformer block reasons unchanged.
+The rules above are the test oracle. The code satisfies them, including optional-null identity, required-module null, declaration deletion, miswiring, anonymous-handle wiring, block reasons and call-time keywords. Focused plain tests in `seamless-transformer/tests/test_contract_pins.py`, `seamless-workflow/tests/test_contract_pins_bound.py` and `seamless-transformer/tests/test_contract_transformer_builder.py` cover them. Deep buffer reads validate the mapped celltype and flatness, and materialization failures leave Pin state and transformer block reasons unchanged.
 
 **Current limitations** (out of scope, not gaps):
 

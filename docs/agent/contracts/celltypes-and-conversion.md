@@ -299,7 +299,7 @@ Value rules:
 
 ### Null and conversion legality
 
-**The null short-circuit applies only to legal pairs; a forbidden pair or an illegal deep pair stays illegal for null** (ruled). Null being deserializable as every celltype (*Canonical null*) is a statement about readings, not a licence to convert along a pair the rule table refuses. The same distinction is drawn for HashType in `contracts/hashtype.md`: `deserializable_as` answers `True` for null everywhere, while `conversion_feasible` answers `False` for a forbidden pair even when the checksum is null.
+**The null short-circuit applies only to legal pairs; a forbidden pair or an illegal deep pair stays illegal for null**. Null being deserializable as every celltype (*Canonical null*) is a statement about readings, not a licence to convert along a pair the rule table refuses. The same distinction is drawn for HashType in `contracts/hashtype.md`: `deserializable_as` answers `True` for null everywhere, while `conversion_feasible` answers `False` for a forbidden pair even when the checksum is null.
 
 | Pair | Canonical-null input to an empty-path Expression |
 |---|---|
@@ -308,7 +308,7 @@ Value rules:
 
 - **Which inputs count as null here.** The Expression key canonicalizes empty `bytes` to the canonical null first (*Canonical null*), and the short-circuit then applies to `NULL_CHECKSUM`. Evaluation applies the same canonicalization under the **target** celltype too. So an empty-buffer input (`sha256(b"")`) whose target is `bytes`, for example `text → bytes`, also yields the canonical null, and the trivial rule does not keep `sha256(b"")`. A non-canonical null (`sha256(b"null")`) takes the ordinary route through the executor.
 - **The executor has no null short-circuit of its own for ordinary pairs.** A null checksum goes through the rule for its pair like any other checksum. So both null forms are refused on every forbidden pair, and a null that reaches a legal pair is converted by that pair's rule — for example, `convert_checksum(NULL_CHECKSUM, "plain", "checksum", …)` produces a `checksum` buffer holding the null checksum's digest, whereas the empty-path Expression for the same pair yields null.
-- **Forbidden pairs included** (ruled). The ruling covers the forbidden ordinary pairs, such as `python → int`, as well as the illegal deep pairs. A forbidden pair is forbidden for null checksums too.
+- **Forbidden pairs included.** The rule covers the forbidden ordinary pairs, such as `python → int`, as well as the illegal deep pairs. A forbidden pair is forbidden for null checksums too.
 
 ### Executor (`seamless.checksum.convert`)
 

@@ -91,7 +91,9 @@ Text/code, JSON scalar/plain, bytes, binary, and mixed celltypes are supported.
 directories, with per-leaf atomic replacement. `folder` mounts in `r`, `w` or
 `rw`; `deepfolder` is read-only (sensing) and may only be mounted with
 `mode="r"`. Directory trees are not replaced
-atomically. Mounts follow a target symlink and preserve it; atomic file writes
+atomically. While a `w`/`rw` directory mount is mounted, the leaf files it
+delivered serve as local buffer sources, so an evicted leaf is read back from
+its file if the file still holds its bytes; this ends at unmount or close. Mounts follow a target symlink and preserve it; atomic file writes
 break hardlink sharing. Cross-process exclusion and filesystem aliases such as
 hardlinks are not covered by the registry.
 

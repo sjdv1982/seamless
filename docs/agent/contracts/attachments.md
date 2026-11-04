@@ -25,6 +25,7 @@ Code locations:
 | Public handles | `seamless_workflow.attachments.api` (`MountHandle`, `ContextMounts`, `make_sink`, `load_graph`) |
 | Public share API | `seamless_workflow.attachments.share.api` (`ShareHandle`, `ContextShares`); `seamless_workflow.shareserver` |
 | Transport implementations | `seamless_workflow.attachments.fs.service` (`FileSystemService`, `Registration`), `…attachments.widget.WidgetDriver` (internal widget transport), `…attachments.manual.ManualDriver` |
+| Local buffer sources (consulted by delivery resolution; registered by directory write mounts) | `seamless.caching.buffer_source` (`BufferSource`, `replace_buffer_sources`, `unregister_buffer_sources`) — seamless-core |
 | Share spec and transport | `seamless_workflow.attachments.share.spec` (`ShareSpec`); `…attachments.share.driver.ShareDriver` |
 | Public widget API | `seamless_workflow.jupyter` (`traitlet`, `output`); `WidgetDriver` itself is internal |
 | Node field and graph entry | `Node.mount` stores the serialized file spec; `Node.attachments` holds non-file specs by driver, of which only the share spec is serialized; `Context.get_graph` / `set_graph`; `serialization.prepare_graph` |
@@ -107,7 +108,7 @@ Two consequences:
 Sensing deliberately does **not** do three things:
 
 - **Invalid external state does not stop sensing.** It fails the cell and monitoring continues; the next valid observation recovers it with no user action.
-- **Only what a user assignment checks is rejected; nothing more.** A mount checks exactly what a user assignment of the same value would check — no more leniently, no more strictly (`contracts/mounts.md`, *Canonical bytes*). **For the code celltypes that excludes syntax** (ruled 2026-09-28): an assignment does not parse `python`, `ipython` or `yaml` text (`contracts/cells.md`, *`.buffer` and `.value`*), so a sensed file with a syntax error is not a sense error. The cell is `complete`, the bytes are its value, and the syntax error surfaces downstream: a transformer that runs the code fails with the `SyntaxError` as its own failure, and a `.value` read raises it on every read without failing the cell. Content that parses but is wrong for the program, such as a `python` file that raises at runtime, is handled the same way.
+- **Only what a user assignment checks is rejected; nothing more.** A mount checks exactly what a user assignment of the same value would check — no more leniently, no more strictly (`contracts/mounts.md`, *Canonical bytes*). **For the code celltypes that excludes syntax**: an assignment does not parse `python`, `ipython` or `yaml` text (`contracts/cells.md`, *`.buffer` and `.value`*), so a sensed file with a syntax error is not a sense error. The cell is `complete`, the bytes are its value, and the syntax error surfaces downstream: a transformer that runs the code fails with the `SyntaxError` as its own failure, and a `.value` read raises it on every read without failing the cell. Content that parses but is wrong for the program, such as a `python` file that raises at runtime, is handled the same way.
 - **A transport may reject data before it becomes an observation.** The share driver refuses an invalid PUT body at the HTTP boundary and sends no observation (`contracts/shares.md`, *Writing: PUT*).
 - **Disappearance does not clear the node.** Removing a value is an explicit graph operation.
 
@@ -135,12 +136,12 @@ if N is not None and N != session.last_synced:
 
 ### A delivery resolves; it never computes
 
-**The payload is resolved through `Checksum.resolution()`: the local buffer cache, then the remote buffer server, then `CacheMissError`. It never fingertips.** A file delivery therefore has exactly the powers of `.buffer` — **nothing in the attachment layer does work behind your back except an explicit `compute()`.** A share delivery does not even resolve the payload; it moves the checksum, and the server resolves bytes only when a client requests them (`contracts/shares.md`, *Cell to share* and *Reading: GET and HEAD*).
+**The payload is resolved through `Checksum.resolution()`: the local buffer cache, then this process's local buffer sources, then the remote buffer server, then `CacheMissError`. It never fingertips.** The local buffer sources are the configured read-buffer directories and the leaf files of this process's directory write mounts, in unspecified order; a source serves only bytes that hash to the requested checksum (`contracts/cache-storage-and-limits.md`, *Local buffer sources*). Reading a source back is resolution, not computation. A file delivery therefore has exactly the powers of `.buffer` — **nothing in the attachment layer does work behind your back except an explicit `compute()`.** A share delivery does not even resolve the payload; it moves the checksum, and the server resolves bytes only when a client requests them (`contracts/shares.md`, *Cell to share* and *Reading: GET and HEAD*).
 
 Consequences worth stating, because the tempting reading is the wrong one:
 
-- **Attaching is not a materialization mechanism for a scratch result.** It does not force a scratch transformation to be re-run, and it does not make a scratch result durable.
-- A scratch-fed actuating attachment usually **works anyway**, because the delivery follows the completing turn while the result buffer is still cached. It **fails** when the checksum arrived without its bytes: remote execution, a cache hit, or eviction.
+- **Attaching is not a materialization mechanism for a scratch result.** It does not force a scratch transformation to be re-run, and it does not make a scratch result durable. The leaf files of a directory write mount do become a local buffer source, but only in this process and only while the mount's registration lasts, and they hold no claim and publish nothing (*Leaf retention, on the sense path only*).
+- A scratch-fed actuating attachment usually **works anyway**, because the delivery follows the completing turn while the result buffer is still cached. It **fails** when the checksum arrived without its bytes and no local buffer source holds them: remote execution, a cache hit, or eviction.
 - That failure is an **ordinary delivery error** — retried cheaply, reported on the attachment, never on the cell — so the resource is still updated if the buffer ever becomes resolvable again.
 
 `contracts/scratch-witness-audit.md` defines scratch and fingertipping; `contracts/cells.md` states the same "nothing computes without `compute()`" rule for reads.
@@ -159,7 +160,7 @@ Consequences worth stating, because the tempting reading is the wrong one:
 
 A cell whose session holds a sense error derives as **`failed`** with that error, and its published checksum is dropped, so downstream nodes become **`blocked-by-error`** exactly as for any other failure. A cell never presents a stale value as valid while its source is broken.
 
-- **It is delivered like any other recorded failure** (`contracts/cells.md`, *Failures*, *How a failure is delivered*; ruled 2026-09-28). `.checksum`, `.buffer`, `.value` and `ctx.a.compute()` answer `None`; `ctx.a.run()` raises the failure; `ctx.a.exception` holds its string, and `ctx.mounts.sync()` reports it without raising.
+- **It is delivered like any other recorded failure** (`contracts/cells.md`, *Failures*, *How a failure is delivered*). `.checksum`, `.buffer`, `.value` and `ctx.a.compute()` answer `None`; `ctx.a.run()` raises the failure; `ctx.a.exception` holds its string, and `ctx.mounts.sync()` reports it without raising.
 - **A read never makes a mounted cell fail.** A failure to materialize a complete cell's value is raised to the reader and never recorded, so it neither masks the value nor stops actuation. This is the read-side counterpart of *Write failures stay on the attachment*: in both cases the result exists, and only turning it into something else (a file, a buffer, a value) failed.
 
 - **The stored value is kept, but masked.** `get_graph()` still records the last good value. Detaching clears only the detached session's sense error; another session's sense error continues to fail the cell. Removing the last session with a sense error unmasks the stored value.
@@ -249,7 +250,7 @@ The spelling — `ctx.mounts.sync()`, `await ctx.mounts.synchronization()` — a
 - marks the session `closing` and removes it, so every later message from it fails the id match;
 - drops the pending delivery and releases its claim, and releases the controller's claim on an in-flight one — the transport keeps its own claim until that operation finishes;
 - clears this session's sense error; another session's sense error continues to fail the cell, and the stored value is unmasked only when no session still holds a sense error;
-- releases the registration.
+- releases the registration, which withdraws any local buffer sources it registered (*Leaf retention, on the sense path only*).
 
 The call then **waits for the transport's cleanup**, bounded by the delivery timeout. Cleanup includes the driver's conditional deletes, so for the file driver a `persistent=False` file has already been deleted — where the conditional-delete rule allows it — by the time `del ctx.a.mount` returns (`contracts/mounts.md`, *Unmount, persistence and close*).
 
@@ -293,6 +294,8 @@ That is the whole promise, and it is narrow on purpose. The general rule is the 
 
 - The claims are attached to the **node and its index**, not to the session, which is why they outlive detaching; they are released when the node takes a different value, when the node is deleted, and at Context close.
 - **A *computed* directory value gets no such claims.** Nothing sensed its leaves, so a leaf that cannot be resolved at delivery time surfaces as an ordinary delivery error — see *A delivery resolves; it never computes* — and is retried.
+- **What a directory write mount has written is a buffer source, not a retained leaf.** The file driver registers the files at the paths of the index it delivers as local buffer sources for their leaves' checksums, so a leaf whose buffer was evicted can be read back from its file (`contracts/mounts.md`, *Directory mounts*; its use case is in `contracts/cache-storage-and-limits.md`, *Local buffer sources*). It promises less than retention in every respect: it holds no claim and keeps nothing in memory; it ends when the registration is released — by detaching, node deletion, graph replacement or close — even when the files remain on disk; and it serves a leaf only while the file still holds that leaf's bytes, so a foreign edit or deletion ends it for that leaf. It cannot supply a leaf whose bytes are not already in such a file, so the delivery-error case above stands.
+- **Sensing registers no buffer source.** A sensed leaf stays resolvable through its claim, not through its file.
 
 Directory celltypes and index shape are `contracts/deep-celltypes.md`; the file driver's directory rules are `contracts/mounts.md`.
 
@@ -312,7 +315,7 @@ Only `driver == "file"` is serialized through `AttachmentSpec.to_graph()`; share
 
 ## Implementation status and current limitations
 
-The former scope-message, public `NodeError`, deletion-cleanup, empty-builder detach, downstream miswiring and node-replacement exception gaps now satisfy the contract. They are covered by plain focused tests in `seamless-workflow/tests/test_contract_attachments.py` and `test_contract_mounts.py`.
+The code satisfies the contract on this page, including the scope messages, the public `NodeError`, deletion cleanup, the empty-builder detach, downstream miswiring and the node-replacement exceptions. Plain focused tests in `seamless-workflow/tests/test_contract_attachments.py` and `test_contract_mounts.py` cover them.
 
 ### Current limitations
 

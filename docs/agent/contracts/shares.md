@@ -73,14 +73,14 @@ A node has one **share** slot, beside its file slot and its widget slot (`contra
 
 - **It starts with the first share** — a `share()` call, or a `set_graph` that attaches shares — and stops at `seamless.close()`. A Context that closes leaves its shares served for a hold window, so that a new Context can take them over, and they go when the window ends (*The hold on close*); the server stays.
 - **It runs on its own thread and its own event loop.** It answers while user code blocks, in a script and under Jupyter, and it never runs on the caller's loop or the kernel's.
-- **Defaults: host `0.0.0.0`, port `5813`** (ruled 2026-10-09). `shareserver.configure(host=, port=)` and the environment variables `SEAMLESS_SHARE_HOST` / `SEAMLESS_SHARE_PORT` override them; `port=0` asks the operating system for a free port, read back from `shareserver.port`. `configure()` after the server has started raises `RuntimeError`.
+- **Defaults: host `0.0.0.0`, port `5813`.** `shareserver.configure(host=, port=)` and the environment variables `SEAMLESS_SHARE_HOST` / `SEAMLESS_SHARE_PORT` override them; `port=0` asks the operating system for a free port, read back from `shareserver.port`. `configure()` after the server has started raises `RuntimeError`.
 - **A busy port is an error.** The `share()` that would have started the server raises `OSError`, and nothing is installed.
 - **There is no authentication and no TLS.** With the default bind address, every host that can reach the machine can read every share and PUT to every writable one. Bind to `127.0.0.1`, or put a reverse proxy in front, for anything else.
 - **Cross-origin requests are allowed from any origin**, without credentials. The exposed headers are `ETag` and `X-Seamless-Marker`.
 
 ### Namespaces
 
-**Every Context serves under one namespace, `ctx.shares.namespace`, default `"ctx"`** (ruled 2026-10-09).
+**Every Context serves under one namespace, `ctx.shares.namespace`, default `"ctx"`**.
 
 - It is **runtime state**: not in the graph, and settable only while the Context has no shares.
 - **A namespace belongs to one live Context.** The first share claims it; a second Context claiming a taken name raises `ValueError("Share namespace '<name>' is in use")`. **Closing the Context holds it**: the first Context that claims it inside the hold window takes it over, with its shares and its connections; otherwise it is released when the window ends (*The hold on close*).
@@ -142,7 +142,7 @@ The served state of a share is a **record**: a checksum, or none, and a **marker
 
 - **`?mode=checksum`** returns the checksum hex as `text/plain` instead of the value.
 - **`HEAD` never resolves bytes**; it answers from the record.
-- **A GET resolves; it never computes.** It has exactly the powers of `.buffer`: the local buffer cache, then the remote buffer server. A value whose checksum arrived without its bytes — a remote result, a cache hit, a scratch result that was evicted — answers `503` until the bytes become resolvable (`contracts/attachments.md`, *A delivery resolves; it never computes*).
+- **A GET resolves; it never computes.** It has exactly the powers of `.buffer`: the local buffer cache, then this process's local buffer sources, then the remote buffer server. A value whose checksum arrived without its bytes — a remote result, a cache hit, a scratch result that was evicted — answers `503` until the bytes become resolvable (`contracts/attachments.md`, *A delivery resolves; it never computes*).
 - **Only complete values are served.** While the cell is `waiting`, `blocked` or `failed`, the share keeps answering with the last value it served, under the same marker. Before the first complete value it answers `404`, unless the share re-attached a held record: it then keeps answering with the held value, under the held marker (*The hold on close*). The node state graph reports the current state separately (*The state graph*).
 
 ### Content types
@@ -181,7 +181,7 @@ The content type is the first of:
 - **The body is canonicalized with `canon_T`, and checked exactly as a user assignment of the same value is checked** — the rule of `contracts/mounts.md`, *Canonical bytes*, including that code celltypes get no syntax check. The cell holds the canonical bytes: a GET after a PUT of `{"a":1}` to a `plain` cell returns the canonical serialization.
 - **An empty body, or `null`, writes null.**
 - **An invalid body is refused and changes nothing.** It is an invalid request, not an invalid resource: the cell keeps its value and its state. **A share never puts a sense error on its cell.**
-- **`?marker=n` makes the write conditional** (ruled 2026-10-09): `n` is the marker the client last saw, and the PUT is accepted only if it still is the current one. **Without the parameter the PUT is unconditional.**
+- **`?marker=n` makes the write conditional**: `n` is the marker the client last saw, and the PUT is accepted only if it still is the current one. **Without the parameter the PUT is unconditional.**
 - **A PUT of the value already served is accepted and changes nothing**: `200`, with the unchanged marker.
 - **An accepted PUT is a sensed write** (`contracts/attachments.md`, *Sense*): a non-detaching authoritative write, with no privilege over a user assignment and none under it.
 - **The `200` is sent after the write has been installed.** A `ctx.a.checksum` read, or a `ctx.compute()`, that starts after the response sees the PUT value or a newer one.
@@ -312,7 +312,7 @@ Of the three-way error model of `contracts/attachments.md`, a share has only the
 
 ## Graph serialization
 
-- **Format `0.6`** adds the `share` entry (ruled 2026-10-09). `0.2` to `0.5` graphs load; a `share` entry in a graph below `0.6` raises `PathError("share entries require workflow graph version 0.6")`.
+- **Format `0.6`** adds the `share` entry. `0.2` to `0.5` graphs load; a `share` entry in a graph below `0.6` raises `PathError("share entries require workflow graph version 0.6")`.
 - **The share entry** is `{"path", "readonly", "mimetype", "toplevel"}` on a cell entry — the spec after normalization, with the default key written out.
 - **Every share entry is validated by `prepare_graph`**, also with `shares=False`: unknown fields, an invalid key, an unshareable celltype, a share on a non-cell node, a connection into a writably shared node, and two shares with one URL are refused as `PathError("Invalid share spec: …")`.
 - **`shares=False` strips the (valid) specs.**

@@ -10,6 +10,7 @@ Code locations:
 | Spec, normalization, celltype admission | `seamless_workflow.attachments.spec` (`AttachmentSpec`, `validate_celltype`) |
 | Initial decision, classification, reassert, detector | `seamless_workflow.attachments.policy` (pure functions) |
 | Transport: registry, broker, I/O pool | `seamless_workflow.attachments.fs.service` (`FileSystemService`, `Registration`, `FileSystem`, `get_service`, `close_service`) |
+| Delivered directory leaves as local buffer sources | registered by `FileSystemService` through `seamless.caching.buffer_source` (`BufferSource`, `replace_buffer_sources`, `unregister_buffer_sources`) — seamless-core |
 | Optional inotify hints | `seamless_workflow.attachments.fs.native.NativeNotifications` |
 | Canonical bytes | `seamless.checksum.canonical` (`canon_T`, `FILE_CELLTYPES`, `DIRECTORY_CELLTYPES`) — seamless-core, shared with the CLI file loader |
 | Graph entry and validation | `seamless_workflow.serialization.prepare_graph`; `Context.get_graph` / `set_graph` |
@@ -204,15 +205,15 @@ Four rules make this converge:
 
 For each mountable celltype *T* the mount uses exactly two functions, both defined by the **existing serializer and deserializer**:
 
-- **write:** resolve the node's buffer and canonicalize it with `canon_T` before writing (compressed, if the path carries a compression suffix). The node checksum is preserved; the delivered file checksum is the checksum of the canonical bytes (ruled 2026-10-07);
-- **read:** `canon_T(bytes) = serialize(deserialize(bytes, T), T)`, and the observed checksum is the checksum of `canon_T(bytes)`. If deserialization raises, the observation is `rejected`. For the code celltypes (`text`, `python`, `ipython`, `yaml`), *deserialize* here is the strict UTF-8 decode only: `canon_T` does not run the syntax check of the reference parser, exactly as the serializer an assignment uses does not (ruled 2026-09-28; `contracts/celltypes-and-conversion.md`, the serializer table).
+- **write:** resolve the node's buffer and canonicalize it with `canon_T` before writing (compressed, if the path carries a compression suffix). The node checksum is preserved; the delivered file checksum is the checksum of the canonical bytes;
+- **read:** `canon_T(bytes) = serialize(deserialize(bytes, T), T)`, and the observed checksum is the checksum of `canon_T(bytes)`. If deserialization raises, the observation is `rejected`. For the code celltypes (`text`, `python`, `ipython`, `yaml`), *deserialize* here is the strict UTF-8 decode only: `canon_T` does not run the syntax check of the reference parser, exactly as the serializer an assignment uses does not (`contracts/celltypes-and-conversion.md`, the serializer table).
 
 Four consequences:
 
 - a file written by the mount **reads back as an exact echo of the canonical delivery**, without changing the node checksum. The acknowledgement records the source checksum and canonical file checksum as a synchronized pair. `node_checksum` and `disk_checksum` may therefore differ while `in_sync=True`. The filesystem transport sends this acknowledgement under its I/O lock before any readback observation can be sent, so that readback compares against the canonical file belief. A later foreign observation is compared against the current file belief, not a history of deliveries;
 - a user-formatted file maps to **the checksum of its value**, so reformatting JSON by hand is not a change;
-- **there is no mount-local parsing.** A mount parses neither more leniently nor more strictly than a user assignment of the same value: it checks exactly what an assignment checks. **For the code celltypes that excludes syntax** (ruled 2026-09-28). `ctx.a.set("def (:\n")` is accepted as `complete`, and so is a mounted file with that content; neither is a sense error. The syntax error surfaces downstream: a transformer that runs the code fails with the `SyntaxError` as its own failure, and a `.value` read raises `HashTypeValidationError` on every read without failing the cell (`contracts/cells.md`, *`.buffer` and `.value`*). Fixing the file is an ordinary change, sensed like any other.
-- **`rw` canonicalizes non-canonical file bytes after sensing**, including initial adoption by an empty cell and formatting-only edits (ruled 2026-10-07). The canonical checksum installed in the cell then equals the checksum of the decompressed file bytes. This write uses the ordinary fingerprint conflict guard; `r` mounts leave the file untouched. `canon_T` is idempotent, and that is property-tested.
+- **there is no mount-local parsing.** A mount parses neither more leniently nor more strictly than a user assignment of the same value: it checks exactly what an assignment checks. **For the code celltypes that excludes syntax.** `ctx.a.set("def (:\n")` is accepted as `complete`, and so is a mounted file with that content; neither is a sense error. The syntax error surfaces downstream: a transformer that runs the code fails with the `SyntaxError` as its own failure, and a `.value` read raises `HashTypeValidationError` on every read without failing the cell (`contracts/cells.md`, *`.buffer` and `.value`*). Fixing the file is an ordinary change, sensed like any other.
+- **`rw` canonicalizes non-canonical file bytes after sensing**, including initial adoption by an empty cell and formatting-only edits. The canonical checksum installed in the cell then equals the checksum of the decompressed file bytes. This write uses the ordinary fingerprint conflict guard; `r` mounts leave the file untouched. `canon_T` is idempotent, and that is property-tested.
 
 *T* is always the cell's **output `celltype`**, including for a connected cell; the producer's input type is stored separately (`contracts/cells.md`). Retyping while mounted is refused (*Errors*).
 
@@ -300,9 +301,14 @@ The node's value is the **deep-folder index** — `{relative path: leaf checksum
 
 **Empty directories.** An **initially empty** directory supplies **no value** (and so cannot override an existing cell value), while a directory **emptied after mounting** reads as the empty index `{}`.
 
-**Leaf retention** — leaves that a mount *sensed* stay resolvable while the node holds that index, including after unmounting; a *computed* directory gets no such claims — is in `contracts/attachments.md`, *Leaf retention*.
+**Leaf retention** — leaves that a mount *sensed* stay resolvable while the node holds that index, including after unmounting; a *computed* directory gets no such claims, only the weaker buffer source below — is in `contracts/attachments.md`, *Leaf retention*.
 
-**Written files as fallback buffer sources.** A directory write mount registers its written leaf files as local buffer sources. An evicted leaf can be read back from its file, decompressing it where needed and validating the resulting bytes against the requested checksum. This acquires no leaf refholder claim. The sources belong to the mount registration and are removed on unmount or close, even when persistent files remain on disk; they do not have the post-unmount lifetime promised for sensed leaves. Missing or changed backing files produce a source miss, allowing other sources to be tried.
+**Delivered leaf files as local buffer sources.** A `w` or `rw` directory mount registers the files at the paths of the index it delivers as local buffer sources of this process, so a leaf whose buffer was evicted can be read back from its file. Why this exception exists, and its use case, a configuration without a hashserver, are in `contracts/cache-storage-and-limits.md`, *Local buffer sources*. A lookup reads the file, decompresses it where the name carries a compression suffix, and serves it only if the resulting bytes hash to the requested checksum. A missing, changed or unreadable file, a symlink, or a path that escapes the mount is a miss for this source, and resolution goes on to the other sources and then to the buffer servers. A presence check, as placement makes it (`contracts/expressions.md`, *Placement*), uses file metadata only and reads no content.
+
+- **Registration is not a claim.** It acquires no leaf refholder claim, keeps nothing in memory, publishes nothing, and is invisible to other processes.
+- **Its lifetime is the registration's, not the node's.** The sources are withdrawn when the registration is released — unmount, node deletion, graph replacement, Context close or the service close — even when persistent files remain on disk. Unlike sensed leaves (`contracts/attachments.md`, *Leaf retention*), they do not outlive unmounting.
+- **During a delivery**, the previous index's sources stay registered beside the new index's, so a leaf that only moves can be read from its old file, and a file that already holds a leaf's bytes at its new path serves it. After a successful delivery only the new index's sources remain. After a delivery that fails partway, the leaves it has already written stay servable until a later delivery replaces them or the registration is released.
+- **Sense-only directory mounts and file mounts register no source.** A sensed leaf stays resolvable through its claim, not through its file.
 
 ### Null on a directory mount is terminal
 
@@ -396,7 +402,7 @@ Stated as current behaviour, with no claim about what any earlier version did:
 
 ## Implementation status and current limitations
 
-The former public `NodeError` and empty-builder detach gaps now satisfy the contract, including missing, non-cell and stale cell handles. Focused plain tests in `seamless-workflow/tests/test_contract_mounts.py` and `test_contract_attachments.py` cover them.
+The code satisfies the contract on this page, including the public `NodeError` for missing, non-cell and stale cell handles and the empty-builder detach. Focused plain tests in `seamless-workflow/tests/test_contract_mounts.py` and `test_contract_attachments.py` cover them.
 
 ### Current limitations
 
@@ -415,7 +421,7 @@ The former public `NodeError` and empty-builder detach gaps now satisfy the cont
 - `mount-design.md` §20.3 ("resolve it through the ordinary path, **which may recompute it**") is **superseded**: a delivery resolves and never fingertips (`contracts/attachments.md`).
 - `mount-design.md` §17.3, the row "clearing an `r`/`rw` cell's value stays cleared": clearing a mounted cell is **refused** with `AuthorityError("Cannot clear a mounted cell; unmount first")`, in every mode, except through an empty same-celltype builder, which unmounts and clears (*Unmount, persistence and close*).
 - `mount-design.md`'s promise that a `set_graph` does not delete a non-persistent file only "when the new graph re-attaches the same path" is too narrow: a `set_graph` never deletes it.
-- `mount-design.md` §16's "naming is provisional": the names are now fixed.
+- `mount-design.md` §16's "naming is provisional": the names are fixed.
 - `mount-implementation.md` says graph format `0.3`; the current workflow graph format written by the code is `0.6` (*Graph serialization*), which includes shares as well as mounts.
 - `attachments-and-mount-design.md` Part II §21 still discusses a `settled()` predicate and spells the barrier `ctx.mount.sync()` (singular). Both are dead. Where that document and `mount-design.md` differ, this page wins.
 - **Every "legacy Seamless" claim anywhere in the design documents is unverified.** The 0.x characterization never ran, so this page carries **no** comparison with it — including in the decision table, whose "legacy" column is not reproduced here.

@@ -152,7 +152,7 @@ The three members are those **literal strings**. `BlockReason`, like `NodeState`
 
 ### Precedence
 
-When several inputs have entries, the node's label is the maximum under this order (author's ruling, 2026-09-18):
+When several inputs have entries, the node's label is the maximum under this order:
 
 ```
 miswired  >  unwired  >  blocked-by-miswiring  >  blocked-by-unwired  >  blocked-by-error
@@ -271,9 +271,9 @@ The window is **event-driven**, under a **fixed maximum of about five minutes**:
 
 A `computing` node's **own** code or load-bearing metadata is edited, so its identity changes and the old run is reusable only on a revert. No upstream event governs this case. It is a **behavioural bet on a revert**, so a **fixed human-timescale window** is the right shape, **independent of the run's runtime**. Holding a superseded two-hour run for a few seconds is worthwhile precisely because a revert within those seconds saves the whole restart.
 
-**The window is 30 seconds** (ruled 2026-09-21, pending measurement).
+**The window is 30 seconds.** The figure is provisional, pending measurement.
 
-**This is its own knob, independent of the Expression linger** (author's ruling 7). The linger of `contracts/expressions.md`, *Cancellation*, keeps a shared Expression evaluation alive briefly after its last requester leaves. The two answer different events, a person reverting an edit versus a requester re-arriving for the same evaluation, so they are not one shared constant, and each may be measured and moved without touching the other.
+**This is its own knob, independent of the Expression linger.** The linger of `contracts/expressions.md`, *Cancellation*, keeps a shared Expression evaluation alive briefly after its last requester leaves. The two answer different events, a person reverting an edit versus a requester re-arriving for the same evaluation, so they are not one shared constant, and each may be measured and moved without touching the other.
 
 The hold is a **fixed lifetime** (hold until a deadline, then release) with **no decay curve**. Decay is the buffer cache's general memory-pressure mechanism and is not duplicated here (`contracts/cache-storage-and-limits.md`). For a very expensive run the lifetime shrinks toward zero.
 
@@ -319,7 +319,7 @@ The barrier API itself is in `contracts/workflow-context.md`; only what depends 
 | **run**: `ctx.a.run()` on a **named** node | as the node barrier | `failed`: **re-raises the node's recorded exception**. `unwired`, `miswired` or `blocked`: raises **`NodeError`** naming the state and what to repair (below). `complete`: returns the materialized value |
 | **graph-wide barrier**: `ctx.compute()` | **no node** is `waiting` or `computing` | returns; it does **not** raise for nodes that settled into `blocked`, `unwired`, `miswired` or `failed` |
 
-- **Barriers report outcomes; `run()` raises them** (ruled 2026-09-28). The node barrier is a statement about motion, as the graph-wide one is: it tells the caller that the cone has settled and hands back the checksum if there is one. The same rule holds for Cells, Pins, Transformers and Transformations in both modes (`contracts/cells.md`, *Failures*, *How a failure is delivered*).
+- **Barriers report outcomes; `run()` raises them.** The node barrier is a statement about motion, as the graph-wide one is: it tells the caller that the cone has settled and hands back the checksum if there is one. The same rule holds for Cells, Pins, Transformers and Transformations in both modes (`contracts/cells.md`, *Failures*, *How a failure is delivered*).
 - **`NodeError` belongs to `run()` on named nodes only.** Its message names the state and what to repair: for `blocked`, the block reason; for `miswired`, the miswired edge and its two celltypes; for `unwired`, the missing pin. A Pin's barrier is its owning Transformer's (`contracts/pins.md`). `compute()` on an anonymous or projection handle is **not a barrier**: it evaluates the handle's own Expression, and neither it nor the handle's `run()` ever raises `NodeError` (`contracts/workflow-context.md`, *Barriers*).
 - **The graph-wide barrier is a statement about motion, not about outcomes.** Quiescence is not success; check states afterwards.
 - A handle whose node no longer exists raises `StaleWorkflowHandleError`.
@@ -333,9 +333,9 @@ The barrier API itself is in `contracts/workflow-context.md`; only what depends 
 
 ## Implementation status and current limitations
 
-The former state propagation, block-reason shape and precedence, deep-table miswiring, stale-exception, root/sub-path exclusion, compiled failure, named-barrier and repair-message gaps now satisfy the contract. Their focused coverage is in `seamless-workflow/tests/test_contract_node_state_lifecycle.py` and the Pin and wiring contract tests; these are plain tests.
+The code satisfies the contract on this page, including state propagation, block-reason shape and precedence, deep-table miswiring, stale exceptions, root/sub-path exclusion, compiled failures, named barriers and repair messages. Their focused coverage is in `seamless-workflow/tests/test_contract_node_state_lifecycle.py` and the Pin and wiring contract tests; these are plain tests.
 
-The self-edit hold default is the ruled 30 seconds, independently configurable from Expression linger. The upstream-confirmation hold and the completed-downstream retention are bounded by the upstream event under the five-minute backstop, which is its own knob. Focused coverage is in `seamless-workflow/tests/test_contract_upstream_hold.py`. Two points on which this section is silent, and how the code answers them today, are listed for a ruling in [the carried-gap plan](../../../contract-ahead-of-code-plan.md).
+The self-edit hold default is 30 seconds, independently configurable from Expression linger. The upstream-confirmation hold and the completed-downstream retention are bounded by the upstream event under the five-minute backstop, which is its own knob. Focused coverage is in `seamless-workflow/tests/test_contract_upstream_hold.py`. Two points on which this section is silent, and how the code answers them, are listed as open in [the carried-gap plan](../../../contract-ahead-of-code-plan.md).
 
 **Deferred features and cost properties.** These are not contract gaps, and no test pins them:
 
@@ -346,7 +346,7 @@ The self-edit hold default is the ruled 30 seconds, independently configurable f
 
 - the exception class for refusing a root edge combined with sub-path edges (deferred);
 - whether a null checksum on a compiled pin counts as "valid for its celltype", and so whether a compiled pin rejected for null makes the transformer `blocked` or `failed` (deferred; `contracts/compiled-pins.md`, section 5);
-- whether every `.exception` string carries the exception class name (`<Class>: <message>`), as ruled for compiled pins (deferred);
+- whether every `.exception` string carries the exception class name (`<Class>: <message>`), as specified for compiled pins (deferred);
 - the `block_reason` of a cell with no input at all (an `unwired` cell with no producer and no edge): the rulings cover a cell with a root input or with one-level inputs, not a cell with none;
 - the state an anonymous or projection handle reports when its parent is `unwired` (deferred; `contracts/cells.md`).
 

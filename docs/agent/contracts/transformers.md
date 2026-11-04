@@ -140,9 +140,9 @@ The named methods never inherit direct-call sugar. A standalone Transformer appl
 
 This table fixes only whether an operation targets a detached snapshot or the live bound node. Execution, cancellation and error behavior are specified by the Transformation, Context and node-lifecycle contracts.
 
-**`compute()` reports a failure, and `run()` raises it** (ruled 2026-09-28; `contracts/cells.md`, *Failures*, *How a failure is delivered*). In both modes `compute()` / `computation()` return the result checksum, or `None` when there is none, and never raise for a failure or a node state. Standalone, that is `Transformation.compute()`, which sets `.exception` on the Transformation; `Transformation.run()` raises `TransformationError` (`contracts/direct-delayed-and-transformation.md`). Bound, `compute()` is the node barrier: it returns `None` when the node settles in `failed`, `unwired`, `miswired` or `blocked`, and `run()` re-raises the node's recorded exception or raises `NodeError` (`contracts/node-state-lifecycle.md`, *States as seen through barriers and handles*). A direct Transformer's call is `build().run()`, so it raises.
+**`compute()` reports a failure, and `run()` raises it** (`contracts/cells.md`, *Failures*, *How a failure is delivered*). In both modes `compute()` / `computation()` return the result checksum, or `None` when there is none, and never raise for a failure or a node state. Standalone, that is `Transformation.compute()`, which sets `.exception` on the Transformation; `Transformation.run()` raises `TransformationError` (`contracts/direct-delayed-and-transformation.md`). Bound, `compute()` is the node barrier: it returns `None` when the node settles in `failed`, `unwired`, `miswired` or `blocked`, and `run()` re-raises the node's recorded exception or raises `NodeError` (`contracts/node-state-lifecycle.md`, *States as seen through barriers and handles*). A direct Transformer's call is `build().run()`, so it raises.
 
-The table holds for direct Transformers exactly as for delayed ones. On a direct Transformer, `build()` returns a Transformation, not a value, and `compute()`, `computation()`, `run()` and `task()` work in both modes. *Verified against code (2026-09-26):* `TransformerCore.build`, `.compute`, `.run`, `.task` and `.computation` use `self.build()`.
+The table holds for direct Transformers exactly as for delayed ones. On a direct Transformer, `build()` returns a Transformation, not a value, and `compute()`, `computation()`, `run()` and `task()` work in both modes. *Implementation:* `TransformerCore.build`, `.compute`, `.run`, `.task` and `.computation` use `self.build()`.
 
 ## Live-node members
 
@@ -288,7 +288,7 @@ The refused writes of *`process_lock` and `driver`* are in the same position: se
 
 ## Implementation status and current limitations
 
-The former bound task, read-only result assignment and signature-less call-time keyword gaps now satisfy the contract. Focused plain tests in `seamless-workflow/tests/test_contract_transformer_bound.py` and `seamless-transformer/tests/test_contract_transformer_builder.py` cover them.
+The code satisfies the contract on this page, including the bound task, read-only result assignment and signature-less call-time keywords. Focused plain tests in `seamless-workflow/tests/test_contract_transformer_bound.py` and `seamless-transformer/tests/test_contract_transformer_builder.py` cover them.
 
 ## Non-goals
 
