@@ -302,6 +302,8 @@ The node's value is the **deep-folder index** — `{relative path: leaf checksum
 
 **Leaf retention** — leaves that a mount *sensed* stay resolvable while the node holds that index, including after unmounting; a *computed* directory gets no such claims — is in `contracts/attachments.md`, *Leaf retention*.
 
+**Written files as fallback buffer sources.** A directory write mount registers its written leaf files as local buffer sources. An evicted leaf can be read back from its file, decompressing it where needed and validating the resulting bytes against the requested checksum. This acquires no leaf refholder claim. The sources belong to the mount registration and are removed on unmount or close, even when persistent files remain on disk; they do not have the post-unmount lifetime promised for sensed leaves. Missing or changed backing files produce a source miss, allowing other sources to be tried.
+
 ### Null on a directory mount is terminal
 
 A `w`/`rw` directory cell holding **null**: **the delivery is suppressed, the tree is left in place, and the mount reports `in_sync: False` permanently — with no error, because nothing failed.**
