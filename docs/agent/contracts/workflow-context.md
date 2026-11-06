@@ -143,7 +143,7 @@ The Context **launches replacement work immediately and delays only the cancella
 
 ## Graph serialization
 
-- **`ctx.get_graph()` returns the durable graph, in format `0.6`**: nodes, configurations, edges and literal producers — never runtime state. Named nodes are stored under `nodes`; anonymous nodes are stored under the top-level key **`anonymous_nodes`**, the symbol table, and never duplicated in `nodes`. The entry schema and the `<ref>` form edges use to name a node or a symbol are `contracts/cells.md`, *Connecting*.
+- **`ctx.get_graph()` returns the durable graph, in format `0.7`**: nodes, configurations, edges and literal producers — never runtime state. Named nodes are stored under `nodes`; anonymous nodes are stored under the top-level key **`anonymous_nodes`**, the symbol table, and never duplicated in `nodes`. The entry schema and the `<ref>` form edges use to name a node or a symbol are `contracts/cells.md`, *Connecting*.
 - **Only reachable entries are serialized.** `anonymous_nodes` holds every entry that an edge, or another serialized entry, names. An entry held only by a live handle is runtime state and is excluded: after a reload nothing could reach it.
 - **Elision is not serialized.** An elided anonymous node stays in `anonymous_nodes`, unmarked; whether it is elided is re-derived at runtime.
 - **`ctx.set_graph(graph)` replaces the graph wholesale.** It checks the wiring rule on `anonymous_nodes` entries exactly as on edges. It is ordered so that the new graph's claims are acquired **before** any live role is released. It softcancels every current and superseded run, detaches mount sessions, and resets the runtime.

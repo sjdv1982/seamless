@@ -64,7 +64,7 @@ class SharesContractDocs(unittest.TestCase):
         expectations = {
             "attachments.md": ("share", "ShareDriver", "ctx.a.share", "serialized"),
             "cells.md": ("share", 'ctx.a["share"]'),
-            "workflow-context.md": ("shares", "shares=True", "0.6"),
+            "workflow-context.md": ("shares", "shares=True", "0.7"),
             "mounts.md": ("0.6", "share"),
             "widgets.md": ("share",),
         }

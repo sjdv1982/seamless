@@ -347,7 +347,7 @@ The shipped command loads one saved graph and serves its declared shares. Instal
 seamless-serve-graph graph.json
 ```
 
-The [share contract](../contracts/shares.md#serving-saved-graphs) defines the command's behavior. Give it a local UTF-8 JSON file containing a current workflow graph. A graph with shares uses `__seamless_workflow__: "0.6"`; older current workflow versions cannot declare shares. Original legacy exports need migration before this command can load them.
+The [share contract](../contracts/shares.md#serving-saved-graphs) defines the command's behavior. Give it a local UTF-8 JSON file containing a current workflow graph. A graph with shares uses `__seamless_workflow__: "0.6"` or later, and a graph with downloads `"0.7"`; older current workflow versions cannot declare them. Original legacy exports need migration before this command can load them.
 
 The runner creates one Context in the default `ctx` namespace and calls `ctx.set_graph(graph, mounts=False, shares=True)`. Graph-declared file mounts are disabled; shares are restored. A graph can also contain transformers, which begin deriving when loaded. Open `/ctx/index.html` for a page shared there. A share declared `toplevel=True` can be served from `/index.html`.
 

@@ -360,7 +360,7 @@ Unmounting, and what it clears, is in `contracts/attachments.md`, *Attach, detac
 
 ## Graph serialization
 
-- **Format.** The contract format is **`0.6`**, which adds serialized share specs to the `0.5` graph format (`contracts/shares.md`, *Graph serialization*; `contracts/workflow-context.md`). `0.2` to `0.5` graphs load; an unknown version raises `PathError("Unsupported workflow graph version: …")`.
+- **Format.** The contract format is **`0.7`**: `0.6` added serialized share specs to the `0.5` graph format, and `0.7` adds downloads (`contracts/shares.md`, *Graph serialization*; `contracts/workflow-context.md`). `0.2` to `0.6` graphs load; an unknown version raises `PathError("Unsupported workflow graph version: …")`.
 - **The mount entry** is `{"path", "mode", "authority", "persistent"}` on a cell entry — the spec after normalization, without the driver. Only `driver == "file"` is serialized at all, so manual and widget sessions leave no entry.
 - **Every mount entry is validated by `prepare_graph`, before `mounts` is consulted at all.** Unknown fields, a bad mode or authority, an illegal `file-strict` combination, an unmountable celltype, a `w`/`rw` `deepfolder`, a mount on a non-cell node and a connection into a sensing-mounted node are all refused as `PathError` — **including when `mounts=False`**, because a malformed spec makes the graph malformed whether or not this loader attaches it.
 - **`mounts=False` strips the (valid) specs** and loads the graph as an ordinary one.
@@ -422,7 +422,7 @@ The code satisfies the contract on this page, including the public `NodeError` f
 - `mount-design.md` §17.3, the row "clearing an `r`/`rw` cell's value stays cleared": clearing a mounted cell is **refused** with `AuthorityError("Cannot clear a mounted cell; unmount first")`, in every mode, except through an empty same-celltype builder, which unmounts and clears (*Unmount, persistence and close*).
 - `mount-design.md`'s promise that a `set_graph` does not delete a non-persistent file only "when the new graph re-attaches the same path" is too narrow: a `set_graph` never deletes it.
 - `mount-design.md` §16's "naming is provisional": the names are fixed.
-- `mount-implementation.md` says graph format `0.3`; the current workflow graph format written by the code is `0.6` (*Graph serialization*), which includes shares as well as mounts.
+- `mount-implementation.md` says graph format `0.3`; the current workflow graph format written by the code is `0.7` (*Graph serialization*), which includes shares and downloads as well as mounts.
 - `attachments-and-mount-design.md` Part II §21 still discusses a `settled()` predicate and spells the barrier `ctx.mount.sync()` (singular). Both are dead. Where that document and `mount-design.md` differ, this page wins.
 - **Every "legacy Seamless" claim anywhere in the design documents is unverified.** The 0.x characterization never ran, so this page carries **no** comparison with it — including in the decision table, whose "legacy" column is not reproduced here.
 
