@@ -2,7 +2,7 @@
 
 `HashType` classifies a **checksum** by the structure of its buffer. Seamless uses it to make deserialization, conversion and path decisions at the checksum level, so that it can reject impossible work, and skip a check it has already settled, without fetching or parsing a buffer.
 
-HashType classifies the **13 celltypes** defined in `contracts/celltypes-and-conversion.md`, and only those. Four other celltype names exist in Seamless: the three **deep celltypes** `deepcell`, `deepfolder` and `folder`, and **`module`**, which is not a deep celltype (`contracts/deep-celltypes.md`, *`module` is not a deep celltype*). This page calls them **the four structural names**. They are outside HashType's vocabulary by ruling, not by omission: a HashType query about one of them is a caller error and raises (*Queries*).
+HashType classifies the **13 celltypes** defined in `contracts/celltypes-and-conversion.md`, and only those. Four other celltype names exist in Seamless: the three **deep celltypes** `deepcell`, `deepfolder` and `folder`, and **`module`**, which is not a deep celltype (`contracts/deep-celltypes.md`, *`module` is not a deep celltype*). This page calls them **the four structural names**. They are outside HashType's vocabulary by design, not by omission: a HashType query about one of them is a caller error and raises (*Queries*).
 
 ## Where this page sits: the stack
 
@@ -242,7 +242,7 @@ The checksum-level conversion query, asked before any conversion work. A pair of
 Rules, in order:
 
 1. `source == target`: `True`.
-2. **A forbidden pair: `False`, for every checksum, including a null checksum.** The null checksum short-circuits only on a **legal** pair; an illegal conversion stays illegal for null (ruling, `contract-clarity-rulings.md`). The ruling covers forbidden ordinary pairs such as `python → int` as well as illegal deep pairs.
+2. **A forbidden pair: `False`, for every checksum, including a null checksum.** The null checksum short-circuits only on a **legal** pair; an illegal conversion stays illegal for null. The rule covers forbidden ordinary pairs such as `python → int` as well as illegal deep pairs.
 3. A null checksum on a legal pair: `True`.
 4. `deserializable_as(source, checksum=checksum)` is `False`: `False`.
 5. `target == "checksum"`: `True`.

@@ -47,7 +47,7 @@ Both functions are Python-only and accept exactly one argument: a Python functio
 ## `Transformation` handle
 
 Assume these meanings (confirm with docs/docstrings for exact behavior):
-- `.compute()`: execute and return an identifier (checksum) for the result. **On failure it returns `None` and sets `.exception`; it does not raise** (ruled 2026-09-28, one rule with Cells and Pins: `contracts/cells.md`, *Failures*, *How a failure is delivered*).
+- `.compute()`: execute and return an identifier (checksum) for the result. **On failure it returns `None` and sets `.exception`; it does not raise** (one rule with Cells and Pins: `contracts/cells.md`, *Failures*, *How a failure is delivered*).
 - `.run()`: execute and return the resolved/materialized value. **This is the call that raises:** a failure raises `TransformationError`, whose message carries the recorded exception.
 - `.start()`: schedule computation (useful when starting many tasks before collecting results).
 - `.task()` / `await`: async execution; preferred in Jupyter/async contexts.

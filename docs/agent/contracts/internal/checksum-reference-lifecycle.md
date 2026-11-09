@@ -61,7 +61,7 @@ A **neutral claim** is for a claim that is not an owner's decision about persist
 
 An owner's claim is `scratch=False` or `scratch=True`, and follows the owner's scratch policy (`Cell.scratch`, the Transformer's or Transformation's `scratch` for its result, a Context node's configured scratch). A transformer's input-side claims follow their own rule instead (below).
 
-**No result-side claim held for a scratch node publishes.** This is a ruling, and it covers every result-side claim the `Context` holds for a scratch node:
+**No result-side claim held for a scratch node publishes.** This is deliberate, and it covers every result-side claim the `Context` holds for a scratch node:
 - the current claim (`node:<path>:current`, and `anonymous:<symbol>:current`);
 - superseded-run claims (`node:<path>:superseded:<generation>`);
 - literal claims (`cell:<path>:literal`);
@@ -78,9 +78,9 @@ Each such claim neither publishes nor clears scratch status.
 
 **Recording**: making a successful Expression or Transformation result **checksum** visible. Local execution, cache, database, remote, jobserver, worker and Dask success paths all record. Every success temprefs before recording, and repeated deterministic recording is idempotent for result ownership. **Failure and cancellation record nothing.**
 
-**Publishing**: writing a result **buffer** to the hashserver, and nothing more (ruled 2026-09-29): it takes no claim and asserts nothing about who holds the result. For results it happens in exactly two ways: on a **non-scratch incref**, or on the executing side of a **non-scratch dispatch**, which publishes without a claim (§8, *Buffer persistence*). A scratch result is never published.
+**Publishing**: writing a result **buffer** to the hashserver, and nothing more: it takes no claim and asserts nothing about who holds the result. For results it happens in exactly two ways: on a **non-scratch incref**, or on the executing side of a **non-scratch dispatch**, which publishes without a claim (§8, *Buffer persistence*). A scratch result is never published.
 
-> **One vocabulary across every page (ruled 2026-09-21).** *Publishing* is the buffer write; *recording* is what happens to a result checksum. They follow different rules: recording always happens on success, and a result buffer is written only when somebody increfs it non-scratch or a non-scratch dispatch asks for it. `contracts/scratch-witness-audit.md`, `contracts/expressions.md` and `contracts/identity-and-caching.md` use the same vocabulary. The code's former `_publish_expression_result` did neither; it is now **`_tempref_expression_result`**, which registers a tempref and marks a buffer the evaluation produced as scratch.
+> **One vocabulary across every page.** *Publishing* is the buffer write; *recording* is what happens to a result checksum. They follow different rules: recording always happens on success, and a result buffer is written only when somebody increfs it non-scratch or a non-scratch dispatch asks for it. `contracts/scratch-witness-audit.md`, `contracts/expressions.md` and `contracts/identity-and-caching.md` use the same vocabulary. The code's former `_publish_expression_result` did neither; it is now **`_tempref_expression_result`**, which registers a tempref and marks a buffer the evaluation produced as scratch.
 
 **Adoption / handoff**: a consumer validates a concrete checksum, acquires its own semantic role, records that role, and only then yields or waits. Adoption is independent ownership: it does not transfer the producer's reference. An Expression consumer instead refreshes a tempref and consumes on the same path (§7).
 
@@ -217,7 +217,7 @@ Handoff happens **before the producer's tempref may expire**.
 
 A shared Expression evaluation's input is additionally held by the member set's neutral claim (§6). That claim belongs to the member-set entry, not to the Expression object.
 
-### One rule for owners: direct inputs from construction, dependencies on resolution (ruled 2026-09-28)
+### One rule for owners: direct inputs from construction, dependencies on resolution
 
 **An owner (a Cell or a Transformation) claims what it is given directly from construction, and a dependency only when it resolves it.**
 
@@ -263,7 +263,7 @@ A tempref never writes (`BufferCache.tempref` has no scratch parameter), so Expr
 
 ### Deep checksums
 
-Only the **top-level** checksum of a `deepcell`, `deepfolder` or `folder` is owned. Members rely on ordinary deep-buffer resolution and remote durability; there is no recursive deep ownership. This covers the **result** side as well as the input side: a Transformation that produces a deep result claims the index checksum under its `"result"` role and makes **no claim on the leaves** (`contracts/deep-celltypes.md`, *The output side*). The one permanent exception is on the mount sense path: leaves that a mount *sensed* keep a claim for as long as the node holds that index, including after unmounting (`contracts/attachments.md`, *Leaf retention*).
+Only the **top-level** checksum of a `deepcell`, `deepfolder` or `folder` is owned. Members rely on ordinary deep-buffer resolution and remote durability; there is no recursive deep ownership. This covers the **result** side as well as the input side: a Transformation that produces a deep result claims the index checksum under its `"result"` role and makes **no claim on the leaves** (`contracts/deep-celltypes.md`, *The output side*). The one permanent exception is on the mount sense path: leaves that a mount *sensed* keep a claim for as long as the node holds that index, including after unmounting (`contracts/attachments.md`, *Leaf retention*). The leaf files of a directory write mount are a local buffer source, not a claim, and make no exception to this rule (`contracts/mounts.md`, *Directory mounts*).
 
 ### Workers and services
 
@@ -342,9 +342,9 @@ The database's path storage (§6, *The durable refholder*) currently keeps every
 5. the partially coupled `PreTransformation` and `CodeManager` role invariants;
 6. a call-site audit plus full regression.
 
-Until they land, green tests are not completion evidence. The forced-cap helper leaves remote resolution and recomputation controls to callers; the named forced-cap coverage proves only a Cell case; shutdown coverage does not prove the full `atexit` / cleanup-exception / corrupted-bridge matrix; helper-dispatch Dask tests do not exercise the real cached, thin and fat branches; partial happy paths do not prove every role multiplicity; and a delayed-dependency test that expires data only after all dependencies finish does not prove per-result adoption before the next wait. Also uncovered: the superseded role ending at the hold **deadline** (only the cap and `prune()` are tested). The 2026-09-24 coverage pass reported the counts, audit, registry, shutdown and Dask publishing paths as covered, but did not re-audit this list package by package.
+Until they land, green tests are not completion evidence. The forced-cap helper leaves remote resolution and recomputation controls to callers; the named forced-cap coverage proves only a Cell case; shutdown coverage does not prove the full `atexit` / cleanup-exception / corrupted-bridge matrix; helper-dispatch Dask tests do not exercise the real cached, thin and fat branches; partial happy paths do not prove every role multiplicity; and a delayed-dependency test that expires data only after all dependencies finish does not prove per-result adoption before the next wait. Also uncovered: the superseded role ending at the hold **deadline** (only the cap and `prune()` are tested). The counts, audit, registry, shutdown and Dask publishing paths are covered, but this list has not been re-audited package by package.
 
-**One open imbalance.** A refholder-balance warning at `seamless.close()` was observed on a Cell derivation path with shared input checksums, the path the now-retired `SubCell` class used to take. It was never diagnosed, and it looked like a real imbalance rather than an audit artefact. The copy defect fixed above was a suspected cause; whether the warning survives that fix has not been re-checked.
+**One open imbalance.** A refholder-balance warning at `seamless.close()` has been observed on a Cell projection path with shared input checksums. It is undiagnosed, and it looks like a real imbalance rather than an audit artefact. The copy defect listed above is a suspected cause; whether the warning is tied to it has not been checked.
 
 Tests run **one process per file**: process-global cache and refholder state carries between files, and combining Seamless test files in one pytest run produces spurious failures.
 

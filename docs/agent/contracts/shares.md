@@ -2,7 +2,9 @@
 
 A **share** is the attachment whose external resource is an HTTP endpoint served by this process. The cell's value is read with GET, written with PUT when the share is writable, and every change is announced over a websocket. **The attachment contract of `contracts/attachments.md` applies in full** — direction, scope, slots, spec versus session, the sense and actuate disciplines, delivery pacing, the cut barrier and the lifecycle. This page specializes it for values served over HTTP. It does not restate a rule from that page; each section says where the share driver makes a generic rule concrete.
 
-Shares exist on the **workflow Context** only. A standalone `Cell` and a `direct`/`delayed` transformer have no HTTP integration. The `seamless-serve-graph` command loads workflow Contexts with their declared shares (*Serving saved graphs* below). **A share is unrelated to the `seamless-share` package**, which inspects and exports cached buffers and transformations.
+The same server also serves **downloads**: archives of cell buffers, each at one URL of the namespace, built when they are requested (*Downloads*). A download is not an attachment; it belongs to the Context, not to a cell.
+
+Shares exist on the **workflow Context** only. A standalone `Cell` and a `direct`/`delayed` transformer have no HTTP integration. The `seamless-serve-graph` command loads workflow Contexts with their declared shares and downloads (*Serving saved graphs* below). **A share is unrelated to the `seamless-share` package**, which inspects and exports cached buffers and transformations.
 
 Code locations:
 
@@ -10,7 +12,9 @@ Code locations:
 |---|---|
 | Public handles | `seamless_workflow.attachments.share.api` (`ShareHandle`, `ContextShares`) |
 | Server configuration | `seamless_workflow.shareserver` (`configure`, `host`, `port`, `url`, `openapi`, `close`) |
-| Durable spec, celltype admission | `seamless_workflow.attachments.share.spec` (`ShareSpec`, `validate_celltype`) |
+| Durable spec, celltype admission | `seamless_workflow.attachments.share.spec` (`ShareSpec`, `DownloadSpec`, `validate_celltype`) |
+| Download cut | `seamless_workflow.attachments.runtime.AttachmentRuntime._download_cut` |
+| Archive packing | `seamless_workflow.attachments.share.archive` |
 | Transport | `seamless_workflow.attachments.share.driver.ShareDriver` |
 | Server, records, namespaces, holds | `seamless_workflow.attachments.share.server` (`ShareServer`) |
 | Content types | `seamless_workflow.attachments.share.mime` |
@@ -34,6 +38,10 @@ ctx.a.share.clear_error()
 ctx.shares.namespace        # "ctx"; settable while this Context has no shares
 ctx.shares.url              # "http://<host>:<port>/<namespace>", or None before the server runs
 ctx.shares.openapi()        # the OpenAPI document for this Context's shares, a dict
+
+ctx.shares.add_download(cells, path="download", *, format="tar.gz")   # blocking; returns the URL
+ctx.shares.remove_download(path="download")
+ctx.shares.downloads        # {path: DownloadSpec}
 
 from seamless_workflow import shareserver
 shareserver.configure(host="0.0.0.0", port=5813)    # before the first share
@@ -71,19 +79,19 @@ A node has one **share** slot, beside its file slot and its widget slot (`contra
 
 **One server per process serves every share of every Context, REST and websocket, on one port.**
 
-- **It starts with the first share** — a `share()` call, or a `set_graph` that attaches shares — and stops at `seamless.close()`. A Context that closes leaves its shares served for a hold window, so that a new Context can take them over, and they go when the window ends (*The hold on close*); the server stays.
+- **It starts with the first share or download** — a `share()` or `add_download()` call, or a `set_graph` that attaches shares or downloads — and stops at `seamless.close()`. A Context that closes leaves its shares served for a hold window, so that a new Context can take them over, and they go when the window ends (*The hold on close*); the server stays.
 - **It runs on its own thread and its own event loop.** It answers while user code blocks, in a script and under Jupyter, and it never runs on the caller's loop or the kernel's.
-- **Defaults: host `0.0.0.0`, port `5813`** (ruled 2026-10-09). `shareserver.configure(host=, port=)` and the environment variables `SEAMLESS_SHARE_HOST` / `SEAMLESS_SHARE_PORT` override them; `port=0` asks the operating system for a free port, read back from `shareserver.port`. `configure()` after the server has started raises `RuntimeError`.
+- **Defaults: host `0.0.0.0`, port `5813`.** `shareserver.configure(host=, port=)` and the environment variables `SEAMLESS_SHARE_HOST` / `SEAMLESS_SHARE_PORT` override them; `port=0` asks the operating system for a free port, read back from `shareserver.port`. `configure()` after the server has started raises `RuntimeError`.
 - **A busy port is an error.** The `share()` that would have started the server raises `OSError`, and nothing is installed.
 - **There is no authentication and no TLS.** With the default bind address, every host that can reach the machine can read every share and PUT to every writable one. Bind to `127.0.0.1`, or put a reverse proxy in front, for anything else.
 - **Cross-origin requests are allowed from any origin**, without credentials. The exposed headers are `ETag` and `X-Seamless-Marker`.
 
 ### Namespaces
 
-**Every Context serves under one namespace, `ctx.shares.namespace`, default `"ctx"`** (ruled 2026-10-09).
+**Every Context serves under one namespace, `ctx.shares.namespace`, default `"ctx"`**.
 
-- It is **runtime state**: not in the graph, and settable only while the Context has no shares.
-- **A namespace belongs to one live Context.** The first share claims it; a second Context claiming a taken name raises `ValueError("Share namespace '<name>' is in use")`. **Closing the Context holds it**: the first Context that claims it inside the hold window takes it over, with its shares and its connections; otherwise it is released when the window ends (*The hold on close*).
+- It is **runtime state**: not in the graph, and settable only while the Context has no shares and no downloads.
+- **A namespace belongs to one live Context.** The first share or download claims it; a second Context claiming a taken name raises `ValueError("Share namespace '<name>' is in use")`. **Closing the Context holds it**: the first Context that claims it inside the hold window takes it over, with its shares and its connections; otherwise it is released when the window ends (*The hold on close*).
 - The same graph can therefore be loaded into several Contexts in one process, each under its own namespace.
 
 ## URL space
@@ -92,6 +100,7 @@ A node has one **share** slot, beside its file slot and its widget slot (`contra
 |---|---|
 | `GET`, `HEAD` `/<namespace>/state-graph` | the Context node state graph |
 | `GET`, `HEAD`, `PUT` `/<namespace>/<path>` | a share |
+| `GET` `/<namespace>/<path>` | a download |
 | `GET`, `HEAD`, `PUT` `/<path>` | a `toplevel` share |
 | `GET /<namespace>` with a websocket upgrade | the namespace's update stream |
 | `GET /openapi.json` | the API description |
@@ -100,7 +109,7 @@ A node has one **share** slot, beside its file slot and its widget slot (`contra
 | `GET /<namespace>/` | `302` to `/<namespace>/index.html` when that share exists, else `404` |
 | `OPTIONS` anything | the CORS preflight answer |
 
-`openapi.json`, `seamless-client.js` and every claimed or held namespace name are reserved top-level keys; a namespace cannot take the name of an existing top-level share. `state-graph` is a reserved namespace key: a non-top-level share with that exact path raises `ValueError`. A top-level share named `state-graph` remains legal. A key is matched whole: there is no access below a share.
+`openapi.json`, `seamless-client.js` and every claimed or held namespace name are reserved top-level keys; a namespace cannot take the name of an existing top-level share. `state-graph` is a reserved namespace key: a non-top-level share with that exact path raises `ValueError`. A top-level share named `state-graph` remains legal. A key is matched whole: there is no access below a share. A download and a share are keys of the same namespace: they cannot have the same key.
 
 ## The state graph
 
@@ -142,7 +151,7 @@ The served state of a share is a **record**: a checksum, or none, and a **marker
 
 - **`?mode=checksum`** returns the checksum hex as `text/plain` instead of the value.
 - **`HEAD` never resolves bytes**; it answers from the record.
-- **A GET resolves; it never computes.** It has exactly the powers of `.buffer`: the local buffer cache, then the remote buffer server. A value whose checksum arrived without its bytes — a remote result, a cache hit, a scratch result that was evicted — answers `503` until the bytes become resolvable (`contracts/attachments.md`, *A delivery resolves; it never computes*).
+- **A GET resolves; it never computes.** It has exactly the powers of `.buffer`: the local buffer cache, then this process's local buffer sources, then the remote buffer server. A value whose checksum arrived without its bytes — a remote result, a cache hit, a scratch result that was evicted — answers `503` until the bytes become resolvable (`contracts/attachments.md`, *A delivery resolves; it never computes*).
 - **Only complete values are served.** While the cell is `waiting`, `blocked` or `failed`, the share keeps answering with the last value it served, under the same marker. Before the first complete value it answers `404`, unless the share re-attached a held record: it then keeps answering with the held value, under the held marker (*The hold on close*). The node state graph reports the current state separately (*The state graph*).
 
 ### Content types
@@ -181,7 +190,7 @@ The content type is the first of:
 - **The body is canonicalized with `canon_T`, and checked exactly as a user assignment of the same value is checked** — the rule of `contracts/mounts.md`, *Canonical bytes*, including that code celltypes get no syntax check. The cell holds the canonical bytes: a GET after a PUT of `{"a":1}` to a `plain` cell returns the canonical serialization.
 - **An empty body, or `null`, writes null.**
 - **An invalid body is refused and changes nothing.** It is an invalid request, not an invalid resource: the cell keeps its value and its state. **A share never puts a sense error on its cell.**
-- **`?marker=n` makes the write conditional** (ruled 2026-10-09): `n` is the marker the client last saw, and the PUT is accepted only if it still is the current one. **Without the parameter the PUT is unconditional.**
+- **`?marker=n` makes the write conditional**: `n` is the marker the client last saw, and the PUT is accepted only if it still is the current one. **Without the parameter the PUT is unconditional.**
 - **A PUT of the value already served is accepted and changes nothing**: `200`, with the unchanged marker.
 - **An accepted PUT is a sensed write** (`contracts/attachments.md`, *Sense*): a non-detaching authoritative write, with no privilege over a user assignment and none under it.
 - **The `200` is sent after the write has been installed.** A `ctx.a.checksum` read, or a `ctx.compute()`, that starts after the response sees the PUT value or a newer one.
@@ -212,6 +221,53 @@ The last row is row 4 of the no-value table and not a share rule: an absent reso
 
 **A share that re-attaches to a held record makes the same decision** (*The hold on close*): the held record counts as an absent file and never writes to the cell. It only gives the served side a starting point. A delivery of the held checksum therefore changes nothing — no marker bump, no `update` message — and a read-only share on a cell without a complete value keeps serving the held value until the cell completes. A writable share on a cell without a value still installs null, which is an ordinary update unless null was held.
 
+## Downloads
+
+**A download is an archive of cell buffers, served at one URL of the namespace and built when it is requested.** An archive has no canonical serialization, so it never gets a checksum: it is not a cell value, it never enters the buffer cache, and only a GET builds it. Its use case is a page button that downloads a section of the Context.
+
+```python
+url = ctx.shares.add_download(["title", "results/table"], format="zip")
+# "http://<host>:<port>/<namespace>/download"
+```
+
+- **`add_download(cells, path="download", *, format="tar.gz")` blocks until the URL answers, and returns it.** `path` is a key of the namespace under the rules of a share key (*The API*). A download is never top-level.
+- **`cells` names cells by path string, with `/` between path segments**: `"results/table"` is `ctx.results.table`. In a list, each path string is also the name of its archive member; a dict `{member: cell}` names the members explicitly. Only cells are named: a subcontext path does not stand for the cells below it.
+- **Before a GET, only syntax is checked.** A cell path is a non-empty sequence of share-key segments whose first segment is not `shares`. Member names follow the same segment rule; they are distinct, and none is a directory prefix of another (`a` and `a/b`). Whether a path names a cell is decided by each GET, never before: a download does not follow the graph, and no graph edit changes or refuses a download.
+- **`format`** is `"tar"`, `"tar.gz"`, `"tar.xz"` or `"zip"`. It fixes the content type and the file name.
+- **`remove_download(path="download")` removes the URL at once.** For a path without a download it is a no-op.
+- **`ctx.shares.downloads`** is this Context's `{path: DownloadSpec}`.
+
+**For the namespace, URL conflicts, the server start, the state graph and the hold, a download counts as a share** (*Namespaces*, *URL space*, *The hold on close*).
+
+### The download GET
+
+**A GET takes one consistent cut of the cells, then resolves and packs their buffers.**
+
+1. **The cut is one read turn of the Context.** Every listed path is looked up in the same turn, so an archive never mixes two states of the graph. The turn reads checksums; it never computes, and it claims every checksum it read until the archive is built.
+2. **Every listed path must name a complete cell whose celltype is not deep.** Otherwise the answer is `409`, with JSON `{"error": "<message>", "cells": {"<cell path>": "<reason>", …}}` that lists **every** failing path. The reasons are `missing` (no node and no subcontext at that path), `not-a-cell` (a transformer or a subcontext), `deep-celltype` (`deepcell`, `deepfolder`), and otherwise the node state: `unwired`, `miswired`, `blocked`, `waiting`, `computing` or `failed`.
+3. **Members are buffers.** A member's bytes are the cell's buffer, byte for byte: the body a share GET would answer for that cell (*Reading: GET and HEAD*). A `folder` cell becomes a directory, with one member `<member>/<key>` per index entry, holding that leaf's buffer; an index key that is not a safe relative path fails the cut with the reason `unsafe-folder-key`. **A cell whose value is null is left out**, and so is a null folder leaf. Buffers are resolved with the powers of a share GET, never computed; a buffer that cannot be resolved answers `503`.
+4. **Packing is deterministic**: members in sorted order, a fixed timestamp (tar: 0; zip: 1980-01-01 00:00), owner 0, mode `0644`, and a gzip header without file name or time. With a given compression library, two GETs of the same cut return the same bytes. The archive is still not content-addressed.
+
+| Status | When |
+|---|---|
+| `200` | the archive; headers `Content-Type` and `Content-Disposition: attachment; filename="<name>"` (*below*), `Cache-Control: no-cache` |
+| `404` | no such download; or a held download whose hold window ended before it was re-attached (*The hold on close*) |
+| `405` | any method but `GET`; `Allow: GET, OPTIONS` |
+| `409` | the cut has failing paths; the JSON body lists every one with its reason |
+| `503` | a buffer cannot be resolved; the Context did not answer the read; the build exceeded its time limit (*Limits*) |
+
+| `format` | `Content-Type` | file name |
+|---|---|---|
+| `tar` | `application/x-tar` | `<last path segment>.tar` |
+| `tar.gz` | `application/gzip` | `<last path segment>.tar.gz` |
+| `tar.xz` | `application/x-xz` | `<last path segment>.tar.xz` |
+| `zip` | `application/zip` | `<last path segment>.zip` |
+
+The extension is not added when the last path segment already ends with it: `path="report.zip"` is served as `report.zip`.
+
+- **A download has no record.** There is no `ETag`, no `X-Seamless-Marker` and no `?mode=checksum`, and the websocket never lists or announces a download.
+- **Downloads are built on a worker pool of their own**, so a slow build never delays a share GET or a state-graph read.
+
 ## The websocket
 
 `GET /<namespace>` with a websocket upgrade opens the namespace's update stream. **The server only sends; anything a client sends is ignored.** Every message is a JSON array.
@@ -222,6 +278,7 @@ The last row is row 4 of the no-value table and not a share rule: an absent reso
 4. `["state-graph", ["<digest>", <marker>]]` — announces a state graph publication; GET the state-graph URL for its body.
 
 - **A client needs no request to learn the current state**: the first `shares` message carries every checksum and marker.
+- **Downloads are not listed**: they have no record, so they have no `update` either. Adding or removing a download sends no `shares` message.
 - **A new client receives its first state-graph announcement within one half-second interval after the initial share snapshot.** Further announcements arrive at most once per interval and only when the published digest differs from the last digest sent to that client. Changes that return to the previously published graph inside one interval produce no announcement.
 - **`binary`** is `false` for `text/*`, `application/json`, `application/yaml`, `application/javascript`, `application/xml` and the `+json` / `+xml` types, and `true` otherwise.
 - Liveness uses websocket ping frames, not a message.
@@ -233,6 +290,7 @@ The last row is row 4 of the no-value table and not a share rule: an absent reso
 
 - **One state-graph path item per claimed or held namespace**, with GET and HEAD and the responses described in *The state graph*.
 - **One path item per share**, at its URL: `get` and `head` always, `put` when the share is writable, with the status codes of this page.
+- **One path item per download**, at its URL: `get` only, answering the archive content type, with `x-seamless-download` holding `{"format", "cells"}`.
 - **Content type and schema follow the celltype:**
 
 | Celltype | Schema |
@@ -283,8 +341,8 @@ ctx.a.set("5")                               // PUT
 
 ## Threads and blocking
 
-- **Every public call is an ordinary public Context operation.** `share()`, `del ctx.a.share`, `clear_error()` and setting `ctx.shares.namespace` block the caller, raise `ReentrantContextError` from the controller thread and `ClosedContextError` after `close()`.
-- **Request handlers run on the server thread.** No user code runs in them.
+- **Every public call is an ordinary public Context operation.** `share()`, `del ctx.a.share`, `clear_error()`, `add_download()`, `remove_download()` and setting `ctx.shares.namespace` block the caller, raise `ReentrantContextError` from the controller thread and `ClosedContextError` after `close()`.
+- **Request handlers run on the server thread.** No user code runs in them. A download is built on a worker thread of the download pool; its cut is one read turn of the Context.
 - **A blocking HTTP call from the thread that owns the Context is fine**: the server does not need that thread.
 
 ## Errors
@@ -305,6 +363,10 @@ Raised at the call:
 | `AuthorityError` | an incoming edge into a writably shared cell; clearing a shared cell |
 | `OSError` | the server cannot bind |
 | `ImportError` | `aiohttp` is not installed (`seamless-workflow[share]`) |
+| `ValueError` | for `add_download()`: an invalid download path, cell path or member name; two members with one name; a member name that is a directory prefix of another; an unknown `format`; a download path taken by a share or a download, as for a share |
+| `TypeError` | for `add_download()`: `cells` is neither a list of strings nor a dict of strings |
+
+`add_download()` never raises because of the graph: a path that names no cell, or a cell that is not complete, is reported by the GET (*The download GET*).
 
 The remedy for every scope refusal is the usual one: **share a cell and connect it.** `ctx.out = ctx.tf.result; ctx.out.share()` serves a transformer's result.
 
@@ -312,13 +374,14 @@ Of the three-way error model of `contracts/attachments.md`, a share has only the
 
 ## Graph serialization
 
-- **Format `0.6`** adds the `share` entry (ruled 2026-10-09). `0.2` to `0.5` graphs load; a `share` entry in a graph below `0.6` raises `PathError("share entries require workflow graph version 0.6")`.
+- **Format `0.7`** adds the top-level `downloads` list; **`0.6`** added the `share` entry. `0.2` to `0.6` graphs load. A `share` entry in a graph below `0.6` raises `PathError("share entries require workflow graph version 0.6")`, and a `downloads` list in a graph below `0.7` raises `PathError("downloads require workflow graph version 0.7")`.
 - **The share entry** is `{"path", "readonly", "mimetype", "toplevel"}` on a cell entry — the spec after normalization, with the default key written out.
-- **Every share entry is validated by `prepare_graph`**, also with `shares=False`: unknown fields, an invalid key, an unshareable celltype, a share on a non-cell node, a connection into a writably shared node, and two shares with one URL are refused as `PathError("Invalid share spec: …")`.
-- **`shares=False` strips the (valid) specs.**
-- **`shares=True` — the default — attaches every spec exactly as `share()` does.** It starts the server if needed, and it blocks through every first delivery, like `mounts=True`. A key or namespace that is taken raises, and the graph is not replaced.
+- **A download entry** is `{"path", "cells", "format"}`, sorted by `path`. `cells` is a list when every member is named after its cell, else a `{member: cell}` dict. A graph without downloads has no `downloads` key.
+- **Every share entry is validated by `prepare_graph`**, also with `shares=False`: unknown fields, an invalid key, an unshareable celltype, a share on a non-cell node, a connection into a writably shared node, and two shares with one URL are refused as `PathError("Invalid share spec: …")`. **Every download entry is validated by the same syntax rules as `add_download()`, and no more**: unknown fields, invalid paths or names, two downloads with one path, and a download with the key of a share are refused as `PathError("Invalid download spec: …")`. Cell paths are not checked against the graph.
+- **`shares=False` strips the (valid) share specs and downloads.**
+- **`shares=True` — the default — attaches every spec exactly as `share()` does, and registers every download exactly as `add_download()` does.** It starts the server if needed, and it blocks through every first delivery, like `mounts=True`. A key or namespace that is taken raises, and the graph is not replaced. The downloads of the previous graph are removed, except where a new download or share takes over their key.
 - **The namespace is not in the graph.** Set `ctx.shares.namespace` before loading.
-- **Loading a graph with shares opens a network endpoint.** Graphs of unknown origin must be loaded with `shares=False`.
+- **Loading a graph with shares or downloads opens a network endpoint.** Graphs of unknown origin must be loaded with `shares=False`.
 
 ## Serving saved graphs
 
@@ -337,6 +400,7 @@ seamless-serve-graph graph.json
 ## Lifecycle
 
 - **Every detach removes the URL at once, except a Context close.** `del ctx.a.share`, deleting the node, an empty same-celltype builder and `set_graph()` all end in the same detach (`contracts/attachments.md`, *Attach, detach, close*). Requests then answer `404`, and the namespace's clients get a new `shares` message.
+- **`remove_download()` and `set_graph()` remove a download's URL at once**; requests then answer `404`. Deleting or changing a cell never touches a download.
 - **`ctx.close()` holds its shares**, and removes at the end of the hold window those that no new Context re-attached (*The hold on close*).
 - **Slot detach is independent.** `del ctx.a.share` leaves a file mount and a widget hub in place.
 - **A new share on the same URL continues its marker sequence.**
@@ -347,11 +411,12 @@ seamless-serve-graph graph.json
 
 **`ctx.close()` does not remove its shares at once. The server holds them for a window, 10 s by default (*Limits*), and a Context that shares the same URLs inside the window takes them over.** Re-running a serving script with `%run -i` — close the old Context, build a new one — is therefore invisible to clients for every value that did not change.
 
-- **What is held is the namespace**: every record of the closing Context, top-level ones included, each with its entry, checksum, marker and claim; the websocket connections; and the last state-graph publication. A Context that never claimed a namespace holds nothing.
+- **What is held is the namespace**: every record of the closing Context, top-level ones included, each with its entry, checksum, marker and claim; its downloads; the websocket connections; and the last state-graph publication. A Context that never claimed a namespace holds nothing.
+- **A held download is never built**: the Context that defined it is closed. A GET to a held download waits until a share or download is re-attached at its URL, and is then answered by it, as a PUT to a held share is (*Writing: PUT*); if the window ends first, it answers `404`.
 - **The hold starts when `close()` stops sensing** (`contracts/attachments.md`, *Close*, step 1). The close flush still completes the deliveries already requested, as ordinary updates. After the flush, nothing the closing Context does changes a record or sends a message: its teardown is invisible. **The window starts when `close()` returns**; `close()` does not wait for it.
 - **During the hold, held shares answer from their records.** GET, HEAD and `?mode=checksum` answer as before, and the connections stay open. A client that connects gets the handshake, a `shares` message with the held records and, if there is one, an announcement of the held state-graph publication, which the state-graph URL serves. `/openapi.json` keeps describing the held shares and the namespace's state-graph endpoint. A PUT waits for its share to be re-attached (*Writing: PUT*).
 - **The first Context that claims the namespace inside the window takes it over** — by its first share, or by a `set_graph()` that attaches shares — instead of raising `ValueError("Share namespace '<name>' is in use")`. The connections, the held records and the state-graph marker sequence pass to it. The held top-level keys are refused to every other Context.
-- **A share of that Context at the URL of a held record re-attaches to it**, whatever its node, celltype or flags. Its initial decision is that of a new share, and the held record only gives the served side its starting point (*The initial decision*):
+- **A share or download of that Context at the URL of a held record or download re-attaches to it**, whatever its node, celltype, flags or kind. A download takes nothing from what it re-attaches to; a share that re-attaches to a held download starts as a new share. A `shares` message is sent when a share replaces a download or the reverse. Its initial decision is that of a new share, and the held record only gives the served side its starting point (*The initial decision*):
   - a value equal to the held one is served under the held marker: no marker bump, no `update` message;
   - a different value is one ordinary update;
   - a read-only share on a cell without a complete value keeps serving the held value until the cell completes; a writable one installs null, which is an ordinary update unless null was held;
@@ -372,9 +437,11 @@ seamless-serve-graph graph.json
 | resolution timeout of a GET | 60 s, then `503` |
 | websocket ping interval | 10 s |
 | hold window after `ctx.close()` | 10 s |
+| time to build a download, cut included | 300 s, then `503` |
+| download worker pool | 2 threads |
 | delivery pacing | `contracts/attachments.md`, *Actuate* |
 
-A value is held in memory in full for the duration of a request. There are no range requests.
+A value is held in memory in full for the duration of a request, and so is a download archive. There are no range requests.
 
 ## Porting notes
 
@@ -395,7 +462,7 @@ Stated as current behaviour, with no claim about what any earlier version did:
 
 ## Implementation status and current limitations
 
-The share API, HTTP/WebSocket server, persistence, OpenAPI description and browser client implement this contract. Focused tests in `seamless-workflow/tests/test_contract_shares.py`, `test_share_transport.py` and `test_share_client_js.py` pin the behavior. Browser acceptance passed against headless Chrome in `seamless-workflow/tests/test_share_browser.py`, including slider keyboard input, Python-to-browser updates, two-tab editing and mounted-page updates.
+The share API, HTTP/WebSocket server, persistence, OpenAPI description and browser client implement this contract. Focused tests in `seamless-workflow/tests/test_contract_shares.py`, `test_share_transport.py`, `test_share_client_js.py` and `test_share_downloads.py` pin the behavior. Browser acceptance passed against headless Chrome in `seamless-workflow/tests/test_share_browser.py`, including slider keyboard input, Python-to-browser updates, two-tab editing and mounted-page updates.
 
 - **Topology refusals raised by generic code say "mount".** An incoming edge into a writably shared cell raises `AuthorityError("Sensing mount is the producer; unmount first")`, and clearing raises `AuthorityError("Cannot clear a mounted cell; unmount first")`. The remedy is `del ctx.a.share`.
 - **The barrier is spelled `ctx.mounts`.**
@@ -407,7 +474,8 @@ The share API, HTTP/WebSocket server, persistence, OpenAPI description and brows
 - **Generating a web page or form from the graph.** A page is a `text` cell that you write and share.
 - **Access below a share** (`/ctx/a/x`). Share a connected cell that holds the projection: `ctx.x = ctx.a.x; ctx.x.share()`.
 - **PUT by checksum.** Deferred with a named condition: it needs the check that `ctx.a.checksum = …` performs, which a transport cannot perform today.
-- **Directory and deep shares.** `folder`, `deepfolder` and `deepcell` cells are not shareable.
+- **Directory and deep shares.** `folder`, `deepfolder` and `deepcell` cells are not shareable. A `folder` cell can be downloaded (*Downloads*); `deepfolder` and `deepcell` cells cannot.
+- **Downloads of computed content.** A download packs buffers of complete cells; it runs no user code. Content that must be computed for the archive, such as a manifest, belongs in a cell.
 - **Computing on GET.** A GET resolves and never fingertips.
 - **Authentication, TLS, sessions.** Every client of a namespace edits the same graph. Use a reverse proxy for access control, and one Context per user for isolation.
 - **Standalone, sub-path, pin and code shares.** As for every attachment (`contracts/attachments.md`, *Non-goals*).

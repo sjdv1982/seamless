@@ -46,7 +46,7 @@ Looking for legacy Seamless (0.x)? Use the legacy docs at `/legacy/`.
 | `contracts/direct-delayed-and-transformation.md` | Immutable Transformation handles and the `direct`/`delayed` Transformer call modes |
 | `contracts/scratch-witness-audit.md` | Scratch, witness, and audit trail semantics; fingertipping as recompute-on-absence, where the chain runs, and why neither evaluation nor fingertipping publishes; provenance as the derivation graph, what a walk of the database recovers, coverage gaps and federation |
 | `contracts/seamless-run-and-argtyping.md` | The `seamless-run` CLI: argtyping, `--var` vs `--metavar`, `--no-process-lock` and `--driver`, `--conda` and `--docker`, how the first word of a command is resolved, canonicalization, manual remote deployment and the `transform.sh` launcher |
-| `contracts/cache-storage-and-limits.md` | What is cached at a high level; the local buffer cache and its memory pressure |
+| `contracts/cache-storage-and-limits.md` | What is cached at a high level; the local buffer cache and its memory pressure; local buffer sources (read-buffer directories, directory write-mount leaves) and the resolution order |
 | `contracts/content-addressed-files-and-dirs.md` | Files and directories as checksums; the deep index as a directory identity |
 | `contracts/modules-and-closures.md` | Content-bound code: embedding modules, environment envelopes, closures as implicit inputs |
 | `contracts/compiled-transformers.md` | C/C++/Fortran/Rust + open language set; identity model and pure-function constraint |

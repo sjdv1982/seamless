@@ -11,7 +11,7 @@ While `seamless-core` underpins higher-level Seamless packages (`seamless-config
 `Checksum` wraps a SHA-256 hash as a first-class Python object. Beyond simple identity, it supports:
 
 - Construction from hex strings, raw bytes, or other `Checksum` instances.
-- `resolve()` — retrieve the corresponding buffer from the local cache or a remote server.
+- `resolve()` — retrieve the corresponding buffer from the local cache, a local buffer source, or a remote server.
 - `fingertip()` — resolve with fallback to recomputation (if a transformation produced this checksum).
 - `incref()` / `decref()` / `tempref()` — reference counting to keep buffers alive in the cache.
 - `load()` / `save()` — file I/O (auto-appends `.CHECKSUM` extension).
@@ -64,6 +64,10 @@ The buffer cache is a dual weak/strong in-memory store:
 - **Strong cache** — buffers with active references (`incref` or `tempref`); kept alive.
 
 Temporary references (`tempref`) model decaying interest — useful for intermediate results that may or may not be needed again. When memory usage exceeds configurable soft/hard caps (default 5 GB / 50 GB), the cache evicts buffers in cost-aware order, considering download cost, recomputation cost, and buffer size.
+
+### Local buffer sources
+
+Outside the cache, a process can have **local buffer sources**: stores on the local file system that supply a buffer by checksum. They are the buffer read folders configured through `seamless-remote`, and the files a `seamless-workflow` directory mount has written, for as long as the mount lasts. `resolve()` / `resolution()` try the cache first, then these sources (in unspecified order), then the remote buffer servers. A source serves a buffer only if its bytes match the checksum; it holds no reference, publishes nothing, and is visible only to its own process. Registering sources is internal to Seamless.
 
 ### HashType and expressions
 
