@@ -105,6 +105,29 @@ The page is a plain file. `seamless-client.js` is served by the share server its
 - **Handlers are attached in `onsharelist`**, because entries appear and disappear with the shares of the namespace.
 - **The server is one per process**: REST and websocket on one port, started by the first share, stopped by `seamless.close()`. It defaults to `0.0.0.0:5813`, with no authentication and no TLS. Bind to `127.0.0.1` for development (`SEAMLESS_SHARE_HOST`, `SEAMLESS_SHARE_PORT`, `shareserver.configure`).
 
+### Returning to a previous input
+
+Suppose an input goes X → Y → X. When a share starts serving the result for Y,
+it releases its claim on the previous result. If the bytes for X are then
+evicted, returning to X can restore its recorded checksum while the bytes are
+still missing. A GET for the value returns `503` if it cannot resolve that
+checksum. This can happen to a `plain` JSON share and concerns the shared
+cell’s own buffer. [Reading shares](../contracts/shares.md#reading-get-and-head)
+
+The share server has the published checksum and a buffer resolver. A GET only
+looks up bytes in the local cache, local buffer sources or a hashserver.
+Fingertipping can execute a producer, so explicit recovery with
+`Cell.fingertip()` belongs in application or workflow code. To keep
+browser-facing results resolvable across input changes, publish non-scratch
+outputs to a hashserver the share server can read.
+[Buffer storage](../contracts/cache-storage-and-limits.md) · [Fingertipping](../contracts/scratch-witness-audit.md#fingertipping)
+
+Direct shares accept a fixed set of celltypes that excludes `folder`,
+`deepfolder` and `deepcell`. To serve directory contents, share derived
+`plain` or `bytes` cells, or include a `folder` cell in a separate archive
+download. Archive downloads also resolve existing buffers.
+[Shareable celltypes](../contracts/shares.md#shareable-celltypes) · [Downloads](../contracts/shares.md#downloads)
+
 ## Development
 
 ### Two processes
