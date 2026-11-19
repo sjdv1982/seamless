@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "seamless-suite"
-version = "1.5rc"
+version = "1.5.0"
 description = "Seamless umbrella distribution (all components by default)"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -15,14 +15,14 @@ dependencies = [
     "seamless-core>=0.3",
     "seamless-config>=0.3.3",
     "seamless-remote>=0.6.0",
-    "seamless-transformer[compiled]>=0.8.1",
+    "seamless-transformer[compiled]>=0.8.2",
     "seamless-dask>=0.6.0",
     "seamless-jobserver>=0.5",
     "seamless-database>=2.3.0",
-    "hashserver>=1.1.0",
+    "hashserver>=1.1.1",
     "remote-http-launcher>=0.4.5",
     "seamless-signature>=0.1.2",
-    "seamless-workflow>=0.2.2"
+    "seamless-workflow>=0.2.3"
 ]
 keywords = ["seamless", "suite", "workflow", "reproducibility", "caching", "pipeline", "HPC", "deterministic", "content-addressed"]
 classifiers = [
