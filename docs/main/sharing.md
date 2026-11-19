@@ -96,6 +96,10 @@ seamless-run --fingertip mycommand input.txt
 
 Without `--fingertip`, a missing input buffer raises a `CacheMissError`.
 
+### In a workflow Context without a hashserver
+
+A workflow Context with no hashserver fingertips without being asked. Every transformation it runs fingertips missing inputs. A cell with a share, a write-only file mount or a widget fingertips its own missing buffer, and stays `waiting` meanwhile. The common reason is a cache hit for a buffer that has expired from memory, after an input went X → Y → X. See [`docs/agent/contracts/workflow-context.md`](../agent/contracts/workflow-context.md#a-context-without-a-hashserver).
+
 ---
 
 ## Replay by checksum: `seamless-run-transformation`

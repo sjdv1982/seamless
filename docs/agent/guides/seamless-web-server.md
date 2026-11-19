@@ -107,20 +107,39 @@ The page is a plain file. `seamless-client.js` is served by the share server its
 
 ### Returning to a previous input
 
-Suppose an input goes X → Y → X. When a share starts serving the result for Y,
-it releases its claim on the previous result. If the bytes for X are then
-evicted, returning to X can restore its recorded checksum while the bytes are
-still missing. A GET for the value returns `503` if it cannot resolve that
-checksum. This can happen to a `plain` JSON share and concerns the shared
-cell’s own buffer. [Reading shares](../contracts/shares.md#reading-get-and-head)
+Suppose an input goes X → Y → X. When the shared result moves on to Y, the
+cell and the share release their claims on X's result. Without a hashserver,
+that buffer is then kept only by a tempref, and it is evicted once the tempref
+expires. Back at X, the transformer hits its cache: the result checksum for X
+is known, but its bytes are gone.
 
-The share server has the published checksum and a buffer resolver. A GET only
-looks up bytes in the local cache, local buffer sources or a hashserver.
-Fingertipping can execute a producer, so explicit recovery with
-`Cell.fingertip()` belongs in application or workflow code. To keep
-browser-facing results resolvable across input changes, publish non-scratch
-outputs to a hashserver the share server can read.
-[Buffer storage](../contracts/cache-storage-and-limits.md) · [Fingertipping](../contracts/scratch-witness-audit.md#fingertipping)
+**Without a hashserver, the Context fixes this for you.** A cell with a share,
+a `w` file mount or a widget does not take a checksum whose buffer is not in memory.
+The cell stays `waiting` while the Context fingertips the buffer: it reads it
+back from a local buffer source, or else recomputes it in this process.
+Meanwhile, the share keeps serving the Y result under its marker, the websocket
+sends nothing, the mounted file is not written, and `ctx.c.checksum` is `None`.
+Then the X result is served and announced as one ordinary update. Every
+transformer the Context runs also fingertips missing inputs, so the cells
+downstream of a cell that has no share recover too.
+[A Context without a hashserver](../contracts/workflow-context.md#a-context-without-a-hashserver)
+
+What this means for an application:
+
+- **Returning to X may recompute the evicted part** when no local buffer
+  source holds it. The producers must therefore be reproducible.
+- **The page may see a delay**, not an error. The cell's `waiting` state is in
+  `/<ns>/state-graph`, so a page can show progress while it waits.
+- **A GET still never computes.** It answers `503` only if the fingertip
+  failed, for example because the producer is not reproducible.
+- **Only a change of the cell's checksum is covered.** Sharing a cell that is
+  already complete, but whose buffer has expired, triggers no fingertip, so
+  that share answers `503`. Share the cell before its value matters, as
+  `build(ctx)` does, or call `ctx.c.fingertip()` from the session.
+- **With a hashserver, non-scratch results are published**, stay resolvable,
+  and nothing needs fingertipping. A read-only hashserver publishes nothing;
+  use a writable one for an application that computes.
+  [Buffer storage](../contracts/cache-storage-and-limits.md#without-a-hashserver)
 
 Direct shares accept a fixed set of celltypes that excludes `folder`,
 `deepfolder` and `deepcell`. To serve directory contents, share derived

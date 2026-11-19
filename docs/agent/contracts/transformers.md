@@ -254,6 +254,8 @@ Code that passes an existing dict on, such as `seamless-run-transformation`, doe
 - the node keeps them in its `meta` mapping, and `ctx.get_graph()` saves that mapping. A graph whose transformer entry lacks a key loads by the rule for absent keys;
 - a bound and a standalone Transformer with the same settings build Transformations with the same two values.
 
+In a Context without a hashserver, a bound Transformer fingertips its inputs whatever its `allow_input_fingertip` (`contracts/workflow-context.md`, *A Context without a hashserver*). The setting is outside the transformation identity, so this changes no checksum.
+
 **`process_lock`, `driver` and `scratch` are operational features, and `streaming` is an interaction feature.** A bound node treats the two kinds differently:
 
 | | Operational: `process_lock`, `driver`, `scratch` | Interaction: `streaming` |
