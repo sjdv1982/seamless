@@ -84,7 +84,7 @@ Delivery follows `contracts/attachments.md`, *Actuate*, without exception. What 
 
 - **A widget shows `complete` values only.** While the cell is `waiting`, `blocked` or `failed`, nothing is delivered and **the widget keeps the last value it showed**. There is no "pending" or "failed" rendering; read `ctx.a.state` and `ctx.a.exception` for that.
 - **Intermediate values are not queued.** A rapid series of cell changes reaches the widget as its last value. Cell-to-attachment delivery starts are spaced by at least **2/3 second per session**. The first delivery is immediate, later pending values coalesce to the latest, and file and widget slots have independent delivery clocks. `ctx.mounts.sync()` waits for throttled pending deliveries, subject to its timeout.
-- **The value is the cell's value as its own `celltype`**: the same object `.value` would return, resolved from the checksum by the transport. Resolution never computes (*A delivery resolves; it never computes*).
+- **The value is the cell's value as its own `celltype`**: the same object `.value` would return, resolved from the checksum by the transport. Resolution never computes (*A delivery resolves; it never computes*). Without a hashserver, a cell with a widget hub does not take a new checksum whose buffer is not in the buffer cache: it stays `waiting`, and the widget keeps its last value, while the Context fingertips the buffer (`contracts/workflow-context.md`, *A Context without a hashserver*).
 - **A null cell value sets `hub.value` to `None`**, which links do not forward (*`None` is absence*): linked widgets keep what they showed.
 
 ## Widget to cell
@@ -132,7 +132,7 @@ The error model is that of `contracts/attachments.md`, *The three-way error mode
 | Error | Where | When |
 |---|---|---|
 | sense error | the **cell**: `failed`, `ctx.a.exception` a string | the widget's value cannot be serialized as the cell's celltype |
-| delivery error | `t.error` | the cell's value cannot be resolved or deserialized — typically a result whose checksum arrived without its bytes |
+| delivery error | `t.error` | the cell's value cannot be resolved or deserialized — typically a result whose checksum arrived without its bytes. For a checksum update that required fingertipping, the missing buffer becomes a delivery error if recovery fails. |
 | conflict error | `t.error`, latched | the detector tripped (*Writing to the hub of an output*) |
 
 The `"<path>: <reason>"` prefix of a `MountError` carries the session's synthetic path, `widget-<hex>`. The hex part is not stable across sessions; match the `widget-` prefix only.

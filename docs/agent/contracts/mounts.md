@@ -205,7 +205,7 @@ Four rules make this converge:
 
 For each mountable celltype *T* the mount uses exactly two functions, both defined by the **existing serializer and deserializer**:
 
-- **write:** resolve the node's buffer and canonicalize it with `canon_T` before writing (compressed, if the path carries a compression suffix). The node checksum is preserved; the delivered file checksum is the checksum of the canonical bytes;
+- **write:** resolve the node's buffer and canonicalize it with `canon_T` before writing (compressed, if the path carries a compression suffix). The node checksum is preserved; the delivered file checksum is the checksum of the canonical bytes. Without a hashserver, a node buffer that was missing from the buffer cache was fingertipped before the node took the checksum (`contracts/workflow-context.md`, *A Context without a hashserver*);
 - **read:** `canon_T(bytes) = serialize(deserialize(bytes, T), T)`, and the observed checksum is the checksum of `canon_T(bytes)`. If deserialization raises, the observation is `rejected`. For the code celltypes (`text`, `python`, `ipython`, `yaml`), *deserialize* here is the strict UTF-8 decode only: `canon_T` does not run the syntax check of the reference parser, exactly as the serializer an assignment uses does not (`contracts/celltypes-and-conversion.md`, the serializer table).
 
 Four consequences:
@@ -418,7 +418,7 @@ The code satisfies the contract on this page, including the public `NodeError` f
 
 **Superseded and stale sources.** These are wrong; do not carry them forward:
 
-- `mount-design.md` §20.3 ("resolve it through the ordinary path, **which may recompute it**") is **superseded**: a delivery resolves and never fingertips (`contracts/attachments.md`).
+- `mount-design.md` §20.3 ("resolve it through the ordinary path, **which may recompute it**") is **superseded**: a delivery resolves and never fingertips (`contracts/attachments.md`). Without a hashserver, the Context fingertips a `w`-mounted cell's missing buffer before the cell takes the checksum, so the delivery finds it (`contracts/workflow-context.md`, *A Context without a hashserver*).
 - `mount-design.md` §17.3, the row "clearing an `r`/`rw` cell's value stays cleared": clearing a mounted cell is **refused** with `AuthorityError("Cannot clear a mounted cell; unmount first")`, in every mode, except through an empty same-celltype builder, which unmounts and clears (*Unmount, persistence and close*).
 - `mount-design.md`'s promise that a `set_graph` does not delete a non-persistent file only "when the new graph re-attaches the same path" is too narrow: a `set_graph` never deletes it.
 - `mount-design.md` §16's "naming is provisional": the names are fixed.

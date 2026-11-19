@@ -64,6 +64,14 @@ unreadable input fails the cell, preserves its stored last good value, and
 continues monitoring. Delivery failures appear on `ctx.output.mount.error` and
 retry with backoff; they do not invalidate the cell's value.
 
+Without a hashserver, buffers live only in this process, and an unclaimed one is
+evicted when its temporary reference expires. A cell can then receive a
+checksum whose buffer is gone, typically by a cache hit after an input went
+X → Y → X. A cell with a `w` mount does not take such a checksum at once: it
+stays `waiting` while the Context fingertips the buffer, reading it back from a
+local buffer source or recomputing it. The file is written after that. Every
+transformation that such a Context runs also fingertips missing inputs.
+
 `ctx.compute()` waits only for graph work. Call `ctx.mounts.sync()` before
 reading mounted outputs externally, or `await ctx.mounts.synchronization()` in
 async code. The returned mapping contains status and errors per node path.
@@ -183,6 +191,13 @@ reach the server, including cells whose values are not shared.
 The client keeps the latest value while one PUT per key is in flight and
 refreshes after a stale-marker `409`.
 
+Without a hashserver, a shared cell waits for its buffer in the same way as a
+`w`-mounted cell (see the mounts section). After a cache hit whose buffer was evicted,
+the cell stays `waiting` while the Context fingertips the buffer. The share keeps
+serving its previous value under its marker, and the WebSocket announces the
+new value only when the buffer is back. A GET answers `503` for that value only
+if the fingertip failed.
+
 Share specifications are serialized with workflow graph format `0.6`. The
 default `ctx.set_graph(graph)` attaches them and can start the HTTP server;
 `ctx.set_graph(graph, shares=False)` validates then strips share specs. Use that
@@ -205,7 +220,9 @@ traitlet(ctx.a).link(slider)
 ```
 
 The widget hub has its own runtime attachment slot and can coexist with
-`ctx.a.mount("a.txt")` on the same cell. `ctx.mounts.sync()` reports both
+`ctx.a.mount("a.txt")` on the same cell. Without a hashserver, a cell with a
+widget hub waits for a missing buffer to be fingertipped, as a `w`-mounted cell
+does, and the widget keeps its last value meanwhile. `ctx.mounts.sync()` reports both
 sessions; `del ctx.a.mount` detaches only the file slot.
 
 Widget attachments are runtime state and are never serialized. The underlying

@@ -144,6 +144,8 @@ Consequences worth stating, because the tempting reading is the wrong one:
 - A scratch-fed actuating attachment usually **works anyway**, because the delivery follows the completing turn while the result buffer is still cached. It **fails** when the checksum arrived without its bytes and no local buffer source holds them: remote execution, a cache hit, or eviction.
 - That failure is an **ordinary delivery error** — retried cheaply, reported on the attachment, never on the cell — so the resource is still updated if the buffer ever becomes resolvable again.
 
+**Without a hashserver, the Context fingertips before the delivery.** A cell with a `w` file mount, a share or a widget hub does not take a new checksum whose buffer is not in the buffer cache. It stays `waiting` while the Context fingertips the buffer, and takes the checksum when the fingertip ends (`contracts/workflow-context.md`, *A Context without a hashserver*). So a cache hit, the common case after a value goes X → Y → X, reaches the attachment with its buffer. The delivery itself still only resolves. When the fingertip fails, the checksum is applied anyway, and the delivery error above follows.
+
 `contracts/scratch-witness-audit.md` defines scratch and fingertipping; `contracts/cells.md` states the same "nothing computes without `compute()`" rule for reads.
 
 ## The three-way error model
@@ -358,4 +360,4 @@ Smaller rough edges:
 - **Cross-process locking or exclusivity.** The registry is a safety net within one process (`contracts/mounts.md`); two processes sharing a resource are handled by conditional writes and the detector, not prevented.
 - **A settledness predicate without a cut.** `settled()` was considered and rejected.
 - **Hard cancellation of an in-flight delivery.** It is never cancelled, by design: the write is either done or not, and cancelling it would leave the belief about the resource undefined.
-- **Attachment-driven computation.** A delivery resolves and never fingertips; attaching is not a way to make Seamless do work.
+- **Attachment-driven computation.** A delivery resolves and never fingertips; attaching is not a way to make Seamless do work. The one exception is the fingertip of an attached cell's missing buffer in a Context without a hashserver, which the Context performs before the cell takes its checksum (*A delivery resolves; it never computes*).

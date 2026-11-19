@@ -16,6 +16,7 @@ This page defines what an agent may assume about Seamless caching/storage at a h
 - Scratch is appropriate for bulky intermediates that are cheap to recompute.
 - Scratch is not only a storage policy. With input fingertipping, a missing scratch input is recomputed at the consumer's execution location, so scratch can keep large producer-consumer edges local to the consuming work.
 - Input fingertipping must be enabled per consumer transformation. Use `allow_input_fingertip = True` on the downstream Python transformer/core before constructing the transformation, or `--fingertip` when executing a transformation checksum from the CLI. Without it, the consumer's pins hold their inputs non-scratch, which publishes a scratch producer's result (`contracts/pins.md`, *Scratch at the pin*).
+- In a workflow Context without a hashserver, input fingertipping is always on for the transformations that the Context submits (`contracts/workflow-context.md`, *A Context without a hashserver*).
 - Do not scratch meaning-bearing “witness” artifacts that you may need for audit/falsification or cross-environment comparison.
 
 ## Buffer cache (local memory pressure)
@@ -46,6 +47,17 @@ What an agent may assume:
 - **Placement counts a source as local** (`contracts/expressions.md`, *Placement*), and a value request counts a buffer in a source as reachable.
 
 Practical implication: after eviction, a buffer that a local buffer source still holds is read back from it, with no recomputation and no remote fetch.
+
+## Without a hashserver
+
+Without a hashserver, the buffer cache and the local buffer sources are the only places a buffer can be. A buffer that nothing claims is evicted once its tempref expires, but its checksum stays in the result caches. A later cache hit then yields a checksum whose buffer is nowhere. The common case is a value that goes X → Y → X: back at X, the transformer hits the cache, and X's result buffer expired while the value was Y.
+
+A workflow Context handles this in two ways (`contracts/workflow-context.md`, *A Context without a hashserver*):
+
+- **Its transformations fingertip their inputs**, so a missing input buffer is recomputed instead of failing the transformer.
+- **A cell with a `w` file mount, a share or a widget hub waits for its buffer.** If its new checksum's buffer is not in the buffer cache, the cell stays `waiting` while the Context fingertips the buffer. The share, the file and the widget see the new value only after that.
+
+Fingertipping does not make a buffer durable. A recovered buffer is held by the cell's claim and kept in memory only. It can expire again once nothing claims it.
 
 ## Remote/persistent storage (where bytes live)
 

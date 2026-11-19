@@ -152,6 +152,7 @@ The served state of a share is a **record**: a checksum, or none, and a **marker
 - **`?mode=checksum`** returns the checksum hex as `text/plain` instead of the value.
 - **`HEAD` never resolves bytes**; it answers from the record.
 - **A GET resolves; it never computes.** It has exactly the powers of `.buffer`: the local buffer cache, then this process's local buffer sources, then the remote buffer server. A value whose checksum arrived without its bytes — a remote result, a cache hit, a scratch result that was evicted — answers `503` until the bytes become resolvable (`contracts/attachments.md`, *A delivery resolves; it never computes*).
+- **Without a hashserver, a shared cell does not take a checksum whose buffer is missing.** A cache hit, typically after a value went X → Y → X and X's buffer expired, leaves the cell `waiting` while the Context fingertips the buffer. Until it is recovered, the share keeps serving its last value under its marker, and no `update` message is sent. Then the new checksum is served and announced as an ordinary update (`contracts/workflow-context.md`, *A Context without a hashserver*). The GET itself still never fingertips. It answers `503` for such a value only if the fingertip failed.
 - **Only complete values are served.** While the cell is `waiting`, `blocked` or `failed`, the share keeps answering with the last value it served, under the same marker. Before the first complete value it answers `404`, unless the share re-attached a held record: it then keeps answering with the held value, under the held marker (*The hold on close*). The node state graph reports the current state separately (*The state graph*).
 
 ### Content types
@@ -476,6 +477,6 @@ The share API, HTTP/WebSocket server, persistence, OpenAPI description and brows
 - **PUT by checksum.** Deferred with a named condition: it needs the check that `ctx.a.checksum = …` performs, which a transport cannot perform today.
 - **Directory and deep shares.** `folder`, `deepfolder` and `deepcell` cells are not shareable. A `folder` cell can be downloaded (*Downloads*); `deepfolder` and `deepcell` cells cannot.
 - **Downloads of computed content.** A download packs buffers of complete cells; it runs no user code. Content that must be computed for the archive, such as a manifest, belongs in a cell.
-- **Computing on GET.** A GET resolves and never fingertips.
+- **Computing on GET.** A GET resolves and never fingertips. Without a hashserver, the Context fingertips a shared cell's missing buffer before the share receives the checksum, never during a request (*Reading: GET and HEAD*).
 - **Authentication, TLS, sessions.** Every client of a namespace edits the same graph. Use a reverse proxy for access control, and one Context per user for isolation.
 - **Standalone, sub-path, pin and code shares.** As for every attachment (`contracts/attachments.md`, *Non-goals*).

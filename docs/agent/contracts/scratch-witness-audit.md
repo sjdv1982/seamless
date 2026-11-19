@@ -22,13 +22,16 @@ producer as scratch does not automatically allow downstream consumers to
 fingertip missing inputs. In Python, set the downstream transformer/core's
 `allow_input_fingertip = True` before constructing the consuming transformation;
 for CLI execution of a transformation checksum, use `--fingertip`.
+One case needs no opt-in: in a workflow Context without a hashserver, every
+transformation that the Context submits fingertips its inputs
+(`contracts/workflow-context.md`, *A Context without a hashserver*).
 
 **The consumer's opt-in decides whether a result it holds stays scratch.** A consumer that fingertips its inputs has scratch pins (literals apart), so a scratch producer whose result is the pin's own input stays scratch. A non-scratch pin overrules a scratch producer when it holds that producer's result; the same holds for a non-scratch Cell. A path or buffer-producing conversion stops that overrule, and earlier Expression links remain scratch checksum requests (`contracts/pins.md`, *Scratch at the pin*; `contracts/cells.md`, *Scratch policy*).
 
 Two things that do **not** make a scratch result materializable:
 
 - **Reading a handle.** `Cell.buffer`, `Cell.value` and `Pin.value` resolve and never fingertip; only an explicit `compute()`, `Transformation.run()`, `Cell.fingertip()` or `Pin.fingertip()` does work (`contracts/cells.md`).
-- **Attaching or mounting.** A delivery to a file or directory resolves the payload and never fingertips, so mounting an output is not a way to force a scratch producer to re-run or to make its result durable (`contracts/attachments.md`, *A delivery resolves; it never computes*).
+- **Attaching or mounting.** A delivery to a file or directory resolves the payload and never fingertips, so mounting an output is not a way to force a scratch producer to re-run or to make its result durable (`contracts/attachments.md`, *A delivery resolves; it never computes*). The exception is a Context without a hashserver: there, a cell with a `w` mount, a share or a widget hub does not take a checksum whose buffer is missing until the Context has fingertipped it (`contracts/workflow-context.md`, *A Context without a hashserver*). That makes the buffer available to the delivery; it does not publish it.
 
 What *does* keep a scratch result alive once it exists is explicit public interest in it: an explicitly requested scratch result acquires a refholder claim and is protected from eviction, while an unrequested one stays purgeable (`contracts/internal/checksum-reference-lifecycle.md`, §8).
 
