@@ -1,125 +1,165 @@
 # Seamless Release Notes
 
-## Unreleased
+## version 1.5 (pre-release)
 
-### `seamless-run` directories and result targets now use `folder` (breaking; C10)
+Seamless 1.5 is the first 1.x release on feature parity with legacy Seamless
+0.x. The reactive, interactive workflow layer is back, on the new
+architecture. Transformers can now be written in R and Julia, and bash
+transformers and the new command-line backends run inside real conda
+environments and containers.
 
-A directory argument to `seamless-run` used to be passed to the command as a
-`deepfolder`, and a result with result targets was declared `deepfolder`.
-Both are now `folder`.
+If you used 1.4, read *Breaking changes* below; most have a one-line fix.
+[CHANGELOG.md](CHANGELOG.md) has the details.
 
-**Every `seamless-run` command with a directory argument or with result
-targets gets a new transformation checksum.** The previous cached result is
-not found, so the
-first run after upgrading computes it again; later runs hit the cache. Nothing
-fails, and the result index and downloaded files are the same as before. For
-an expensive command, run it once before relying on its cache. Scripts or
-tools that stored the transformation checksum, including lookups, logs or
-records, must use the new checksum. Old cache entries stay in the database,
-unused.
+The human documentation does not cover the workflow face yet. See the
+README's *Documentation* section for where to start; the contract pages under
+`docs/agent/contracts/` are authoritative. `pip install seamless-suite`
+includes everything: there are no `[jupyter]` or `[share]` extras.
 
-A `folder` pin is written from its index and members on whichever host runs
-the command. Before this change, a `deepfolder` pin was resolved from buffer
-files on that host only, so a command with a directory argument failed on any
-host that could not see the buffer directory. Bash now refuses `deepfolder`
-pins outright.
+### Reactive workflows are back
 
-### Naked 64-hex strings in deep results are values (breaking; C16)
+`seamless.workflow.Context` holds a graph of cells and transformers and keeps it
+up to date as values change, like a spreadsheet. Only what changed is
+recomputed. The rest comes from the cache.
 
-A transformer that returns a dict as a `deepcell` or `folder` result used to
-have every member that was a string of 64 hexadecimal characters read as a
-checksum. It is now a value, like any other string. Only a checksum object is
-a checksum: `seamless.Checksum` in Python, and the checksum classes of R and
-Julia. This holds in every language and under every backend.
+- **Cells and transformers.** Assign values, functions and connections to
+  `ctx`. Transformers can be written in Python, bash, R, Julia or a compiled
+  language. `ctx.compute()` waits for the graph to finish. Each node reports
+  its `.state` and `.exception`.
+- **File mounts.** `cell.mount("data.json")` keeps a cell and a file in
+  sync, in either direction. Directories mount as `folder` cells.
+- **Jupyter widgets.** `traitlet(cell).link(widget)` links a cell to an
+  ipywidget; `output(cell)` displays it (both from `seamless_workflow.jupyter`).
+- **Web interfaces.** `cell.share()` serves a cell over HTTP and WebSocket,
+  read-only or writable. The server publishes a live OpenAPI description and a
+  small browser client (`seamless-client.js`). It can also offer cells as a
+  download archive and publish the state of the graph. `seamless-serve-graph`
+  serves a saved graph without writing any Python.
+- **Saving.** `ctx.get_graph()` and `ctx.set_graph()` save and load a workflow
+  as JSON. The graph stores checksums, not data: to reload it in another
+  process, use persistent storage (`seamless.config.init()` with a hashserver
+  or database). Loading a graph can write files and open HTTP ports; load
+  graphs of unknown origin with `set_graph(graph, mounts=False, shares=False)`.
+  Build large graphs with one `set_graph()` call; adding nodes one by one
+  re-derives the whole graph each time.
 
-**Nothing fails for a `deepcell` result.** The members that were strings become
-values, so the result, and its checksum, is another deepcell than before. In
-a `folder` result such a string raises a `TypeError`. To keep the old
-meaning, wrap the string: `Checksum(s)`.
+Not carried over from 0.x: macros, libraries and the standard library, Silk
+validation (a cell with a validator fails with `NotImplementedError`),
+sub-contexts with their own runtime, and debug sessions.
 
-### Other breaking changes
+Shares have no authentication or TLS, and the server listens on all network
+interfaces (`0.0.0.0:5813`) unless you call
+`seamless_workflow.shareserver.configure(host="127.0.0.1")` or set
+`SEAMLESS_SHARE_HOST`. The state of the graph, including error messages, is
+visible to anyone who can reach the server. Serve only on trusted networks.
 
-- Outside bash, `deepfolder` pins now match `deepcell` pins: each is a dict of
-  checksum objects. Bash refuses both pin types. A `folder` pin is always a
-  dict of contents outside bash.
-- Every file of a deepcell `RESULT` must parse as `mixed`; a plain text file
-  that was treated as a
-  JSON string before now fails.
-- A conda specification together with Docker, and an unknown key in an image
-  specification, are refused at dispatch. They are no longer rejected when
-  the Transformation is built or the environment is set.
+### Cells and Expressions in Python
+
+`seamless.Cell` and `seamless.Expression` also work outside a Context. A
+standalone Cell is evaluated when you read it. Selecting part of a value
+(`cell["key"]`) or converting it (`cell.as_celltype("text")`) is an Expression,
+identified and cached like a transformation.
+
+Cells, Pins, Transformers and Transformation handles share one failure rule: a
+read (`.value`, `.checksum`) or `.compute()` returns `None` and keeps the error
+on `.exception`; `.run()` raises, and so does a call to a `direct` function. A
+result that exists but cannot be fetched raises on every read.
+
+### More languages, real environments
+
+- **R and Julia** transformers, through `Transformer("r")` / `Transformer("julia")`
+  in Python or in a Context. They run as separate `Rscript`/`julia` processes by
+  default, or embedded in the Python process with `tf.metavars.BACKEND = "mem"`.
+  Not available through `direct`/`delayed` or `seamless-run`.
+- **Python in its own process** with `tf.metavars.BACKEND = "cli"`.
+- **Conda environments and containers are now entered**, not just recorded.
+  Bash transformers and the command-line backends run inside the requested
+  conda environment or container image (Docker, Podman or Apptainer, whichever
+  the executing host has), and check required binaries where the code runs.
+  Use `tf.environment` or `seamless-run --conda` / `--docker`. A Python
+  transformer on the default in-memory backend does not enter an environment:
+  a conda name is checked against the running process, and a Docker image is
+  refused. As before, the environment is not part of a transformation's
+  identity, and a cached result is returned without checking it.
+
+### Running and observing
+
+- **Logs.** `Transformation.logs` (and `ctx.tf.logs`) returns the stdout and
+  stderr of a run, with its execution time. Logs work on every backend. A
+  result that came from the cache has no log, and logs are kept in memory only.
+- **Streaming.** `--streaming` (replacing `--direct-print`) and
+  `Transformer.streaming` show output while a transformation runs, including
+  tqdm progress bars. Dask backend only.
+- **Notebooks.** `direct` calls, `tf.run()` and `tf.compute()` work inside
+  Jupyter and other running event loops.
+- **One body per process.** By default a process runs one transformation body
+  at a time. A body that submits nested work releases its slot. Mark a
+  transformer as a `driver` (`seamless-run --driver`) when it mainly launches
+  other work, or switch the lock off (`process_lock = False`,
+  `--no-process-lock`). `global_lock` is gone. For parallel local execution,
+  start worker processes (`spawn`, or a local cluster).
+- **Cancellation.** `Transformation.cancel()` now cancels your interest in a
+  run. The run itself continues as long as someone else is waiting for it.
+  `seamless-cancel <checksum>` remains the hard kill. A Context only ever
+  cancels softly; `ctx.prune()` releases superseded runs early.
+- **Irreproducible results are recorded.** When recomputing a transformation
+  gives a different result than the one in the database, the database records
+  the observation and keeps the original result.
+- **Selections and conversions run where the data is.** When the data lives
+  on the cluster, they are evaluated on the jobserver or Dask cluster instead of
+  being downloaded first.
+
+### Breaking changes
+
+- `seamless-run` passes directory arguments, and returns results with result
+  targets, as `folder` instead of `deepfolder`. Such commands get a new
+  checksum and are recomputed once. As a bonus, they now also run on hosts that
+  cannot see the submitter's buffer directory.
+- A 64-character hex string inside a `deepcell` result is now a string, not a
+  checksum; in a `folder` result it raises `TypeError`. Wrap real checksums
+  with `Checksum(s)`.
+- Deep pins: outside bash, `deepcell` and `deepfolder` pins are dicts of
+  checksum objects and a `folder` pin is a dict of contents. Bash refuses
+  `deepcell` and `deepfolder` pins, and every file of a deepcell `RESULT` must
+  parse as `mixed`.
 - A `bytes` pin reaches Python code as `bytes`, not as a `seamless.Buffer`.
-  Code that read `value.content` must use `value` itself; `value.decode()`
-  works as before.
-- `BACKEND` accepts `"cli"` and `"mem"` only, where that setting is
-  available. Earlier handler tool names such as `"ryp"` and `"juliacall"`
-  were not released backend values, so no migration is needed.
+- `--direct-print` and `direct_print` are replaced by `--streaming` and
+  `streaming`.
+- `global_lock` is replaced by `process_lock` and `driver` (see above).
+- Pins are set through `tf.pins.x`; the shortcuts `tf.x` and `tf["x"]` are gone.
+- `CompiledTransformer` is gone: use `Transformer("c", compiled=True)`.
+- Compiled transformers: a schema `char` is now C `unsigned char`; null inputs
+  and optional pins are refused; scalar pins are checked by kind and range.
+  Recheck existing kernels against the compiled-pins contract.
+- `seamless-run` no longer reads `.SEAMLESS.yaml` / `.SEAMLESS.py` interface
+  files: declare extra inputs with `-i`, `-I` or `--metafile`.
+- Environments: `set_powers` is removed; a conda environment together with a
+  Docker image, and unknown image keys, are refused when the job is dispatched.
+- Null: a required pin accepts null only for the `plain`, `mixed` and `bytes`
+  celltypes. A function may now return `None` for those three result
+  celltypes (1.4 refused every `None` result).
+- The conversion engine was rewritten. Some conversions of non-canonical data
+  now give different checksums (for example, `text` to `plain` always writes
+  canonical JSON).
+- `BACKEND` accepts `"cli"` and `"mem"` only.
+- The database protocol is now 2.3 (`seamless-database` 2.2.0): upgrade the
+  database server together with the clients.
 
-### New capabilities
+### Known issues
 
-- R and Julia handlers now support deep celltype pins and results under both
-  backends, with language-specific checksum objects for checksum pins and
-  deepcell members.
-- Python transformers can select a CLI backend with
-  `tf.metavars.BACKEND = "cli"`; the default remains `"mem"`. This runs the
-  Python code in its own process.
-- R, Julia and Python CLI backends honour the transformer's conda or Docker
-  environment, and check required binaries where the code runs.
-- R and Julia use the common `"cli"` and `"mem"` backend values.
-
-### HTTP shares for workflow Contexts
-
-Whole Context cells can now be served through a process-wide HTTP and WebSocket
-server. Shares are read-only by default; writable shares accept raw HTTP PUT
-values with marker-based compare-and-set. The server publishes a live OpenAPI
-description at `openapi.json` and includes a dependency-free browser client at
-`seamless-client.js`. Use `Cell.share()` to publish a cell. Share specs are
-stored in workflow graph format `0.6`; loading a graph with `shares=False`
-validates and strips them without opening endpoints. Install
-`seamless-workflow[share]` to include the server dependency.
-
-### Transformation logs
-
-`Transformation.logs` returns the captured stdout and stderr of a successful
-run, followed by its execution time. After a failure it returns the same text
-as `.exception`. A bound Transformer has `ctx.tf.logs`. Logs work on every
-backend: `process`, `spawn`, jobserver and Dask.
-
-- Logs are kept in memory, per process, keyed by transformation checksum. A
-  result that comes from a cache has no log, and `.logs` is then `None`.
-- The execution time is the dispatcher's measurement, the same number as
-  `wall_time_seconds` in the execution record. It includes queueing and input
-  resolution, so it is not comparable to the execution time of Seamless 0.x.
-- A bash command's stdout and stderr are captured as two separate streams, and
-  stderr is kept on success too.
-- In `process` mode, output still goes live to your terminal and is also kept
-  for the log.
-- In worker processes, the C-level output of compiled transformers is captured.
-  A worker process therefore runs one compiled call at a time.
-
-See `docs/agent/contracts/transformation-logs.md`.
-
-### `direct_print` is removed; `--direct-print` becomes `--streaming`
-
-`streaming` supersedes `direct_print`. The `Transformer.direct_print` property
-and the `direct_print` constructor keyword are gone, and so is the
-`__direct_print__` meta key. Workflow graphs no longer store a `direct_print`
-key; a graph that has one still loads, and the key is ignored.
-
-`seamless-run --direct-print` and `seamless-run-transformation --direct-print`
-are replaced by `--streaming`, which shows the transformation's stdout and
-stderr while it runs. Both commands write the streamed text to stderr, because
-stdout carries the result. Streaming works with `remote: daskserver` only; the
-other backends ignore the flag.
+- The Julia command-line backend (the default for Julia) needs a source
+  checkout of Seamless; it fails when installed from PyPI. Use
+  `tf.metavars.BACKEND = "mem"` (requires `juliacall`) or a source install.
+- `seamless-run --undo` fails with "Transformation could not be declared
+  irreproducible".
 
 ## version 1.4
 
 - A `Transformation` is now explicitly an **immutable computation definition
 plus a mutable execution promise**, with a public **checksum-addressed
-cancellation** API. For Python and bash transformations, the identity contract is
-unchanged; v1.4 fixes the checksum implementation to honor the
-load-bearing/orthogonal split. Compiled-transformer `__schema__` is now part of
-identity. Some pre-1.4 cache entries will be re-keyed and recomputed (see below).
+cancellation** API. This refactor also updates the transformation identity
+contract. Affected pre-1.4 cache entries will be recomputed; most Python
+`direct`/`delayed` transformer entries are affected (see below).
 
 - seamless-core ships an
 independent fix for checksumming compressed files.
@@ -187,7 +227,8 @@ pin-to-argument binding, not only to compilation.
 Environment declarations remain outside identity. A fresh `Environment()`
 contributes nothing, and the ambient conda/shell environment is not
 auto-captured. `__env__` is written only for a non-empty explicit environment: a
-conda spec, a conda env name, a Docker image, or a required-binaries `which` list.
+conda spec, a conda env name, a Docker image, or a required-binaries `which` list
+(`tf.environment.set_*`, or CLI `--conda` / `--docker-image`).
 
 If a result truly depends on the runtime environment, declare that dependency
 explicitly as an input. With `__env__` outside the cache key, identical code and

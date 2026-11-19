@@ -1,51 +1,53 @@
 ## Portability checklist (Python)
 
-Score each area as: ✅ already, ⚠️ fixable, ❌ hard.
+Score each area: ✅ already, ⚠️ fixable, ❌ hard. For each ⚠️, note whether it is **Seamless-specific** (learning the model, declaring boundaries) or **framework-independent** (cleanup any workflow system would benefit from). Do not count the latter against Seamless.
 
-When scoring, note whether a ⚠️ is **Seamless-specific** (learning the computation model, declaring transformation boundaries) or **framework-independent** (cleanup that would benefit any workflow system). Don't count framework-independent cleanup against Seamless.
+- **Inputs explicit**: the computation depends on arguments and config, not implicit globals or files.
+- **Determinism**: randomness is seedable; time, hostname and PID are not part of results unless parameterized.
+- **I/O boundaries**: no ambient reads ("whatever is on disk or the network"). Reading a buffer whose checksum is an explicit input is fine.
+- **Environment strategy**: project code bound by content; third-party and compiled dependencies controlled enough for the determinism needed. If a step must run in its own conda env or container, can it be bash or a CLI-backend step?
+- **Boundary formats**: values crossing step boundaries are canonical (JSON-like, NumPy arrays, plain files), not HDF5, `.npz`, pickle or other formats with embedded timestamps. ❌ only if the format is mandated by an external tool and cannot be converted on ingest.
+- **Side effects**: can be made "outputs only".
+- **Data size**: data can be referenced by checksum and materialized only where executed.
+- **Witness outputs**: small meaning-bearing results can be kept unscratched for comparison.
+- **Recompute budget**: recomputation is feasible when buffers are missing (fingertipping) or for audits.
 
-- **Inputs explicit**: main computation depends on arguments/config, not implicit globals/files.
-- **Determinism**: randomness is seedable; time/hostname/pid not part of results unless parameterized.
-- **I/O boundaries**: avoid *ambient* reads ("whatever is on disk/network"). Reads are fine when they are **content-addressed**: if the checksum is an explicit input, resolving it inside the transformer is a caching/materialization operation, not a semantic side effect.
-- **Environment strategy**: project code can be bound by content (embed or immutable artifacts); compiled/system deps are controlled enough for your determinism needs.
-- **Side effects**: can be made "outputs-only" (produce artifacts) rather than "mutate shared state".
-- **Data size**: can reference data by identity (checksums) and materialize only where executed.
-- **Witness outputs**: can persist small meaning-bearing results/diagnostics for cross-run and cross-environment comparison (don't scratch these).
-- **Recompute budget**: recomputation is feasible for falsification (at least for witness outputs) when fingertipping/buffers are unavailable.
+Verdict rubric: **easy** mostly ✅ with a few ⚠️; **moderate** many ⚠️, few ❌; **hard** one or more ❌ in determinism, I/O or side effects.
 
-Verdict rubric:
+A "moderate" or "hard" verdict may shift after framework-independent cleanup. Re-assess with the cleanup assumed done. Then apply the benefit test in `poor-fit.md`: a portable pipeline with no reuse is still not worth porting.
 
-- **easy**: mostly ✅, a few ⚠️
-- **moderate**: many ⚠️ but few ❌
-- **hard**: one or more ❌ in determinism/I/O/side effects
+## Entry point fit (do not skip)
 
-**Important**: a "moderate" or "hard" verdict may shift after framework-independent cleanup. If the ⚠️ and ❌ scores come from design smells (hidden downloads, mutable append-state, implicit versioning) rather than inherent domain properties, re-assess after assuming that cleanup is done. See "Is This Problem Seamless-Shaped?" in SKILL.md.
-
-## Entry point fit (don't skip this)
-
-Decide whether the best Seamless integration is:
-
-- **CLI**: the workflow is mostly Unix commands/pipelines over files/stdin/stdout → emphasize `seamless-run`.
-- **Python**: the workflow is mostly Python functions/values → emphasize `direct`/`delayed`.
-- **Hybrid**: common in data/science → use both, with explicit boundaries.
+- **Unix**: mostly commands over files/stdin/stdout -> `seamless-run`.
+- **Python**: mostly functions over values -> `direct` / `delayed`; other languages through `Transformer(...)`.
+- **Workflow**: interactive, reactive, edited inputs, web front end, or a Seamless 0.x project -> `Context`.
+- **Mixed**: common in science; explicit boundaries, and remember the Unix face has its own identities.
 
 ## Portability checklist (bash/Unix)
 
-- **Idempotent**: rerunning doesn't corrupt state; outputs are overwritten/cleaned predictably.
-- **Declared inputs/outputs**: script uses explicit file args and/or stdin/stdout; no hidden reads.
-- **Stable environment**: tool versions are pinned/known; PATH quirks avoided.
-- **No implicit temp state**: avoids relying on random `/tmp` names unless parameterized.
-- **Working dir**: uses controlled working directory; relative paths are well-defined.
+- **Idempotent**: rerunning does not corrupt state.
+- **Declared inputs/outputs**: explicit file arguments and/or stdin/stdout; no hidden reads.
+- **Stable environment**: tool versions pinned; with `--conda ENV` or `--docker IMAGE` the command runs inside that environment on the executing host (it must exist there; it is not part of identity).
+- **No implicit temp state** unless parameterized.
+- **Working directory**: commands run in a materialized job directory; relative paths must be relative to declared inputs.
+- **Directories**: directory arguments and result targets become `folder` (a materialized directory).
 
-## Common design smells (often framework-independent)
+## Workflow-face checklist
 
-These make a pipeline look like a poor Seamless fit, but they hurt all frameworks and are typically fixable:
+- **Graph size**: hundreds of nodes are fine; for very large graphs, construct with one `set_graph()`.
+- **Needs 0.x features that are absent?** Macros, stdlib (`map`), Silk validation, sub-contexts, authenticated web access.
+- **Concurrency**: one body per process by default; local parallelism needs `spawn` workers or a cluster.
+- **Persistence**: a saved graph holds checksums only; reopening it needs a persistent buffer store.
+- **Exposure**: shares have no authentication; acceptable only on trusted networks or behind a proxy that adds it.
 
-- Hidden network access (downloads "latest" during analysis).
-- Mutable append-style state files (cumulative JSON/CSV that steps read and extend).
+## Common design smells (usually framework-independent)
+
+- Hidden network access ("latest" downloads during analysis).
+- Append-style state files that steps read and extend.
 - Implicit versioning (no manifest or checksums for external data snapshots).
 - Reads from `$HOME` or user-specific config.
-- Uses current timestamp in output names/content.
-- Implicit caches that change behavior across runs.
+- Timestamps in output names or contents.
+- Implicit caches that change behaviour across runs.
+- Write-during-DAG-construction tricks guarded by `os.path.exists`.
 
-If these are the main obstacles, the pipeline is likely "Seamless-shaped after cleanup" — discuss with the user whether the cleanup is worth doing (it usually is, for any framework).
+If these are the main obstacles, the pipeline is "Seamless-shaped after cleanup". Discuss whether the cleanup is worth doing (for any framework, it usually is).

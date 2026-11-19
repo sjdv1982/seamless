@@ -1,26 +1,15 @@
 ## Seamless primitives (agent cheat sheet)
 
-This file is meant to help an agent *port/refactor* code to use Seamless effectively, not just explain it.
+For porting and refactoring, not just explaining. Contracts in `docs/agent/contracts/` are authoritative.
 
 ### Core mental model
 
-- A Seamless “step” is a **transformation**: (code identity + explicit inputs) → output.
-- Caching/memoization is valid when the step is **referentially transparent** with respect to its declared inputs.
-- If a computation is sensitive to the environment, treat that as a *falsifiable* concern (`env-null-hypothesis.md`), and preserve a small non-scratched witness for comparison.
+- A step is a **transformation**: (code identity + explicit inputs) -> result. Identity is the `tf_checksum`; the result is a checksum too.
+- Reuse is valid when the step is referentially transparent with respect to its declared inputs.
+- Environment sensitivity is a falsifiable concern (`env-null-hypothesis.md`); keep a small non-scratched witness.
+- Between steps, **Expressions** select part of a value and/or convert its celltype (project, then convert, at most one conversion). They run no user code and are cached like transformations.
 
-### `direct` vs `delayed` (Python)
-
-- Use `direct` when you want the call-site to behave like a normal function call that returns a value.
-- Use `delayed` when you want a handle you can:
-  - `.run()` later (sync),
-  - `.task()` / `await` later (async),
-  - `.start()` to schedule many tasks and then collect results.
-
-Porting rule of thumb:
-
-- Start with `delayed` for pipelines; optionally layer `direct` for convenience at the edges.
-
-#### Minimal code that actually runs (shape-level example)
+### Python face: `direct`, `delayed`, `Transformer`
 
 ```python
 from seamless.transformer import direct, delayed
@@ -33,84 +22,103 @@ def add(a, b):
 def add_later(a, b):
     return a + b
 
-assert add(1, 2) == 3              # immediate value
+assert add(1, 2) == 3        # runs now; a failure raises
 
-tf = add_later(1, 2)               # Transformation handle
-cs = tf.compute()                  # checksum (identity of result)
-val = tf.run()                     # materialized value
+tf = add_later(1, 2)         # Transformation handle
+cs = tf.compute()            # result checksum, or None on failure (see tf.exception)
+val = tf.run()               # value; raises on failure
+log = tf.logs                # captured stdout/stderr + execution time; None after a cache hit
 ```
 
-Practical note for agents: Seamless can make the second call faster when the identity matches and the result is already cached.
+- `tf.start()` schedules, `tf.task()` / `await tf.computation()` for async. Start many, collect later.
+- Other languages go through the factory: `Transformer("bash")`, `Transformer("r")`, `Transformer("julia")`, `Transformer("c", compiled=True)`. Their pins are declared, not read from a signature:
 
-### Dependency wiring (nesting/composition)
+```python
+from seamless.transformer import Transformer
 
-- Treat upstream results as explicit dependencies by passing them into downstream steps. Note that the mechanism is different for Python or for CLI tools (which may be written in Python).
-- Avoid “hidden” dependencies through globals, working directory, environment variables, or ad-hoc files.
-- Prefer **content-addressed I/O**: it’s fine for a step to “read arbitrarily” *if* what it reads is identified by an explicit checksum input (materialization), not by an ambient path/URL (“whatever is there”).
+tf = Transformer("bash", direct=True)
+tf.code = "cat input > RESULT"
+tf.pins.input = "hi"         # declares pin "input" and sets it
+tf()                         # "hi\n"
+```
 
-### Inputs, defaults, and closures
+- Pins are reached only as `tf.pins.x` (the 1.4 shortcuts `tf.x` / `tf["x"]` are gone); per-pin celltypes as `tf.celltypes.x`; the result celltype as `tf.celltypes.result`.
+- Python signature defaults become optional pins (`tf.optional_pins`); none for bash, R, Julia or compiled code.
+- Settings outside identity: `tf.process_lock`, `tf.driver`, `tf.streaming`, `tf.metavars.BACKEND` (`"mem"` default for Python, `"cli"` for R/Julia), `tf.environment.set_conda_env(...)` / `set_docker({"name": ...})` / `set_which([...])`, `tf.scratch`.
 
-Closures are a portability trap: captured values are *implicit inputs*.
+Porting rule of thumb: start with `delayed` for pipelines, use `direct` at the edges.
 
-Porting patterns:
+### Standalone Cells and Expressions (Python face)
 
-- Make captured values explicit arguments (including config) so they become part of the step identity.
-- If a value is a small constant/config blob, inject it explicitly (e.g. via a globals mechanism) rather than relying on outer scope.
-- Avoid using time, randomness, PIDs, hostnames, and other ambient sources unless explicitly parameterized and recorded.
+```python
+from seamless import Cell
 
-### Imports and helper modules (project code)
+c = Cell("plain")
+c.value = {"a": [1, 2, 3]}
+c["a"][1].value              # 2: a projection, evaluated when read
+c.as_celltype("text").value  # a conversion
+```
 
-Goal: ensure the executed code is **bound by content**, not “whatever is on disk remotely”.
+A standalone Cell has nothing running in the background: reads pull. Inside a running event loop (Jupyter), a read that would need remote evaluation returns `None` and leaves the Cell `waiting`. `cell.build()` freezes it into an immutable `Expression`. Contracts: `cells.md`, `expressions.md`.
 
-Good options:
+### Workflow face: Context
 
-- **Embed helper modules** into the transformation/module mechanism when you want “code is data” determinism.
-- **Or install immutable artifacts** (wheel/image) pinned by version+hash (avoid editable installs and copying a working tree).
+```python
+from seamless.workflow import Context
 
-Practical cautions for embedding:
+def double(x):
+    return x * 2
 
-- Embedding often captures *what is currently imported/loaded*; dynamic imports and package data may not be included automatically.
-- If you embed a package, ensure the required submodules are imported so the embedded module definition is complete.
-- Keep an eye on payload size and update cadence (large embedded code artifacts can be operationally heavy even if deterministic).
+ctx = Context()
+ctx.x = 21
+ctx.tf = double                 # a callable becomes a transformer
+ctx.tf.pins.x = ctx.x           # connecting is assignment
+ctx.y = ctx.tf.result
+ctx.compute()                   # barrier: wait until nothing is waiting/computing
+ctx.y.value, ctx.tf.state       # 42, "complete"
+```
 
-### Compiled/system deps (NumPy/BLAS/GPU)
+Reads never wait; `compute()` is the barrier; seven node states with block reasons explain stuck nodes. Use the `seamless-workflow` skill for detail.
 
-- Don’t assume they “don’t matter”; treat them as part of the environment envelope.
-- If determinism matters: pin versions/backends and record the env signature for later audits.
-- If you accept “optimistic null”: keep cache keys env-agnostic but store env signature as provenance and provide an audit path that forces recomputation.
+### Failure delivery (Cells, Pins, Transformers, Transformations)
 
-### Dask execution (HPC/distributed)
+Reads (`.value`, `.checksum`, `.buffer`) and `.compute()` return `None` for a failure and keep the error on `.exception`; `.run()` raises (and a `direct` call is a `run()`). A result that exists but cannot be fetched (`CacheMissError`) raises on every read. `Expression.compute()` / `.run()` raise. Contract: `cells.md` (*Failures*).
 
-If Seamless’s Dask integration is available/configured:
+### Dependency wiring
 
-- treat Dask as an execution backend, not as a competing “workflow vs compute” framework.
-- prefer `delayed` pipelines so many tasks can be scheduled efficiently.
-- ask/confirm cluster constraints (networking, environments, packaging) instead of assuming “it will just work”.
+- Pass upstream results (handles, checksums, values) into downstream steps. Mechanisms differ per face: Python passes handles; the Unix face passes files; a Context connects by assignment.
+- No hidden dependencies through globals, working directory, environment variables or ad-hoc files.
+- Content-addressed I/O is fine: reading a buffer whose checksum is an explicit input is materialization, not a side effect.
 
-### Scratch vs witness outputs
+### Drivers and nesting
 
-- Scratch is for bulky intermediates that you can recompute.
-- Do **not** scratch the meaning-bearing witness outputs needed for cross-run / cross-environment checks.
-- If a fingertip/materialization fails, recompute the witness and compare (byte-identical best case; otherwise user-defined interpretation).
+A transformation may launch transformations while it runs. Declare it (`tf.driver = True`; `seamless-run --driver`) when it mainly launches and waits; a non-driver body gives up the process lock at its first nested submission anyway. Return a deep celltype (`tf.celltypes.result = "deepcell"`, members as `Checksum` objects) so the aggregate is not materialized. Note: a 64-character hex string in a deep result is a value, not a checksum; wrap real checksums in `Checksum(...)`.
 
-### Unix/bash pipelines (`seamless-run` style)
+### Inputs, defaults and closures
 
-Seamless can also wrap Unix-y steps.
+Closures are implicit inputs. Make captured values explicit arguments; inject constants explicitly (`tf.globals`); avoid time, randomness, PIDs and hostnames unless parameterized.
 
-Porting patterns:
+### Helper modules (project code)
 
-- Make inputs/outputs explicit (files vs literal values).
-- Canonicalize outputs when parallelism only changes ordering (e.g. sort records) so meaning becomes stable bytes.
-- Control locale-dependent behavior for classic tools (e.g. sort order): set/record `LC_ALL` and similar knobs.
+Bind code by content: embed helper modules (`tf.modules`, contract `modules-and-closures.md`) or install immutable artifacts pinned by version and hash. Embedding captures what is imported; make sure submodules are loaded. The Python CLI backend (`BACKEND = "cli"`) supports no modules or globals.
 
-#### Minimal CLI example (mental model)
+### Compiled and system dependencies
+
+Treat NumPy/BLAS/GPU stacks as part of the environment. If determinism matters, pin them and record the environment; otherwise accept the optimistic null and keep an audit path. Real environments are now enforceable for bash and CLI backends (`tf.environment`, `seamless-run --conda/--docker`).
+
+### Scratch versus witness outputs
+
+Scratch is for bulky intermediates you can recompute; each consumer that may receive a missing scratch input needs input fingertipping enabled (`allow_input_fingertip = True` in Python, `--fingertip` for a CLI transformation checksum). Never scratch a witness. A non-scratch consumer pin that holds a scratch producer's result publishes it anyway.
+
+### Unix pipelines (`seamless-run`)
 
 ```bash
-# Runs a command as a transformation; inputs/outputs are tracked by identity.
-seamless-run paste data/a.txt data/b.txt
+seamless-run paste data/a.txt data/b.txt          # files are inputs by content
+seamless-run --conda myenv samtools view -c in.bam # runs inside the conda env "myenv"
 ```
+
+Make inputs explicit (files versus literal values; `-i`, `-I`, `--var`, `--metavar` for non-identity hints, `--metafile` for non-identity files). Canonicalize outputs when parallelism only changes order. Set `LC_ALL`. Directory arguments and result targets are `folder` (materialized directories).
 
 ### What not to suggest (remote)
 
-- Don’t propose “scp the repo/module to the server” or “assume the remote has your checkout”.
-- Prefer content-bound embedding or immutable artifacts; see `remote-donts.md`.
+No "scp the repo to the server". Embed code by content or install immutable artifacts; see `remote-donts.md`.

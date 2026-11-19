@@ -1,17 +1,18 @@
 ---
 name: seamless-porting
-description: Use when creating, porting, or debugging Seamless pipelines from Python, bash, or existing workflow systems; selecting the active concern in a staged non-linear Seamless port; designing referentially transparent DAGs; wrapping steps with direct/delayed transformers or seamless-run; validating Seamless contract compliance; activating capabilities such as persistent caching and local-cluster remote execution; or optimizing parallelism, incremental computation, and dataflow.
+description: Use when creating, porting, upgrading, or debugging Seamless 1.5 pipelines; porting Python, bash, R, Julia or compiled code, an existing Snakemake/Nextflow/script pipeline, or a legacy Seamless 0.x context; upgrading Seamless 1.4 code (direct_print, global_lock, tf.x pin sugar, CompiledTransformer, deepfolder directories, .SEAMLESS.yaml); choosing between the Python face (direct/delayed/Transformer), the Unix face (seamless-run) and the workflow face (reactive Context with mounts, shares, widgets); selecting the active concern in a staged, non-linear port; checking Seamless contract compliance; activating persistent caching, local-cluster remote execution, conda/container environments, drivers and the process lock; or optimizing parallelism, incremental recomputation and dataflow.
+license: MIT
 ---
 
 # Seamless Porting
 
-Essential: treat Seamless pipeline work as a staged, non-linear progression. Seamless wrapping syntax is deceptively small: a minor syntactic change can have large semantic and operational effects. Agents mispredict Seamless behavior when they change wrapping, wiring, capability activation, execution placement, and optimization at the same time.
+Treat Seamless pipeline work as a staged, non-linear progression. Seamless wrapping syntax is small, but a minor syntactic change can have large semantic and operational effects. Agents mispredict Seamless behaviour when they change wrapping, wiring, capability activation, execution placement and optimization at the same time.
 
-The purpose of this skill is attention routing. Consider exactly one active concern at a time, but do not treat the active concern as a physical edit boundary. Seamless changes often touch several surfaces at once: step code, wrapper syntax, wiring, data movement, cache policy, backend configuration, and granularity. The active concern governs why the edit is being made, what evidence is relevant, and which exit check must pass.
+This skill routes attention. Consider one active concern at a time, but do not treat it as an edit boundary: a change often touches step code, wrapper syntax, wiring, data movement, cache policy, backend configuration and granularity at once. The active concern decides why an edit is made, what evidence counts, and which exit check must pass.
 
-## Operating Model
+The contract pages in `seamless/docs/agent/contracts/` are authoritative. The human docs in `seamless/docs/main/` lag the 1.5 code; do not port from them where a contract exists.
 
-Stages have a normal order, but the active concern is chosen by user intent, failure evidence, failed prerequisites, or the earliest unfinished concern.
+## Operating model
 
 Before nontrivial edits, state or infer:
 
@@ -20,228 +21,148 @@ Before nontrivial edits, state or infer:
 - Touched surfaces:
 - Exit check:
 
-Concern selection priority:
+Concern selection priority: (1) user-named concern; (2) symptom-implied concern; (3) failed prerequisite of the selected concern; (4) earliest unfinished concern.
 
-1. User-named concern.
-2. Symptom-implied concern.
-3. Failed prerequisite of the selected concern.
-4. Earliest unfinished concern.
+Default stage order: 1. DAG design and face choice; 2. plain step behaviour; 3. minimal wrapping; 4. Seamless contract; 5. scaling and realism; 6. capability activation; 7. optimization.
 
-Default stage order:
+Move on when the exit check passes, when the user changes focus, or when a failure proves another concern is active.
 
-1. DAG design.
-2. Plain step behavior.
-3. Minimal wrapping.
-4. Seamless contract.
-5. Scaling and realism.
-6. Capability activation.
-7. Optimization.
+## Required returns
 
-Move to another concern when the exit check passes, when the user explicitly changes focus, or when a failure proves that a different concern is active.
+- Return to **contract** after any semantic change to wrapper syntax, wiring, data movement, cache policy, materialization, backend, parallelization, granularity or environment.
+- Return to **scaling and realism**, then contract, after any significant move toward real inputs, real environments or restored production steps.
+- If optimization fails because result semantics are unclear, return to DAG design or plain step behaviour. If remote differs from local, return to contract first.
 
-## Required Returns
+## Hard rules
 
-Return to Seamless contract after any semantic change to wrapper syntax, wiring, data movement, cache policy, materialization strategy, execution backend, parallelization, or granularity.
+- Do not start with Seamless syntax. Design or recover the DAG and step boundaries first.
+- Pick the face per part of the pipeline deliberately (stage 1). Never generalize a property of one face to Seamless as a whole.
+- Do not add remote execution, parallelization, incremental computation or optimization before a small wrapped pipeline passes contract checks.
+- Do not fix a failed small pipeline by adding wiring until the plain step and the individual wrapper have both been smoke-tested.
+- Do not pass Python class instances across Seamless boundaries. Use JSON-like values, NumPy arrays, buffers, files or checksums. Do not let HDF5, `.npz` or pickle cross a step boundary unless accepted as opaque blobs.
+- For large data, decide explicitly between value, checksum and handle wiring.
+- Name the backend when execution placement matters: `process`, `spawn`, `remote: jobserver`, `remote: daskserver`.
+- Use 1.5 API names only: `tf.pins.x` (never `tf.x`), `tf.streaming` / `--streaming` (never `direct_print`), `process_lock` / `driver` (never `global_lock`), `Transformer(lang, compiled=True)` (never `CompiledTransformer`), `-i` / `-I` / `--metafile` (never `.SEAMLESS.yaml`). Upgrading 1.4 code: `references/upgrading-from-1.4.md`.
+- Failure delivery: `.compute()` and reads return `None` on failure; check `.exception`. Smoke tests must use `.run()` (or a `direct` call), which raise, or assert that `.exception` is `None`.
+- A transformation that mainly launches other transformations is a driver: set `tf.driver = True` / `seamless-run --driver`.
+- If scratch plus fingertip is used, enable input fingertipping on every consumer that may receive a missing scratch input (`allow_input_fingertip = True` on the downstream Python transformer before building; `--fingertip` for a CLI transformation checksum). Scratch on the producer is not enough, and a non-scratch consumer pin publishes the result anyway.
+- For substantive ports, implement persistent caching and local-cluster remote execution by default after the small wrapped pipeline passes contract checks, unless out of scope or blocked by missing cluster configuration.
+- End with a capability report (below).
 
-Return to scaling and realism, then contract, after any significant move from toy data toward real inputs, real environments, or restored production steps.
+## Contract references
 
-If optimization fails because result semantics are unclear, return to DAG design or plain step behavior. If remote execution differs from local execution, return to contract first, then capability activation or optimization.
+Load the relevant contract before changing the associated semantics (paths under `seamless/docs/agent/contracts/`):
 
-## Hard Rules
+- Identity and caching: `identity-and-caching.md`. Python wrappers and Transformation handles: `direct-delayed-and-transformation.md`. Transformer factory, `build()`, `process_lock`/`driver`: `transformers.md`. Pins, optional pins, null: `pins.md`.
+- Unix face: `seamless-run-and-argtyping.md`.
+- Workflow face: `workflow-context.md`, `node-state-lifecycle.md`, `cells.md`, `expressions.md`, `mounts.md`, `shares.md`, `widgets.md`, `attachments.md`. Agent guide: `seamless/docs/agent/guides/seamless-web-server.md`.
+- Data: `celltypes-and-conversion.md`, `deep-celltypes.md`, `content-addressed-files-and-dirs.md`, `hashtype.md`, `compression.md`.
+- Languages and environments: `handler-languages.md` (R, Julia), `language-backends.md` (`BACKEND = "cli"`/`"mem"`), `compiled-transformers.md`, `compiled-pins.md`, `seamless-signature-schema.md`, `environments.md`, `modules-and-closures.md`.
+- Execution: `execution-backends.md`, `cancellation.md`, `transformation-logs.md`, `streaming.md`.
+- Storage and audit: `scratch-witness-audit.md`, `cache-storage-and-limits.md`, `execution-records.md`, `service-management.md`.
 
-- Do not start with Seamless syntax. First design or recover the DAG and step boundaries.
-- Do not add remote execution, parallelization, incremental computation, or optimization before a small wrapped pipeline passes contract checks.
-- Do not fix a failed small pipeline by adding wiring complexity until the plain step and individual wrapper have both been smoke-tested.
-- Do not pass Python class instances across Seamless boundaries. Convert to supported structured values or buffers.
-- For large data, do not materialize values by default. Decide explicitly between value, checksum, and handle wiring.
-- When remote or HPC execution matters, name the backend explicitly: `process`, `spawn`, `remote: jobserver`, or `remote: daskserver`.
-- For substantive ports, implement persistent caching and local-cluster remote execution by default after the small wrapped pipeline passes contract checks, unless explicitly out of scope or blocked by missing local cluster configuration.
-- If scratch plus fingertip is used, enable input fingertipping on each consumer transformation that may receive missing scratch inputs. In Python, set the downstream transformer/core's `allow_input_fingertip = True` before constructing the transformation; for CLI execution of a transformation checksum, use `--fingertip`. Scratch on the producer is not enough.
-- In the final response, list the Seamless capabilities implemented and briefly list relevant capabilities left for follow-up, including blocked or intentionally omitted ones.
+## 1. DAG design and face choice
 
-## Contract References
+Entry triggers: new port, unclear structure, de novo pipeline; implicit, notebook-shaped or side-effect-heavy code; optimization or contract work fails because step meaning is unclear.
 
-Load the relevant contract before changing the associated semantics:
+Start without Seamless syntax. For a de novo pipeline, design an abstract DAG of referentially transparent steps with I/O at the boundaries. For existing step code, check purity first, then wiring. For an implicit pipeline, isolate the steps and rewire them explicitly. For an explicit pipeline (Snakemake, Nextflow), check that steps do not grossly violate purity, then move on. Effects (uploads, notifications, deletions) stay outside Seamless.
 
-- Python wrapper behavior: `seamless/docs/agent/contracts/direct-delayed-and-transformation.md`
-- CLI command wrapping and arg/file typing: `seamless/docs/agent/contracts/seamless-run-and-argtyping.md`
-- Transformation identity and caching: `seamless/docs/agent/contracts/identity-and-caching.md`
-- Imports, modules, project code, and closures: `seamless/docs/agent/contracts/modules-and-closures.md`
-- Compiled transformers: `seamless/docs/agent/contracts/compiled-transformers.md`
-- seamless-signature schema (used by compiled transformers): `seamless/docs/agent/contracts/seamless-signature-schema.md`
-- Execution backend selection: `seamless/docs/agent/contracts/execution-backends.md`
-- Execution records (`seamless.db` `MetaData`): `seamless/docs/agent/contracts/execution-records.md`
-- Service management (`seamless-service-*`, `rhl-*`, false-pass): `seamless/docs/agent/contracts/service-management.md`
-- Scratch, fingertip, witnesses, and audit: `seamless/docs/agent/contracts/scratch-witness-audit.md`
-- Cache storage and scratch limits: `seamless/docs/agent/contracts/cache-storage-and-limits.md`
-- Compression (`.zst`/`.gz`): `seamless/docs/agent/contracts/compression.md`
-- Input fingertip API details: `seamless/docs/agent/api/python/seamless_transformer.transformation_class.md`
+Then choose the face for each part:
 
-## 1. DAG Design
+- **Unix face** (`seamless-run`): CLI tools over files. File names are part of identity.
+- **Python face** (`direct`/`delayed`, `Transformer(...)`): functions over values; drivers and fan-out loops; R, Julia, bash, compiled steps via the factory.
+- **Workflow face** (`Context`): interactive or long-lived use (edited inputs, file sync, widgets, HTTP front end), and every port of a Seamless 0.x project. See `references/workflow-face-porting.md`; for 0.x, `references/legacy-0x-to-1.5.md`; for building and debugging Contexts, the `seamless-workflow` skill.
 
-Entry triggers:
+Exit check: each step has explicit inputs and outputs; hidden dependencies and side effects are removed, parameterized or recorded as risks; each part has a face.
 
-- New port, unclear structure, or de novo pipeline.
-- Existing code is implicit, notebook-shaped, or side-effect-heavy.
-- Optimization or contract work fails because step meaning is unclear.
+## 2. Plain step behaviour
 
-Start without Seamless syntax or implementation details.
+Entry triggers: a step is wrong before Seamless is involved; its plain behaviour is untested; a wrapper failure may be an ordinary Python, bash, tool or environment failure.
 
-For a de novo pipeline, design an abstract DAG of functionally pure, referentially transparent steps with I/O pushed to the boundaries. For existing step code, check purity first, then focus on wiring. For an implicit pipeline-shaped implementation, isolate the steps and rewire them as an explicit DAG. For an existing explicit pipeline such as Snakemake, quickly verify that the steps do not grossly violate purity, then move on.
+Make each step concrete and smoke-tested as plain Python, bash, R or Julia. Prefer function-shaped Python steps and command-shaped bash steps with explicit file, stdin, stdout and environment boundaries.
 
-Exit check: each step has explicit inputs and outputs, and hidden dependencies or side effects are either removed, parameterized, or recorded as risks.
+Exit check: the unwrapped step passes a small smoke test with representative input.
 
-## 2. Plain Step Behavior
+## 3. Minimal wrapping
 
-Entry triggers:
+Entry triggers: plain behaviour passes; the first wrapper attempt fails; Seamless syntax is in use without a small wrapped proof.
 
-- A step gives the wrong result before Seamless is involved.
-- The step boundary is known, but its plain behavior has not been smoke-tested.
-- A wrapper failure may actually be ordinary Python, bash, tool, or environment failure.
+Wrap individual steps in the simplest form first: `direct` for a Python step, `seamless-run` for a command, `Transformer("r", direct=True)` (pins declared through `tf.pins`) for R or Julia. Reuse the plain smoke tests.
 
-Before wrapping, make each step concrete and smoke-tested as plain Python or bash.
+Then wire a small linear pipeline of 2 to 5 wrapped steps with the simplest wiring: concrete values (Python), files (Unix), or cells connected by assignment (workflow: `ctx.tf.pins.x = ctx.x`, `ctx.y = ctx.tf.result`, then `ctx.compute()` and check `.state` and `.exception`). Prefer `delayed` handles once the goal is an explicit Python graph.
 
-For Python, prefer ordinary function-shaped steps. For bash or Unix pipelines, prefer command-shaped steps with explicit file, stdin, stdout, and environment boundaries.
+If it fails, revisit plain behaviour and individual wrapping before blaming the wiring. Known traps: class instances as inputs; a `bytes` pin arrives as `bytes`; a required pin of a celltype other than `plain`, `mixed`, `bytes` refuses null; a 64-hex string in a deep result is a value unless wrapped in `Checksum(...)`; in a Context, a code string assigned to a name is a cell value, not code.
 
-Exit check: the unwrapped step passes a small smoke test with representative input and produces the expected output.
+Exit check: one wrapped step and one small wrapped pipeline pass smoke tests.
 
-## 3. Minimal Wrapping
+## 4. Seamless contract
 
-Entry triggers:
+Entry triggers: unexpected cache hit, miss or reuse; same apparent inputs, different results; local and remote disagree; hidden files, imports, closures, working directory, environment variables, RNG, network or class instances are suspected; wrapper, wiring, backend, materialization, cache policy, parallelization, granularity or environment changed.
 
-- Plain step behavior passes and the next task is Seamless wrapping.
-- First wrapper attempt fails.
-- The code uses Seamless syntax before there is a small wrapped proof.
+Assess compliance by relating the code to the exact semantics of the wrappers in use; if in doubt, run tests. Check at least:
 
-Add minimal Seamless wrapping to individual steps. Prefer the simplest syntax first: `seamless.transformer.direct` for individual Python step smoke tests and direct `seamless-run` wrapping for bash commands. Reuse the plain smoke tests against the wrapped code.
-
-For Python pipeline wiring, prefer `delayed` / `Transformation` handles once individual step wrappers work and the goal is to build an explicit graph.
-
-Then wire a small linear pipeline of 2-5 Seamless-wrapped steps. Use the simplest possible wiring: concrete materialized Python values, or files for the CLI face, as inputs and outputs.
-
-If this does not work, revisit plain step behavior and individual wrapping before assuming the wiring is the problem. One known exception is Python class instances as inputs, which Seamless does not support. Prefer numpy values, lists, dicts, or combinations of those. As a last resort, use pickle to pass raw buffers between Seamless-wrapped steps.
-
-If the simplest wrapper is inappropriate, for example for compiled transformers, skip that step temporarily or choose the specialized wrapper only after the smaller pipeline works.
-
-Exit check: one wrapped step and one small wrapped pipeline both pass smoke tests.
-
-## 4. Seamless Contract
-
-Entry triggers:
-
-- Unexpected cache hit, cache miss, or result reuse.
-- Same apparent inputs give different results.
-- Local and remote execution disagree.
-- Hidden files, imports, closures, working directory, environment variables, RNG, network, or class instances are suspected.
-- Wrapper syntax, wiring, backend, materialization, cache policy, parallelization, or granularity changed.
-
-Assess compliance by inspecting the pipeline code and relating it to the exact Seamless wrapper semantics in use. If in doubt, run tests. Simple non-determinism is often detectable by repeated test runs, but other contract violations may require careful inspection.
-
-Check at least:
-
-- Inputs and outputs are explicit.
-- Hidden filesystem, network, global state, working directory, and environment dependencies are eliminated or deliberately modeled.
-- Boundary values use supported types, buffers, files, checksums, or handles.
+- Inputs and outputs are explicit; no hidden filesystem, network, global, working-directory or environment dependency.
+- Boundary values use supported, canonical formats.
 - Large data is not accidentally materialized.
-- Code identity, imported modules, closures, compiled code, and command environments match the wrapper contract.
-- Repeated runs with the same code and inputs have the same result, or intentional non-determinism is parameterized.
-- Cache identity expectations match the chosen granularity and wiring.
+- Code identity, modules, closures, compiled schemas and command environments match the wrapper contract. The environment is outside identity: if a tool version must count, make it an input.
+- Repeated runs give the same result, or nondeterminism is seeded. A cache hit proves nothing: test determinism with the cache cleared or by recomputing.
+- Cache identity matches the chosen granularity and wiring. A `seamless-run` step and a Python step never share cache entries.
 
-Re-check the contract after each material change to wrapping, data movement, caching, parallelization, or remote execution.
+Exit check: the contract has been checked against the wrappers in use and the small pipeline still passes.
 
-Exit check: the contract has been checked against the wrappers in use and the small wrapped pipeline still passes.
+## 5. Scaling and realism
 
-## 5. Scaling And Realism
+Entry triggers: the small example works and the next step is real data, real tools, real environments or restored steps; a failure appears only at size or in the real environment.
 
-Entry triggers:
+Move gradually toward real usage; re-evaluate DAG, contract, capabilities and optimization after each significant step.
 
-- Small wrapped example works and the next step is real data, real tools, or restored production steps.
-- A failure appears only at larger size or in the real environment.
-- Simplifications made earlier may no longer be valid.
+Exit check: the next more realistic case passes, or the failure is traced to an earlier concern.
 
-Progressively move from simplified small-data examples toward real usage. Add back steps that were removed for simplification. Increase input sizes gradually.
+## 6. Capability activation
 
-Each move toward realism can change the correct Seamless design. Re-evaluate the DAG, contract, selected capability, and optimization choices after every significant scaling step.
+Entry triggers: the user asks for persistent caching, remote or HPC execution, environments, parallelism, incremental computation, interactivity or observability; a small pipeline passes and the next goal needs a capability.
 
-Exit check: the next larger or more realistic case passes, or the failure is traced back to a specific earlier concern.
+Defaults for substantive ports:
 
-## 6. Capability Activation
+1. **Persistent caching.** Mandatory on the Unix face (`SEAMLESS_CACHE` or a cluster). In Python and in a Context, call `seamless.config.init()` after setting it up; without it, results and saved workflow graphs do not survive the process.
+2. **Local-cluster remote execution.** `remote: jobserver` or `remote: daskserver` on a configured local or nearby service.
 
-Entry triggers:
+Keep local-cluster remote distinct from HPC remote (scheduler-managed `remote: daskserver` or `--write-remote-job`); do not configure HPC unless asked or already configured.
 
-- User asks for persistent caching, local-cluster remote execution, HPC execution, parallelization, incremental computing, or operational behavior.
-- A small wrapped pipeline passes and the next goal requires a Seamless capability.
-- Operational behavior, not step semantics, is now the active issue.
+Other capabilities, when they serve the goal (details in `references/languages-and-environments.md`):
 
-Simple direct Seamless wrappers in Python are almost a no-op. As more Seamless capabilities are activated, more semantic and operational complexity comes into play.
+- **Environments**: bash steps and CLI backends run inside conda envs or images (`seamless-run --conda/--docker`, `tf.environment`); the in-memory Python backend cannot.
+- **Concurrency**: one body per process by default; `spawn` workers or a cluster for parallelism; `process_lock = False` only for code that is safe next to other code.
+- **Observability**: `.logs` after a run; `streaming` for live output (Dask only).
+- **Interactivity** (workflow face): mounts, shares, widgets (`seamless-workflow` skill).
+- **Execution records**: minimal by default; `record: true` only for environment-drift debugging, audits or a shared `seamless.db`.
 
-Default capabilities for substantive ports:
+For remote or backend failures, switch to the `seamless-remote-debugging` skill.
 
-1. Persistent caching. It is already active by default for the CLI face; for Python-facing ports, make sure the pipeline uses persistent Seamless caching rather than only ephemeral local values.
-2. Local-cluster remote execution. Use `remote: jobserver` or `remote: daskserver` on a local or nearby configured Seamless service when available. This is common enough to implement by default after the small wrapped pipeline passes.
-
-Keep local-cluster remote execution distinct from HPC execution:
-
-- `process`: local in-process execution, no remote service.
-- `spawn`: local worker processes, useful parallelism but not remote execution.
-- Local-cluster remote: `remote: jobserver` or `remote: daskserver` against a local/nearby configured service, usually a default capability.
-- HPC remote: scheduler/site-managed `remote: daskserver` or manual remote job deployment with queue, module, container, credential, filesystem, and policy constraints. Do not silently configure this unless requested or already clearly configured; list it as follow-up when relevant.
-
-Other common capability concerns are parallelization and incremental computing, including data-incremental and code-incremental computation. Add these when they serve the user's goal or a clear performance/scaling need.
-
-Execution records are a default capability: every successful transformation persists a minimal record into `seamless.db`. Do **not** enable full records (`- record: true`) by default — the full payload adds environment fingerprinting and content-addressed sub-buffer writes per execution. Reach for `record: true` only when the user is debugging environment drift, auditing irreproducibility, or producing a sharable `seamless.db`. Records are write-once per `tf_checksum`, so flipping the flag does not retroactively upgrade existing rows.
-
-When debugging operational complexity, use Seamless diagnostics/instrumentation, and use the `seamless-remote-debugging` skill when the failure is remote/backend-related.
-
-Exit check: the capability works on a small wrapped pipeline and the contract has been rechecked.
+Exit check: the capability works on the small pipeline and the contract has been rechecked.
 
 ## 7. Optimization
 
-Entry triggers:
+Entry triggers: performance, data movement, cache pressure, large intermediates, parallelism, incremental recomputation.
 
-- User asks about performance, remote execution optimization, HPC placement, data movement, cache pressure, large intermediates, parallelism, or incremental recomputation.
-- Small pipeline works, but real usage materializes too much data, moves data poorly, recomputes poorly, or underuses parallel execution.
+Ask first: are edges values, checksums, handles, files or deep checksums? Which outputs carry meaning and must stay materializable? Which bulky intermediates can be scratch, and which consumers then need input fingertipping? Is granularity right for both caching and placement? Which backend is active?
 
-Seamless is primarily about wrapping. Its syntax is small enough to explicitly enumerate plausible wrapping choices and compare their effects when optimizing.
+Then consider explicitly:
 
-Ask these questions first:
+1. Scratch plus fingertip, for cache pressure and data colocalization (fingertipping inside a worker currently works only with `process` and `remote: daskserver`).
+2. Wiring by value, checksum or handle; materialize large data only where needed. Selections and conversions (Expressions, cell joins) already run where the data is.
+3. Parallel execution: `delayed` handles with `start()`, `spawn`, `parallel`, `seamless-queue`; in a Context, independent nodes run concurrently up to the backend's capacity.
+4. Granularity, including nesting (a driver launching sub-transformations; heterogeneous nesting such as `seamless-run` wrapping a Python script that launches transformations). In a Context, `ctx.prune()` reclaims superseded runs early.
 
-- Are edges values, checksums, handles, files, or deep checksums?
-- Which outputs are meaning-bearing and must remain materializable?
-- Which bulky intermediates can be scratch?
-- Would scratch plus fingertip improve data colocalization, and which consumer transformations need input fingertipping enabled?
-- Is transformation granularity appropriate for both caching and execution placement?
-- Which execution backend is active?
+Exit check: the optimization is justified by observed or expected behaviour, and the contract still holds.
 
-Then consider these choices explicitly:
+## Capability report
 
-1. Carefully consider scratch plus fingertip. Not only can they reduce cache pressure, they can also enforce data colocalization. Enable input fingertipping per consumer transformation; do not assume a global switch.
-2. Wiring can use values, checksums, or handles. Concrete materialization is simple and inspectable, but it can hurt performance. Materialize large datasets only when necessary.
-3. Parallel execution can use delayed transformers, spawn, `multi.parallel`, or `seamless-queue`.
-4. Granularity matters because a transformation is both a caching unit and an execution or parallelization unit. Granularity can be nested: transformations can be defined inside another transformation, including heterogeneous nesting such as `seamless-run` wrapping a Python script that launches Python transformations. Nested granularity can create multi-level caching and improve colocalization of compute, data, and caching services.
+End every porting or debugging task with: implemented capabilities (what is actually active: wrapping per face, persistent caching, local-cluster remote, parallelism, environments, scratch/fingertip, incremental computation, HPC, mounts/shares/widgets); relevant follow-ups with a reason or blocker; and why any default capability was not implemented.
 
-For remote execution dataflow optimization, prioritize wiring type, scratch plus fingertip, and granularity. For parallelization optimization, prioritize execution mechanisms and granularity.
+## Reference map
 
-Exit check: the optimization is justified by observed or expected dataflow, cache, or parallel execution behavior, and contract compliance still holds.
-
-## Capability Report
-
-End every porting or debugging task with a concise capability report:
-
-- Implemented capabilities: name what is actually active, for example minimal wrapping, persistent caching, local-cluster remote execution, parallel execution, scratch/fingertip, incremental computation, or HPC execution.
-- Relevant follow-ups: name capabilities not implemented but plausibly useful next, with a short reason or blocker.
-- If a default capability was not implemented, state why.
-
-## Example Transitions
-
-Common forward path:
-
-DAG design => plain step behavior => minimal wrapping => contract => scaling and realism => capability activation => contract => optimization
-
-Common non-linear returns:
-
-- Wrapper or wiring changed => contract.
-- Cache, materialization, backend, parallelism, or granularity changed => contract.
-- Realism increased => scaling and realism => contract.
-- Remote differs from local => contract => capability activation or optimization.
-- Optimization exposes unclear result semantics => DAG design or plain step behavior.
+- `references/upgrading-from-1.4.md`: 1.4 to 1.5 breaking changes with the replacement for each.
+- `references/legacy-0x-to-1.5.md`: porting a Seamless 0.x context; API mapping and what is absent.
+- `references/workflow-face-porting.md`: porting a pipeline or notebook into a `Context`.
+- `references/languages-and-environments.md`: R, Julia, compiled, backends, conda and containers, process lock.

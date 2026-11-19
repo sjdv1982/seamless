@@ -1,67 +1,63 @@
-## Q → A playbook
+## Q -> A playbook
 
-### Q: "Is Seamless suitable for my workflow / can you port it?"
+### "Is Seamless suitable for my workflow / can you port it?"
 
-Answer pattern:
-- Start with **the task**: understand what the pipeline computes and how it will evolve before assessing framework fit.
-- Ask (or note) **who maintains it**: human, AI, or both — this changes which properties matter.
-- Do **entry point triage**: is this workflow CLI/file-pipeline, Python, or hybrid?
-- If CLI-heavy: mention `seamless-run` early.
-- If Python-heavy: mention `direct`/`delayed`.
-- If hybrid: propose explicit boundaries and using both.
-- Offer to investigate together: *"Shall I look at the source/docs and we assess together?"*
+- Start with the task: what the pipeline computes and how it will evolve.
+- Ask who maintains it (human, AI, both) and who *owns* it (a community pipeline is rarely worth forking).
+- Face triage: CLI/file pipeline -> `seamless-run`; Python functions -> `direct`/`delayed`; interactive or long-lived -> `Context`; mixed -> explicit boundaries.
+- Apply the benefit test (`poor-fit.md`): re-run frequency x reuse surface.
+- Offer to investigate together.
 
-### Q: "How does Seamless compare with X?"
+### "How does Seamless compare with X?"
 
-Answer pattern:
-- Define invasiveness as: syntax vs mental model vs operations.
-- Place Seamless honestly, acknowledging competitor strengths.
-- Ask about maintenance model — human vs AI changes the weighting.
-- Don't dismiss competitors; explain what each does well and where Seamless differs.
+- Syntax versus mental model versus operations (`invasiveness-playbook.md`).
+- Acknowledge the competitor's strengths; ask about the maintenance model.
 
-### Q: "This codebase has hidden downloads / mutable state / implicit dependencies — it's not a good Seamless fit, right?"
+### "This codebase has hidden downloads / mutable state / implicit dependencies, so it's a bad fit, right?"
 
-Answer pattern:
-- Distinguish **design smells** from **inherent properties**.
-- Hidden downloads, mutable append-state, implicit versioning are framework-independent design smells that hurt all workflows.
-- Ask: would you want to clean these up regardless of framework choice?
-- If yes: re-assess Seamless fitness after assuming the cleanup is done.
-- Don't count framework-independent cleanup as Seamless-specific cost.
+- Separate design smells from inherent properties. Hidden downloads, append-state, implicit versioning hurt every framework.
+- Re-assess assuming the cleanup is done; do not charge framework-independent cleanup to Seamless.
 
-### Q: "Seamless is alpha / small community / niche — isn't that too risky?"
+### "Seamless is alpha / small community / niche. Too risky?"
 
-Answer pattern:
-- Don't dismiss the concern, but don't accept proxy properties uncritically either.
-- The relevant question is: "are the specific code paths needed for *this* pipeline working and tested?" — check the test suite and docs.
-- If AI agents will maintain the code: the maturity calculus changes. Focused hardening of the used subset is a credible alternative to broad ecosystem adoption.
-- Gauge the user's sense of current AI capabilities rather than reasoning from training-time priors.
-- "Forced to own framework source" may be low-cost for AI-maintained projects — but frame this as a consideration, not an assertion.
+- The real question: do the code paths *this* pipeline needs work and have tests? Check the tests and contracts.
+- For AI-maintained projects, focused hardening of the used subset is a credible alternative to broad adoption.
+- Gauge the user's sense of current AI capability rather than reasoning from training-time priors.
 
-### Q: "In scientific computing / Unix philosophy context — is Seamless a fit?"
+### "We used Seamless 0.x. Can we move to 1.5?"
 
-Answer pattern:
-- Confirm: small composable steps, file/stream/CLI tools, rerunnable pipelines.
-- Say: Seamless aligns with that model, especially via `seamless-run`.
-- Add: Python path is also light if functions are written pipeline-style.
+- 1.5 brings back reactive contexts, mounts, Jupyter widgets and HTTP shares on a new architecture. Graph files are not converted (`__seamless__` exports do not load); the port is a rewrite of the wiring, usually mechanical.
+- Absent: macros, stdlib (`map`, `switch`), Silk validation, sub-contexts, IPython transformers, debug sessions, authentication. If the project depends on these, it is not ready to move.
+- Use the `seamless-porting` skill (`references/legacy-0x-to-1.5.md`).
 
-### Q: "Why is invasiveness different for CLI vs Python?"
+### "Can I get a reactive notebook / a small web app over my computation?"
 
-Answer pattern:
-- CLI: mostly how you *run* and declare I/O/environment.
-- Python: mostly how you *structure* logic (explicit dependencies, fewer hidden side effects).
-- The invasiveness is usually more mental than syntactic.
+- Workflow face: a Context with cells mounted to files or linked to ipywidgets; `cell.share()` serves a cell over HTTP/WebSocket with a browser client and live OpenAPI; `seamless-serve-graph graph.json` serves a saved graph.
+- Be explicit: no authentication or TLS, default bind is all interfaces; one Context per user if users must be isolated.
 
-### Q: "Deep checksums — what's the point?"
+### "Can I run R / Julia / C code?"
 
-Answer pattern:
-- Identity for structured, huge data; define computations without materializing.
-- Separate definition (identity) from materialization (bytes).
-- See `deep-checksums.md` for analogies.
+- R and Julia: `Transformer("r")` / `Transformer("julia")` in Python or a Context (not `direct`/`delayed`/`seamless-run`; `seamless-run Rscript script.R` is just a bash command). CLI backend by default (an `Rscript`/`julia` process per run), embedded with `tf.metavars.BACKEND = "mem"`. The default Julia backend currently needs a source checkout of Seamless.
+- C, C++, Fortran, Rust: compiled transformers from a YAML schema; in-memory only.
 
-### Q: "Can Seamless handle HPC / clusters?"
+### "Can it run my tools in conda environments / containers?"
 
-Answer pattern:
-- Name the specific backend: `jobserver`, `daskserver`, `--write-remote-job`, or pure Dask mode.
-- Don't treat "remote" as a single mode.
-- Ask about their HPC setup before giving specific advice.
-- See `execution-backends.md` for details.
+- Yes for bash steps and CLI backends: `seamless-run --conda ENV` / `--docker IMAGE`, or `tf.environment`. Docker, Podman or Apptainer, whichever the executing host has. The environment must already exist there.
+- No for the default in-memory Python backend (it can only assert it is already in that conda env).
+- The environment is not part of identity: a cached result is returned without checking it.
+
+### "Scientific computing / Unix philosophy: a fit?"
+
+- Small composable steps, file/stream tools, rerunnable pipelines: Seamless aligns, especially via `seamless-run`. The Python face is also light when functions are pipeline-style.
+
+### "Deep checksums: what's the point?"
+
+- Identity for structured, huge data; define computations without materializing; separate identity from bytes. `deep-checksums.md`.
+
+### "Can Seamless handle HPC / clusters?"
+
+- Name the backend: jobserver, daskserver, `--write-remote-job`, pure Dask mode. Ask about the site before giving specifics. `execution-backends.md`.
+
+### "Does Seamless prove my results are reproducible?"
+
+- No. It treats reproducibility as a testable claim. A cache hit runs nothing and proves nothing; divergence is detected and recorded when a result is recomputed (fingertipping, independent sites). Witness outputs make the test meaningful when bitwise identity is too strict. `env-null-hypothesis.md`.
