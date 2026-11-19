@@ -1,83 +1,56 @@
 ## Porting recipes (safe defaults)
 
-### Recipe 0: Pick the right entry point (Python vs CLI vs hybrid)
+For carrying out a port step by step, use the `seamless-porting` skill. These recipes are for sketching one.
 
-Don’t assume Python-first.
+### Recipe 0: pick the face (or the mix)
 
-- If the workflow is mainly **commands/pipelines over files**: start with `seamless-run` (CLI face).
-- If the workflow is mainly **Python functions/values**: start with `@delayed` / `@direct` (Python face).
-- If it’s mixed: make boundaries explicit (files vs values) and use both.
+- Mostly **commands and pipelines over files**: `seamless-run` (Unix face).
+- Mostly **Python functions over values**: `delayed` / `direct` (Python face); R, Julia, bash and compiled steps through `Transformer(...)`.
+- **Interactive or long-lived** (a notebook you keep tweaking, files you edit, a web front end, a 0.x project): a workflow `Context`.
+- Mixed: make boundaries explicit. Remember that a `seamless-run` step and a Python step of the same logic do not share cache entries (`faces.md`).
 
-### Recipe 0.5: Pick the execution backend (ops choice, not a rewrite)
+### Recipe 0.5: pick the execution backend (an ops choice, not a rewrite)
 
-If the user cares about parallelism/HPC/remote execution, name the backend explicitly:
-- `spawn` for local worker processes.
-- `remote: jobserver` for the simple “remote-like” mode (daemon + worker pool; great for dev/test).
-- `remote: daskserver` for Dask-backed scaling (HPC/distributed).
+`process` (default) -> `spawn` (local workers) -> `remote: jobserver` (simple daemon + worker pool) -> `remote: daskserver` (HPC). Say: "we port once; the backend is configuration." See `execution-backends.md`.
 
-Then say the key reassurance: “We can port the pipeline once; backend choice is configuration/operations.” See `references/execution-backends.md`.
+### Recipe A: wrap a pure-ish Python function
 
-### Recipe A: Wrap a pure-ish Python function
+- `@direct` when the call should return a value now; `@delayed` for a handle to run, start or await later.
+- Inputs as arguments; push I/O into separate steps.
+- Helper code from the repo goes in through the module mechanism (`tf.modules`), never "assume it exists remotely".
+- In tests, use `.run()` (raises) rather than `.compute()` (returns `None` on failure).
 
-Goal: keep call-site feeling normal.
+### Recipe B: split I/O from compute
 
-- Use `@direct` for “call returns a value now”.
-- Use `@delayed` for “call returns a handle; run/start later”.
-- Make inputs explicit (arguments), and push I/O to separate steps where possible.
-- If a function depends on helper code in the repo, include it via the module mechanism rather than “assuming it exists remotely”.
+1. Load/parse (file -> structured value).
+2. Compute (structured -> structured).
+3. Render/write (structured -> file or `folder`).
 
-### Recipe B: Split I/O from compute
+### Recipe C: nesting and drivers
 
-Goal: make step identity stable and caching effective.
+- Pass upstream handles into downstream steps; `start()` many, then `run()` or await.
+- **Fan-out**: a driver transformation (`tf.driver = True`) loops over inputs and launches one sub-transformation per element. Each has its own identity, so per-element caching and parallelism come for free; when one element changes, the others hit the cache. Return a deep celltype (`tf.celltypes.result = "deepcell"`, members wrapped as `Checksum(...)`) so the aggregate is not materialized.
+- **Conditionals**: Python `if`/`else` in a driver; the unchosen branch is never built.
+- **Data-dependent fan-out**: iterate a deep checksum (a `folder` or `deepcell` index) and launch one step per member, without fetching the members.
+- **Reusable patterns**: a Python function that composes `delayed` calls is a template.
 
-- Step 1: load/parse inputs (file → structured value).
-- Step 2: compute (structured → structured).
-- Step 3: render/write outputs (structured → file/folder).
+### Recipe D: bind code and environments by content
 
-### Recipe C: Nesting and dependency wiring
-
-Goal: define a pipeline as a composition of steps.
-
-- Upstream transformations can be passed into downstream steps; treat them as explicit dependencies.
-- Use `delayed(...).start()` when you want to schedule work, then `.run()` later.
-
-#### Driver transformations (fan-out / map / conditional patterns)
-
-The transformation cache is keyed by *content identity*, not by name or position.
-This means nested transformations give you per-element caching automatically — no special machinery needed.
-
-**Fan-out / map pattern**:
-
-- Write a "driver" transformation that loops over inputs and spawns one sub-transformation per element.
-- The driver itself is cheap — it just creates sub-transformations, not materializing large data.
-- Each sub-transformation has its own checksum identity → independent caching and parallelism.
-- When one input element changes, the driver re-runs, but unchanged sub-transformations hit cache.
-- The driver's output should use a **deep celltype** to avoid materializing all results into a single large buffer.
-
-**Conditional pattern**:
-
-- A driver transformation that uses Python `if`/`else` to choose which sub-transformation to create.
-- The unchosen branch is never instantiated — naturally lazy, no wasted computation.
-
-**Reusable patterns**:
-
-- A Python function that composes `delayed` calls *is* a reusable template.
-- Python's own abstraction mechanisms (functions, classes, modules) are all you need.
-
-### Recipe D: Module inclusion (avoid “copy this module”)
-
-Goal: make helper code available in execution environments safely.
-
-- Default to **content-bound code**:
-  - **Embed your project modules** when you want the transformation to commit to exact code bytes (Seamless-style determinism). This can be reasonable even for large pure-Python modules.
-  - For non-Python/compiled deps, prefer **pinned environments** (conda/image) and avoid “whatever is installed”.
-- Packaging is fine *only if immutable*: install a wheel/sdist/image identified by a version+hash (not editable installs, not copying a mutable working tree).
-- Avoid closure state or dynamically imported local files that won’t exist on workers unless they are explicitly included as module/code artifacts.
+- Embed project modules when the transformation should commit to exact code bytes.
+- Third-party dependencies: for the default in-memory Python backend, install them in the worker's own environment (a cluster queue's `conda:` entry); `tf.environment.set_conda_env(name)` only asserts that the worker is already in it. To run a step **inside** a conda environment or container, use bash (`seamless-run --conda/--docker`, `Transformer("bash")`) or a CLI backend (`tf.metavars.BACKEND = "cli"` for Python; the default for R and Julia). Image specs: `{"name": "image@sha256:...", "gpus": ..., "shm_size": ...}`.
+- The environment is outside identity and a cached result is returned without checking it. If a tool version must count, make it an input (a version string or the tool binary's checksum).
+- Packaging is fine only if immutable (wheel or image pinned by version and hash). No editable installs or copied working trees for remote execution.
 
 ### Recipe E: Unix command steps
 
-Goal: preserve Unix philosophy.
+- Declare which arguments are files and which are values; add extra inputs with `-i` / `-I`, identity-neutral hints with `--metavar` and `--metafile`.
+- Idempotent, environment-stable scripts (pinned tools, no "latest").
+- Canonicalize output when parallelism only changes order (`sort`, `LC_ALL=C`).
+- A script that itself calls `seamless-run` needs no flag; a script that mostly launches other steps can be declared `--driver`.
 
-- Wrap commands/pipelines as explicit steps that declare which args are files vs values.
-- Ensure scripts are idempotent and environment-stable (pin tools, avoid “latest”).
-- Prefer output canonicalization (e.g. sort) when parallelism only changes ordering, so meaning becomes stable bytes.
+### Recipe F: a reactive front end (workflow face)
+
+- Put the stable pipeline steps behind transformers in a Context; keep inputs that users edit as cells.
+- Mount editable inputs to files (`ctx.params.mount("params.json")`), or share them over HTTP (`ctx.params.share(readonly=False)`; no authentication, bind to localhost unless the network is trusted).
+- Expose results read-only (`ctx.result.share()`), or as a download archive (`ctx.shares.add_download(["result"])`).
+- Save with `ctx.get_graph()`; reload needs persistent storage (`SEAMLESS_CACHE` plus `seamless.config.init()`), because the graph holds checksums only.

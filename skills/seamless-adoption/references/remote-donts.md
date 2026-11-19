@@ -1,24 +1,30 @@
-## Remote execution “don’ts” (and what to do instead)
+## Remote execution "don'ts" (and what to do instead)
 
-### Don’t: “Just copy your Python module/repo to the remote server”
+### Don't: "just copy your Python module or repo to the remote server"
 
-Why it’s a bad suggestion:
-- **Not reproducible**: the server ends up running “whatever happens to be there”.
-- **Breaks caching identity**: Seamless-style reuse depends on “same code” meaning the same thing; ad-hoc copying introduces silent drift.
-- **Operationally brittle**: out-of-band deployment, hard to audit, easy to forget, easy to mismatch across workers.
-- **Security/permissions**: pushing arbitrary code to servers is often not acceptable in real environments.
-
-Do instead:
-- **Bind code by content, not by location**:
-  - **Embed project code** into the transformation/module mechanism when you want “code is data” determinism (can be appropriate even for large pure-Python codebases).
-  - **Or package deterministically**: install an *immutable* artifact (wheel/sdist/image) identified by hash/version, not “whatever is on disk”.
-- **Pin environments** when determinism matters: container images or locked env specs; avoid “latest”.
-- **Avoid editable installs / live mounts** for remote execution: they reintroduce “runs whatever happens to be there”.
-
-Note: packaging is only a determinism risk when it’s *location-based* (e.g. editable installs, pulling from a mutable branch, copying a repo). Packaging can be fully deterministic when the installed artifact is immutable and content-identified.
-
-### Don’t: assume the remote has your local files
+- **Not reproducible**: the server runs whatever happens to be there.
+- **Breaks identity**: "same code" must mean the same bytes; ad-hoc copies drift silently.
+- **Brittle**: out-of-band deployment, hard to audit, easy to mismatch across workers.
+- **Security**: pushing arbitrary code to servers is often not acceptable.
 
 Do instead:
-- Treat large inputs as artifacts identified by checksums/immutable IDs and only materialize where execution happens.
-- Make file mappings explicit (what is an input file vs a literal string argument).
+
+- **Bind code by content**: embed project modules in the transformation (`tf.modules`), or install an **immutable** artifact (wheel or image identified by version and hash).
+- **Pin environments** when determinism matters: a locked conda env or an image digest (`name@sha256:...`).
+- **No editable installs or live mounts** on workers.
+
+### Don't: assume `tf.environment` moves a Python step into an environment
+
+For the default in-memory Python backend, `set_conda_env(name)` only checks that the worker process already is in that conda environment, and `set_docker(...)` makes the run fail. Only bash steps and CLI backends (`tf.metavars.BACKEND = "cli"`) enter a conda environment or a container. The environment must already exist on the executing host: Seamless does not build conda environments or images.
+
+### Don't: assume the remote has your local files
+
+Treat large inputs as artifacts identified by checksum and materialized where execution happens (`seamless-upload`, then pass the checksum). Make file mappings explicit (input file versus literal string).
+
+### Don't: rely on a fallback
+
+Once a jobserver or daskserver is configured and fails, Seamless does not silently run the work locally. Diagnose the service (`seamless-remote-debugging` skill).
+
+### Don't: treat a cache hit as a successful remote test
+
+A remote run that hits the cache executed nothing. To test that a step works on a clean worker, clear the relevant cache or use a fresh project/stage.

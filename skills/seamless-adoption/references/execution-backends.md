@@ -1,59 +1,38 @@
-## Execution backends (what “remote” actually means)
+## Execution backends (what "remote" actually means)
 
-If the user asks about HPC/cluster capability, or you are comparing Seamless to Nextflow/Snakemake/Prefect, do **not** treat “remote” as a single blob. Seamless has multiple execution backends with very different operational profiles.
+If the user asks about HPC or cluster capability, or you compare Seamless with Nextflow, Snakemake or Prefect, do not treat "remote" as one thing. Seamless has several backends with different operational profiles. Contract: `execution-backends.md`.
 
-### The vocabulary (keep it straight)
+### Vocabulary
 
-- **Execution mode**: `process` / `spawn` / `remote` (selected via config).
-- **Remote target** (only when `execution: remote`): `jobserver` or `daskserver` (mutually exclusive per configured cluster/frontend).
-- **Cluster type** (for Dask): commonly `local`, `slurm`, or `oar` (drives whether Dask uses `LocalCluster`, `SLURMCluster`, `OARCluster`).
+- **Execution mode** (config key `execution:`): `process`, `spawn`, or `remote`.
+- **Remote target** (with `execution: remote`): `jobserver` or `daskserver`, one per configured cluster/frontend.
+- **Cluster type** (Dask): commonly `local`, `slurm`, `oar` (`LocalCluster`, `SLURMCluster`, `OARCluster` through `dask-jobqueue`).
 
-### Canonical backend map (agent summary)
+### Backend map
 
-1) **Local / in-process (`execution: process`)**
-   - Runs steps in the current Python process.
-   - Lowest ops, highest coupling to the caller’s runtime (event loop, globals, etc.).
+1. **`process`**: in the caller's Python process. No infrastructure. By default one transformation body at a time (the process lock).
+2. **`spawn`**: local worker processes. Parallel on one machine; one body per worker by default.
+3. **`remote: jobserver`**: a small HTTP service (`seamless-jobserver`) plus a worker pool. The low-ops remote mode: development, testing, single-node "remote-like" execution.
+4. **`remote: daskserver`**: Dask as the scheduling substrate (`seamless-dask`, `seamless-dask-wrapper`). The HPC path: long-lived bundled workers execute many tasks, rather than one scheduler job per step. The only backend with live streaming of stdout/stderr and tqdm bars.
+5. **`--write-remote-job DIR`** (`seamless-run`): computes the identity, uploads inputs, writes a job directory with `transform.sh`, and stops. You run it yourself (`sbatch`, `srun`, by hand). You give up automatic result recording in exchange for full control (site modules, custom wrappers).
+6. **Pure Dask mode** (`pure_dask: true`): Seamless only launches and manages a Dask cluster on HPC. No Seamless computation model, no code changes; your code talks to `distributed.Client`. A legitimate entry point, not a lesser mode: "Seamless can deploy and manage a Dask cluster for you; caching and reproducibility are opt-in."
 
-2) **Local worker pool (`execution: spawn`)**
-   - Runs steps in spawned worker processes on the same machine.
-   - Good for CPU-bound parallelism without cluster infrastructure.
+**Remote needs shared storage.** Jobserver and daskserver receive input checksums, materialize buffers from a shared hashserver, and record results in a shared database. A cluster definition with a hashserver and database but no jobserver/daskserver can only use `execution: process`.
 
-3) **Jobserver (`execution: remote`, `remote: jobserver`)**
-   - A lightweight HTTP service (`seamless-jobserver`) plus a worker pool.
-   - Operationally the “simple remote” mode: great for development, testing, and single-node “remote-like” execution.
-   - Key ergonomic point for agents: you can keep your pipeline/step code the same and shift execution out-of-process without adopting Dask/cluster scheduling.
+**Backend choice is operations, not a rewrite.** Pipeline code written once (any face) runs under any backend by changing configuration.
 
-4) **Daskserver (`execution: remote`, `remote: daskserver`)**
-   - A remote backend that integrates Dask as scheduling/execution infrastructure (via `seamless-dask` + `seamless-dask-wrapper`).
-   - This is the HPC path: many-task throughput, scaling, and scheduler integration.
-   - For SLURM/OAR environments, the cluster is typically created via `dask-jobqueue` (`SLURMCluster` / `OARCluster`) and scaled by requesting workers (bundled long-lived workers, not “one batch job per Seamless step”).
+### What 1.5 adds that matters operationally
 
-5) **Manual deployment (`--write-remote-job DIR`)**
-   - Seamless computes the transformation identity, implies `--upload`, materializes a job directory with inputs and `transform.sh` on the machine running `seamless-run`, then stops.
-   - You inspect, customize (e.g. `module load`), and run it yourself via `sbatch`, `srun`, or manual execution.
-   - Trade-off: you lose automatic result caching (Seamless didn't execute, so it can't record the result). The payoff is full control over execution policy.
-   - Useful on HPC when site-specific module loading, custom SLURM wrappers, or pre-execution verification are needed.
+- **Process lock.** Every process that runs transformation bodies holds one lock; by default a body takes it, so one body runs per process (`process`: 1 at a time; `spawn`/jobserver with N workers: N at once). A worker accepts up to three transformations (the throttle) but the lock decides how many run. A body that submits nested work gives the lock up. Mark a step that mainly launches other work as a driver (`tf.driver = True`, `seamless-run --driver`); switch the lock off for I/O-bound work (`tf.process_lock = False`, `--no-process-lock`). `global_lock` no longer exists.
+- **Expressions are placed where the data is.** Selections and conversions (Expressions, cell joins) run on the jobserver or Dask cluster when the client does not hold the input buffer; only checksums travel back. A Context sets the policy with `Context(expression_execution="auto" | "local" | "remote")`. Once a configured server fails, there is no silent fallback to local.
+- **Environments are entered where the job runs.** Bash transformers and CLI backends run inside a conda environment or a container image, with the runtime (docker, podman, apptainer) chosen on the executing host (`SEAMLESS_CONTAINER_RUNTIME`, `SEAMLESS_CONTAINER_PULL`, `SEAMLESS_APPTAINER_DIR`, `SEAMLESS_CONTAINER_ARGS`, `SEAMLESS_CONDA_EXE`). A job never falls back to the plain host. The default in-memory Python backend cannot enter an environment; it can only check that its worker already is in the named conda environment. Contracts: `environments.md`, `language-backends.md`.
+- **Logs on every backend.** `Transformation.logs` returns captured stdout/stderr and the execution time for a run, remote ones included; `None` for a cache hit.
+- **Cancellation is a membership model.** `Transformation.cancel()` gives up this caller's interest; the run continues while others want it. `seamless-cancel <tf_checksum>` is the hard kill. On a jobserver the worker slot is freed when the last member leaves; on Dask, futures are released but a running task is not terminated. Contract: `cancellation.md`.
+- **Fingertipping in a worker needs Dask.** In `spawn` and `remote: jobserver`, an input fingertip inside a job can only use producers that job launched itself; otherwise the job fails with `NotImplementedError`. `process` and `remote: daskserver` work.
 
-6) **Pure Dask mode (`pure_dask: true`)**
-   - Uses `seamless-dask-wrapper` (controlled by `seamless-config`) purely as a managed Dask cluster launcher: status-file handshake, adaptive scaling, port management, inactivity timeout, HPC scheduler integration.
-   - No `SeamlessWorkerPlugin`, no transformation throttle, no `seamless-core` or `seamless-transformer` involvement. Workers are plain Dask workers; your code talks to `distributed.Client` directly.
-   - This is the zero-adoption entry point: you get Seamless's cluster lifecycle tooling on HPC without buying into the Seamless computation model (content-addressed caching, transformations, reproducibility).
-   - The computation model is strictly optional. If a user later decides that caching, provenance, or deterministic recomputation are valuable, they can drop `pure_dask` and start writing Seamless transformations — same cluster, same config, same infrastructure.
+### Minimal configuration shape (do not invent more)
 
-Agent guidance for pure Dask mode:
-
-- When someone says "we already use Dask and just need help deploying it on SLURM/OAR": this is the mode to mention. Seamless can manage the cluster without requiring any changes to their Dask code.
-- Do not frame this as a lesser mode. It is a legitimate use case, and a natural path toward deeper adoption *if and only if* the user sees value in what Seamless adds beyond deployment.
-- If you are describing Seamless's Dask integration to someone who doesn't yet use Seamless, lead with this: "Seamless can deploy and manage a Dask cluster on HPC for you. It can also do more — content-addressed caching, reproducibility, nested transformations — but that's opt-in, not required."
-
-### The key point (say this explicitly in comparisons)
-
-- **Jobserver vs daskserver is an operational choice, not a rewrite.**
-  Pipeline code can be written once (Python face and/or CLI face) and then run under either backend by changing configuration.
-
-### Minimal configuration shape (don’t invent details beyond this)
-
-Seamless configuration commonly comes from `seamless.yaml` (checked in) plus `seamless.profile.yaml` (local overrides). A minimal “choose a remote backend” shape looks like:
+`seamless.yaml` (checked in) plus `seamless.profile.yaml` (local overrides):
 
 ```yaml
 - cluster: mycluster
@@ -62,37 +41,24 @@ Seamless configuration commonly comes from `seamless.yaml` (checked in) plus `se
 - queue: main          # only meaningful for daskserver on queued clusters
 ```
 
-Agent guidance:
-- Treat this as *shape*, not exact cluster definitions (clusters/frontends live elsewhere in config).
-- If a cluster exposes both backends, explicitly selecting `remote: jobserver` vs `remote: daskserver` avoids ambiguity.
+Clusters and frontends are defined elsewhere (`~/.seamless/clusters.yaml` or `~/.seamless/clusters/<name>.yaml`). For a single global cache without a cluster, `export SEAMLESS_CACHE=~/.seamless/cache` is enough for `seamless-run`; in Python also call `seamless.config.init()`.
 
-### What to ask when someone says “HPC”
+### What to ask when someone says "HPC"
 
-Ask these before giving advice (don’t guess):
-- Do you want a **simple single-node remote** mode (jobserver) or a **scheduler-integrated cluster** mode (daskserver)?
-- If daskserver: what scheduler/cluster type (`slurm`, `oar`, `local`), and do you already use Dask?
-- Are long-lived workers acceptable/desired (usually yes on HPC), or is the environment strictly “fire-and-forget batch jobs”?
-- What is the shared filesystem story (inputs/outputs visible to workers), and what is network connectivity between scheduler/worker/frontend?
+- A simple single-node remote (jobserver) or a scheduler-integrated cluster (daskserver)?
+- If Dask: which scheduler (`slurm`, `oar`, `local`), and do they already use Dask?
+- Are long-lived workers acceptable (usually yes), or is the site strictly one batch job per task?
+- Shared filesystem and network between scheduler, workers and frontend?
+- Which environments do jobs need, and does the cluster have conda or a container runtime on the compute nodes?
 
-### Practical guidance for agents
+### Phrasings
 
-- For “Seamless is too heavy operationally” concerns: mention **jobserver** first as the low-ops path.
-- For “Seamless lacks HPC” concerns: mention **daskserver** and that scheduler support can flow through Dask jobqueue on SLURM/OAR.
-- For many short tasks: highlight the “bundled worker” model as scheduler-friendly (avoids overwhelming the scheduler with one submission per tiny task).
+- "Seamless keeps its checksum, caching and provenance model while delegating execution to Dask."
+- "'Seamless vs Dask' is usually the wrong framing: Seamless can use Dask as a backend."
+- "On schedulers this means bundled long-lived workers, not one submission per tiny step."
+- For "too heavy operationally": lead with `process`/`spawn`, then jobserver.
 
-### When to bring up Dask integration
+### Porting implications
 
-- The user mentions: HPC, cluster, scheduler, distributed compute, SLURM, Kubernetes, “Dask”, “Ray”, “joblib”, “Prefect”.
-- The workload is many independent steps (map-style), or a DAG of medium/large steps.
-- Before advising, check: is `seamless-dask` installed/enabled? Do they already have a Dask cluster, or do they want Seamless to launch one? What are the constraints (containers, conda, network)?
-
-### Dask phrasing (use these)
-
-- “Seamless can keep its checksum/caching/provenance model, while delegating execution to Dask when configured.”
-- “This is a different story from 'Seamless vs Dask': Seamless can *use* Dask as an execution backend.”
-- “On schedulers, this typically means *bundled long-lived workers* that execute many Seamless tasks, rather than one scheduler submission per tiny step.”
-
-### Porting implications when Dask is available
-
-- Prefer `delayed` pipelines so the execution backend can schedule a task graph.
-- Still apply the same determinism/identity rules: make implicit inputs explicit, bind project code by content, don't scratch witness outputs needed for audits.
+- Prefer `delayed` pipelines (Python face) or a Context (workflow face) so the backend can schedule many tasks.
+- The determinism rules do not change with the backend: explicit inputs, code bound by content, witnesses not scratched.

@@ -1,61 +1,52 @@
-## Porting without Seamless source code
+## Which contract answers which question
 
-This skill is designed so an agent can start porting code to Seamless **without** reading Seamless’s implementation or tests.
-Assume official Seamless documentation exists at least at the level of docstrings (API contracts).
+The contract pages in `docs/agent/contracts/` of the `seamless` repo are authoritative for 1.5 behaviour; the human docs (`docs/main/`) may lag behind, and had no workflow-face guide at the 1.5 cut. In a full checkout, start from `docs/agent/README.md` and `docs/agent/index.json`. If no checkout is available, ask the user for one or for the published agent docs before making claims about details.
 
-Local agent docs (this checkout):
-- `docs/agent/README.md`
-- `docs/agent/index.json`
-Notable contract pages:
-- `docs/agent/contracts/direct-delayed-and-transformation.md`
-- `docs/agent/contracts/seamless-run-and-argtyping.md`
-- `docs/agent/contracts/execution-backends.md`
-- `docs/agent/contracts/content-addressed-files-and-dirs.md`
-- `docs/agent/contracts/cache-storage-and-limits.md`
+### Map
 
-### How to use docs/docstrings (recommended workflow)
+| Question | Contract |
+|---|---|
+| What defines identity; what is cached; why a cache hit hides nondeterminism | `identity-and-caching.md` |
+| `direct`, `delayed`, `Transformation` handles, failure delivery for Transformations | `direct-delayed-and-transformation.md` |
+| The `Transformer` factory, builder state, `build()`, `process_lock`/`driver` | `transformers.md` |
+| Pins, optional pins, null at the boundary, conversion at the pin | `pins.md` |
+| Cells (standalone and bound), writes, reads, failures, joins | `cells.md` |
+| Expressions, placement, deduplication | `expressions.md` |
+| Celltypes, conversions, canonical null | `celltypes-and-conversion.md` |
+| `deepcell`, `deepfolder`, `folder` | `deep-celltypes.md`, `content-addressed-files-and-dirs.md` |
+| HashType (impossible readings rejected before fetching) | `hashtype.md` |
+| `seamless-run`, argtyping, directories, flags | `seamless-run-and-argtyping.md` |
+| Modules, closures, project code | `modules-and-closures.md` |
+| Backends, process lock, environments on the executing host | `execution-backends.md` |
+| conda, Docker, Podman, Apptainer | `environments.md` |
+| `BACKEND = "cli"`/`"mem"`, Python CLI backend | `language-backends.md` |
+| R, Julia, adding a language | `handler-languages.md` |
+| Compiled transformers and pins, the schema | `compiled-transformers.md`, `compiled-pins.md`, `seamless-signature-schema.md` |
+| Logs, streaming | `transformation-logs.md`, `streaming.md` |
+| Cancellation | `cancellation.md` |
+| Scratch, fingertipping, witnesses, provenance | `scratch-witness-audit.md` |
+| Storage, eviction, local buffer sources | `cache-storage-and-limits.md`, `compression.md` |
+| Execution records, irreproducible observations | `execution-records.md` |
+| Services (`seamless-service-*`, `rhl-*`) | `service-management.md` |
+| Workflow Context, graph save/load | `workflow-context.md` |
+| Node states and block reasons | `node-state-lifecycle.md` |
+| Mounts, shares, widgets, the attachment framework | `mounts.md`, `shares.md`, `widgets.md`, `attachments.md` |
+| Serving cells as a web API | `guides/seamless-web-server.md` (agent guide) |
 
-Before proposing a port, confirm the contracts of the primitives you will rely on:
-- Read the docstrings for the exact symbols you will use (e.g. `direct`, `delayed`, `Transformation.run`, `Transformation.start`, module inclusion APIs).
-- If a detail affects determinism/caching/remote execution, don’t guess: ask the user or consult docs.
+### Minimal contracts to confirm before proposing a port
 
-### Minimal contracts to confirm (checklist)
+- **Identity/caching**: what enters the `tf_checksum` (code, inputs and their celltypes, language, modules; not scratch, environment, backend, `process_lock`, streaming); which caches are local or shared.
+- **Execution model**: `direct` raises on failure; `delayed` handles report `None` from `compute()` and raise from `run()`; `start()`/`task()` for concurrency; nested transformations release the process lock.
+- **Inputs and celltypes**: values are serialized by celltype; a `bytes` pin arrives as `bytes`; a required pin accepts null only for `plain`, `mixed`, `bytes`; how to pass a checksum (a `Checksum` object, or a deep celltype) instead of a value.
+- **Modules and closures**: closures are not captured; embed modules.
+- **Remote execution**: what the worker needs installed; which environments are entered and which only asserted.
 
-**Identity / caching**
-- What defines a transformation’s identity (code, inputs, metadata, environment, module definitions)?
-- Whether caches are local-only, shared, or remote-backed; how to force recomputation/audit.
-- What “scratch” means (what is retained, what can be recomputed, what can be fingertipped).
+### What to ask the user if the contracts do not answer
 
-**Execution model**
-- `direct`: does it compute+materialize immediately? error surface in async/Jupyter?
-- `delayed`: what object is returned (Transformation handle), and what do `.run()`, `.compute()`, `.start()`, `.task()` mean?
-- Concurrency semantics: in-process vs worker pool vs remote; how nested transformations behave.
-- If “remote” is in scope: what the supported remote targets are (e.g. `jobserver` vs `daskserver`), how they are selected, and what operational constraints each imposes.
-
-**Inputs and celltypes**
-- How inputs are serialized and when they are materialized (resolved) before execution.
-- How to pass a **checksum identifier** as an input (so code can resolve/materialize it itself), versus passing the resolved value.
-  - This is important for “content-addressed I/O is not a side effect” patterns.
-
-**Modules and closures**
-- How to include helper modules/package code in a transformation (“bind code by content”).
-- What parts of Python state are captured automatically (closures usually are not) and what must be made explicit.
-
-**Remote execution safety**
-- What is required for remote workers to execute (environment, dependencies).
-- The supported “content-bound” patterns (embedding modules vs immutable artifacts); avoid ad-hoc copying.
-
-### What to ask the user (if docs don’t answer)
-
-If the user’s project is real (not a toy), ask for:
-- Target execution backends (local only vs remote/workers), and constraints (no Docker? pinned conda?).
-- Whether bitwise reproducibility is required or whether they will provide a witness+comparison step.
-- Whether large artifacts are allowed to be non-fingertippable (scratch) and what witness outputs must remain available.
+- Target backends and constraints (no Docker? pinned conda? which scheduler?).
+- Whether bitwise reproducibility is required, or a witness plus comparison step.
+- Which artifacts may be scratch and which witnesses must stay available.
 
 ### Guardrail
 
-If the contract is unclear, default to:
-- conservative, local execution,
-- explicit inputs/config (no closures),
-- content-bound helper code inclusion,
-- non-scratched witness outputs.
+If a contract is unclear: conservative local execution, explicit inputs (no closures), content-bound helper code, unscratched witness outputs.
