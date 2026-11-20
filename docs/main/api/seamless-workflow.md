@@ -102,123 +102,24 @@ Text/code, JSON scalar/plain, bytes, binary, and mixed celltypes are supported.
 directories, with per-leaf atomic replacement. `folder` mounts in `r`, `w` or
 `rw`; `deepfolder` is read-only (sensing) and may only be mounted with
 `mode="r"`. Directory trees are not replaced
-atomically. While a `w`/`rw` directory mount is mounted, the leaf files it
-delivered serve as local buffer sources, so an evicted leaf is read back from
-its file if the file still holds its bytes; this ends at unmount or close. Mounts follow a target symlink and preserve it; atomic file writes
+atomically. Mounts follow a target symlink and preserve it; atomic file writes
 break hardlink sharing. Cross-process exclusion and filesystem aliases such as
 hardlinks are not covered by the registry.
 
-Workflow graphs are written in format `0.6`, which stores mount and share
-specifications. Graphs in formats `0.2` through `0.5` continue to load; older
-`0.2`/`0.3` graphs require `target_celltype` to be absent or equal to
-`celltype`. Constant producers retain their input encoding as `value.celltype`.
-Loading a graph can write files or open share endpoints. For a graph of unknown
-origin, use `ctx.set_graph(graph, mounts=False, shares=False)` to validate and
-strip both kinds of attachment spec. Sensing cells cannot receive incoming
-edges; mounted celltypes cannot change. Unmount first. Standalone cells,
-sub-path projections, transformer pins and code handles cannot be mounted
-directly: mount a whole cell and connect it instead.
+Graphs retain mount specifications (format `0.4`). Legacy 0.2/0.3 graphs load
+only when `target_celltype` is absent or equals `celltype`; conflicting graphs
+raise `PathError`. Constant producers retain their input encoding as `value.celltype`. **Loading a graph can write
+files:** use `ctx.set_graph(graph, mounts=False)` for graphs of unknown origin.
+Sensing cells cannot receive incoming edges; mounted celltypes cannot change.
+Unmount first. Standalone cells, sub-path projections, transformer pins and code
+handles cannot be mounted directly: mount a whole cell and connect it instead.
 
-File mounts currently use polling and a bounded daemon I/O pool. Diagnostics
+The transport currently uses polling and a bounded daemon I/O pool. Diagnostics
 include `seamless_workflow.diagnostics.record_attachments(ctx)` and the
 controllable `attachments.manual.ManualDriver` for ordering tests.
 
 Set `SEAMLESS_MOUNT_NATIVE=1` before the first mount to enable Linux inotify hints
 alongside polling. Unsupported platforms and failed watches retain polling.
-
-## HTTP shares
-
-Share a whole Context cell to expose its served value over HTTP. Shares are
-read-only by default; writable shares accept external edits and must be on a
-cell with no incoming graph edge. Install `seamless-workflow[share]` to include
-the HTTP server dependency.
-
-```python
-from seamless_workflow import Cell, Context, shareserver
-
-shareserver.configure(host="127.0.0.1", port=0)  # before the first share
-with Context() as ctx:
-    ctx.input = Cell("int")
-    ctx.input.set(4)
-    ctx.input.share(readonly=False)
-
-    ctx.result = Cell("text")
-    ctx.result.set("ready")
-    ctx.result.share()  # readonly=True
-
-    print(ctx.input.share.url)
-```
-
-`share(path=None, readonly=True, *, mimetype=None, toplevel=False)` returns
-`None`; `del ctx.input.share` removes that URL. The default path follows the
-Context node path, and `ctx.shares.namespace` selects the Context's runtime URL
-prefix while it has no shares. A read-only share can serve a connected computed
-cell.
-
-One process-wide server serves every Context on one port, with REST and
-WebSockets on its own thread. It starts on the first share and remains until
-`seamless.close()`. The default bind is `0.0.0.0:5813`; configure it before the
-first share or set `SEAMLESS_SHARE_HOST` and `SEAMLESS_SHARE_PORT`. Use port `0`
-to request a free port and read the selected value from `shareserver.port`.
-
-The share URL supports GET and HEAD for the current canonical cell buffer and
-PUT for writes. Bodies are raw bytes, without a JSON envelope or base64. A
-writable PUT can include `?marker=<last-seen-marker>` for compare-and-set; a
-stale marker receives `409`, and an accepted response arrives after the cell has
-taken the value. A null value is `204`; a share with no value is `404`. GET
-resolves the already-served checksum and never recomputes the cell. The namespace WebSocket provides an initial full share snapshot and
-subsequent checksum/marker updates. `GET /openapi.json` describes active shares;
-`ctx.shares.openapi()` and `shareserver.openapi()` return the same descriptions
-in Python. The browser client is served at `/seamless-client.js` and connects
-with `connect_seamless()`:
-
-```javascript
-const remote = connect_seamless();
-remote.self.onsharelist = (keys) => {
-  if (!keys.includes("input")) return;
-  remote.input.onchange = () => render(remote.input.value);
-};
-function submit(value) {
-  if (remote.input) remote.input.set(value);
-}
-```
-
-Once a Context has shared a cell, `GET /<namespace>/state-graph` serves all of
-its named nodes and graph connections, with each node's state, block reason,
-exception and checksum. Snapshots can be up to half a second old. Set
-`remote.self.onstategraph = () => renderGraph(remote.self.stategraph)` to fetch
-and display snapshots when the namespace WebSocket announces a change. This
-exposes node paths and error text for the entire Context to anyone who can
-reach the server, including cells whose values are not shared.
-
-The client keeps the latest value while one PUT per key is in flight and
-refreshes after a stale-marker `409`.
-
-Without a hashserver, a shared cell waits for its buffer in the same way as a
-`w`-mounted cell (see the mounts section). After a cache hit whose buffer was evicted,
-the cell stays `waiting` while the Context fingertips the buffer. The share keeps
-serving its previous value under its marker, and the WebSocket announces the
-new value only when the buffer is back. A GET answers `503` for that value only
-if the fingertip failed.
-
-An archive download (`ctx.shares.add_download(cells, ...)`) is built from the
-listed cells' buffers when it is requested, and never computes. Without a
-hashserver, a listed cell waits for its buffer like a shared cell, and a
-download requested meanwhile answers `409` with the reason `waiting`. The leaf
-files of a downloaded `folder` cell are regenerated when the cell's value
-changes, but nothing keeps them afterwards: once they are evicted, the download
-answers `503`. To keep a folder downloadable, mount it with `mode="w"`; the
-written files then supply its leaves. Seamless does not add that mount for you.
-
-Share specifications are serialized with workflow graph format `0.6`. The
-default `ctx.set_graph(graph)` attaches them and can start the HTTP server;
-`ctx.set_graph(graph, shares=False)` validates then strips share specs. Use that
-with `mounts=False` for graphs from an unknown source.
-
-The server has no built-in authentication or TLS, and permits cross-origin
-requests. Its default wildcard bind makes shares reachable to hosts that can
-reach the machine; bind to `127.0.0.1` or place a reverse proxy in front when
-they should not be publicly reachable.
 
 For notebooks, install `seamless-workflow[jupyter]` and use the public widget
 helpers:

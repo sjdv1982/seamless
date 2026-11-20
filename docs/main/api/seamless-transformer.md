@@ -1,6 +1,6 @@
 # seamless-transformer
 
-`seamless-transformer` is the computation engine of the [Seamless](https://github.com/sjdv1982/seamless) framework. It takes a *transformation* — a pure-functional computation defined as a checksum-addressed dict of inputs, code, and language — and executes it, returning a result checksum. It supports Python and bash transformations, multi-process worker pools with shared-memory IPC, and integration with the Seamless caching and remote infrastructure.
+`seamless-transformer` is the computation engine of the [Seamless](https://github.com/sjdv1982/seamless) framework. It takes a *transformation* — a pure-functional computation defined as a checksum-addressed dict of inputs, code, and language — and executes it, returning a result checksum. It supports Python and bash transformations, compiled languages, handler languages such as R and Julia, multi-process worker pools with shared-memory IPC, and integration with the Seamless caching and remote infrastructure.
 
 ## Branch notes: `jupyter-sync` (sync API inside Jupyter)
 
@@ -42,7 +42,7 @@ The December attempt sent every in-process computation to one shared background 
 
 ### Caveats
 
-- **Keep construction lazy for the root transformation.** `construct()` starts and resolves upstream dependencies as needed to determine input checksums, but `_run_dependencies()` must not call `self.start()` for the root. Explicit execution through `start()`, `compute()`, or `run()` schedules root work. The loop wake-up in `_create_task_on_loop()` must remain enabled so tasks scheduled from another thread can run without a later wait. This keeps `construct()` and `is_cached()` from computing eagerly or issuing an extra database query.
+- **Don't wake the loop in `start()`.** A task created from another thread only runs once someone waits for it, and `construct()` relies on that to stay lazy: `_run_dependencies()` calls `self.start()`, which schedules the whole computation. When a wake-up was added, `construct()` started computing eagerly and `test_is_cached` failed with an extra database query. This behaviour exists on `cells-and-expressions` too.
 - **Blocking now happens inside any running loop.** Sync calls inside `asyncio.run()` scripts now block instead of raising. To keep that guard outside Jupyter, `_sync_task_loop()` could check `running_in_jupyter()`. The plain-asyncio behaviour is what allows testing without a kernel.
 - **Not tested:** the jobserver remote path, and nest_asyncio.
 - `tests/dask/dask_sync.jupyter.py` is a manual notebook check on Dask. Run it from `tests/dask` with `tests/manual/jupyter-wrapper`.
@@ -53,22 +53,8 @@ A **transformation** in Seamless is a deterministic computation: given the same 
 
 1. **Building** the transformation dict from the inputs and code, then computing its checksum (which serves as the transformation's identity for caching).
 2. **Building** the execution namespace: resolving input buffers, compiling modules, injecting dependencies.
-3. **Executing** the code — either Python (via `exec`) or bash (via subprocess with file-mapped pins).
+3. **Executing** the code — Python (via `exec`), bash (via subprocess with file-mapped pins), compiled code (via a native call), or a handler language such as R or Julia (via that language's handler, a Python function).
 4. **Returning** the result as a checksum, which can be cached and reused.
-
-## Public Transformer constructors
-
-The public constructors are `direct`, `delayed`, and the `Transformer` factory:
-
-```python
-from seamless.transformer import Transformer, direct, delayed
-
-python_builder = Transformer()
-bash_builder = Transformer("bash", direct=True)
-compiled_builder = Transformer("c", compiled=True)
-```
-
-The factory signature is `Transformer(language="python", compiled=False, direct=False)` and returns a code-less builder. `direct` and `delayed` accept Python functions (or clone an existing ordinary builder into the requested call mode); they do not accept a language argument. Concrete Python, Bash, and compiled implementation classes are not exported as constructors.
 
 ## Transformer construction
 
@@ -78,7 +64,7 @@ There are three canonical construction paths:
 - assigning a function to a workflow Context (`ctx.tf = function`) creates a bound Python Transformer;
 - `Transformer(language="python", compiled=False, direct=False)` creates a code-less configurable builder for any scenario.
 
-`direct` and `delayed` are Python-only and have no `language` argument. The factory accepts `"python"` or `"bash"` when `compiled=False`; when `compiled=True`, it forwards the language to the compiled implementation. Set `direct=True` for immediate call semantics.
+`direct` and `delayed` are Python-only and have no `language` argument. The factory accepts `"python"`, `"bash"` or a handler language (`"r"`, `"julia"`, or one you registered) when `compiled=False`; when `compiled=True`, it forwards the language to the compiled implementation. Set `direct=True` for immediate call semantics. `seamless_transformer.languages.available_languages()` lists every accepted language with its kind.
 
 ```python
 from seamless_transformer import Transformer
@@ -89,9 +75,14 @@ bash.code = "cat input > RESULT"
 c = Transformer("c", compiled=True)
 c.schema = "..."
 c.code = "..."
+
+r = Transformer("r", direct=True)
+r.code = "result <- a + b"
+r.pins.a = 2
+r.pins.b = 3
 ```
 
-Python and Bash builder languages are fixed and read-only. The factory is also available as `seamless.transformer.Transformer`; `seamless.workflow` exports `Transformer`, `Context`, and `Cell` together.
+A builder's language is fixed and read-only. The factory is also available as `seamless.transformer.Transformer`; `seamless.workflow` exports `Transformer`, `Context`, and `Cell` together.
 
 ## Transformer pins
 
@@ -170,7 +161,7 @@ In Python, for large batches of delayed transformations, use `parallel()` or `pa
 Installing `seamless-transformer` provides:
 
 | Command | Description |
-| --------- | ------------- |
+|---------|-------------|
 | `seamless-run` | The CLI face of Seamless: wrap a bash command or pipeline as a transformation, using file/directory argument names as pin names |
 | `seamless-upload` | Upload input files/directories to the buffer server and write `.CHECKSUM` sidecar files, staging inputs for `seamless-run` |
 | `seamless-download` | Fetch result files/directories from the buffer server using `.CHECKSUM` sidecar files produced by `seamless-run` |
@@ -184,7 +175,7 @@ Installing `seamless-transformer` provides:
 `seamless-run-transformation` executes an pre-constructed transformation. It
 takes a transformation checksum, resolves the transformation dict that checksum
 identifies, builds a synthetic `Transformation` object from that dict, and runs
-the normal `Transformation` lifecycle.
+the normal `Transformation` lifecycle. 
 
 The command prints the result checksum:
 
@@ -256,13 +247,12 @@ For this path, the producer must keep the transformation dict and its referenced
 buffers available to the run-transformation process. In practice, use the same configured
 project, hashserver, or `SEAMLESS_CACHE` for both processes, and persist the
 transformation identity buffer as shown above.
-
 ### Managing dependencies with `seamless-run`
 
 The canonical ways to declare inputs and execution hints that are not positional command arguments:
 
 | Flag | Description |
-| ------ | ------------- |
+|------|-------------|
 | `-i PATH` / `--input PATH` | Add a single file or directory as an explicit input (repeatable) |
 | `-I FILE` / `--input-file FILE` | Read input file paths (one per line) from `FILE`; each becomes an explicit input (repeatable) |
 | `--metafile FILE` | Read meta-variable definitions (`NAME=VALUE`, one per line) from `FILE` (repeatable). Same semantics as `--metavar`: variables are available as `$NAME` in the bash command but do **not** contribute to the transformation identity. Use for thread counts, verbosity, temp dirs, and other execution hints that should not invalidate the cache. |
@@ -290,6 +280,51 @@ pip install seamless-transformer[compiled]
 ```
 
 See `docs/agent/contracts/compiled-transformers.md` for the full behavioral contract.
+
+## Handler languages: R and Julia
+
+A *handler language* is a language whose code is run by a *handler*: a Python function that receives the code and the pins, runs the code in the other language, and returns the result. R (`"r"`) and Julia (`"julia"`) are built in.
+
+```python
+from seamless_transformer import Transformer
+
+tf = Transformer("julia", direct=True)
+tf.code = """
+function transform(a, b)
+    return a + b
+end
+"""
+tf.pins.a = 2
+tf.pins.b = 3
+tf()   # -> 5
+```
+
+- **The code is ordinary R or Julia.** Either it is a block in which each pin is a variable and the code assigns `result`, or it defines a top-level function `transform` whose arguments are the pins. Pins are declared through `tf.pins`, as for bash.
+- **Each language has two backends**, selected with `tf.metavars.BACKEND`. The default CLI backend starts an interpreter process per run (`"cli"`). The alternative embeds the interpreter in the Python process (`"mem"`), which avoids the start-up cost and keeps `transform` definitions between runs. These setting values are the same for R and Julia; `Rscript`, `julia`, `ryp` and `juliacall` are tool names, not backend values.
+- **Both backends of a language give the same result, bit for bit, when both succeed.** The backend and the handler are therefore not part of the transformation's identity: switching backend is a cache hit.
+- **An embedded interpreter needs the process lock.** A transformation with `process_lock = False` and an in-memory backend fails when it runs.
+- **The CLI backends honour the transformer environment.** They can run in a conda environment or Docker image; the image or environment must contain the runtime and required packages. Seamless installs neither R nor Julia.
+- **The CLI runner packages** are `jsonlite` for R, and the tracked `seamless/julia/Project.toml` plus `Manifest.toml` for Julia (`JSON` 1.10.0, `NPZ` 0.4.3). R's `RcppCNPy` is needed for NumPy arrays. The in-memory backends instead need `ryp` or `juliacall`; JuliaCall uses its own Julia project.
+- **R and Julia support deep celltypes.** Their checksum types can be passed through a `deepcell` pin or returned as a deep result member; see the [deep celltypes contract](https://github.com/sjdv1982/seamless/blob/main/seamless-transformer/../seamless/docs/agent/contracts/deep-celltypes.md).
+
+For concrete runtime installation steps, package setup, and a CLI smoke example,
+see the [R and Julia transformer guide](https://github.com/sjdv1982/seamless/blob/main/seamless-transformer/../seamless/docs/main/r-and-julia-transformers.md).
+
+The set of handler languages is open. A handler is one self-contained Python function, and its source travels with each transformation, so a worker process needs no registration:
+
+```python
+from seamless_transformer.languages import register_language_handler
+
+def my_handler(code, pins, filesystem, output_name, metavars):
+    import subprocess          # imports go inside the function
+    ...                        # run `code` on `pins`
+    return result
+
+register_language_handler("mylang", my_handler, metavars={"BACKEND": "cli"})
+tf = Transformer("mylang")
+```
+
+See `docs/agent/contracts/handler-languages.md` in the main seamless repository for the full behavioral contract: the handler's arguments, the value rules for pins and results, backend parity, and identity.
 
 ## Installation
 
