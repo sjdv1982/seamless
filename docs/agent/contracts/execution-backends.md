@@ -74,8 +74,12 @@ A transformation can name a conda environment or a Docker image. A CLI backend, 
 
 In `spawn` and `remote: jobserver`, a transformation runs in a worker process that cannot see its parent's fingertip candidates: neither the parent's reverse caches nor its database. A fingertip in such a worker tries only the producers that the worker itself launched (nested transformations). If those do not recover the buffer, it raises `NotImplementedError`, and the job fails with that error in its traceback. It does not report a `CacheMissError`, because the search was incomplete.
 
-- **What this blocks.** A transformation with `allow_input_fingertip` whose input buffer is absent (a `scratch` result, or an evicted one) fails in `spawn` and `remote: jobserver`, unless the worker launched the input's producer itself.
-- **What still works.** `process` (the fingertip runs in the caller's process, which holds the candidates) and `remote: daskserver` (the workers of a Dask worker can query the database).
+**In `spawn`, the parent recovers a transformation's direct inputs before dispatch.** When input fingertipping is enabled and Dask is not in use, the parent fingertips every input pin whose buffer is absent, before it hands the transformation to a worker. The worker then downloads the bytes from the parent over the local worker channel, as it does for any input. Pins that the worker reads from the file system are left alone. If the parent's fingertip fails, the transformation fails with that `CacheMissError` and its fingertip category; the worker never runs.
+
+- **What this still blocks.**
+  - In `remote: jobserver`: a transformation with `allow_input_fingertip` whose input buffer is absent (a `scratch` result, or an evicted one) fails, unless the worker launched the input's producer itself.
+  - In `spawn`: a buffer that is not a direct input but that the worker needs, such as a member of a `folder` or deep input whose index is present. The worker fingertips it itself, which raises `NotImplementedError` as above.
+- **What works.** `process` (the fingertip runs in the caller's process, which holds the candidates), the direct inputs in `spawn` (above), and `remote: daskserver` (the workers of a Dask worker can query the database).
 - **This is a limitation, not the contract.** The contract is that an input fingertip inside a job works on every backend (`contracts/scratch-witness-audit.md`, *Case 1*).
 
 ## The process lock

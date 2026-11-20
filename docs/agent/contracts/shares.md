@@ -2,7 +2,7 @@
 
 A **share** is the attachment whose external resource is an HTTP endpoint served by this process. The cell's value is read with GET, written with PUT when the share is writable, and every change is announced over a websocket. **The attachment contract of `contracts/attachments.md` applies in full** — direction, scope, slots, spec versus session, the sense and actuate disciplines, delivery pacing, the cut barrier and the lifecycle. This page specializes it for values served over HTTP. It does not restate a rule from that page; each section says where the share driver makes a generic rule concrete.
 
-The same server also serves **downloads**: archives of cell buffers, each at one URL of the namespace, built when they are requested (*Downloads*). A download is not an attachment; it belongs to the Context, not to a cell.
+The same server also serves **downloads**: archives of cell buffers, each at one URL of the namespace, built when they are requested (*Downloads*). A download is not an attachment; it belongs to the Context, not to a cell. Only in a Context without a hashserver does a listed cell count as attached, and only for the fingertip before an update (*Downloads*).
 
 Shares exist on the **workflow Context** only. A standalone `Cell` and a `direct`/`delayed` transformer have no HTTP integration. The `seamless-serve-graph` command loads workflow Contexts with their declared shares and downloads (*Serving saved graphs* below). **A share is unrelated to the `seamless-share` package**, which inspects and exports cached buffers and transformations.
 
@@ -239,6 +239,8 @@ url = ctx.shares.add_download(["title", "results/table"], format="zip")
 - **`ctx.shares.downloads`** is this Context's `{path: DownloadSpec}`.
 
 **For the namespace, URL conflicts, the server start, the state graph and the hold, a download counts as a share** (*Namespaces*, *URL space*, *The hold on close*).
+
+**Without a hashserver, a cell that a download lists does not take a checksum whose buffer is missing**, as for a shared cell (`contracts/workflow-context.md`, *A Context without a hashserver*). The cell is `waiting` while the Context fingertips the buffer, and a GET answers `409` with the reason `waiting` meanwhile. For a `folder` cell the fingertip also regenerates missing leaves. Nothing keeps those leaves afterwards: once they are evicted, a GET answers `503`. **A `w` file mount on the folder keeps it downloadable**, because its written files are a local buffer source for the leaves. The user adds that mount; the Context does not.
 
 ### The download GET
 

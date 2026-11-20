@@ -69,8 +69,11 @@ evicted when its temporary reference expires. A cell can then receive a
 checksum whose buffer is gone, typically by a cache hit after an input went
 X → Y → X. A cell with a `w` mount does not take such a checksum at once: it
 stays `waiting` while the Context fingertips the buffer, reading it back from a
-local buffer source or recomputing it. The file is written after that. Every
-transformation that such a Context runs also fingertips missing inputs.
+local buffer source or recomputing it. The file is written after that. For a
+`folder` cell, a missing leaf counts too: if any leaf is gone, the Context runs
+the folder's producer again to regenerate it, even when the folder's index is
+still in memory. Every transformation that such a Context runs also fingertips
+missing inputs.
 
 `ctx.compute()` waits only for graph work. Call `ctx.mounts.sync()` before
 reading mounted outputs externally, or `await ctx.mounts.synchronization()` in
@@ -197,6 +200,15 @@ the cell stays `waiting` while the Context fingertips the buffer. The share keep
 serving its previous value under its marker, and the WebSocket announces the
 new value only when the buffer is back. A GET answers `503` for that value only
 if the fingertip failed.
+
+An archive download (`ctx.shares.add_download(cells, ...)`) is built from the
+listed cells' buffers when it is requested, and never computes. Without a
+hashserver, a listed cell waits for its buffer like a shared cell, and a
+download requested meanwhile answers `409` with the reason `waiting`. The leaf
+files of a downloaded `folder` cell are regenerated when the cell's value
+changes, but nothing keeps them afterwards: once they are evicted, the download
+answers `503`. To keep a folder downloadable, mount it with `mode="w"`; the
+written files then supply its leaves. Seamless does not add that mount for you.
 
 Share specifications are serialized with workflow graph format `0.6`. The
 default `ctx.set_graph(graph)` attaches them and can start the HTTP server;
