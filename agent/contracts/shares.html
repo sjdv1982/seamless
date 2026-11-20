@@ -236,7 +236,7 @@
               
                 <h1 id="http-shares-contract">HTTP shares (Contract)</h1>
 <p>A <strong>share</strong> is the attachment whose external resource is an HTTP endpoint served by this process. The cell's value is read with GET, written with PUT when the share is writable, and every change is announced over a websocket. <strong>The attachment contract of <code>contracts/attachments.md</code> applies in full</strong> — direction, scope, slots, spec versus session, the sense and actuate disciplines, delivery pacing, the cut barrier and the lifecycle. This page specializes it for values served over HTTP. It does not restate a rule from that page; each section says where the share driver makes a generic rule concrete.</p>
-<p>The same server also serves <strong>downloads</strong>: archives of cell buffers, each at one URL of the namespace, built when they are requested (<em>Downloads</em>). A download is not an attachment; it belongs to the Context, not to a cell.</p>
+<p>The same server also serves <strong>downloads</strong>: archives of cell buffers, each at one URL of the namespace, built when they are requested (<em>Downloads</em>). A download is not an attachment; it belongs to the Context, not to a cell. Only in a Context without a hashserver does a listed cell count as attached, and only for the fingertip before an update (<em>Downloads</em>).</p>
 <p>Shares exist on the <strong>workflow Context</strong> only. A standalone <code>Cell</code> and a <code>direct</code>/<code>delayed</code> transformer have no HTTP integration. The <code>seamless-serve-graph</code> command loads workflow Contexts with their declared shares and downloads (<em>Serving saved graphs</em> below). <strong>A share is unrelated to the <code>seamless-share</code> package</strong>, which inspects and exports cached buffers and transformations.</p>
 <p>Code locations:</p>
 <table>
@@ -622,6 +622,7 @@ ctx.set_graph(graph, shares=True)
 <li><strong><code>ctx.shares.downloads</code></strong> is this Context's <code>{path: DownloadSpec}</code>.</li>
 </ul>
 <p><strong>For the namespace, URL conflicts, the server start, the state graph and the hold, a download counts as a share</strong> (<em>Namespaces</em>, <em>URL space</em>, <em>The hold on close</em>).</p>
+<p><strong>Without a hashserver, a cell that a download lists does not take a checksum whose buffer is missing</strong>, as for a shared cell (<code>contracts/workflow-context.md</code>, <em>A Context without a hashserver</em>). The cell is <code>waiting</code> while the Context fingertips the buffer, and a GET answers <code>409</code> with the reason <code>waiting</code> meanwhile. For a <code>folder</code> cell the fingertip also regenerates missing leaves. Nothing keeps those leaves afterwards: once they are evicted, a GET answers <code>503</code>. <strong>A <code>w</code> file mount on the folder keeps it downloadable</strong>, because its written files are a local buffer source for the leaves. The user adds that mount; the Context does not.</p>
 <h3 id="the-download-get">The download GET</h3>
 <p><strong>A GET takes one consistent cut of the cells, then resolves and packs their buffers.</strong></p>
 <ol>

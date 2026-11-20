@@ -299,12 +299,16 @@ that buffer is then kept only by a tempref, and it is evicted once the tempref
 expires. Back at X, the transformer hits its cache: the result checksum for X
 is known, but its bytes are gone.</p>
 <p><strong>Without a hashserver, the Context fixes this for you.</strong> A cell with a share,
-a <code>w</code> file mount or a widget does not take a checksum whose buffer is not in memory.
+a <code>w</code> file mount or a widget, or a cell that an archive download lists, does not
+take a checksum whose buffer is not in memory.
 The cell stays <code>waiting</code> while the Context fingertips the buffer: it reads it
 back from a local buffer source, or else recomputes it in this process.
 Meanwhile, the share keeps serving the Y result under its marker, the websocket
 sends nothing, the mounted file is not written, and <code>ctx.c.checksum</code> is <code>None</code>.
-Then the X result is served and announced as one ordinary update. Every
+Then the X result is served and announced as one ordinary update. For a
+<code>folder</code> cell, a missing leaf counts too: the Context runs the folder's
+producer again to regenerate it, even when the folder's index is still in
+memory. Every
 transformer the Context runs also fingertips missing inputs, so the cells
 downstream of a cell that has no share recover too.
 <a href="../contracts/workflow-context.html#a-context-without-a-hashserver">A Context without a hashserver</a></p>
@@ -315,7 +319,8 @@ downstream of a cell that has no share recover too.
 <li><strong>The page may see a delay</strong>, not an error. The cell's <code>waiting</code> state is in
   <code>/&lt;ns&gt;/state-graph</code>, so a page can show progress while it waits.</li>
 <li><strong>A GET still never computes.</strong> It answers <code>503</code> only if the fingertip
-  failed, for example because the producer is not reproducible.</li>
+  failed, for example because the producer is not reproducible. A download
+  requested while a listed cell is <code>waiting</code> answers <code>409</code>.</li>
 <li><strong>Only a change of the cell's checksum is covered.</strong> Sharing a cell that is
   already complete, but whose buffer has expired, triggers no fingertip, so
   that share answers <code>503</code>. Share the cell before its value matters, as
@@ -328,7 +333,12 @@ downstream of a cell that has no share recover too.
 <p>Direct shares accept a fixed set of celltypes that excludes <code>folder</code>,
 <code>deepfolder</code> and <code>deepcell</code>. To serve directory contents, share derived
 <code>plain</code> or <code>bytes</code> cells, or include a <code>folder</code> cell in a separate archive
-download. Archive downloads also resolve existing buffers.
+download. Archive downloads also resolve existing buffers, and never compute.
+Without a hashserver, nothing keeps a downloaded folder's leaf files: they are
+regenerated when the folder's value changes, but once they are evicted, the
+download answers <code>503</code>. To keep a folder downloadable, mount it with
+<code>ctx.f.mount(path, mode="w")</code>; the written files then supply its leaves.
+Seamless does not add that mount for you.
 <a href="../contracts/shares.html#shareable-celltypes">Shareable celltypes</a> · <a href="../contracts/shares.html#downloads">Downloads</a></p>
 <h2 id="development">Development</h2>
 <h3 id="two-processes">Two processes</h3>
