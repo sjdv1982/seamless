@@ -1,6 +1,6 @@
 # Seamless Agent Docs
 
-This is the docs tree for the new Seamless. Legacy Seamless (0.x) docs are served from `/legacy/`.
+This is the docs tree for the new Seamless.
 
 This folder is intended to hold **agent-consumable contracts** and generated API reference.
 
