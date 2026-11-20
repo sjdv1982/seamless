@@ -125,7 +125,7 @@ If any input has an entry, the node's state and label are the maximum entry unde
 | a literal producer, or an upstream that is `complete`, with no own work to do | **`complete`** |
 | a conversion, projection, validator or cell-level join that must run | **`waiting`** while the job is in flight, then `complete` |
 | that job fails | **`failed`**, with the error as `.exception` |
-| without a hashserver: a `w` file mount, a share or a widget hub on the cell, and a new checksum whose buffer is not in the buffer cache | **`waiting`** while the buffer is fingertipped, then `complete`, also when the fingertip fails (`contracts/workflow-context.md`, *A Context without a hashserver*) |
+| without a hashserver: a `w` file mount, a share or a widget hub on the cell, or a download that lists it, and a new checksum whose buffer is not in the buffer cache (for a `folder`, also a missing leaf) | **`waiting`** while the buffer is fingertipped, then `complete`, also when the fingertip fails (`contracts/workflow-context.md`, *A Context without a hashserver*) |
 | an upstream that is not `complete` | **`blocked`** or **`waiting`**, by the same mapping as for transformers (step 4) |
 
 - **A cell's own conversion failure is `failed`, not `blocked`.** This is the cell-level counterpart of a transformer's own failure: the work that failed was the cell's, so the exception is the cell's. Contrast the transformer *pin* case above, where a conversion into the pin celltype leaves the pin with no valid checksum, so the failure belongs to the pin and the transformer node is merely `blocked`.

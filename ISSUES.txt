@@ -1,0 +1,51 @@
+Seamless known issues
+=====================
+
+1. A w-mounted folder keeps its files in memory (code ahead of contract)
+------------------------------------------------------------------------
+Recorded: 2026-11-20
+Status: kept on purpose for now; the code and the contract disagree.
+
+What the code does
+  For a `folder` (or `deepfolder`) cell with a file mount, any observation whose
+  checksum equals the cell's current checksum takes `node-leaf` MountLeases on
+  every leaf. That includes the echo a `w` mount sees after writing its own
+  files. So the leaves of a w-mounted folder are claimed, and stay in memory,
+  as long as the node holds that index.
+  Code: seamless-workflow/seamless_workflow/attachments/runtime.py,
+  `AttachmentRuntime._mount_hold_leaves`, called from the attach path
+  (`if checksum == observation.checksum: ...`) and from `_mount_observed`
+  (`if node.current_checksum ... == observation.checksum: ...`).
+
+What the contract says
+  contracts/attachments.md, "Leaf retention, on the sense path only": only
+  leaves an attachment *sensed* are retained. "What a directory write mount has
+  written is a buffer source, not a retained leaf ... it holds no claim and
+  keeps nothing in memory." contracts/internal/checksum-reference-lifecycle.md
+  (only the top-level checksum of a folder is owned) names the mount sense path
+  as the one exception.
+
+Evidence
+  Probe on 2026-11-20 (scratch copy of
+  tests/test_share_downloads.py::test_registered_folder_download_keeps_and_releases_leaf_refs,
+  with the folder w-mounted and download refholds disabled): after forced
+  expiry, the leaf still had one refholder, a
+  `mount:<session>:node-leaf` MountLease. With `_mount_hold_leaves` disabled as
+  well, the leaf left memory and the download GET still answered 200, because
+  the leaf was read back from the mounted file (local buffer source).
+
+Consequence
+  The w mount keeps its folder's files twice: on disk and in memory. Without
+  this hold, the contract's buffer source on its own keeps downloads and
+  deliveries of a w-mounted folder working.
+
+To decide later
+  Either restrict `_mount_hold_leaves` to sensed values (drop it on the
+  write-echo path), or extend the contract to allow the in-memory hold for
+  write mounts.
+
+Related rulings (2026-11-20, no-hashserver Rule 2 for folders): download-listed
+cells count as attached; for a `folder` cell, Rule 2 forces the producer when a
+leaf is missing locally; to keep a downloaded folder downloadable without a
+hashserver, the user w-mounts it manually. See contracts/workflow-context.md,
+"A Context without a hashserver".

@@ -114,12 +114,16 @@ expires. Back at X, the transformer hits its cache: the result checksum for X
 is known, but its bytes are gone.
 
 **Without a hashserver, the Context fixes this for you.** A cell with a share,
-a `w` file mount or a widget does not take a checksum whose buffer is not in memory.
+a `w` file mount or a widget, or a cell that an archive download lists, does not
+take a checksum whose buffer is not in memory.
 The cell stays `waiting` while the Context fingertips the buffer: it reads it
 back from a local buffer source, or else recomputes it in this process.
 Meanwhile, the share keeps serving the Y result under its marker, the websocket
 sends nothing, the mounted file is not written, and `ctx.c.checksum` is `None`.
-Then the X result is served and announced as one ordinary update. Every
+Then the X result is served and announced as one ordinary update. For a
+`folder` cell, a missing leaf counts too: the Context runs the folder's
+producer again to regenerate it, even when the folder's index is still in
+memory. Every
 transformer the Context runs also fingertips missing inputs, so the cells
 downstream of a cell that has no share recover too.
 [A Context without a hashserver](../contracts/workflow-context.md#a-context-without-a-hashserver)
@@ -131,7 +135,8 @@ What this means for an application:
 - **The page may see a delay**, not an error. The cell's `waiting` state is in
   `/<ns>/state-graph`, so a page can show progress while it waits.
 - **A GET still never computes.** It answers `503` only if the fingertip
-  failed, for example because the producer is not reproducible.
+  failed, for example because the producer is not reproducible. A download
+  requested while a listed cell is `waiting` answers `409`.
 - **Only a change of the cell's checksum is covered.** Sharing a cell that is
   already complete, but whose buffer has expired, triggers no fingertip, so
   that share answers `503`. Share the cell before its value matters, as
@@ -144,7 +149,12 @@ What this means for an application:
 Direct shares accept a fixed set of celltypes that excludes `folder`,
 `deepfolder` and `deepcell`. To serve directory contents, share derived
 `plain` or `bytes` cells, or include a `folder` cell in a separate archive
-download. Archive downloads also resolve existing buffers.
+download. Archive downloads also resolve existing buffers, and never compute.
+Without a hashserver, nothing keeps a downloaded folder's leaf files: they are
+regenerated when the folder's value changes, but once they are evicted, the
+download answers `503`. To keep a folder downloadable, mount it with
+`ctx.f.mount(path, mode="w")`; the written files then supply its leaves.
+Seamless does not add that mount for you.
 [Shareable celltypes](../contracts/shares.md#shareable-celltypes) · [Downloads](../contracts/shares.md#downloads)
 
 ## Development
