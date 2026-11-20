@@ -62,6 +62,13 @@ def _iter_contract_pages() -> list[pathlib.Path]:
     return sorted(p for p in contracts_dir.glob("*.md") if p.is_file())
 
 
+def _iter_guide_pages() -> list[pathlib.Path]:
+    guides_dir = AGENT_DOCS / "guides"
+    if not guides_dir.exists():
+        return []
+    return sorted(p for p in guides_dir.glob("*.md") if p.is_file())
+
+
 def _format_args(args: ast.arguments) -> str:
     def _arg(a: ast.arg) -> str:
         return a.arg
@@ -281,6 +288,10 @@ def _build_index(
     # Topics: contracts
     contracts = _iter_contract_pages()
     index["topics"]["contracts"] = [str(p.relative_to(AGENT_DOCS)) for p in contracts]
+
+    # Topics: guides (non-normative how-to pages)
+    guides = _iter_guide_pages()
+    index["topics"]["guides"] = [str(p.relative_to(AGENT_DOCS)) for p in guides]
 
     # Topics: API pages
     index["topics"]["api_python"] = api_pages

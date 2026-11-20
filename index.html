@@ -197,8 +197,13 @@ today, or watch this space for updates.</p>
 </tr>
 <tr>
 <td><code>seamless-transformer</code></td>
-<td><code>from seamless.transformer import direct, delayed, parallel</code></td>
-<td><code>direct</code>, <code>delayed</code>, <code>parallel</code>, <code>parallel_async</code>, <code>TransformationList</code>, <code>seamless-run</code>, <code>seamless-upload</code>, <code>seamless-download</code></td>
+<td><code>from seamless.transformer import Transformer, direct, delayed</code></td>
+<td><code>Transformer</code>, <code>direct</code>, <code>delayed</code>, <code>parallel</code>, <code>parallel_async</code>, <code>TransformationList</code>, <code>seamless-run</code>, <code>seamless-upload</code>, <code>seamless-download</code></td>
+</tr>
+<tr>
+<td><code>seamless-workflow</code></td>
+<td><code>from seamless.workflow import Context, Cell, Transformer</code></td>
+<td>reactive workflow Contexts and their canonical Cell/Transformer handles</td>
 </tr>
 <tr>
 <td><code>seamless-config</code></td>
@@ -238,6 +243,7 @@ seamless-run 'seq 1 10 | tac &amp;&amp; sleep 5'    # cache hit — instant
 </ul>
 <p><strong>How-to guides</strong></p>
 <ul>
+<li><a href="r-and-julia-transformers.html">Running R and Julia transformers</a> — install the runtimes and packages for local CLI execution</li>
 <li><a href="caching.html">Caching, identity, and sharing</a> — what constitutes a cache key, <code>Checksum</code> and <code>Buffer</code>, <code>.CHECKSUM</code> sidecars, the <code>persistent</code> command</li>
 <li><a href="composition.html">Composition</a> — driver transformations, fan-out, <code>.modules</code> and <code>.globals</code></li>
 <li><a href="parallelism.html">Local parallelism</a> — <code>execution: spawn</code>, <code>spawn(N)</code>, <code>parallel()</code>, <code>TransformationList</code>, <code>seamless-queue</code></li>
@@ -309,5 +315,5 @@ seamless-run 'seq 1 10 | tac &amp;&amp; sleep 5'    # cache hit — instant
 
 <!--
 MkDocs version : 1.6.1
-Build Date UTC : 2026-10-05 12:58:00.899976+00:00
+Build Date UTC : 2026-11-20 23:45:20.250214+00:00
 -->

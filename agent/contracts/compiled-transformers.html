@@ -75,6 +75,14 @@
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="mounts.html">File Mounts</a>
                   </li>
+                  <li class="toctree-l1"><a class="reference internal" href="shares.html">HTTP Shares</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="widgets.html">Jupyter Widgets</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="streaming.html">Streaming</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="transformation-logs.html">Transformation Logs</a>
+                  </li>
                   <li class="toctree-l1"><a class="reference internal" href="cancellation.html">Cancellation</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="direct-delayed-and-transformation.html">direct/delayed/Transformation</a>
@@ -90,6 +98,8 @@
                   <li class="toctree-l1"><a class="reference internal" href="content-addressed-files-and-dirs.html">Content-addressed Files and Dirs</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="execution-backends.html">Execution Backends</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="environments.html">Environments</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="execution-records.html">Execution Records</a>
                   </li>
@@ -136,6 +146,10 @@
                   <li class="toctree-l1"><a class="reference internal" href="compiled-pins.html">Compiled Pins</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="seamless-signature-schema.html">seamless-signature Schema</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="handler-languages.html">Handler Languages</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="language-backends.html">Language Backends</a>
                   </li>
               </ul>
               <p class="caption"><span class="caption-text">API</span></p>
@@ -187,17 +201,18 @@
             <div class="section" itemprop="articleBody">
               
                 <h1 id="compiled-transformers-contract">Compiled Transformers (Contract)</h1>
-<p>This page defines the behavior an agent may rely on when working with compiled-language transformers in Seamless.</p>
+<p>This page defines the compiled-language additions to the common Transformer builder contract in <code>contracts/transformers.md</code>. It owns schemas, native code, compilation and marshalling; it does not redefine standalone versus bound builders or the Transformation snapshot boundary.</p>
 <h2 id="what-compiled-transformers-are">What compiled transformers are</h2>
-<p><code>CompiledTransformer</code> and <code>DirectCompiledTransformer</code> extend the same delayed/direct model as Python transformers, but execute <strong>compiled source code</strong> instead of a Python function. The compiled source must define a <code>transform()</code> function whose signature matches the C header generated from the schema (see <code>tf.header</code>). The schema is written in the seamless-signature YAML format.</p>
+<p><code>Transformer(language, compiled=True, direct=False)</code> and <code>Transformer(language, compiled=True, direct=True)</code> construct Transformer builders that execute <strong>compiled source code</strong> instead of a Python function. Their common builder, binding and build semantics are <code>contracts/transformers.md</code>. The compiled source must define a <code>transform()</code> function whose signature matches the C header generated from the schema (see <code>tf.header</code>). The schema is written in the seamless-signature YAML format.</p>
 <p>Built-in languages: <code>c</code>, <code>cpp</code>, <code>fortran</code>, <code>rust</code>. <strong>The set is open.</strong> Additional languages can be registered at runtime with <code>define_compiled_language()</code> (see "Custom language registration" below). Any language that compiles to a C-ABI-compatible <code>transform()</code> symbol is supported.</p>
 <p>Compiled transformers require the <code>compiled</code> optional-dependency group:</p>
 <pre><code class="language-sh">pip install seamless-transformer[compiled]
 # or: pip install cffi numpy seamless-signature
 </code></pre>
 <h2 id="delayed-vs-direct">Delayed vs direct</h2>
-<p><code>CompiledTransformer(language)</code> — calling returns a <code>Transformation</code> handle (delayed, same as <code>delayed</code> for Python).</p>
-<p><code>DirectCompiledTransformer(language)</code> — calling executes the build pipeline immediately and returns the value (same as <code>direct</code> for Python).</p>
+<p><code>Transformer(language, compiled=True)</code> — calling returns a <code>Transformation</code> handle (delayed, same as <code>delayed</code> for Python).</p>
+<p><code>Transformer(language, compiled=True, direct=True)</code> — calling executes the build pipeline immediately and returns the value (same as <code>direct</code> for Python).</p>
+<p>The distinction applies only to <code>__call__</code>. On both classes, <code>build()</code> and <code>transformation()</code> return an unexecuted <code>Transformation</code>, as specified in <code>contracts/transformers.md</code>.</p>
 <p>Both classes support all the same attributes (<code>schema</code>, <code>code</code>, <code>header</code>, <code>metavars</code>, <code>objects</code>, <code>compilation</code>, <code>environment</code>).</p>
 <h2 id="referential-transparency-constraint">Referential transparency constraint</h2>
 <p>A compiled transformer is a <strong>pure function of its declared inputs</strong> as far as the return value is concerned. This is the same constraint as for Python transformers, but without a sandbox to enforce it — the <code>.so</code> runs natively.</p>
@@ -210,16 +225,16 @@
 </ul>
 <p>Code like <code>load_model()</code> or <code>open_database_session()</code> <strong>cannot be wrapped</strong> as a compiled transformer — these create persistent state that subsequent calls depend on, violating the identity model.</p>
 <p><strong>Tolerated:</strong> side effects that do <em>not</em> affect the return value — logging, diagnostic output, writing dashboards. The runtime does not police these.</p>
+<p>Diagnostic output that native code writes to stdout or stderr is captured into the transformation's log when the call runs in a worker process. A worker process therefore runs one compiled call at a time. In <code>process</code> mode that output is not captured. See <code>contracts/transformation-logs.md</code>, <em>Compiled transformers</em>.</p>
 <p><strong>The runtime will not detect violations.</strong> The consequence is <strong>silently incorrect caching</strong>: the same inputs return a stale cached result instead of re-executing with the invisibly changed persistent state.</p>
 <h2 id="architecture">Architecture</h2>
-<p>Compiled transformers share a <code>TransformerCore</code> base with Python transformers. The distinction is in the mixin:</p>
+<p>Compiled transformers share the <code>TransformerCore</code> builder base with Python transformers. The common behavioral contract is <code>contracts/transformers.md</code>; the implementation distinction is in the mixin:</p>
 <ul>
 <li><code>TransformerCore</code> — shared state and <code>__call__</code> dispatch flow</li>
 <li><code>PythonMixin</code> — Python source, Python callable signature, sandbox execution</li>
 <li><code>CompiledMixin</code> — schema, compiled source, CFFI build pipeline</li>
 </ul>
-<p><code>CompiledTransformer</code> = <code>TransformerCore</code> + <code>CompiledMixin</code> (delayed).
-<code>DirectCompiledTransformer</code> = <code>TransformerCore</code> + <code>CompiledMixin</code> (direct).</p>
+<p>Both runtime implementations combine <code>TransformerCore</code> and <code>CompiledMixin</code>; the direct implementation additionally uses the same direct-call mixin as ordinary Transformers. These implementation classes are not public constructors.</p>
 <h2 id="c-as-the-abi-lingua-franca">C as the ABI lingua franca</h2>
 <p>Regardless of which compiled language a transformer uses, the interface is always expressed as a <strong>C header</strong>. Seamless uses C as the shared ABI between all compiled languages and Python:</p>
 <ul>
@@ -278,6 +293,7 @@ outputs:
 <li><code>result celltype = "deepcell"</code>: each dict value is individually checksum-addressed for independent caching. Use <code>tf.celltypes.result = "deepcell"</code> before calling.</li>
 <li>Any other celltype is rejected for multi-output schemas.</li>
 </ul>
+<p><strong>A deep result is an index, and reading it resolves nothing.</strong> The transformation's result <em>checksum</em> is the index's checksum, exactly as on the input side, and that is what a <code>Transformation</code> handle, a Cell, a pin and a direct call all receive; a caller that wants the bytes of a <code>folder</code> asks for them through <code>folder → mixed</code> and pays that cost explicitly. The transformer holds a reference on the index checksum only, never on the members. This includes the direct compiled transformer (<code>Transformer(..., compiled=True, direct=True)</code>): a <code>deepcell</code> result is returned as the validated index of <code>Checksum</code> objects, with no child resolved. See <code>contracts/deep-celltypes.md</code>, <em>The output side: a deep result is an index</em>.</p>
 <h2 id="input-type-rules">Input type rules</h2>
 <ul>
 <li><strong>Numeric scalar parameters</strong> admit values by <strong>kind and range, not by exact dtype</strong>: a JSON scalar (Python <code>int</code>, <code>float</code>, <code>bool</code>) or a zero-dimensional <code>binary</code> scalar of the matching kind, within the native range of the schema type. A zero-dimensional scalar's dtype is not compared with the schema dtype and its byte order plays no part.</li>
@@ -303,9 +319,9 @@ outputs:
 <h2 id="additional-compiled-objects">Additional compiled objects</h2>
 <p><code>tf.objects</code> is an <code>ObjectList</code> of <code>CompiledObject</code> instances. Each object has its own language (which may differ from the main transformer's language) and source code. Objects are compiled and linked alongside the main source.</p>
 <p>Example — C main with a Fortran helper:</p>
-<pre><code class="language-python">from seamless_transformer import DirectCompiledTransformer, CompiledObject
+<pre><code class="language-python">from seamless_transformer import CompiledObject, Transformer
 
-tf = DirectCompiledTransformer(&quot;c&quot;)
+tf = Transformer(&quot;c&quot;, compiled=True, direct=True)
 tf.schema = ...
 tf.code = main_c_code
 
@@ -333,21 +349,30 @@ define_compiled_language(
 )
 </code></pre>
 <h2 id="environment">Environment</h2>
-<p><code>tf.environment</code> is an <code>Environment</code> object that controls the execution environment of the transformation worker:</p>
+<p><code>tf.environment</code> is an <code>Environment</code> object. Every Transformer has one, and for a compiled transformer it offers less than for a bash transformer:</p>
 <ul>
-<li><code>set_conda_env("myenv")</code> — activate a named conda environment.</li>
-<li><code>set_conda(yaml_text)</code> — provide a full conda spec (YAML with <code>dependencies</code>).</li>
-<li><code>set_docker({"name": "image:tag"})</code> — run inside a Docker container.</li>
-<li><code>set_which(["gcc", "make"])</code> — assert that these binaries are on PATH.</li>
+<li><code>set_which(["gcc", "make"])</code> — assert that these binaries are on the <code>PATH</code> of the process that runs the transformation.</li>
+<li><code>set_conda(yaml_text)</code> — store a full conda spec (YAML with <code>dependencies</code>). It travels with the transformation, and execution does not act on it.</li>
+</ul>
+<p><strong>A compiled transformer cannot be wrapped in a conda environment or in a container.</strong> The compiled call runs inside the worker process, and that process cannot be wrapped. A compiled transformer has an in-memory backend only, and the rule of every in-memory backend holds (<code>contracts/language-backends.md</code>, <em>The in-memory rule</em>):</p>
+<ul>
+<li><code>set_conda_env("myenv")</code> is a <strong>requirement on the worker process</strong>. The transformation runs only when its process is already in exactly that conda environment: a name is compared with the process's <code>CONDA_DEFAULT_ENV</code>, and a specification that contains <code>/</code> is a path, compared with its <code>CONDA_PREFIX</code>. Otherwise the transformation fails when it runs, before the call.</li>
+<li><code>set_docker({"name": "image:tag"})</code> makes the transformation <strong>fail when it runs</strong>, before the call. The message names the language.</li>
+<li>Neither fails when the Transformation is built, and a result that is already recorded is returned without the check.</li>
+<li>A conda environment together with a Docker image is refused at dispatch, as for every language.</li>
+<li>A compiled transformer that needs other compilers or libraries gets them from the environment that its worker process runs in.</li>
 </ul>
 <p>These settings propagate to the worker as part of the transformation's <code>__env__</code> dunder, which is excluded from the cache key (execution-only, not determinant).</p>
 <hr />
 <h2 id="reference-map-load-only-as-needed">Reference Map (load only as needed)</h2>
 <ul>
+<li><code>contracts/transformers.md</code> — common Transformer builder, binding and snapshot semantics</li>
+<li><code>contracts/transformation-logs.md</code> — <code>.logs</code>, and how a compiled call's C-level stdout and stderr are captured</li>
 <li><code>contracts/seamless-signature-schema.md</code> — full schema YAML format, dtype tables, wildcard rules, shape constraints, and language-native derivation examples</li>
 <li><code>contracts/identity-and-caching.md</code> — load-bearing vs orthogonal key split, caching model, referential transparency</li>
 <li><code>contracts/pins.md</code> — the pin layer: reaching pins, the pin set, pin celltypes, optional pins and the null rules, and conversion at the pin boundary</li>
 <li><code>contracts/compiled-pins.md</code> — the compiled-pin contract: declarable pin celltypes per schema parameter, schema-bound <code>mixed</code>, scalar and character admission rules, validation stages and errors</li>
+<li><code>contracts/language-backends.md</code> — the in-memory rule that governs a compiled transformer's environment, and the CLI and in-memory kinds of language backend</li>
 </ul>
               
             </div>

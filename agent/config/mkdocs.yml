@@ -23,6 +23,10 @@ nav:
       - Node State Lifecycle: contracts/node-state-lifecycle.md
       - Attachments: contracts/attachments.md
       - File Mounts: contracts/mounts.md
+      - HTTP Shares: contracts/shares.md
+      - Jupyter Widgets: contracts/widgets.md
+      - Streaming: contracts/streaming.md
+      - Transformation Logs: contracts/transformation-logs.md
       - Cancellation: contracts/cancellation.md
       - direct/delayed/Transformation: contracts/direct-delayed-and-transformation.md
       - Modules and Closures: contracts/modules-and-closures.md
@@ -31,10 +35,12 @@ nav:
       - Cache Storage and Limits: contracts/cache-storage-and-limits.md
       - Content-addressed Files and Dirs: contracts/content-addressed-files-and-dirs.md
       - Execution Backends: contracts/execution-backends.md
+      - Environments: contracts/environments.md
       - Execution Records: contracts/execution-records.md
       - Service Management: contracts/service-management.md
       - Compression: contracts/compression.md
       - Compiled Transformers: contracts/compiled-transformers.md
       - seamless-signature Schema: contracts/seamless-signature-schema.md
+      - Handler Languages: contracts/handler-languages.md
+      - Language Backends: contracts/language-backends.md
   - API (generated): api/
-

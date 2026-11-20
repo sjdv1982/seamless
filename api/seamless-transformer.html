@@ -119,6 +119,8 @@
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#compiled-language-support">Compiled language support</a>
     </li>
+    <li class="toctree-l2"><a class="reference internal" href="#handler-languages-r-and-julia">Handler languages: R and Julia</a>
+    </li>
     <li class="toctree-l2"><a class="reference internal" href="#installation">Installation</a>
         <ul>
     <li class="toctree-l3"><a class="reference internal" href="#setting-up-seamless-mode">Setting up seamless-mode</a>
@@ -191,7 +193,7 @@
             <div class="section" itemprop="articleBody">
               
                 <h1 id="seamless-transformer">seamless-transformer</h1>
-<p><code>seamless-transformer</code> is the computation engine of the <a href="https://github.com/sjdv1982/seamless">Seamless</a> framework. It takes a <em>transformation</em> — a pure-functional computation defined as a checksum-addressed dict of inputs, code, and language — and executes it, returning a result checksum. It supports Python and bash transformations, multi-process worker pools with shared-memory IPC, and integration with the Seamless caching and remote infrastructure.</p>
+<p><code>seamless-transformer</code> is the computation engine of the <a href="https://github.com/sjdv1982/seamless">Seamless</a> framework. It takes a <em>transformation</em> — a pure-functional computation defined as a checksum-addressed dict of inputs, code, and language — and executes it, returning a result checksum. It supports Python and bash transformations, compiled languages, handler languages such as R and Julia, multi-process worker pools with shared-memory IPC, and integration with the Seamless caching and remote infrastructure.</p>
 <h2 id="branch-notes-jupyter-sync-sync-api-inside-jupyter">Branch notes: <code>jupyter-sync</code> (sync API inside Jupyter)</h2>
 <p>This branch lets the sync API (<code>func()</code> of a <code>@direct</code> transformer, <code>tf.run()</code>, <code>tf.compute()</code>) be used from a Jupyter cell, or from any thread whose own event loop is running. On <code>cells-and-expressions</code> (5162312) every sync entry point is refused there with "not supported within Jupyter". The branch was re-created from <code>cells-and-expressions</code>. It replaces the December 2025 attempt (91bec26, still on <code>origin/jupyter-sync</code>), which deadlocked <code>test_nested_transformations_multi.py</code>.</p>
 <h3 id="why-the-december-attempt-hung">Why the December attempt hung</h3>
@@ -239,7 +241,7 @@
 <ol>
 <li><strong>Building</strong> the transformation dict from the inputs and code, then computing its checksum (which serves as the transformation's identity for caching).</li>
 <li><strong>Building</strong> the execution namespace: resolving input buffers, compiling modules, injecting dependencies.</li>
-<li><strong>Executing</strong> the code — either Python (via <code>exec</code>) or bash (via subprocess with file-mapped pins).</li>
+<li><strong>Executing</strong> the code — Python (via <code>exec</code>), bash (via subprocess with file-mapped pins), compiled code (via a native call), or a handler language such as R or Julia (via that language's handler, a Python function).</li>
 <li><strong>Returning</strong> the result as a checksum, which can be cached and reused.</li>
 </ol>
 <h2 id="transformer-construction">Transformer construction</h2>
@@ -249,7 +251,7 @@
 <li>assigning a function to a workflow Context (<code>ctx.tf = function</code>) creates a bound Python Transformer;</li>
 <li><code>Transformer(language="python", compiled=False, direct=False)</code> creates a code-less configurable builder for any scenario.</li>
 </ul>
-<p><code>direct</code> and <code>delayed</code> are Python-only and have no <code>language</code> argument. The factory accepts <code>"python"</code> or <code>"bash"</code> when <code>compiled=False</code>; when <code>compiled=True</code>, it forwards the language to the compiled implementation. Set <code>direct=True</code> for immediate call semantics.</p>
+<p><code>direct</code> and <code>delayed</code> are Python-only and have no <code>language</code> argument. The factory accepts <code>"python"</code>, <code>"bash"</code> or a handler language (<code>"r"</code>, <code>"julia"</code>, or one you registered) when <code>compiled=False</code>; when <code>compiled=True</code>, it forwards the language to the compiled implementation. Set <code>direct=True</code> for immediate call semantics. <code>seamless_transformer.languages.available_languages()</code> lists every accepted language with its kind.</p>
 <pre><code class="language-python">from seamless_transformer import Transformer
 
 bash = Transformer(&quot;bash&quot;, direct=True)
@@ -258,8 +260,13 @@ bash.code = &quot;cat input &gt; RESULT&quot;
 c = Transformer(&quot;c&quot;, compiled=True)
 c.schema = &quot;...&quot;
 c.code = &quot;...&quot;
+
+r = Transformer(&quot;r&quot;, direct=True)
+r.code = &quot;result &lt;- a + b&quot;
+r.pins.a = 2
+r.pins.b = 3
 </code></pre>
-<p>Python and Bash builder languages are fixed and read-only. The factory is also available as <code>seamless.transformer.Transformer</code>; <code>seamless.workflow</code> exports <code>Transformer</code>, <code>Context</code>, and <code>Cell</code> together.</p>
+<p>A builder's language is fixed and read-only. The factory is also available as <code>seamless.transformer.Transformer</code>; <code>seamless.workflow</code> exports <code>Transformer</code>, <code>Context</code>, and <code>Cell</code> together.</p>
 <h2 id="transformer-pins">Transformer pins</h2>
 <p><code>tf.pins.x</code> (also <code>tf.args.x</code>) returns a fresh <code>Pin</code> handle in standalone and
 workflow-bound modes. An unset declared pin is an unwired Pin; undeclared names
@@ -375,8 +382,12 @@ the normal <code>Transformation</code> lifecycle. </p>
 <p>When the argument is a <code>*.CHECKSUM</code> file, the command automatically reads
 <code>dunder.json</code> from the same directory if it exists. You can override that with
 <code>--dunder PATH</code>. The dunder payload is merged into the execution envelope, while
-<code>--scratch</code>, <code>--fingertip</code>, <code>--direct-print</code>, and <code>--strict</code> are passed into the
+<code>--scratch</code>, <code>--fingertip</code>, <code>--streaming</code>, and <code>--strict</code> are passed into the
 synthetic <code>Transformation</code> execution path.</p>
+<p><code>--streaming</code> shows the transformation's stdout and stderr while it runs. It
+has an effect only with <code>remote: daskserver</code>. The streamed text is written to
+stderr, because stdout carries the result checksum. <code>seamless-run</code> has the same
+flag.</p>
 <p>There are two common producer paths.</p>
 <p>The standalone job-directory path is produced by <code>seamless-run --dry-run</code>:</p>
 <pre><code class="language-bash">seamless-run --dry-run --upload -j X 'sleep 10.48 &amp;&amp; echo 48'
@@ -449,23 +460,66 @@ transformation identity buffer as shown above.</p>
 <pre><code class="language-bash">pip install seamless-transformer[compiled]
 </code></pre>
 <p>See <code>docs/agent/contracts/compiled-transformers.md</code> for the full behavioral contract.</p>
+<h2 id="handler-languages-r-and-julia">Handler languages: R and Julia</h2>
+<p>A <em>handler language</em> is a language whose code is run by a <em>handler</em>: a Python function that receives the code and the pins, runs the code in the other language, and returns the result. R (<code>"r"</code>) and Julia (<code>"julia"</code>) are built in.</p>
+<pre><code class="language-python">from seamless_transformer import Transformer
+
+tf = Transformer(&quot;julia&quot;, direct=True)
+tf.code = &quot;&quot;&quot;
+function transform(a, b)
+    return a + b
+end
+&quot;&quot;&quot;
+tf.pins.a = 2
+tf.pins.b = 3
+tf()   # -&gt; 5
+</code></pre>
+<ul>
+<li><strong>The code is ordinary R or Julia.</strong> Either it is a block in which each pin is a variable and the code assigns <code>result</code>, or it defines a top-level function <code>transform</code> whose arguments are the pins. Pins are declared through <code>tf.pins</code>, as for bash.</li>
+<li><strong>Each language has two backends</strong>, selected with <code>tf.metavars.BACKEND</code>. The default CLI backend starts an interpreter process per run (<code>"cli"</code>). The alternative embeds the interpreter in the Python process (<code>"mem"</code>), which avoids the start-up cost and keeps <code>transform</code> definitions between runs. These setting values are the same for R and Julia; <code>Rscript</code>, <code>julia</code>, <code>ryp</code> and <code>juliacall</code> are tool names, not backend values.</li>
+<li><strong>Both backends of a language give the same result, bit for bit, when both succeed.</strong> The backend and the handler are therefore not part of the transformation's identity: switching backend is a cache hit.</li>
+<li><strong>An embedded interpreter needs the process lock.</strong> A transformation with <code>process_lock = False</code> and an in-memory backend fails when it runs.</li>
+<li><strong>The CLI backends honour the transformer environment.</strong> They can run in a conda environment or Docker image; the image or environment must contain the runtime and required packages. Seamless installs neither R nor Julia.</li>
+<li><strong>The CLI runner packages</strong> are <code>jsonlite</code> for R, and the tracked <code>seamless/julia/Project.toml</code> plus <code>Manifest.toml</code> for Julia (<code>JSON</code> 1.10.0, <code>NPZ</code> 0.4.3). R's <code>RcppCNPy</code> is needed for NumPy arrays. The in-memory backends instead need <code>ryp</code> or <code>juliacall</code>; JuliaCall uses its own Julia project.</li>
+<li><strong>R and Julia support deep celltypes.</strong> Their checksum types can be passed through a <code>deepcell</code> pin or returned as a deep result member; see the <a href="https://github.com/sjdv1982/seamless/blob/main/seamless-transformer/../seamless/docs/agent/contracts/deep-celltypes.md">deep celltypes contract</a>.</li>
+</ul>
+<p>For concrete runtime installation steps, package setup, and a CLI smoke example,
+see the <a href="https://github.com/sjdv1982/seamless/blob/main/seamless-transformer/../seamless/docs/main/r-and-julia-transformers.md">R and Julia transformer guide</a>.</p>
+<p>The set of handler languages is open. A handler is one self-contained Python function, and its source travels with each transformation, so a worker process needs no registration:</p>
+<pre><code class="language-python">from seamless_transformer.languages import register_language_handler
+
+def my_handler(code, pins, filesystem, output_name, metavars):
+    import subprocess          # imports go inside the function
+    ...                        # run `code` on `pins`
+    return result
+
+register_language_handler(&quot;mylang&quot;, my_handler, metavars={&quot;BACKEND&quot;: &quot;cli&quot;})
+tf = Transformer(&quot;mylang&quot;)
+</code></pre>
+<p>See <code>docs/agent/contracts/handler-languages.md</code> in the main seamless repository for the full behavioral contract: the handler's arguments, the value rules for pins and results, backend parity, and identity.</p>
 <h2 id="installation">Installation</h2>
 <pre><code class="language-bash">pip install seamless-transformer
 </code></pre>
 <h3 id="setting-up-seamless-mode">Setting up seamless-mode</h3>
-<p>After installing, <code>seamless-mode-bind.sh</code> is available on your <code>PATH</code>. Source it in your shell session to activate the <code>seamless-mode-on</code>, <code>seamless-mode-off</code>, <code>seamless-mode-toggle</code> commands and the <code>Ctrl-U U</code> hotkey.</p>
-<p><strong>Manual (any environment) — add to <code>~/.bashrc</code> or <code>~/.zshrc</code>:</strong></p>
-<pre><code class="language-bash">source $(which seamless-mode-bind.sh)
+<p>After installing, <code>seamless-mode-bind.sh</code> is available on your <code>PATH</code>. Source it in an interactive Bash session to register the <code>seamless-mode-on</code>, <code>seamless-mode-off</code>, <code>seamless-mode-toggle</code> commands and the <code>Ctrl-U U</code> hotkey.</p>
+<p><strong>Manual Bash setup — add to <code>~/.bashrc</code>:</strong></p>
+<pre><code class="language-bash">source &quot;$(command -v seamless-mode-bind.sh)&quot;
 </code></pre>
 <p><strong>Conda — auto-activate with the environment:</strong></p>
-<pre><code class="language-bash">cp $(which seamless-mode-bind.sh) $CONDA_PREFIX/etc/conda/activate.d/
+<p><code>seamless-suite</code> installs its Conda activation hook automatically. If you install only <code>seamless-transformer</code>, add the binding script to the active environment:</p>
+<pre><code class="language-bash">mkdir -p &quot;$CONDA_PREFIX/etc/conda/activate.d&quot;
+cp &quot;$(command -v seamless-mode-bind.sh)&quot; &quot;$CONDA_PREFIX/etc/conda/activate.d/&quot;
 </code></pre>
-<p><strong>venv / virtualenv — append to the environment's activate script:</strong></p>
-<pre><code class="language-bash">echo &quot;source $(which seamless-mode-bind.sh)&quot; &gt;&gt; $VIRTUAL_ENV/bin/activate
+<p><strong>venv, uv, Poetry, virtualenvwrapper, and other POSIX venvs — install a hook once:</strong></p>
+<pre><code class="language-bash">source .venv/bin/activate  # or activate your venv as usual
+seamless-mode-venv-hook install
 </code></pre>
-<p><strong>virtualenvwrapper — add to the environment's postactivate hook:</strong></p>
-<pre><code class="language-bash">echo &quot;source $(which seamless-mode-bind.sh)&quot; &gt;&gt; $VIRTUAL_ENV/bin/postactivate
+<p>Remove it with <code>seamless-mode-venv-hook remove</code>. The hook only binds in interactive Bash; it has no effect when the environment is activated by scripts or other shells. uv creates a standard <code>.venv</code>, so the same hook applies. Activate it with <code>source .venv/bin/activate</code> before installing the hook. <code>uv run</code> runs commands inside the environment but does not activate the calling shell.</p>
+<p><strong>Pixi — launch an interactive Bash in the Pixi environment:</strong></p>
+<pre><code class="language-bash">pixi add --pypi seamless-suite
+pixi run seamless-mode-shell
 </code></pre>
+<p><code>seamless-mode-shell</code> starts Bash with the Seamless bindings loaded. Pixi activation scripts configure task environments but do not source shell functions into an interactive parent shell. If you use <code>pixi shell</code> directly, run <code>source "$(command -v seamless-mode-bind.sh)"</code> inside that shell.</p>
               
             </div>
           </div><footer>

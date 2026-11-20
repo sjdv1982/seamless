@@ -75,6 +75,14 @@
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="mounts.html">File Mounts</a>
                   </li>
+                  <li class="toctree-l1"><a class="reference internal" href="shares.html">HTTP Shares</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="widgets.html">Jupyter Widgets</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="streaming.html">Streaming</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="transformation-logs.html">Transformation Logs</a>
+                  </li>
                   <li class="toctree-l1"><a class="reference internal" href="cancellation.html">Cancellation</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="direct-delayed-and-transformation.html">direct/delayed/Transformation</a>
@@ -91,7 +99,15 @@
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#argtyping-files-vs-values">Argtyping (files vs values)</a>
     </li>
+    <li class="toctree-l2"><a class="reference internal" href="#directory-arguments-and-result-targets">Directory arguments and result targets</a>
+    </li>
     <li class="toctree-l2"><a class="reference internal" href="#meta-variables-metavar">Meta variables (--metavar)</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#process-lock-flags-no-process-lock-driver">Process lock flags (--no-process-lock, --driver)</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#environment-flags-conda-docker">Environment flags (--conda, --docker)</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#the-first-word-of-a-command">The first word of a command</a>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#canonicalization">Canonicalization</a>
     </li>
@@ -109,6 +125,8 @@
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="execution-backends.html">Execution Backends</a>
                   </li>
+                  <li class="toctree-l1"><a class="reference internal" href="environments.html">Environments</a>
+                  </li>
                   <li class="toctree-l1"><a class="reference internal" href="execution-records.html">Execution Records</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="service-management.html">Service Management</a>
@@ -120,6 +138,10 @@
                   <li class="toctree-l1"><a class="reference internal" href="compiled-pins.html">Compiled Pins</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="seamless-signature-schema.html">seamless-signature Schema</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="handler-languages.html">Handler Languages</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="language-backends.html">Language Backends</a>
                   </li>
               </ul>
               <p class="caption"><span class="caption-text">API</span></p>
@@ -191,6 +213,15 @@
 <p>An agent should:
 - prefer explicit specification when guessing is ambiguous
 - avoid relying on CWD surprises; set/record workdir</p>
+<h2 id="directory-arguments-and-result-targets">Directory arguments and result targets</h2>
+<p>A directory argument and a set of result targets are both directories that <code>seamless-run</code> carries as <code>folder</code>, the celltype for a directory whose contents are meant to be materialized (<a href="deep-celltypes.html">Deep celltypes</a>, <em>In bash</em>).</p>
+<ul>
+<li><strong>A directory argument is a <code>folder</code> pin.</strong> The directory is uploaded, and the executing host writes it into the job directory from the index and its members, from whichever buffer source holds them. It does not matter whether that host sees the buffer directory of the submitting machine.</li>
+<li><strong>A result with result targets is a <code>folder</code> result.</strong> <code>RESULT</code> is a directory, and each file in it is a member that holds the file's bytes. The index and the downloaded files are as for any <code>folder</code> result.</li>
+<li><strong>Bash refuses <code>deepfolder</code> pins.</strong> Other backends receive checksum objects, not a materialized directory.</li>
+<li><strong>The celltypes are part of the transformation's identity</strong>, through <code>__format__</code> and <code>__output__</code>.</li>
+<li><strong><code>seamless-run</code> is bash.</strong> It has no handler languages, no Python transformers and no <code>BACKEND</code>. A command always runs as a CLI job (<a href="language-backends.html">Language backends</a>).</li>
+</ul>
 <h2 id="meta-variables-metavar">Meta variables (<code>--metavar</code>)</h2>
 <p><code>--metavar NAME=VALUE</code> injects a variable into the bash command environment
 without contributing to the transformation identity (cache key).</p>
@@ -204,6 +235,111 @@ thread counts, verbosity flags, temp dirs, debug toggles, and similar operationa
 parameters.</p>
 <p>Use <code>--var</code> for any value that is part of the computation logic and should
 invalidate the cache when it changes.</p>
+<h2 id="process-lock-flags-no-process-lock-driver">Process lock flags (<code>--no-process-lock</code>, <code>--driver</code>)</h2>
+<p>A command that <code>seamless-run</code> wraps is a bash transformation. By default its script runs while holding the lock of the process that executes it, so each worker process runs one script at a time (<code>contracts/execution-backends.md</code>, <em>The process lock</em>). Two flags change this. Neither changes the transformation checksum.</p>
+<table>
+<thead>
+<tr>
+<th>Flag</th>
+<th>Written to <code>__meta__</code></th>
+<th>Use it when</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>none</td>
+<td><code>process_lock: true</code>, <code>driver: false</code></td>
+<td>the default</td>
+</tr>
+<tr>
+<td><code>--no-process-lock</code></td>
+<td><code>process_lock: false</code>, <code>driver: false</code></td>
+<td>the command is safe to run next to other transformations in the same process, for example I/O-bound work</td>
+</tr>
+<tr>
+<td><code>--driver</code></td>
+<td><code>driver: true</code>, <code>process_lock: false</code></td>
+<td>the command mainly launches other transformations and waits for them</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li><strong><code>--driver</code> implies <code>--no-process-lock</code>.</strong></li>
+<li><strong>The flags set the same two values as the <code>process_lock</code> and <code>driver</code> properties of a Transformer.</strong> Their meaning, and the rule that both cannot be true, are in <code>contracts/transformers.md</code>, <em><code>process_lock</code> and <code>driver</code></em>.</li>
+<li><strong><code>seamless-run-transformation</code> has neither flag.</strong> It runs an existing transformation dict and does not rewrite its <code>__meta__</code>. The two values come from the dunder file. Without one the dict carries neither value, and the transformation takes the lock.</li>
+</ul>
+<p><strong>A command that calls <code>seamless-run</code> itself needs no flag.</strong> The outer script's environment contains <code>SEAMLESS_PROCESS_LOCK_NOTIFY</code>. The nested <code>seamless-run</code> uses it to tell the outer transformation that nested work is being submitted, and the outer transformation then gives up its lock, so that the nested job can run in the same worker process. <code>seamless-run --qsubmit</code> does the same. The nested command keeps its own defaults: it takes the lock of the process that runs it, and it is not a driver.</p>
+<p>One case does need a flag. The signal is a named pipe on the local filesystem, so it does not reach the outer transformation when the nested <code>seamless-run</code> runs over <code>ssh</code>, inside a container, or on a different filesystem. Declare such an outer command with <code>--driver</code> or <code>--no-process-lock</code>. Without the flag, the nested job can be dispatched to the process whose lock the outer script holds, and both then wait for each other without an error. A command that runs under <code>--docker</code> is inside a container. Under <code>--conda</code> the signal works as for a plain command.</p>
+<h2 id="environment-flags-conda-docker">Environment flags (<code>--conda</code>, <code>--docker</code>)</h2>
+<p>A command can run in a conda environment or in a container. <code>contracts/environments.md</code> is the contract. This section lists what is specific to <code>seamless-run</code>.</p>
+<table>
+<thead>
+<tr>
+<th>Flag</th>
+<th>Aliases</th>
+<th>The command runs</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>--conda ENV</code></td>
+<td><code>--conda-env</code>, <code>--conda-environment</code></td>
+<td>in the named conda environment, as under <code>conda run -n ENV</code>. A name that contains <code>/</code> is the path of an environment</td>
+</tr>
+<tr>
+<td><code>--docker IMAGE</code></td>
+<td><code>--docker-image</code></td>
+<td>in a container made from the Docker image. The container runtime of the executing host starts it: docker, podman or apptainer</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li><strong>The two flags together are refused</strong>, when the command is dispatched and not while the arguments are parsed. The command fails before anything is launched, and the message says to pick one. A command whose result is already cached returns it, and the flags are not looked at (<a href="language-backends.html">Language backends</a>, <em>The check happens at dispatch</em>).</li>
+<li><strong>Neither flag changes the transformation checksum.</strong> A result that is already cached is returned whatever the flag says, and nothing is launched.</li>
+<li><strong>The environment must exist where the command executes.</strong> That host needs the conda environment, or a container runtime and the image. By default no image is pulled.</li>
+<li><strong>A command with an environment never falls back to the plain host.</strong> It runs in the environment, or it fails.</li>
+<li><strong><code>--docker</code> sets the image name only.</strong> The other keys of the image spec, <code>gpus</code> and <code>shm_size</code>, are set on the Python face.</li>
+<li><strong>The flags change how the first word of the command is treated</strong> (<em>The first word of a command</em>).</li>
+<li><strong>With <code>--write-remote-job</code>, the job directory carries the environment</strong> (<em>Manual Remote Deployment Mode</em>).</li>
+</ul>
+<h2 id="the-first-word-of-a-command">The first word of a command</h2>
+<p>The first word of each command that <code>seamless-run</code> wraps names a program to run. Without <code>--conda</code> or <code>--docker</code>, <code>seamless-run</code> first checks whether the word names an existing local file. That file takes precedence over a same-named tool on the submitting machine's <code>PATH</code>. Only when no local file exists does it look the word up on that <code>PATH</code>:</p>
+<table>
+<thead>
+<tr>
+<th>The word is</th>
+<th>What <code>seamless-run</code> does</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>an existing local file</td>
+<td>It uploads the file as an input, and the command calls the uploaded copy</td>
+</tr>
+<tr>
+<td>no local file exists, and the tool is found in a standard directory whose path ends in <code>bin</code>, <code>sbin</code> or <code>usr</code></td>
+<td>It leaves the word as a name. The executing host resolves it</td>
+</tr>
+<tr>
+<td>no local file exists, and the tool is found elsewhere, such as <code>/usr/games/cowsay</code> or <code>~/tools/mytool</code></td>
+<td>It uploads the file as an input, and the command calls the uploaded copy</td>
+</tr>
+<tr>
+<td>no local file or host <code>PATH</code> entry is found</td>
+<td>It leaves the word as a name. A tool that exists only on the executing host therefore works</td>
+</tr>
+</tbody>
+</table>
+<p>With <code>--conda</code> or <code>--docker</code>, the submitting machine's <code>PATH</code> says nothing about the place where the command runs. <code>seamless-run</code> still gives an existing local file precedence and uploads it; it does not then check the host <code>PATH</code>:</p>
+<ul>
+<li><strong>If no local file exists, <code>seamless-run</code> does not look the word up.</strong> The word names a tool in the environment, even when the submitting machine has a tool of that name.</li>
+<li><strong>A local file is uploaded</strong>, as any argument that names an existing local file is. <code>seamless-run --docker IMAGE ./analyze.sh data.txt</code> uploads <code>analyze.sh</code> and <code>data.txt</code>, and runs the script inside the image.</li>
+<li><strong>A personal tool on the submitting machine's <code>PATH</code> must be given by its path</strong> to be uploaded.</li>
+</ul>
+<p>With or without an environment:</p>
+<ul>
+<li><strong><code>chmod +x</code> is applied to each command first word that was uploaded, and to no other.</strong> A word that stays a name is not touched, so a command whose tool is absent from the submitting machine does not fail on a <code>chmod</code>.</li>
+</ul>
 <h2 id="canonicalization">Canonicalization</h2>
 <p>For pipelines where parallelism only affects ordering:
 - canonicalize outputs (e.g. sort records) so “same meaning” becomes “same bytes”.
@@ -212,6 +348,7 @@ invalidate the cache when it changes.</p>
 <p><code>seamless-run</code> itself is just one command invocation; bulk concurrency happens when you schedule many transformations (Python face) or run many <code>seamless-run</code> invocations in parallel.</p>
 <p>Agent guidance:
 - Expect practical limits to come from worker pool sizing / OS process limits / filesystem throughput.
+- A worker process runs one command at a time by default, so a pool of N workers runs N commands at once. <code>--no-process-lock</code> lifts that limit for a command (<em>Process lock flags</em>).
 - For “many short tasks”, prefer a backend designed for high task throughput (e.g. Dask-backed execution) rather than naive “fork 1000 subprocesses locally”.
 - If two submissions resolve to the <strong>same</strong> <code>tf_checksum</code> while one is still running (e.g. running an existing checksum with different execution-only flags), the second does not start a second execution: by default it latches onto the running one and returns its result value. <code>seamless-run</code> has no flag to opt out of that; the opt-out is <code>--strict</code> on <code>seamless-run-transformation</code> (<code>strict_dunder=True</code> in Python), which instead fails when an active submission carries a different execution envelope, so the prior submission must finish or be canceled (<code>seamless-cancel &lt;tf_checksum&gt;</code>) first. See <code>contracts/identity-and-caching.md</code> for the full latch-on/<code>strict</code> contract.</p>
 <h2 id="remote-execution-guidance">Remote execution guidance</h2>
@@ -239,6 +376,19 @@ remote execution, typically on HPC systems.</p>
   result caching for that run.
 - The generated <code>transform.sh</code> is meant to be inspectable and runnable by the
   user under site-specific control.
+- <code>bash transform.sh</code>, run in the job directory, is the way to run the job.
+  The directory is exactly what Seamless would have executed: Seamless itself
+  runs a bash transformation as <code>bash transform.sh</code> in such a directory.
+- <code>transform.sh</code> sets every pin variable itself. It does not rely on the
+  environment variables of the process that wrote it.
+- With <code>--conda</code> or <code>--docker</code>, <code>transform.sh</code> is a launcher of one command,
+  and the script is <code>transform-inner.sh</code> next to it. The launcher enters the
+  conda environment or starts the container, and runs the script there.
+  <code>bash transform.sh</code> stays the way to run the job.
+- The launcher refers to the directory it is run from, so the directory can be
+  moved. A container launcher names the container runtime that was selected on
+  the host that wrote the directory. It is plain text, and can be edited for
+  another site (<code>contracts/environments.md</code>, <em>The job directory on disk</em>).
 - Re-running the same command should be expected to materialize the job
   directory again, because Seamless has not registered a completed execution.</p>
 <p>Agent guidance:

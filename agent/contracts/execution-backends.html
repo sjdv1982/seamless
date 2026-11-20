@@ -75,6 +75,14 @@
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="mounts.html">File Mounts</a>
                   </li>
+                  <li class="toctree-l1"><a class="reference internal" href="shares.html">HTTP Shares</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="widgets.html">Jupyter Widgets</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="streaming.html">Streaming</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="transformation-logs.html">Transformation Logs</a>
+                  </li>
                   <li class="toctree-l1"><a class="reference internal" href="cancellation.html">Cancellation</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="direct-delayed-and-transformation.html">direct/delayed/Transformation</a>
@@ -94,6 +102,30 @@
     <li class="toctree-l2"><a class="reference internal" href="#terms">Terms</a>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#backend-semantics-agent-assumptions">Backend semantics (agent assumptions)</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#output-and-logs-per-backend">Output and logs per backend</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#environments-are-entered-on-the-executing-host">Environments are entered on the executing host</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#current-limitation-fingertipping-in-a-worker-needs-dask">Current limitation: fingertipping in a worker needs Dask</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#the-process-lock">The process lock</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#nested-work-gives-the-lock-up">Nested work gives the lock up</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#drivers">Drivers</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#bash-bodies">Bash bodies</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#handler-languages-and-embedded-interpreters">Handler languages and embedded interpreters</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#concurrency-per-backend">Concurrency per backend</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#current-limitations-of-the-process-lock">Current limitations of the process lock</a>
+    </li>
+        </ul>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#expressions-are-placed-not-configured">Expressions are placed, not configured</a>
     </li>
@@ -107,6 +139,8 @@
     </li>
     </ul>
                   </li>
+                  <li class="toctree-l1"><a class="reference internal" href="environments.html">Environments</a>
+                  </li>
                   <li class="toctree-l1"><a class="reference internal" href="execution-records.html">Execution Records</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="service-management.html">Service Management</a>
@@ -118,6 +152,10 @@
                   <li class="toctree-l1"><a class="reference internal" href="compiled-pins.html">Compiled Pins</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="seamless-signature-schema.html">seamless-signature Schema</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="handler-languages.html">Handler Languages</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="language-backends.html">Language Backends</a>
                   </li>
               </ul>
               <p class="caption"><span class="caption-text">API</span></p>
@@ -180,22 +218,250 @@
 <h2 id="backend-semantics-agent-assumptions">Backend semantics (agent assumptions)</h2>
 <p>1) <strong><code>process</code></strong>
    - Runs in the caller’s Python process.
-   - No infrastructure required.</p>
+   - No infrastructure required.
+   - By default, one transformation runs its code at a time (<em>The process lock</em>).</p>
 <p>2) <strong><code>spawn</code></strong>
    - Runs in local spawned worker processes.
-   - Still “single machine”, but parallel.</p>
+   - Still “single machine”, but parallel: by default, one transformation runs its code at a time in each worker process.</p>
 <p>3) <strong><code>remote: jobserver</code></strong>
    - Uses a jobserver process plus a worker pool, reached over HTTP.
    - Intended as a low-ops remote mode (development/testing/single-node remote execution).</p>
 <p>4) <strong><code>remote: daskserver</code></strong>
    - Uses Dask as the execution/scheduling substrate.
    - Intended for HPC/distributed throughput; can integrate with schedulers (commonly via <code>dask-jobqueue</code> on SLURM/OAR).
-   - Operationally: typically long-lived/bundled workers execute many tasks (not one scheduler submission per Seamless step).</p>
+   - Operationally: typically long-lived/bundled workers execute many tasks (not one scheduler submission per Seamless step).
+   - Supports opt-in live stdout/stderr streaming per transformation; see
+     <a href="streaming.html">Streaming</a>.</p>
+<h3 id="output-and-logs-per-backend">Output and logs per backend</h3>
+<p>A transformation's stdout and stderr are captured on every backend. After a successful run they are in <code>Transformation.logs</code>, followed by the execution time. After a failure they are in the trailers of <code>.exception</code>. Backends differ in where the capture happens and in whether the output is also visible while the run is in flight:</p>
+<table>
+<thead>
+<tr>
+<th>Backend</th>
+<th>Streams in the success log</th>
+<th>Live output while the run is in flight</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>process</code></td>
+<td>captured by a tee in the caller's process</td>
+<td>on the caller's stdout and stderr</td>
+</tr>
+<tr>
+<td><code>spawn</code></td>
+<td>captured in the worker child</td>
+<td>none</td>
+</tr>
+<tr>
+<td><code>remote: jobserver</code></td>
+<td>captured in the worker child, returned in the jobserver's response</td>
+<td>none</td>
+</tr>
+<tr>
+<td><code>remote: daskserver</code></td>
+<td>captured in the worker child, returned to the client with the result</td>
+<td>only with <code>streaming</code></td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li><strong>Streaming is Dask-only.</strong> <code>process</code>, <code>spawn</code> and <code>remote: jobserver</code> ignore the flag (<code>contracts/streaming.md</code>).</li>
+<li><strong>A log exists only for a run that executed.</strong> A result that comes from a cache or from the database has no log, on any backend.</li>
+<li><strong>The execution time in the log is the dispatcher's measurement</strong>, the same number as <code>wall_time_seconds</code> in the execution record. It includes queueing, inter-process transfer and input resolution.</li>
+</ul>
+<p>The log's layout, its per-process store, what is and is not captured, and the rules for bash and compiled transformers are <code>contracts/transformation-logs.md</code>.</p>
+<h3 id="environments-are-entered-on-the-executing-host">Environments are entered on the executing host</h3>
+<p>A transformation can name a conda environment or a Docker image. A CLI backend, which is the bash transformer and the CLI backends of Python, R and Julia (<code>contracts/language-backends.md</code>), runs its script there (<code>contracts/environments.md</code>). The <strong>executing host</strong> is the machine on which the script runs. It enters the environment, so it must provide it.</p>
+<table>
+<thead>
+<tr>
+<th>Backend</th>
+<th>Executing host</th>
+<th>Its settings are read from</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>process</code>, <code>spawn</code></td>
+<td>the submitting machine</td>
+<td>the environment of the submitting process</td>
+</tr>
+<tr>
+<td><code>remote: jobserver</code></td>
+<td>the jobserver host</td>
+<td>the environment the jobserver was started in</td>
+</tr>
+<tr>
+<td><code>remote: daskserver</code></td>
+<td>the Dask worker nodes</td>
+<td>the queue's <code>job_script_prologue</code></td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li><strong>For a conda environment, the executing host needs that environment and a conda launcher.</strong></li>
+<li><strong>For a Docker image, the executing host needs a container runtime and the image.</strong> The runtime is docker, podman or apptainer. The host chooses it, by the setting <code>SEAMLESS_CONTAINER_RUNTIME</code> or else by detection. A transformation never names a runtime. By default no image is pulled.</li>
+<li><strong>Every backend behaves the same.</strong> The job is wrapped where it executes, and no backend does anything of its own for an environment. A host that cannot enter the environment fails the job. No backend falls back to running the script on the plain host.</li>
+<li><strong>A fingertip needs the environment where the buffer is wanted.</strong> A fingertip is never dispatched, so the process that asks for the buffer enters the environment itself (<code>contracts/scratch-witness-audit.md</code>, <em>Fingertipping</em>).</li>
+<li><strong>An in-memory backend is never wrapped.</strong> Its code runs inside the process that executes it: Python in memory, compiled transformations, and the in-memory backends of R, Julia and other handler languages. A Docker image on one is an error, on every backend. A conda environment is a requirement on that process, which must already be in exactly that environment (<code>contracts/language-backends.md</code>, <em>The in-memory rule</em>). The process is the one that the execution backend runs bodies in: the calling process in <code>process</code>, a worker process otherwise.</li>
+<li><strong>Required binaries are looked up where the code runs.</strong> For a CLI backend that is the executing host's environment or image, after it is entered, and for an in-memory backend the <code>PATH</code> of the executing process (<code>contracts/language-backends.md</code>, <em>Required binaries</em>).</li>
+<li><strong>A specification that could never work is refused when the transformation is dispatched</strong> on the submitting side: a conda environment together with a Docker image, and an unknown key of the image spec. It is checked again on the executing host before launch (<code>contracts/language-backends.md</code>, <em>The check happens at dispatch</em>).</li>
+<li><strong>The image spec's <code>gpus</code> does not place a job.</strong> It gives the container access to the GPUs of the host on which the job runs. Which host that is follows from the backend and the queue, as for any transformation.</li>
+</ul>
+<p><code>contracts/environments.md</code> has the settings, the failures and the limitations.</p>
+<h3 id="current-limitation-fingertipping-in-a-worker-needs-dask">Current limitation: fingertipping in a worker needs Dask</h3>
+<p>In <code>spawn</code> and <code>remote: jobserver</code>, a transformation runs in a worker process that cannot see its parent's fingertip candidates: neither the parent's reverse caches nor its database. A fingertip in such a worker tries only the producers that the worker itself launched (nested transformations). If those do not recover the buffer, it raises <code>NotImplementedError</code>, and the job fails with that error in its traceback. It does not report a <code>CacheMissError</code>, because the search was incomplete.</p>
+<ul>
+<li><strong>What this blocks.</strong> A transformation with <code>allow_input_fingertip</code> whose input buffer is absent (a <code>scratch</code> result, or an evicted one) fails in <code>spawn</code> and <code>remote: jobserver</code>, unless the worker launched the input's producer itself.</li>
+<li><strong>What still works.</strong> <code>process</code> (the fingertip runs in the caller's process, which holds the candidates) and <code>remote: daskserver</code> (the workers of a Dask worker can query the database).</li>
+<li><strong>This is a limitation, not the contract.</strong> The contract is that an input fingertip inside a job works on every backend (<code>contracts/scratch-witness-audit.md</code>, <em>Case 1</em>).</li>
+</ul>
+<h2 id="the-process-lock">The process lock</h2>
+<p>Two terms are used below. The <strong>body</strong> of a transformation is its user code: the Python function, the bash script or the compiled call. For a handler language such as R or Julia, the body is the call of the handler that runs the code (<code>contracts/handler-languages.md</code>). For Python under its CLI backend, the body is the run of the job. <strong>Nested work</strong> is a transformation whose execution is requested from inside a body.</p>
+<p><strong>Every process that runs bodies has one process lock, and by default a body runs while holding it.</strong> A transformation whose <code>process_lock</code> is true waits for the lock of the process it was placed in, runs its body while holding the lock, and releases the lock when the body ends. <code>process_lock</code> is true by default (<code>contracts/transformers.md</code>, <em><code>process_lock</code> and <code>driver</code></em>). Among such transformations, at most one body runs at a time in any one process. This holds on every backend, and for Python, bash, handler-language and compiled transformers alike.</p>
+<ul>
+<li><strong>The lock is held around the body only.</strong> Input resolution, module building and result serialization happen outside it. Several transformations in one process therefore download and upload at the same time.</li>
+<li><strong>The lock keeps holders apart, and nothing else.</strong> A body that does not hold the lock can run next to a holder in the same process. Three kinds of body do not hold it: a body with <code>process_lock</code> false, a driver (<em>Drivers</em>), and a body that gave the lock up (<em>Nested work gives the lock up</em>). Code outside any transformation, such as the script that submits work in <code>process</code> mode, never waits for the lock.</li>
+<li><strong>What the lock is for.</strong> It protects state that the bodies of one process share, such as the working directory, environment variables or a library that is not thread-safe, as long as every body there keeps the default. It also fixes how many bodies run at once: one per process (<em>Concurrency per backend</em>).</li>
+<li><strong>The lock is controlled by metadata only.</strong> There is no lock object for user code to take. The name <code>global_lock</code> is retired without an alias. Neither <code>seamless_transformer</code> nor <code>seamless.transformer</code> exports it, and reading it as an attribute of either module raises <code>AttributeError</code> with a message that points to <code>process_lock</code>. Code that took it inside a body declares <code>process_lock</code> on the transformer instead.</li>
+</ul>
+<h3 id="nested-work-gives-the-lock-up">Nested work gives the lock up</h3>
+<p><strong>A body that submits nested work gives up the lock at that moment, if it holds it, and never takes it again.</strong></p>
+<ul>
+<li><strong>It happens at submission</strong>, before it is known whether the nested result is cached. Whether a body keeps its lock therefore does not depend on the state of any cache.</li>
+<li><strong>The reason is that nested work can land in the submitter's own process.</strong> In <code>process</code> mode it always does. In a worker pool it does when the nested transformation is dispatched to the worker that submitted it, and when the pool is full, in which case the worker runs it itself. A parent that kept the lock would wait for a child that waits for the parent's lock.</li>
+<li><strong>Afterwards the body runs without the lock until it ends.</strong> That includes the code that follows the return of the nested results. A body has its process to itself only up to its first nested submission.</li>
+<li><strong>No declaration is needed.</strong> A transformation that keeps every default may submit nested work.</li>
+</ul>
+<p>These calls, made by a body, are nested submissions:</p>
+<table>
+<thead>
+<tr>
+<th>Call</th>
+<th>Kind</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>tr.start()</code></td>
+<td>scheduling</td>
+</tr>
+<tr>
+<td><code>tr.compute()</code>, <code>tr.run()</code>, a call of a direct Transformer</td>
+<td>synchronous execution</td>
+</tr>
+<tr>
+<td><code>await tr.computation()</code>, <code>tr.task()</code></td>
+<td>asynchronous execution</td>
+</tr>
+<tr>
+<td><code>parallel()</code>, <code>parallel_async()</code></td>
+<td>batches</td>
+</tr>
+<tr>
+<td>a fingertip that recomputes a transformation</td>
+<td>recovery of an absent buffer by running its producer again (<code>contracts/scratch-witness-audit.md</code>, <em>Fingertipping</em>)</td>
+</tr>
+</tbody>
+</table>
+<p>Building a Transformation without running it is not a submission. Neither is reading a handle: <code>status</code>, <code>exception</code>, <code>result_checksum</code>, <code>value</code>, <code>buffer</code>, <code>logs</code>.</p>
+<p><strong>The rule covers the body's own thread and the coroutines of its event loop.</strong> A submission from a thread that the body started itself is not attributed to the body, and the lock stays held. A workflow Context created inside a body is such a case, because a Context submits its nodes from its own controller thread. A body that submits in this way must have <code>process_lock</code> false, or be a driver. If it keeps the default, a nested transformation that lands in its process waits for the lock while the body waits for the transformation. The two then hang, and no error is raised.</p>
+<h3 id="drivers">Drivers</h3>
+<p>A <strong>driver</strong> is a transformation declared with <code>driver</code> true: its body mainly launches other transformations and waits for them.</p>
+<ul>
+<li><strong>A driver never takes the lock.</strong> Its body starts even while the lock of its process is held, and it runs next to whatever else runs there.</li>
+<li><strong>Its submissions are marked as coming from a driver.</strong> On <code>remote: daskserver</code>, a nested submission normally asks for permission before it goes to Dask. It can be made to wait, and it can be handed back to the submitter to run itself. This is the anti-deadlock routine described in <code>seamless-dask/anti-deadlock.txt</code>. A submission made by a driver's body skips the routine. So does the submission of a driver itself.</li>
+<li><strong>The mark is not inherited.</strong> A transformation launched by a driver is an ordinary transformation. It takes or leaves the lock according to its own settings, it is deduplicated as usual, and the nested work that it submits in turn asks for permission again.</li>
+</ul>
+<p><strong>Nested work from a CLI job</strong> gets what its configuration gives it:</p>
+<ul>
+<li><strong>A nested <code>seamless-run</code> finds its configuration</strong> from <code>SEAMLESS_CACHE</code>, or from <code>SEAMLESS_REMOTE_CLIENTS</code> together with the Dask scheduler, or else from a configuration file in its working directory. For a job, the working directory is the job directory, which holds none.</li>
+<li><strong>Only the Dask worker exports these variables.</strong> Under <code>remote: daskserver</code> a nested <code>seamless-run</code> from a bash job, and a nested transformation from a Python CLI job (<code>contracts/language-backends.md</code>, <em>Drivers and nested work</em>), therefore go to the same cluster and share its caches. On <code>process</code>, <code>spawn</code> and <code>remote: jobserver</code> nothing is exported. A nested <code>seamless-run</code> there fails for lack of a configuration, unless one of the variables is in the environment that the job inherits, and a nested call in a Python CLI job runs inside the job's own process, with no cache and no dispatch.</li>
+<li><strong>A submission from the job's own process skips the permission routine</strong>, because the process is neither a worker nor one that has spawned workers. The mark of a driver is not what decides it.</li>
+<li><strong>Inside a container nothing is exported and the nesting signal does not cross.</strong> Nested work from a containerized job is not supported.</li>
+</ul>
+<p>Declaring a driver is never needed for correctness, because an undeclared body gives the lock up at its first nested submission. The declaration matters in two cases: when the body should not wait for the lock at all, and on Dask, where it lifts the permission routine from the body's launches.</p>
+<h3 id="bash-bodies">Bash bodies</h3>
+<p><strong>What this section says of a bash body holds for the body of every CLI backend</strong>: the bash transformer, and the CLI backends of Python, R and Julia (<code>contracts/language-backends.md</code>). A job in any of them is a process of its own, started by the process that runs the transformation, and is signalled and torn down in the same way.</p>
+<ul>
+<li><strong>A bash transformation never changes the working directory of the process that runs it.</strong> The script runs in a job directory of its own, which is its working directory. The process keeps the working directory it had, so a relative path used by other code in that process keeps its meaning.</li>
+<li><strong>A bash body takes the lock like any other body</strong>, unless <code>process_lock</code> is false or the transformation is a driver. For <code>seamless-run</code> these are <code>--no-process-lock</code> and <code>--driver</code> (<code>contracts/seamless-run-and-argtyping.md</code>).</li>
+<li><strong>A bash body that holds the lock is told when its script submits nested work.</strong> The script's environment contains the variable <code>SEAMLESS_PROCESS_LOCK_NOTIFY</code>. A Seamless program that the script starts, such as <code>seamless-run</code>, uses the variable to signal the body when it first submits a transformation. The body then gives the lock up, as any body does. <code>seamless-run --qsubmit</code> signals as well. The script itself has nothing to do.</li>
+<li><strong>The nested command keeps its own defaults.</strong> It does not become a driver, and neither does the bash transformation whose script started it.</li>
+<li><strong>The variable is set only when the body holds the lock as its script starts.</strong> Otherwise the body removes it from the script's environment, so that a nested command never signals a process further up.</li>
+<li><strong>The signal works for as long as the script's process runs</strong>, also after the script has closed its stdout and stderr.</li>
+<li><strong>The signal is a named pipe on the local filesystem.</strong> The nested command must see the same filesystem as the body, and the signal does not cross <code>ssh</code> or a container boundary. A bash body that submits nested work through one of those must be declared a driver, or have <code>process_lock</code> false.</li>
+<li><strong>A bash body with an environment is a bash body like any other</strong> (<code>contracts/environments.md</code>). It takes the lock and holds it until its script ends, so a long container job occupies its process for that time. A script under a conda environment has the variable and is signalled as a plain script is. A script in a container made from the transformation's Docker image is behind a container boundary: the variable is not passed in, and the previous rule applies.</li>
+</ul>
+<h3 id="handler-languages-and-embedded-interpreters">Handler languages and embedded interpreters</h3>
+<p>A handler-language transformation runs R, Julia or another registered language through a handler. The R and the Julia handler each have two ways to run the code, which this section calls a CLI backend and an in-memory backend. Python has both as well: in memory by default, and as a CLI job with <code>BACKEND="cli"</code>. These are <strong>language backends</strong>, selected per Transformer, and they are independent of the execution backends of this page. <code>contracts/language-backends.md</code> specifies the two kinds and the Python CLI backend, and <code>contracts/handler-languages.md</code> the handler ones.</p>
+<ul>
+<li><strong>A CLI backend starts one interpreter process for each run</strong>, on the machinery of bash transformations. <em>Bash bodies</em> holds for it: the process keeps its working directory, and the body is told when the code starts a nested <code>seamless-run</code>. By default one such run is in flight per process. With <code>process_lock</code> false they run side by side, each in its own interpreter process.</li>
+<li><strong>An in-memory backend embeds the interpreter in the process that runs the body.</strong> That is the caller's process in <code>process</code> mode, and each worker process otherwise. A process has one embedded interpreter per language. It starts at its first use and lives until the process ends.</li>
+<li><strong>An in-memory backend of a handler language refuses to run without the lock.</strong> A transformation that has <code>process_lock</code> false fails when its body starts, and so does a driver. The message names the CLI backend as the alternative. A result that is already recorded is still returned, because nothing runs. Python and compiled bodies in memory have no such rule: they run without the lock when <code>process_lock</code> is false, as always.</li>
+<li><strong>The process lock is the only lock around an embedded interpreter.</strong> Among transformations that hold it, one body runs at a time in a process, so one transformation at a time uses the interpreter.</li>
+<li><strong>An in-memory body holds the lock from its start to its end.</strong> It cannot give the lock up: there is no nesting signal as for a bash body. Code that submits nested work, for example by running <code>seamless-run</code>, belongs under the CLI backend.</li>
+</ul>
+<p>Two facts about where bodies run matter to whoever writes a handler:</p>
+<ul>
+<li><strong>The lock gives exclusion, not a fixed thread.</strong> A body never runs on the main thread of its process, and successive bodies in one process run on different threads. In <code>process</code> mode the thread that ran one body may no longer exist when the next body runs. An interpreter that must always be called from the same thread gets that thread from <code>run_in_interpreter_thread</code> (<code>contracts/handler-languages.md</code>, <em>Threads, and <code>run_in_interpreter_thread</code></em>), not from the lock.</li>
+<li><strong>A body may hold Python's GIL for a long time.</strong> A worker pool checks each of its worker processes about once a second. A body that keeps the GIL, as a call into an embedded interpreter can, makes its worker miss the check, but a worker that is running a transformation is not restarted for that. It is restarted only when its process exits or its connection closes. This holds in <code>spawn</code> and in both remote modes.</li>
+</ul>
+<h3 id="concurrency-per-backend">Concurrency per backend</h3>
+<p>The lock is per process, so the number of bodies that run at once follows from the number of processes in which a backend runs bodies. A worker process accepts up to three transformations at once. That number is the transformation throttle. The lock then decides how many of their bodies run.</p>
+<table>
+<thead>
+<tr>
+<th>Backend</th>
+<th>Processes that run bodies</th>
+<th>Bodies at once when every transformation keeps the default</th>
+<th>Bodies at once with <code>process_lock</code> false</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>process</code></td>
+<td>the caller's process</td>
+<td>1</td>
+<td>not limited by the lock</td>
+</tr>
+<tr>
+<td><code>spawn</code> with N workers</td>
+<td>N worker processes</td>
+<td>N, one per worker</td>
+<td>up to 3 per worker, 3N in total</td>
+</tr>
+<tr>
+<td><code>remote: jobserver</code> with N workers</td>
+<td>N worker processes</td>
+<td>N, one per worker</td>
+<td>up to 3 per worker, 3N in total</td>
+</tr>
+<tr>
+<td><code>remote: daskserver</code></td>
+<td>the Seamless worker processes inside each Dask worker</td>
+<td>one per Seamless worker process</td>
+<td>up to the throttle per Seamless worker process</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li><strong>A transformation that waits for the lock occupies one of the slots of its worker while it waits.</strong></li>
+<li><strong>Bodies that do not hold the lock are not counted in the third column.</strong> A parent that gave the lock up keeps its slot in its worker while it waits for its nested work, and so does a driver, but neither holds the lock.</li>
+<li><strong>On <code>remote: daskserver</code>, the lock does not decide how many transformations a Dask worker accepts.</strong> Dask resources and the permission routine decide that (<code>seamless-dask/anti-deadlock.txt</code>).</li>
+<li><strong>The second column is also the number of embedded interpreters.</strong> A handler language under an in-memory backend keeps one R or Julia interpreter in each process that has run such a body (<em>Handler languages and embedded interpreters</em>).</li>
+</ul>
+<h3 id="current-limitations-of-the-process-lock">Current limitations of the process lock</h3>
+<ul>
+<li><strong>Dispatch does not look at the lock.</strong> In a worker pool, a transformation can be given to a worker whose lock is held. It then waits for that lock, and it does not move when another worker becomes free.</li>
+<li><strong>A body that hangs blocks its process, not one slot.</strong> Every transformation that is placed in that process afterwards and takes the lock waits behind it. In a worker pool, cancelling the hung transformation terminates its worker process and frees the lock. In <code>process</code> mode a cancel does not interrupt a body that runs inside the process, such as Python code, a compiled call or an embedded interpreter, so the lock stays held until the body returns (<code>contracts/cancellation.md</code>, <em>A transformation that waits for the process lock</em>). A bash body is different: a cancel kills its script, and the body then returns and frees the lock (<code>contracts/cancellation.md</code>, <em>A bash run that is cancelled</em>).</li>
+</ul>
 <h2 id="expressions-are-placed-not-configured">Expressions are placed, not configured</h2>
 <p>A jobserver or daskserver also evaluates <strong>Expressions</strong> (the jobserver endpoint is <code>GET /run-expression</code>). Three differences from the transformation backends above matter:</p>
 <ul>
 <li><strong>It is not a backend choice but a placement rule.</strong> An Expression is evaluated <em>where the data is</em>: local when no buffer is needed or the input buffer is already in this process's memory, otherwise dispatched. Selecting a backend does not turn this on or off.</li>
-<li><strong><code>execution="auto" | "local" | "remote"</code> is a per-Expression argument, not the <code>execution:</code> config key.</strong> Here <code>"local"</code> means <em>in this process's memory</em> and <code>"remote"</code> means <em>not in this process's memory</em> — independently of which transformation backend is configured. A Context fixes the policy for its own Expression jobs with <code>Context(expression_execution=…)</code>.</li>
+<li><strong><code>execution="auto" | "local" | "remote"</code> is a per-Expression argument, not the <code>execution:</code> config key.</strong> Here <code>"local"</code> means <em>in this process's memory</em> and <code>"remote"</code> means <em>not in this process's memory</em> — independently of which transformation backend is configured. One deliberate deviation: for placement, a buffer available from a local buffer source — a configured read-buffer directory, or a leaf file of an active directory write mount, both read from this process's file system — also counts as local (<code>contracts/expressions.md</code>, <em>Placement</em>). A Context fixes the policy for its own Expression jobs with <code>Context(expression_execution=…)</code>.</li>
 <li><strong>A daskserver is a jobserver <em>mode</em> for Expressions</strong>, not a competing backend: both expose the same checksum, error, caching and HashType contracts.</li>
 </ul>
 <p>The full rule, the resolution order, the no-silent-fallback rules and the two open placement questions are <code>contracts/expressions.md</code>, <em>Placement</em>.</p>
@@ -204,7 +470,7 @@
 <p>Consequences an agent may rely on:</p>
 <ul>
 <li><strong>Inputs are not necessarily uploaded at submission.</strong> They may be <strong>pre-present</strong> — staged by a prior upload, or <strong>by design</strong>, when the client already holds the checksum of a large server-side dataset. Only buffers actually missing on the server are staged (e.g. <code>--upload</code>, or <code>--write-remote-job</code> which implies it).</li>
-<li><strong>Results are durable out-of-process.</strong> A remote run's non-<code>scratch</code> results live in the shared hashserver/database independently of the submitting client, so tearing the client down does not lose them. (A <code>scratch</code> result is the exception: not stored, recomputed at a consumer via input fingertipping — see <code>contracts/scratch-witness-audit.md</code>.)</li>
+<li><strong>Results are durable out-of-process.</strong> A remote run's non-<code>scratch</code> results live in the shared hashserver/database independently of the submitting client, so tearing the client down does not lose them. (A <code>scratch</code> result is the exception: a scratch transformation may be dispatched, but its result is not stored. It is recomputed at a consumer via input fingertipping, or on the client by <code>Transformation.run()</code>, which then runs the transformation a second time — see <code>contracts/scratch-witness-audit.md</code>. Input fingertipping does not yet work on every backend: see <em>Current limitation: fingertipping in a worker needs Dask</em> above.)</li>
 <li><strong>Materialization is content-addressed, not a side effect.</strong> A worker resolving an input checksum is performing materialization, not "reading whatever is on disk" (see <code>contracts/identity-and-caching.md</code>).</li>
 </ul>
 <h2 id="testing-surface">Testing surface</h2>
@@ -228,7 +494,7 @@
           </div><footer>
     <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
         <a href="content-addressed-files-and-dirs.html" class="btn btn-neutral float-left" title="Content-addressed Files and Dirs"><span class="icon icon-circle-arrow-left"></span> Previous</a>
-        <a href="execution-records.html" class="btn btn-neutral float-right" title="Execution Records">Next <span class="icon icon-circle-arrow-right"></span></a>
+        <a href="environments.html" class="btn btn-neutral float-right" title="Environments">Next <span class="icon icon-circle-arrow-right"></span></a>
     </div>
 
   <hr/>
@@ -254,7 +520,7 @@
       <span><a href="content-addressed-files-and-dirs.html" style="color: #fcfcfc">&laquo; Previous</a></span>
     
     
-      <span><a href="execution-records.html" style="color: #fcfcfc">Next &raquo;</a></span>
+      <span><a href="environments.html" style="color: #fcfcfc">Next &raquo;</a></span>
     
   </span>
 </div>

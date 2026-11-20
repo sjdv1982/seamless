@@ -343,7 +343,8 @@ generated in <code>tf.header</code>.</p>
 the compiler binary, flags, and mode. Modify it before calling to override
 defaults (e.g. switch from <code>profile</code> to <code>debug</code>).</p>
 <p><strong>Environment</strong>: <code>tf.environment</code> is an :class:<code>~seamless_transformer.environment.Environment</code>
-that controls conda, docker, and execution powers for the transformation.</p>
+that checks required binaries on the worker's <code>PATH</code>. A requested conda
+environment must match this process, and Docker is refused.</p>
 <p><strong>Additional objects</strong>: <code>tf.objects</code> holds a list of
 :class:<code>CompiledObject</code> instances — extra source files in the same or a
 different compiled language (e.g. a Fortran helper) that are compiled and
@@ -358,7 +359,6 @@ Seamless's content-addressed identity model.</p>
   <code>"fortran"</code>, <code>"rust"</code>, or any custom language added via
   :func:<code>~seamless_transformer.languages.define_compiled_language</code>).</li>
 <li><code>scratch</code>: if True, the result buffer may be dropped after computation.</li>
-<li><code>direct_print</code>: if True, forward transformer stdout/stderr directly.</li>
 <li><code>local</code>: if True, force local execution (ignore remote backend config).</li>
 </ul>
 <p>Requires <code>seamless-signature</code>, <code>cffi</code>, and <code>numpy</code> (install with

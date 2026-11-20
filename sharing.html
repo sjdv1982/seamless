@@ -80,6 +80,8 @@
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#on-seamless-run">On seamless-run</a>
     </li>
+    <li class="toctree-l3"><a class="reference internal" href="#in-a-workflow-context-without-a-hashserver">In a workflow Context without a hashserver</a>
+    </li>
         </ul>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#replay-by-checksum-seamless-run-transformation">Replay by checksum: seamless-run-transformation</a>
@@ -235,6 +237,8 @@ seamless-fingertip a3f2...  &gt; result.txt
 <pre><code class="language-bash">seamless-run --fingertip mycommand input.txt
 </code></pre>
 <p>Without <code>--fingertip</code>, a missing input buffer raises a <code>CacheMissError</code>.</p>
+<h3 id="in-a-workflow-context-without-a-hashserver">In a workflow Context without a hashserver</h3>
+<p>A workflow Context with no hashserver fingertips without being asked. Every transformation it runs fingertips missing inputs. A cell with a share, a write-only file mount or a widget fingertips its own missing buffer, and stays <code>waiting</code> meanwhile. The common reason is a cache hit for a buffer that has expired from memory, after an input went X → Y → X. See <a href="../agent/contracts/workflow-context.md#a-context-without-a-hashserver"><code>docs/agent/contracts/workflow-context.md</code></a>.</p>
 <hr />
 <h2 id="replay-by-checksum-seamless-run-transformation">Replay by checksum: <code>seamless-run-transformation</code></h2>
 <p><code>seamless-run-transformation</code> is the universal transformation executor. It accepts a <strong>transformation checksum</strong> (not input arguments) and executes the corresponding transformation, returning the result checksum.</p>
@@ -254,7 +258,7 @@ seamless-run-transformation X/transformation.json.CHECKSUM
 <p>With <code>--upload</code>, <code>seamless-run</code> uploads the prepared transformation dict and the small buffers needed to identify the job, then writes <code>X/transformation.json.CHECKSUM</code>. If execution dunder metadata is needed, <code>seamless-run</code> writes <code>X/dunder.json</code>; <code>seamless-run-transformation</code> reads that file automatically when it sits next to the checksum file. You can also pass an explicit dunder file:</p>
 <pre><code class="language-bash">seamless-run-transformation --dunder X/dunder.json X/transformation.json.CHECKSUM
 </code></pre>
-<p>The <code>--scratch</code>, <code>--fingertip</code>, <code>--direct-print</code>, and <code>--strict</code> options are applied to the synthetic <code>Transformation</code> execution envelope.</p>
+<p>The <code>--scratch</code>, <code>--fingertip</code>, <code>--streaming</code>, and <code>--strict</code> options change how the synthetic <code>Transformation</code> executes, never its checksum. <code>--streaming</code> shows the transformation's stdout and stderr on stderr while it runs, and has an effect only with <code>remote: daskserver</code>.</p>
 <h3 id="replaying-a-delayed-python-transformation">Replaying a delayed Python transformation</h3>
 <p>The second path starts from a Python <code>Transformation</code>, for example one created with <code>delayed</code>:</p>
 <pre><code class="language-python">import seamless

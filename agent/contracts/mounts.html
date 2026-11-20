@@ -119,7 +119,7 @@
     </li>
         </ul>
     </li>
-    <li class="toctree-l2"><a class="reference internal" href="#sync-spelling-and-the-report">sync(): spelling and the report</a>
+    <li class="toctree-l2"><a class="reference internal" href="#sync-and-the-report">sync() and the report</a>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#unmount-persistence-and-close">Unmount, persistence and close</a>
     </li>
@@ -132,10 +132,22 @@
     <li class="toctree-l2"><a class="reference internal" href="#porting-notes">Porting notes</a>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#implementation-status-and-current-limitations">Implementation status and current limitations</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#current-limitations">Current limitations</a>
+    </li>
+        </ul>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#non-goals">Non-goals</a>
     </li>
     </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="shares.html">HTTP Shares</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="widgets.html">Jupyter Widgets</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="streaming.html">Streaming</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="transformation-logs.html">Transformation Logs</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="cancellation.html">Cancellation</a>
                   </li>
@@ -153,6 +165,8 @@
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="execution-backends.html">Execution Backends</a>
                   </li>
+                  <li class="toctree-l1"><a class="reference internal" href="environments.html">Environments</a>
+                  </li>
                   <li class="toctree-l1"><a class="reference internal" href="execution-records.html">Execution Records</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="service-management.html">Service Management</a>
@@ -164,6 +178,10 @@
                   <li class="toctree-l1"><a class="reference internal" href="compiled-pins.html">Compiled Pins</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="seamless-signature-schema.html">seamless-signature Schema</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="handler-languages.html">Handler Languages</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="language-backends.html">Language Backends</a>
                   </li>
               </ul>
               <p class="caption"><span class="caption-text">API</span></p>
@@ -215,7 +233,7 @@
             <div class="section" itemprop="articleBody">
               
                 <h1 id="file-mounts-contract">File mounts (Contract)</h1>
-<p>A <strong>mount</strong> is the attachment whose external resource is a file or a directory. <strong>The attachment contract of <code>contracts/attachments.md</code> applies in full — direction, scope, spec versus session, the sense and actuate disciplines, the three-way error model, the detector mechanism, the cut barrier and the lifecycle — and this page specializes it for bytes on a filesystem.</strong> Nothing here restates a rule from that page; every section says where the file driver makes a generic rule concrete.</p>
+<p>A <strong>mount</strong> is the attachment whose external resource is a file or a directory. <strong>The attachment contract of <code>contracts/attachments.md</code> applies in full</strong> — direction, scope, spec versus session, the sense and actuate disciplines, the three-way error model, the detector mechanism, the cut barrier and the lifecycle. This page specializes it for bytes on a filesystem. It does not restate a rule from that page; each section says where the file driver makes a generic rule concrete.</p>
 <p>Code locations:</p>
 <table>
 <thead>
@@ -242,6 +260,10 @@
 <td><code>seamless_workflow.attachments.fs.service</code> (<code>FileSystemService</code>, <code>Registration</code>, <code>FileSystem</code>, <code>get_service</code>, <code>close_service</code>)</td>
 </tr>
 <tr>
+<td>Delivered directory leaves as local buffer sources</td>
+<td>registered by <code>FileSystemService</code> through <code>seamless.caching.buffer_source</code> (<code>BufferSource</code>, <code>replace_buffer_sources</code>, <code>unregister_buffer_sources</code>) — seamless-core</td>
+</tr>
+<tr>
 <td>Optional inotify hints</td>
 <td><code>seamless_workflow.attachments.fs.native.NativeNotifications</code></td>
 </tr>
@@ -255,7 +277,7 @@
 </tr>
 <tr>
 <td>Errors</td>
-<td><code>seamless_workflow.attachments.session</code> (<code>MountError</code>, <code>ConflictError</code>), <code>seamless_workflow.errors</code> (<code>AuthorityError</code>, <code>NodeError</code>, <code>PathError</code>, <code>ReentrantContextError</code>)</td>
+<td><code>seamless_workflow.attachments.session</code> (<code>MountError</code>, <code>ConflictError</code>); <code>seamless_workflow.errors</code> (<code>AuthorityError</code>, <code>NodeError</code>, <code>PathError</code>, <code>ReentrantContextError</code>, <code>ClosedContextError</code>)</td>
 </tr>
 </tbody>
 </table>
@@ -270,18 +292,18 @@ ctx.a.mount.clear_error()
 
 report = ctx.mounts.sync(timeout=None)
 report = await ctx.mounts.synchronization(timeout=None)
-ctx.mounts.errors           # {node path: error}
+ctx.mounts.errors           # {(node_path, driver): error}
 
 ctx.set_graph(graph, mounts=True)
 </code></pre>
 <ul>
-<li><strong><code>mount</code> is a class attribute of <code>Cell</code></strong> — a property with a deleter — so <code>del ctx.a.mount</code> reaches the deleter and never sub-path deletion. The cost is that a value key named <code>mount</code> is reachable only as <code>ctx.a["mount"]</code>, as for <code>value</code> or <code>checksum</code> (<code>contracts/cells.md</code>, <em>API-name arbitration</em>).</li>
+<li><strong><code>mount</code> is a class attribute of <code>Cell</code></strong> — a property with a deleter — so <code>del ctx.a.mount</code> reaches the deleter and never sub-path deletion. It addresses the file slot only; a Jupyter widget attachment is detached through its hub. The cost is that a value key named <code>mount</code> is reachable only as <code>ctx.a["mount"]</code>, as for <code>value</code> or <code>checksum</code> (<code>contracts/cells.md</code>, <em>API-name arbitration</em>).</li>
 <li><strong><code>mounts</code> is reserved on the Context.</strong> <code>ctx.mounts = x</code> raises <code>AttributeError("mounts is reserved for the Context mount API")</code>, and a graph node at path <code>("mounts",)</code> is refused with <code>PathError("mounts is a reserved Context API name")</code>. The plural is deliberate: it cannot be mistaken for mounting the Context itself.</li>
-<li><strong><code>mount()</code> blocks through the initial read and the first delivery attempt, and raises only for an invalid <em>request</em></strong> — never for the state of the file. See <code>contracts/attachments.md</code>, <em>Attach, detach, close</em>.</li>
-<li><strong><code>path</code> normalization.</strong> Anything <code>os.fspath</code> accepts — a <code>str</code> or an <code>os.PathLike</code> — is accepted; an empty path or one containing a NUL raises <code>ValueError("mount path must be a nonempty text path")</code>. The spec stores the path <strong>as given</strong>; <code>spec.path</code> is that string. The registry resolves it against the current working directory <strong>at attach time</strong> (absolute, with symlinks in the parent chain resolved). Whether the mount is a file or a directory follows from the <strong>celltype</strong>, not from a flag or from the path.</li>
+<li><strong><code>mount()</code> blocks through the initial read and the first delivery attempt, and raises only for an invalid <em>request</em></strong> — never for the state of the file (<code>contracts/attachments.md</code>, <em>Attach, detach, close</em>). A widget slot may coexist with this file slot; a second file mount on the same node is refused.</li>
+<li><strong><code>path</code> normalization.</strong> Anything <code>os.fspath</code> accepts — a <code>str</code> or an <code>os.PathLike</code> — is accepted; an empty path or one containing a NUL raises <code>ValueError("mount path must be a nonempty text path")</code>. The spec stores the path <strong>as given</strong>, and <code>spec.path</code> is that string. The registry resolves it against the current working directory <strong>at attach time</strong> (absolute, with symlinks in the parent chain resolved; see <em>The path-overlap registry</em>). Whether the mount is a file or a directory follows from the <strong>celltype</strong>, not from a flag or from the path.</li>
 </ul>
 <h3 id="status"><code>status</code></h3>
-<p><code>ctx.a.mount.status</code> is <code>None</code> on an unmounted cell; otherwise a dict whose keys are contract:</p>
+<p><code>ctx.a.mount.status</code> is <code>None</code> when the file slot is unoccupied; otherwise it is a dict whose keys are contract. Widget-slot status is available from its hub:</p>
 <table>
 <thead>
 <tr>
@@ -304,7 +326,7 @@ ctx.set_graph(graph, mounts=True)
 </tr>
 <tr>
 <td><code>in_sync</code></td>
-<td><code>node_checksum</code> is not <code>None</code>, equals <code>disk_checksum</code> (a null node value with an absent file also counts), and there is no sense error</td>
+<td><code>node_checksum</code> is not <code>None</code>, and either equals <code>disk_checksum</code> or the two match the latest acknowledged source/canonical-file checksum pair (a null node value with an absent file also counts), and there is no sense error</td>
 </tr>
 <tr>
 <td><code>pending</code></td>
@@ -324,8 +346,9 @@ ctx.set_graph(graph, mounts=True)
 </tr>
 </tbody>
 </table>
-<p><code>sense_error</code> and <code>error</code> are <strong><code>Exception</code> objects</strong>, while <code>Cell.exception</code> is a string; see <code>contracts/attachments.md</code>, <em>Error typing</em>.</p>
+<p><code>sense_error</code> and <code>error</code> are <strong><code>Exception</code> objects</strong>, while <code>Cell.exception</code> is a <strong>string</strong> — the same <code>MountError</code>, rendered with its <code>"&lt;path&gt;: &lt;reason&gt;"</code> prefix (<code>contracts/attachments.md</code>, <em>Error typing</em>).</p>
 <h3 id="errors">Errors</h3>
+<p>The three messages quoted in full below are contract and pinned by tests: <code>"Only whole Context cell nodes can be mounted"</code>, <code>"Cell is already mounted; unmount first"</code> and <code>"Mounted celltype cannot change; unmount first"</code>. <code>NodeError</code>'s <code>"Mounts require an existing whole cell node"</code> is contract as well.</p>
 <table>
 <thead>
 <tr>
@@ -336,27 +359,35 @@ ctx.set_graph(graph, mounts=True)
 <tbody>
 <tr>
 <td><code>ValueError</code></td>
-<td>a bad <code>path</code>, <code>mode</code> or <code>authority</code>; an illegal <code>file-strict</code> combination; a cell that is already mounted; a path that overlaps another registration in this process</td>
+<td>a bad <code>path</code>, <code>mode</code> or <code>authority</code>; an illegal <code>file-strict</code> combination; a path that overlaps another registration in this process; a cell that is already mounted — <code>ValueError("Cell is already mounted; unmount first")</code>; retyping a mounted cell, or replacing it with a builder of a different celltype — <code>ValueError("Mounted celltype cannot change; unmount first")</code></td>
 </tr>
 <tr>
 <td><code>TypeError</code></td>
 <td><code>persistent</code> is not a <code>bool</code>; the celltype is not mountable; <code>deepfolder</code> with a mode other than <code>"r"</code></td>
 </tr>
 <tr>
+<td><code>AttributeError</code></td>
+<td>a standalone <code>Cell</code> — <code>AttributeError("mount is only available for bound workflow cells")</code>; a sub-path projection (<code>ctx.a.b</code>) or a read-only handle, including a transformer's result <code>ctx.tf.result</code> — <code>AttributeError("Only whole Context cell nodes can be mounted")</code>; <code>ctx.mounts = x</code>. Whether a bound <code>as_celltype</code> handle is refused, and with which error, is <strong>unspecified</strong> (deferred)</td>
+</tr>
+<tr>
 <td><code>NodeError</code></td>
-<td>the node does not exist, or is not a cell</td>
+<td>the node does not exist, or is not a cell — <code>NodeError("Mounts require an existing whole cell node")</code>.</td>
 </tr>
 <tr>
 <td><code>AuthorityError</code></td>
-<td>a sensing mount on a node with an incoming edge; an incoming edge into a sensing-mounted node; clearing a mounted cell</td>
+<td>a sensing mount on a node with an incoming edge; an incoming edge into a sensing-mounted node; clearing a mounted cell — <code>AuthorityError("Cannot clear a mounted cell; unmount first")</code>. <strong><code>ctx.a = Cell(celltype=&lt;same&gt;)</code> is not refused</strong>: it unmounts and clears (<em>Unmount, persistence and close</em>)</td>
 </tr>
 <tr>
 <td><code>PathError</code></td>
-<td><strong>any invalid mount spec in a graph</strong> — unknown fields, a bad mode or authority, an illegal <code>file-strict</code> combination, a non-mountable or sense-only celltype — plus a mount on a non-cell node, an unreadable graph version and a graph connection into a sensing-mounted node. <strong>An invalid <em>request</em> raises <code>TypeError</code> / <code>ValueError</code>; the same fault inside a <em>graph</em> raises <code>PathError</code></strong>, and a fault the spec itself would have raised is wrapped as <code>"Invalid mount spec: &lt;original message&gt;"</code></td>
+<td><strong>any invalid mount spec in a graph</strong> — unknown fields, a bad mode or authority, an illegal <code>file-strict</code> combination, a non-mountable or sense-only celltype — plus a mount on a non-cell node, an unreadable graph version and a graph connection into a sensing-mounted node. A fault the spec itself would have raised is wrapped as <code>"Invalid mount spec: &lt;original message&gt;"</code></td>
 </tr>
 <tr>
 <td><code>ReentrantContextError</code></td>
 <td><code>mount()</code>, <code>clear_error()</code>, unmounting or the barrier called from the controller thread</td>
+</tr>
+<tr>
+<td><code>ClosedContextError</code></td>
+<td>any of the same calls after <code>close()</code> (<code>contracts/attachments.md</code>, <em>Scope</em>)</td>
 </tr>
 <tr>
 <td><code>TimeoutError</code></td>
@@ -364,16 +395,17 @@ ctx.set_graph(graph, mounts=True)
 </tr>
 <tr>
 <td><code>KeyError</code></td>
-<td><code>clear_error()</code> on an unmounted cell — an inconsistency, not a designed refusal</td>
+<td><code>clear_error()</code> when the file slot is unoccupied. It addresses only the file slot and does not clear a widget session's error. <strong>Whether this is contract is deferred</strong>: the rest of the unoccupied file-slot surface answers <code>None</code> or is a no-op, so the <code>KeyError</code> reads as an inconsistency rather than a designed refusal. Do not depend on the exception type</td>
 </tr>
 <tr>
 <td><code>MountError</code></td>
-<td>never raised; it is <em>reported</em>, on the cell (as a string) or on the mount (as an object)</td>
+<td>never raised; it is <em>reported</em>, on the cell as a string or on the mount as an object</td>
 </tr>
 </tbody>
 </table>
+<p><strong>The general split: an invalid <em>request</em> raises <code>TypeError</code> / <code>ValueError</code>; the same fault inside a <em>graph</em> raises <code>PathError</code>.</strong></p>
 <h2 id="spec-validation-and-normalization">Spec validation and normalization</h2>
-<p><code>mode</code>, <code>authority</code> and <code>persistent</code> live on the generic <code>AttachmentSpec</code> class, but <strong>their semantics are file semantics</strong> and belong here.</p>
+<p><code>mode</code>, <code>authority</code> and <code>persistent</code> live on the generic <code>AttachmentSpec</code> class, but <strong>their semantics are file semantics</strong>, and they belong here.</p>
 <table>
 <thead>
 <tr>
@@ -396,18 +428,18 @@ ctx.set_graph(graph, mounts=True)
 <tr>
 <td><code>persistent</code></td>
 <td><code>bool</code></td>
-<td>whether the file survives unmounting (below)</td>
+<td>whether the file survives unmounting (<em>Unmount, persistence and close</em>)</td>
 </tr>
 </tbody>
 </table>
 <p>Validation, in the order the spec applies it:</p>
-<ul>
-<li><code>mode</code> must be one of the three: <code>ValueError("mode must be r, w or rw")</code>;</li>
-<li><code>authority</code> must be one of the three: <code>ValueError("invalid mount authority")</code>;</li>
-<li><code>persistent</code> must be exactly a <code>bool</code> — a truthy value is not accepted: <code>TypeError("persistent must be bool")</code>;</li>
-<li><code>"file-strict"</code> requires a sensing mode <strong>and</strong> <code>persistent=True</code>: <code>ValueError("file-strict requires sensing and persistent=True")</code>. <code>file-strict</code> means <em>the file is required</em>; a missing path is a sense error rather than a silently absent value, and deleting the file at unmount would contradict the declaration;</li>
+<ol>
+<li><code>mode</code> must be one of the three: <code>ValueError("mode must be r, w or rw")</code>.</li>
+<li><code>authority</code> must be one of the three: <code>ValueError("invalid mount authority")</code>.</li>
+<li><code>persistent</code> must be exactly a <code>bool</code> — a truthy value is not accepted: <code>TypeError("persistent must be bool")</code>.</li>
+<li><code>"file-strict"</code> requires a sensing mode <strong>and</strong> <code>persistent=True</code>: <code>ValueError("file-strict requires sensing and persistent=True")</code>. <code>file-strict</code> means <em>the file is required</em>: a missing path is a sense error rather than a silently absent value, and deleting the file at unmount would contradict the declaration.</li>
 <li><strong><code>mode="w"</code> with <code>authority="file"</code> is silently normalized to <code>authority="cell"</code>.</strong> A write-only mount never reads, so there is no initial file value for the file to win with. The normalization is visible: <code>spec.authority</code> reads <code>"cell"</code>, and that is what <code>get_graph()</code> serializes.</li>
-</ul>
+</ol>
 <p>An unmountable celltype raises at attach time and at graph load.</p>
 <h2 id="mountable-celltypes">Mountable celltypes</h2>
 <table>
@@ -423,14 +455,14 @@ ctx.set_graph(graph, mounts=True)
 <tr>
 <td><code>text</code>, <code>python</code>, <code>ipython</code>, <code>yaml</code></td>
 <td>file</td>
-<td>strict UTF-8; the trailing newline is normalized to exactly one</td>
-<td>no CRLF conversion — CRLF is content. <strong>Code text is not syntax-checked</strong>, because a user assignment of the same text is not either</td>
+<td>strict UTF-8; the trailing newline is normalized to exactly one; <strong>no syntax check</strong></td>
+<td>no CRLF conversion — CRLF is content. Code text is checked <strong>exactly as an assignment checks it</strong> (<em>Canonical bytes</em>): a <code>python</code> file with a syntax error is sensed as <code>complete</code></td>
 </tr>
 <tr>
 <td><code>plain</code></td>
 <td>file</td>
 <td>JSON parse, canonical re-serialization</td>
-<td>JSON only. User formatting survives until the value changes</td>
+<td>JSON only. <code>rw</code> canonicalizes sensed files; <code>r</code> leaves formatting untouched</td>
 </tr>
 <tr>
 <td><code>str</code></td>
@@ -484,23 +516,22 @@ ctx.set_graph(graph, mounts=True)
 </table>
 <h3 id="deepfolder-is-sense-only"><code>deepfolder</code> is sense-only</h3>
 <p><strong><code>folder</code> mounts in <code>r</code>, <code>w</code> and <code>rw</code>. <code>deepfolder</code> may only be mounted with <code>mode="r"</code>.</strong></p>
-<p>The reason is what the two celltypes declare. A write mount <strong>materializes every leaf onto disk</strong>, which is exactly what <code>deepfolder</code> — "an index; the contents stay by reference" — says it does not do, while <code>folder</code> means "the contents of a directory" (<code>contracts/deep-celltypes.md</code>). The restriction costs one retype and nothing else: the two index buffers are <strong>byte-identical</strong> and the conversion between them is free in both directions. And a transformer <strong>cannot produce a <code>deepfolder</code> at all</strong>, so <code>folder</code> is the only celltype a computed directory can arrive in.</p>
-<p>There are two enforcement points, and they raise different types — the general split for mounts, worth learning once:</p>
+<p>The reason is what the two celltypes declare. A write mount <strong>materializes every leaf onto disk</strong>, which is exactly what <code>deepfolder</code> — "an index; the contents stay by reference" — says it does not do, while <code>folder</code> means "the contents of a directory" (<code>contracts/deep-celltypes.md</code>). The restriction costs one retype and nothing else: the two index buffers are <strong>byte-identical</strong>, and the conversion between them is free in both directions. And a transformer <strong>cannot produce a <code>deepfolder</code> at all</strong>, so <code>folder</code> is the only celltype a computed directory can arrive in.</p>
+<p>The two enforcement points follow the request/graph split of <em>Errors</em>:</p>
 <ul>
-<li><strong>An invalid <em>request</em> to <code>mount()</code> raises <code>TypeError</code>.</strong> Because the default mode is <code>rw</code>, the bare <code>ctx.a.mount(path)</code> on a <code>deepfolder</code> cell raises too — deliberately, with a message naming both remedies:</li>
+<li><strong>An invalid request to <code>mount()</code> raises <code>TypeError</code>.</strong> Because the default mode is <code>rw</code>, the bare <code>ctx.a.mount(path)</code> on a <code>deepfolder</code> cell raises too — deliberately, with a message naming both remedies:</li>
 </ul>
 <p><code>text
   TypeError: Celltype 'deepfolder' can only be sensed: mount with mode='r', or use celltype 'folder' to write</code></p>
 <ul>
-<li><strong>An invalid mount spec in a <em>graph</em> raises <code>PathError</code></strong>, wrapping the same text:</li>
+<li><strong>An invalid mount spec in a graph raises <code>PathError</code></strong>, wrapping the same text, <strong>also with <code>mounts=False</code></strong> (<em>Graph serialization</em>):</li>
 </ul>
 <p><code>text
   PathError: Invalid mount spec: Celltype 'deepfolder' can only be sensed: mount with mode='r', or use celltype 'folder' to write</code></p>
-<p>This refusal happens in <code>prepare_graph</code>, so it applies <strong>with <code>mounts=False</code> as well</strong>: the graph is malformed regardless of whether this loader would attach it. The same holds for every other invalid mount entry — unknown fields, a bad mode, a mount on a non-cell node, a sensing mount with an incoming connection.</p>
 <p><code>validate_celltype(celltype, mode)</code> is the single enforcement point, called from <code>_mount_validate</code>, from <code>load_graph</code> and from <code>prepare_graph</code>. Its <code>mode</code> parameter is <strong>required</strong>, deliberately, so that no caller can skip the rule.</p>
 <h2 id="the-initial-decision-table">The initial decision table</h2>
-<p>At attach time the controller evaluates one decision against the node's value <strong>in that turn</strong> and the initial observation. Inputs are the effective mode and authority, the file state, and whether the node has a <strong>complete value</strong>. <em>F</em> and <em>N</em> are compared as <strong>canonical checksums</strong>.</p>
-<p><strong>"No value" means the node has no checksum</strong>, and is distinct from a null value. On the file side, an <strong>absent path, a zero-byte file and an initially empty directory all additionally report "no value"</strong>, which is what makes them unable to override an existing cell value; an explicit <code>null\n</code> file does not, and can.</p>
+<p>At attach time the controller evaluates one decision against the node's value <strong>in that turn</strong> and the initial observation. The inputs are the effective mode and authority, the file state, and whether the node has a <strong>complete value</strong>. <em>F</em> and <em>N</em> are compared as <strong>canonical checksums</strong>.</p>
+<p><strong>"No value" means the node has no checksum</strong>, which is distinct from a null value. On the file side, <strong>an absent path, a zero-byte file and an initially empty directory all additionally report "no value"</strong>, which is what makes them unable to override an existing cell value; an explicit <code>null\n</code> file does not, and can.</p>
 <p><strong>In both tables the rows are ordered, and the first matching row wins</strong> — that is how the policy function is written.</p>
 <p><strong>The node has no complete value:</strong></p>
 <table>
@@ -558,6 +589,10 @@ ctx.set_graph(graph, mounts=True)
 </tr>
 </tbody>
 </table>
+<p>For a <strong>file</strong> mount in <code>rw</code>, adopting <em>F</em> also schedules a conditional write
+when the observed bytes are non-canonical. This applies even when an existing
+node already has the same canonical checksum: checksum equality does not
+suppress the normalization write. In <code>r</code>, adoption leaves the file bytes alone.</p>
 <p><strong>The node has a complete value <em>N</em>:</strong></p>
 <table>
 <thead>
@@ -649,11 +684,11 @@ ctx.set_graph(graph, mounts=True)
 </tr>
 </tbody>
 </table>
-<p><strong>Rejected files.</strong> A file may be unreadable, or impossible to canonicalize as the celltype. Where the table would install <em>F</em> into the node, the cell gets a <strong>sense error</strong> instead — <code>failed</code>, with a <code>MountError</code>, monitoring active. Everywhere else a rejected file counts as <strong>a present file that differs from <em>N</em></strong>. Either way the session starts with the belief <code>INVALID</code>.</p>
+<p><strong>Rejected files.</strong> A file may be unreadable, or impossible to canonicalize as the celltype. Where the table would install <em>F</em> into the node, the cell gets a <strong>sense error</strong> instead: it is <code>failed</code>, its <code>.exception</code> is the <code>MountError</code>'s string, and monitoring stays active. Everywhere else a rejected file counts as <strong>a present file that differs from <em>N</em></strong>. Either way the session starts with the belief <code>INVALID</code>.</p>
 <p><strong>Nothing in this table is a continuous rule.</strong> It runs exactly once per session, at attach; every later observation goes through the classification below.</p>
 <h2 id="observation-classification-and-the-one-belief-about-the-file">Observation classification, and the one belief about the file</h2>
 <p>The session keeps <strong>one belief about the file</strong>: a checksum (or the sentinel <code>ABSENT</code> / <code>INVALID</code>) plus a fingerprint. It is <strong>comparison-only</strong> — never resolved, holding no claim on anything. Echo detection, write skipping and write preconditions all derive from it.</p>
-<p>Every observation carries a <strong>watch sequence</strong>, owned by the transport and advanced under the registration's lock on every detected change <strong>and on every completed write</strong>.</p>
+<p>Every observation carries a <strong>watch sequence</strong> (<code>ws</code>), owned by the transport and advanced under the registration's lock on every detected change <strong>and on every completed write</strong>.</p>
 <table>
 <thead>
 <tr>
@@ -670,7 +705,7 @@ ctx.set_graph(graph, mounts=True)
 </tr>
 <tr>
 <td><code>unchanged</code></td>
-<td>checksum equals the belief (for <code>ABSENT</code>/<code>INVALID</code>, the fingerprint too)</td>
+<td>the checksum equals the belief (for <code>ABSENT</code>/<code>INVALID</code>, the fingerprint too)</td>
 <td>update the fingerprint only. Identical-content rewrites and <code>touch</code> end here</td>
 </tr>
 <tr>
@@ -681,11 +716,11 @@ ctx.set_graph(graph, mounts=True)
 <tr>
 <td><code>absent</code></td>
 <td>the file is missing</td>
-<td>the node is left unchanged; <code>file-strict</code>: sense error; otherwise any sense error is cleared; <code>w</code>: reassert</td>
+<td>the node is left unchanged; <code>file-strict</code>: sense error, otherwise any sense error is cleared; <code>w</code>: reassert</td>
 </tr>
 <tr>
 <td><code>echo</code></td>
-<td>checksum equals the <strong>in-flight</strong> delivery's checksum</td>
+<td>the checksum equals the <strong>in-flight</strong> delivery's canonical file checksum</td>
 <td>our own write, seen before its acknowledgement: adopt it as the belief</td>
 </tr>
 <tr>
@@ -695,38 +730,47 @@ ctx.set_graph(graph, mounts=True)
 </tr>
 </tbody>
 </table>
+<p>A <code>foreign</code> observation in a sensing mode installs the checksum and sets both the belief and the actuation baseline in the same turn — so canonical content is not written straight back; for <code>rw</code>, non-canonical file bytes instead request a conditional canonical write — and clears the sense error. A zero-byte file maps to null; an emptied directory maps to <code>{}</code>.</p>
 <p>Four rules make this converge:</p>
 <ul>
-<li><strong>Why one belief instead of a list of what we last wrote.</strong> Consider: we deliver <em>C1</em>; a foreign writer replaces it with <em>C2</em>, which is sensed; the writer then reverts to <em>C1</em>. A last-written list would discard that final <em>C1</em> as our own echo and leave the node at <em>C2</em> while the file holds <em>C1</em>. Against the belief — which is <em>C2</em> by then — it is correctly classified <code>foreign</code>.</li>
-<li><strong>A stale observation is discarded, and that loses nothing.</strong> It is either a duplicate, or content read <em>before</em> one of our own writes landed, even if it reached ingress after that write's acknowledgement. If the discarded read happened to see a newer foreign change, the broker detects that change again, because <strong>its baseline moves only with its own polls and with completed writes</strong> — a read never moves it.</li>
+<li><strong>One belief, not a list of what we last wrote.</strong> Suppose we deliver <em>C1</em>; a foreign writer replaces it with <em>C2</em>, which is sensed; the writer then reverts to <em>C1</em>. A last-written list would discard that final <em>C1</em> as our own echo and leave the node at <em>C2</em> while the file holds <em>C1</em>. Against the belief — which is <em>C2</em> by then — it is correctly classified <code>foreign</code>.</li>
+<li><strong>Discarding a stale observation loses nothing.</strong> It is either a duplicate, or content read <em>before</em> one of our own writes landed, even if it reached ingress after that write's acknowledgement. If the discarded read happened to see a newer foreign change, the broker detects that change again, because <strong>its baseline moves only with its own polls and with completed writes</strong> — a read never moves it.</li>
 <li><strong>A write advances the watch sequence.</strong> An acknowledgement carries the sequence the write itself produced, so any observation whose content predates the write carries a smaller sequence and is discarded as stale, however late it arrives. Without this, a read taken just before our write could be accepted just after its acknowledgement and revert the node.</li>
-<li><strong>An <code>unchanged</code> observation can still clear a sense error.</strong> If a sense error is set and the observation carries a real checksum — rather than <code>ABSENT</code> or <code>INVALID</code> — the value is re-installed and the error is cleared. This is the defensive case that lets a forced re-poll recover a cell whose file has not changed since.</li>
+<li><strong>An <code>unchanged</code> observation can still clear a sense error.</strong> If a sense error is set and the observation carries a real checksum — not <code>ABSENT</code> or <code>INVALID</code> — the value is re-installed and the error cleared. This defensive case lets a forced re-poll recover a cell whose file has not changed since.</li>
 </ul>
-<p>A <code>foreign</code> observation in a sensing mode installs the checksum, sets the belief and the actuation baseline in the same turn — so the value is not written straight back — and clears the sense error. A zero-byte file maps to null; an emptied directory maps to <code>{}</code>.</p>
 <h2 id="canonical-bytes">Canonical bytes</h2>
 <p>For each mountable celltype <em>T</em> the mount uses exactly two functions, both defined by the <strong>existing serializer and deserializer</strong>:</p>
 <ul>
-<li><strong>write:</strong> the canonical buffer of the node's checksum, byte for byte (compressed, if the path carries a compression suffix);</li>
-<li><strong>read:</strong> <code>canon_T(bytes) = serialize(deserialize(bytes, T), T)</code>, and the observed checksum is the checksum of <code>canon_T(bytes)</code>. If deserialization raises, the observation is <code>rejected</code>.</li>
+<li><strong>write:</strong> resolve the node's buffer and canonicalize it with <code>canon_T</code> before writing (compressed, if the path carries a compression suffix). The node checksum is preserved; the delivered file checksum is the checksum of the canonical bytes. Without a hashserver, a node buffer that was missing from the buffer cache was fingertipped before the node took the checksum (<code>contracts/workflow-context.md</code>, <em>A Context without a hashserver</em>);</li>
+<li><strong>read:</strong> <code>canon_T(bytes) = serialize(deserialize(bytes, T), T)</code>, and the observed checksum is the checksum of <code>canon_T(bytes)</code>. If deserialization raises, the observation is <code>rejected</code>. For the code celltypes (<code>text</code>, <code>python</code>, <code>ipython</code>, <code>yaml</code>), <em>deserialize</em> here is the strict UTF-8 decode only: <code>canon_T</code> does not run the syntax check of the reference parser, exactly as the serializer an assignment uses does not (<code>contracts/celltypes-and-conversion.md</code>, the serializer table).</li>
 </ul>
 <p>Four consequences:</p>
 <ul>
-<li>a file written by the mount <strong>reads back as an exact echo</strong>;</li>
+<li>a file written by the mount <strong>reads back as an exact echo of the canonical delivery</strong>, without changing the node checksum. The acknowledgement records the source checksum and canonical file checksum as a synchronized pair. <code>node_checksum</code> and <code>disk_checksum</code> may therefore differ while <code>in_sync=True</code>. The filesystem transport sends this acknowledgement under its I/O lock before any readback observation can be sent, so that readback compares against the canonical file belief. A later foreign observation is compared against the current file belief, not a history of deliveries;</li>
 <li>a user-formatted file maps to <strong>the checksum of its value</strong>, so reformatting JSON by hand is not a change;</li>
-<li>there is <strong>no mount-local parsing</strong>: a mount parses neither more leniently nor more strictly than a user assignment of the same value — which is why <strong>code text is not syntax-checked</strong>;</li>
-<li><strong>non-canonical bytes are never rewritten.</strong> User formatting survives until the node's value actually changes. <code>canon_T</code> is idempotent, and that is property-tested.</li>
+<li><strong>there is no mount-local parsing.</strong> A mount parses neither more leniently nor more strictly than a user assignment of the same value: it checks exactly what an assignment checks. <strong>For the code celltypes that excludes syntax.</strong> <code>ctx.a.set("def (:\n")</code> is accepted as <code>complete</code>, and so is a mounted file with that content; neither is a sense error. The syntax error surfaces downstream: a transformer that runs the code fails with the <code>SyntaxError</code> as its own failure, and a <code>.value</code> read raises <code>HashTypeValidationError</code> on every read without failing the cell (<code>contracts/cells.md</code>, <em><code>.buffer</code> and <code>.value</code></em>). Fixing the file is an ordinary change, sensed like any other.</li>
+<li><strong><code>rw</code> canonicalizes non-canonical file bytes after sensing</strong>, including initial adoption by an empty cell and formatting-only edits. The canonical checksum installed in the cell then equals the checksum of the decompressed file bytes. This write uses the ordinary fingerprint conflict guard; <code>r</code> mounts leave the file untouched. <code>canon_T</code> is idempotent, and that is property-tested.</li>
 </ul>
-<p><em>T</em> is always the cell's <strong>output <code>celltype</code></strong>, including for a connected cell; the producer's input type is stored separately (<code>contracts/cells.md</code>). Retyping while mounted is refused.</p>
+<p><em>T</em> is always the cell's <strong>output <code>celltype</code></strong>, including for a connected cell; the producer's input type is stored separately (<code>contracts/cells.md</code>). Retyping while mounted is refused (<em>Errors</em>).</p>
+<p>For example, an empty <code>Cell("plain")</code> mounted with <code>mode="rw"</code> on a file
+containing <code>{"a":1}</code> adopts <code>{"a": 1}</code> and rewrites the file using canonical
+<code>plain</code> serialization. After a successful <code>ctx.mounts.sync()</code>, the cell checksum
+equals <code>seamless-checksum mounted-file.json</code>; canonicalizing only the cell
+buffer while leaving the original JSON bytes on disk does <strong>not</strong> satisfy this
+rule. Later formatting-only edits are rewritten canonically as well, without
+changing the cell checksum. With <code>mode="r"</code>, the original file bytes remain.
+For compressed files, the equality is over the decompressed bytes.</p>
 <h3 id="null-files">Null files</h3>
 <ul>
 <li><strong>A missing path is <code>absent</code></strong>, never null. At mount time it cannot override an existing value; under <code>file-strict</code> it is a sense error.</li>
-<li><strong>A zero-byte file and <code>b"null\n"</code> both read as null</strong>, before celltype-specific parsing. The difference is at mount time only: the zero-byte file reports "no value" and cannot override, the explicit <code>null\n</code> can. A newline-only file is not special and undergoes normal parsing.</li>
+<li><strong>A zero-byte file and <code>b"null\n"</code> both read as null</strong>, before celltype-specific parsing. They differ at mount time only: the zero-byte file reports "no value" and cannot override, the explicit <code>null\n</code> can. A newline-only file is not special and undergoes normal parsing.</li>
 <li><strong>A null delivery truncates an existing file to zero bytes</strong> — also for compressed paths, where it writes zero bytes and not a compressed empty stream — <strong>and never creates a missing file</strong>: a null delivery whose belief is <code>ABSENT</code> is suppressed at dispatch. A null value with an absent file therefore counts as <strong>in sync</strong>.</li>
 <li><strong><code>bytes</code> null reads as <code>b""</code>.</strong> <code>bytes</code> is the one celltype where empty <em>is</em> null, in both directions (<code>contracts/cells.md</code>).</li>
 </ul>
+<p>Directories do not converge on null; see <em>Null on a directory mount is terminal</em>.</p>
 <h3 id="compression">Compression</h3>
 <p>A <code>.gz</code> or <code>.zst</code> suffix means: decompress before <code>canon_T</code> on read, and compress the canonical bytes on write — <strong>deterministically</strong> (gzip with <code>mtime=0</code> at level 6; zstd at level 3).</p>
-<p><strong>The canonical checksum is always taken over the decompressed bytes</strong>, as everywhere else in Seamless (<code>contracts/compression.md</code>). Compressed bytes are not stable across compressor versions and settings, so every comparison that decides an action is a canonical-checksum comparison; fingerprints only decide whether a read is worth doing. A foreign recompression of identical content therefore classifies as <code>unchanged</code>.</p>
+<p><strong>The canonical checksum is always taken over the decompressed bytes</strong>, as everywhere else in Seamless (<code>contracts/compression.md</code>). Compressed bytes are not stable across compressor versions and settings, so a foreign recompression of identical content classifies as <code>unchanged</code> (<em>Limits</em>: the checksum is the correctness guard).</p>
 <h2 id="fingerprints-polling-and-the-racy-window">Fingerprints, polling and the racy window</h2>
 <ul>
 <li><strong>Fingerprint:</strong> existence plus <code>(st_dev, st_ino, st_size, st_mtime_ns, st_ctime_ns)</code>. The <strong>inode</strong> makes atomic replacement visible even when size and mtime match. The <strong>ctime</strong> makes permission and ownership changes visible, so a file that was unreadable is read again once it is fixed. A directory's fingerprint is the root stat plus the sorted <code>(relative path, stat)</code> list of every non-temporary leaf.</li>
@@ -737,26 +781,27 @@ ctx.set_graph(graph, mounts=True)
 <li><strong>Native hints are optional and advisory.</strong> <code>SEAMLESS_MOUNT_NATIVE=1</code>, set before the first mount, adds Linux inotify watches — on the <strong>parent directories</strong>, so that editor-style target replacement does not invalidate a watch. They only mark registrations dirty. <strong>Polling remains the correctness fallback</strong>, and still owns watch sequences and stable reads. Unsupported platforms, failed watches and a queue overflow fall back to polling silently.</li>
 </ul>
 <h2 id="conditional-atomic-writes-and-conflicts">Conditional atomic writes and conflicts</h2>
+<p>A file delivery:</p>
 <ol>
-<li>write to a temporary file in the target's directory, named <code>.&lt;name&gt;.seamless-&lt;random&gt;.tmp</code>, created exclusively;</li>
-<li>copy the existing target's mode bits onto it when the target exists, so permissions survive replacement; otherwise the umask default applies;</li>
-<li><strong>re-stat the target and compare it with the delivery's expected fingerprint</strong> — the belief's fingerprint at dispatch;</li>
-<li><code>os.replace</code> onto the target.</li>
+<li>writes to a temporary file in the target's directory, named <code>.&lt;name&gt;.seamless-&lt;random&gt;.tmp</code>, created exclusively;</li>
+<li>copies the existing target's mode bits onto it when the target exists, so permissions survive replacement; otherwise the umask default applies;</li>
+<li><strong>re-stats the target and compares it with the delivery's expected fingerprint</strong> — the belief's fingerprint at dispatch;</li>
+<li><code>os.replace</code>s it onto the target.</li>
 </ol>
 <p>On a mismatch the temporary is removed and the delivery acknowledges <strong><code>conflict</code></strong>. The controller only clears <code>in_flight</code>; the transport forces a poll, and <strong>the observation that follows decides the outcome</strong> — under <code>rw</code> the node takes the file's value, under <code>w</code> the Context reasserts.</p>
 <p><strong>The precondition is what makes a mount converge.</strong> Without it, a write launched before a foreign save would land over a change we have never seen, and the next read would classify our own content as an echo — silently losing the foreign edit.</p>
-<p>The residual race — between the re-stat and the rename — remains. It is microseconds wide and is accepted, because there is no portable filesystem compare-and-swap.</p>
+<p>The residual race between the re-stat and the rename remains. It is microseconds wide and is accepted, because there is no portable filesystem compare-and-swap.</p>
 <p>Three further properties of the write path:</p>
 <ul>
 <li><strong>No <code>fsync</code> by default.</strong> Mounts serve live editing, not durability.</li>
 <li><strong>Replacing a hardlinked target breaks the link</strong>, so other names keep the old content. This is documented, not prevented.</li>
-<li>Temporary names are ignored by the broker, by directory scans and by directory cleanup, and a failed write removes its temporary file and leaves the target untouched.</li>
+<li><strong>Temporary names are ignored</strong> by the broker, by directory scans and by directory cleanup, and a failed write removes its temporary file and leaves the target untouched.</li>
 </ul>
 <h2 id="reassert-and-the-detectors-thresholds">Reassert, and the detector's thresholds</h2>
 <p>A <code>foreign</code>, <code>rejected</code> or <code>absent</code> observation in mode <strong><code>w</code></strong> on a <strong><code>complete</code></strong> node means someone else changed an output this Context owns. The controller requests a delivery of <em>N</em> even though <em>N</em> is already the actuation baseline, records a timestamp and runs the detector. If the node is not complete, nothing happens until it is.</p>
-<p><strong>Threshold: three reasserts within a rolling 20-second window</strong> (a current default, not contract — see <em>Limits</em>).</p>
+<p><strong>Threshold: three reasserts within a rolling 20-second window</strong> — a current default, not contract (<em>Limits</em>).</p>
 <p><strong>The window is the whole point.</strong> A human editing and reverting over hours produces the same signature with no conflict; a machine fight runs at the poll rate and crosses the threshold in under a second. Counting reasserts without a window would fire on the first; a window without a threshold would fire on any ordinary editing session.</p>
-<p>The trip mechanism — the latched <code>ConflictError</code>, actuation stopping, the registration staying, <code>clear_error()</code> as the only recovery — is in <code>contracts/attachments.md</code>. The error message names the path and the two alternating checksums.</p>
+<p>The trip mechanism — the latched <code>ConflictError</code>, actuation stopping, the registration staying, <code>clear_error()</code> as the only recovery — is in <code>contracts/attachments.md</code>, <em>The oscillation detector</em>. The file driver's error message names the path and the two alternating checksums.</p>
 <h3 id="two-writers">Two writers</h3>
 <ul>
 <li><strong>Within one process, two writers are prevented</strong>: the registry refuses incompatible overlaps, and a sensing mount refuses incoming edges.</li>
@@ -764,23 +809,28 @@ ctx.set_graph(graph, mounts=True)
 <li><strong>Scope, stated as a warning rather than a promise.</strong> The detector finds <strong>oscillation</strong>. It does <strong>not</strong> fire on two <code>rw</code> mounts over <em>independent</em> nodes in two processes. Those converge silently on the last writer, coupling the two workflows through the filesystem so that one's results depend on whether the other happened to be running. <strong>Nothing here can detect that across processes.</strong></li>
 </ul>
 <h2 id="directory-mounts">Directory mounts</h2>
-<p>The node's value is the <strong>deep-folder index</strong> — <code>{relative path: leaf checksum hex}</code>, serialized as <code>plain</code> — and the session tracks only its top-level checksum. Index shape, member typing and the free <code>folder</code> ↔ <code>deepfolder</code> conversion are <code>contracts/deep-celltypes.md</code>.</p>
+<p>The node's value is the <strong>deep-folder index</strong> — <code>{relative path: leaf checksum hex}</code>, serialized as <code>plain</code> — and the session tracks only its top-level checksum. Index shape, member typing and the free <code>folder</code> ↔ <code>deepfolder</code> conversion are in <code>contracts/deep-celltypes.md</code>.</p>
 <p><strong>Read.</strong> Walk the tree, ignoring temporary names. For each file, strip a compression suffix from the <em>name</em> and decompress the content, then hash the <strong>raw bytes</strong> — leaves are bytes, so no text decoding happens and no <code>canon_T</code> applies to a leaf. Build the index, serialize it, hash it, and emit one observation whose buffer is the index. Two leaves whose names collide after suffix stripping are rejected.</p>
 <p><strong>Symlinks.</strong> A <strong>symlink leaf is rejected</strong> (<code>ValueError("Directory mounts do not follow leaf symlinks")</code>), and <strong>symlinked subdirectories are not traversed</strong>. A delivery path that would escape the mount through a symlink is refused.</p>
-<p><strong>Write.</strong> Each changed leaf is replaced <strong>atomically and individually</strong>, then extraneous files are removed where cleanup applies. <strong>The tree as a whole is not replaced atomically</strong> — only each leaf is. A leaf whose content already matches is skipped; a leaf that changed under us fails the whole delivery, which is then retried. The acknowledgement comes after the whole tree is written, and the registration serializes its own I/O, so a half-written tree is never sensed. Compressed physical names are preserved: a leaf previously stored as <code>a.gz</code> is rewritten as <code>a.gz</code>, and index keys with an unsafe shape — absolute, empty, <code>.</code> or <code>..</code> components — are refused.</p>
+<p><strong>Write.</strong> Each changed leaf is replaced <strong>atomically and individually</strong>; then extraneous files are removed where cleanup applies. <strong>The tree as a whole is not replaced atomically.</strong> A leaf whose content already matches is skipped; a leaf that changed under us fails the whole delivery, which is then retried. The acknowledgement comes after the whole tree is written, and the registration serializes its own I/O, so a half-written tree is never sensed. Compressed physical names are preserved: a leaf previously stored as <code>a.gz</code> is rewritten as <code>a.gz</code>. Index keys with an unsafe shape — absolute, empty, <code>.</code> or <code>..</code> components — are refused.</p>
 <p><strong>Cleanup applies only when <code>mode == "w"</code> or <code>authority == "cell"</code>.</strong> Otherwise extraneous files are left in place. Empty subdirectories are then pruned.</p>
 <p><strong>Empty directories.</strong> An <strong>initially empty</strong> directory supplies <strong>no value</strong> (and so cannot override an existing cell value), while a directory <strong>emptied after mounting</strong> reads as the empty index <code>{}</code>.</p>
-<p><strong>Leaf retention</strong> — leaves that a mount <em>sensed</em> stay resolvable while the node holds that index, including after unmounting; a <em>computed</em> directory gets no such claims — is in <code>contracts/attachments.md</code>.</p>
+<p><strong>Leaf retention</strong> — leaves that a mount <em>sensed</em> stay resolvable while the node holds that index, including after unmounting; a <em>computed</em> directory gets no such claims, only the weaker buffer source below — is in <code>contracts/attachments.md</code>, <em>Leaf retention</em>.</p>
+<p><strong>Delivered leaf files as local buffer sources.</strong> A <code>w</code> or <code>rw</code> directory mount registers the files at the paths of the index it delivers as local buffer sources of this process, so a leaf whose buffer was evicted can be read back from its file. Why this exception exists, and its use case, a configuration without a hashserver, are in <code>contracts/cache-storage-and-limits.md</code>, <em>Local buffer sources</em>. A lookup reads the file, decompresses it where the name carries a compression suffix, and serves it only if the resulting bytes hash to the requested checksum. A missing, changed or unreadable file, a symlink, or a path that escapes the mount is a miss for this source, and resolution goes on to the other sources and then to the buffer servers. A presence check, as placement makes it (<code>contracts/expressions.md</code>, <em>Placement</em>), uses file metadata only and reads no content.</p>
+<ul>
+<li><strong>Registration is not a claim.</strong> It acquires no leaf refholder claim, keeps nothing in memory, publishes nothing, and is invisible to other processes.</li>
+<li><strong>Its lifetime is the registration's, not the node's.</strong> The sources are withdrawn when the registration is released — unmount, node deletion, graph replacement, Context close or the service close — even when persistent files remain on disk. Unlike sensed leaves (<code>contracts/attachments.md</code>, <em>Leaf retention</em>), they do not outlive unmounting.</li>
+<li><strong>During a delivery</strong>, the previous index's sources stay registered beside the new index's, so a leaf that only moves can be read from its old file, and a file that already holds a leaf's bytes at its new path serves it. After a successful delivery only the new index's sources remain. After a delivery that fails partway, the leaves it has already written stay servable until a later delivery replaces them or the registration is released.</li>
+<li><strong>Sense-only directory mounts and file mounts register no source.</strong> A sensed leaf stays resolvable through its claim, not through its file.</li>
+</ul>
 <h3 id="null-on-a-directory-mount-is-terminal">Null on a directory mount is terminal</h3>
 <p>A <code>w</code>/<code>rw</code> directory cell holding <strong>null</strong>: <strong>the delivery is suppressed, the tree is left in place, and the mount reports <code>in_sync: False</code> permanently — with no error, because nothing failed.</strong></p>
 <p>Contrast files, which always converge: a null value truncates the file to zero bytes, and a null value with an absent file counts as in sync. There is no equivalent for a directory. "Delete the tree" is not it — removing a value is an explicit graph operation, and a mount never deletes content it did not put there.</p>
-<p><strong>The sharp edge, stated explicitly: the only signal is <code>in_sync: False</code> with an empty <code>ctx.mounts.errors</code>, so a "sync until <code>in_sync</code>" loop never terminates.</strong> The exits are assigning a non-null value, or unmounting. Given that <code>deepfolder</code> is sense-only, this case can only arise for <code>folder</code>.</p>
-<h2 id="sync-spelling-and-the-report"><code>sync()</code>: spelling and the report</h2>
-<pre><code class="language-python">report = ctx.mounts.sync(timeout=None)
-report = await ctx.mounts.synchronization(timeout=None)
-</code></pre>
-<p>The semantics, the round structure and the <em>settled through the final cut</em> guarantee are in <code>contracts/attachments.md</code>. What is file-specific is the spelling and the report.</p>
-<p><strong><code>SyncReport</code> is a <code>dict</code> subclass keyed by node path</strong> (a tuple, as everywhere in the Context), whose values are detached copies of the <code>status</code> dict above, plus two properties:</p>
+<p><strong>The sharp edge, stated explicitly: the only signal is <code>in_sync: False</code> with an empty <code>ctx.mounts.errors</code>, so a "sync until <code>in_sync</code>" loop never terminates.</strong> The exits are assigning a non-null value, or unmounting.</p>
+<p><strong>Where the null can come from.</strong> <code>deepfolder</code> is sense-only, so this case arises only for <code>folder</code>. And <strong>a transformer cannot produce a null <code>folder</code></strong>: a transformation whose result is <code>None</code> for a <code>folder</code> result celltype fails with <code>RuntimeError("Null result is not allowed for celltype 'folder'")</code>, so the transformer is <code>failed</code> and its result cell never completes. A null directory value therefore comes only from a user write of null, a graph literal, or the initial decision (rows 3–5 of the no-value table, in <code>rw</code> mode).</p>
+<h2 id="sync-and-the-report"><code>sync()</code> and the report</h2>
+<p>The semantics, the round structure and the <em>settled through the final cut</em> guarantee of <code>ctx.mounts.sync()</code> / <code>await ctx.mounts.synchronization()</code> are in <code>contracts/attachments.md</code>, <em>The cut barrier</em>. What is file-specific is the report.</p>
+<p><strong><code>SyncReport</code> is a <code>dict</code> subclass keyed by <code>(node_path, driver)</code></strong>, where <code>node_path</code> is a tuple and <code>driver</code> is <code>"file"</code>, <code>"widget"</code> or <code>"share"</code> for supported public attachments. The internal test-only <code>ManualDriver</code> may use <code>"manual"</code> in protocol tests. The report includes every attachment session, and each value is a detached copy of that session's status dict, plus two properties:</p>
 <table>
 <thead>
 <tr>
@@ -790,12 +840,12 @@ report = await ctx.mounts.synchronization(timeout=None)
 </thead>
 <tbody>
 <tr>
-<td><code>report[node_path]</code></td>
-<td>that mount's <code>status</code> dict at the moment the cut resolved</td>
+<td><code>report[(node_path, driver)]</code></td>
+<td>that attachment's status dict at the moment the cut resolved</td>
 </tr>
 <tr>
 <td><code>report.errors</code></td>
-<td><code>{node path: error or sense_error}</code> for every entry that has one</td>
+<td><code>{(node_path, driver): error or sense_error}</code> for every entry that has one</td>
 </tr>
 <tr>
 <td><code>report.in_sync</code></td>
@@ -803,36 +853,36 @@ report = await ctx.mounts.synchronization(timeout=None)
 </tr>
 </tbody>
 </table>
-<p><code>ctx.mounts.errors</code> is the same mapping as <code>report.errors</code>, computed on demand <strong>without</strong> a cut — a cheap status read, not a barrier.</p>
+<p><code>ctx.mounts.errors</code> is the same tuple-keyed mapping as <code>report.errors</code>, computed on demand <strong>without</strong> a cut — a cheap status read, not a barrier.</p>
 <p>A Context with no mounts returns an empty report immediately.</p>
 <p><strong><code>ctx.compute()</code> never waits for files.</strong> A script that computes and then reads a mounted output from outside the process must call <code>ctx.mounts.sync()</code> as well; graph quiescence says nothing about the filesystem.</p>
 <h2 id="unmount-persistence-and-close">Unmount, persistence and close</h2>
-<p>Unmounting, and what it clears, is in <code>contracts/attachments.md</code>. File-specific:</p>
+<p>Unmounting, and what it clears, is in <code>contracts/attachments.md</code>, <em>Attach, detach, close</em>. File-specific:</p>
 <ul>
-<li><strong>The unmount call waits for the transport's cleanup</strong>, bounded by the delivery timeout, so a <code>persistent=False</code> deletion has happened by the time <code>del ctx.a.mount</code> returns.</li>
-<li><strong><code>persistent=False</code> deletes conditionally.</strong> The file — or, for a directory mount, the whole tree — is deleted at unmount, at node deletion and at close, <strong>only if its fingerprint still equals the belief's fingerprint</strong>, and only if no other live registration names the path. A file a foreign writer has changed since is <strong>left alone</strong>, and that is logged. Seamless never deletes content based on a path alone.</li>
-<li><strong>A <code>set_graph</code> swap keeps the file.</strong> Graph replacement detaches every session with deletion disabled, so a non-persistent file survives a reload whether or not the new graph re-attaches the same path.</li>
+<li><strong>The unmount call waits for the transport's cleanup</strong>, bounded by the delivery timeout, so a <code>persistent=False</code> deletion has happened by the time <code>del ctx.a.mount</code> returns. Node deletion waits in the same way.</li>
+<li><strong><code>persistent=False</code> deletes conditionally.</strong> The file — or, for a directory mount, the whole tree — is deleted at unmount, at node deletion and at Context close, <strong>only if its fingerprint still equals the belief's fingerprint</strong>, and only if no other live registration names the path. A file a foreign writer has changed since is <strong>left alone</strong>, and that is logged. Seamless never deletes content based on a path alone.</li>
+<li><strong>An empty same-celltype builder unmounts and clears.</strong> <code>ctx.a = Cell(celltype=&lt;same&gt;)</code> on a mounted cell is the one clearing spelling that is not refused (<em>Errors</em>): it detaches the mount — spec, status and session removed, no <code>mount</code> entry in <code>get_graph()</code> — and leaves the cell with no value. A persistent file is left untouched. <strong>Whether a <code>persistent=False</code> file is deleted on this path is unspecified</strong> (deferred). A builder of a <em>different</em> celltype is refused as a retype.</li>
+<li><strong>A <code>set_graph</code> swap keeps the file.</strong> Graph replacement detaches every session with deletion disabled, so a non-persistent file survives a reload whether or not the new graph re-attaches the same path. Do not rely on a graph replacement to clean anything up.</li>
 <li><strong>The close flush is file-shaped only in its bound</strong>: <code>close(timeout=60)</code> covers the flush and the conditional deletes together.</li>
-<li><strong><code>seamless.close()</code> closes the Contexts first, each flushing, and then the filesystem service</strong>, which stops the broker, unregisters everything that is left (running the conditional deletes) and drains the I/O pool. Service threads are daemon threads, so an abandoned interpreter can still exit. The service itself starts <strong>lazily, on the first reservation</strong>, and a <code>get_service()</code> after a close starts a fresh one.</li>
+<li><strong><code>seamless.close()</code> closes the Contexts first, each flushing and running its conditional deletes, and then the filesystem service</strong>, which stops the broker, releases every registration that is left and drains the I/O pool. <strong>The service close itself deletes nothing</strong>: it unregisters leftovers with deletion disabled (<code>unregister(reg, delete=False)</code>), so a non-persistent file whose Context was never closed survives. Service threads are daemon threads, so an abandoned interpreter can still exit. The service starts <strong>lazily, on the first reservation</strong>, and a <code>get_service()</code> after a close starts a fresh one.</li>
 </ul>
 <h2 id="the-path-overlap-registry">The path-overlap registry</h2>
 <ul>
-<li><strong>Normalization.</strong> Paths are made absolute with symlinks in the parent chain resolved. <strong>If the target itself is a symlink, the registration resolves to the link's target</strong>: writes then replace the target file and the link survives.</li>
+<li><strong>Normalization.</strong> Paths are made absolute with symlinks in the parent chain resolved. <strong>If the target itself is a symlink, the registration resolves to the link's target</strong>: writes then replace the target file, and the link survives.</li>
 <li><strong>Overlap.</strong> Two registrations overlap if their paths are equal, or if one is a directory prefix of the other.</li>
-<li><strong>Refusal.</strong> An overlap is refused — <code>ValueError("Mount path overlaps existing registration: …")</code> — if either side <strong>actuates</strong> (<code>w</code> in its mode) or either side is a <strong>non-persistent directory</strong> (one that would delete a tree). <code>r</code>-only registrations may overlap freely.</li>
+<li><strong>Refusal.</strong> An overlap is refused — <code>ValueError("Mount path overlaps existing registration: …")</code> — if either side <strong>actuates</strong> (<code>w</code> in its mode) or either side is a <strong>non-persistent directory</strong> (one that would delete a tree). <code>r</code>-only registrations may otherwise overlap freely.</li>
 <li><strong>The check covers every Context in the process</strong>, not just one graph.</li>
 <li><strong>Swaps.</strong> A <code>set_graph</code> reservation names the registrations it replaces, and the swap commits or aborts with the controller turn. A reservation that is refused leaves the existing mounts installed and active.</li>
 <li><strong>Non-guarantees.</strong> Other processes, hardlinks, bind mounts, case-insensitive filesystems and network-filesystem aliases are <strong>outside</strong> the check. It is a safety net, not an exclusivity guarantee.</li>
 </ul>
 <h2 id="graph-serialization">Graph serialization</h2>
 <ul>
-<li><strong>Format <code>0.4</code>.</strong> <code>0.2</code> and <code>0.3</code> graphs still load; an unknown version raises <code>PathError("Unsupported workflow graph version: …")</code>.</li>
+<li><strong>Format.</strong> The contract format is <strong><code>0.7</code></strong>: <code>0.6</code> added serialized share specs to the <code>0.5</code> graph format, and <code>0.7</code> adds downloads (<code>contracts/shares.md</code>, <em>Graph serialization</em>; <code>contracts/workflow-context.md</code>). <code>0.2</code> to <code>0.6</code> graphs load; an unknown version raises <code>PathError("Unsupported workflow graph version: …")</code>.</li>
 <li><strong>The mount entry</strong> is <code>{"path", "mode", "authority", "persistent"}</code> on a cell entry — the spec after normalization, without the driver. Only <code>driver == "file"</code> is serialized at all, so manual and widget sessions leave no entry.</li>
 <li><strong>Every mount entry is validated by <code>prepare_graph</code>, before <code>mounts</code> is consulted at all.</strong> Unknown fields, a bad mode or authority, an illegal <code>file-strict</code> combination, an unmountable celltype, a <code>w</code>/<code>rw</code> <code>deepfolder</code>, a mount on a non-cell node and a connection into a sensing-mounted node are all refused as <code>PathError</code> — <strong>including when <code>mounts=False</code></strong>, because a malformed spec makes the graph malformed whether or not this loader attaches it.</li>
 <li><strong><code>mounts=False</code> strips the (valid) specs</strong> and loads the graph as an ordinary one.</li>
-<li><strong><code>mounts=True</code> attaches every spec exactly as <code>mount()</code> does.</strong> All reservations and initial reads are prepared in parallel on the caller's side; <strong>one message replaces the graph and all sessions atomically</strong>; and the call waits for every initial acknowledgement. As with <code>mount()</code>, the state of a file never makes the load fail — it becomes a cell exception or a mount error, with that mount monitoring.</li>
+<li><strong><code>mounts=True</code> attaches every spec exactly as <code>mount()</code> does.</strong> All reservations and initial reads are prepared in parallel on the caller's side; <strong>one message replaces the graph and all sessions atomically</strong>; and the call waits for every initial acknowledgement. As with <code>mount()</code>, the state of a file never makes the load fail — it becomes a cell exception or a mount error, with that mount monitoring. Consequently <code>ctx.set_graph(graph, mounts=True)</code> <strong>blocks</strong>, unlike the plain form, which does not wait (<code>contracts/workflow-context.md</code>).</li>
 <li><strong>Loading a graph with <code>w</code>/<code>rw</code> mounts writes files.</strong> This is the one place where loading a graph has an effect outside the process. <strong>Graphs of unknown origin must be loaded with <code>mounts=False</code>.</strong></li>
-<li>Consequently <code>ctx.set_graph(graph, mounts=True)</code> <strong>blocks</strong> — through the initial reads and acknowledgements — unlike the plain form, which does not wait (<code>contracts/workflow-context.md</code>).</li>
 </ul>
 <h2 id="limits-and-platform-notes">Limits and platform notes</h2>
 <p><strong>The shape is contract:</strong></p>
@@ -880,8 +930,8 @@ report = await ctx.mounts.synchronization(timeout=None)
 </tr>
 </tbody>
 </table>
-<p><strong>Network filesystems are a documented limitation.</strong> The fingerprint plus the racy rule cover the ordinary cases, but <strong>on an attribute-caching filesystem a change that preserves both size and <code>mtime_ns</code> may go unseen until the next change</strong>. <strong>There is no per-mount <code>rehash_interval</code>, and none is planned.</strong> The correctness guard still holds — nothing wrong is installed — but the change is noticed late, or on the next event.</p>
-<p>Other platform notes: there is no <code>fsync</code>; replacing a hardlinked target breaks the link; a symlinked target is followed and preserved, while symlinks <em>inside</em> a directory mount are refused or skipped; case-insensitive filesystems are outside the overlap check.</p>
+<p><strong>Network filesystems are a documented limitation.</strong> The fingerprint plus the racy rule cover the ordinary cases, but <strong>on an attribute-caching filesystem a change that preserves both size and <code>mtime_ns</code> may go unseen until the next change</strong>. <strong>There is no per-mount <code>rehash_interval</code>, and none is planned.</strong> The correctness guard still holds — nothing wrong is installed — but the change is noticed late.</p>
+<p>Platform notes, collected: there is no <code>fsync</code>; replacing a hardlinked target breaks the link; a symlinked target is followed and preserved, while symlinks <em>inside</em> a directory mount are refused or skipped; case-insensitive filesystems are outside the overlap check.</p>
 <h2 id="porting-notes">Porting notes</h2>
 <p>Stated as current behaviour, with no claim about what any earlier version did:</p>
 <ul>
@@ -891,40 +941,45 @@ report = await ctx.mounts.synchronization(timeout=None)
 <li><strong>A directory is a <code>folder</code> (or, for sensing only, <code>deepfolder</code>) cell mounted to a directory path.</strong> There is no <code>as_directory</code> flag.</li>
 </ul>
 <h2 id="implementation-status-and-current-limitations">Implementation status and current limitations</h2>
-<p>Settled contract that the code does not yet implement, or implements differently. Where a design document and the code disagree, <strong>the code wins</strong>, and the disagreement is listed here.</p>
+<p>The code satisfies the contract on this page, including the public <code>NodeError</code> for missing, non-cell and stale cell handles and the empty-builder detach. Focused plain tests in <code>seamless-workflow/tests/test_contract_mounts.py</code> and <code>test_contract_attachments.py</code> cover them.</p>
+<h3 id="current-limitations">Current limitations</h3>
 <ul>
-<li><strong><code>Cell.exception</code> is an exception object in code, not the contractual string.</strong> A sense error is installed on the node as the <code>MountError</code> itself; see <code>contracts/cells.md</code> and <code>contracts/attachments.md</code>.</li>
-<li><strong><code>clear_error()</code> on an unmounted cell raises a bare <code>KeyError</code></strong>, while <code>.spec</code>, <code>.status</code> and <code>.error</code> answer <code>None</code> and <code>del ctx.a.mount</code> is a silent no-op. An inconsistency, not a refusal.</li>
-<li><strong>A <code>set_graph</code> never deletes a non-persistent file</strong>, which is wider than the design's promise ("not when the new graph re-attaches the same path"). Do not rely on a graph replacement to clean anything up.</li>
 <li><strong>The <code>ConflictError</code> message hardcodes "three reasserts in 20 seconds."</strong> Retuning the detector would leave the message stale; treat the message as prose and <code>isinstance(..., ConflictError)</code> as the check.</li>
-<li><strong>The vocabulary of the code is <code>mount</code>, not <code>attachment</code></strong>, all the way down to <code>Node.mount</code> and the <code>_mount_*</code> handlers; <code>AttachmentSpec</code> carries file fields. See <code>contracts/attachments.md</code>, <em>Implementation status</em>, for the four places the generic layer is file-shaped.</li>
-<li><strong>Delivery retries have no timer of their own.</strong> The broker's per-poll no-op tick causes a turn, and the post-turn pass dispatches a due retry — so on an idle Context a backoff fires within about one poll interval. See <code>contracts/attachments.md</code>.</li>
+<li><strong>The vocabulary of the code is <code>mount</code>, not <code>attachment</code></strong>, all the way down to <code>Node.mount</code> and the <code>_mount_*</code> handlers, and <code>AttachmentSpec</code> carries file fields. See <code>contracts/attachments.md</code>, <em>Implementation status</em>, for the four places where the generic layer is file-shaped.</li>
+<li><strong>Delivery retries have no timer of their own.</strong> The broker's per-poll no-op tick causes a turn, and the post-turn pass dispatches a due retry — so on an idle Context a backoff fires within about one poll interval (<code>contracts/attachments.md</code>).</li>
+</ul>
+<p><strong>Open, deferred by the author</strong> (the tests pin neither answer):</p>
+<ul>
+<li>whether the <code>KeyError</code> from <code>clear_error()</code> on an unmounted cell is contract;</li>
+<li>whether mounting a bound <code>as_celltype</code> handle is refused, and with which error;</li>
+<li>whether a <code>persistent=False</code> file is deleted when <code>ctx.a = Cell(celltype=&lt;same&gt;)</code> detaches the mount.</li>
 </ul>
 <p><strong>Superseded and stale sources.</strong> These are wrong; do not carry them forward:</p>
 <ul>
-<li><code>mount-design.md</code> §20.3 ("resolve it through the ordinary path, <strong>which may recompute it</strong>") is <strong>superseded</strong>: a delivery resolves and never fingertips (<code>contracts/attachments.md</code>).</li>
-<li><code>mount-design.md</code> §17.3, the row "clearing an <code>r</code>/<code>rw</code> cell's value stays cleared": the code <strong>refuses</strong> the clear outright, with <code>AuthorityError("Cannot clear a mounted cell; unmount first")</code>. The refusal is the contract.</li>
-<li><code>mount-design.md</code> §16's "naming is provisional": the names are now fixed by the code.</li>
-<li><code>mount-implementation.md</code> says graph format <code>0.3</code>; the code and the workflow README say <code>0.4</code>.</li>
-<li><code>attachments-and-mount-design.md</code> Part II §21 still discusses a <code>settled()</code> predicate and spells the barrier <code>ctx.mount.sync()</code> (singular). Both are dead. Where that document and <code>mount-design.md</code> differ, <code>mount-design.md</code> plus the code wins.</li>
+<li><code>mount-design.md</code> §20.3 ("resolve it through the ordinary path, <strong>which may recompute it</strong>") is <strong>superseded</strong>: a delivery resolves and never fingertips (<code>contracts/attachments.md</code>). Without a hashserver, the Context fingertips a <code>w</code>-mounted cell's missing buffer before the cell takes the checksum, so the delivery finds it (<code>contracts/workflow-context.md</code>, <em>A Context without a hashserver</em>).</li>
+<li><code>mount-design.md</code> §17.3, the row "clearing an <code>r</code>/<code>rw</code> cell's value stays cleared": clearing a mounted cell is <strong>refused</strong> with <code>AuthorityError("Cannot clear a mounted cell; unmount first")</code>, in every mode, except through an empty same-celltype builder, which unmounts and clears (<em>Unmount, persistence and close</em>).</li>
+<li><code>mount-design.md</code>'s promise that a <code>set_graph</code> does not delete a non-persistent file only "when the new graph re-attaches the same path" is too narrow: a <code>set_graph</code> never deletes it.</li>
+<li><code>mount-design.md</code> §16's "naming is provisional": the names are fixed.</li>
+<li><code>mount-implementation.md</code> says graph format <code>0.3</code>; the current workflow graph format written by the code is <code>0.7</code> (<em>Graph serialization</em>), which includes shares and downloads as well as mounts.</li>
+<li><code>attachments-and-mount-design.md</code> Part II §21 still discusses a <code>settled()</code> predicate and spells the barrier <code>ctx.mount.sync()</code> (singular). Both are dead. Where that document and <code>mount-design.md</code> differ, this page wins.</li>
 <li><strong>Every "legacy Seamless" claim anywhere in the design documents is unverified.</strong> The 0.x characterization never ran, so this page carries <strong>no</strong> comparison with it — including in the decision table, whose "legacy" column is not reproduced here.</li>
 </ul>
 <h2 id="non-goals">Non-goals</h2>
 <ul>
 <li><strong>Durability.</strong> No <code>fsync</code>; a mount serves live editing.</li>
 <li><strong>Cross-process exclusivity or locking.</strong> The registry is a within-process safety net; across processes the tools are conditional writes and the detector.</li>
-<li><strong>Rewriting a file into canonical form.</strong> User formatting survives until the value changes; a mount does not fight the editor.</li>
+<li><strong>Preserving formatting on a writable mount.</strong> <code>rw</code> deliberately rewrites non-canonical sensed file bytes into canonical form; use <code>r</code> to preserve external formatting.</li>
 <li><strong>Recreating a file the user deleted, on its own.</strong> Deletion leaves a sensing node unchanged; an actuating mount rewrites the file at the <em>next</em> value change, or at the next reassert in <code>w</code> mode.</li>
 <li><strong>Mounting a whole (sub)context to a directory, automatic child paths, or file-extension inference.</strong></li>
 <li><strong>Continuous external ownership</strong> (<code>edit_policy="external-owned"</code>). Deferred with a condition: it must not be expressed by redefining <code>authority="file"</code>.</li>
-<li><strong>Detecting two <code>rw</code> mounts over <em>independent</em> nodes in two processes.</strong> The detector finds oscillation, not silent coupling through the filesystem. See <em>Two writers</em>.</li>
+<li><strong>Detecting two <code>rw</code> mounts over <em>independent</em> nodes in two processes.</strong> The detector finds oscillation, not silent coupling through the filesystem (<em>Two writers</em>).</li>
 </ul>
               
             </div>
           </div><footer>
     <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
         <a href="attachments.html" class="btn btn-neutral float-left" title="Attachments"><span class="icon icon-circle-arrow-left"></span> Previous</a>
-        <a href="cancellation.html" class="btn btn-neutral float-right" title="Cancellation">Next <span class="icon icon-circle-arrow-right"></span></a>
+        <a href="shares.html" class="btn btn-neutral float-right" title="HTTP Shares">Next <span class="icon icon-circle-arrow-right"></span></a>
     </div>
 
   <hr/>
@@ -950,7 +1005,7 @@ report = await ctx.mounts.synchronization(timeout=None)
       <span><a href="attachments.html" style="color: #fcfcfc">&laquo; Previous</a></span>
     
     
-      <span><a href="cancellation.html" style="color: #fcfcfc">Next &raquo;</a></span>
+      <span><a href="shares.html" style="color: #fcfcfc">Next &raquo;</a></span>
     
   </span>
 </div>

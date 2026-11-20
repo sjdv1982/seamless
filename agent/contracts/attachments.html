@@ -73,7 +73,7 @@
                   </li>
                   <li class="toctree-l1 current"><a class="reference internal current" href="#">Attachments</a>
     <ul class="current">
-    <li class="toctree-l2"><a class="reference internal" href="#scope-context-bound-whole-cell-nodes-one-attachment-each">Scope: Context-bound whole cell nodes, one attachment each</a>
+    <li class="toctree-l2"><a class="reference internal" href="#scope-context-bound-whole-cell-nodes-one-slot-per-driver">Scope: Context-bound whole cell nodes, one slot per driver</a>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#the-durable-spec-and-the-ephemeral-session">The durable spec and the ephemeral session</a>
     </li>
@@ -102,18 +102,38 @@
     <li class="toctree-l2"><a class="reference internal" href="#the-cut-barrier">The cut barrier</a>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#attach-detach-close">Attach, detach, close</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#attach">Attach</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#detach">Detach</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#close">Close</a>
+    </li>
+        </ul>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#leaf-retention-on-the-sense-path-only">Leaf retention, on the sense path only</a>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#the-driver-roster">The driver roster</a>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#implementation-status-and-current-limitations">Implementation status and current limitations</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#current-limitations">Current limitations</a>
+    </li>
+        </ul>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#non-goals">Non-goals</a>
     </li>
     </ul>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="mounts.html">File Mounts</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="shares.html">HTTP Shares</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="widgets.html">Jupyter Widgets</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="streaming.html">Streaming</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="transformation-logs.html">Transformation Logs</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="cancellation.html">Cancellation</a>
                   </li>
@@ -131,6 +151,8 @@
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="execution-backends.html">Execution Backends</a>
                   </li>
+                  <li class="toctree-l1"><a class="reference internal" href="environments.html">Environments</a>
+                  </li>
                   <li class="toctree-l1"><a class="reference internal" href="execution-records.html">Execution Records</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="service-management.html">Service Management</a>
@@ -142,6 +164,10 @@
                   <li class="toctree-l1"><a class="reference internal" href="compiled-pins.html">Compiled Pins</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="seamless-signature-schema.html">seamless-signature Schema</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="handler-languages.html">Handler Languages</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="language-backends.html">Language Backends</a>
                   </li>
               </ul>
               <p class="caption"><span class="caption-text">API</span></p>
@@ -196,10 +222,15 @@
 <p>An <strong>attachment</strong> connects one Context cell node to an external resource, in one or both directions:</p>
 <ul>
 <li><strong>sense</strong> — external state becomes an <strong>authoritative value write</strong> on the node: an ordinary user assignment that happens to arrive from somewhere else;</li>
-<li><strong>actuate</strong> — after a turn in which the node's value changed, that <strong>complete</strong> value is <strong>delivered</strong> to the resource.</li>
+<li><strong>actuate</strong> — after a turn in which the node's value changed, and once the node is <strong><code>complete</code></strong>, that value is <strong>delivered</strong> to the resource.</li>
 </ul>
-<p>This page is the framework: direction, scope, ownership, delivery discipline, error state and lifecycle. The <strong>file driver</strong> — bytes, paths, celltype canonicalization, fingerprints, atomic writes, directories, limits — is <code>contracts/mounts.md</code>. The seam is <strong>direction and discipline versus bytes and filesystem</strong>: <code>contracts/mounts.md</code> never restates a rule from this page, it only says where the file driver specializes one.</p>
-<p><strong>This page specifies the guaranteed behaviour of the attachments that exist; it is not a supported plugin API.</strong> The file driver is the only production driver. <code>ManualDriver</code> is a test instrument, <code>WidgetDriver</code> is experimental, and third-party drivers are not supported. There is a real transport boundary and it is worth understanding, but nothing below is a stable extension point, and the "generic" layer is still file-shaped in four named places (see <em>Implementation status</em>).</p>
+<p>This page is the framework: scope, the durable spec and the ephemeral session, the topology rules, the sense and actuate disciplines, the error model, the oscillation detector, the cut barrier, the lifecycle and leaf retention. The <strong>file driver</strong> — bytes, paths, celltype canonicalization, fingerprints, atomic writes, directories, limits — is <code>contracts/mounts.md</code>. The seam is <strong>direction and discipline versus bytes and filesystem</strong>: <code>contracts/mounts.md</code> never restates a rule from this page; it only says where the file driver specializes one.</p>
+<p><strong>This page specifies the guaranteed behaviour of the attachments that exist; it is not a supported plugin API.</strong> File mounts, Jupyter widgets and HTTP shares are supported through their public APIs. Widget attachments use <code>seamless_workflow.jupyter</code>; <code>WidgetDriver</code> remains an internal transport. <code>ManualDriver</code> is a test instrument, and third-party drivers are not supported. There is a real transport boundary and it is worth understanding, but nothing below is a stable extension point, and the "generic" layer is still file-shaped in four named places (<em>Current limitations</em>, below).</p>
+<p><strong>"Authority" has two unrelated meanings</strong>, both inherited from the code's own naming. Keep them apart:</p>
+<ul>
+<li><strong>Write authority</strong> — the topology check that every write passes, and that refuses with <strong><code>AuthorityError</code></strong> when a source controls the target (<code>contracts/cells.md</code>, <em>Authority</em>). An <strong>authoritative write</strong> is one that passes this check and installs a value. <strong>Unqualified, "authority" and "authoritative" on this page always mean this.</strong></li>
+<li><strong>The <code>authority</code> spec field</strong> — <code>"file"</code>, <code>"cell"</code> or <code>"file-strict"</code>, an argument of <code>mount()</code>. It <strong>only resolves the initial file-versus-cell conflict at attach time</strong> (<code>contracts/mounts.md</code>, <em>The initial decision table</em>). It confers no write authority, is not a continuous ownership rule, and has nothing to do with <code>AuthorityError</code>. This page always names it as "the <code>authority</code> field" or writes it as <code>authority=…</code>.</li>
+</ul>
 <p>Code locations:</p>
 <table>
 <thead>
@@ -230,12 +261,28 @@
 <td><code>seamless_workflow.attachments.api</code> (<code>MountHandle</code>, <code>ContextMounts</code>, <code>make_sink</code>, <code>load_graph</code>)</td>
 </tr>
 <tr>
+<td>Public share API</td>
+<td><code>seamless_workflow.attachments.share.api</code> (<code>ShareHandle</code>, <code>ContextShares</code>); <code>seamless_workflow.shareserver</code></td>
+</tr>
+<tr>
 <td>Transport implementations</td>
-<td><code>seamless_workflow.attachments.fs.service</code> (<code>FileSystemService</code>, <code>Registration</code>), <code>…attachments.widget.WidgetDriver</code>, <code>…attachments.manual.ManualDriver</code></td>
+<td><code>seamless_workflow.attachments.fs.service</code> (<code>FileSystemService</code>, <code>Registration</code>), <code>…attachments.widget.WidgetDriver</code> (internal widget transport), <code>…attachments.manual.ManualDriver</code></td>
+</tr>
+<tr>
+<td>Local buffer sources (consulted by delivery resolution; registered by directory write mounts)</td>
+<td><code>seamless.caching.buffer_source</code> (<code>BufferSource</code>, <code>replace_buffer_sources</code>, <code>unregister_buffer_sources</code>) — seamless-core</td>
+</tr>
+<tr>
+<td>Share spec and transport</td>
+<td><code>seamless_workflow.attachments.share.spec</code> (<code>ShareSpec</code>); <code>…attachments.share.driver.ShareDriver</code></td>
+</tr>
+<tr>
+<td>Public widget API</td>
+<td><code>seamless_workflow.jupyter</code> (<code>traitlet</code>, <code>output</code>); <code>WidgetDriver</code> itself is internal</td>
 </tr>
 <tr>
 <td>Node field and graph entry</td>
-<td><code>seamless_workflow.graph.Node.mount</code>; <code>seamless_workflow.context.Context.get_graph</code> / <code>set_graph</code>; <code>seamless_workflow.serialization.prepare_graph</code></td>
+<td><code>Node.mount</code> stores the serialized file spec; <code>Node.attachments</code> holds non-file specs by driver, of which only the share spec is serialized; <code>Context.get_graph</code> / <code>set_graph</code>; <code>serialization.prepare_graph</code></td>
 </tr>
 <tr>
 <td>Cell handle</td>
@@ -247,7 +294,7 @@
 </tr>
 </tbody>
 </table>
-<h2 id="scope-context-bound-whole-cell-nodes-one-attachment-each">Scope: Context-bound whole cell nodes, one attachment each</h2>
+<h2 id="scope-context-bound-whole-cell-nodes-one-slot-per-driver">Scope: Context-bound whole cell nodes, one slot per driver</h2>
 <p>An attachment attaches to a <strong>whole cell node of a workflow Context</strong>, and to nothing else.</p>
 <table>
 <thead>
@@ -266,8 +313,16 @@
 <td><code>AttributeError("mount is only available for bound workflow cells")</code> — the bound-only error <code>Cell</code> already uses for Context-only members</td>
 </tr>
 <tr>
-<td>a sub-path projection (<code>ctx.a.b</code>), or a read-only handle — <strong>including a transformer's result, <code>ctx.tf.result</code></strong></td>
+<td>a sub-path projection (<code>ctx.a.b</code>)</td>
 <td><code>AttributeError("Only whole Context cell nodes can be mounted")</code></td>
+</tr>
+<tr>
+<td>a read-only handle, <strong>including a transformer's result, <code>ctx.tf.result</code></strong></td>
+<td><code>AttributeError("Only whole Context cell nodes can be mounted")</code></td>
+</tr>
+<tr>
+<td>a bound <code>as_celltype</code> handle (<code>ctx.a.as_celltype("text")</code>)</td>
+<td><strong>unspecified — deferred.</strong> Whether mounting one is refused, and with which error, is an open question; do not depend on either outcome</td>
 </tr>
 <tr>
 <td>a transformer pin</td>
@@ -282,56 +337,61 @@
 <td><code>NodeError("Mounts require an existing whole cell node")</code></td>
 </tr>
 <tr>
-<td>a node that already has one</td>
+<td>a node whose slot for this driver is already occupied</td>
 <td><code>ValueError("Cell is already mounted; unmount first")</code></td>
 </tr>
 </tbody>
 </table>
+<p>A node has one <strong>file</strong> slot, one <strong>widget</strong> slot and one <strong>share</strong> slot. They may coexist. A second attachment for a driver that already has a slot is refused; <code>ctx.a.mount.*</code>, <code>traitlet(ctx.a)</code> and <code>ctx.a.share.*</code> address only their respective slots.</p>
+<p>The messages <code>"Only whole Context cell nodes can be mounted"</code> and <code>"Cell is already mounted; unmount first"</code> are contract, and so is the <code>NodeError</code> message.</p>
 <p><strong>The remedy for every exclusion is the same: attach a cell and connect it</strong>, in whichever direction the value flows. <code>ctx.code = Cell(celltype="python"); ctx.code.mount("code.py"); ctx.tf.code = ctx.code</code> is the supported way to edit transformer code externally; <code>ctx.out = ctx.tf.result; ctx.out.mount("outdir", mode="w")</code> is the supported way to write a transformer's result out. This is not a temporary limitation: only nodes carry checksums, only a Context has a controller and an update stream, and an attachment's whole discipline is built on the node being the unit of change.</p>
 <p><strong>Only the whole node value is attached.</strong> There are no sub-path attachments: a sub-path write is a read-modify-set transaction on the root (<code>contracts/cells.md</code>), and an attachment that owned part of a root value would have no checksum of its own to compare against.</p>
 <p><strong>Every public call is an ordinary public Context operation.</strong> Attaching, detaching, <code>clear_error()</code> and the barrier raise <code>ReentrantContextError</code> when called from the controller thread, and <code>ClosedContextError</code> after <code>close()</code>.</p>
 <h2 id="the-durable-spec-and-the-ephemeral-session">The durable spec and the ephemeral session</h2>
 <p>An attachment is two objects with two different lifetimes.</p>
-<p><strong>The spec is durable node state.</strong> It is a frozen dataclass stored in a dedicated <code>Node.mount</code> field — deliberately <em>not</em> in <code>CellConfig</code>, so that the parameterized configuration path cannot reach it. Only attach and detach change it. It is what <code>get_graph()</code> serializes and what <code>set_graph()</code> restores.</p>
+<p><strong>The file spec is durable node state.</strong> It is a frozen dataclass stored in the dedicated <code>Node.mount</code> field — deliberately <em>not</em> in <code>CellConfig</code>, so that the parameterized configuration path cannot reach it. Only attaching and detaching change it. It is what <code>get_graph()</code> serializes and what <code>set_graph()</code> restores. Non-file specs are held in <code>Node.attachments</code>, keyed by driver; only the share spec is serialized and restored. Widget specs remain runtime-only.</p>
 <ul>
-<li>The spec <strong>survives value writes and every configuration edit that leaves the node a cell.</strong></li>
-<li>It is removed, and the session closed, when the node is <strong>deleted</strong> or <strong>replaced by a transformer</strong>. The post-turn pass detaches any session whose node has disappeared or is no longer a cell, so this needs no cooperation from the caller.</li>
+<li>The spec <strong>survives value writes and every configuration edit that leaves the node a cell</strong> — with one exception: replacing the cell with an <strong>empty builder of the same celltype</strong> detaches it (<em>Detach</em>).</li>
+<li>It is removed, and the session closed, when the attachment is <strong>unmounted</strong>, when the node is <strong>deleted</strong>, and when the graph is <strong>replaced</strong> by <code>set_graph()</code>. Every one of those paths is a detach (<em>Detach</em>).</li>
+<li><strong>The post-turn pass is the backstop:</strong> it detaches any session whose node has disappeared or is no longer a cell, so no removal path depends on the caller's cooperation. Through the public API a cell node never turns into a transformer in place — assigning transformer code or a <code>Transformer</code> builder onto a cell node is refused with <code>NodeError</code> (<code>contracts/workflow-context.md</code>, <em>What an assignment means</em>) — so the "no longer a cell" branch guards internal paths only.</li>
 </ul>
-<p><strong>The session is runtime state, and is never copied, serialized or restored.</strong> It holds the transport registration, the one belief about the resource, the processed watch sequence, the actuation baseline, the pending and in-flight deliveries, the reassert timestamps, the two error slots and the session state (<code>active</code>, <code>tripped</code>, <code>closing</code>).</p>
+<p><strong>The session is runtime state, and is never copied, serialized or restored.</strong> Sessions are keyed by <code>(node_path, driver)</code>. Each holds its transport registration, belief about that resource, processed watch sequence, actuation baseline, pending and in-flight deliveries, reassert timestamps, error slots and state (<code>active</code>, <code>tripped</code>, <code>closing</code>).</p>
 <ul>
-<li><strong>A fresh <code>session_id</code> per session, never reused</strong>, plays the role of a generation. Replacing a spec, re-attaching, or reloading the graph closes the old session and opens a new one.</li>
+<li><strong>A fresh <code>session_id</code> per session, never reused</strong>, plays the role of a generation. Detaching and re-attaching, or reloading the graph, closes the old session and opens a new one.</li>
 <li><strong>Every late message from an old session is discarded</strong>, and the payload claims it carries are released. Every handler matches the session id first.</li>
-<li>Therefore <code>get_graph()</code> / <code>set_graph()</code> round-trips carry the spec and nothing else: after a reload, sensing starts from a fresh initial read, not from a remembered state.</li>
+<li>Therefore a <code>get_graph()</code> / <code>set_graph()</code> round trip carries the file spec and share spec. After a reload, file and share sessions start fresh, and runtime-only widget attachments are absent.</li>
 </ul>
 <h2 id="the-topology-rules-an-attachment-imposes">The topology rules an attachment imposes</h2>
-<p><strong>A sensing attachment is the node's producer.</strong> While a node has an attachment whose mode contains <code>r</code>:</p>
+<p><strong>A sensing attachment is the node's producer.</strong> While any attachment on a node has a mode containing <code>r</code>:</p>
 <ul>
 <li>any operation that would add an <strong>incoming edge</strong> to it — at the root <strong>or at any sub-path</strong> — raises <code>AuthorityError("Sensing mount is the producer; unmount first")</code>. That includes assignment syntax, which would otherwise detach and connect;</li>
-<li>attaching to a node that already has an incoming edge raises <code>AuthorityError("Sensing mount cannot have incoming edges; unmount first")</code>;</li>
+<li>attaching a sensing mode to a node that already has an incoming edge raises <code>AuthorityError("Sensing mount cannot have incoming edges; unmount first")</code>. A <code>w</code>-only attachment on a connected node is legal: that is how a computed value is written out;</li>
 <li>a graph carrying such a connection is refused at load with <code>PathError("Sensing mounts cannot have incoming connections")</code>.</li>
 </ul>
-<p>This is the ordinary "a target has at most one producer" rule, and it is what makes a sensed write's authority check unable to fail.</p>
-<p>Two further refusals apply to <strong>any</strong> attached node, sensing or not:</p>
+<p>This is the ordinary "a target has at most one producer" rule, and it is what makes a sensed write's write-authority check unable to fail (<em>Sense</em>). A <code>w</code> attachment may coexist with a sensing attachment; only the sensing attachment contributes the producer rule.</p>
+<p>Two further refusals apply to <strong>any</strong> attached node, whatever the mode:</p>
 <ul>
-<li><strong>The celltype is frozen.</strong> Retyping, or replacing the cell with a builder of a different celltype, raises <code>ValueError("Mounted celltype cannot change; unmount first")</code>. The celltype decides how the resource's bytes are read and written, and re-initializing in place would need a multi-turn protocol that a configuration edit does not have.</li>
-<li><strong>Clearing is refused.</strong> <code>ctx.a.checksum = None</code> and the other clearing spellings raise <code>AuthorityError("Cannot clear a mounted cell; unmount first")</code>. Clearing is an explicit graph operation, and there is no defined external state for "no value".</li>
+<li><strong>The celltype is frozen.</strong> Retyping, or replacing the cell with a builder of a <strong>different</strong> celltype, raises <code>ValueError("Mounted celltype cannot change; unmount first")</code>. The celltype decides how the resource's bytes are read and written, and re-initializing in place would need a multi-turn protocol that a configuration edit does not have.</li>
+<li><strong>Clearing is refused.</strong> <code>ctx.a.checksum = None</code> and the other clearing spellings raise <code>AuthorityError("Cannot clear a mounted cell; unmount first")</code>. Clearing a value is an explicit graph operation, and there is no defined external state for "no value".</li>
 </ul>
-<p><code>contracts/cells.md</code> states the last two from the handle's side.</p>
+<p><strong>One assignment is exempt from both refusals: <code>ctx.a = Cell(celltype=&lt;same&gt;)</code></strong>, an empty builder of the cell's own celltype. It is not refused, and it is not a clearing spelling of an attached cell: it <strong>detaches the attachment and clears the cell</strong> in one operation (<em>Detach</em>), so the cell it clears is no longer attached.</p>
+<p><code>contracts/cells.md</code> states the celltype freeze and the clearing refusal from the handle's side.</p>
 <h2 id="sense-a-non-detaching-authoritative-write">Sense: a non-detaching authoritative write</h2>
 <p>A sensed value is installed exactly as a user assignment is, with two qualifications:</p>
 <ul>
-<li><strong>The same authority check, never detaching.</strong> The write is validated against topology as a non-detaching root write and installed without clearing edges, followed by the ordinary cascade. The newest authoritative input wins, by acceptance order; a sense has no privilege over a user write and no user write has privilege over a sense.</li>
-<li><strong>The authority check cannot fail</strong> while the edge rule above holds. If it fails anyway, the failure is <strong>recorded in the session, not raised</strong> — a sense arrives on the controller as a message from a background producer, and raising would poison ingress.</li>
+<li><strong>The same write-authority check, never detaching.</strong> The write is validated against topology as a non-detaching root write and installed without clearing edges, followed by the ordinary cascade. The newest authoritative input wins, by acceptance order: a sense has no privilege over a user write, and no user write has privilege over a sense.</li>
+<li><strong>The check cannot fail</strong> while the edge rule above holds. If it fails anyway, the failure is <strong>recorded in the session, not raised</strong> — a sense arrives on the controller as a message from a background producer, and raising would poison ingress.</li>
 </ul>
 <p>Two consequences:</p>
 <ul>
-<li><strong>A sensed value supersedes an <em>undispatched</em> pending delivery.</strong> The pending delivery is dropped and its claim released: there is no point writing back a value the resource has just told us is stale. An <strong>in-flight</strong> delivery is never cancelled (below).</li>
-<li><strong>A sense clears the sense error.</strong> Every value write passes through the one installation point, which clears <code>session.sense_error</code>, so a valid observation <em>and</em> a user assignment both clear it.</li>
+<li><strong>A sensed value supersedes an <em>undispatched</em> pending delivery.</strong> The pending delivery is dropped and its claim released: there is no point writing back a value the resource has just told us is stale. An <strong>in-flight</strong> delivery is never cancelled (<em>Actuate</em>).</li>
+<li><strong>Any accepted value write clears every sense error on that node.</strong> A valid observation from either slot, or a user assignment, clears the sensing-error state held by both sessions. An invalid observation still fails the cell and does not clear another session's error.</li>
 </ul>
 <p>Sensing deliberately does <strong>not</strong> do three things:</p>
 <ul>
 <li><strong>Invalid external state does not stop sensing.</strong> It fails the cell and monitoring continues; the next valid observation recovers it with no user action.</li>
-<li><strong>Content that is merely wrong for the program is not rejected.</strong> A syntax error in a <code>python</code> cell passes, because a user assignment of the same text passes. The failure surfaces where it would for a user write: in the transformer that runs it.</li>
+<li><strong>Only what a user assignment checks is rejected; nothing more.</strong> A mount checks exactly what a user assignment of the same value would check — no more leniently, no more strictly (<code>contracts/mounts.md</code>, <em>Canonical bytes</em>). <strong>For the code celltypes that excludes syntax</strong>: an assignment does not parse <code>python</code>, <code>ipython</code> or <code>yaml</code> text (<code>contracts/cells.md</code>, <em><code>.buffer</code> and <code>.value</code></em>), so a sensed file with a syntax error is not a sense error. The cell is <code>complete</code>, the bytes are its value, and the syntax error surfaces downstream: a transformer that runs the code fails with the <code>SyntaxError</code> as its own failure, and a <code>.value</code> read raises it on every read without failing the cell. Content that parses but is wrong for the program, such as a <code>python</code> file that raises at runtime, is handled the same way.</li>
+<li><strong>A transport may reject data before it becomes an observation.</strong> The share driver refuses an invalid PUT body at the HTTP boundary and sends no observation (<code>contracts/shares.md</code>, <em>Writing: PUT</em>).</li>
 <li><strong>Disappearance does not clear the node.</strong> Removing a value is an explicit graph operation.</li>
 </ul>
 <h2 id="actuate-delivery-after-a-turn">Actuate: delivery after a turn</h2>
@@ -343,24 +403,25 @@ if N is not None and N != session.last_synced:
         request a delivery of N
 </code></pre>
 <ul>
-<li><strong>Only <code>complete</code> actuates.</strong> A node that is <code>waiting</code>, <code>computing</code>, <code>blocked</code>, <code>failed</code> or <code>unwired</code> delivers nothing: <strong>transient states never delete or rewrite the resource.</strong> A cell mid-recompute does not blank its file, and a failed cell does not propagate its failure into external state.</li>
-<li><strong>Actuation is triggered by node changes</strong>, never by a node/resource mismatch on its own. The one exception is the <code>w</code>-mode <strong>reassert</strong> (below), where a foreign change to an output the Context owns re-requests the current value.</li>
+<li><strong>Only <code>complete</code> actuates.</strong> A node in <strong>any other state</strong> — <code>waiting</code>, <code>blocked</code>, <code>failed</code>, <code>unwired</code>, <code>miswired</code> — delivers nothing: <strong>a node that is not complete never deletes or rewrites the resource.</strong> A cell mid-recompute does not blank its file, and a failed or blocked cell does not propagate its failure into external state.</li>
+<li><strong>Actuation is triggered by node changes</strong>, never by a node/resource mismatch on its own. The one exception is the <code>w</code>-mode <strong>reassert</strong> (<em>The oscillation detector</em>), where a foreign change to an output the Context owns re-requests the current value.</li>
 <li>The pass is O(number of attachments) per turn and needs no changed-set from the cascade.</li>
 </ul>
-<p><strong>Latest discipline.</strong> A session has <strong>at most one pending and at most one in-flight delivery</strong>.</p>
+<p><strong>Latest discipline.</strong> A session has <strong>at most one pending and at most one in-flight delivery</strong>. A pending delivery is dispatched immediately when eligible, except that successive deliveries for the same session start at least <strong>2/3 second apart</strong>. This is a per-session minimum interval, not a rolling-rate cap: the first delivery may start immediately, and separate attachment sessions are paced independently. Sensing is not throttled.</p>
 <ul>
 <li>A new request <strong>replaces</strong> the pending one and releases its claim: intermediate values are not queued, and a rapid series of edits produces one write of the last value.</li>
 <li><strong>An in-flight delivery is never cancelled.</strong> When it is acknowledged, the pending one is dispatched — unless it has meanwhile become equivalent to the believed state of the resource, in which case it is dropped.</li>
 <li>A delivery carries a <strong>claim on its payload checksum</strong>, acquired in the requesting turn and owned by the controller, which releases it on supersession, acknowledgement or session close. The transport takes a <strong>separate</strong> claim of its own for the duration of the operation, so a detach during an in-flight write cannot pull the buffer out from under it.</li>
 </ul>
 <h3 id="a-delivery-resolves-it-never-computes">A delivery resolves; it never computes</h3>
-<p><strong>The payload is resolved through <code>Checksum.resolution()</code>: the local buffer cache, then the remote buffer server, then <code>CacheMissError</code>. It never fingertips.</strong> A delivery therefore has exactly the powers of <code>.buffer</code> — <strong>nothing in the attachment layer does work behind your back except an explicit <code>compute()</code>.</strong></p>
+<p><strong>The payload is resolved through <code>Checksum.resolution()</code>: the local buffer cache, then this process's local buffer sources, then the remote buffer server, then <code>CacheMissError</code>. It never fingertips.</strong> The local buffer sources are the configured read-buffer directories and the leaf files of this process's directory write mounts, in unspecified order; a source serves only bytes that hash to the requested checksum (<code>contracts/cache-storage-and-limits.md</code>, <em>Local buffer sources</em>). Reading a source back is resolution, not computation. A file delivery therefore has exactly the powers of <code>.buffer</code> — <strong>nothing in the attachment layer does work behind your back except an explicit <code>compute()</code>.</strong> A share delivery does not even resolve the payload; it moves the checksum, and the server resolves bytes only when a client requests them (<code>contracts/shares.md</code>, <em>Cell to share</em> and <em>Reading: GET and HEAD</em>).</p>
 <p>Consequences worth stating, because the tempting reading is the wrong one:</p>
 <ul>
-<li><strong>Attaching is not a materialization mechanism for a scratch result.</strong> It does not force a scratch transformation to be re-run, and it does not make a scratch result durable.</li>
-<li>A scratch-fed actuating attachment usually <strong>works anyway</strong>, because the delivery follows the completing turn while the result buffer is still cached. It <strong>fails</strong> when the checksum arrived without its bytes: remote execution, a cache hit, or eviction.</li>
+<li><strong>Attaching is not a materialization mechanism for a scratch result.</strong> It does not force a scratch transformation to be re-run, and it does not make a scratch result durable. The leaf files of a directory write mount do become a local buffer source, but only in this process and only while the mount's registration lasts, and they hold no claim and publish nothing (<em>Leaf retention, on the sense path only</em>).</li>
+<li>A scratch-fed actuating attachment usually <strong>works anyway</strong>, because the delivery follows the completing turn while the result buffer is still cached. It <strong>fails</strong> when the checksum arrived without its bytes and no local buffer source holds them: remote execution, a cache hit, or eviction.</li>
 <li>That failure is an <strong>ordinary delivery error</strong> — retried cheaply, reported on the attachment, never on the cell — so the resource is still updated if the buffer ever becomes resolvable again.</li>
 </ul>
+<p><strong>Without a hashserver, the Context fingertips before the delivery.</strong> A cell with a <code>w</code> file mount, a share or a widget hub does not take a new checksum whose buffer is not in the buffer cache. It stays <code>waiting</code> while the Context fingertips the buffer, and takes the checksum when the fingertip ends (<code>contracts/workflow-context.md</code>, <em>A Context without a hashserver</em>). So a cache hit, the common case after a value goes X → Y → X, reaches the attachment with its buffer. The delivery itself still only resolves. When the fingertip fails, the checksum is applied anyway, and the delivery error above follows.</p>
 <p><code>contracts/scratch-witness-audit.md</code> defines scratch and fingertipping; <code>contracts/cells.md</code> states the same "nothing computes without <code>compute()</code>" rule for reads.</p>
 <h2 id="the-three-way-error-model">The three-way error model</h2>
 <table>
@@ -375,9 +436,9 @@ if N is not None and N != session.last_synced:
 <tbody>
 <tr>
 <td><strong>sense error</strong></td>
-<td>the <strong>cell</strong>: <code>failed</code>, with the error as <code>.exception</code></td>
+<td>the <strong>cell</strong>: <code>failed</code>, with the error's text as the string <code>.exception</code></td>
 <td>the resource cannot supply the cell's value</td>
-<td>the next valid observation, <strong>any</strong> value write, or detaching</td>
+<td>the next valid observation from that session, <strong>any</strong> accepted value write, or detaching that session (unless another session still holds a sense error)</td>
 </tr>
 <tr>
 <td><strong>delivery error</strong></td>
@@ -397,21 +458,27 @@ if N is not None and N != session.last_synced:
 <h3 id="sense-errors-fail-the-cell">Sense errors fail the cell</h3>
 <p>A cell whose session holds a sense error derives as <strong><code>failed</code></strong> with that error, and its published checksum is dropped, so downstream nodes become <strong><code>blocked-by-error</code></strong> exactly as for any other failure. A cell never presents a stale value as valid while its source is broken.</p>
 <ul>
-<li><strong>The stored value is kept, but masked.</strong> <code>get_graph()</code> still records the last good value, and detaching unmasks it.</li>
+<li><strong>It is delivered like any other recorded failure</strong> (<code>contracts/cells.md</code>, <em>Failures</em>, <em>How a failure is delivered</em>). <code>.checksum</code>, <code>.buffer</code>, <code>.value</code> and <code>ctx.a.compute()</code> answer <code>None</code>; <code>ctx.a.run()</code> raises the failure; <code>ctx.a.exception</code> holds its string, and <code>ctx.mounts.sync()</code> reports it without raising.</li>
+<li>
+<p><strong>A read never makes a mounted cell fail.</strong> A failure to materialize a complete cell's value is raised to the reader and never recorded, so it neither masks the value nor stops actuation. This is the read-side counterpart of <em>Write failures stay on the attachment</em>: in both cases the result exists, and only turning it into something else (a file, a buffer, a value) failed.</p>
+</li>
+<li>
+<p><strong>The stored value is kept, but masked.</strong> <code>get_graph()</code> still records the last good value. Detaching clears only the detached session's sense error; another session's sense error continues to fail the cell. Removing the last session with a sense error unmasks the stored value.</p>
+</li>
 <li><strong><code>clear_exception()</code> on such a cell requests an immediate re-observation</strong> instead of re-deriving: the cell's exception is owned by the resource, so the only way to clear it is to look again. <code>contracts/node-state-lifecycle.md</code> states this from the state machine's side.</li>
 <li>A brief sense error is cheap. If the resource returns to its previous content, the downstream transformations get their old identities back and can re-latch onto their held runs within the supersession grace window instead of recomputing.</li>
 </ul>
 <h3 id="write-failures-stay-on-the-attachment-never-on-the-cell">Write failures stay on the attachment, never on the cell</h3>
 <p><strong>A read problem is the cell's exception, because the resource <em>is</em> the cell's value source. A write problem stays on the attachment, because the value is valid and only the resource is behind.</strong> Failing the cell would block every downstream consumer of a correct result merely because a copy could not be made.</p>
 <p>The cost is visibility, and it is accepted: a failed write shows in <code>.error</code>, in one log line, and in the <code>sync()</code> report — <strong>not</strong> in <code>ctx.a.exception</code>.</p>
-<p>A failed delivery is <strong>retried with capped exponential backoff — 1 s, doubling, capped at 60 s</strong> — and <strong>immediately</strong> whenever the node's value changes, until it succeeds or is superseded. The retrying delivery keeps its claim while it waits. The next success clears the error and resets the backoff. A missing target directory, a full disk or a permission problem therefore recovers by itself.</p>
+<p>A failed delivery is <strong>retried with capped exponential backoff — 1 s, doubling, capped at 60 s</strong> until it succeeds or is superseded. A newly requested value replaces the pending retry and resets its backoff, but its delivery still observes the per-session minimum interval. The retrying delivery keeps its claim while it waits. The next success clears the error and resets the backoff. A missing target directory, a full disk or a permission problem therefore recovers by itself.</p>
 <h3 id="error-typing-objects-here-strings-on-the-cell">Error typing: objects here, strings on the cell</h3>
-<p><strong><code>ctx.a.mount.error</code> and <code>status["sense_error"]</code> are <code>Exception</code> objects</strong> (<code>MountError</code>, or its subclass <code>ConflictError</code>). <strong><code>Cell.exception</code> is a string</strong> (the ruling of <code>contracts/cells.md</code>).</p>
-<p>The rule that makes this extensible is the <strong>remote boundary</strong>: the string convention exists because Expressions and Transformations can execute remotely, and exception objects do not transfer well. Attachments are fundamentally local — the transport lives in this process — so a local-only error surface is exempt.</p>
+<p><strong><code>ctx.a.mount.error</code> and <code>status["sense_error"]</code> are <code>MountError</code> objects</strong> (a <code>ConflictError</code>, which subclasses <code>MountError</code>, for a tripped detector). <strong><code>ctx.a.exception</code> is a string</strong>, as it is for every Cell failure (<code>contracts/cells.md</code>, <em>Failures</em>).</p>
+<p>The rule that separates the two is the <strong>remote boundary</strong>: the string convention exists because Expressions and Transformations can execute remotely, and exception objects do not transfer well. Attachments are fundamentally local — the transport lives in this process — so the attachment's own error surface is exempt and keeps objects. The cell surface is not exempt, because a cell's failure is read like any other.</p>
 <p>Two consequences:</p>
 <ul>
-<li><strong><code>isinstance(ctx.a.mount.error, ConflictError)</code> remains the machine-readable way to tell a tripped detector from a failed write.</strong> There is no other flag for it; <code>status["state"] == "tripped"</code> says the same thing about the session.</li>
-<li><strong>The same <code>MountError</code> appears as an object on the attachment surface and as a string on the cell.</strong> Its <code>"&lt;path&gt;: &lt;reason&gt;"</code> prefix is <strong>contract</strong>, and it is what identifies a sense error among ordinary cell failures.</li>
+<li><strong><code>isinstance(ctx.a.mount.error, ConflictError)</code> is the machine-readable way to tell a tripped detector from a failed write.</strong> There is no other flag for it on the error; <code>status["state"] == "tripped"</code> says the same about the session.</li>
+<li><strong>The same sense error appears as a <code>MountError</code> object in <code>status["sense_error"]</code> and as a string in <code>ctx.a.exception</code>.</strong> Its <code>"&lt;path&gt;: &lt;reason&gt;"</code> prefix is <strong>contract</strong> on both surfaces, and it is what identifies a sense error among ordinary cell failures: check the string for that prefix, never <code>isinstance(ctx.a.exception, MountError)</code>.</li>
 </ul>
 <h2 id="the-oscillation-detector">The oscillation detector</h2>
 <p>Conditional writes stop an attachment overwriting a change it has not seen. They do not stop two writers taking turns. A foreign write is not itself the signal — under a sensing attachment it is the whole point. The signal is narrower:</p>
@@ -424,7 +491,7 @@ if N is not None and N != session.last_synced:
 <li><strong>actuation stops</strong>: the session state becomes <code>tripped</code>, the pending delivery is dropped, and no further delivery is requested;</li>
 <li><strong>the registration is kept.</strong> The attachment keeps sensing (modes with <code>r</code>) or watching (<code>w</code>), so its status stays current. <strong>A tripped attachment is paused, never dead</strong> — tracking the other writer beats diverging silently.</li>
 </ul>
-<p><strong>Recovery is manual: <code>clear_error()</code>.</strong> It clears the error, returns the session to <code>active</code>, forgets the reassert timestamps, and — for an actuating mode on a <code>complete</code> node — immediately requests a delivery of the current value, so the Context's value wins the moment you say so. The <strong>thresholds, the window and the two-editors rationale</strong> are file-driver policy: see <code>contracts/mounts.md</code>.</p>
+<p><strong>Recovery is manual: <code>clear_error()</code>.</strong> It clears only this session's error, returns the session to <code>active</code>, forgets the reassert timestamps, and — for an actuating mode on a <code>complete</code> node — requests a delivery of the current value. That delivery remains subject to the per-session minimum interval. The <strong>thresholds, the window and the two-editors rationale</strong> are file-driver policy: see <code>contracts/mounts.md</code>.</p>
 <h2 id="the-cut-barrier">The cut barrier</h2>
 <p><strong>"Every queue is empty" is not a settledness criterion</strong>: a transport can always be between detecting a change and finishing the read of it. Settlement is established by a <strong>cut</strong> instead.</p>
 <p>One round is:</p>
@@ -432,7 +499,7 @@ if N is not None and N != session.last_synced:
 <li>request a cut from every registration of this Context;</li>
 <li>wait for each cut result. A transport sends it only after enqueueing every observation that resolves what it had seen at or below the cut. Ingress is FIFO, so by the time the controller processes the cut result, those observations have been processed too;</li>
 <li>wait for <strong>graph quiescence</strong> — no node <code>waiting</code> or <code>computing</code>;</li>
-<li>wait until no session has a pending or in-flight delivery. <strong>A delivery that failed and is waiting for its retry counts as settled</strong>, with its error reported;</li>
+<li>wait until no session has a pending or in-flight delivery. <strong>A delivery that failed and is waiting for its retry counts as settled</strong>, with its error reported. A newer replacement request is unsettled again, including while it waits for its per-session delivery interval;</li>
 <li><strong>if anything moved during the round</strong> — any sensed value, any delivery requested — <strong>start another round</strong>; otherwise resolve.</li>
 </ol>
 <p>A delivery is itself an external event after the cut, so our own writes are normally consumed as an echo in the final round; a genuinely concurrent foreign write starts another one.</p>
@@ -443,35 +510,50 @@ if N is not None and N != session.last_synced:
 <li><strong><code>ctx.compute()</code> stays graph-only.</strong> It never waits for external state. Reading an actuated resource from outside the process after <code>compute()</code> requires the cut barrier as well.</li>
 <li>There is <strong>no <code>settled()</code> predicate.</strong> "Is everything settled?" cannot be answered without a cut.</li>
 </ul>
-<p>The spelling — <code>ctx.mounts.sync()</code>, <code>await ctx.mounts.synchronization()</code> — and the <code>SyncReport</code> fields are in <code>contracts/mounts.md</code>, because the only external barrier that exists is the file one.</p>
+<p><code>sync()</code> waits for a delivery delayed by this interval just as it waits for an in-flight delivery; its timeout still bounds the wait. A Context-owned timer wakes the post-turn dispatcher when an idle Context has a delivery whose interval expires.</p>
+<p>The spelling — <code>ctx.mounts.sync()</code>, <code>await ctx.mounts.synchronization()</code> — and the <code>SyncReport</code> fields are in <code>contracts/mounts.md</code>.</p>
 <h2 id="attach-detach-close">Attach, detach, close</h2>
-<p><strong>Attach</strong> does all the slow work on the caller's thread, then decides in one turn:</p>
+<h3 id="attach">Attach</h3>
+<p><strong>Attaching</strong> (<code>ctx.a.mount(...)</code>) does all the slow work on the caller's thread, then decides in one turn:</p>
 <ol>
 <li>validate the request and the node (the table in <em>Scope</em>, plus spec validation);</li>
 <li>reserve the resource with the transport;</li>
 <li>run the <strong>initial observation</strong> and wait for it. The observation fixes the watch <strong>baseline</strong>, so a change made after it is not lost: it is detected as an ordinary later event once the session is active (observation begins as a post-turn effect of step 4, not at reservation);</li>
-<li>submit one message. In its turn the controller re-validates, evaluates the <strong>initial decision table</strong> against the node's value <em>at that turn</em>, installs spec and session, applies a resource → node write or sets a sense error if the table says so, and queues an initial delivery if the table says node → resource;</li>
+<li>submit one message. In its turn the controller re-validates, evaluates the <strong>initial decision table</strong> — where the <code>authority</code> field decides a file-versus-cell conflict (<code>contracts/mounts.md</code>) — against the node's value <em>at that turn</em>, installs spec and session, applies a resource → node write or sets a sense error if the table says so, and queues an initial delivery if the table says node → resource;</li>
 <li>if an initial delivery was queued, <strong>wait for its acknowledgement</strong>, so that attach-then-read from outside the process works. A failed initial write does not make attaching raise; it becomes the attachment's error and is retried.</li>
 </ol>
 <p><strong>Attach blocks, and raises only for an invalid request.</strong> It never raises for the <em>state</em> of the resource — missing, unreadable, invalid for the celltype, or not writable. In all of those the attachment is installed and monitoring, each problem is logged once, and when the resource is fixed the attachment recovers with no user action. If it does raise, nothing is installed and the reservation is released.</p>
-<p><strong>Detach</strong> (<code>del ctx.a.mount</code>) is a single turn that:</p>
+<h3 id="detach">Detach</h3>
+<p><strong>Unmounting the file slot</strong> (<code>del ctx.a.mount</code>) is a single turn that:</p>
 <ul>
 <li>marks the session <code>closing</code> and removes it, so every later message from it fails the id match;</li>
 <li>drops the pending delivery and releases its claim, and releases the controller's claim on an in-flight one — the transport keeps its own claim until that operation finishes;</li>
-<li><strong>clears the cell's sense error, unmasking the stored value</strong>;</li>
-<li>releases the registration, and waits for the transport's cleanup, bounded by the delivery timeout.</li>
+<li>clears this session's sense error; another session's sense error continues to fail the cell, and the stored value is unmasked only when no session still holds a sense error;</li>
+<li>releases the registration, which withdraws any local buffer sources it registered (<em>Leaf retention, on the sense path only</em>).</li>
 </ul>
-<p>Node deletion and replacement by a transformer detach in exactly the same way.</p>
-<p><strong>Close</strong> flushes, once, and does not retry:</p>
+<p>The call then <strong>waits for the transport's cleanup</strong>, bounded by the delivery timeout. Cleanup includes the driver's conditional deletes, so for the file driver a <code>persistent=False</code> file has already been deleted — where the conditional-delete rule allows it — by the time <code>del ctx.a.mount</code> returns (<code>contracts/mounts.md</code>, <em>Unmount, persistence and close</em>).</p>
+<p><strong>Node deletion detaches every occupied slot in exactly the same way, including the wait.</strong> <code>del ctx.a</code>, or deleting a subcontext that contains attached cells, detaches each attachment and <strong>returns only after the transports' cleanup has run</strong>: the conditional delete of a <code>persistent=False</code> file has happened when <code>del</code> returns, exactly as for file unmounting. The leaf-retention claims of a deleted node are released (<em>Leaf retention</em>).</p>
+<p><strong>An empty builder of the same celltype detaches and clears.</strong> <code>ctx.a = Cell(celltype=&lt;same&gt;)</code> on an attached cell:</p>
+<ul>
+<li><strong>detaches every occupied slot</strong>: the file spec and all runtime attachment specs, sessions and statuses are removed — <code>ctx.a.mount.spec</code> and <code>ctx.a.mount.status</code> read <code>None</code>, <code>get_graph()</code> writes no <code>mount</code> entry for the node, the node is no longer actuated, and the registrations are released, so the resources can be attached again;</li>
+<li><strong>clears the cell</strong>: it no longer has a checksum;</li>
+<li><strong>leaves a persistent resource untouched</strong>: the file is neither rewritten nor deleted.</li>
+</ul>
+<p><strong>Unspecified — deferred:</strong> whether a <code>persistent=False</code> file is deleted on this path. Do not depend on either outcome.</p>
+<p>An empty builder of a <strong>different</strong> celltype is still refused (<em>The topology rules an attachment imposes</em>), and every other clearing spelling is still refused with <code>AuthorityError</code>.</p>
+<p><strong>Graph replacement</strong> by <code>set_graph()</code> detaches every session <strong>with deletion disabled</strong>, so no conditional delete runs on that path (<code>contracts/mounts.md</code>); runtime-only widget attachments are not restored.</p>
+<h3 id="close">Close</h3>
+<p><strong>Closing the Context</strong> (<code>ctx.close()</code>, or leaving its <code>with</code> block) flushes once, and does not retry:</p>
 <ol>
 <li>admission closes and sensing stops;</li>
-<li>each <strong>persistent</strong> session with a pending delivery and no error dispatches it;</li>
-<li>in-flight acknowledgements are awaited, bounded by <code>close(timeout=60)</code>; a timeout is logged and the close proceeds;</li>
+<li>each <strong>persistent</strong> session with a pending delivery and no error keeps it eligible for dispatch, subject to its per-session minimum interval;</li>
+<li>in-flight acknowledgements are awaited, bounded by <code>close(timeout=60)</code>; an internal deadline wakeup dispatches a throttled pending delivery when it becomes eligible, and a timeout is logged before close proceeds;</li>
 <li>non-persistent cleanup runs (file-driver policy; see <code>contracts/mounts.md</code>);</li>
 <li>registrations are released.</li>
 </ol>
 <p>The flush completes only deliveries that <strong>ordinary actuation has already requested</strong>; it never compares node and resource afresh, so external state that someone is mid-way through editing is not overwritten at close. It does not retry a delivery that fails during the flush; the failure is logged. Acknowledgements and cut results are <strong>internal</strong> messages, so they keep being accepted after ordinary admission has closed — otherwise the flush could not observe its own completion.</p>
 <p><strong>A close triggered by garbage collection on the controller thread cannot flush.</strong> It releases roles in place and joins in a finalizer thread, so an already-requested delivery may be dispatched but is never awaited, and its acknowledgement arrives after the session is gone. Finalization <em>off</em> the controller thread performs an ordinary, flushing close. Do not rely on garbage collection to make external state current — use <code>close()</code>, the context manager, or the cut barrier.</p>
+<p><strong>The share driver holds a closed Context's shares</strong>: its server keeps serving them for a short window after <code>close()</code> returns, so that a new Context can take them over (<code>contracts/shares.md</code>, <em>The hold on close</em>). That is server state; the Context itself is closed.</p>
 <p><code>seamless.close()</code> closes the Contexts, each flushing, and then the transport service.</p>
 <h2 id="leaf-retention-on-the-sense-path-only">Leaf retention, on the sense path only</h2>
 <p><strong>Leaves that an attachment <em>sensed</em> stay resolvable while the node holds that index, including after detaching.</strong></p>
@@ -479,6 +561,8 @@ if N is not None and N != session.last_synced:
 <ul>
 <li>The claims are attached to the <strong>node and its index</strong>, not to the session, which is why they outlive detaching; they are released when the node takes a different value, when the node is deleted, and at Context close.</li>
 <li><strong>A <em>computed</em> directory value gets no such claims.</strong> Nothing sensed its leaves, so a leaf that cannot be resolved at delivery time surfaces as an ordinary delivery error — see <em>A delivery resolves; it never computes</em> — and is retried.</li>
+<li><strong>What a directory write mount has written is a buffer source, not a retained leaf.</strong> The file driver registers the files at the paths of the index it delivers as local buffer sources for their leaves' checksums, so a leaf whose buffer was evicted can be read back from its file (<code>contracts/mounts.md</code>, <em>Directory mounts</em>; its use case is in <code>contracts/cache-storage-and-limits.md</code>, <em>Local buffer sources</em>). It promises less than retention in every respect: it holds no claim and keeps nothing in memory; it ends when the registration is released — by detaching, node deletion, graph replacement or close — even when the files remain on disk; and it serves a leaf only while the file still holds that leaf's bytes, so a foreign edit or deletion ends it for that leaf. It cannot supply a leaf whose bytes are not already in such a file, so the delivery-error case above stands.</li>
+<li><strong>Sensing registers no buffer source.</strong> A sensed leaf stays resolvable through its claim, not through its file.</li>
 </ul>
 <p>Directory celltypes and index shape are <code>contracts/deep-celltypes.md</code>; the file driver's directory rules are <code>contracts/mounts.md</code>.</p>
 <h2 id="the-driver-roster">The driver roster</h2>
@@ -492,7 +576,11 @@ if N is not None and N != session.last_synced:
 <tbody>
 <tr>
 <td><strong>file</strong> (<code>fs.service.FileSystemService</code>)</td>
-<td>the <strong>only production driver</strong>; <code>contracts/mounts.md</code></td>
+<td>supported through the mount API; <code>contracts/mounts.md</code></td>
+</tr>
+<tr>
+<td><strong>share</strong> (<code>share.driver.ShareDriver</code>)</td>
+<td>supported through <code>Cell.share</code>; serializable; <code>contracts/shares.md</code></td>
 </tr>
 <tr>
 <td><code>manual.ManualDriver</code></td>
@@ -500,7 +588,7 @@ if N is not None and N != session.last_synced:
 </tr>
 <tr>
 <td><code>widget.WidgetDriver</code></td>
-<td><strong>experimental.</strong> A traitlets-style callback widget attached through the same session protocol, built to show that the boundary is real. Never serialized</td>
+<td><strong>internal transport</strong> for the supported <code>seamless_workflow.jupyter</code> widget API. Never serialized</td>
 </tr>
 <tr>
 <td>anything else</td>
@@ -508,18 +596,21 @@ if N is not None and N != session.last_synced:
 </tr>
 </tbody>
 </table>
-<p>Only <code>driver == "file"</code> is serializable; <code>AttachmentSpec.to_graph()</code> raises <code>ValueError("Only file mounts are serializable")</code> for anything else, and a manual or widget session leaves no <code>"mount"</code> entry in <code>get_graph()</code>.</p>
-<p><code>seamless_workflow.diagnostics.record_attachments(ctx)</code> records the immutable event stream — each observation's classification, each delivery request, dispatch and acknowledgement, each reassert and the detector's verdict. It exists because an echo misclassified as foreign usually re-installs the checksum the node already has, which no state or value assertion can see.</p>
+<p>Only <code>driver == "file"</code> is serialized through <code>AttachmentSpec.to_graph()</code>; shares use their own serializable <code>ShareSpec</code>. Manual and widget sessions leave no graph entry.</p>
+<p><code>seamless_workflow.diagnostics.record_attachments(ctx)</code> records the immutable event stream for each <code>(node_path, driver)</code> session — each observation's classification, each delivery request, dispatch and acknowledgement, each reassert and the detector's verdict. It exists because an echo misclassified as foreign usually re-installs the checksum the node already has, which no state or value assertion can see.</p>
 <h2 id="implementation-status-and-current-limitations">Implementation status and current limitations</h2>
-<p>Settled contract that the code does not yet implement, or implements differently. Where a design document and the code disagree, <strong>the code wins</strong>, and the disagreement is listed here.</p>
+<p>The code satisfies the contract on this page, including the scope messages, the public <code>NodeError</code>, deletion cleanup, the empty-builder detach, downstream miswiring and the node-replacement exceptions. Plain focused tests in <code>seamless-workflow/tests/test_contract_attachments.py</code> and <code>test_contract_mounts.py</code> cover them.</p>
+<h3 id="current-limitations">Current limitations</h3>
+<p>These are properties of the code that the rules above permit. None is test-pinned as a gap.</p>
 <p><strong>The generic layer is file-shaped in four places.</strong> They are why this page is not a plugin API:</p>
 <ol>
 <li><strong><code>AttachmentSpec</code>'s fields are file fields.</strong> <code>path</code>, <code>mode</code>, <code>authority</code>, <code>persistent</code> — plus <code>driver</code> — live on the supposedly generic spec class, and <code>to_graph()</code> raises unless the driver is <code>file</code>. A non-file driver gets a synthetic <code>path</code> (<code>"widget-&lt;uuid&gt;"</code>, <code>"manual-&lt;uuid&gt;"</code>) purely to satisfy validation.</li>
-<li><strong>Every controller handler and the node field are <code>_mount_*</code> / <code>node.mount</code>.</strong> <code>_mount_attach</code>, <code>_mount_observed</code>, <code>_mount_delivered</code>, <code>_mount_cut</code>, <code>_mount_sync</code>, <code>_mount_after_turn</code>, <code>Node.mount</code>. The vocabulary of this page ("attachment") is not the vocabulary of the code.</li>
+<li><strong>Every controller handler and the file node field are <code>_mount_*</code> / <code>node.mount</code>.</strong> <code>_mount_attach</code>, <code>_mount_observed</code>, <code>_mount_delivered</code>, <code>_mount_cut</code>, <code>_mount_sync</code>, <code>_mount_after_turn</code>, <code>Node.mount</code>; runtime-only non-file specs are in <code>Node.attachments</code>. The vocabulary of this page ("attachment") is not the vocabulary of the code.</li>
 <li><strong><code>WidgetDriver</code> borrows the file service.</strong> It constructs an <code>fs.service.Registration</code>, and it uses <code>get_service()</code> for its thread pool and for payload resolution — so the "second driver" is not independent of the first.</li>
 <li><strong>The only external barrier is spelled <code>ctx.mounts</code>.</strong> There is no driver-neutral name for it, and manual and widget sessions are cut through it all the same.</li>
 </ol>
-<p><strong>The boundary is nonetheless real</strong>, and that is the evidence for it: three implementations satisfy one transport protocol —</p>
+<p>The share driver owns its HTTP server and private I/O pool; it does not borrow the file service. <code>SyncReport</code> and <code>ctx.mounts.errors</code> include the driver value <code>"share"</code> (<code>contracts/mounts.md</code>, <em><code>sync()</code> and the report</em>).</p>
+<p><strong>The boundary is nonetheless real</strong>, and that is the evidence for it: four implementations satisfy one transport protocol —</p>
 <table>
 <thead>
 <tr>
@@ -555,23 +646,22 @@ if N is not None and N != session.last_synced:
 </tbody>
 </table>
 <p>— and <code>SyncPredicate</code> cuts every session regardless of driver.</p>
-<p>Smaller divergences and rough edges:</p>
+<p>Smaller rough edges:</p>
 <ul>
-<li><strong><code>Cell.exception</code> is still an exception object in code, not a string.</strong> A sense error is installed on the node as the <code>MountError</code> itself. <code>contracts/cells.md</code> carries the same note for cell failures generally; the string contract is what agents should code against, and the <code>"&lt;path&gt;: &lt;reason&gt;"</code> prefix holds either way.</li>
-<li><strong>On an <em>unattached</em> cell the surface answers <code>None</code> — except <code>clear_error()</code>.</strong> <code>.mount.spec</code>, <code>.mount.status</code> and <code>.mount.error</code> all return <code>None</code>, and <code>del ctx.a.mount</code> is a silent no-op, but <code>ctx.a.mount.clear_error()</code> raises a bare <code>KeyError(&lt;node path&gt;)</code>. That is an inconsistency, not a designed refusal; do not depend on the exception type.</li>
-<li><strong>Delivery retries are dispatched by the post-turn pass, and <code>_mount_tick</code> is an explicit no-op.</strong> The attachment layer owns no timer. In practice the file driver's broker enqueues one <code>_mount_tick</code> message per registration per poll interval, and since the post-turn pass runs after <strong>every</strong> turn, a due backoff fires within about one poll interval even on an otherwise idle Context (measured: ~1.5 s for the first, 1 s retry). A driver that sends no tick — <code>ManualDriver</code> — fires a due retry only when something else causes a turn; <code>ctx.mounts.sync()</code> is one.</li>
-<li><strong>A failure inside the observation handler becomes <code>session.error</code> as a bare <code>MountError(str(exc))</code></strong>, without the <code>"&lt;path&gt;: "</code> prefix that every other <code>MountError</code> carries. It is a can't-happen path (the authority check cannot fail while the edge rule holds), but the prefix contract does not hold for it.</li>
+<li><strong>On a cell with no file slot, the file-mount surface answers <code>None</code> — except <code>clear_error()</code>.</strong> <code>.mount.spec</code>, <code>.mount.status</code> and <code>.mount.error</code> all return <code>None</code>, and <code>del ctx.a.mount</code> is a silent no-op, but <code>ctx.a.mount.clear_error()</code> raises a bare <code>KeyError(&lt;node path&gt;)</code>. <strong>Whether that <code>KeyError</code> is contract is deferred</strong>; until it is decided, do not depend on the exception type. Widget-slot state is read from its hub.</li>
+<li><strong>Delivery pacing uses a Context-owned deadline timer.</strong> The post-turn pass schedules the earliest per-session throttle or retry deadline, so delayed dispatch and retries wake an otherwise idle Context. The file broker may also send <code>_mount_tick</code> messages; they use the same dispatcher.</li>
+<li><strong>A failure inside the observation handler becomes <code>session.error</code> as a bare <code>MountError(str(exc))</code></strong>, without the <code>"&lt;path&gt;: "</code> prefix that every other <code>MountError</code> carries. Strictly this breaks the prefix contract, but the path cannot be reached while the edge rule holds (the write-authority check of a sense cannot fail, <em>Sense</em>), so no test pins it.</li>
 <li><strong>Malformed internal messages are dropped silently.</strong> <code>_mount_delivered</code> and <code>_mount_cut</code> validate their payload shape and return without effect on anything unexpected, because they run as class-5 messages and raising would poison ingress.</li>
 </ul>
 <h2 id="non-goals">Non-goals</h2>
 <ul>
 <li><strong>A plugin API.</strong> See the top of this page. The contract describes the attachments that exist.</li>
-<li><strong>Standalone, sub-path, pin and code mounts.</strong> Only a bound whole cell node can be mounted (see <em>Scope</em>, above) — this is architectural, not a version gap: a standalone <code>Cell</code> has no controller, a sub-path write is a read-modify-set transaction on the root with nothing of its own to compare against, and a pin or code handle is not a cell. The remedy is always the same: attach a cell and connect it.</li>
-<li><strong>Continuous external ownership</strong> (an <code>edit_policy="external-owned"</code> that would forbid later user assignment). Deferred with a named condition: if it is added it gets its own name and specification. <code>contracts/mounts.md</code> has the file driver's constraint on how it must <strong>not</strong> be expressed (not by redefining <code>authority="file"</code>).</li>
+<li><strong>Standalone, sub-path, pin and code mounts.</strong> Only a bound whole cell node can be mounted (<em>Scope</em>) — this is architectural, not a version gap: a standalone <code>Cell</code> has no controller, a sub-path write is a read-modify-set transaction on the root with nothing of its own to compare against, and a pin or code handle is not a cell. The remedy is always the same: attach a cell and connect it. (Bound <code>as_celltype</code> handles are the one undecided target; see <em>Scope</em>.)</li>
+<li><strong>Continuous external ownership</strong> (an <code>edit_policy="external-owned"</code> that would forbid later user assignment). Deferred with a named condition: if it is added it gets its own name and specification. It must <strong>not</strong> be expressed by redefining the <code>authority</code> field's <code>"file"</code> value, which only resolves the initial conflict (<code>contracts/mounts.md</code>).</li>
 <li><strong>Cross-process locking or exclusivity.</strong> The registry is a safety net within one process (<code>contracts/mounts.md</code>); two processes sharing a resource are handled by conditional writes and the detector, not prevented.</li>
 <li><strong>A settledness predicate without a cut.</strong> <code>settled()</code> was considered and rejected.</li>
 <li><strong>Hard cancellation of an in-flight delivery.</strong> It is never cancelled, by design: the write is either done or not, and cancelling it would leave the belief about the resource undefined.</li>
-<li><strong>Attachment-driven computation.</strong> A delivery resolves and never fingertips; attaching is not a way to make Seamless do work.</li>
+<li><strong>Attachment-driven computation.</strong> A delivery resolves and never fingertips; attaching is not a way to make Seamless do work. The one exception is the fingertip of an attached cell's missing buffer in a Context without a hashserver, which the Context performs before the cell takes its checksum (<em>A delivery resolves; it never computes</em>).</li>
 </ul>
               
             </div>

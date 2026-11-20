@@ -75,6 +75,14 @@
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="mounts.html">File Mounts</a>
                   </li>
+                  <li class="toctree-l1"><a class="reference internal" href="shares.html">HTTP Shares</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="widgets.html">Jupyter Widgets</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="streaming.html">Streaming</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="transformation-logs.html">Transformation Logs</a>
+                  </li>
                   <li class="toctree-l1"><a class="reference internal" href="cancellation.html">Cancellation</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="direct-delayed-and-transformation.html">direct/delayed/Transformation</a>
@@ -86,6 +94,14 @@
     <li class="toctree-l2"><a class="reference internal" href="#scratch">Scratch</a>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#fingertipping">Fingertipping</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#where-a-fingertip-chain-runs-and-what-it-leaves-behind">Where a fingertip chain runs, and what it leaves behind</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#two-modelling-rules-that-keep-a-graph-out-of-the-expensive-shape">Two modelling rules that keep a graph out of the expensive shape</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#provenance-the-derivation-graph">Provenance: the derivation graph</a>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#witness-outputs-do-not-scratch">Witness outputs (do not scratch)</a>
     </li>
@@ -103,6 +119,8 @@
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="execution-backends.html">Execution Backends</a>
                   </li>
+                  <li class="toctree-l1"><a class="reference internal" href="environments.html">Environments</a>
+                  </li>
                   <li class="toctree-l1"><a class="reference internal" href="execution-records.html">Execution Records</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="service-management.html">Service Management</a>
@@ -114,6 +132,10 @@
                   <li class="toctree-l1"><a class="reference internal" href="compiled-pins.html">Compiled Pins</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="seamless-signature-schema.html">seamless-signature Schema</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="handler-languages.html">Handler Languages</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="language-backends.html">Language Backends</a>
                   </li>
               </ul>
               <p class="caption"><span class="caption-text">API</span></p>
@@ -173,16 +195,22 @@ Anything “tolerance-based” requires a separate user-defined witness/comparis
 - Scratch plus input fingertipping is also a placement mechanism: if a downstream transformation needs a missing scratch input, the producer transformation is rerun where the consumer needs the bytes.
 - Use scratch for bulky generated intermediates that are not meaning-bearing and whose main purpose is to feed another transformation.
 - Scratch must not remove the ability to evaluate the meaning-bearing outcome of the computation.</p>
+<p><strong>Scratch applies to the result, never to the transformation's definition or inputs.</strong> The transformation dict (its <code>tf_checksum</code> buffer) is provenance: fingertipping a scratch result, possibly in another process, starts from it. Nothing produces a definition, so nothing could fingertip one back. A transformation therefore always writes its definition to the hashserver, scratch or not. Its inputs (pins, code, modules) follow their own rule, which the transformation's scratch plays no part in: a literal pin is always published, and any other pin is scratch exactly when the consuming transformation fingertips its inputs (<code>contracts/pins.md</code>, <em>Scratch at the pin</em>). Only the result buffer is governed by the transformation's scratch.</p>
 <p>Scratch is <strong>orthogonal</strong> to transformation identity: it controls whether a buffer is durably stored, not the value it denotes. The <code>result_checksum</code> is unchanged by scratch, scratch is excluded from <code>tf_checksum</code>, and two transformations differing only in scratch policy are cache-equivalent (see <code>contracts/identity-and-caching.md</code>). The "must not remove the ability to evaluate the meaning-bearing outcome" rule above is a <em>usage</em> constraint, not a checksum rule.</p>
+<p><strong>A scratch transformation may be dispatched, and its result is not published</strong>, unless a non-scratch pin, or in a Context a non-scratch cell, needs it (below). A jobserver or Dask worker runs it like any other transformation, but writes no result buffer to the hashserver, so the requester receives only the result checksum. A consumer that needs the bytes recovers them by fingertipping. A consumer running on the server does this through an input fingertip (case 1 below), and on the client <code>Transformation.run()</code> fingertips the result, recomputing the transformation locally. <strong>A dispatched scratch transformation whose value the client asks for therefore runs twice.</strong> That is the accepted cost of scratch. <code>local=True</code> keeps a scratch transformation in the requesting process instead.</p>
 <p>Input fingertipping is opt-in on each consumer transformation. Marking an upstream
 producer as scratch does not automatically allow downstream consumers to
 fingertip missing inputs. In Python, set the downstream transformer/core's
 <code>allow_input_fingertip = True</code> before constructing the consuming transformation;
-for CLI execution of a transformation checksum, use <code>--fingertip</code>.</p>
+for CLI execution of a transformation checksum, use <code>--fingertip</code>.
+One case needs no opt-in: in a workflow Context without a hashserver, every
+transformation that the Context submits fingertips its inputs
+(<code>contracts/workflow-context.md</code>, <em>A Context without a hashserver</em>).</p>
+<p><strong>The consumer's opt-in decides whether a result it holds stays scratch.</strong> A consumer that fingertips its inputs has scratch pins (literals apart), so a scratch producer whose result is the pin's own input stays scratch. A non-scratch pin overrules a scratch producer when it holds that producer's result; the same holds for a non-scratch Cell. A path or buffer-producing conversion stops that overrule, and earlier Expression links remain scratch checksum requests (<code>contracts/pins.md</code>, <em>Scratch at the pin</em>; <code>contracts/cells.md</code>, <em>Scratch policy</em>).</p>
 <p>Two things that do <strong>not</strong> make a scratch result materializable:</p>
 <ul>
-<li><strong>Reading a handle.</strong> <code>Cell.buffer</code>, <code>Cell.value</code> and <code>Pin.value</code> resolve and never fingertip; only an explicit <code>compute()</code> / <code>Transformation.run()</code> does work (<code>contracts/cells.md</code>).</li>
-<li><strong>Attaching or mounting.</strong> A delivery to a file or directory resolves the payload and never fingertips, so mounting an output is not a way to force a scratch producer to re-run or to make its result durable (<code>contracts/attachments.md</code>, <em>A delivery resolves; it never computes</em>).</li>
+<li><strong>Reading a handle.</strong> <code>Cell.buffer</code>, <code>Cell.value</code> and <code>Pin.value</code> resolve and never fingertip; only an explicit <code>compute()</code>, <code>Transformation.run()</code>, <code>Cell.fingertip()</code> or <code>Pin.fingertip()</code> does work (<code>contracts/cells.md</code>).</li>
+<li><strong>Attaching or mounting.</strong> A delivery to a file or directory resolves the payload and never fingertips, so mounting an output is not a way to force a scratch producer to re-run or to make its result durable (<code>contracts/attachments.md</code>, <em>A delivery resolves; it never computes</em>). The exception is a Context without a hashserver: there, a cell with a <code>w</code> mount, a share or a widget hub does not take a checksum whose buffer is missing until the Context has fingertipped it (<code>contracts/workflow-context.md</code>, <em>A Context without a hashserver</em>). That makes the buffer available to the delivery; it does not publish it.</li>
 </ul>
 <p>What <em>does</em> keep a scratch result alive once it exists is explicit public interest in it: an explicitly requested scratch result acquires a refholder claim and is protected from eviction, while an unrequested one stays purgeable (<code>contracts/internal/checksum-reference-lifecycle.md</code>, §8).</p>
 <p>Agent porting implication: do not replace a compact, reliable producer implementation just to avoid a large edge. If the producer is deterministic and cheap enough to rerun, prefer a scratch producer plus fingertipping consumer so the large value is materialized co-located with the consumer.</p>
@@ -190,16 +218,108 @@ for CLI execution of a transformation checksum, use <code>--fingertip</code>.</p
 <h2 id="fingertipping">Fingertipping</h2>
 <p>Fingertipping is a <strong>Checksum → Buffer resolution mode</strong>, and is <em>distinct</em> from scratch — scratch is a <strong>storage policy</strong> ("do not durably store this buffer"), fingertipping is a <strong>retrieval-with-recomputation-fallback</strong>. When a buffer is requested with fingertipping enabled, Seamless:</p>
 <ol>
-<li>tries normal <strong>retrieval</strong> first — the local buffer cache, then the hashserver;</li>
-<li><strong>only if the buffer is absent</strong>, falls back to <strong>fingertipping proper</strong>: <em>recomputation-using-provenance</em>. It consults the <strong>reverse-checksum cache</strong> (<code>rev_transformations</code> / <code>rev_expression</code>) to find a transformation/expression that <em>produces</em> the requested checksum, recomputes it — recursively fingertipping that producer's own inputs — and so regenerates the buffer.</li>
+<li>tries normal <strong>retrieval</strong> first — the local buffer cache, then the process's local buffer sources (<code>contracts/cache-storage-and-limits.md</code>, <em>Local buffer sources</em>), then the hashserver;</li>
+<li><strong>only if the buffer is absent</strong>, falls back to <strong>fingertipping proper</strong>: <em>recomputation-using-provenance</em>. It consults the <strong>reverse-checksum cache</strong> (<code>rev_transformations</code> / <code>rev_expression</code>, and the reverse rows of cell joins) to find a transformation, an Expression or a cell join that <em>produces</em> the requested checksum, recomputes it — recursively fingertipping that producer's own inputs — and so regenerates the buffer.</li>
 </ol>
+<p><strong>In a fingertip chain, a cell join is a link like any other.</strong> A cell join is the Expression behind a cell-level join (<code>contracts/expressions.md</code>, <em>Cell joins</em>). When a fingertip reaches one through its reverse row, the celljoin JSON is read from this process or from the hashserver (the database holds none), its inputs are fingertipped and it is re-evaluated in the process that wants the buffer. An ordinary evaluation of a cell join is different: there, an input whose buffer is neither local nor on the hashserver is a final <code>CacheMissError</code>, with no recomputation. A deep join needs only its root index, so recovering its result never fingertips a member.</p>
 <p>A buffer is <strong>absent</strong> — and so triggers the recomputation fallback — in two distinct cases:</p>
 <ul>
 <li>it was <strong>evicted or deleted</strong> from the store (e.g. removed from the hashserver dir) — which can happen to a <strong>non-<code>scratch</code></strong> result; <strong>or</strong></li>
 <li>it was <strong>never stored</strong> (<code>scratch</code>).</li>
 </ul>
 <p>So <code>scratch</code> <em>guarantees</em> a buffer will need fingertipping when its value is required, but fingertipping is <strong>not</strong> exclusive to scratch: an evicted non-scratch buffer is regenerated by the same path. Fingertipping is opt-in per consumer (<code>allow_input_fingertip = True</code> in Python, <code>--fingertip</code> for a CLI transformation checksum).</p>
-<p><strong>Fingertipping is where accidental nondeterminism surfaces.</strong> Step 1 (retrieval) is pure lookup and can never diverge. Step 2 <strong>re-executes the producer</strong>; if that producer is not reproducible, the regenerated buffer has a <strong>different checksum</strong> than the one requested, breaking the input identity of whatever asked for it. A normally-stored, never-evicted result hides such nondeterminism forever — it is looked up, never recomputed (see <code>contracts/identity-and-caching.md</code>, "Caching masks accidental nondeterminism"). Practical rule: <strong>any buffer that may be fingertipped — every <code>scratch</code> producer, and in principle any evictable buffer — must be reproducible.</strong></p>
+<h3 id="where-a-fingertip-chain-runs-and-what-it-leaves-behind">Where a fingertip chain runs, and what it leaves behind</h3>
+<p><strong>Fingertipping always runs locally and never writes to the hashserver.</strong> There is no exception: not for a manual fingertip, not inside a job, not at any site, and not for the end result of a chain.</p>
+<p><strong>A fingertip chain runs in the process that wants the buffer.</strong> Nothing in it is dispatched, not the Expressions and not the Transformations. "Evaluated where the data is" governs ordinary Expression evaluation and does <strong>not</strong> govern fingertipping (<code>contracts/expressions.md</code>, <em>Fingertipping is exempt from "where the data is"</em>). The reason is structural: a remote evaluation answers with a <em>checksum</em>, so a remotely evaluated result could reach the requester only by being written to the hashserver, which would re-add exactly the buffer that a <code>scratch</code> decision or an eviction deliberately kept out. With a job server active, a fingertip happens in one of two cases:</p>
+<p><strong>Case 1: input fingertip inside a job.</strong> This is the common case: a big scratch intermediate that is only needed as input for a transformation. The consuming transformation is dispatched to the job server (jobserver or daskserver) like any other. When it runs, it fingertips its missing input <strong>locally, as far as Seamless is concerned</strong>. Nothing in that chain is dispatched again. On a daskserver the recomputation may run on another Dask worker, but Dask moves that data between workers itself, independently of Seamless. <strong>Nothing is written to the hashserver</strong>: not the recovered input, not any intermediate. The job wants the buffer for itself and has it in memory. This is scratch plus input fingertipping working as a placement mechanism (<em>Scratch</em>, above): the bulky input is regenerated where it is consumed.</p>
+<p><strong>Case 2: manual fingertip.</strong> Someone explicitly asks for the bytes of a Cell, Pin, Checksum or Expression result that was marked scratch (or evicted), in Python (<code>Checksum.fingertip()</code>, <code>Cell.fingertip()</code>, <code>Pin.fingertip()</code>, and <code>Transformation.run()</code>, which fingertips its result) or with the <code>seamless-fingertip</code> CLI. <strong>Local evaluation is the norm, even while a job server is active</strong>: the chain runs in the requesting process and is not dispatched, whole or in part. <strong>Nothing is written to the hashserver</strong> by the fingertip. A bare <code>Checksum.fingertip()</code> leaves the buffer in local memory only. A fingertip through a non-scratch owner persists the result, but through that owner's own incref, not because of the fingertip.</p>
+<p><strong>A missing scratch intermediate in an Expression chain is materialized locally on demand.</strong> When a later link needs bytes for a known scratch result whose buffer is unreachable, it evaluates that input again here and writes nothing. This uses the owner's known recipe, not the reverse-index fingertip search. The first link may be dispatched and fail before a download; once an intermediate is materialized here, later links run here too. A thin client cannot locally re-run a scratch Transformation whose execution environment exists only remotely (<code>contracts/expressions.md</code>, <em>The requester's scratch decision</em>).</p>
+<p><strong>The rule both cases follow: the chain runs where the buffer is wanted, so the buffer is already in memory where it is needed and nothing is written.</strong></p>
+<p>A chain's cost is bounded by the <strong>frontier</strong>, not by the ancestry: retrieval is tried at every level before recursing, so the walk stops at the first checksum the store can serve, and what is recomputed is the frontier of the absent region. The restriction to state alongside it: <strong>fingertipping assumes that the process that wants the buffer can execute the chain's transformations.</strong> In case 1 that is the job's worker. In case 2 it is the requesting process, so a thin client with no conda environment or no declared binaries cannot fingertip through a Transformation.</p>
+<p><strong>Evaluating, recording identity and publishing are three different acts, and only the third stores anything.</strong> The vocabulary is fixed: <em>publishing</em> is the buffer write, <em>recording</em> is what happens to a result checksum, and <code>contracts/internal/checksum-reference-lifecycle.md</code> uses the same two words in the same two senses.</p>
+<table>
+<thead>
+<tr>
+<th>Act</th>
+<th>Effect</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Evaluating</strong> a transformation or Expression, or recovering a buffer by fingertipping</td>
+<td>produces a buffer in that process's memory. That is all</td>
+</tr>
+<tr>
+<td><strong>Recording identity</strong> — the transformation and expression result caches, and the reverse index fingertipping walks</td>
+<td>inserts a producer → result checksum once. A different result is never recorded as the canonical result; it is an irreproducible observation and says nothing about where any buffer is</td>
+</tr>
+<tr>
+<td><strong>Publishing</strong> — writing the result buffer to the hashserver</td>
+<td>nothing more: it takes no claim and asserts nothing about who holds the result. A scratch result is never published</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Neither evaluation nor fingertipping publishes of its own accord.</strong> A result is published in exactly two ways. Either an owner increfs it non-scratch, for example a non-scratch Cell; that incref also overturns any scratch status (<code>contracts/internal/checksum-reference-lifecycle.md</code>). Or a non-scratch dispatch asks the executing side to write it, because the hashserver is the only channel by which the bytes can reach the requester (below). So a bare <code>Checksum.fingertip()</code> leaves nothing behind but a buffer in local memory; a Cell-level fingertip on a non-scratch Cell persists the result, because the Cell increfs it. The fingertip site itself never decides: it holds a bare checksum, with no owner and no scratch intent.</p>
+<p><strong>No site is exempt, and nothing is ever written.</strong> The rule holds wherever the recovery happens: on a client, inside a jobserver, on a Dask worker. A worker that fingertips a missing <code>scratch</code> input (case 1) is the ordinary case, not an exception: it wants the buffer for itself, and persistence stays the holder's act. A manual fingertip (case 2) is not an exception either. <strong>There is no exception</strong>: no process fingertips on another process's behalf, so no fingertip ever needs the hashserver to hand its result over. The only writes made on somebody else's behalf are <em>dispatched evaluations</em> carrying <code>scratch=False</code>, such as a dispatched <code>Expression.run()</code> or a non-scratch transformation (<code>contracts/expressions.md</code>, <em>The requester's scratch decision</em>). Those are evaluations, not fingertips. A remote fingertip request does not exist; adding one would be a new feature that needs its own contract ruling.</p>
+<p><strong>The consequence for a reader:</strong> a result checksum never implies a result buffer, and a fingertip is the only guaranteed way to get one (<code>contracts/expressions.md</code>, <em>Results and caching</em>).</p>
+<p><strong>When the walk cannot recover the buffer, it reports a category.</strong> <code>CacheMissError(checksum).fingertip_category</code> is the highest-ranked outcome among all candidates, including nested fingertips: <code>materialization</code>, <code>failed_transformation</code>, <code>irreproducible_transformation</code>, or <code>irreproducible_expression</code> (<code>contracts/expressions.md</code>, <em>What a failed fingertip reports</em>). Candidate trial order does not affect the maximum. Cancellation and infrastructure errors propagate without a category. The reverse index, execution records, automatic irreproducible rows, and hashserver index remain the investigation route; the exception does not carry a candidate traceback.</p>
+<p><em>Implemented:</em> neither branch of the walk publishes. A tempref never writes, and both branches mark the buffer they recover as scratch, so a fingertip (case 1 or case 2) leaves the recovered buffer in memory only. This includes the Dask fat-input task: <code>seamless-dask/seamless_dask/client.py</code> <code>_fingertip_buffer_async</code> temprefs the fingertipped buffer and marks it scratch. See <code>contracts/expressions.md</code>, <em>Status: publication and fingertipping</em>.</p>
+<p><strong>What "never dispatched" does and does not exclude.</strong> The chain itself sends no work to a server: none of its links is dispatched. Two ways of reaching remote work are correct and do not break that rule:</p>
+<ul>
+<li><strong>A recompute may join remote work already in flight</strong> for the same identity instead of starting local work. A transformation candidate joins a jobserver submission of the same <code>tf_checksum</code> that is already running (<code>TransformationCache._run_active_or_execute</code>). An Expression candidate joins a dispatched evaluation through the shared member set (<code>contracts/expressions.md</code>, <em>Deduplication</em>), and <code>materialize</code> is not applied to that join. Joining is deduplication, not a dispatch: that work was sent by its own requester, and that link is then served remotely.</li>
+<li><strong>Transformations launched by a candidate's own code are not forced local.</strong> The recompute of the candidate runs locally (<code>force_local</code>), but a transformation that its code launches is new work, not a link of the chain, and it goes through the ordinary jobserver and Dask paths.</li>
+</ul>
+<h3 id="two-modelling-rules-that-keep-a-graph-out-of-the-expensive-shape">Two modelling rules that keep a graph out of the expensive shape</h3>
+<p>Fingertipping a large parent in order to keep one small item is the case where local evaluation is genuinely the costly choice. It is reachable only by opting into it, and two rules keep a graph out of it:</p>
+<ul>
+<li><strong>Do not scratch a small derived cell.</strong> If it is stored, ordinary resolution serves it and no chain is built at all. Scratch is for <em>bulky</em> intermediates; applying it to a small projection buys nothing and can force the recomputation of its large parent.</li>
+<li><strong>Make an item-addressed large parent deep.</strong> A path step over a <code>deepcell</code> / <code>deepfolder</code> / <code>folder</code> checksum selects a <strong>sub-checksum without materializing the parent</strong> (<code>contracts/deep-celltypes.md</code>), so the item is reachable without the parent ever existing as a buffer. A large <code>plain</code> blob that consumers index into is the shape to avoid.</li>
+</ul>
+<p><strong>Fingertipping is where accidental nondeterminism surfaces.</strong> Step 1 (retrieval) is pure lookup and can never diverge. Step 2 <strong>re-executes the producer</strong>; a different result checksum breaks the requested input identity, reports <code>irreproducible_transformation</code>, and adds an automatic irreproducible row while preserving the original forward result. A normally stored, never evicted result hides such nondeterminism until recomputation (see <code>contracts/identity-and-caching.md</code>, "Caching masks accidental nondeterminism"). Practical rule: <strong>any buffer that may be fingertipped — every <code>scratch</code> producer, and in principle any evictable buffer — must be reproducible.</strong></p>
+<h2 id="provenance-the-derivation-graph">Provenance: the derivation graph</h2>
+<p><strong>The provenance of a result is its derivation: the graph of productions that leads to it.</strong> A node is a recorded producer, of which there are three kinds: a Transformation, an Expression, and a cell join. An edge exists wherever one producer's result checksum is another producer's input. This graph is the object of study. Materialization, placement and cache reuse are out of scope: where a step ran, whether a buffer was stored, and which session reused a recorded result are not part of a result's provenance. An execution record still says where and when the recorded production ran (<code>contracts/execution-records.md</code>).</p>
+<p><strong>The walk.</strong> It starts from a result checksum, chosen by whoever wants to know where that result came from, and uses the same reverse rows as fingertipping (<em>Fingertipping</em>), without recomputing anything:</p>
+<table>
+<thead>
+<tr>
+<th>Producer</th>
+<th>Found through</th>
+<th>What it tells</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Transformation</td>
+<td>its reverse row, then the transformation dict on the hashserver</td>
+<td>each pin by name, with its celltype and checksum; the language, the output and, for compiled code, the schema; the code checksum, which resolves to the source</td>
+</tr>
+<tr>
+<td>Expression</td>
+<td>its reverse row, which is the recipe itself</td>
+<td>the input checksum, the path and the two celltypes</td>
+</tr>
+<tr>
+<td>cell join</td>
+<td>its reverse row, then the celljoin JSON on the hashserver</td>
+<td>which input went under which key, and the root</td>
+</tr>
+</tbody>
+</table>
+<p>A deep index resolves to its member names. A module pin and a compiled-objects pin are self-describing: the source is in the buffer. The execution record adds the environment.</p>
+<p><strong>In a workflow Context the derivation is complete.</strong> Every step by which a Context derives one checksum from others is one of the three producers, so the walk reaches the leaves without a break. The cell join closes the derivation by recording the root and member checksums as a producer for the join's result (<code>contracts/expressions.md</code>, <em>Cell joins</em>).</p>
+<p><strong>Implementation status.</strong> Cell joins now record forward and reverse producer rows in the database, and queue their definitions to the hashserver when both write services are configured. The database holds checksums and celltypes only. Fingertip traversal uses these reverse rows to recover a join locally from its required inputs, without dispatch or result publication. Ordinary placement and remote dispatch are also implemented (<code>contracts/expressions.md</code>, <em>Implementation status</em>).</p>
+<p><strong>What it is sufficient for.</strong> The derivation is enough to reconstruct the completed workflow as a DAG and to tell what was computed, in a sense that is not specific to Seamless, provided the transformation code is readable. It is not the Context graph, and it is not meant to be. Node names, and configuration outside identity such as scratch policy and environment, are saved by <code>get_graph()</code> and are not in the derivation; pin names and join keys are. A checksum may have several recorded producers, because computations converge: each of them is a valid derivation.</p>
+<p><strong>A leaf is original data, or a coverage gap.</strong> A leaf is a checksum with no recorded producer. Ideally the leaves are the original data: the diffraction patterns, not the coordinate file derived from them. A leaf that is in fact a computed value marks a <strong>coverage gap</strong>, a derivation that happened outside Seamless:</p>
+<ul>
+<li>a value computed by an external tool and brought in as an input;</li>
+<li>host-language glue between recorded steps: a result that is read into Python in a script or a notebook, modified, and passed on as a new value. A workflow Context has no such glue, since its wiring consists of Expressions and cell joins;</li>
+<li>a sub-path write of a checksum, which embeds that checksum's value into the root literal (<code>contracts/cells.md</code>, <em>Projections</em>). It is a one-off assembly, and the link is not kept.</li>
+</ul>
+<p>Inside a driver transformation, glue between the transformations it launches is part of the driver's own code, so it can be read from the source. <strong>The link from a driver to the transformations it launched belongs to the derivation</strong>: it is what lets a walk open a driver up into the steps it ran. It is not recorded yet (<em>Gaps</em>, below).</p>
+<p><strong>Seamless is meant to federate.</strong> An identity is content-addressed, so it means the same thing in every database, and a row recorded in one <code>seamless.db</code> is valid in any other. There is one logical database of derivations, of which each <code>seamless.db</code> holds a shard. A leaf in one shard may be a result in another, and the walk then continues there. Two shards that record different results for one identity do not conflict: that is an observation of irreproducibility (<code>contracts/execution-records.md</code>).</p>
+<p><strong>Whether the bytes are still there is a different question.</strong> Whether a leaf's buffer can still be retrieved, how a leaf is described, and whether the definitions the walk reads are kept, are matters of data stewardship (FAIR), not of computation provenance. Seamless contributes one guarantee to it: a transformation's definition is published whatever its scratch policy (<em>Scratch</em>), and a celljoin JSON is written to the hashserver whenever it is recorded (<code>contracts/expressions.md</code>, <em>Cell joins</em>).</p>
+<p><strong>Gaps.</strong> The driver link remains unrecorded:
+- <strong>The driver link is not recorded.</strong> A transformation launched by a driver's code is recorded as a producer in its own right, and its inputs and result connect to other producers by checksum as usual. That the driver launched it is recorded nowhere, so a walk sees the driver as one opaque step and cannot open it up, and the launched transformations cannot be attributed to it. A launched transformation carries nothing about its launcher. <code>__meta__["driver"]</code> says only that a transformation was itself declared a driver; it is outside identity, and a transformation launched by a driver does not get it (<code>contracts/transformers.md</code>, <em><code>process_lock</code> and <code>driver</code></em>). The submission of a launch does carry a boolean that says it came from a driver's code, but it names no parent and is not stored. The parent's <code>tf_checksum</code> is not passed along when the launch is submitted, and neither the database nor the execution record has a place for the link (<code>contracts/execution-records.md</code>).</p>
 <h2 id="witness-outputs-do-not-scratch">Witness outputs (do not scratch)</h2>
 <p>A witness is a small, persistent artifact that encodes scientific meaning and diagnostics, e.g.:
 - classifier: <code>(label, margin)</code> (or other stability diagnostics)

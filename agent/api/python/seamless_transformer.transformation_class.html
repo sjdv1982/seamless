@@ -75,6 +75,14 @@
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../../contracts/mounts.html">File Mounts</a>
                   </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../contracts/shares.html">HTTP Shares</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../contracts/widgets.html">Jupyter Widgets</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../contracts/streaming.html">Streaming</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../contracts/transformation-logs.html">Transformation Logs</a>
+                  </li>
                   <li class="toctree-l1"><a class="reference internal" href="../../contracts/cancellation.html">Cancellation</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../../contracts/direct-delayed-and-transformation.html">direct/delayed/Transformation</a>
@@ -91,6 +99,8 @@
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../../contracts/execution-backends.html">Execution Backends</a>
                   </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../contracts/environments.html">Environments</a>
+                  </li>
                   <li class="toctree-l1"><a class="reference internal" href="../../contracts/execution-records.html">Execution Records</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../../contracts/service-management.html">Service Management</a>
@@ -102,6 +112,10 @@
                   <li class="toctree-l1"><a class="reference internal" href="../../contracts/compiled-pins.html">Compiled Pins</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../../contracts/seamless-signature-schema.html">seamless-signature Schema</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../contracts/handler-languages.html">Handler Languages</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../contracts/language-backends.html">Language Backends</a>
                   </li>
               </ul>
               <p class="caption"><span class="caption-text">API</span></p>
@@ -162,6 +176,8 @@
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#transformationstatus">Transformation.status</a>
     </li>
+    <li class="toctree-l2"><a class="reference internal" href="#transformationstreaming">Transformation.streaming</a>
+    </li>
     <li class="toctree-l2"><a class="reference internal" href="#transformationtask">Transformation.task</a>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#transformationtransformation_checksum">Transformation.transformation_checksum</a>
@@ -174,6 +190,8 @@
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#_compute_executor_max_workers">_compute_executor_max_workers</a>
     </li>
+    <li class="toctree-l2"><a class="reference internal" href="#_create_task_on_loop">_create_task_on_loop</a>
+    </li>
     <li class="toctree-l2"><a class="reference internal" href="#_dask_available">_dask_available</a>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#_dependency_computation">_dependency_computation</a>
@@ -183,6 +201,8 @@
     <li class="toctree-l2"><a class="reference internal" href="#_dependency_message">_dependency_message</a>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#_dependency_result_checksum">_dependency_result_checksum</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#_driver_context_active">_driver_context_active</a>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#_ensure_loop_running">_ensure_loop_running</a>
     </li>
@@ -395,6 +415,12 @@ Raise RuntimeError in case of an exception.</p>
 <li>signature: <code>status(self)</code></li>
 </ul>
 <p><em>No docstring.</em></p>
+<h2 id="transformationstreaming"><code>Transformation.streaming</code></h2>
+<ul>
+<li>kind: <code>method</code></li>
+<li>signature: <code>streaming(self, value)</code></li>
+</ul>
+<p><em>No docstring.</em></p>
 <h2 id="transformationtask"><code>Transformation.task</code></h2>
 <ul>
 <li>kind: <code>method</code></li>
@@ -433,6 +459,12 @@ Raise RuntimeError in case of an exception.</p>
 <li>signature: <code>_compute_executor_max_workers()</code></li>
 </ul>
 <p><em>No docstring.</em></p>
+<h2 id="_create_task_on_loop"><code>_create_task_on_loop</code></h2>
+<ul>
+<li>kind: <code>function</code></li>
+<li>signature: <code>_create_task_on_loop(loop, coroutine, done_callback)</code></li>
+</ul>
+<p>Create a task on its loop thread, waking a loop owned by another thread.</p>
 <h2 id="_dask_available"><code>_dask_available</code></h2>
 <ul>
 <li>kind: <code>function</code></li>
@@ -461,6 +493,12 @@ Raise RuntimeError in case of an exception.</p>
 <ul>
 <li>kind: <code>function</code></li>
 <li>signature: <code>_dependency_result_checksum(dep, *, scratch)</code></li>
+</ul>
+<p><em>No docstring.</em></p>
+<h2 id="_driver_context_active"><code>_driver_context_active</code></h2>
+<ul>
+<li>kind: <code>function</code></li>
+<li>signature: <code>_driver_context_active()</code></li>
 </ul>
 <p><em>No docstring.</em></p>
 <h2 id="_ensure_loop_running"><code>_ensure_loop_running</code></h2>

@@ -44,6 +44,8 @@
     <ul class="current">
     <li class="toctree-l2"><a class="reference internal" href="#start-here">Start here</a>
     </li>
+    <li class="toctree-l2"><a class="reference internal" href="#guides">Guides</a>
+    </li>
     <li class="toctree-l2"><a class="reference internal" href="#contracts-quick-index">Contracts quick index</a>
     </li>
     </ul>
@@ -81,6 +83,14 @@
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="contracts/mounts.html">File Mounts</a>
                   </li>
+                  <li class="toctree-l1"><a class="reference internal" href="contracts/shares.html">HTTP Shares</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="contracts/widgets.html">Jupyter Widgets</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="contracts/streaming.html">Streaming</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="contracts/transformation-logs.html">Transformation Logs</a>
+                  </li>
                   <li class="toctree-l1"><a class="reference internal" href="contracts/cancellation.html">Cancellation</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="contracts/direct-delayed-and-transformation.html">direct/delayed/Transformation</a>
@@ -97,6 +107,8 @@
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="contracts/execution-backends.html">Execution Backends</a>
                   </li>
+                  <li class="toctree-l1"><a class="reference internal" href="contracts/environments.html">Environments</a>
+                  </li>
                   <li class="toctree-l1"><a class="reference internal" href="contracts/execution-records.html">Execution Records</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="contracts/service-management.html">Service Management</a>
@@ -108,6 +120,10 @@
                   <li class="toctree-l1"><a class="reference internal" href="contracts/compiled-pins.html">Compiled Pins</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="contracts/seamless-signature-schema.html">seamless-signature Schema</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="contracts/handler-languages.html">Handler Languages</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="contracts/language-backends.html">Language Backends</a>
                   </li>
               </ul>
               <p class="caption"><span class="caption-text">API</span></p>
@@ -164,8 +180,24 @@
 <ul>
 <li>Read the contract-oriented overview in <code>README.md</code>.</li>
 <li>Browse behavior and cache contracts under <code>contracts/</code>.</li>
+<li>Follow how-to guides under <code>guides/</code>.</li>
 <li>See generated API reference under <code>api/</code>.</li>
 </ul>
+<h2 id="guides">Guides</h2>
+<table>
+<thead>
+<tr>
+<th>Guide</th>
+<th>What it covers</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>guides/seamless-web-server.md</code></td>
+<td>Making a web server from a workflow Context: shared cells as the whole REST API, the development stage (dev server in front, interactive Context behind; live edit, <code>%run -i</code> reload and <code>authority="file"</code> mounts; a hardened client) and the deployment stage (script-served, or a built front end packed into a graph and served from a hashserver by a generic server)</td>
+</tr>
+</tbody>
+</table>
 <h2 id="contracts-quick-index">Contracts quick index</h2>
 <table>
 <thead>
@@ -177,43 +209,47 @@
 <tbody>
 <tr>
 <td><code>contracts/execution-backends.md</code></td>
-<td><code>process</code>, <code>spawn</code>, <code>remote: jobserver/daskserver</code> semantics</td>
+<td><code>process</code>, <code>spawn</code>, <code>remote: jobserver/daskserver</code> semantics; the process lock (one transformation runs its code at a time per process, and gives the lock up when it submits nested work), drivers, the bash nesting signal, handler languages and embedded interpreters, and concurrency per backend; which host must provide the conda environment or the container runtime of a bash transformation</td>
 </tr>
 <tr>
 <td><code>contracts/identity-and-caching.md</code></td>
-<td>Content-addressing, checksum stability, cache invalidation</td>
+<td>Content-addressing, checksum stability, cache invalidation; load-bearing versus orthogonal keys of a transformation dict, including <code>__handler__</code> and the neutral <code>__format__</code> entry of handler languages</td>
 </tr>
 <tr>
 <td><code>contracts/celltypes-and-conversion.md</code></td>
-<td>The 13 celltypes; celltype hierarchy as a checksum hierarchy; canonical null and virtual values; reference parser; conversion rule table and <code>convert_checksum</code></td>
+<td>Layer 1+3 of the stack. The 13 celltypes; celltype hierarchy as a <strong>checksum</strong> hierarchy; canonical null and virtual values; reference parser; the conversion rule table <strong>built on the hierarchy</strong> (<code>conversion_trivial</code> <em>is</em> the set of hierarchy edges) and <code>convert_checksum</code>. The engine is exactly the empty-path case of an Expression</td>
 </tr>
 <tr>
 <td><code>contracts/hashtype.md</code></td>
-<td><code>HashType</code> checksum classification (replaces <code>BufferInfo</code>); false-negative property; tightening; <code>hash_type</code> database table; <code>deserializable_as</code>/<code>capabilities</code>/<code>conversion_feasible</code></td>
+<td>Layer 2. <code>HashType</code> checksum classification (replaces <code>BufferInfo</code>); the false-negative property (<strong>every <code>False</code> is a proof</strong>) and the positive property (<strong>a <code>True</code> from <code>deserializable_as</code> is a proof</strong>); tightening; <code>hash_type</code> database table; <code>deserializable_as</code>/<code>capabilities</code>/<code>conversion_feasible</code>; no deep-celltype vocabulary</td>
 </tr>
 <tr>
 <td><code>contracts/deep-celltypes.md</code></td>
-<td><code>deepcell</code>/<code>deepfolder</code>/<code>folder</code>: the flat index buffer, member typing, legal conversions and the one-step path rule (<code>module</code> is not deep)</td>
+<td>A <strong>carve-out at layer 4</strong>, not a layer. <code>deepcell</code>/<code>deepfolder</code>/<code>folder</code>: the flat index buffer, member typing, the legal conversion table, the one-step string-item path rule and the fusion barrier (<code>module</code> is not deep)</td>
 </tr>
 <tr>
 <td><code>contracts/expressions.md</code></td>
-<td>Expressions: the 4-tuple identity, the dummy Expression, path syntax, placement (<code>execution="auto"</code>), the error envelope, uncached failures, dedup and softcancel</td>
+<td>Layer 4. Expressions: <strong>project, then convert</strong> (at most one conversion, always last), the 4-tuple identity, the dummy Expression, path syntax, fusion, placement (<code>execution="auto"</code>) and the fingertip exemption from it, publishing vs recording identity, the error envelope, uncached failures, dedup and softcancel, and cell joins (the many-input Expression behind a cell-level join: its JSON, identity, database rows and placement)</td>
 </tr>
 <tr>
 <td><code>contracts/cells.md</code></td>
-<td>Cells as deferred Expressions, bound or standalone: <code>celltype</code> vs read-only <code>input_celltype</code>, <code>.source</code>/<code>.checksum</code>, the two write families and the 3×2 matrix, null and <code>None</code>, standalone reads, failures on the handle, projections and connection targets, cell-level joins</td>
+<td>Layer 5. Cells as deferred Expressions, bound or standalone: <code>celltype</code> vs read-only <code>input_celltype</code>, <code>.source</code>/<code>.checksum</code>, the two write families and the 3×2 matrix, null and <code>None</code>, standalone reads, failures on the handle, projections (project-then-convert on a handle) and connection targets, cell-level joins</td>
 </tr>
 <tr>
 <td><code>contracts/pins.md</code></td>
 <td>Transformer pins: <code>tf.pins.x</code>, the <code>pin.celltype</code>/<code>tf.celltypes.x</code> link, pins hold checksums, conversion at the pin, optional pins and the null rules, a Pin is not a source</td>
 </tr>
 <tr>
+<td><code>contracts/transformers.md</code></td>
+<td>Transformers as mutable builders for immutable Transformation snapshots: the factory and the three kinds of language it accepts (native, handler, compiled), standalone and bound modes, binding as a move, mode-independent <code>build()</code> / <code>transformation()</code>, direct call sugar, named work methods and the result endpoint; the <code>process_lock</code> and <code>driver</code> settings, their coupling, the rule for absent keys, and operational versus interaction features</td>
+</tr>
+<tr>
 <td><code>contracts/workflow-context.md</code></td>
-<td>The reactive workflow <code>Context</code>: a DAG of nodes with Cells/Transformers as views, assignment and edges, the controller thread and sequenced ingress, barriers and timeouts, optimistic sub-path commits, <code>prune()</code>, <code>get_graph</code>/<code>set_graph</code></td>
+<td>The reactive workflow <code>Context</code>: a DAG of nodes with Cells/Transformers as views, assignment and edges, the controller thread and sequenced ingress, barriers and timeouts, optimistic sub-path commits, <code>prune()</code>, <code>get_graph</code>/<code>set_graph</code>; a Context without a hashserver (input fingertipping, cells with a <code>w</code> mount, share or widget wait for a fingertipped buffer)</td>
 </tr>
 <tr>
 <td><code>contracts/node-state-lifecycle.md</code></td>
-<td>The six node states and how each is derived, connectivity, block reasons and their precedence, the glitch-free cascade, speculative supersession and the three grace holds, <code>prune</code>, and states through barriers</td>
+<td>The seven node states and how each is derived, connectivity, block reasons and their precedence, the glitch-free cascade, speculative supersession and the three grace holds, <code>prune</code>, and states through barriers</td>
 </tr>
 <tr>
 <td><code>contracts/attachments.md</code></td>
@@ -224,12 +260,36 @@
 <td>File mounts: the <code>ctx.a.mount</code> API, <code>mode</code>/<code>authority</code>/<code>persistent</code>, the initial decision table, observation classification against one disk belief, canonical bytes and null files, fingerprints and conditional atomic writes, directory mounts (<code>deepfolder</code> is sense-only), <code>ctx.mounts.sync()</code>, graph serialization and limits</td>
 </tr>
 <tr>
+<td><code>contracts/shares.md</code></td>
+<td>HTTP shares: <code>Cell.share</code>, REST and websocket behavior, marker-based conditional writes, live OpenAPI, the browser client, and graph persistence</td>
+</tr>
+<tr>
+<td><code>contracts/widgets.md</code></td>
+<td>Jupyter widget attachments: traitlet hubs and links, widget-to-cell sensing, cell-to-widget delivery, <code>ctx.mounts.sync()</code>, lifecycle and output widgets</td>
+</tr>
+<tr>
+<td><code>contracts/streaming.md</code></td>
+<td>Opt-in streaming for <code>remote: daskserver</code> transformations and how Transformer and Transformation flags affect submitted work</td>
+</tr>
+<tr>
+<td><code>contracts/transformation-logs.md</code></td>
+<td><code>Transformation.logs</code> and bound <code>ctx.tf.logs</code>: the captured stdout and stderr of a successful run plus its execution time, the failure text, the per-process store keyed by <code>tf_checksum</code> (a cache hit has no log), the exact layout and truncation, and what each backend captures, including bash and compiled output</td>
+</tr>
+<tr>
 <td><code>contracts/cancellation.md</code></td>
-<td>The cancellation substrate: one membership set per deduplication site, <code>softcancel</code> = deregister vs hard <code>cancel</code> = kill-all, softness cascading to the leaf, no liveness machinery, and the soft-only reactive policy</td>
+<td>The cancellation substrate: one membership set per deduplication site, <code>softcancel</code> = deregister vs hard <code>cancel</code> = kill-all, softness cascading to the leaf, no liveness machinery, the soft-only reactive policy, a run that is cancelled while it waits for the process lock, and the teardown of a cancelled bash script and its container</td>
 </tr>
 <tr>
 <td><code>contracts/service-management.md</code></td>
 <td><code>seamless-service-resolve</code>, <code>rhl-*</code> helpers, false-pass protocol</td>
+</tr>
+<tr>
+<td><code>contracts/environments.md</code></td>
+<td>Environments of CLI jobs, which are bash transformers and the CLI backends of Python, R and Julia: a conda environment (<code>conda run</code>) or a Docker image run by docker, podman or apptainer. The closed image spec and its check at dispatch, the runtime chosen on the executing host and its settings, the environment as outside identity, required binaries checked inside the environment, the failure classes, the job directory with its <code>transform.sh</code> launcher, and the limits on nesting and cancellation</td>
+</tr>
+<tr>
+<td><code>contracts/language-backends.md</code></td>
+<td>Language backends: the CLI and in-memory kinds, <code>BACKEND</code> (<code>"cli"</code> and <code>"mem"</code>) for Python, R and Julia, the environment rule of each kind (the in-memory rule and the CLI rule), the checks at run time and at dispatch, required binaries, the public functions <code>check_in_memory_environment</code> and <code>execute_cli</code>, and the Python CLI backend: what stays the same, what the job needs, results, parity, drivers and nested work</td>
 </tr>
 <tr>
 <td><code>contracts/execution-records.md</code></td>
@@ -237,19 +297,19 @@
 </tr>
 <tr>
 <td><code>contracts/direct-delayed-and-transformation.md</code></td>
-<td>Transformation model, <code>direct</code>/<code>delayed</code> decorators</td>
+<td>Immutable Transformation handles and the <code>direct</code>/<code>delayed</code> Transformer call modes</td>
 </tr>
 <tr>
 <td><code>contracts/scratch-witness-audit.md</code></td>
-<td>Scratch, witness, and audit trail semantics; fingertipping as recompute-on-absence</td>
+<td>Scratch, witness, and audit trail semantics; fingertipping as recompute-on-absence, where the chain runs, and why neither evaluation nor fingertipping publishes; provenance as the derivation graph, what a walk of the database recovers, coverage gaps and federation</td>
 </tr>
 <tr>
 <td><code>contracts/seamless-run-and-argtyping.md</code></td>
-<td>The <code>seamless-run</code> CLI: argtyping, <code>--var</code> vs <code>--metavar</code>, canonicalization, manual remote deployment</td>
+<td>The <code>seamless-run</code> CLI: argtyping, <code>--var</code> vs <code>--metavar</code>, <code>--no-process-lock</code> and <code>--driver</code>, <code>--conda</code> and <code>--docker</code>, how the first word of a command is resolved, canonicalization, manual remote deployment and the <code>transform.sh</code> launcher</td>
 </tr>
 <tr>
 <td><code>contracts/cache-storage-and-limits.md</code></td>
-<td>What is cached at a high level; the local buffer cache and its memory pressure</td>
+<td>What is cached at a high level; the local buffer cache and its memory pressure; local buffer sources (read-buffer directories, directory write-mount leaves) and the resolution order; buffers without a hashserver (the X → Y → X case)</td>
 </tr>
 <tr>
 <td><code>contracts/content-addressed-files-and-dirs.md</code></td>
@@ -266,6 +326,10 @@
 <tr>
 <td><code>contracts/compiled-pins.md</code></td>
 <td>Compiled transformer input pins: the C ABI rules, schema-derived celltypes and the declaration whitelist, <code>mixed</code> as auto, the two validation stages and where they run, scalar and character admission, null, errors</td>
+</tr>
+<tr>
+<td><code>contracts/handler-languages.md</code></td>
+<td>Handler languages: R, Julia and languages added with <code>register_language_handler</code>. The three kinds of language and <code>available_languages()</code>, the handler API and its arguments, the block and <code>transform()</code> code styles, what the CLI and in-memory backends run and need and their bitwise parity, the value rules for pins and results, deep pins and results, the checksum classes of R and Julia, pins as files, <code>__handler__</code> and the backend as orthogonal, honouring an environment through the two public functions, and the in-memory backends' need for the process lock</td>
 </tr>
 <tr>
 <td><code>contracts/seamless-signature-schema.md</code></td>
@@ -325,5 +389,5 @@
 
 <!--
 MkDocs version : 1.6.1
-Build Date UTC : 2026-10-05 12:58:01.842003+00:00
+Build Date UTC : 2026-11-20 23:45:21.177092+00:00
 -->

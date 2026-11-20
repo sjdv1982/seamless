@@ -198,6 +198,16 @@ installs null; <code>file-strict</code> instead fails when the path is missing. 
 unreadable input fails the cell, preserves its stored last good value, and
 continues monitoring. Delivery failures appear on <code>ctx.output.mount.error</code> and
 retry with backoff; they do not invalidate the cell's value.</p>
+<p>Without a hashserver, buffers live only in this process, and an unclaimed one is
+evicted when its temporary reference expires. A cell can then receive a
+checksum whose buffer is gone, typically by a cache hit after an input went
+X → Y → X. A cell with a <code>w</code> mount does not take such a checksum at once: it
+stays <code>waiting</code> while the Context fingertips the buffer, reading it back from a
+local buffer source or recomputing it. The file is written after that. For a
+<code>folder</code> cell, a missing leaf counts too: if any leaf is gone, the Context runs
+the folder's producer again to regenerate it, even when the folder's index is
+still in memory. Every transformation that such a Context runs also fingertips
+missing inputs.</p>
 <p><code>ctx.compute()</code> waits only for graph work. Call <code>ctx.mounts.sync()</code> before
 reading mounted outputs externally, or <code>await ctx.mounts.synchronization()</code> in
 async code. The returned mapping contains status and errors per node path.
@@ -236,12 +246,22 @@ handles cannot be mounted directly: mount a whole cell and connect it instead.</
 include <code>seamless_workflow.diagnostics.record_attachments(ctx)</code> and the
 controllable <code>attachments.manual.ManualDriver</code> for ordering tests.</p>
 <p>Set <code>SEAMLESS_MOUNT_NATIVE=1</code> before the first mount to enable Linux inotify hints
-alongside polling. Unsupported platforms and failed watches retain polling.
-The experimental <code>attachments.widget.WidgetDriver(widget).attach(ctx.cell)</code>
-exercises the same session protocol with a traitlets-style callback widget;
-widget and manual-driver sessions are never serialized. This is an experimental
-second transport, not a promise that arbitrary external services share file
-mount conflict policy.</p>
+alongside polling. Unsupported platforms and failed watches retain polling.</p>
+<p>For notebooks, install <code>seamless-workflow[jupyter]</code> and use the public widget
+helpers:</p>
+<pre><code class="language-python">from IPython.display import display
+from seamless_workflow.jupyter import traitlet, output
+
+display(output(ctx.c))
+traitlet(ctx.a).link(slider)
+</code></pre>
+<p>The widget hub has its own runtime attachment slot and can coexist with
+<code>ctx.a.mount("a.txt")</code> on the same cell. Without a hashserver, a cell with a
+widget hub waits for a missing buffer to be fingertipped, as a <code>w</code>-mounted cell
+does, and the widget keeps its last value meanwhile. <code>ctx.mounts.sync()</code> reports both
+sessions; <code>del ctx.a.mount</code> detaches only the file slot.</p>
+<p>Widget attachments are runtime state and are never serialized. The underlying
+<code>attachments.widget.WidgetDriver</code> remains an internal transport.</p>
               
             </div>
           </div><footer>

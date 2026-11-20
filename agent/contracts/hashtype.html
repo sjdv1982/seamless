@@ -59,7 +59,11 @@
                   </li>
                   <li class="toctree-l1 current"><a class="reference internal current" href="#">HashType</a>
     <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#where-this-page-sits-the-stack">Where this page sits: the stack</a>
+    </li>
     <li class="toctree-l2"><a class="reference internal" href="#the-false-negative-property">The false-negative property</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#the-positive-property">The positive property</a>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#the-word">The word</a>
     </li>
@@ -71,15 +75,19 @@
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#queries">Queries</a>
         <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#the-domain-of-every-query">The domain of every query</a>
+    </li>
     <li class="toctree-l3"><a class="reference internal" href="#deserializable_ascelltype-checksum-true-false-none">deserializable_as(celltype, *, checksum) -&gt; True | False | None</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="#capabilitiessource_celltype-set-expression-capability">capabilities(source_celltype) -&gt; set (expression capability)</a>
+    <li class="toctree-l3"><a class="reference internal" href="#capabilitiessource_celltype-set">capabilities(source_celltype) -&gt; set</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#conversion_feasiblehash_type-source-target-checksum-true-false-none">conversion_feasible(hash_type, source, target, *, checksum) -&gt; True | False | None</a>
     </li>
         </ul>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#where-hashtype-is-consulted">Where HashType is consulted</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#errors">Errors</a>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#current-limitations">Current limitations</a>
     </li>
@@ -103,6 +111,14 @@
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="mounts.html">File Mounts</a>
                   </li>
+                  <li class="toctree-l1"><a class="reference internal" href="shares.html">HTTP Shares</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="widgets.html">Jupyter Widgets</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="streaming.html">Streaming</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="transformation-logs.html">Transformation Logs</a>
+                  </li>
                   <li class="toctree-l1"><a class="reference internal" href="cancellation.html">Cancellation</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="direct-delayed-and-transformation.html">direct/delayed/Transformation</a>
@@ -119,6 +135,8 @@
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="execution-backends.html">Execution Backends</a>
                   </li>
+                  <li class="toctree-l1"><a class="reference internal" href="environments.html">Environments</a>
+                  </li>
                   <li class="toctree-l1"><a class="reference internal" href="execution-records.html">Execution Records</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="service-management.html">Service Management</a>
@@ -130,6 +148,10 @@
                   <li class="toctree-l1"><a class="reference internal" href="compiled-pins.html">Compiled Pins</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="seamless-signature-schema.html">seamless-signature Schema</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="handler-languages.html">Handler Languages</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="language-backends.html">Language Backends</a>
                   </li>
               </ul>
               <p class="caption"><span class="caption-text">API</span></p>
@@ -181,8 +203,47 @@
             <div class="section" itemprop="articleBody">
               
                 <h1 id="hashtype-contract">HashType (Contract)</h1>
-<p><code>HashType</code> classifies a <strong>checksum</strong> by the structure of its buffer. It lets Seamless make deserialization, conversion and path decisions at the checksum level, rejecting impossible work without fetching or parsing a buffer. It replaces the old <code>BufferInfo</code> decision layer: no seamless-core, seamless-transformer, seamless-remote or seamless-dask code reads or writes <code>BufferInfo</code>.</p>
-<p>Celltypes, the reference parser and the conversion engine are defined in <code>contracts/celltypes-and-conversion.md</code>. HashType classifies only the 13 celltypes; the deep celltypes (<code>deepcell</code>, <code>deepfolder</code>, <code>folder</code>) are outside its vocabulary, and <code>contracts/deep-celltypes.md</code> records what that currently means for them.</p>
+<p><code>HashType</code> classifies a <strong>checksum</strong> by the structure of its buffer. Seamless uses it to make deserialization, conversion and path decisions at the checksum level, so that it can reject impossible work, and skip a check it has already settled, without fetching or parsing a buffer.</p>
+<p>HashType classifies the <strong>13 celltypes</strong> defined in <code>contracts/celltypes-and-conversion.md</code>, and only those. Four other celltype names exist in Seamless: the three <strong>deep celltypes</strong> <code>deepcell</code>, <code>deepfolder</code> and <code>folder</code>, and <strong><code>module</code></strong>, which is not a deep celltype (<code>contracts/deep-celltypes.md</code>, <em><code>module</code> is not a deep celltype</em>). This page calls them <strong>the four structural names</strong>. They are outside HashType's vocabulary by design, not by omission: a HashType query about one of them is a caller error and raises (<em>Queries</em>).</p>
+<h2 id="where-this-page-sits-the-stack">Where this page sits: the stack</h2>
+<p>Each layer is defined <strong>on top of</strong> the one before it, and no page re-derives the one below it.</p>
+<table>
+<thead>
+<tr>
+<th>Layer</th>
+<th>Page</th>
+<th>What it adds</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1. <strong>Celltypes and the type hierarchy</strong></td>
+<td><code>contracts/celltypes-and-conversion.md</code></td>
+<td>which checksums are valid as which celltype, and the subtype→supertype edges</td>
+</tr>
+<tr>
+<td>2. <strong>HashType</strong></td>
+<td><strong>this page</strong></td>
+<td>a checksum-level classification that <strong>disproves</strong> readings and conversions, and <strong>proves</strong> readings where the word settles them, without fetching a buffer</td>
+</tr>
+<tr>
+<td>3. <strong>Conversion</strong></td>
+<td><code>contracts/celltypes-and-conversion.md</code>, <em>Conversion engine</em></td>
+<td>the rule table, built on the hierarchy, using layer 2 to refuse or skip work before any buffer is fetched</td>
+</tr>
+<tr>
+<td>4. <strong>Expressions</strong></td>
+<td><code>contracts/expressions.md</code></td>
+<td>path steps plus at most one conversion, in that order (<strong>project, then convert</strong>); layer 3 is exactly the empty-path case</td>
+</tr>
+<tr>
+<td>5. <strong>Cells</strong></td>
+<td><code>contracts/cells.md</code></td>
+<td>a Cell is a <em>deferred</em> Expression</td>
+</tr>
+</tbody>
+</table>
+<p>The reference parser (layer 1), the conversion engine (layer 3) and Expression validation (layer 4) all consult HashType before touching bytes. A <code>False</code> refuses work (<em>The false-negative property</em>). A <code>True</code> from <code>deserializable_as</code> proves a reading, and the conversion engine uses it to skip a fetch whose only purpose would be that check (<em>The positive property</em>). Nothing else in HashType decides that work is possible.</p>
 <p>Code locations:</p>
 <table>
 <thead>
@@ -215,11 +276,32 @@
 </tbody>
 </table>
 <h2 id="the-false-negative-property">The false-negative property</h2>
-<p><strong>HashType may answer "unknown", but it must never reject a valid deserialization or conversion.</strong> A <code>False</code> from a query is a proof of impossibility. <code>True</code> and <code>None</code> are not guarantees: the reference parser or the conversion engine still makes the final decision. Callers act only on <code>False</code>, by raising <code>HashTypeValidationError</code> (a <code>ValueError</code> subclass; error-envelope kind <code>"hash_type_validation"</code>).</p>
-<p>The rules below preserve this property; current limitations are conservative (<code>None</code> or an
-over-permissive capability), not false rejections.</p>
+<p><strong>HashType may answer "unknown", but it must never reject a valid deserialization or conversion.</strong></p>
+<ul>
+<li>A <code>False</code> from any query is a <strong>proof of impossibility</strong>. Callers act on it by raising <code>HashTypeValidationError</code>, a <code>ValueError</code> subclass (see <em>Errors</em>).</li>
+<li><code>None</code> means "unknown". Whether a <code>True</code> proves anything depends on the query: see <em>The positive property</em>.</li>
+</ul>
+<p>The property is kept by <strong>narrowing the domain rather than widening the vocabulary</strong>: a query is asked only about the 13 celltypes, and anything else raises. Deep feasibility is decided before HashType is consulted (<code>contracts/deep-celltypes.md</code>, <em>Where deep validation happens</em>).</p>
+<p>Where HashType is imprecise, it is imprecise conservatively: it answers <code>None</code> or reports an over-permissive capability. It never falsely rejects, and <code>deserializable_as</code> never falsely proves. A <em>false rejection</em> or a <em>false proof</em> is therefore a bug of a different class from imprecision: a defect to fix, never a conservatism to accept.</p>
+<h2 id="the-positive-property">The positive property</h2>
+<p><strong>A <code>True</code> from <code>deserializable_as(celltype, checksum=…)</code> is a proof that the reference parser accepts the checksum as that celltype.</strong></p>
+<ul>
+<li><strong>Only <code>deserializable_as</code> makes this promise.</strong> A <code>True</code> from <code>conversion_feasible</code> still means only "not disproved": whether a conversion succeeds also depends on the source value, which the word does not settle. No caller acts on it. <code>capabilities</code> and the item hints are over-permissive by design (<em>Current limitations</em>).</li>
+<li><strong>Where the word cannot settle a reading, the answer is <code>None</code>, never <code>True</code>.</strong> The word cannot settle three things:</li>
+<li><code>python</code>, <code>ipython</code> and <code>yaml</code> syntax;</li>
+<li>whether 64 characters are hexadecimal, for <code>checksum</code>;</li>
+<li>the payload of a Seamless-mixed buffer, of which the producer reads only the header;</li>
+</ul>
+<p>A concrete JSON scalar has no ambiguity for a <code>str</code> reading: <code>JSON_NULL</code> records parsed null, and <code>JSON_STRING</code> records strings or booleans, all of which <code>str</code> accepts. The two virtual null checksums are handled before the word is examined.</p>
+<p>The tables in <em><code>deserializable_as</code></em> follow this rule.
+- <strong>Who acts on a <code>True</code>.</strong> Only the conversion engine, and only to skip a fetch whose sole purpose would be that same check. That means a <strong>reinterpretation</strong>, which keeps the checksum and whose only work is validating the target reading, and the keep branch of <code>bytes→mixed</code> (<code>contracts/celltypes-and-conversion.md</code>, <em>Principle</em>). Everywhere else, the parser needs the value and not just the verdict, so it still parses. Retrieval validation still raises only on <code>False</code>.
+- <strong>A word is a claim about the whole buffer.</strong> Both properties rest on this.
+  - <code>from_buffer</code> meets it by construction: a <code>NUMPY</code> word means that <code>np.load</code> succeeded, and a JSON word means that <code>orjson</code> parsed the whole text. The one exception is the header-only Seamless-mixed classification, which is why a <code>MIXED_*</code> word answers <code>None</code> for <code>mixed</code>.
+  - An untested kind is a claim too. <code>UTF8_UNTESTED</code> says that the whole buffer decodes as UTF-8. <code>JSON_UNTESTED</code> says that the whole buffer parses as JSON (<code>orjson</code>). A producer that has not checked the whole buffer must write <code>UNTESTED</code>.
+- <strong>What a wrong word costs.</strong> The database checks that a word is well-formed, not that it is true (<em>Storage and tightening</em>). A word that falsely proves a reading makes a reinterpretation succeed, and the empty-path Expression records that success. The failure then surfaces later, when the checksum is read. This is the same trust that the database already gets for Expression and transformation results.</p>
+<p>The positive property is monotone under tightening. A tighter word implies the stored one, so it never withdraws a proof. A conversion that the engine's dry run (<code>conversion_needs_buffer</code>) settled without a buffer therefore stays settled when it runs.</p>
 <h2 id="the-word">The word</h2>
-<p>A HashType is a 13-bit integer (<code>pack</code>/<code>unpack</code>; <code>HashType.word</code>). It is a frozen dataclass with these fields:</p>
+<p>A HashType is a 13-bit integer (<code>pack</code>/<code>unpack</code>; <code>HashType.word</code>). <code>HashType</code> is a frozen dataclass with these fields:</p>
 <table>
 <thead>
 <tr>
@@ -232,7 +314,7 @@ over-permissive capability), not false rejections.</p>
 <tr>
 <td>0–3</td>
 <td><code>Kind</code></td>
-<td><code>RAW_BYTES</code>=0, <code>NUMPY</code>=1, <code>MIXED_OBJECT</code>=2, <code>MIXED_ARRAY</code>=3, <code>RAW_TEXT</code>=4, <code>JSON_OBJECT</code>=5, <code>JSON_ARRAY</code>=6, <code>JSON_STRING</code>=7, <code>JSON_NUMBER</code>=8, <code>UNTESTED</code>=9, <code>UTF8_UNTESTED</code>=10, <code>JSON_UNTESTED</code>=11</td>
+<td><code>RAW_BYTES</code>=0, <code>NUMPY</code>=1, <code>MIXED_OBJECT</code>=2, <code>MIXED_ARRAY</code>=3, <code>RAW_TEXT</code>=4, <code>JSON_OBJECT</code>=5, <code>JSON_ARRAY</code>=6, <code>JSON_STRING</code>=7, <code>JSON_NUMBER</code>=8, <code>UNTESTED</code>=9, <code>UTF8_UNTESTED</code>=10, <code>JSON_UNTESTED</code>=11, <code>JSON_NULL</code>=12</td>
 </tr>
 <tr>
 <td>4–5</td>
@@ -256,36 +338,77 @@ over-permissive capability), not false rejections.</p>
 </tr>
 </tbody>
 </table>
-<p>Well-formedness (<code>is_valid_word</code>; enforced locally, by the remote client, and by the database):</p>
+<p><strong>Well-formedness</strong> (<code>is_valid_word</code>). A valid word is an <code>int</code> in <code>[0, 2**13)</code> that satisfies:</p>
 <ul>
 <li><code>DType != NA</code> if and only if <code>Kind == NUMPY</code>. <code>Rank != SCALAR</code> only for <code>NUMPY</code>.</li>
 <li><code>NUMPY_BYTES</code> only with <code>NUMPY</code> + <code>NONNUMERIC</code> + <code>SCALAR</code> (a 0-d dtype-<code>S</code> array).</li>
 <li><code>JSON_NUMBER</code> requires <code>NUMERIC_SCALAR</code>. <code>NUMERIC_SCALAR</code> is allowed only on <code>JSON_NUMBER</code> or <code>JSON_STRING</code>.</li>
-<li>The <code>SEMANTIC</code> bit is reserved; words with it set are invalid.</li>
+<li>The <code>SEMANTIC</code> bit is reserved; a word with it set is invalid.</li>
 </ul>
-<p>Derived properties: <code>is_utf8</code> (<code>RAW_TEXT</code>, the JSON kinds, <code>UTF8_UNTESTED</code>, <code>JSON_UNTESTED</code>); <code>is_json</code> (the JSON kinds, <code>JSON_UNTESTED</code>); <code>is_untested</code>; <code>is_numpy</code>; <code>is_mixed</code>; <code>mic</code> (most-informative celltype: <code>RAW_BYTES</code>/<code>UNTESTED</code>→<code>bytes</code>, <code>RAW_TEXT</code>/<code>UTF8_UNTESTED</code>→<code>text</code>, <code>NUMPY</code>→<code>binary</code>, <code>MIXED_*</code>→<code>mixed</code>, <code>JSON_OBJECT</code>/<code>JSON_ARRAY</code>/<code>JSON_UNTESTED</code>→<code>plain</code>, <code>JSON_STRING</code>→<code>str</code>, <code>JSON_NUMBER</code>→<code>float</code>).</p>
-<p>The untested kinds are placeholders that record less knowledge. The only producer in current code, <code>from_buffer</code>, never emits them. They can arrive only through <code>set_hash_type</code> or from the database.</p>
+<p><code>is_valid_word</code> returns <code>False</code>, and never raises, for anything else, including non-integers. Well-formedness is enforced by local <code>set_hash_type</code>, by the remote client and by the database (<em>Storage and tightening</em>).</p>
+<p><strong><code>unpack</code> does not validate.</strong> <code>unpack(word)</code> raises for a non-integer and for an integer outside <code>[0, 2**13)</code>; the exception classes are <strong>unspecified</strong> (today <code>TypeError</code> and <code>ValueError</code> respectively). What <code>unpack</code> does with an in-range word that is not well-formed is also <strong>unspecified</strong>: today it decodes most such words without complaint. A caller holding an untrusted word checks it with <code>is_valid_word</code> first.</p>
+<p><strong>Derived properties:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Property</th>
+<th>True for</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>is_utf8</code></td>
+<td><code>RAW_TEXT</code>, the JSON kinds, <code>UTF8_UNTESTED</code>, <code>JSON_UNTESTED</code></td>
+</tr>
+<tr>
+<td><code>is_json</code></td>
+<td>the JSON kinds, <code>JSON_UNTESTED</code></td>
+</tr>
+<tr>
+<td><code>is_untested</code></td>
+<td><code>UNTESTED</code>, <code>UTF8_UNTESTED</code>, <code>JSON_UNTESTED</code></td>
+</tr>
+<tr>
+<td><code>is_numpy</code></td>
+<td><code>NUMPY</code></td>
+</tr>
+<tr>
+<td><code>is_mixed</code></td>
+<td><code>MIXED_OBJECT</code>, <code>MIXED_ARRAY</code></td>
+</tr>
+</tbody>
+</table>
+<p><code>mic</code> is the most-informative celltype: <code>RAW_BYTES</code>/<code>UNTESTED</code> → <code>bytes</code>; <code>RAW_TEXT</code>/<code>UTF8_UNTESTED</code> → <code>text</code>; <code>NUMPY</code> → <code>binary</code>; <code>MIXED_*</code> → <code>mixed</code>; <code>JSON_OBJECT</code>/<code>JSON_ARRAY</code>/<code>JSON_NULL</code>/<code>JSON_UNTESTED</code> → <code>plain</code>; <code>JSON_STRING</code> → <code>str</code>; <code>JSON_NUMBER</code> → <code>float</code>.</p>
+<p><strong>The untested kinds</strong> are placeholders that record less knowledge. <code>from_buffer</code>, the only producer, never emits them; they arrive only through <code>set_hash_type</code> or from the database, and every rule on this page supports them. Whoever writes one owes the claim that it makes about the whole buffer (<em>The positive property</em>).</p>
 <h2 id="producer-from_buffer">Producer: <code>from_buffer</code></h2>
-<p><code>HashType.from_buffer(buffer)</code> classifies by the <strong>bytes only</strong>.</p>
+<p><code>HashType.from_buffer(buffer)</code> classifies by the <strong>bytes only</strong>:</p>
 <ol>
-<li>Starts with <code>b"\x93NUMPY"</code>: <code>NUMPY</code>. The file is loaded with <code>np.load(allow_pickle=False)</code> to read <code>DType</code>, <code>Rank</code> and <code>NUMPY_BYTES</code>.</li>
-<li>Starts with <code>b"\x94SEAMLESS-MIXED"</code>: <code>MIXED_OBJECT</code> or <code>MIXED_ARRAY</code>, from the root type in the form header. Any other root type raises <code>ValueError</code>.</li>
+<li>Starts with <code>b"\x93NUMPY"</code>: <code>NUMPY</code>. The whole file is loaded with <code>np.load(allow_pickle=False)</code> to read <code>DType</code>, <code>Rank</code> and <code>NUMPY_BYTES</code>. If <code>np.load</code> refuses it, the result is <code>RAW_BYTES</code>.</li>
+<li>Starts with <code>b"\x94SEAMLESS-MIXED"</code>: <code>MIXED_OBJECT</code> or <code>MIXED_ARRAY</code>, from the root type in the form header. <strong>Only the header is read</strong>, not the payload. A header that cannot be read, or whose root type is neither object nor array, gives <code>RAW_BYTES</code>.</li>
 <li>Not UTF-8: <code>RAW_BYTES</code>.</li>
-<li>Otherwise the whole text is parsed with <code>orjson.loads</code>: object → <code>JSON_OBJECT</code>; array → <code>JSON_ARRAY</code>; string → <code>JSON_STRING</code> (plus <code>NUMERIC_SCALAR</code> if it parses as a finite float); number → <code>JSON_NUMBER</code> + <code>NUMERIC_SCALAR</code>; <code>true</code>/<code>false</code>/<code>null</code> → <code>JSON_STRING</code> with no flags; not JSON → <code>RAW_TEXT</code>.</li>
+<li>Otherwise the whole text is parsed with <code>orjson.loads</code>:</li>
+<li>object → <code>JSON_OBJECT</code>; array → <code>JSON_ARRAY</code>;</li>
+<li>string → <code>JSON_STRING</code>, plus <code>NUMERIC_SCALAR</code> if it parses as a finite float;</li>
+<li>number → <code>JSON_NUMBER</code> + <code>NUMERIC_SCALAR</code>;</li>
+<li><code>true</code>/<code>false</code> → <code>JSON_STRING</code> with no flags (see <em>Current limitations</em>);</li>
+<li><code>null</code> → <code>JSON_NULL</code> with no flags, including non-canonical whitespace spellings;</li>
+<li>not JSON → <code>RAW_TEXT</code>.</li>
 </ol>
 <p><code>Length</code> is always the byte-length bucket.</p>
+<p>A magic prefix alone therefore never makes <code>from_buffer</code> raise. Every buffer gets a word, and so a checksum.</p>
 <p><strong>When it runs.</strong> A HashType is computed and registered (<code>register_hash_type_for_buffer</code> → <code>set_hash_type</code>) whenever:</p>
 <ul>
 <li>a checksum is calculated from a buffer (<code>Buffer.get_checksum</code>, <code>cached_calculate_checksum[_sync]</code>);</li>
 <li>a <code>Buffer</code> is constructed with an explicit <code>checksum=</code>;</li>
 <li><code>ensure_hash_type[_async]</code> is given a buffer for an unclassified checksum;</li>
-<li>an Expression publishes a result that has a buffer. This covers both local evaluation and remote evaluation, where the worker's <code>evaluate_expression_async</code> publishes.</li>
+<li>an Expression evaluation produces a result buffer, locally or remotely. Remotely, the worker that holds the buffer classifies it.</li>
 </ul>
+<p>Registering a HashType is neither <em>recording</em> a result checksum nor <em>publishing</em> a buffer. It is metadata about a checksum, and it travels through the database (<code>contracts/expressions.md</code>, <em>Evaluating, recording identity and publishing are three different things</em>).</p>
 <h2 id="storage-and-tightening">Storage and tightening</h2>
 <ul>
-<li><strong>Local</strong>: a process-wide dict <code>checksum → word</code> (<code>get_hash_type_cache()</code>), guarded by an <code>RLock</code>.</li>
-<li><strong>Remote</strong>: seamless-database table <code>hash_type</code>. <code>GET</code> of type <code>hash_type</code> returns the word or <code>null</code>. <code>PUT</code> of type <code>hash_type</code> validates the word with seamless-core's <code>is_valid_word</code> (the database imports seamless-core).</li>
-<li><strong>Tightening only.</strong> One rule is used locally (<code>set_hash_type</code>) and in the database (<code>HashType.create</code>, inside an <code>IMMEDIATE</code> transaction): <code>_hash_type_implies(tighter, looser)</code>.</li>
+<li><strong>Local</strong>: a process-wide dict <code>checksum → word</code> (<code>get_hash_type_cache()</code>), guarded by an <code>RLock</code>. A word is never evicted; it can only be tightened.</li>
+<li><strong>Remote</strong>: the seamless-database table <code>hash_type</code>. A <code>GET</code> of type <code>hash_type</code> returns the word, or <code>null</code> for an unknown checksum. A <code>PUT</code> of type <code>hash_type</code> validates the word with seamless-core's <code>is_valid_word</code> (the database imports seamless-core).</li>
+<li><strong>Tightening only.</strong> Local <code>set_hash_type</code> and the database (<code>HashType.create</code>, inside an <code>IMMEDIATE</code> transaction) apply the same rule, <code>_hash_type_implies(tighter, looser)</code>:</li>
 <li><code>Length</code> must be equal.</li>
 <li>A looser <code>UNTESTED</code> is implied by any word, <code>UTF8_UNTESTED</code> by any <code>is_utf8</code> word, and <code>JSON_UNTESTED</code> by any <code>is_json</code> word.</li>
 <li>A concrete word is implied only by an identical word.</li>
@@ -300,7 +423,7 @@ over-permissive capability), not false rejections.</p>
 <tbody>
 <tr>
 <td>equal, or looser (implied by stored)</td>
-<td>ignored; stored word kept; local write queues no upload</td>
+<td>ignored; the stored word is kept; a local write queues no upload</td>
 </tr>
 <tr>
 <td>tighter (implies stored)</td>
@@ -313,7 +436,8 @@ over-permissive capability), not false rejections.</p>
 </tbody>
 </table>
 <ul>
-<li><strong>Upload.</strong> A local change is queued on the buffer writer (<code>buffer_writer.register_hash_type</code>, deduplicated per <code>(checksum, word)</code>). It is sent with <code>database_remote.set_hash_type</code> when <code>seamless_remote</code> is importable. A word loaded from the database (<code>get_hash_type_remote</code>) enters the local cache without being uploaded again.</li>
+<li><strong>Invalid words.</strong> Local <code>set_hash_type</code> raises <code>ValueError</code> for a word that is not well-formed. The database refuses a malformed <code>hash_type</code> <code>PUT</code> (missing <code>value</code>, a non-integer, or a word that is not well-formed) and stores nothing. How it refuses is <strong>unspecified</strong>: today the handler raises <code>DatabaseError("Malformed PUT hash_type request")</code>, which the server answers as HTTP 400 with the body <code>ERROR: Malformed PUT hash_type request</code>.</li>
+<li><strong>Upload.</strong> A local change is queued on the buffer writer (<code>buffer_writer.register_hash_type</code>, deduplicated per <code>(checksum, word)</code>) and sent with <code>database_remote.set_hash_type</code> when <code>seamless_remote</code> is importable. A word loaded from the database (<code>get_hash_type_remote</code>) enters the local cache without being uploaded again.</li>
 </ul>
 <h2 id="lookup">Lookup</h2>
 <table>
@@ -334,7 +458,7 @@ over-permissive capability), not false rejections.</p>
 </tr>
 <tr>
 <td><code>ensure_hash_type(cs, buffer=None)</code> (sync)</td>
-<td>local cache → if <code>buffer</code> is supplied, classify/register it and queue its upload; otherwise, <strong>if no event loop is running</strong>, query the database (via <code>asyncio.run</code>). <strong>Inside a running event loop with no buffer, it returns <code>None</code> after the local cache.</strong></td>
+<td>local cache → if <code>buffer</code> is supplied, classify and register it and queue its upload; otherwise, <strong>if no event loop is running</strong>, query the database (via <code>asyncio.run</code>). <strong>Inside a running event loop with no buffer, it returns <code>None</code> after the local cache.</strong></td>
 </tr>
 <tr>
 <td><code>await ensure_hash_type_async(cs, buffer=None)</code></td>
@@ -343,15 +467,95 @@ over-permissive capability), not false rejections.</p>
 </tbody>
 </table>
 <h2 id="queries">Queries</h2>
+<h3 id="the-domain-of-every-query">The domain of every query</h3>
+<p>Every query below takes its celltypes from <strong>the 13, and only the 13</strong>. A name outside them, whether one of the four structural names or an unknown name, is a <strong>caller error and raises <code>ValueError</code></strong>. It is never answered <code>False</code>, <code>None</code> or the empty set, because none of those classifies anything: the question was not HashType's to ask (<code>contracts/deep-celltypes.md</code>, <em>Where deep validation happens</em>).</p>
+<table>
+<thead>
+<tr>
+<th>Query</th>
+<th>Domain</th>
+<th>Outside it</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>deserializable_as(celltype, *, checksum)</code></td>
+<td><code>celltype</code> ∈ the 13</td>
+<td><code>ValueError</code></td>
+</tr>
+<tr>
+<td><code>capabilities(source_celltype)</code></td>
+<td><code>source_celltype</code> ∈ the 13</td>
+<td><code>ValueError</code></td>
+</tr>
+<tr>
+<td><code>has_numeric_items</code> / <code>has_string_items</code></td>
+<td>as <code>capabilities</code></td>
+<td><code>ValueError</code></td>
+</tr>
+<tr>
+<td><code>conversion_feasible(hash_type, source, target, *, checksum)</code></td>
+<td><code>source</code> <strong>and</strong> <code>target</code> ∈ the 13</td>
+<td><code>ValueError</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Inside the domain, an empty answer is a real answer.</strong> <code>capabilities</code> returns the empty set for <code>int</code>, <code>float</code>, <code>bool</code> and <code>checksum</code> because those admit no path step at all; that is a classification, not a shrug. Likewise a <code>False</code> and a <code>True</code> from <code>deserializable_as</code> are both proofs, and <code>None</code> means "unknown".</p>
+<p><strong>Why raise rather than widen.</strong> Teaching the queries the four structural names would make HashType the owner of their feasibility. The legal deep set is <em>smaller</em> than "anything goes", so a widened <code>deserializable_as</code> would have to carry the whole deep table, and its <code>False</code> answers would be structural refusals dressed up as classification. Raising keeps one rule per layer, and keeps the false-negative property a property of the 13.</p>
+<p>Where the four structural names are decided instead:</p>
+<ul>
+<li><strong>Deep celltypes.</strong> Deep feasibility never depends on the data behind the checksum, so it is structural and settled at Expression construction: a pathless deep Expression by the conversion engine's deep table, a pathed one by the deep path table, both defined in <code>contracts/deep-celltypes.md</code> (<code>contracts/expressions.md</code>, <em>When an Expression is vetted, and by what</em>).</li>
+<li><strong><code>module</code>.</strong> None of the deep rules apply to it, and it is not in the conversion rule table either. Its conversion legality is not defined on this page.</li>
+</ul>
 <h3 id="deserializable_ascelltype-checksum-true-false-none"><code>deserializable_as(celltype, *, checksum) -&gt; True | False | None</code></h3>
-<p><code>checksum</code> is a required keyword because null and boolean deserialization depend on the exact
-checksum. Omitting it raises <code>TypeError</code> at the call site.</p>
+<p><code>checksum</code> is a required keyword, because the null and boolean answers depend on the exact checksum. Omitting it raises <code>TypeError</code> at the call site.</p>
+<p>Every <code>False</code> below disproves the reading and every <code>True</code> proves it (<em>The false-negative property</em>, <em>The positive property</em>). A reading that the word cannot settle is <code>None</code>.</p>
 <p>Evaluated in order:</p>
 <ol>
-<li><code>checksum</code> is either null checksum: <code>True</code> (null is valid for every celltype).</li>
+<li><code>checksum</code> is either null checksum: <code>True</code>. A null checksum deserializes as every one of the 13 celltypes: it reads as <code>b""</code> for <code>bytes</code> and as <code>None</code> for the others (<code>contracts/celltypes-and-conversion.md</code>, <em>Canonical null</em>). <strong>This is deserializability, not convertibility.</strong> It does not make a conversion legal: a null checksum on a forbidden pair is still refused by <code>conversion_feasible</code> (below).</li>
 <li><code>bytes</code>: <code>True</code>.</li>
 <li><code>bool</code>: <code>True</code> only if <code>checksum</code> is one of the four canonical boolean checksums; otherwise <code>False</code>.</li>
-<li>Untested kinds: <code>text/yaml/python/ipython</code> → <code>True</code> if <code>is_utf8</code> else <code>None</code>; <code>plain/mixed</code> → <code>True</code> if <code>is_json</code> else <code>None</code>; <code>str</code> → <code>True</code> for null/boolean checksums else <code>None</code>; <code>int/float</code> → <code>False</code> if <code>LONG</code> else <code>None</code>; <code>binary</code> → <code>None</code> for <code>UNTESTED</code>, else <code>False</code>; <code>checksum</code> → <code>None</code> if <code>EQ64</code> else <code>False</code>.</li>
+<li>Untested kinds:</li>
+</ol>
+<table>
+<thead>
+<tr>
+<th>Celltype</th>
+<th>Result</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>text</code></td>
+<td><code>True</code> if <code>is_utf8</code>, else <code>None</code></td>
+</tr>
+<tr>
+<td><code>yaml</code>, <code>python</code>, <code>ipython</code></td>
+<td><code>None</code> (syntax is never proved)</td>
+</tr>
+<tr>
+<td><code>plain</code>, <code>mixed</code></td>
+<td><code>True</code> if <code>is_json</code>, else <code>None</code></td>
+</tr>
+<tr>
+<td><code>str</code></td>
+<td><code>True</code> for a boolean checksum, else <code>None</code></td>
+</tr>
+<tr>
+<td><code>int</code>, <code>float</code></td>
+<td><code>False</code> if <code>LONG</code>, else <code>None</code></td>
+</tr>
+<tr>
+<td><code>binary</code></td>
+<td><code>None</code> for <code>UNTESTED</code>, else <code>False</code></td>
+</tr>
+<tr>
+<td><code>checksum</code></td>
+<td><code>None</code> if <code>EQ64</code>, else <code>False</code></td>
+</tr>
+</tbody>
+</table>
+<ol>
 <li>Concrete kinds:</li>
 </ol>
 <table>
@@ -363,8 +567,12 @@ checksum. Omitting it raises <code>TypeError</code> at the call site.</p>
 </thead>
 <tbody>
 <tr>
-<td><code>text</code>, <code>yaml</code>, <code>python</code>, <code>ipython</code></td>
-<td><code>is_utf8</code> (syntax is not checked; the parser checks it)</td>
+<td><code>text</code></td>
+<td><code>is_utf8</code></td>
+</tr>
+<tr>
+<td><code>yaml</code>, <code>python</code>, <code>ipython</code></td>
+<td><code>False</code> if not <code>is_utf8</code>; otherwise <code>None</code> (the syntax is the parser's to check)</td>
 </tr>
 <tr>
 <td><code>plain</code></td>
@@ -372,11 +580,11 @@ checksum. Omitting it raises <code>TypeError</code> at the call site.</p>
 </tr>
 <tr>
 <td><code>str</code></td>
-<td>kind <code>JSON_STRING</code> or <code>JSON_NUMBER</code>, or a null/boolean checksum</td>
+<td><code>True</code> for <code>JSON_NUMBER</code>, <code>JSON_STRING</code>, or a boolean checksum; otherwise <code>False</code>. The two virtual null checksums were already answered <code>True</code> in step 1; other <code>JSON_NULL</code> checksums are refused.</td>
 </tr>
 <tr>
 <td><code>int</code>, <code>float</code></td>
-<td><code>False</code> if <code>LONG</code>; else <code>NUMERIC_SCALAR</code> is set</td>
+<td><code>False</code> if <code>LONG</code>; otherwise whether <code>NUMERIC_SCALAR</code> is set</td>
 </tr>
 <tr>
 <td><code>binary</code></td>
@@ -384,17 +592,16 @@ checksum. Omitting it raises <code>TypeError</code> at the call site.</p>
 </tr>
 <tr>
 <td><code>mixed</code></td>
-<td>kind not <code>RAW_BYTES</code>/<code>RAW_TEXT</code></td>
+<td><code>False</code> for <code>RAW_BYTES</code>/<code>RAW_TEXT</code>; <code>None</code> for <code>MIXED_OBJECT</code>/<code>MIXED_ARRAY</code>, whose payload the producer never read; otherwise <code>True</code></td>
 </tr>
 <tr>
 <td><code>checksum</code></td>
-<td>kind <code>RAW_TEXT</code> or <code>JSON_NUMBER</code> (an all-digit digest is a JSON number) and <code>EQ64</code> (hex validity is left to the parser)</td>
+<td><code>None</code> if the kind is <code>RAW_TEXT</code> or <code>JSON_NUMBER</code> (an all-digit digest is a JSON number) and the length is <code>EQ64</code>, because hex validity is the parser's to check; otherwise <code>False</code></td>
 </tr>
 </tbody>
 </table>
-<p><strong>A <code>celltype</code> outside the 13 above</strong> — a deep celltype (<code>deepcell</code>, <code>deepfolder</code>, <code>folder</code>) or <code>module</code> — matches none of the branches above, and the function's final fallthrough is <code>return False</code>. This is why every deep-celltype or <code>module</code> Expression currently raises <code>HashTypeValidationError</code> before evaluation: see <code>contracts/deep-celltypes.md</code>, "Current status: none of this is enforced yet".</p>
-<h3 id="capabilitiessource_celltype-set-expression-capability"><code>capabilities(source_celltype) -&gt; set</code> (expression capability)</h3>
-<p>Records which path steps the <strong>root</strong> structure admits: <code>"SEQ"</code> (positional item/slice) and <code>"MAP"</code> (string key).</p>
+<h3 id="capabilitiessource_celltype-set"><code>capabilities(source_celltype) -&gt; set</code></h3>
+<p>Records which path steps the <strong>root</strong> structure admits: <code>"SEQ"</code> (a positional item or a slice) and <code>"MAP"</code> (a string key).</p>
 <table>
 <thead>
 <tr>
@@ -412,65 +619,131 @@ checksum. Omitting it raises <code>TypeError</code> at the call site.</p>
 <td><code>"SEQ"</code> if <code>Rank != SCALAR</code>; <code>"MAP"</code> if <code>STRUCTURED</code></td>
 </tr>
 <tr>
-<td><code>plain</code>, <code>mixed</code></td>
-<td><code>JSON_OBJECT</code>/<code>MIXED_OBJECT</code> → <code>{"MAP"}</code>; <code>JSON_ARRAY</code>/<code>MIXED_ARRAY</code>/<code>JSON_STRING</code> → <code>{"SEQ"}</code>; else empty</td>
+<td><code>plain</code></td>
+<td><code>JSON_OBJECT</code> → <code>{"MAP"}</code>; <code>JSON_ARRAY</code>/<code>JSON_STRING</code> → <code>{"SEQ"}</code>; otherwise empty</td>
 </tr>
 <tr>
-<td>other</td>
-<td>empty</td>
+<td><code>mixed</code></td>
+<td><code>NUMPY</code> follows the <code>binary</code> row; <code>JSON_OBJECT</code>/<code>MIXED_OBJECT</code> → <code>{"MAP"}</code>; <code>JSON_ARRAY</code>/<code>MIXED_ARRAY</code>/<code>JSON_STRING</code> → <code>{"SEQ"}</code>; otherwise empty</td>
+</tr>
+<tr>
+<td><code>int</code>, <code>float</code>, <code>bool</code>, <code>checksum</code></td>
+<td>empty: <strong>no path step is ever admitted</strong> over a scalar or a reference</td>
 </tr>
 </tbody>
 </table>
-<p><code>has_numeric_items</code> and <code>has_string_items</code> return <code>True</code>/<code>False</code>/<code>None</code> item-type hints for the same sources. Path validation (<code>_validate_path_capability</code>) skips untested words and checks a step only while the root word still types the value: a slice keeps the capabilities; an item step stops checking, except that any further step after a <code>bytes</code> item is rejected (the item is an int) and a <code>NUMERIC</code> NumPy array with rank below <code>D3PLUS</code> admits as many positional item steps as its rank.</p>
-<h3 id="conversion_feasiblehash_type-source-target-checksum-true-false-none"><code>conversion_feasible(hash_type, source, target, *, checksum) -&gt; True | False | None</code></h3>
-<p>This is the checksum-level conversion query used before any conversion work. Rules:</p>
+<p>A deep path (exactly one string-item step below a deep parent) is a structural rule settled at construction (<code>contracts/deep-celltypes.md</code>, <em>Paths</em>), so <code>capabilities</code> never admits or refuses it. A deep index is an ordinary <code>JSON_OBJECT</code> buffer; queried under celltype <code>plain</code> or <code>mixed</code>, it classifies as a map like any other JSON object.</p>
+<p><code>has_numeric_items</code> and <code>has_string_items</code> return <code>True</code>/<code>False</code>/<code>None</code> hints about the item type, over the same domain.</p>
+<p><strong>Path validation</strong> (<code>_validate_path_capability</code>) applies <code>capabilities</code> step by step:</p>
 <ul>
-<li>A null checksum, or <code>source == target</code>: <code>True</code>.</li>
+<li>An untested word is not checked at all.</li>
+<li>Each step must find the capability it needs (<code>"MAP"</code> for a string item, <code>"SEQ"</code> otherwise) in the current capabilities, or the path is refused with <code>HashTypeValidationError</code>.</li>
+<li>A slice keeps the current capabilities for the next step.</li>
+<li>After an item step, the root word no longer types the value, so checking stops, with two exceptions where it still does:</li>
+<li>under <code>bytes</code>, an item is an integer, so any further step is refused;</li>
+<li>under <code>binary</code>, <strong>and under <code>mixed</code> over a word of kind <code>NUMPY</code></strong>, a <code>NUMERIC</code> array with rank below <code>D3PLUS</code> admits as many integer item steps as its rank. Each integer item step lowers the rank by one; at rank <code>SCALAR</code> no further step is admitted.</li>
+</ul>
+<h3 id="conversion_feasiblehash_type-source-target-checksum-true-false-none"><code>conversion_feasible(hash_type, source, target, *, checksum) -&gt; True | False | None</code></h3>
+<p>The checksum-level conversion query, asked before any conversion work. A pair of the 13 is <strong>forbidden</strong> if it is in <code>conversion_forbidden</code>: exactly the 16 pairs <code>python/ipython ↔ yaml</code>, <code>python/ipython → int/float/bool</code> and <code>int/float/bool → python/ipython</code> (<code>contracts/celltypes-and-conversion.md</code>, <em>Rule table</em>). No equivalence or chain resolves to a forbidden pair, so every other pair of distinct celltypes is <strong>legal</strong>.</p>
+<p>Rules, in order:</p>
+<ol>
+<li><code>source == target</code>: <code>True</code>.</li>
+<li><strong>A forbidden pair: <code>False</code>, for every checksum, including a null checksum.</strong> The null checksum short-circuits only on a <strong>legal</strong> pair; an illegal conversion stays illegal for null. The rule covers forbidden ordinary pairs such as <code>python → int</code> as well as illegal deep pairs.</li>
+<li>A null checksum on a legal pair: <code>True</code>.</li>
 <li><code>deserializable_as(source, checksum=checksum)</code> is <code>False</code>: <code>False</code>.</li>
 <li><code>target == "checksum"</code>: <code>True</code>.</li>
-<li>The pair is mapped once through <code>conversion_equivalent</code>. After that:</li>
-<li><code>conversion_chain</code>: evaluate the first step. <code>False</code> disproves the chain. If the first step
-    preserves the checksum (<code>conversion_trivial</code> or <code>conversion_reinterpret</code>), evaluate the
-    second step on the same word; its <code>False</code> also disproves the chain. If the second step always
-    succeeds on valid input (<code>conversion_trivial</code> or <code>conversion_reformat</code>), return the first
-    step's answer. Otherwise return <code>None</code>; in particular, do not predict through a first step
-    that creates a new buffer.</li>
-<li><code>conversion_forbidden</code> → <code>False</code>;</li>
-<li><code>conversion_trivial</code> or <code>conversion_reformat</code> → <code>True</code>;</li>
-<li><code>conversion_reinterpret</code> → <code>deserializable_as(target, checksum=checksum)</code>.</li>
-<li><code>conversion_possible</code>: untested → <code>None</code>. Concrete:</li>
-<li><code>int</code>/<code>float</code> target:<ul>
-<li>NumPy word, regardless of source celltype: non-scalar → <code>False</code>; <code>NUMERIC</code> → <code>True</code>; otherwise <code>None</code>.</li>
-<li><code>JSON_OBJECT</code>, <code>JSON_ARRAY</code>, <code>MIXED_OBJECT</code>, <code>MIXED_ARRAY</code> → <code>False</code>.</li>
-<li><code>JSON_NUMBER</code> or <code>NUMERIC_SCALAR</code> set → <code>True</code>.</li>
-<li>Unflagged <code>JSON_STRING</code> → <code>None</code>.</li>
-<li><code>LONG</code> does not decide this category; the length limit remains in deserialization/reinterpretation checks.</li>
+<li>The pair is mapped once through <code>conversion_equivalent</code>, and then evaluated by category:</li>
+<li><code>conversion_chain</code>: evaluate the first step. <code>False</code> disproves the chain. If the first step preserves the checksum (<code>conversion_trivial</code> or <code>conversion_reinterpret</code>), evaluate the second step on the same word; its <code>False</code> also disproves the chain. If the second step always succeeds on valid input (<code>conversion_trivial</code> or <code>conversion_reformat</code>), return the first step's answer. Otherwise return <code>None</code>. In particular, never predict through a first step that creates a new buffer.</li>
+<li><code>conversion_trivial</code> or <code>conversion_reformat</code>: <code>True</code>.</li>
+<li><code>conversion_reinterpret</code>: <code>deserializable_as(target, checksum=checksum)</code>.</li>
+<li><code>conversion_possible</code>: an untested word gives <code>None</code>. For a concrete word:<ul>
+<li><code>int</code>/<code>float</code> target:</li>
+<li>a NumPy word, whatever the source celltype: non-scalar → <code>False</code>; <code>NUMERIC</code> → <code>True</code>; otherwise <code>None</code>;</li>
+<li><code>JSON_OBJECT</code>, <code>JSON_ARRAY</code>, <code>MIXED_OBJECT</code>, <code>MIXED_ARRAY</code> → <code>False</code>;</li>
+<li><code>JSON_NUMBER</code>, or <code>NUMERIC_SCALAR</code> set → <code>True</code>;</li>
+<li>an unflagged <code>JSON_STRING</code> → <code>None</code>, because JSON booleans can convert to numbers;</li>
+<li><code>JSON_NULL</code> → <code>False</code>, because <code>int(None)</code> and <code>float(None)</code> fail;</li>
+<li><code>LONG</code> does not decide this category; the length limit belongs to the deserialization and reinterpretation checks.</li>
+<li><code>mixed→str</code>: <code>False</code> for <code>JSON_OBJECT</code>/<code>JSON_ARRAY</code>, otherwise <code>True</code>.</li>
+<li>everything else, including <code>bool</code> targets: <code>None</code>.</li>
 </ul>
 </li>
-<li><code>mixed→str</code>: <code>False</code> for <code>JSON_OBJECT</code>/<code>JSON_ARRAY</code>, otherwise <code>True</code>.</li>
-<li>Everything else, including <code>bool</code> targets: <code>None</code>.</li>
-<li><code>conversion_values</code>: untested → <code>None</code> (except for the earlier <code>checksum</code> target rule). Concrete:</li>
-<li><code>checksum→X</code>: <code>None</code>.</li>
-<li><code>plain→binary</code>: <code>False</code> for <code>JSON_OBJECT</code>.</li>
-<li><code>binary→plain</code>: <code>True</code> for <code>NUMERIC</code>/<code>STRUCTURED</code>.</li>
-<li>Everything else: <code>None</code>.</li>
+<li><code>conversion_values</code>: an untested word gives <code>None</code> (the <code>checksum</code> target was settled in rule 5). For a concrete word:<ul>
+<li><code>checksum→X</code>: <code>None</code>;</li>
+<li><code>plain→binary</code>: <code>False</code> for <code>JSON_OBJECT</code>;</li>
+<li><code>binary→plain</code>: <code>True</code> for <code>NUMERIC</code>/<code>STRUCTURED</code>;</li>
+<li>everything else: <code>None</code>.</li>
 </ul>
+</li>
+</ol>
+<p><strong>Only a <code>False</code> from this query is acted on.</strong> Its <code>True</code> means "not disproved", and nothing more:</p>
+<ul>
+<li>for a trivial or reformat pair, the answer is given without proving that the source is valid (rule 4 refuses only a <em>disproved</em> source);</li>
+<li>in the possible and value categories, the conversion's outcome depends on the value, which the word does not see.</li>
+</ul>
+<p>For a reinterpretation the answer <em>is</em> <code>deserializable_as(target)</code>, which is a proof. Even so, the engine asks <code>deserializable_as</code> directly (<em>The positive property</em>).</p>
 <h2 id="where-hashtype-is-consulted">Where HashType is consulted</h2>
 <ul>
 <li><strong>Reference parser</strong> (<code>_parse_buffer</code>): after virtual values, <code>validate_deserializable_as(checksum, celltype, buffer=buffer)</code> runs before any parsing.</li>
-<li><strong>Conversion engine</strong> (<code>seamless.checksum.convert</code>): before a source buffer is fetched, via <code>validate_deserializable_as</code> without a buffer. <code>bytes→mixed</code> also keeps the checksum when the cached word says <code>mixed</code>.</li>
-<li><strong>Expression validation</strong> (<code>validate_expression[_async]</code>): checks the source celltype, then path capability, then <code>conversion_feasible</code> for an empty path, before evaluation.</li>
-<li><strong>Retrieval validation</strong> of a declared checksum/celltype (<code>validate_deserializable_as</code>) in <code>seamless.cell_class</code>, <code>seamless_transformer</code> (<code>pin_class</code>, <code>pretransformation</code>, <code>transformation_class</code>), <code>seamless_dask</code> and <code>seamless_workflow.context</code>.</li>
+<li><strong>Conversion engine</strong> (<code>seamless.checksum.convert</code>): before a source buffer is fetched, it looks up the word (<code>validate_deserializable_as</code> without a buffer), and a <code>False</code> refuses the conversion. For a reinterpretation, and for the keep branch of <code>bytes→mixed</code>, a <code>True</code> from <code>deserializable_as(target)</code> settles the conversion without fetching (<em>The positive property</em>; <code>contracts/celltypes-and-conversion.md</code>, <em>Principle</em>). The dry run <code>conversion_needs_buffer</code> sees the same word, so it answers <code>False</code> there.</li>
+<li><strong>Expression validation</strong> (<code>validate_expression[_async]</code>), before evaluation:</li>
+<li>If either celltype is one of the four structural names, HashType is not asked anything: the checksum is only classified (<code>ensure_hash_type[_async]</code>), and the structural half of vetting, which ran at construction, stands. An unknown celltype name raises <code>ValueError</code>.</li>
+<li>Otherwise, it checks the source celltype (<code>validate_deserializable_as</code>), then path capability, then <code>conversion_feasible</code> for an empty path only.</li>
 </ul>
+<p>Before an empty-path Expression decides whether its conversion needs the input buffer, evaluation loads the input's word with <code>ensure_hash_type_async</code>. A word that is known only to the database therefore counts too, and the synchronous dry run then finds it in the local cache (<em>Current limitations</em>, first item).</p>
+<p>This is the <strong>evaluation-time</strong> half of Expression vetting; the structural half runs at construction and never consults HashType (<code>contracts/expressions.md</code>, <em>When an Expression is vetted, and by what</em>). The order is <strong>project, then convert</strong> read at the checksum level (<code>contracts/expressions.md</code>, <em>Application order: project, then convert</em>): capability is asked of the <strong>input</strong> celltype, because the path walks the input's structure, and <code>conversion_feasible</code> is asked only where there is no path. No query on this page classifies "the value a path would select": that is data behind the checksum, and HashType never looks there.
+- <strong>Retrieval validation</strong> of a declared checksum and celltype (<code>validate_deserializable_as</code>) in <code>seamless.cell_class</code>, <code>seamless_transformer</code> (<code>pin_class</code>, <code>pretransformation</code>, <code>transformation_class</code>), <code>seamless_dask</code> and <code>seamless_workflow.context</code>.</p>
+<h2 id="errors">Errors</h2>
+<table>
+<thead>
+<tr>
+<th>Situation</th>
+<th>Raised</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>A celltype outside the 13 passed to a query</td>
+<td><code>ValueError</code></td>
+</tr>
+<tr>
+<td><code>deserializable_as</code> called without <code>checksum=</code></td>
+<td><code>TypeError</code></td>
+</tr>
+<tr>
+<td>A validation entry point finds a HashType <code>False</code></td>
+<td><code>HashTypeValidationError</code> (a <code>ValueError</code> subclass)</td>
+</tr>
+<tr>
+<td>Local <code>set_hash_type</code> with a malformed word, or a word that contradicts the stored one</td>
+<td><code>ValueError</code></td>
+</tr>
+<tr>
+<td>Remote <code>set_hash_type</code> contradicting the database (HTTP 409)</td>
+<td><code>ValueError</code></td>
+</tr>
+<tr>
+<td><code>unpack</code> of a non-integer or out-of-range word</td>
+<td>raises; class unspecified (<em>The word</em>)</td>
+</tr>
+<tr>
+<td>Malformed <code>hash_type</code> <code>PUT</code> at the database</td>
+<td>refused, nothing stored; form unspecified (<em>Storage and tightening</em>)</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Across process boundaries</strong>, <code>HashTypeValidationError</code> travels in the error envelope (<code>seamless.error_envelope</code>) with kind <strong><code>"hash_type_validation"</code></strong>, and <code>decode_error</code> turns that kind back into an instance of <code>HashTypeValidationError</code>. The kind string and the fact that the decoded error is a <code>HashTypeValidationError</code> are contract. The decoded error's exact class (as opposed to any subclass) and its message text are <strong>unspecified</strong>; today it is exactly <code>HashTypeValidationError</code>, carrying the original <code>str(exc)</code>.</p>
 <h2 id="current-limitations">Current limitations</h2>
+<p>These are contract. They are conservative (a <code>None</code> or an over-permissive answer): never false rejections, and never false proofs.</p>
 <ul>
-<li><strong>Remote lookup from synchronous validation inside a running event loop</strong>: when no buffer is supplied, <code>ensure_hash_type</code> skips the database and returns <code>None</code> if the checksum is not in the local cache. A supplied buffer is classified locally and its upload is queued. Although async <code>parse_buffer</code> calls the synchronous <code>_parse_buffer</code>, it passes the buffer, so parse-time validation can classify it without a database request. Use <code>ensure_hash_type_async</code> when remote-only metadata is needed before a buffer is available.</li>
-<li><strong>JSON <code>true</code>/<code>false</code>/<code>null</code> are classified <code>JSON_STRING</code>.</strong> For <code>plain</code> and <code>mixed</code>, path validation sees <code>{"SEQ"}</code> and can allow positional access to a scalar; parsing/evaluation still decides whether that access is valid. The classification is therefore not a proof of a JSON string: <code>conversion_possible</code> answers <code>None</code> for an unflagged <code>JSON_STRING</code> word with an <code>int</code>/<code>float</code> target, because JSON <code>true</code>/<code>false</code> convert there.</li>
-<li><strong>Untested kinds remain supported</strong> and can arrive through <code>set_hash_type</code> or from the database, although <code>from_buffer</code> does not currently produce them. The <code>SEMANTIC</code> bit is reserved and rejected by <code>is_valid_word</code>.</li>
+<li><strong>No remote lookup from synchronous validation inside a running event loop.</strong> With no buffer supplied, <code>ensure_hash_type</code> skips the database and returns <code>None</code> for a checksum missing from the local cache (<em>Lookup</em>). Async <code>parse_buffer</code> calls the synchronous <code>_parse_buffer</code>, but it passes the buffer, so parse-time validation classifies it locally without a database request. Use <code>ensure_hash_type_async</code> when remote-only metadata is needed before a buffer is available.</li>
+<li><strong>JSON <code>true</code>/<code>false</code> are classified <code>JSON_STRING</code>.</strong> For <code>plain</code> and <code>mixed</code>, path validation can therefore still admit positional access to a boolean; parsing and evaluation decide whether that access is valid. The word does not prove an actual JSON string, and <code>conversion_possible</code> answers <code>None</code> for an unflagged <code>JSON_STRING</code> with an <code>int</code>/<code>float</code> target because booleans convert there. But every <code>JSON_STRING</code> proves a <code>str</code> reading: strings and booleans both pass. <code>JSON_NULL</code> has no sequence capability. A non-canonical spelling of null (<code>b" null \n"</code>, <code>b"null\n\n"</code>) receives <code>JSON_NULL</code>; its <code>str</code> reading is disproved, while the two virtual null checksums still read as <code>None</code> without a buffer. With a cached concrete word, <code>plain→str</code> over either kind is settled without fetching the buffer.</li>
+<li><strong>A Seamless-mixed word proves nothing about a <code>mixed</code> reading.</strong> The producer reads only the form header, so <code>deserializable_as("mixed")</code> answers <code>None</code> for <code>MIXED_OBJECT</code>/<code>MIXED_ARRAY</code>. As a result, <code>bytes→mixed</code> over a Seamless-mixed buffer always fetches and parses it (<code>contracts/celltypes-and-conversion.md</code>, <em>Reformat rules</em>).</li>
 </ul>
 <h2 id="non-goals">Non-goals</h2>
 <ul>
-<li><strong>Value-level syntax and hex validation.</strong> HashType classifies buffer bytes without parsing them for the requested celltype. It does not check <code>python</code>/<code>ipython</code>/<code>yaml</code> syntax or whether <code>checksum</code> text contains valid hexadecimal characters. Those checks belong to the parser or conversion engine. A permissive HashType answer is allowed; only <code>False</code> is used to reject work.</li>
+<li><strong>The four structural names.</strong> HashType classifies buffers. A deep buffer is an ordinary <code>plain</code> buffer, so a deep index <em>does</em> get a <code>JSON_OBJECT</code> word like any other. What HashType does not do is know the names <code>deepcell</code>, <code>deepfolder</code>, <code>folder</code> and <code>module</code>: every query raises for them (<em>The domain of every query</em>). <code>contracts/deep-celltypes.md</code> owns deep feasibility and decides it structurally, before any query on this page is reached.</li>
+<li><strong>Value-level syntax and hex validation.</strong> HashType classifies buffer bytes without parsing them for the requested celltype. It does not check <code>python</code>/<code>ipython</code>/<code>yaml</code> syntax, or whether <code>checksum</code> text is valid hexadecimal. Those checks belong to the parser and the conversion engine. Wherever a reading turns on them, <code>deserializable_as</code> answers <code>None</code>, never <code>True</code> (<em>The positive property</em>).</li>
 </ul>
               
             </div>

@@ -153,8 +153,10 @@
 <li>signature: <code>Environment</code></li>
 </ul>
 <p>Execution environment for an individual transformer.</p>
-<p>Controls the conda environment, Docker container, required binaries, and
-execution powers that the transformation worker will use.</p>
+<p>Controls the conda environment, Docker container, and required binaries
+for the transformation worker. CLI backends enter the selected conda
+environment or container image. In-memory backends require their process
+to already be in the requested conda environment and reject Docker.</p>
 <p>Access via <code>transformer.environment</code> on any :class:<code>~seamless_transformer.transformer_class.Transformer</code>
 or :class:<code>~seamless_transformer.compiled_transformer.CompiledTransformer</code>::</p>
 <pre><code>tf.environment.set_conda_env("myenv")
@@ -166,9 +168,10 @@ transformation — all methods accept <code>None</code> to clear a previously se
 <ul>
 <li><strong>conda</strong>: a conda environment YAML spec (string, path, or file object).
   The YAML must be a mapping with a <code>dependencies</code> key.</li>
-<li><strong>conda_env</strong>: the name of an existing conda environment to activate.</li>
-<li><strong>which</strong>: a list of binary names that must be on <code>PATH</code> in the worker.</li>
-<li><strong>powers</strong>: a dict of execution privilege escalations (platform-specific).</li>
+<li><strong>conda_env</strong>: the name of an existing conda environment for the bash
+  <code>conda run</code> wrapper.</li>
+<li><strong>which</strong>: binary names checked inside a selected bash conda environment
+  or container image, and on the worker's <code>PATH</code> for other languages.</li>
 <li><strong>docker</strong>: a dict with at least a <code>"name"</code> key specifying the Docker image.</li>
 </ul>
 <h2 id="environmentget_conda"><code>Environment.get_conda</code></h2>
@@ -187,12 +190,6 @@ transformation — all methods accept <code>None</code> to clear a previously se
 <ul>
 <li>kind: <code>method</code></li>
 <li>signature: <code>get_docker(self)</code></li>
-</ul>
-<p><em>No docstring.</em></p>
-<h2 id="environmentget_powers"><code>Environment.get_powers</code></h2>
-<ul>
-<li>kind: <code>method</code></li>
-<li>signature: <code>get_powers(self)</code></li>
 </ul>
 <p><em>No docstring.</em></p>
 <h2 id="environmentget_which"><code>Environment.get_which</code></h2>
@@ -219,29 +216,32 @@ transformation — all methods accept <code>None</code> to clear a previously se
 <li>kind: <code>method</code></li>
 <li>signature: <code>set_conda_env(self, conda_env_name)</code></li>
 </ul>
-<p>Set the name of an existing conda environment to activate on the worker.</p>
+<p>Set a conda requirement or CLI environment for this transformer.</p>
+<p>CLI backends enter the environment. In-memory backends require their
+process to already be running in the specified environment.</p>
 <h2 id="environmentset_docker"><code>Environment.set_docker</code></h2>
 <ul>
 <li>kind: <code>method</code></li>
 <li>signature: <code>set_docker(self, docker)</code></li>
 </ul>
-<p>Set the Docker image to run the transformation in.</p>
-<p>Argument must be a dict with at least a <code>"name"</code> key (the image name).
-Pass <code>None</code> to clear.</p>
-<h2 id="environmentset_powers"><code>Environment.set_powers</code></h2>
-<ul>
-<li>kind: <code>method</code></li>
-<li>signature: <code>set_powers(self, powers)</code></li>
-</ul>
-<p>Set execution privilege escalations (platform-specific dict).</p>
-<p>Pass <code>None</code> to clear.</p>
+<p>Set the Docker image and optional runtime settings for this transformer.</p>
+<p>The specification is validated when an uncached transformation is
+dispatched. Pass None to clear.</p>
 <h2 id="environmentset_which"><code>Environment.set_which</code></h2>
 <ul>
 <li>kind: <code>method</code></li>
 <li>signature: <code>set_which(self, which)</code></li>
 </ul>
-<p>Set a list of binary names that must be on PATH in the worker.</p>
+<p>Set binary names whose availability is checked before execution.</p>
+<p>CLI backends check inside the selected environment. In-memory backends
+check the PATH of the process that runs the transformation.</p>
 <p>Pass a list of strings (e.g. <code>["gcc", "make"]</code>) or <code>None</code> to clear.</p>
+<h2 id="_validate_environment_dispatch"><code>_validate_environment_dispatch</code></h2>
+<ul>
+<li>kind: <code>function</code></li>
+<li>signature: <code>_validate_environment_dispatch(environment)</code></li>
+</ul>
+<p>Validate specifications that make any backend dispatch impossible.</p>
               
             </div>
           </div><footer>

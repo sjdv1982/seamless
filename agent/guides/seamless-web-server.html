@@ -1,0 +1,679 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <link rel="shortcut icon" href="../img/favicon.ico" />
+    <title>Making a Seamless web server (Guide) - Seamless — Agent Documentation</title>
+    <link rel="stylesheet" href="../css/theme.css" />
+    <link rel="stylesheet" href="../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "Making a Seamless web server (Guide)";
+        var mkdocs_page_input_path = "guides/seamless-web-server.md";
+        var mkdocs_page_url = null;
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href="../index.html" class="icon icon-home"> Seamless — Agent Documentation
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../index.html">Home</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../overview.html">Agent Docs Overview</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../repos/index.html">Workspace Repos</a>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Contracts</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../contracts/identity-and-caching.html">Identity and Caching</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../contracts/celltypes-and-conversion.html">Celltypes, Null, and Conversion</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../contracts/hashtype.html">HashType</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../contracts/deep-celltypes.html">Deep Celltypes</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../contracts/expressions.html">Expressions</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../contracts/cells.html">Cells</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../contracts/pins.html">Pins</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../contracts/workflow-context.html">Workflow Context</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../contracts/node-state-lifecycle.html">Node State Lifecycle</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../contracts/attachments.html">Attachments</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../contracts/mounts.html">File Mounts</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../contracts/shares.html">HTTP Shares</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../contracts/widgets.html">Jupyter Widgets</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../contracts/streaming.html">Streaming</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../contracts/transformation-logs.html">Transformation Logs</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../contracts/cancellation.html">Cancellation</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../contracts/direct-delayed-and-transformation.html">direct/delayed/Transformation</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../contracts/modules-and-closures.html">Modules and Closures</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../contracts/scratch-witness-audit.html">Scratch/Witness/Audit</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../contracts/seamless-run-and-argtyping.html">seamless-run/Argtyping</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../contracts/cache-storage-and-limits.html">Cache Storage and Limits</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../contracts/content-addressed-files-and-dirs.html">Content-addressed Files and Dirs</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../contracts/execution-backends.html">Execution Backends</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../contracts/environments.html">Environments</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../contracts/execution-records.html">Execution Records</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../contracts/service-management.html">Service Management</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../contracts/compression.html">Compression</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../contracts/compiled-transformers.html">Compiled Transformers</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../contracts/compiled-pins.html">Compiled Pins</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../contracts/seamless-signature-schema.html">seamless-signature Schema</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../contracts/handler-languages.html">Handler Languages</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../contracts/language-backends.html">Language Backends</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">API</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/python/seamless.html">seamless</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/python/seamless.transformer.html">seamless.transformer</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/python/seamless.buffer_class.html">seamless.buffer_class</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/python/seamless.checksum_class.html">seamless.checksum_class</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/python/seamless_config.select.html">seamless_config.select</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/python/seamless_config.tools.html">seamless_config.tools</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/python/seamless_transformer.transformation_class.html">seamless_transformer.transformation_class</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/python/seamless_transformer.transformer_class.html">seamless_transformer.transformer_class</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">CLI</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/cli/seamless-run.html">seamless-run</a>
+                  </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Seamless — Agent Documentation</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../index.html" class="icon icon-home" aria-label="Docs"></a></li>
+      <li class="breadcrumb-item active">Making a Seamless web server (Guide)</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h1 id="making-a-seamless-web-server-guide">Making a Seamless web server (Guide)</h1>
+<p>This page is a <strong>guide</strong>, not a contract. It tells you how to build a web application whose server side is a workflow Context: how to think about it, how to develop it with hot reloading on both sides, and how to deploy it. The normative behaviour lives in <code>contracts/shares.md</code>, <code>contracts/mounts.md</code> and <code>contracts/workflow-context.md</code>; this page links to them instead of restating them.</p>
+<p>A few parts describe tools that do not exist yet: the pack tool and Cloudless in the deployment tactics. They are marked <em>(not yet implemented)</em> where they occur and collected under <em>Implementation status</em>.</p>
+<h2 id="the-idea-shared-cells-are-the-rest-api">The idea: shared cells are the REST API</h2>
+<p>A Seamless web server is a <strong>workflow Context plus shares</strong>. There is no route table, no request handler and no serializer to write. <strong>A shared cell is the whole REST API you need, and the reactive workflow does the work behind it.</strong></p>
+<table>
+<thead>
+<tr>
+<th>You need</th>
+<th>You write</th>
+<th>The browser sees</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Show a value</td>
+<td><code>ctx.x.share()</code></td>
+<td><code>GET /&lt;ns&gt;/x</code>, pushed again on every change over the websocket</td>
+</tr>
+<tr>
+<td>Take input</td>
+<td><code>ctx.x.share(readonly=False)</code></td>
+<td><code>PUT /&lt;ns&gt;/x</code>, optionally conditional with <code>?marker=n</code></td>
+</tr>
+<tr>
+<td>Serve a computed result</td>
+<td><code>ctx.out = ctx.tf.result; ctx.out.share()</code></td>
+<td><code>GET /&lt;ns&gt;/out</code>; the workflow recomputes it when its inputs change</td>
+</tr>
+<tr>
+<td>Serve a page or an asset</td>
+<td>a <code>text</code> or <code>bytes</code> cell, <code>share(path="index.html")</code></td>
+<td><code>GET</code> with the right content type</td>
+</tr>
+<tr>
+<td>Describe the API</td>
+<td>nothing</td>
+<td><code>/openapi.json</code>, <code>/&lt;ns&gt;/state-graph</code></td>
+</tr>
+<tr>
+<td>Receive live updates</td>
+<td>nothing</td>
+<td>the websocket at <code>/&lt;ns&gt;</code>, wrapped by <code>/seamless-client.js</code></td>
+</tr>
+</tbody>
+</table>
+<p>What happens on a request:</p>
+<ul>
+<li><strong>A PUT is a write to the cell.</strong> Its dependents recompute under the reactive Context, and a result that reaches a share is announced to every websocket client.</li>
+<li><strong>A GET resolves stored bytes and never computes.</strong> The request handlers run on the server's own thread and run no user code.</li>
+<li><strong>All logic lives in the graph</strong>: transformers between cells. The serving script builds the graph and shares some of its cells; it does not respond to requests.</li>
+</ul>
+<h3 id="design-rules">Design rules</h3>
+<ol>
+<li><strong>One cell per quantity the page shows or edits.</strong> The share key defaults to the node path (<code>ctx.sub.a</code> is served at <code>/&lt;ns&gt;/sub/a</code>).</li>
+<li><strong>Inputs are writable shares, outputs are read-only shares of connected cells.</strong> A writable share is the node's producer, so it cannot have an incoming edge. To serve a computed value, connect it into a cell and share that cell read-only.</li>
+<li><strong>A user action is a write.</strong> For request and response, use a writable input cell and a read-only result cell, connected by a transformer.</li>
+<li><strong>Pick the celltype by what the page reads.</strong> <code>plain</code> serves JSON, <code>text</code> serves raw text, <code>bytes</code> serves a file as it is. A <code>str</code> cell serves a <em>quoted</em> JSON string. Shareable celltypes are listed in <code>contracts/shares.md</code>.</li>
+<li><strong>Everything in a namespace is shared by every visitor.</strong> There is no authentication and no sessions. For isolation between users, give each user their own Context and namespace.</li>
+</ol>
+<h3 id="a-minimal-server">A minimal server</h3>
+<p>Adapted from <code>seamless-workflow/examples/share-sliders/serve.py</code> (install <code>seamless-workflow[share]</code>):</p>
+<pre><code class="language-python">import os
+from pathlib import Path
+
+import seamless
+from seamless import Cell
+from seamless_workflow import Context, shareserver
+
+
+def build(ctx, page_path=None):
+    &quot;&quot;&quot;Populate ctx with the application's cells, transformers and shares.&quot;&quot;&quot;
+    def add(a, b):
+        return a + b
+
+    ctx.a = Cell(celltype=&quot;plain&quot;)
+    ctx.a.set(10)
+    ctx.b = Cell(celltype=&quot;plain&quot;)
+    ctx.b.set(20)
+    ctx.add = add
+    ctx.add.pins.a = ctx.a
+    ctx.add.pins.b = ctx.b
+    ctx.c = Cell(celltype=&quot;plain&quot;)
+    ctx.c = ctx.add.result
+
+    ctx.a.share(readonly=False)                     # inputs: PUT allowed
+    ctx.b.share(readonly=False)
+    ctx.c.share()                                   # output: read-only
+
+    if page_path is not None:                       # a hand-written page; a built front end is packed instead
+        ctx.page = Cell(celltype=&quot;text&quot;)
+        ctx.page.mount(page_path, mode=&quot;r&quot;)
+        ctx.page.share(path=&quot;index.html&quot;, toplevel=True)
+
+
+def start(page_path=Path(__file__).with_name(&quot;index.html&quot;)):
+    &quot;&quot;&quot;Configure the server once per process, then build a fresh live Context.&quot;&quot;&quot;
+    if shareserver.url is None:                     # configure() after the server started raises
+        host = os.environ.get(&quot;SEAMLESS_SHARE_HOST&quot;, &quot;127.0.0.1&quot;)
+        port = int(os.environ.get(&quot;SEAMLESS_SHARE_PORT&quot;, shareserver.port))
+        shareserver.configure(host=host, port=port)
+    ctx = Context()
+    ctx.shares.namespace = &quot;app&quot;                    # runtime state; set before the first share
+    try:
+        build(ctx, page_path)
+    except Exception:
+        ctx.close()
+        raise
+    return ctx
+</code></pre>
+<p><code>build(ctx)</code> is the part that is independent of how the server is run; the pack tool of <em>Deployment</em> calls the same function.</p>
+<p>The page is a plain file. <code>seamless-client.js</code> is served by the share server itself:</p>
+<pre><code class="language-html">&lt;script src=&quot;/seamless-client.js&quot;&gt;&lt;/script&gt;
+&lt;script&gt;
+  const app = connect_seamless(null, null, &quot;app&quot;);   // same origin, namespace &quot;app&quot;
+  const slider = document.getElementById(&quot;a&quot;), sum = document.getElementById(&quot;c&quot;);
+  app.self.onsharelist = keys =&gt; {                   // keys of the shares that exist now
+    app.c.onchange = () =&gt; { sum.value = app.c.value; };
+    slider.oninput = () =&gt; app.a.set(slider.value);  // PUT
+  };
+&lt;/script&gt;
+</code></pre>
+<ul>
+<li><strong><code>value</code> is text</strong> (a <code>Blob</code> for binary shares). JSON is not parsed for you.</li>
+<li><strong>Handlers are attached in <code>onsharelist</code></strong>, because entries appear and disappear with the shares of the namespace.</li>
+<li><strong>The server is one per process</strong>: REST and websocket on one port, started by the first share, stopped by <code>seamless.close()</code>. It defaults to <code>0.0.0.0:5813</code>, with no authentication and no TLS. Bind to <code>127.0.0.1</code> for development (<code>SEAMLESS_SHARE_HOST</code>, <code>SEAMLESS_SHARE_PORT</code>, <code>shareserver.configure</code>).</li>
+</ul>
+<h3 id="returning-to-a-previous-input">Returning to a previous input</h3>
+<p>Suppose an input goes X → Y → X. When the shared result moves on to Y, the
+cell and the share release their claims on X's result. Without a hashserver,
+that buffer is then kept only by a tempref, and it is evicted once the tempref
+expires. Back at X, the transformer hits its cache: the result checksum for X
+is known, but its bytes are gone.</p>
+<p><strong>Without a hashserver, the Context fixes this for you.</strong> A cell with a share,
+a <code>w</code> file mount or a widget does not take a checksum whose buffer is not in memory.
+The cell stays <code>waiting</code> while the Context fingertips the buffer: it reads it
+back from a local buffer source, or else recomputes it in this process.
+Meanwhile, the share keeps serving the Y result under its marker, the websocket
+sends nothing, the mounted file is not written, and <code>ctx.c.checksum</code> is <code>None</code>.
+Then the X result is served and announced as one ordinary update. Every
+transformer the Context runs also fingertips missing inputs, so the cells
+downstream of a cell that has no share recover too.
+<a href="../contracts/workflow-context.html#a-context-without-a-hashserver">A Context without a hashserver</a></p>
+<p>What this means for an application:</p>
+<ul>
+<li><strong>Returning to X may recompute the evicted part</strong> when no local buffer
+  source holds it. The producers must therefore be reproducible.</li>
+<li><strong>The page may see a delay</strong>, not an error. The cell's <code>waiting</code> state is in
+  <code>/&lt;ns&gt;/state-graph</code>, so a page can show progress while it waits.</li>
+<li><strong>A GET still never computes.</strong> It answers <code>503</code> only if the fingertip
+  failed, for example because the producer is not reproducible.</li>
+<li><strong>Only a change of the cell's checksum is covered.</strong> Sharing a cell that is
+  already complete, but whose buffer has expired, triggers no fingertip, so
+  that share answers <code>503</code>. Share the cell before its value matters, as
+  <code>build(ctx)</code> does, or call <code>ctx.c.fingertip()</code> from the session.</li>
+<li><strong>With a hashserver, non-scratch results are published</strong>, stay resolvable,
+  and nothing needs fingertipping. A read-only hashserver publishes nothing;
+  use a writable one for an application that computes.
+  <a href="../contracts/cache-storage-and-limits.html#without-a-hashserver">Buffer storage</a></li>
+</ul>
+<p>Direct shares accept a fixed set of celltypes that excludes <code>folder</code>,
+<code>deepfolder</code> and <code>deepcell</code>. To serve directory contents, share derived
+<code>plain</code> or <code>bytes</code> cells, or include a <code>folder</code> cell in a separate archive
+download. Archive downloads also resolve existing buffers.
+<a href="../contracts/shares.html#shareable-celltypes">Shareable celltypes</a> · <a href="../contracts/shares.html#downloads">Downloads</a></p>
+<h2 id="development">Development</h2>
+<h3 id="two-processes">Two processes</h3>
+<p>Put the front end's dev server (Vite or similar) in front, and the Seamless process behind it.</p>
+<ul>
+<li><strong>The dev server compiles and hot-reloads the front end.</strong> It proxies the share namespace and the client script to the Seamless process.</li>
+<li><strong>The Seamless process holds the Context</strong> and the share server. A share server only serves stored bytes and cannot proxy or hot-reload a front end.</li>
+<li><strong>Same origin in development and production.</strong> The proxy means the front end code is identical in both. CORS is open, so <code>connect_seamless(5813)</code> would also work, but it builds the port into the code.</li>
+</ul>
+<p>Start the two in separate terminals. The backend runs interactively, so the Context stays inspectable and editable:</p>
+<pre><code class="language-bash"># terminal 1: backend
+conda activate &lt;env&gt;
+python -i backend.py
+</code></pre>
+<pre><code class="language-bash"># terminal 2: front end
+conda activate &lt;env&gt;
+npm run dev
+</code></pre>
+<p><strong>vite.config.ts</strong></p>
+<pre><code class="language-ts">export default defineConfig({
+  base: './',
+  plugins: [/* the framework plugin */],
+  server: { proxy: {
+    '/app':                { target: 'http://127.0.0.1:5813', ws: true },  // REST and websocket
+    '/seamless-client.js': 'http://127.0.0.1:5813',
+    '/openapi.json':       'http://127.0.0.1:5813',
+  }},
+})
+</code></pre>
+<ul>
+<li><strong><code>ws: true</code> is needed on the namespace entry</strong>, because the websocket is <code>GET /&lt;ns&gt;</code> with an upgrade.</li>
+<li><strong>Choose a namespace name that no front end route starts with.</strong> Vite matches proxy keys by prefix.</li>
+<li><strong>Load the client with a plain <code>&lt;script src="/seamless-client.js"&gt;</code> tag</strong> and call <code>connect_seamless(null, null, "&lt;ns&gt;")</code> once, from its own small module that turns shared cells into the framework's reactive state. Hot-swapping a component re-evaluates its module; keeping the connection in its own module prevents a second websocket.</li>
+<li><strong>State kept in writable shared cells survives full page reloads</strong> and is visible to Python. Keep the front end's durable state there.</li>
+<li><strong>A no-build page</strong> can instead be a <code>text</code> cell mounted with <code>mode="r"</code> (as in the example). An edit is served within the mount's polling interval, but the browser is not told and must be reloaded by hand.</li>
+<li><strong>Do not compile inside the Context.</strong> A build step run as a transformer puts the sources and <code>node_modules</code> into the cache key and pays a full build per save. Compile offline; let the graph record only the result.</li>
+</ul>
+<h3 id="three-ways-to-change-the-seamless-side">Three ways to change the Seamless side</h3>
+<p>The front end hot-reloads by itself. The Seamless side has three mechanisms, which differ in what they cost and what state they keep.</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>1. Live edit</th>
+<th>2. <code>%run -i</code> reload</th>
+<th>3. Restart</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>What you do</td>
+<td>change cells and the graph in the live session</td>
+<td>re-run the script in IPython</td>
+<td>stop and start the process</td>
+</tr>
+<tr>
+<td>Context</td>
+<td>the same object</td>
+<td>closed, a new one built</td>
+<td>a new process</td>
+</tr>
+<tr>
+<td>Share server</td>
+<td>untouched</td>
+<td>untouched</td>
+<td>restarted</td>
+</tr>
+<tr>
+<td>State written from a browser</td>
+<td>kept</td>
+<td>reset to the script's defaults, unless mounted</td>
+<td>reset, unless mounted</td>
+</tr>
+<tr>
+<td>Front end</td>
+<td><code>shares</code> message on the websocket</td>
+<td>no disconnect; only changed values are announced</td>
+<td>disconnect, then reconnect</td>
+</tr>
+<tr>
+<td>Requires</td>
+<td>the script kept in step</td>
+<td>a script that is safe to re-run</td>
+<td>mounted state; a hardened client</td>
+</tr>
+</tbody>
+</table>
+<h4 id="1-live-edit-in-the-interactive-session">1. Live edit in the interactive session</h4>
+<p>Zero restart. Assign cells, transformers and connections in the running session, by hand or by a coding agent attached to it; the workflow recomputes and the browser follows.</p>
+<ul>
+<li><strong>The script is the source of truth; the live session is a preview.</strong> Every live change must also be made in <code>backend.py</code>, or the next reload or restart reverts it.</li>
+<li><strong>Adding or removing a share is announced to the front end</strong> as a new <code>shares</code> message on the websocket, which calls <code>onsharelist</code>. Attach handlers for new keys there.</li>
+<li><strong><code>/openapi.json</code> is generated per request and is always current.</strong> There is no push for it. A front end that keeps a copy (generated types, a key list) re-fetches it after the cell list changes; the websocket <code>shares</code> message is the trigger.</li>
+</ul>
+<h4 id="2-run-i-reload-the-script-keep-the-server">2. <code>%run -i</code>: reload the script, keep the server</h4>
+<p>The script is re-run in IPython's interactive namespace. This is the equivalent of a hot reload. The workflow Context is replaced (the <code>ctx</code> variable is re-defined); <strong>the share server is not</strong>, because it exists independently of Contexts.</p>
+<p>Write the script so that it is safe to re-run:</p>
+<pre><code class="language-python"># backend.py: run with `python -i backend.py`, reload with `%run -i backend.py`
+try:
+    ctx.close()                  # the previous run's Context; frees its namespace
+except NameError:
+    pass                         # first run
+ctx = start()
+</code></pre>
+<ul>
+<li><strong>Close the old Context first.</strong> A second live Context claiming a taken namespace raises <code>ValueError("Share namespace '&lt;name&gt;' is in use")</code>.</li>
+<li><strong>Guard <code>shareserver.configure</code></strong> with <code>if shareserver.url is None</code>, as <code>start()</code> above does. <code>configure()</code> after the server started raises <code>RuntimeError</code>.</li>
+<li><strong>Do not call <code>seamless.close()</code> in a reloadable script.</strong> It stops the share server. Keep it for a non-interactive <code>main()</code> that runs once and exits.</li>
+<li><strong>A reload resets state that browsers wrote.</strong> The new Context starts from the script's defaults. Mount the cells that must survive (mechanism 3).</li>
+<li><strong>Markers keep increasing across the reload.</strong> A re-shared URL continues its marker sequence for the lifetime of the server.</li>
+</ul>
+<p><strong>The hold on close</strong> keeps the reload invisible in the browser for values that did not change (<code>contracts/shares.md</code>, <em>The hold on close</em>):</p>
+<ul>
+<li><code>ctx.close()</code> does not remove the shares at once. The server keeps serving them, with their checksums and markers, for a <strong>hold window</strong> (10 s by default), and keeps the websockets open. The Context's teardown is not visible, and <code>/openapi.json</code> does not drop to an empty document.</li>
+<li>The new Context's first share takes the namespace over, and each share at a held URL <strong>re-attaches</strong>. A cell whose value is unchanged produces no marker bump and therefore no websocket update. A cell whose value differs produces one ordinary update.</li>
+<li>A PUT sent during the reload waits for its share to be re-attached, and is then processed by the new Context.</li>
+<li>A held share that the new script no longer makes is removed when the window ends, as on any close.</li>
+<li>The hold serves; it never carries a value into the new Context. State that a browser wrote into an unmounted cell still returns to the script's default.</li>
+</ul>
+<h4 id="3-mounts-with-authorityfile-persistent-state">3. Mounts with <code>authority="file"</code>: persistent state</h4>
+<p>A mounted cell keeps its value in a file. That makes state survive a <code>%run -i</code> reload and a <strong>full restart of the Seamless process</strong>, a "tepid reload".</p>
+<pre><code class="language-python">ctx.params = Cell(celltype=&quot;plain&quot;)
+ctx.params.set({&quot;threshold&quot;: 0.5})                         # the default; set it before mounting
+ctx.params.mount(&quot;state/params.json&quot;, mode=&quot;rw&quot;, authority=&quot;file&quot;)
+ctx.params.share(readonly=False)
+</code></pre>
+<ul>
+<li><strong>First run</strong>: the file is absent, so the default is written to it. <strong>Every later run</strong>: the file wins over the script's default (<code>contracts/mounts.md</code>, <em>The initial decision table</em>, row 11, logged once).</li>
+<li><strong>Every accepted PUT is written to the file</strong>, and an edit of the file is served and announced.</li>
+<li><strong><code>authority</code> resolves only the initial conflict.</strong> After attach, every file change and every cell change flows as usual.</li>
+<li><strong>Mount only state worth keeping.</strong> Do not mount derived cells; they are recomputed. Keep the state directory out of version control.</li>
+<li><strong><code>persistent=True</code> is the default</strong>; the file survives unmount and Context close.</li>
+</ul>
+<h4 id="hardening-the-front-end-for-restarts">Hardening the front end for restarts</h4>
+<p>A restarted process restarts its markers. The front end must cope with a server that vanishes and comes back.</p>
+<ul>
+<li><strong>Reconnect automatically.</strong> <code>seamless-client.js</code> retries a lost websocket with backoff (1 s, doubling, up to 30 s).</li>
+<li><strong>Every connection starts with a <code>shares</code> message</strong> that carries the checksum and marker of every share in the namespace.</li>
+<li><strong>The client's restart rule</strong> (<code>contracts/shares.md</code>, <em><code>seamless-client.js</code></em>): if, after reconnecting, the markers are <strong>lower</strong> than the ones the front end already holds, the server process restarted. One key that is exactly one lower, because the server has not yet processed the client's own PUT to it, does not count. Mounted cells were restored from their files, so the front end's own state is current: the client adopts the new markers and does not re-read the values. If that was wrong (unmounted state was reset), the user reloads the page by hand.</li>
+<li><strong>A write sent after a restart, before the client has adopted the new markers, carries the old marker.</strong> It is normally refused with <code>409</code>, and the client drops the local change. Until the reconnect lets the client conclude that the server restarted, it ignores the server's lower marker, so the page keeps showing the dropped change until the reconnect; the client then reads that value. Show a disconnected state instead of letting the user edit as if connected.</li>
+</ul>
+<h2 id="deployment">Deployment</h2>
+<p>Development needs Node, a dev server and a live interactive Context. Deployment needs none of them: a built, static front end, and a Context that serves it. There are two levels.</p>
+<h3 id="level-1-the-serving-script">Level 1: the serving script</h3>
+<p>For a front end that is one hand-written file, <strong>the development script is already the deployment</strong>, as in <code>examples/share-sliders</code>: a <code>text</code> cell mounted with <code>mode="r"</code> and shared at the top level, plus the data cells. Run <code>python serve.py</code>, bind explicitly, and put a reverse proxy in front.</p>
+<p>A <strong>built</strong> application (many hashed files) runs into five limits of this level:</p>
+<ol>
+<li><strong>One cell per file.</strong> Folder cells cannot be shared.</li>
+<li><strong>Top-level share keys have one segment.</strong> <code>/assets/x.js</code> cannot be a top-level share; inside a namespace a key may have several segments.</li>
+<li><strong>Hashed names change on every build</strong>, so the set of mounted shares changes.</li>
+<li><strong>The browser client never reports changes of file-like shares.</strong> Keys with a <code>.</code> are not auto-read.</li>
+<li><strong>The redirect from <code>/</code> and <code>/&lt;ns&gt;/</code> to <code>index.html</code> drops the query string.</strong></li>
+</ol>
+<p>Level 2 absorbs the first limit in the pack tool, and removes the other four: files are shared under a namespace at their relative paths, every build is a new graph so changing names cost nothing, a running graph's files never change, and the proxy can redirect <code>/</code> with the query string kept.</p>
+<h3 id="level-2-pack-the-build-into-a-graph">Level 2: pack the build into a graph</h3>
+<p>Compile offline, pack <code>dist/</code> into a Context with one <code>bytes</code> cell per file, each shared at its path, and save the graph. The graph holds only checksums; the bytes live on a hashserver. A generic server loads the graph and serves it. The server needs no Node and no application code.</p>
+<pre><code>src/  --npm run build--&gt;  dist/  --pack--&gt;  Context (one bytes cell per file + backend nodes)
+                                              | get_graph()                    | publish
+                                              v                               v
+                                          graph.json (checksums)          hashserver  --rsync--&gt;  deploy hashserver
+                                              |                                                       |
+                                              +-----&gt; generic server: set_graph(mounts=False, shares=True) --resolves--+
+</code></pre>
+<h4 id="1-build-with-a-relative-base">1. Build with a relative base</h4>
+<p>Set <code>base: './'</code> in the Vite config and run the production build:</p>
+<pre><code class="language-bash">npm ci                        # reproducible install; pin the Node version
+npm run build                 # vite build -&gt; dist/
+</code></pre>
+<ul>
+<li><strong><code>base: './'</code></strong> makes the page load its assets relative to wherever <code>index.html</code> is served, so the same build works under any namespace.</li>
+<li><strong>Keep Vite's content hashes in deployment builds.</strong> Each build produces a new graph, so changing names cost nothing, and the proxy can mark assets immutable.</li>
+<li><strong>Files loaded at run time</strong> (workers, <code>.wasm</code>, fonts) must be in <code>dist/</code> too, with pinned content types.</li>
+</ul>
+<h4 id="2-pack">2. Pack</h4>
+<p>The pack tool is generic: it walks <code>dist/</code>, makes a cell per file, shares it at its relative path and writes the graph. If the application has a backend, call its <code>build(ctx)</code> first (without a <code>page_path</code>), so static files and backend nodes end up in one graph.</p>
+<pre><code class="language-python">import json, mimetypes
+from pathlib import Path
+
+import seamless, seamless.config
+from seamless import Cell
+from seamless_workflow import Context, shareserver
+
+NULL_CONTENTS = (b&quot;&quot;, b&quot;null\n&quot;, b&quot;null&quot;)      # these are null: the share would answer 204
+
+def node_name(rel):
+    # &quot;assets/index-DD5wxIS0.js&quot; -&gt; &quot;web__assets__index_DD5wxIS0_js&quot;
+    return &quot;web__&quot; + &quot;&quot;.join(c if c.isalnum() else &quot;_&quot; for c in rel.replace(&quot;/&quot;, &quot;__&quot;))
+
+def pack(dist, graph_out, backend=None):
+    seamless.config.init()                            # build stage: a writable hashserver
+    shareserver.configure(host=&quot;127.0.0.1&quot;, port=0)   # share() records specs; nothing is exposed
+    ctx = Context()
+    try:
+        if backend is not None:
+            backend(ctx)                              # the application's own nodes
+        names = set()
+        for f in sorted(Path(dist).rglob(&quot;*&quot;)):
+            if not f.is_file():
+                continue
+            rel = f.relative_to(dist).as_posix()
+            data = f.read_bytes()
+            if data in NULL_CONTENTS:
+                raise ValueError(f&quot;{rel}: content would be served as null (204)&quot;)
+            name = node_name(rel)
+            if name in names:
+                raise ValueError(f&quot;{rel}: node name collision&quot;)
+            names.add(name)
+            mimetype = mimetypes.guess_type(rel)[0] or &quot;application/octet-stream&quot;
+            setattr(ctx, name, Cell(celltype=&quot;bytes&quot;))
+            cell = getattr(ctx, name)
+            cell.set(data)
+            cell.share(path=rel, mimetype=mimetype)   # pinned into the graph's share entry
+        graph = ctx.get_graph()
+    finally:
+        ctx.close()
+        seamless.close()                              # flushes pending hashserver writes
+    Path(graph_out).write_text(json.dumps(graph, indent=1, sort_keys=True))
+</code></pre>
+<p>What the pack tool must get right:</p>
+<ul>
+<li><strong>Run it as its own process.</strong> <code>seamless.close()</code> ends Seamless for the whole process: no Context can be built afterwards, and neither can a second <code>pack</code> or a <code>serve</code>. The same holds for the serving process below.</li>
+<li><strong>Celltype <code>bytes</code> for every file.</strong> It is the one celltype whose buffer is the file as it is, so the served body is the built file byte for byte.</li>
+<li><strong>Pin the content type at pack time.</strong> Without a <code>mimetype</code>, the server guesses from the extension on the <em>serving</em> host, and a browser refuses a module script that is not served with a JavaScript type. The pinned value is stored in the graph's share entry.</li>
+<li><strong>Refuse null contents.</strong> An empty file, or one that is exactly <code>null</code>, is the null value, and a share answers <code>204</code> with no body.</li>
+<li><strong>Generated node names.</strong> The share path carries the real file name; the node name is only an identifier.</li>
+<li><strong>Publishing is automatic</strong>: a non-scratch cell publishes its literal to the hashserver when the Context claims it. <code>seamless.close()</code> reports buffers it could not write; treat that as a failed build.</li>
+<li><strong>Verify before shipping.</strong> Batch-check every checksum in the graph against the hashserver's <code>GET /has-now</code>, which, unlike <code>/has</code>, does not count buffers that are only promised.</li>
+</ul>
+<h4 id="3-hashserver">3. Hashserver</h4>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>Build side</th>
+<th>Deploy side</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Mode</td>
+<td>writable</td>
+<td>read-only when the graph has no writable shares and no transformers; writable once PUT values or computed results must survive</td>
+</tr>
+<tr>
+<td>Contents</td>
+<td>every buffer the Context published</td>
+<td>a copy: the buffer directory is plain files named by checksum, so <code>rsync</code> transfers only what is new</td>
+</tr>
+<tr>
+<td>Reachability</td>
+<td>build machine or CI only</td>
+<td>the serving process only; never public</td>
+</tr>
+</tbody>
+</table>
+<p>Unchanged files are never uploaded or transferred again.</p>
+<h4 id="4-serve">4. Serve</h4>
+<p>The shipped command loads one saved graph and serves its declared shares. Install <code>seamless-suite</code> for the <code>seamless-serve-graph</code> entry point and its HTTP dependency. The implementation is <code>seamless_workflow.serve_graph:main</code>; <code>python -m seamless_workflow.serve_graph</code> is equivalent.</p>
+<pre><code class="language-bash">seamless-serve-graph graph.json
+</code></pre>
+<p>The <a href="../contracts/shares.html#serving-saved-graphs">share contract</a> defines the command's behavior. Give it a local UTF-8 JSON file containing a current workflow graph. A graph with shares uses <code>__seamless_workflow__: "0.6"</code> or later, and a graph with downloads <code>"0.7"</code>; older current workflow versions cannot declare them. Original legacy exports need migration before this command can load them.</p>
+<p>The runner creates one Context in the default <code>ctx</code> namespace and calls <code>ctx.set_graph(graph, mounts=False, shares=True)</code>. Graph-declared file mounts are disabled; shares are restored. A graph can also contain transformers, which begin deriving when loaded. Open <code>/ctx/index.html</code> for a page shared there. A share declared <code>toplevel=True</code> can be served from <code>/index.html</code>.</p>
+<p>The share server uses its normal bind configuration, currently <code>0.0.0.0:5813</code> by default. Configure the listener in Python with <code>seamless_workflow.shareserver.configure()</code> if you need a different address or port in a custom serving script. The command has no listener flags. Its HTTP and websocket endpoints use the current share protocol and built-in <code>/seamless-client.js</code>.</p>
+<p>Put the desired cluster and execution mode in the usual <code>seamless-config</code> files for the directory from which you launch the command. The runner initializes that configuration before creating the Context, so a configured hashserver, database, jobserver or daskserver is used through the normal modern stack. See <a href="../../main/cluster.md">Setting up a local cluster</a> and <a href="../../main/remote.md">Remote execution</a>. The command has no remote-service flags.</p>
+<p>The runner does not query <code>/has-now</code> for every referenced buffer. Check availability as a separate deployment step if a later browser <code>503</code> is unacceptable. SIGINT or SIGTERM closes the Context and Seamless. There is no dedicated health endpoint; <code>GET /openapi.json</code> shows the HTTP server is responding, while <code>GET /ctx/state-graph</code> reports node states.</p>
+<h4 id="5-reverse-proxy">5. Reverse proxy</h4>
+<p>The share server has no compression, no TLS and no long-lived caching. A reverse proxy (nginx, Caddy) supplies them:</p>
+<ul>
+<li><strong>Compression and TLS termination.</strong></li>
+<li><strong><code>Cache-Control: public, max-age=31536000, immutable</code> on <code>/&lt;ns&gt;/assets/*</code>.</strong> This is safe only because the deployment build keeps content hashes. Every share response otherwise carries <code>Cache-Control: no-cache</code> with the checksum as <code>ETag</code>, so every page load revalidates every file.</li>
+<li><strong>Redirect <code>/</code> straight to <code>/&lt;ns&gt;/index.html</code></strong>, keeping the query string, instead of relying on the server's own <code>302</code>, which drops it.</li>
+<li><strong>Access control</strong>, and the exposure rules below.</li>
+</ul>
+<h3 id="exposure-state-and-releases">Exposure, state and releases</h3>
+<ul>
+<li><strong>Every share is readable by anyone who reaches the port</strong>, and every writable share is writable by them. Bind to loopback and let the proxy do access control.</li>
+<li><strong><code>/&lt;ns&gt;/state-graph</code> and <code>/openapi.json</code> are always served.</strong> The state graph carries every node's path, celltype, state, checksum and error text, also for nodes that are not shared. Block the state-graph path at the proxy if it must not be public.</li>
+<li><strong>Loading a graph opens endpoints and can run transformer code.</strong> Deploy a graph file you built and verified. If an application must inspect a graph of unknown origin, load it through the Python API with <code>shares=False</code> and <code>mounts=False</code>.</li>
+<li><strong>One Context means one shared state.</strong> For a tool where each user has their own state, load the static graph once at a fixed namespace, and give each session its own backend Context at its own namespace, built from a template graph. The page reads the session id from its URL and calls <code>connect_seamless(null, null, "s-" + id)</code>. Sessions share the static buffers, because the checksums are the same. The share server has no custom routes, so creating sessions needs a small control listener, with idle expiry <em>(not yet implemented)</em>.</li>
+<li><strong>Keep a versioned graph file for each release.</strong> The serving command reads a local JSON file; deploy that file and its referenced buffers together. Rolling back means launching a previous graph file whose buffers are still available.</li>
+<li><strong>The compile step is outside Seamless identity.</strong> The graph records what was built, not how. Record the "how" in a cell (git commit, lockfile checksum, exact Node version) and share it read-only, so the page can show it.</li>
+</ul>
+<h3 id="taking-it-further-serve-a-workflow-as-data">Taking it further: serve a workflow as data</h3>
+<p>The destination of level 2 is that the <strong>static front end and the Python backend ship as one kind of artifact</strong>: a saved workflow graph, with backend nodes recomputed or cache-hit on the server's execution backend. The generic <code>seamless-serve-graph</code> command serves a local graph file now; Cloudless for per-session instances remains unimplemented. Build the application so that its server side is a <code>build(ctx)</code> function: that is the part that moves into the graph unchanged.</p>
+<h2 id="checklist">Checklist</h2>
+<ol>
+<li>Model each shown or edited quantity as a cell; inputs are writable shares, outputs are read-only shares of connected cells.</li>
+<li>Keep all logic in the graph. Add no request code.</li>
+<li>Develop with the dev server in front, <code>python -i backend.py</code> behind, a namespace of its own, and <code>/seamless-client.js</code> and <code>/openapi.json</code> proxied.</li>
+<li>Keep the script in step with every live edit; keep it safe to re-run with <code>%run -i</code> (close the old Context, guard <code>configure</code>, no <code>seamless.close()</code>).</li>
+<li>Mount, with <code>authority="file"</code>, the state that must survive reloads.</li>
+<li>Harden the client: reconnect, tolerate a restarted server, never assume a write succeeded.</li>
+<li>Deploy with relative base, pinned content types, hashed names, a hashserver copy, a startup check and a reverse proxy.</li>
+</ol>
+<h2 id="implementation-status">Implementation status</h2>
+<p>Exercised against the code: <code>bytes</code> cells shared at multi-segment paths with a pinned <code>mimetype</code>; the <code>share</code> entry in <code>get_graph()</code> and the absence of a <code>mount</code> entry for unmounted cells; <code>set_graph(graph, mounts=False, shares=True)</code> into a fresh Context under the same namespace, with markers continuing; the <code>ValueError</code> for a namespace that a live Context holds; the share server staying up after <code>ctx.close()</code>; <code>authority="file"</code> persistence of a PUT across two Contexts; the <code>build</code>/<code>start</code> example and its <code>%run -i</code> header (a PUT to <code>a</code> recomputes <code>c</code>; the old Context is closed, the namespace is re-claimed and the defaults return); and the pack and serve sketches, run in a single process over the local buffer cache. That run showed the graph holding only <code>value.checksum</code> per cell node, pinned content types, no <code>mount</code> entries, bodies equal to the files, and <code>GET /&lt;ns&gt;/</code> answering the <code>index.html</code> share.</p>
+<p>The graph-serving command is implemented. Its focused tests cover the required graph-file argument, JSON loading into a Context, a real Context's serialized-graph path, configuration initialization, cleanup after loading fails, and signal handler restoration. The command uses current workflow serialization and the modern share protocol.</p>
+<p>Not implemented, and described above as the intended behaviour:</p>
+<ul>
+<li>The <strong>pack tool</strong> as a shipped command (the code above is a sketch) and <strong>Cloudless</strong>.</li>
+</ul>
+<p>Not verified:</p>
+<ul>
+<li>The hold on close and the client's restart rule (<code>contracts/shares.md</code>) in the reload and restart workflows above.</li>
+<li>The hashserver round trip: pack and serve as separate processes, with the buffers transferred through a hashserver, and the startup check against <code>/has-now</code>.</li>
+<li>Whether a Context with a read-only hashserver tries to publish the literals it fetches. Declare the hashserver read-only in the deployment configuration and look for write attempts in its log.</li>
+<li>Behaviour of <code>Cell.set()</code> for a single value of several MB. The contract states a 1 GiB request limit for PUT.</li>
+</ul>
+              
+            </div>
+          </div><footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+    
+    
+  </span>
+</div>
+    <script src="../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "..";</script>
+    <script src="../js/theme_extra.js"></script>
+    <script src="../js/theme.js"></script>
+      <script src="../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>

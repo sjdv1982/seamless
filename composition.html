@@ -64,6 +64,10 @@
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#conditionals">Conditionals</a>
     </li>
+    <li class="toctree-l3"><a class="reference internal" href="#nesting-needs-no-declaration">Nesting needs no declaration</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#declaring-a-driver-driver-true">Declaring a driver: .driver = True</a>
+    </li>
         </ul>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#module-inclusion">Module inclusion</a>
@@ -201,6 +205,25 @@ def pipeline(data, use_fast_path):
         return slow_process(data).run()
 </code></pre>
 <p>Because the driver itself is a cached transformation, changing <code>use_fast_path</code> from <code>True</code> to <code>False</code> (with the same <code>data</code>) produces a new driver transformation checksum and re-executes the driver. The slow path runs; the fast path never runs. On the next call with <code>use_fast_path=True</code>, the driver is a cache hit and the fast-path result is returned immediately.</p>
+<h3 id="nesting-needs-no-declaration">Nesting needs no declaration</h3>
+<p>A transformation that launches other transformations is written like any other. Nothing has to be declared.</p>
+<p>By default, the code of a transformation runs while holding the lock of its process, so that one transformation runs at a time per process (see <a href="parallelism.html">Local parallelism</a>). A driver that kept this lock while it waits would block its own sub-transformations. It does not keep it. The first time its code launches a transformation, the driver gives the lock up, and it does not take it again. A launch is <code>.start()</code>, <code>.run()</code>, <code>.compute()</code>, <code>.task()</code>, a call of a <code>direct</code> function, or <code>parallel()</code>. In the fan-out example above, <code>process_all</code> holds the lock until its first <code>tf.start()</code>. From then on, the <code>process_one</code> transformations can run in the driver's process as well.</p>
+<p>Two things follow:</p>
+<ul>
+<li>What the driver does before its first launch, it does with its process to itself. What it does afterwards, such as combining the results, it does next to other transformations.</li>
+<li>The launch must come from the driver's own thread, or from a coroutine of its event loop. If the driver starts a thread of its own and launches from there, the lock stays held, and the pipeline can hang without an error. Give such a driver <code>process_lock = False</code>, or declare it as a driver (below).</li>
+</ul>
+<h3 id="declaring-a-driver-driver-true">Declaring a driver: <code>.driver = True</code></h3>
+<pre><code class="language-python">process_all.driver = True
+</code></pre>
+<p>This says that the code mainly launches other transformations and waits for them. The declaration adds two things:</p>
+<ul>
+<li><strong>The driver never takes the lock.</strong> It starts at once, even while another transformation runs in its process, and it holds nothing up while it prepares its first launch. Setting <code>.driver = True</code> also sets <code>.process_lock</code> to <code>False</code>.</li>
+<li><strong>On a Dask cluster, its launches are not held back.</strong> Seamless limits how fast a transformation that runs on the cluster can submit further transformations, so that the cluster does not fill up with parents that wait for their children. Launches made by a declared driver skip this limit.</li>
+</ul>
+<p>The declaration applies to the driver alone. The transformations that it launches are ordinary transformations with their own settings.</p>
+<p>Declare a driver when its own work is negligible. A driver that does substantial work before its first launch is better left undeclared, so that this work has the process to itself.</p>
+<p>For a <code>seamless-run</code> command that itself calls <code>seamless-run</code>, the flag is <code>--driver</code>. The flag is needed only when the inner command runs over <code>ssh</code> or inside a container. Otherwise the outer command gives up its lock by itself.</p>
 <hr />
 <h2 id="module-inclusion">Module inclusion</h2>
 <p>When a transformation runs on a remote worker, it has no access to your local filesystem or Python environment. Code that is defined in modules you've written — helper functions, data classes, utilities — must be explicitly bound into the transformation.</p>

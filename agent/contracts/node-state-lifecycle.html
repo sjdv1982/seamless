@@ -71,7 +71,13 @@
                   </li>
                   <li class="toctree-l1 current"><a class="reference internal current" href="#">Node State Lifecycle</a>
     <ul class="current">
-    <li class="toctree-l2"><a class="reference internal" href="#the-six-states">The six states</a>
+    <li class="toctree-l2"><a class="reference internal" href="#the-seven-states">The seven states</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#miswired-is-a-static-defect-not-a-failure">miswired is a static defect, not a failure</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#three-rules-that-fix-the-vocabulary">Three rules that fix the vocabulary</a>
+    </li>
+        </ul>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#equilibrium-quiescence-and-what-they-do-not-mean">Equilibrium, quiescence, and what they do not mean</a>
     </li>
@@ -82,6 +88,8 @@
     <li class="toctree-l3"><a class="reference internal" href="#transformer-nodes">Transformer nodes</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#cell-nodes">Cell nodes</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#elided-anonymous-nodes">Elided anonymous nodes</a>
     </li>
         </ul>
     </li>
@@ -109,11 +117,11 @@
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#speculation-launch-immediately-delay-cancellation">Speculation: launch immediately, delay cancellation</a>
         <ul>
-    <li class="toctree-l3"><a class="reference internal" href="#a-upstream-confirmation-hold-event-driven-the-load-bearing-case">(a) Upstream-confirmation hold — event-driven; the load-bearing case</a>
+    <li class="toctree-l3"><a class="reference internal" href="#a-upstream-confirmation-hold-event-driven-and-the-load-bearing-case">(a) Upstream-confirmation hold: event-driven, and the load-bearing case</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="#b-self-edit-revert-hold-a-fixed-window">(b) Self-edit revert hold — a fixed window</a>
+    <li class="toctree-l3"><a class="reference internal" href="#b-self-edit-revert-hold-a-fixed-window">(b) Self-edit revert hold: a fixed window</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="#c-completed-downstream-retention-buffer-retention-event-bounded">(c) Completed-downstream retention — buffer retention, event-bounded</a>
+    <li class="toctree-l3"><a class="reference internal" href="#c-completed-downstream-retention-buffer-retention-event-bounded">(c) Completed-downstream retention: buffer retention, event-bounded</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#reinstatement-is-not-a-special-operation">Reinstatement is not a special operation</a>
     </li>
@@ -139,6 +147,14 @@
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="mounts.html">File Mounts</a>
                   </li>
+                  <li class="toctree-l1"><a class="reference internal" href="shares.html">HTTP Shares</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="widgets.html">Jupyter Widgets</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="streaming.html">Streaming</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="transformation-logs.html">Transformation Logs</a>
+                  </li>
                   <li class="toctree-l1"><a class="reference internal" href="cancellation.html">Cancellation</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="direct-delayed-and-transformation.html">direct/delayed/Transformation</a>
@@ -155,6 +171,8 @@
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="execution-backends.html">Execution Backends</a>
                   </li>
+                  <li class="toctree-l1"><a class="reference internal" href="environments.html">Environments</a>
+                  </li>
                   <li class="toctree-l1"><a class="reference internal" href="execution-records.html">Execution Records</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="service-management.html">Service Management</a>
@@ -166,6 +184,10 @@
                   <li class="toctree-l1"><a class="reference internal" href="compiled-pins.html">Compiled Pins</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="seamless-signature-schema.html">seamless-signature Schema</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="handler-languages.html">Handler Languages</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="language-backends.html">Language Backends</a>
                   </li>
               </ul>
               <p class="caption"><span class="caption-text">API</span></p>
@@ -217,9 +239,10 @@
             <div class="section" itemprop="articleBody">
               
                 <h1 id="the-node-state-lifecycle-contract">The node state lifecycle (Contract)</h1>
-<p><strong>A workflow node is always in exactly one of six states, and every one of them is <em>derived</em>, never assigned.</strong> The Context is a DAG of nodes plus a runtime that keeps it in equilibrium (<code>contracts/workflow-context.md</code>); this page is the state machine that runtime implements — what the six states mean, how each is derived from a node's own configuration and its upstreams, how a change cascades through the downstream cone without ever producing an inconsistent intermediate result, how superseded work is speculatively retained, and how a user reclaims it.</p>
-<p>A <strong>node</strong> is a Context-bound builder — <code>ctx.a</code>, <code>ctx.tf</code> — and <code>Cell</code>, <code>Pin</code> and <code>Transformer</code> handles are <em>views</em> onto one (<code>contracts/workflow-context.md</code>, <code>contracts/cells.md</code>, <code>contracts/pins.md</code>). State is a property of the node, so two handles onto one node always report the same state, and a handle carries none of it.</p>
-<p>This page owns: the state vocabulary, the derivation rules, block reasons and their precedence, the cascade and its glitch-freedom invariant, the hold/supersession policy, and what <code>prune</code> reclaims. It does <strong>not</strong> own the Context API (<code>contracts/workflow-context.md</code>), the handle-side read/write API (<code>contracts/cells.md</code>, <code>contracts/pins.md</code>), what softcancel means (<code>contracts/cancellation.md</code>), or Expression-level cancellation and materialization (<code>contracts/expressions.md</code>).</p>
+<p><strong>A workflow node is always in exactly one of seven states, and every state is <em>derived</em>, never assigned.</strong> The Context is a DAG of nodes plus a runtime that keeps it in equilibrium (<code>contracts/workflow-context.md</code>). This page is the state machine that runtime implements: what the seven states mean, how each is derived from a node's own configuration and its upstreams, how a change cascades through the downstream cone without ever producing an inconsistent intermediate result, how superseded work is speculatively retained, and how a user reclaims it.</p>
+<p>A <strong>node</strong> is a Context-bound builder, such as <code>ctx.a</code> or <code>ctx.tf</code>. <code>Cell</code>, <code>Pin</code> and <code>Transformer</code> handles are <em>views</em> onto one (<code>contracts/workflow-context.md</code>, <code>contracts/cells.md</code>, <code>contracts/pins.md</code>, <code>contracts/transformers.md</code>). State is a property of the node, not of the handle, so <strong>two handles onto one named node always report the same state</strong>. <strong>Anonymous and projection handles are exempt.</strong> Their <code>.state</code> is passive and local to the handle (<code>contracts/cells.md</code>, <em>Anonymous and projection handles</em>), and the state the Context derives for the underlying anonymous node is invisible through the API.</p>
+<p>This page owns the state vocabulary, the derivation rules, block reasons and their precedence, the shape of <code>block_reason</code>, the cascade and its glitch-freedom invariant, the hold and supersession policy, and what <code>prune</code> reclaims. It does <strong>not</strong> own the Context API (<code>contracts/workflow-context.md</code>), the handle-side read and write API (<code>contracts/cells.md</code>, <code>contracts/pins.md</code>), what softcancel means (<code>contracts/cancellation.md</code>), or Expression-level cancellation and materialization (<code>contracts/expressions.md</code>).</p>
+<p>The share server exposes these handle-reported states in the whole Context snapshot described in <a href="shares.html#the-state-graph">HTTP shares, <em>The state graph</em></a>.</p>
 <p>Code locations:</p>
 <table>
 <thead>
@@ -231,7 +254,7 @@
 <tbody>
 <tr>
 <td>The state vocabulary and node record</td>
-<td><code>seamless_workflow.graph</code> (<code>NodeState</code>, <code>Node.state</code>, <code>Node.block_reason</code>, <code>Node.block_pins</code>, <code>Node.pin_states</code>, <code>Node.exception</code>)</td>
+<td><code>seamless_workflow.graph</code> (<code>NodeState</code>, <code>BlockReason</code>, <code>Node.state</code>, <code>Node.block_reason</code>, <code>Node.block_pins</code>, <code>Node.pin_states</code>, <code>Node.exception</code>)</td>
 </tr>
 <tr>
 <td>Derivation pass and cell derivation</td>
@@ -255,7 +278,7 @@
 </tr>
 </tbody>
 </table>
-<h2 id="the-six-states">The six states</h2>
+<h2 id="the-seven-states">The seven states</h2>
 <table>
 <thead>
 <tr>
@@ -269,16 +292,20 @@
 <td>not yet sufficiently connected</td>
 </tr>
 <tr>
+<td><code>miswired</code></td>
+<td>connected, but an incoming link is statically ill-formed (below); no work is attempted</td>
+</tr>
+<tr>
 <td><code>blocked</code></td>
-<td>sufficiently connected, but some upstream is unwired, blocked or failed — <strong>not itself errored</strong></td>
+<td>sufficiently connected, but some upstream is unwired, miswired, blocked or failed; <strong>not itself errored</strong></td>
 </tr>
 <tr>
 <td><code>waiting</code></td>
-<td>the node's inputs are not all concrete checksums yet</td>
+<td>the node's inputs are not all concrete checksums yet, or a cell node's own work is in flight</td>
 </tr>
 <tr>
 <td><code>computing</code></td>
-<td>the node's inputs are concrete and its own work has been <strong>submitted</strong> — queued behind backend concurrency, or already running</td>
+<td>the node's inputs are concrete and its own work has been <strong>submitted</strong>: queued behind backend concurrency, or already running</td>
 </tr>
 <tr>
 <td><code>complete</code></td>
@@ -290,14 +317,26 @@
 </tr>
 </tbody>
 </table>
-<p>Three rules fix the vocabulary. They are the places where a plausible reading is wrong.</p>
-<p><strong>1. <code>waiting</code> versus <code>computing</code> is decided at dispatch, not by the backend.</strong> <code>computing</code> means <em>submitted</em>, not <em>executing</em>. No backend is asked to report start-of-execution, because jobserver and Dask may not surface it, and a state that depended on such a report would be unobtainable for some backends and racy for the rest. Two consequences:</p>
+<p><code>NodeState</code> is a <code>Literal</code> type alias over these seven strings, not an <code>enum.Enum</code>: compare against the string.</p>
+<h3 id="miswired-is-a-static-defect-not-a-failure"><code>miswired</code> is a static defect, not a failure</h3>
+<p>A node is <code>miswired</code> when an incoming link is statically ill-formed. There are two criteria that depend on the source, and one on the target:</p>
 <ul>
-<li>A transformer whose pins are all literals has nothing to wait for, so it goes <strong>straight to <code>computing</code> and is never observed <code>waiting</code></strong>. Only its downstream shows <code>waiting</code>.</li>
+<li><strong>Ordinary sources: a path and a conversion on one link.</strong> The edge projects into its source <em>and</em> the source's celltype differs from the target's <code>celltype</code> (the wiring rule, <code>contracts/cells.md</code>, <em>Connecting</em>). <strong>A symbol whose entry carries a path counts as a path-carrying source</strong>, so routing a projection through an anonymous node does not escape the rule.</li>
+<li><strong>Deep sources: the deep table.</strong> When the source is <code>deepcell</code>, <code>deepfolder</code> or <code>folder</code>, the criterion is the table of legal deep links in <code>contracts/deep-celltypes.md</code>. A link outside that table is ill-formed in the same way, and the outcome is the same. The carve-out covers only the link whose source is deep; everything downstream of the resulting child checksum is ordinary wiring again.</li>
+<li><strong>Any source: a forbidden connection target key.</strong> A one-level target whose key is neither a string nor a non-negative integer (a <code>bool</code> is not an integer here), or is one of the reserved names <code>"&lt;root&gt;"</code> and <code>"&lt;numeric&gt;"</code> (<code>contracts/cells.md</code>, <em>Projections</em>). The message for this case is unspecified.</li>
+</ul>
+<p>No work is attempted, so there is no exception. The node carries a repair description naming the edge, the two celltypes and the two disambiguating spellings; that message text is contract and is specified in <code>contracts/cells.md</code>, <em>Connecting</em>.</p>
+<p><strong>Writing an ill-formed link directly raises.</strong> An invalid request raises. Only a <em>valid</em> request that invalidates someone else's wiring leaves a node <code>miswired</code>: retyping a source that has projecting consumers is never refused, and each affected consumer becomes <code>miswired</code>. <code>Context.set_graph</code> <strong>derives</strong> the state rather than rejecting the graph, so a graph can be saved and handed on mid-repair.</p>
+<p><strong>Standalone consumers can be <code>miswired</code> too.</strong> A standalone Cell <code>c = b[3]</code>, or a standalone Pin wired to <code>b[3]</code>, reports <code>miswired</code> after <code>b</code> is retyped so that the link would project and convert. Its <code>.checksum</code> is <code>None</code> (<code>contracts/cells.md</code>, <code>contracts/pins.md</code>).</p>
+<h3 id="three-rules-that-fix-the-vocabulary">Three rules that fix the vocabulary</h3>
+<p>These are the places where a plausible reading is wrong.</p>
+<p><strong>1. <code>waiting</code> versus <code>computing</code> is decided at dispatch, not by the backend.</strong> <code>computing</code> means <em>submitted</em>, not <em>executing</em>. No backend is asked to report start-of-execution: jobserver and Dask may not surface it, and a state that depended on such a report would be unobtainable for some backends and racy for the rest. Two consequences:</p>
+<ul>
+<li>A transformer whose pins are all literals has nothing to wait for. It goes <strong>straight to <code>computing</code> and is never observed <code>waiting</code></strong>; only its downstream shows <code>waiting</code>.</li>
 <li>A node is <code>computing</code> <strong>from dispatch onwards, including the window in which its transformation identity is still being constructed.</strong> There is no separate "constructing" state, and <code>computing</code> is not delayed until the identity exists (<code>contracts/workflow-context.md</code> states the same rule from the execution side).</li>
 </ul>
-<p><strong>2. <code>computing</code> is a transformer-node state.</strong> A cell node's own work — a conversion, a projection, a validator, a cell-level join — reports <strong><code>waiting</code></strong> while it is in flight, and a <strong>cell node is never observed <code>computing</code></strong>. This is the same vocabulary the standalone subset uses in <code>contracts/cells.md</code>, where a Cell's states are <code>unwired</code>, <code>waiting</code>, <code>complete</code> and <code>failed</code>.</p>
-<p><strong>3. Upstream failure never propagates as <code>failed</code>.</strong> A dependent of a failed node is <strong><code>blocked</code></strong>, with block reason <code>blocked-by-error</code>. <code>failed</code> is reserved for a node's <strong>own</strong> evaluation, and a node's <code>.exception</code> is its own, never a borrowed copy of an upstream's. Reading a failure therefore always identifies the node that produced it; to find the cause of a <code>blocked</code> node, follow the block reason upstream.</p>
+<p><strong>2. <code>computing</code> is a transformer-node state.</strong> A cell node's own work (a conversion, a projection, a validator, a cell-level join) reports <strong><code>waiting</code></strong> while it is in flight, and a <strong>cell node is never observed <code>computing</code></strong>. The standalone vocabulary agrees: a standalone Cell or Pin reports only <code>unwired</code>, <code>miswired</code>, <code>waiting</code>, <code>complete</code> and <code>failed</code> (<em>States as seen through barriers and handles</em>).</p>
+<p><strong>3. Upstream failure never propagates as <code>failed</code>.</strong> A dependent of a failed node is <strong><code>blocked</code></strong>, with block reason <code>blocked-by-error</code>. <code>failed</code> is reserved for a node's <strong>own</strong> evaluation, and a node's <code>.exception</code> is its own, never a borrowed copy of an upstream's. Reading a failure therefore always identifies the node that produced it; to find the cause of a <code>blocked</code> node, follow its <code>block_reason</code> upstream.</p>
 <h2 id="equilibrium-quiescence-and-what-they-do-not-mean">Equilibrium, quiescence, and what they do not mean</h2>
 <table>
 <thead>
@@ -310,7 +349,7 @@
 <tbody>
 <tr>
 <td>equilibrium</td>
-<td><code>complete</code>, <code>failed</code>, <code>blocked</code>, <code>unwired</code></td>
+<td><code>complete</code>, <code>failed</code>, <code>blocked</code>, <code>unwired</code>, <code>miswired</code></td>
 <td>an <strong>external change</strong></td>
 </tr>
 <tr>
@@ -322,53 +361,84 @@
 </table>
 <p>An external change perturbs; the Context relaxes. Nothing else moves a node.</p>
 <ul>
-<li><strong>Quiescence ⇔ no node is <code>waiting</code> or <code>computing</code>.</strong> Within scope — a DAG of reproducible transformations — quiescence is guaranteed reachable in finite steps after a finite burst of edits.</li>
-<li><strong>Quiescence is a property of node states only.</strong> A <code>complete</code> node may still have a <strong>superseded run in flight</strong> — work that is obsolete by construction and whose result nothing will consume. It does not count against quiescence. So <strong>quiescent ≠ cluster-idle</strong>; <code>prune</code> is what makes the two coincide (below, and <code>contracts/workflow-context.md</code>).</li>
-<li><strong>Quiescence ≠ success.</strong> Equilibrium includes <code>failed</code>, <code>blocked</code> and <code>unwired</code>. Success is the strictly stronger condition that every witness or otherwise observable node is <code>complete</code>. A graph-wide barrier returning is a statement about motion, not about outcomes.</li>
+<li><strong>Quiescence ⇔ no node is <code>waiting</code> or <code>computing</code>.</strong> Within scope (a DAG of reproducible transformations), quiescence is guaranteed reachable in finite steps after a finite burst of edits.</li>
+<li><strong>Quiescence is a property of node states only.</strong> A <code>complete</code> node may still have a <strong>superseded run in flight</strong>: work that is obsolete by construction and whose result nothing will consume. It does not count against quiescence. So <strong>quiescent ≠ cluster-idle</strong>; <code>prune</code> is what makes the two coincide (below, and <code>contracts/workflow-context.md</code>).</li>
+<li><strong>Quiescence ≠ success.</strong> Equilibrium includes <code>failed</code>, <code>blocked</code>, <code>unwired</code> and <code>miswired</code>. Success is the strictly stronger condition that every witness or otherwise observable node is <code>complete</code>. A graph-wide barrier returning is a statement about motion, not about outcomes.</li>
 </ul>
 <h2 id="connectivity-when-is-a-node-sufficiently-connected">Connectivity: when is a node sufficiently connected</h2>
-<p><strong>Sufficiently connected = every required pin wired, and every connected-optional pin wired.</strong> An unconnected optional pin is accepted and is simply not part of the transformation; it does not gate. The rule itself is substrate and belongs to <code>contracts/pins.md</code> (<code>sufficiently_connected</code>); the Context only consumes its verdict.</p>
+<p><strong>Sufficiently connected = every required pin wired, and every connected optional pin wired.</strong> An unconnected optional pin is accepted and is simply not part of the transformation; it does not gate. The rule itself is substrate and belongs to <code>contracts/pins.md</code> (<code>sufficiently_connected</code>); the Context only consumes its verdict.</p>
 <ul>
-<li>A node reaches <code>computing</code> iff every required upstream is <code>complete</code> <strong>and</strong> every connected-optional upstream is either <code>complete</code> or definitively in its empty/dropped case — the upstream resolving to the canonical JSON null, which <strong>on a connected optional pin means that pin's absence</strong> and drops it from the transformation. "Pin absent" and "pin present-but-null" canonicalize to the same transformation checksum; that is intended and is feature 6's identity rule (<code>contracts/pins.md</code>).</li>
-<li>A connected optional pin therefore <strong>gates exactly like a required pin.</strong> Its only relaxation is that <em>resolving to null satisfies the gate</em> rather than failing it. An <strong>errored</strong> connected-optional upstream <strong>blocks</strong> the node like any other failed upstream; it is never skipped. Optionality normalizes a successful null, never an error.</li>
-<li><strong>Admitted trade-off: connected-optional pins lose laziness.</strong> The upstream always runs, even when its null is then dropped. "Optional" means "may be absent <strong>or</strong> null, but if connected, always computed" — the opposite of the intuitive reading. Optional pins can be difficult to use, and this is the reason.</li>
+<li>A node reaches <code>computing</code> iff every required upstream is <code>complete</code> <strong>and</strong> every connected optional upstream is either <code>complete</code> or definitively in its empty case: the upstream resolves to the canonical JSON null, which <strong>on a connected optional pin means that pin's absence</strong> and drops it from the transformation. "Pin absent" and "pin present but null" canonicalize to the same transformation checksum; that is intended, and is the identity rule of <code>contracts/pins.md</code>.</li>
+<li>A connected optional pin therefore <strong>gates exactly like a required pin.</strong> Its only relaxation is that <em>resolving to null satisfies the gate</em> rather than failing it. An <strong>errored</strong> connected optional upstream <strong>blocks</strong> the node like any other failed upstream; it is never skipped. Optionality normalizes a successful null, never an error.</li>
+<li><strong>Admitted trade-off: connected optional pins lose laziness.</strong> The upstream always runs, even when its null is then dropped. "Optional" means "may be absent <strong>or</strong> null, but if connected, always computed", which is the opposite of the intuitive reading. This is why optional pins can be difficult to use.</li>
 </ul>
 <h2 id="how-each-state-is-derived">How each state is derived</h2>
 <p><strong>Derivation happens once per controller turn, for the whole graph, in one synchronous non-yielding pass in topological order</strong> (sources before consumers). Every state below is the outcome of that pass. <strong>No state is ever set from a background thread</strong>: a result arriving from execution enters as a continuation on the controller and is applied by the <em>next</em> pass, exactly like an edit (<code>contracts/workflow-context.md</code>).</p>
-<p>Topological order is what makes the derived states mutually consistent within one turn: a consumer is always derived against upstream states that have already been derived in the same pass, never against a half-updated picture.</p>
+<p>Topological order is what makes the derived states mutually consistent within one turn: a consumer is always derived against upstream states that were already derived in the same pass, never against a half-updated picture.</p>
 <h3 id="transformer-nodes">Transformer nodes</h3>
-<p>For the code input and for every declared pin, <strong>in name order</strong>:</p>
+<p><strong>A compiled Stage 1 failure comes first.</strong> If a compiled transformer fails its static, data-independent Stage 1 checks (<code>contracts/compiled-pins.md</code>, section 5), that is the transformer's <strong>own</strong> failure, whatever its inputs: the node is <strong><code>failed</code></strong>, <code>block_reason</code> is <code>None</code>, and the Stage 1 diagnostic is its <code>.exception</code>. No pin is resolved and no transformation is built.</p>
+<p>Otherwise, each input is classified. The inputs are the code, which counts as a <strong>pseudo-pin named <code>"code"</code></strong>, and every declared pin, taken <strong>in name order</strong>:</p>
 <ol>
-<li>A pin with <strong>no edge and no stored value</strong>, and not declared optional, is a <strong>locally missing</strong> input: the node's state is <strong><code>unwired</code></strong>, and the pin is named. The <strong>code input counts as a pseudo-pin under the name <code>"code"</code></strong> and follows the same rule.</li>
-<li>An input whose upstream node is <strong>not <code>complete</code></strong> makes the node non-current. The upstream's state maps to a pending reason:</li>
+<li><strong>Locally missing.</strong> An input with no edge and no stored value, and not declared optional, makes the node <strong><code>unwired</code></strong>. The input's entry is <code>unwired</code>.</li>
+<li><strong>Locally miswired.</strong> An input whose incoming link is ill-formed (<em><code>miswired</code> is a static defect</em>) makes the node <strong><code>miswired</code></strong>. The input's entry is <code>miswired</code>. This is the sister rule of step 1: a node that is not correctly connected is never described in terms of its upstreams.</li>
+<li><strong>The pin's own failure.</strong> A pin can fail in two ways, and they are reported differently. The dividing line is whether the pin <strong>has a valid checksum for its celltype</strong>:</li>
 </ol>
 <table>
 <thead>
 <tr>
-<th>Upstream state</th>
-<th>Pending reason contributed</th>
+<th>The pin</th>
+<th>Transformer state</th>
+<th>The pin's entry</th>
+<th><code>tf.exception</code></th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td><code>failed</code>, or <code>blocked</code> with reason <code>blocked-by-error</code></td>
+<td>has <strong>no valid checksum</strong> for its celltype: a null rejected by the required-pin rule, a failed conversion from the upstream celltype to the pin celltype, or a checksum not deserializable as the pin celltype</td>
+<td><strong><code>blocked</code></strong></td>
 <td><code>blocked-by-error</code></td>
+<td><strong><code>None</code></strong></td>
+</tr>
+<tr>
+<td><strong>has</strong> a valid checksum that the transformer cannot use: for example a truly mixed value on a compiled transformer (<code>contracts/compiled-pins.md</code>, section 5)</td>
+<td><strong><code>failed</code></strong></td>
+<td>none (<code>block_reason</code> is <code>None</code>)</td>
+<td><strong>set</strong>: the diagnostic, naming the pin</td>
+</tr>
+</tbody>
+</table>
+<p>In the first row the failure belongs to the pin: the pin's state is <code>failed</code> and its failure is readable as <code>pin.exception</code> (<code>contracts/pins.md</code>). No transformation is built, so nothing of the transformer's own has failed. In the second row the pin is fine and the failure is the transformer's own, so it is reported as one. <strong>The state follows this rule, not where the check happens to run</strong>: a rejection detected before hashing and one detected in the executor give the same state.
+4. <strong>An upstream that is not <code>complete</code>.</strong> The upstream's state maps to the input's entry:</p>
+<table>
+<thead>
+<tr>
+<th>Upstream state</th>
+<th>Entry contributed</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>miswired</code>, or <code>blocked</code> with reason <code>blocked-by-miswiring</code></td>
+<td><code>blocked-by-miswiring</code></td>
 </tr>
 <tr>
 <td><code>unwired</code>, or <code>blocked</code> with reason <code>blocked-by-unwired</code></td>
 <td><code>blocked-by-unwired</code></td>
 </tr>
 <tr>
-<td><code>waiting</code>, <code>computing</code> (anything still progressing)</td>
-<td><code>waiting</code></td>
+<td><code>failed</code>, or <code>blocked</code> with reason <code>blocked-by-error</code></td>
+<td><code>blocked-by-error</code></td>
+</tr>
+<tr>
+<td><code>waiting</code>, <code>computing</code> (still progressing)</td>
+<td>none: the input is waiting</td>
 </tr>
 </tbody>
 </table>
 <ol>
-<li>A pin's <strong>own</strong> failure — a null rejected by the required-pin rule, or a failed conversion from the upstream celltype to the pin celltype — fails <strong>the pin</strong>. The node is <strong><code>blocked</code></strong> with reason <code>blocked-by-error</code>, naming that pin. The pin's failure is readable on the pin handle (<code>contracts/pins.md</code>), and <strong>the transformer's own <code>.exception</code> stays <code>None</code></strong>: no transformation was built, so nothing of the transformer's own failed.</li>
-<li>With <strong>no pending input</strong>, the node is dispatched and becomes <strong><code>computing</code></strong>. When its run answers, it becomes <code>complete</code>, or — on its <strong>own</strong> failure — <code>failed</code>, with the failure as its <code>.exception</code>.</li>
+<li><strong>Dispatch.</strong> With every input complete (or, for a connected optional pin, resolved to null), the node is dispatched and becomes <strong><code>computing</code></strong>. When its run answers, it becomes <code>complete</code>, or, on its <strong>own</strong> failure, <code>failed</code> with the failure as its <code>.exception</code>.</li>
 </ol>
-<p>The winning label among several pending inputs is decided by the precedence in <em>Block reasons</em> below.</p>
+<p>If any input has an entry, the node's state and label are the maximum entry under the precedence in <em>Block reasons</em>: <code>miswired</code> or <code>unwired</code> is the node's state, and a <code>blocked-by-…</code> value makes it <code>blocked</code> with that reason. If inputs remain but none has an entry, the node is <strong><code>waiting</code></strong>.</p>
 <h3 id="cell-nodes">Cell nodes</h3>
 <table>
 <thead>
@@ -383,7 +453,11 @@
 <td><strong><code>unwired</code></strong></td>
 </tr>
 <tr>
-<td>a literal producer, or an upstream that is <code>complete</code>, with no conversion to do</td>
+<td>an incoming link that is ill-formed</td>
+<td><strong><code>miswired</code></strong></td>
+</tr>
+<tr>
+<td>a literal producer, or an upstream that is <code>complete</code>, with no own work to do</td>
 <td><strong><code>complete</code></strong></td>
 </tr>
 <tr>
@@ -395,18 +469,25 @@
 <td><strong><code>failed</code></strong>, with the error as <code>.exception</code></td>
 </tr>
 <tr>
+<td>without a hashserver: a <code>w</code> file mount, a share or a widget hub on the cell, and a new checksum whose buffer is not in the buffer cache</td>
+<td><strong><code>waiting</code></strong> while the buffer is fingertipped, then <code>complete</code>, also when the fingertip fails (<code>contracts/workflow-context.md</code>, <em>A Context without a hashserver</em>)</td>
+</tr>
+<tr>
 <td>an upstream that is not <code>complete</code></td>
-<td><strong><code>blocked</code></strong> (or <code>waiting</code>), by the same mapping as for transformers</td>
+<td><strong><code>blocked</code></strong> or <strong><code>waiting</code></strong>, by the same mapping as for transformers (step 4)</td>
 </tr>
 </tbody>
 </table>
 <ul>
-<li><strong>A cell's own conversion failure is <code>failed</code>, not <code>blocked</code>.</strong> This is the cell-level counterpart of a transformer's own failure: the work that failed was the cell's, so the exception is the cell's. Contrast the transformer <em>pin</em> case above, where the conversion failure belongs to the pin and the transformer node is merely <code>blocked</code>.</li>
+<li><strong>A cell's own conversion failure is <code>failed</code>, not <code>blocked</code>.</strong> This is the cell-level counterpart of a transformer's own failure: the work that failed was the cell's, so the exception is the cell's. Contrast the transformer <em>pin</em> case above, where a conversion into the pin celltype leaves the pin with no valid checksum, so the failure belongs to the pin and the transformer node is merely <code>blocked</code>.</li>
 <li><strong>A mount that cannot sense its file fails the cell</strong> (<code>failed</code>) with the sense error, and <code>clear_exception()</code> on such a node <strong>re-polls the mount</strong> rather than re-deriving (<code>contracts/attachments.md</code>, <em>Sense errors fail the cell</em>). The stored value is kept but masked, and unmounting unmasks it.</li>
-<li><strong>A cell-level join is plain local Python — no Transformation and no Expression behind it</strong> — assembled in-process from its root value and connected sub-path sources, which is why it is never observed <code>computing</code>, only <code>waiting</code> then <code>complete</code>. This is <strong>provisional</strong>: a future re-implementation is to cache joins and evaluate them where the data is, and <strong>no join identity is promised</strong>. The full observable contract is <code>contracts/cells.md</code>, <em>Cell-level joins</em>; this table states only where a join sits in the state machine.</li>
+<li><strong>A root edge and sub-path edges are mutually exclusive.</strong> If a cell has sub-path edges, its root may hold only a checksum (a literal), never a source. So <code>ctx.join = ctx.base; ctx.join["k"] = ctx.other</code> is <strong>refused</strong>, and so is the reverse order; a literal root with sub-path edges is a legal join. The exception class is unspecified (deferred). <code>contracts/cells.md</code> states the same rule from the wiring side.</li>
+<li><strong>A cell-level join is evaluated as a cell join: an Expression of its own kind, not a Transformation</strong> (<code>contracts/expressions.md</code>, <em>Cell joins</em>). It is the cell node's own work, which is why it is never observed <code>computing</code>, only <code>waiting</code> then <code>complete</code>, whether the cell join is evaluated in this process or dispatched. A failure of that work makes the node <code>failed</code>: a conversion of the root or of a member, or an input whose buffer is neither in this process nor on the hashserver (<code>CacheMissError</code>). The full observable contract is <code>contracts/cells.md</code>, <em>Cell-level joins</em>; this table states only where a join sits in the state machine.</li>
 </ul>
+<h3 id="elided-anonymous-nodes">Elided anonymous nodes</h3>
+<p>An anonymous node that is elided by fusion (<code>contracts/cells.md</code>; <code>contracts/expressions.md</code>, <em>Fusion</em>) is <strong>excluded from state derivation and from barriers</strong>. It has no state, is never <code>waiting</code>, never holds a barrier open, and contributes no entry to anyone's <code>block_reason</code>. <strong>A node below an elided one derives from the root of the fused run</strong>, the non-elided source whose checksum the fused Expression starts from, as though the whole fused run were one link.</p>
 <h2 id="block-reasons">Block reasons</h2>
-<p><strong>The block reason is a first-class, queryable enumeration</strong>, with exactly two members:</p>
+<p><strong>The block reason is a first-class, queryable enumeration with exactly three members:</strong></p>
 <table>
 <thead>
 <tr>
@@ -423,80 +504,93 @@
 </tr>
 <tr>
 <td><code>blocked-by-error</code></td>
-<td>something upstream failed</td>
+<td>something upstream failed, or a pin has no valid checksum</td>
 <td>fix code or data</td>
+</tr>
+<tr>
+<td><code>blocked-by-miswiring</code></td>
+<td>something upstream is <code>miswired</code></td>
+<td>re-wire it with an explicit conversion</td>
 </tr>
 </tbody>
 </table>
-<p>The two members are those <strong>literal strings</strong>; <code>BlockReason</code> (and <code>NodeState</code> above) is a <code>Literal</code> type alias, not an <code>enum.Enum</code>, so compare against the string and do not expect member attributes. Both reasons are the one state <code>blocked</code> — both need an external change to leave — but they imply different user actions, so the reason must be inspectable by UIs and tests rather than recoverable only from prose.</p>
+<p>The three members are those <strong>literal strings</strong>. <code>BlockReason</code>, like <code>NodeState</code>, is a <code>Literal</code> type alias, not an <code>enum.Enum</code>, so compare against the string and do not expect member attributes. All three are the one state <code>blocked</code>, and each needs an external change to leave it, but they imply different user actions. That is why the reason must be inspectable by UIs and tests rather than recoverable only from prose.</p>
+<p><strong>Per-input entries use a five-member domain</strong>: the three block reasons, plus the two local defects <code>miswired</code> and <code>unwired</code>. An entry of <code>miswired</code> or <code>unwired</code> names an input of <em>this</em> node that is itself miswired or missing; a <code>blocked-by-…</code> entry names an input whose upstream is stuck.</p>
 <h3 id="precedence">Precedence</h3>
-<p>When several inputs are pending at once (author's ruling, 2026-09-18):</p>
-<pre><code>unwired  &gt;  blocked-by-unwired  &gt;  blocked-by-error  &gt;  waiting
+<p>When several inputs have entries, the node's label is the maximum under this order:</p>
+<pre><code>miswired  &gt;  unwired  &gt;  blocked-by-miswiring  &gt;  blocked-by-unwired  &gt;  blocked-by-error
 </code></pre>
 <ul>
-<li><strong>A <em>locally</em> missing input wins outright</strong>: the node is <code>unwired</code>, not <code>blocked</code>. A node that is not sufficiently connected is never described in terms of its upstreams.</li>
-<li><strong>Among upstreams, <code>blocked-by-unwired</code> beats <code>blocked-by-error</code>.</strong> The rationale: <strong>having all inputs wired — the correct topology — has priority over errors, which are about correct values</strong>; and an errored upstream is quite often errored <em>only</em> because something below <em>it</em> is still unwired. Report the missing wiring first, because fixing it may dissolve the error.</li>
-<li><strong><code>waiting</code> loses to every blocking reason.</strong> A node with one progressing input and one blocked input is <code>blocked</code>, not <code>waiting</code>: the progressing input will settle on its own, the blocked one will not, so the honest report is that the node is stuck.</li>
+<li><strong>A local defect wins over routine incompleteness.</strong> <code>unwired</code> is a state every node passes through while a graph is built; <code>miswired</code> is always a defect, and no amount of further wiring dissolves it. If <code>unwired</code> won, a miswired edge on a join would hide behind an unwired sibling edge until the wiring was finished, which is exactly when it should already have been visible. The same tiebreak carries over to the upstream reasons, which is why <code>blocked-by-miswiring</code> beats <code>blocked-by-unwired</code>.</li>
+<li><strong>A local defect wins outright over upstream reasons</strong>: the node is <code>miswired</code> or <code>unwired</code>, not <code>blocked</code>. A node that is not correctly connected is never described in terms of its upstreams.</li>
+<li><strong>Among upstreams, <code>blocked-by-unwired</code> beats <code>blocked-by-error</code>.</strong> Having all inputs wired, the correct topology, has priority over errors, which are about correct values. And an errored upstream is quite often errored <em>only</em> because something below <em>it</em> is still unwired. Report the missing wiring first, because fixing it may dissolve the error.</li>
+<li><strong>A waiting input loses to everything.</strong> It contributes no entry at all. A node with one progressing input and one blocked input is <code>blocked</code>, not <code>waiting</code>: the progressing input will settle on its own and the blocked one will not, so the honest report is that the node is stuck. A node is <code>waiting</code> only when no input has an entry.</li>
 </ul>
 <h3 id="where-each-form-is-visible">Where each form is visible</h3>
-<p>Note the deliberate asymmetry: a cell has one input, a transformer has many, so <strong>a transformer names its inputs</strong> while a cell reports the category.</p>
+<p><code>block_reason</code> is a <strong>detached copy</strong> (mutating it changes nothing) and is bound-only. Its shape is decided by <strong>topology, not by state</strong>, so a consumer knows which form to expect from the graph alone:</p>
 <table>
 <thead>
 <tr>
-<th>Read</th>
-<th>Reports</th>
+<th>Node</th>
+<th><code>.block_reason</code> when the node is <code>unwired</code>, <code>miswired</code> or <code>blocked</code></th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td>a bound Cell's <code>.block_reason</code> (including <code>tf.result</code>)</td>
-<td>the <strong>enum</strong>, or <code>None</code></td>
+<td>a <strong>transformer</strong></td>
+<td>a <strong>dict</strong> <code>{input name: entry}</code>, keyed by pin name, with <code>"code"</code> for the code pseudo-pin</td>
 </tr>
 <tr>
-<td>a bound Transformer's <code>.block_reason</code></td>
-<td>the <strong>sorted list of input pin names</strong> responsible, including <code>"code"</code>; a <strong>detached copy</strong> (mutating it changes nothing); <code>None</code> unless the node is <code>unwired</code>, <code>blocked</code> or <code>waiting</code></td>
+<td>a <strong>cell with one-level inputs</strong> (a join)</td>
+<td>a <strong>dict</strong> <code>{edge path: entry}</code>, keyed by the edge's one-level path</td>
+</tr>
+<tr>
+<td>a <strong>cell whose only input is at the root</strong> (including <code>tf.result</code>)</td>
+<td>a <strong>single value</strong> from the five-member domain</td>
 </tr>
 </tbody>
 </table>
-<p>Which pins the transformer's list names:</p>
 <ul>
-<li>in <strong><code>unwired</code></strong> and <strong><code>waiting</code></strong>: the pins in the <strong>winning category</strong> only;</li>
-<li>in <strong><code>blocked</code></strong>: <strong>every</strong> pin blocked for either reason, so the list is the full set of inputs needing attention while the enum (on <code>tf.result.block_reason</code>) says which category won.</li>
+<li><strong>The dict holds one entry per input that is neither <code>complete</code> nor <code>waiting</code></strong>, and only those. Its values are drawn from the five-member domain.</li>
+<li><strong>The label is the maximum of the entries under the precedence.</strong> There is no separate field for "which category won". <code>tf.result.block_reason</code> is simply the ordinary single-value reading of the result cell, whose one input is the transformer; it is not a second surface for the transformer's label.</li>
+<li><strong>A node that is itself <code>waiting</code> reports <code>None</code></strong>, not an empty dict. So does a node that is <code>computing</code>, <code>complete</code> or <code>failed</code>: in particular, a compiled Stage 1 failure and a valid-but-unusable pin value both report <code>None</code> alongside the transformer's <code>.exception</code>.</li>
+<li>A root input and one-level inputs never coexist (<em>Cell nodes</em>), so the two cell forms do not overlap, and there is no key for the root.</li>
 </ul>
-<p><strong>The precedence decides the label, never the completeness of the list.</strong> <code>contracts/pins.md</code> states the same split from the handle side.</p>
+<p><strong><code>.state</code> says whether the defect is local; the entries say where to look.</strong> A <code>blocked-by-miswiring</code> entry means a miswiring <em>at or above</em> that input, exactly as <code>blocked-by-unwired</code> names a missing wire any distance upstream. A <code>miswired</code> or <code>unwired</code> entry means the defect is on that input itself, and the walk ends there. Otherwise, follow that input upstream.</p>
+<p><code>contracts/pins.md</code> states the transformer form from the pin side, and <code>contracts/cells.md</code> the cell forms from the cell side; this section is the canonical statement.</p>
 <h3 id="transitivity">Transitivity</h3>
-<p><strong>Both reasons propagate.</strong> A consumer of an error-blocked node is itself <code>blocked-by-error</code>; a consumer of an unwired or unwired-blocked node is <code>blocked-by-unwired</code>; where both apply, the precedence above decides. A downstream node therefore reports <strong>why the graph is stuck</strong>, not merely that its immediate input is not ready — a node ten edges below a missing wire still says <code>blocked-by-unwired</code>.</p>
+<p><strong>All three reasons propagate.</strong> A consumer of an error-blocked node is itself <code>blocked-by-error</code>. A consumer of an unwired or unwired-blocked node is <code>blocked-by-unwired</code>. A consumer of a <code>miswired</code> node, or of one already <code>blocked-by-miswiring</code>, is <code>blocked-by-miswiring</code>. Where several apply, the precedence above decides. A downstream node therefore reports <strong>why the graph is stuck</strong>, not merely that its immediate input is not ready: a node ten edges below a missing wire still says <code>blocked-by-unwired</code>.</p>
 <h2 id="leaving-a-state">Leaving a state</h2>
 <ul>
 <li><strong>An equilibrium state is left only by an external change</strong>: wiring or unwiring, an edit, a graph replacement, or <code>clear_exception()</code>. Nothing in the runtime retries, ages out, or re-derives an equilibrium node on its own.</li>
-<li><strong><code>clear_exception()</code> is the external change that releases <code>failed</code>.</strong> It is forwarded to the node's Context-private Expression/Transformation, and it:</li>
-<li>drops the recorded exception,</li>
-<li>discards the cached failure fact,</li>
-<li><strong>softcancels</strong> the node's current run (<code>contracts/cancellation.md</code>),</li>
+<li><strong><code>clear_exception()</code> is the external change that releases <code>failed</code>.</strong> It is forwarded to the node's Context-private Expression or Transformation, and it:</li>
+<li>drops the recorded exception;</li>
+<li>discards the cached failure fact;</li>
+<li><strong>softcancels</strong> the node's current run (<code>contracts/cancellation.md</code>);</li>
 <li>re-derives the node from its <strong>current</strong> inputs.</li>
 </ul>
-<p>It is a <strong>no-op on a node with no exception</strong>. There is <strong>no automatic retry</strong>: classifying a failure as transient and retrying it is a Transformation/backend concern, not Context logic (<em>Non-goals</em>).
+<p>It is a <strong>no-op on a node with no exception</strong>. There is <strong>no automatic retry</strong>: classifying a failure as transient and retrying it is a Transformation or backend concern, not Context logic (<em>Non-goals</em>).
 - <strong>A repaired failure must revoke before it recomputes.</strong> After the edit that repairs a failure, no downstream node is left <code>complete</code> on the failed node's stale state, and <strong>a failure never survives the edit that repairs it</strong>. This is the cascade invariant below, applied to the <code>failed</code> state.
 - <strong>Only the failing node reports the exception.</strong> Its dependents report <code>blocked</code> with no exception of their own.
-- <strong>A node's failure is reported identically on the node and on its result handle</strong>: <code>ctx.tf.exception</code> and <code>ctx.tf.result.exception</code> are the same failure.
-- <strong>A failure is an event, not a string.</strong> Re-deriving after an edit produces a <strong>new</strong> failure even when the message is identical; nothing may treat two equal messages as one failure, and nothing may suppress a re-raised failure because it "looks the same".</p>
+- <strong><code>.exception</code> is a string</strong>, on nodes as on standalone Cells, Pins and Transformations. A node's failure is reported identically on the node and on its result handle: <code>ctx.tf.exception</code> and <code>ctx.tf.result.exception</code> are the same failure.
+- <strong>A failure is an event, not a message.</strong> Re-deriving after an edit produces a <strong>new</strong> failure even when the message is identical. Nothing may treat two equal messages as one failure, and nothing may suppress a re-raised failure because it "looks the same".</p>
 <h2 id="the-cascade-and-glitch-freedom">The cascade, and glitch-freedom</h2>
-<p>A <strong>change</strong> is an update to a node's value, config or identity, or to connectivity. The cascade rule:</p>
+<p>A <strong>change</strong> is an update to a node's value, configuration or identity, or to connectivity. The cascade rule:</p>
 <blockquote>
-<p>On any change to a node's identity or connectivity, the node re-derives its own state. If it <strong>leaves <code>complete</code></strong>, every downstream node <strong>re-derives its own state</strong> — landing in <code>waiting</code> <em>or</em> <code>blocked</code> per its full upstream set — <strong>synchronously, before</strong> the wavefront recompute is launched.</p>
+<p>On any change to a node's identity or connectivity, the node re-derives its own state. If it <strong>leaves <code>complete</code></strong>, every downstream node <strong>re-derives its own state</strong>, landing in <code>waiting</code> <em>or</em> <code>blocked</code> per its full upstream set, <strong>synchronously, before</strong> the wavefront recompute is launched.</p>
 </blockquote>
 <p>Two refinements over a blunt "all downstream become pending":</p>
 <ul>
 <li><strong>Re-derive, don't force-set.</strong> A multi-input downstream may belong in <code>blocked</code>, not <code>waiting</code>, because it also depends on a failed or unwired node. Each downstream computes its own state against its <strong>full</strong> upstream set; the cascade tells it to recompute its state, not what state to take.</li>
 <li><strong>The trigger is "leaves <code>complete</code>"</strong>, which is broader than "an input checksum changed". It includes:</li>
-<li><strong>self-edits</strong> — editing a node's code or load-bearing metadata changes its <strong>own</strong> transformation identity with no input change;</li>
-<li><strong>disconnection</strong> — removing a required pin moves a node <code>complete → unwired</code>, and its downstream to <code>blocked</code>.</li>
+<li><strong>self-edits</strong>: editing a node's code or load-bearing metadata changes its <strong>own</strong> transformation identity with no input change;</li>
+<li><strong>disconnection</strong>: removing a required pin moves a node <code>complete → unwired</code>, and its downstream to <code>blocked</code>.</li>
 </ul>
 <h3 id="the-glitch-freedom-invariant">The glitch-freedom invariant</h3>
 <blockquote>
-<p><strong>Invalidation dominates recomputation.</strong> On any change, mark the whole downstream cone non-current — revoke it from <code>complete</code> — <em>before</em> launching the wavefront recompute. <strong>Never fire a node on a stale-completed input.</strong></p>
+<p><strong>Invalidation dominates recomputation.</strong> On any change, mark the whole downstream cone non-current (revoke it from <code>complete</code>) <em>before</em> launching the wavefront recompute. <strong>Never fire a node on a stale completed input.</strong></p>
 </blockquote>
-<p>The textbook diamond: with <code>a = 1; b = a + 1; c = a + b</code>, when <code>a → 10</code> the danger is <code>c</code> firing on the <strong>new</strong> <code>a</code> and <code>b</code>'s <strong>stale</strong> result, giving a transient <code>c = 12</code> that corresponds to no consistent state of the graph. The invariant forbids it: the instant <code>a</code> changes, <code>b</code> and <code>c</code> are synchronously revoked to <code>waiting</code>, so <code>c</code> cannot fire until <code>b</code> recompletes to <code>11</code>, and <code>c</code> then gives <code>21</code>. <strong>The only visible effect of the invariant is an honest <code>waiting</code> on <code>c</code>.</strong></p>
+<p>The textbook diamond: with <code>a = 1; b = a + 1; c = a + b</code>, when <code>a → 10</code> the danger is <code>c</code> firing on the <strong>new</strong> <code>a</code> and <code>b</code>'s <strong>stale</strong> result, giving a transient <code>c = 12</code> that corresponds to no consistent state of the graph. The invariant forbids it. The instant <code>a</code> changes, <code>b</code> and <code>c</code> are synchronously revoked to <code>waiting</code>, so <code>c</code> cannot fire until <code>b</code> recompletes to <code>11</code>, and <code>c</code> then gives <code>21</code>. <strong>The only visible effect of the invariant is an honest <code>waiting</code> on <code>c</code>.</strong></p>
 <p>The two halves are decoupled and have very different costs:</p>
 <table>
 <thead>
@@ -509,12 +603,12 @@
 <tbody>
 <tr>
 <td><strong>marking</strong> the cone non-current</td>
-<td>cheap in-process bookkeeping — state flips, no I/O</td>
+<td>cheap in-process bookkeeping: state flips, no I/O</td>
 <td>must complete in <strong>one non-yielding pass before any descendant is evaluated for firing</strong></td>
 </tr>
 <tr>
 <td><strong>building and launching</strong> the refreshed work</td>
-<td>real work — identity construction, submission</td>
+<td>real work: identity construction, submission</td>
 <td>lazy and prioritised; <strong>need not</strong> be synchronous</td>
 </tr>
 </tbody>
@@ -522,20 +616,20 @@
 <p>That ordering is the whole requirement. A node becomes eligible to fire only once <strong>all</strong> its inputs are current, so glitch-freedom holds regardless of when the replacement work is rebuilt.</p>
 <h3 id="the-negative-half-is-contract-too">The negative half is contract too</h3>
 <p><strong>Nothing outside the cone may leave <code>complete</code>.</strong> The cone of an edited node is its <strong>transitive consumers</strong>: two consumers of one root are not in each other's cones, and an input is never in its consumer's cone.</p>
-<p>Over-invalidation <strong>never produces a wrong answer</strong>, which is exactly what makes it insidious: a deterministic body recomputes to the same checksum, so state comparisons and checksum comparisons see nothing while work was thrown away and a cluster was kept busy. The contract is therefore <strong>both</strong> that the whole cone is revoked <strong>and</strong> that nodes outside it are untouched — including <strong>not re-executed</strong>.</p>
+<p>Over-invalidation <strong>never produces a wrong answer</strong>, which is exactly what makes it insidious. A deterministic body recomputes to the same checksum, so state comparisons and checksum comparisons see nothing, while work was thrown away and a cluster was kept busy. The contract is therefore <strong>both</strong> that the whole cone is revoked <strong>and</strong> that nodes outside it are untouched, including <strong>not re-executed</strong>.</p>
 <h3 id="there-is-no-exception-for-cache-hits">There is no exception for cache hits</h3>
-<p><strong>A turn that makes a node newly eligible to compute leaves it pending in that turn</strong>; its result — or its failure — is settled by a <strong>later</strong> turn. No public operation returns a freshly computed result, and <strong>a locally cached result is not allowed to install <code>complete</code> in the writing turn</strong>.</p>
-<p>The reason is that otherwise node state would become <strong>history-dependent</strong>: re-setting a pin to a previously computed value would complete in-turn, while the first setting of the same value did not, so the same graph and the same write would give different observable state depending on what the process had computed earlier.</p>
-<p>When a recompute yields the <strong>same</strong> checksum — an inert edit — downstream nodes re-complete through the <strong>ordinary content-addressed cache hit</strong>: one turn later, not zero (<code>contracts/identity-and-caching.md</code>, and <code>contracts/workflow-context.md</code> on cache hits arriving through a controller turn).</p>
+<p><strong>A turn that makes a node newly eligible to compute leaves it pending in that turn</strong>; its result, or its failure, is settled by a <strong>later</strong> turn. No public operation returns a freshly computed result, and <strong>a locally cached result is not allowed to install <code>complete</code> in the writing turn</strong>.</p>
+<p>Otherwise node state would become <strong>history-dependent</strong>: re-setting a pin to a previously computed value would complete in-turn, while the first setting of the same value did not. The same graph and the same write would then give different observable state depending on what the process had computed earlier.</p>
+<p>When a recompute yields the <strong>same</strong> checksum (an inert edit), downstream nodes re-complete through the <strong>ordinary content-addressed cache hit</strong>: one turn later, not zero (<code>contracts/identity-and-caching.md</code>, and <code>contracts/workflow-context.md</code> on cache hits arriving through a controller turn).</p>
 <h2 id="speculation-launch-immediately-delay-cancellation">Speculation: launch immediately, delay cancellation</h2>
-<p>On a change, for the changed node and everything downstream, <strong>launch of the replacement is never debounced; only cancellation of the superseded run is delayed.</strong> Latency is never traded for the possibility that the user is still typing. What <em>is</em> bought by delay is the avoidance of killing running work that may still be needed — an inconsequential upstream edit, a reverted edit, an oscillation.</p>
+<p>On a change, for the changed node and everything downstream, <strong>launch of the replacement is never debounced; only cancellation of the superseded run is delayed.</strong> Latency is never traded for the possibility that the user is still typing. What delay <em>does</em> buy is not killing running work that may still be needed: after an inconsequential upstream edit, a reverted edit, or an oscillation.</p>
 <p>The organising fact is content-addressing: <strong>a node's transformation identity is a hash of its own code and its upstreams' <em>output</em> checksums.</strong> Two consequences drive the whole policy:</p>
 <ul>
-<li>a node's running work survives an upstream edit <strong>iff the upstream's output is unchanged</strong> — even though the upstream's <em>code</em> changed;</li>
+<li>a node's running work survives an upstream edit <strong>iff the upstream's output is unchanged</strong>, even though the upstream's <em>code</em> changed;</li>
 <li>editing a node's <strong>own</strong> code always changes its own identity, so its own running work is reusable <strong>only on a literal revert</strong>.</li>
 </ul>
 <p>That splits the holds into three cases.</p>
-<h3 id="a-upstream-confirmation-hold-event-driven-the-load-bearing-case">(a) Upstream-confirmation hold — event-driven; the load-bearing case</h3>
+<h3 id="a-upstream-confirmation-hold-event-driven-and-the-load-bearing-case">(a) Upstream-confirmation hold: event-driven, and the load-bearing case</h3>
 <p>Node <code>B</code> is <code>computing</code>, possibly nearly finished, when a changed upstream <code>A</code> starts recomputing. <code>A</code>'s edit may be inconsequential, in which case <code>B</code>'s identity is unchanged and its in-flight run <strong>is still the current run</strong>.</p>
 <p><strong>Hold <code>B</code>'s run until the changed upstream resolves</strong>, then compare:</p>
 <table>
@@ -556,35 +650,37 @@
 </tr>
 </tbody>
 </table>
-<p>The window is <strong>event-driven</strong>, under a <strong>fixed maximum of about five minutes</strong>: if the upstream has not resolved by then, release the hold. The ceiling keeps <code>B</code> held while a genuinely slow upstream is still resolving, and stops a <em>stuck</em> upstream from pinning a superseded run indefinitely.</p>
-<h3 id="b-self-edit-revert-hold-a-fixed-window">(b) Self-edit revert hold — a fixed window</h3>
-<p>A <code>computing</code> node's <strong>own</strong> code or load-bearing metadata is edited, so its identity changes and the old run is reusable only on a revert. No upstream event governs this case; it is a <strong>behavioural bet on a revert</strong>, so a <strong>fixed human-timescale window of seconds</strong> is the right shape, <strong>independent of the run's runtime</strong>. Holding a superseded two-hour run for a few seconds is worthwhile precisely because a revert within those seconds saves the whole restart.</p>
-<p>It is a <strong>fixed lifetime</strong> — hold until a deadline, then release — with <strong>no decay curve</strong>. Decay is the buffer cache's general memory-pressure mechanism and is not duplicated here (<code>contracts/cache-storage-and-limits.md</code>). For a very expensive run the lifetime shrinks toward zero.</p>
-<h3 id="c-completed-downstream-retention-buffer-retention-event-bounded">(c) Completed-downstream retention — buffer retention, event-bounded</h3>
-<p>Node <code>Y</code> is already <code>complete</code> when an upstream changes. There is <strong>no running work to protect</strong>, and reinstating a completed node is a pure cache hit, so what is held is <strong><code>Y</code>'s output buffer</strong> (and the upstream's old output), so that the hit lands if the upstream re-resolves to the same output. Its lifetime is bounded by the <strong>same upstream event</strong>, with the <strong>same five-minute backstop</strong>. Memory pressure may evict it early; that is the correct compute-versus-memory trade-off and needs no separate policy.</p>
+<p>The window is <strong>event-driven</strong>, under a <strong>fixed maximum of about five minutes</strong>: if the upstream has not resolved by then, the hold is released. The ceiling keeps <code>B</code> held while a genuinely slow upstream is still resolving, and stops a <em>stuck</em> upstream from pinning a superseded run indefinitely.</p>
+<h3 id="b-self-edit-revert-hold-a-fixed-window">(b) Self-edit revert hold: a fixed window</h3>
+<p>A <code>computing</code> node's <strong>own</strong> code or load-bearing metadata is edited, so its identity changes and the old run is reusable only on a revert. No upstream event governs this case. It is a <strong>behavioural bet on a revert</strong>, so a <strong>fixed human-timescale window</strong> is the right shape, <strong>independent of the run's runtime</strong>. Holding a superseded two-hour run for a few seconds is worthwhile precisely because a revert within those seconds saves the whole restart.</p>
+<p><strong>The window is 30 seconds.</strong> The figure is provisional, pending measurement.</p>
+<p><strong>This is its own knob, independent of the Expression linger.</strong> The linger of <code>contracts/expressions.md</code>, <em>Cancellation</em>, keeps a shared Expression evaluation alive briefly after its last requester leaves. The two answer different events, a person reverting an edit versus a requester re-arriving for the same evaluation, so they are not one shared constant, and each may be measured and moved without touching the other.</p>
+<p>The hold is a <strong>fixed lifetime</strong> (hold until a deadline, then release) with <strong>no decay curve</strong>. Decay is the buffer cache's general memory-pressure mechanism and is not duplicated here (<code>contracts/cache-storage-and-limits.md</code>). For a very expensive run the lifetime shrinks toward zero.</p>
+<h3 id="c-completed-downstream-retention-buffer-retention-event-bounded">(c) Completed-downstream retention: buffer retention, event-bounded</h3>
+<p>Node <code>Y</code> is already <code>complete</code> when an upstream changes. There is <strong>no running work to protect</strong>, and reinstating a completed node is a pure cache hit. What is held is <strong><code>Y</code>'s output buffer</strong> (and the upstream's old output), so that the hit lands if the upstream re-resolves to the same output. Its lifetime is bounded by the <strong>same upstream event</strong>, with the <strong>same five-minute backstop</strong>. Memory pressure may evict it early; that is the correct compute-versus-memory trade-off and needs no separate policy.</p>
 <p><strong>(a) and (c) are the same event-driven downstream hold</strong>, split only by whether the downstream is still <code>computing</code> or already <code>complete</code>. <strong>(b)</strong> keeps a fixed window because no upstream event governs it.</p>
 <h3 id="reinstatement-is-not-a-special-operation">Reinstatement is not a special operation</h3>
 <p><strong>Reinstating a held run is mechanically nothing.</strong> The node re-derives the <strong>same</strong> identity and <strong>re-latches onto the still-running submission through the ordinary membership set</strong> (<code>contracts/cancellation.md</code>). There is no surgical resurrection, no rebinding of a saved future, and no separate reinstatement code path: <strong>the hold merely keeps that submission alive long enough for the re-derivation to find it.</strong></p>
-<p>A held run that had already produced a result or an error still delivers it as a <strong>later fact</strong>, through a subsequent turn — never as a cache lookup performed by the editing turn. This is the same rule as <em>There is no exception for cache hits</em> above.</p>
+<p>A held run that had already produced a result or an error still delivers it as a <strong>later fact</strong>, through a subsequent turn, never as a cache lookup performed by the editing turn. This is the rule of <em>There is no exception for cache hits</em>.</p>
 <h3 id="nodes-do-not-hang-on-to-completed-work">Nodes do not hang on to completed work</h3>
-<p>Correctness and most of the performance benefit come from the <strong>content-addressed cache</strong>, which is global, shared and outlives any node. Retention of <strong>running</strong> work is a different thing and is load-bearing, because once cancelled an in-flight run's <strong>partial progress is gone</strong> and nothing in the cache can bring it back.</p>
+<p>Correctness and most of the performance benefit come from the <strong>content-addressed cache</strong>, which is global, shared and outlives any node. Retention of <strong>running</strong> work is a different thing and is load-bearing, because once cancelled an in-flight run's <strong>partial progress is gone</strong>, and nothing in the cache can bring it back.</p>
 <h3 id="holder-policy-and-bounds">Holder policy and bounds</h3>
 <ul>
-<li><strong>A node holds at most one current run plus a small bounded set of superseded <em>in-flight</em> runs, capped at three.</strong> The cap is on in-flight runs only: when a superseded run <strong>completes</strong>, it leaves the cap, and its result is retained — if at all — by the ordinary buffer reference, not by the holder.</li>
-<li><strong>A superseded run evicted from that set is softcancelled — never hard-killed</strong>, because the submission may be shared with sibling nodes, with other runs, and with other processes (<code>contracts/cancellation.md</code>). The reactive layer never issues a hard cancel (<code>contracts/workflow-context.md</code>).</li>
-<li><strong>No global budget is needed.</strong> Only <code>computing</code> nodes have running work to supersede, and the wavefront of actually-running work is bounded by backend concurrency, so superseded in-flight runs are bounded by <strong>3 × backend concurrency</strong>, independent of graph size.</li>
-<li><strong>Preemption is optional, not contract.</strong> Reclaiming a slot from a superseded run in favour of a current run elsewhere is at most a nicety; the supported control is <code>prune</code>, because <strong>the user knows which held run is still worth keeping</strong> and the scheduler does not.</li>
+<li><strong>A node holds at most one current run plus a small bounded set of superseded <em>in-flight</em> runs, capped at three.</strong> The cap is on in-flight runs only: when a superseded run <strong>completes</strong> it leaves the cap, and its result is retained, if at all, by the ordinary buffer reference, not by the holder.</li>
+<li><strong>A superseded run evicted from that set is softcancelled, never hard-killed</strong>, because the submission may be shared with sibling nodes, with other runs, and with other processes (<code>contracts/cancellation.md</code>). The reactive layer never issues a hard cancel (<code>contracts/workflow-context.md</code>).</li>
+<li><strong>No global budget is needed.</strong> Only <code>computing</code> nodes have running work to supersede, and the wavefront of running work is bounded by backend concurrency, so superseded in-flight runs are bounded by <strong>3 × backend concurrency</strong>, independent of graph size.</li>
+<li><strong>Preemption is optional, not contract.</strong> Reclaiming a slot from a superseded run in favour of a current run elsewhere is at most a nicety. The supported control is <code>prune</code>, because <strong>the user knows which held run is still worth keeping</strong> and the scheduler does not.</li>
 </ul>
 <h2 id="prune-reclaiming-obsolete-work"><code>prune</code>: reclaiming obsolete work</h2>
-<p>The API surface is in <code>contracts/workflow-context.md</code>; what belongs here is what it means for states and holds.</p>
+<p>The API surface is in <code>contracts/workflow-context.md</code>; this section states what it means for states and holds.</p>
 <ul>
-<li><strong><code>ctx.prune()</code> softcancels every superseded or grace-held run immediately</strong>, leaving only the current wavefront, and reports how many it cancelled. It is <strong>lightweight and repeatable</strong> — not a freeze, not a commit, and not a barrier.</li>
-<li><strong><code>ctx.a.prune()</code> does the same for <code>ctx.a</code> and its downstream cone only</strong>; <code>ctx.prune()</code> is that same call at the graph root. This is the <strong>user's manual control</strong> over which superseded work to reclaim; the scheduler does not guess a tighter automatic policy. Machinery to call it automatically — edit-rate, saturation or cost driven — can be layered on later and is <strong>not part of v1</strong>.</li>
-<li><strong><code>prune</code> changes no node state.</strong> It cancels obsolete work only; a <code>complete</code> node stays <code>complete</code> and a <code>computing</code> node's <em>current</em> run is untouched.</li>
+<li><strong><code>ctx.prune()</code> softcancels every superseded or grace-held run immediately</strong>, leaving only the current wavefront, and reports how many it cancelled. It is <strong>lightweight and repeatable</strong>: not a freeze, not a commit, and not a barrier.</li>
+<li><strong><code>ctx.a.prune()</code> does the same for <code>ctx.a</code> and its downstream cone only</strong>; <code>ctx.prune()</code> is the same call at the graph root. This is the <strong>user's manual control</strong> over which superseded work to reclaim; the scheduler does not guess a tighter automatic policy. Machinery to call it automatically (driven by edit rate, saturation or cost) can be layered on later and is <strong>not part of v1</strong>.</li>
+<li><strong><code>prune</code> changes no node state.</strong> It cancels obsolete work only: a <code>complete</code> node stays <code>complete</code>, and a <code>computing</code> node's <em>current</em> run is untouched.</li>
 <li><strong>After <code>prune</code>, all running work is current work</strong>, so once the wavefront finishes the cluster is genuinely idle: <strong>quiescence == idle</strong>.</li>
 </ul>
 <h2 id="states-as-seen-through-barriers-and-handles">States as seen through barriers and handles</h2>
-<p>The barrier API itself is <code>contracts/workflow-context.md</code>; only what depends on states is stated here.</p>
+<p>The barrier API itself is in <code>contracts/workflow-context.md</code>; only what depends on states is stated here.</p>
 <table>
 <thead>
 <tr>
@@ -595,45 +691,58 @@
 </thead>
 <tbody>
 <tr>
-<td><strong>node barrier</strong> — <code>ctx.a.compute()</code></td>
-<td>the node <strong>and its upstream cone</strong> are out of <code>waiting</code>/<code>computing</code></td>
-<td><code>failed</code> → <strong>re-raises the node's recorded exception</strong>; <code>unwired</code> or <code>blocked</code> → raises <code>NodeError</code> naming the state <strong>and the block reason</strong>; otherwise returns the checksum</td>
+<td><strong>node barrier</strong>: <code>ctx.a.compute()</code> on a <strong>named</strong> node</td>
+<td>the node <strong>and its upstream cone</strong> are out of <code>waiting</code> and <code>computing</code></td>
+<td><code>complete</code>: returns the checksum. Any other state: returns <strong><code>None</code></strong>. It never raises for the state it finds</td>
 </tr>
 <tr>
-<td><strong>graph-wide barrier</strong> — <code>ctx.compute()</code></td>
+<td><strong>run</strong>: <code>ctx.a.run()</code> on a <strong>named</strong> node</td>
+<td>as the node barrier</td>
+<td><code>failed</code>: <strong>re-raises the node's recorded exception</strong>. <code>unwired</code>, <code>miswired</code> or <code>blocked</code>: raises <strong><code>NodeError</code></strong> naming the state and what to repair (below). <code>complete</code>: returns the materialized value</td>
+</tr>
+<tr>
+<td><strong>graph-wide barrier</strong>: <code>ctx.compute()</code></td>
 <td><strong>no node</strong> is <code>waiting</code> or <code>computing</code></td>
-<td>returns; it does <strong>not</strong> raise for nodes that settled into <code>blocked</code>, <code>unwired</code> or <code>failed</code></td>
+<td>returns; it does <strong>not</strong> raise for nodes that settled into <code>blocked</code>, <code>unwired</code>, <code>miswired</code> or <code>failed</code></td>
 </tr>
 </tbody>
 </table>
 <ul>
+<li><strong>Barriers report outcomes; <code>run()</code> raises them.</strong> The node barrier is a statement about motion, as the graph-wide one is: it tells the caller that the cone has settled and hands back the checksum if there is one. The same rule holds for Cells, Pins, Transformers and Transformations in both modes (<code>contracts/cells.md</code>, <em>Failures</em>, <em>How a failure is delivered</em>).</li>
+<li><strong><code>NodeError</code> belongs to <code>run()</code> on named nodes only.</strong> Its message names the state and what to repair: for <code>blocked</code>, the block reason; for <code>miswired</code>, the miswired edge and its two celltypes; for <code>unwired</code>, the missing pin. A Pin's barrier is its owning Transformer's (<code>contracts/pins.md</code>). <code>compute()</code> on an anonymous or projection handle is <strong>not a barrier</strong>: it evaluates the handle's own Expression, and neither it nor the handle's <code>run()</code> ever raises <code>NodeError</code> (<code>contracts/workflow-context.md</code>, <em>Barriers</em>).</li>
 <li><strong>The graph-wide barrier is a statement about motion, not about outcomes.</strong> Quiescence is not success; check states afterwards.</li>
 <li>A handle whose node no longer exists raises <code>StaleWorkflowHandleError</code>.</li>
-<li><strong>Standalone handles have a narrower vocabulary.</strong> A standalone <code>Cell</code> or <code>Pin</code> reports only <code>unwired</code>, <code>waiting</code>, <code>complete</code> and <code>failed</code>, and <code>block_reason</code> is <strong>bound-only</strong>. <code>blocked</code> and <code>computing</code> are Context-node states, because only a Context has upstreams to be blocked by and a runtime to dispatch to (<code>contracts/cells.md</code>, <code>contracts/pins.md</code>).</li>
+<li><strong>Standalone handles have a narrower vocabulary.</strong> A standalone <code>Cell</code> or <code>Pin</code> reports only <code>unwired</code>, <code>miswired</code>, <code>waiting</code>, <code>complete</code> and <code>failed</code>, and <code>block_reason</code> is <strong>bound-only</strong>. <code>blocked</code> and <code>computing</code> are Context-node states, because only a Context has upstreams to be blocked by and a runtime to dispatch to (<code>contracts/cells.md</code>, <code>contracts/pins.md</code>). An anonymous or projection handle in a Context reports the same narrower vocabulary, passively (see the top of this page).</li>
 </ul>
 <h2 id="determinism-and-scope">Determinism and scope</h2>
 <ul>
-<li><strong>Determinism is assumed.</strong> The retain-and-compare loop of the hold policy assumes that the same inputs give the same result checksum. Irreproducible transformations are out of scope for workflows, and accidental nondeterminism being <strong>masked</strong> by the content-addressed cache is a universal Seamless property, not a Context hazard (<code>contracts/identity-and-caching.md</code>, <code>contracts/scratch-witness-audit.md</code>).</li>
-<li><strong>Cycles are out of scope</strong>, not merely unimplemented: the cascade assumes a DAG. (<code>contracts/workflow-context.md</code> rejects a cycle-closing edge at declaration time.)</li>
-<li><strong>Headless advance is forward-only</strong>, and is deferred with fire-and-forget. Only the autonomous <code>waiting → computing → complete</code> transitions could occur without a live Context; the <code>failed</code> and <code>blocked</code> branches never resolve headlessly, because leaving them needs an intervention that cannot happen headless. <strong>The entire reactive apparatus — the cascade, the holds, supersession, invalidation — is online-only.</strong></li>
+<li><strong>Determinism is assumed.</strong> The retain-and-compare loop of the hold policy assumes that the same inputs give the same result checksum. Irreproducible transformations are out of scope for workflows. Accidental nondeterminism being <strong>masked</strong> by the content-addressed cache is a universal Seamless property, not a Context hazard (<code>contracts/identity-and-caching.md</code>, <code>contracts/scratch-witness-audit.md</code>).</li>
+<li><strong>Cycles are out of scope</strong>, not merely unimplemented: the cascade assumes a DAG, and <code>contracts/workflow-context.md</code> rejects a cycle-closing edge at declaration time.</li>
+<li><strong>Headless advance is forward-only</strong>, and is deferred with fire-and-forget. Only the autonomous <code>waiting → computing → complete</code> transitions could occur without a live Context. The <code>failed</code> and <code>blocked</code> branches never resolve headlessly, because leaving them needs an intervention. <strong>The entire reactive apparatus (the cascade, the holds, supersession, invalidation) is online-only.</strong></li>
 </ul>
 <h2 id="implementation-status-and-current-limitations">Implementation status and current limitations</h2>
-<p><strong>This page is the contract.</strong> These notes record where today's code diverges, so that an agent reading the code is not misled into taking the code's behaviour for the rule.</p>
+<p>The code satisfies the contract on this page, including state propagation, block-reason shape and precedence, deep-table miswiring, stale exceptions, root/sub-path exclusion, compiled failures, named barriers and repair messages. Their focused coverage is in <code>seamless-workflow/tests/test_contract_node_state_lifecycle.py</code> and the Pin and wiring contract tests; these are plain tests.</p>
+<p>The self-edit hold default is 30 seconds, independently configurable from Expression linger. The upstream-confirmation hold and the completed-downstream retention are bounded by the upstream event under the five-minute backstop, which is its own knob. Focused coverage is in <code>seamless-workflow/tests/test_contract_upstream_hold.py</code>. Two points on which this section is silent, and how the code answers them, are listed as open in <a href="../../../contract-ahead-of-code-plan.md">the carried-gap plan</a>.</p>
+<p><strong>Deferred features and cost properties.</strong> These are not contract gaps, and no test pins them:</p>
 <ul>
-<li><strong>Block-reason precedence is inverted in the code.</strong> Today <code>blocked-by-error</code> beats <code>blocked-by-unwired</code>, in <strong>both</strong> the transformer derivation and the cell derivation, and the A0 contract suite asserts that order. The contract is the precedence given above — <strong>topology before values</strong> — ruled 2026-09-18; the code <strong>and that test</strong> must change.</li>
-<li><strong>The three hold cases are not implemented as three.</strong> Every supersession currently gets the same <strong>fixed window — the self-edit case (b) — of 15 seconds</strong>. The event-driven upstream-confirmation hold <strong>(a)</strong> and the completed-downstream retention <strong>(c)</strong> do not exist yet, and the five-minute figure appears only as a <strong>ceiling on the expiry timer</strong>. What <em>is</em> implemented: the cap of <strong>three</strong> superseded in-flight runs, <strong>eviction-by-softcancel</strong>, <strong>reinstatement by re-latching</strong>, and <strong><code>prune</code> at both scopes</strong>.</li>
-<li><strong>Future-wiring is not implemented; the runtime is checksum-wired only.</strong> A node leaves <code>waiting</code> for <code>computing</code> exactly when all of its inputs are <strong>concrete checksums</strong>. Consequently a <code>waiting</code> node holds <strong>no submitted continuation</strong>, and fire-and-forget is deferred (<code>contracts/workflow-context.md</code>).</li>
-<li><strong>Derivation re-derives the whole graph, topologically, on every turn</strong>, rather than only the invalidated cone. This is a <strong>cost</strong> property, not a semantic one: the outcome is identical, and the design's bound-to-the-cone cost is the target.</li>
-<li><strong><code>.exception</code> holds an exception object, not a string.</strong> The settled convention is one string convention across Cell, Pin and Transformation; the same item is recorded in <code>contracts/cells.md</code> and <code>contracts/pins.md</code>.</li>
-<li><strong>The node-transition contract suite cannot currently run</strong> in this working tree — it errors during buffer writing, before it asserts anything — so the divergences above were established by <strong>reading the code</strong>, not by a red test.</li>
+<li><strong>Future-wiring is not implemented; the runtime is checksum-wired only.</strong> A node leaves <code>waiting</code> for <code>computing</code> exactly when all of its inputs are concrete checksums. A <code>waiting</code> node therefore holds no submitted continuation, and fire-and-forget is deferred (<code>contracts/workflow-context.md</code>).</li>
+<li><strong>Derivation re-derives the whole graph, topologically, on every turn</strong>, rather than only the invalidated cone. This is a cost property, not a semantic one: the outcome is identical, and the design's cone-bounded cost is the target.</li>
+</ul>
+<p><strong>Unspecified.</strong> Do not depend on any answer:</p>
+<ul>
+<li>the exception class for refusing a root edge combined with sub-path edges (deferred);</li>
+<li>whether a null checksum on a compiled pin counts as "valid for its celltype", and so whether a compiled pin rejected for null makes the transformer <code>blocked</code> or <code>failed</code> (deferred; <code>contracts/compiled-pins.md</code>, section 5);</li>
+<li>whether every <code>.exception</code> string carries the exception class name (<code>&lt;Class&gt;: &lt;message&gt;</code>), as specified for compiled pins (deferred);</li>
+<li>the <code>block_reason</code> of a cell with no input at all (an <code>unwired</code> cell with no producer and no edge): the rulings cover a cell with a root input or with one-level inputs, not a cell with none;</li>
+<li>the state an anonymous or projection handle reports when its parent is <code>unwired</code> (deferred; <code>contracts/cells.md</code>).</li>
 </ul>
 <h2 id="non-goals">Non-goals</h2>
 <ul>
-<li><strong>A transient-failure state.</strong> <code>failed</code> is one state, and the block-reason vocabulary has exactly two members. Retry classification is a Transformation/backend concern, not Context logic.</li>
+<li><strong>A transient-failure state.</strong> <code>failed</code> is one state, and the block-reason enumeration has exactly three members (<code>blocked-by-unwired</code>, <code>blocked-by-error</code>, <code>blocked-by-miswiring</code>). Retry classification is a Transformation or backend concern, not Context logic.</li>
 <li><strong>Mandatory preemption</strong> of a superseded run's slot in favour of a current run elsewhere; <code>prune</code> is the supported control.</li>
-<li><strong>Epoch-stamping of the invalidation cone.</strong> The cone is marked <strong>eagerly</strong>; a generation/epoch scheme was considered and rejected.</li>
+<li><strong>Epoch-stamping of the invalidation cone.</strong> The cone is marked <strong>eagerly</strong>; a generation or epoch scheme was considered and rejected.</li>
 <li><strong>A "constructing" state</strong>, and any state whose derivation depends on a backend reporting start-of-execution.</li>
-<li><strong>A single <code>status</code> string</strong> folding <code>waiting</code> and <code>computing</code> into one "pending": removed in favour of the six-state vocabulary plus <code>block_reason</code>.</li>
+<li><strong>A single <code>status</code> string</strong> folding <code>waiting</code> and <code>computing</code> into one "pending": removed in favour of the seven-state vocabulary plus <code>block_reason</code>.</li>
 <li><strong>Cycles</strong>, and <strong>automatic retry</strong> of any kind.</li>
 </ul>
               

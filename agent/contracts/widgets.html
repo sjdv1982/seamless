@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <link rel="shortcut icon" href="../img/favicon.ico" />
+    <title>Jupyter Widgets - Seamless — Agent Documentation</title>
+    <link rel="stylesheet" href="../css/theme.css" />
+    <link rel="stylesheet" href="../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "Jupyter Widgets";
+        var mkdocs_page_input_path = "contracts/widgets.md";
+        var mkdocs_page_url = null;
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href="../index.html" class="icon icon-home"> Seamless — Agent Documentation
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../index.html">Home</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../overview.html">Agent Docs Overview</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../repos/index.html">Workspace Repos</a>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Contracts</span></p>
+              <ul class="current">
+                  <li class="toctree-l1"><a class="reference internal" href="identity-and-caching.html">Identity and Caching</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="celltypes-and-conversion.html">Celltypes, Null, and Conversion</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="hashtype.html">HashType</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="deep-celltypes.html">Deep Celltypes</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="expressions.html">Expressions</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="cells.html">Cells</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="pins.html">Pins</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="workflow-context.html">Workflow Context</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="node-state-lifecycle.html">Node State Lifecycle</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="attachments.html">Attachments</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="mounts.html">File Mounts</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="shares.html">HTTP Shares</a>
+                  </li>
+                  <li class="toctree-l1 current"><a class="reference internal current" href="#">Jupyter Widgets</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#the-api">The API</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#the-hub-one-attachment-any-number-of-widgets">The hub: one attachment, any number of widgets</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#modes-w-and-the-upgrade-to-rw">Modes: w, and the upgrade to rw</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#the-initial-decision">The initial decision</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#cell-to-widget">Cell to widget</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#widget-to-cell">Widget to cell</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#none-is-absence">None is absence</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#values-a-widget-cannot-hold">Values a widget cannot hold</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#writing-to-the-hub-of-an-output">Writing to the hub of an output</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#threads-and-blocking">Threads and blocking</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#errors">Errors</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#lifecycle">Lifecycle</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#the-output-widget">The output widget</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#limits">Limits</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#porting-notes">Porting notes</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#current-limitations">Current limitations</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#non-goals">Non-goals</a>
+    </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="streaming.html">Streaming</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="transformation-logs.html">Transformation Logs</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="cancellation.html">Cancellation</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="direct-delayed-and-transformation.html">direct/delayed/Transformation</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="modules-and-closures.html">Modules and Closures</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="scratch-witness-audit.html">Scratch/Witness/Audit</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="seamless-run-and-argtyping.html">seamless-run/Argtyping</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="cache-storage-and-limits.html">Cache Storage and Limits</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="content-addressed-files-and-dirs.html">Content-addressed Files and Dirs</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="execution-backends.html">Execution Backends</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="environments.html">Environments</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="execution-records.html">Execution Records</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="service-management.html">Service Management</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="compression.html">Compression</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="compiled-transformers.html">Compiled Transformers</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="compiled-pins.html">Compiled Pins</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="seamless-signature-schema.html">seamless-signature Schema</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="handler-languages.html">Handler Languages</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="language-backends.html">Language Backends</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">API</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/python/seamless.html">seamless</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/python/seamless.transformer.html">seamless.transformer</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/python/seamless.buffer_class.html">seamless.buffer_class</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/python/seamless.checksum_class.html">seamless.checksum_class</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/python/seamless_config.select.html">seamless_config.select</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/python/seamless_config.tools.html">seamless_config.tools</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/python/seamless_transformer.transformation_class.html">seamless_transformer.transformation_class</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/python/seamless_transformer.transformer_class.html">seamless_transformer.transformer_class</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">CLI</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/cli/seamless-run.html">seamless-run</a>
+                  </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Seamless — Agent Documentation</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../index.html" class="icon icon-home" aria-label="Docs"></a></li>
+          <li class="breadcrumb-item">Contracts</li>
+      <li class="breadcrumb-item active">Jupyter Widgets</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h1 id="jupyter-widgets-contract">Jupyter widgets (Contract)</h1>
+<p>A <strong>widget attachment</strong> is the attachment whose external resource is a traitlets object in this process: an ipywidgets slider, a text box, any <code>HasTraits</code> instance. <strong>The attachment contract of <code>contracts/attachments.md</code> applies in full</strong> — direction, scope, spec versus session, the sense and actuate disciplines, the three-way error model, the detector mechanism, the cut barrier and the lifecycle. This page specializes it for values held by a widget. It does not restate a rule from that page; each section says where the widget driver makes a generic rule concrete.</p>
+<p>Widget attachments exist on the <strong>workflow Context</strong> only. A standalone <code>Cell</code>, a <code>direct</code>/<code>delayed</code> transformer and the command-line face have no widget integration.</p>
+<p>Code locations:</p>
+<table>
+<thead>
+<tr>
+<th>Concern</th>
+<th>Module / symbol</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Public functions</td>
+<td><code>seamless_workflow.jupyter</code> (<code>traitlet</code>, <code>output</code>)</td>
+</tr>
+<tr>
+<td>The hub and its links</td>
+<td><code>seamless_workflow.attachments.traitlet</code> (<code>CellTraitlet</code>, <code>Link</code>)</td>
+</tr>
+<tr>
+<td>Output display</td>
+<td><code>seamless_workflow.attachments.output_widget</code> (<code>OutputWidget</code>)</td>
+</tr>
+<tr>
+<td>Transport</td>
+<td><code>seamless_workflow.attachments.widget.WidgetDriver</code> — internal; it borrows the file service's I/O pool (<code>contracts/attachments.md</code>, <em>Current limitations</em>)</td>
+</tr>
+<tr>
+<td>Session protocol, policy, barrier</td>
+<td>as in <code>contracts/attachments.md</code></td>
+</tr>
+<tr>
+<td>Errors</td>
+<td><code>seamless_workflow.attachments.session</code> (<code>MountError</code>, <code>ConflictError</code>); <code>seamless_workflow.errors</code> (<code>AuthorityError</code>, <code>NodeError</code>, <code>ReentrantContextError</code>, <code>ClosedContextError</code>)</td>
+</tr>
+</tbody>
+</table>
+<h2 id="the-api">The API</h2>
+<pre><code class="language-python">from seamless_workflow.jupyter import traitlet, output
+
+t = traitlet(ctx.a)                    # the cell's hub; blocking; created on first use
+t.link(widget, target_attr=&quot;value&quot;)    # bidirectional: cell &lt;-&gt; widget
+t.connect(widget, target_attr=&quot;value&quot;) # one way: cell -&gt; widget
+t.observe(handler, names=&quot;value&quot;)      # traitlets observe, plus an immediate first call
+t.value                                # the cell's last delivered value, or None
+
+t.status                               # the status dict
+t.error                                # delivery or conflict error, or None
+t.clear_error()
+t.destroy()                            # detach, and drop every link
+
+out = output(ctx.c, layout=None, mimetype=None)   # an OutputWidget; display(out)
+</code></pre>
+<ul>
+<li><strong>These are functions, not <code>Cell</code> members.</strong> <code>Cell</code> has no <code>traitlet</code> or <code>output</code> attribute, so <code>ctx.a.traitlet</code> and <code>ctx.a.output</code> remain ordinary sub-path projections (<code>contracts/cells.md</code>, <em>API-name arbitration</em>).</li>
+<li><strong><code>traitlet(cell)</code> returns the same hub on every call</strong> while the attachment exists: <code>traitlet(ctx.a) is traitlet(ctx.a)</code>.</li>
+<li><strong><code>traitlets</code> and <code>ipywidgets</code> are optional dependencies</strong> (<code>seamless-workflow[jupyter]</code>), imported on first use. <code>traitlet()</code> needs only <code>traitlets</code>; <code>output()</code> needs <code>ipywidgets</code> and IPython.</li>
+<li><strong>Nothing here requires a running kernel.</strong> A hub links to any <code>HasTraits</code> object, in a script or a test as in a notebook.</li>
+</ul>
+<h2 id="the-hub-one-attachment-any-number-of-widgets">The hub: one attachment, any number of widgets</h2>
+<p><strong>The attached resource is the hub, never a widget.</strong> <code>CellTraitlet</code> is a <code>traitlets.HasTraits</code> object with one trait, <code>value</code>. It occupies the node's single widget slot and may coexist with its single file slot (<code>contracts/attachments.md</code>, <em>Scope</em>). Widgets are tied to it by ordinary in-process links that the attachment layer never sees.</p>
+<ul>
+<li><strong>Several widgets on one cell are several links on one hub.</strong> A slider and a text box linked to the same hub stay in step with each other and with the cell.</li>
+<li><strong>The session keeps the hub alive, the hub keeps its links alive, and a link keeps its widget alive.</strong> The return values of <code>traitlet()</code>, <code>link()</code> and <code>connect()</code> may be dropped.</li>
+<li><strong><code>link()</code> and <code>connect()</code> return the <code>Link</code>;</strong> <code>Link.unlink()</code> removes that one link and leaves the attachment in place.</li>
+<li><strong><code>observe</code> calls the handler once immediately</strong> when the hub has a value, and then on every change.</li>
+<li><strong>Assign, do not mutate.</strong> A change is detected when <code>value</code> is assigned. Mutating a list or an array held in <code>value</code> in place is not observed, as with any traitlet.</li>
+</ul>
+<h2 id="modes-w-and-the-upgrade-to-rw">Modes: <code>w</code>, and the upgrade to <code>rw</code></h2>
+<p>The widget driver uses the <code>mode</code> and <code>authority</code> fields of the generic spec (<code>contracts/mounts.md</code>, <em>Spec validation and normalization</em>), but the user never passes them.</p>
+<ul>
+<li><strong>A hub is created in mode <code>w</code>.</strong> <code>traitlet()</code>, <code>connect()</code>, <code>observe()</code> and <code>output()</code> only read the cell, so they are legal on a <strong>connected</strong> cell — that is how a computed value is displayed.</li>
+<li><strong>The first <code>link()</code> upgrades the hub to mode <code>rw</code>.</strong> A sensing attachment is the node's producer, so the upgrade is refused with <code>AuthorityError("Sensing mount cannot have incoming edges; unmount first")</code> when the cell has an incoming edge. <strong>A refused upgrade changes nothing:</strong> the hub stays attached in <code>w</code>, and its existing links and observers keep working.</li>
+<li><strong>The upgrade is a detach followed by an attach in the widget slot</strong>, so it opens a new widget session; the hub and its links are carried over. A file session on the same node is preserved.</li>
+<li><strong>There is no downgrade.</strong> A hub that has been linked stays in <code>rw</code> after its last bidirectional link is removed, until it is destroyed. While it is in <code>rw</code>, adding an incoming edge to the cell raises <code>AuthorityError("Sensing mount is the producer; unmount first")</code>; call <code>traitlet(cell).destroy()</code> first.</li>
+<li><strong>The <code>authority</code> field is always <code>"cell"</code>.</strong></li>
+<li><strong>Every sensing slot protects the node's topology.</strong> Destroying the hub releases its own guard; an <code>r</code> or <code>rw</code> file mount still refuses incoming edges until it is unmounted too.</li>
+</ul>
+<h2 id="the-initial-decision">The initial decision</h2>
+<p>The initial decision is the table of <code>contracts/mounts.md</code>, <em>The initial decision table</em>, read with <strong>the hub's value in the place of the file</strong>, with <code>authority="cell"</code>, and with <strong>a hub value of <code>None</code> as an absent file</strong>. Its outcomes for the two attach points:</p>
+<p><strong>At <code>traitlet(cell)</code></strong> (mode <code>w</code>, hub value <code>None</code>): if the cell is <code>complete</code>, its value is delivered to the hub before the call returns; otherwise nothing happens until it completes.</p>
+<p><strong>At the first <code>link(widget)</code></strong> (upgrade to <code>rw</code>). If the hub's value is <code>None</code> and the widget's is not, <code>link()</code> first copies the widget's value into the hub. Then:</p>
+<table>
+<thead>
+<tr>
+<th>Cell</th>
+<th>Widget value</th>
+<th>Result</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>complete</code>, value <em>N</em></td>
+<td>any</td>
+<td><strong>the cell wins:</strong> the widget is set to <em>N</em></td>
+</tr>
+<tr>
+<td>no complete value</td>
+<td><em>V</em>, not <code>None</code></td>
+<td><strong>the empty cell takes the widget's value:</strong> cell ← <em>V</em></td>
+</tr>
+<tr>
+<td>no complete value</td>
+<td><code>None</code></td>
+<td>cell ← null</td>
+</tr>
+</tbody>
+</table>
+<p>The last row is row 4 of the no-value table and not a widget rule: an absent resource attached in a sensing mode to a cell without a value installs null. The cell is then <code>complete</code> with value <code>None</code>, and counts as in sync with the <code>None</code>-valued hub.</p>
+<p><strong>A later <code>link()</code> on a hub that is already <code>rw</code></strong> applies the same direction rule without a new attach: a hub with a value sets the widget; a hub without one takes the widget's value as an ordinary change.</p>
+<h2 id="cell-to-widget">Cell to widget</h2>
+<p>Delivery follows <code>contracts/attachments.md</code>, <em>Actuate</em>, without exception. What that means for a widget:</p>
+<ul>
+<li><strong>A widget shows <code>complete</code> values only.</strong> While the cell is <code>waiting</code>, <code>blocked</code> or <code>failed</code>, nothing is delivered and <strong>the widget keeps the last value it showed</strong>. There is no "pending" or "failed" rendering; read <code>ctx.a.state</code> and <code>ctx.a.exception</code> for that.</li>
+<li><strong>Intermediate values are not queued.</strong> A rapid series of cell changes reaches the widget as its last value. Cell-to-attachment delivery starts are spaced by at least <strong>2/3 second per session</strong>. The first delivery is immediate, later pending values coalesce to the latest, and file and widget slots have independent delivery clocks. <code>ctx.mounts.sync()</code> waits for throttled pending deliveries, subject to its timeout.</li>
+<li><strong>The value is the cell's value as its own <code>celltype</code></strong>: the same object <code>.value</code> would return, resolved from the checksum by the transport. Resolution never computes (<em>A delivery resolves; it never computes</em>). Without a hashserver, a cell with a widget hub does not take a new checksum whose buffer is not in the buffer cache: it stays <code>waiting</code>, and the widget keeps its last value, while the Context fingertips the buffer (<code>contracts/workflow-context.md</code>, <em>A Context without a hashserver</em>).</li>
+<li><strong>A null cell value sets <code>hub.value</code> to <code>None</code></strong>, which links do not forward (<em><code>None</code> is absence</em>): linked widgets keep what they showed.</li>
+</ul>
+<h2 id="widget-to-cell">Widget to cell</h2>
+<p>A change to a bidirectionally linked widget is sensed as in <code>contracts/attachments.md</code>, <em>Sense</em>: a non-detaching authoritative write with no privilege over a user assignment, and none under it.</p>
+<p>When the same cell has both a sensing file mount and a bidirectional widget hub, <strong>the newest accepted write wins</strong>. An actual valid write from either resource or from the user clears every sense error on that node. Merely observing unchanged valid content from the other resource does not recover a failed sensor. The delivery interval does not delay sensing.</p>
+<ul>
+<li><strong>The value is serialized as the cell's celltype, exactly as an assignment of the same value would be.</strong> A value that an assignment would reject is a <strong>sense error</strong>: the cell is <code>failed</code>, monitoring continues, and the next valid widget value recovers it with no user action. A <code>Text</code> widget linked to an <code>int</code> cell fails the cell while the text is not a number.</li>
+<li><strong>Changes are debounced.</strong> The cell is written once, after the widget has been quiet for the debounce interval (<em>Limits</em>), with the widget's value at that moment. Dragging a slider produces one write, not one per step.</li>
+<li><strong>The handler returns before the cell is written.</strong> <code>slider.value = 5</code> followed at once by <code>ctx.a.value</code> may still read the old value.</li>
+<li><strong><code>ctx.mounts.sync()</code> is the barrier</strong>, and it does not wait for the debounce: a cut observes the hub's value as it is and reports only after that observation is processed (<code>contracts/attachments.md</code>, <em>The cut barrier</em>). <strong><code>ctx.compute()</code> is graph-only</strong> and does not see a widget change that has not been sensed yet. A script that sets a widget and then computes must call <code>ctx.mounts.sync()</code> in between.</li>
+<li><strong>A pending widget change beats an incoming delivery.</strong> If the cell changes while a widget change is still inside its debounce interval, the widget's change is observed first, the delivery acknowledges <code>conflict</code>, and the cell takes the widget's value.</li>
+</ul>
+<h3 id="none-is-absence"><code>None</code> is absence</h3>
+<p><strong>A hub value of <code>None</code> is the absent resource</strong> (<code>absent</code> in <code>contracts/mounts.md</code>, <em>Observation classification</em>). It never clears and never overwrites a cell after the initial decision: disappearance does not clear the node.</p>
+<ul>
+<li>A <code>Link</code> forwards <code>None</code> in neither direction.</li>
+<li>A widget cannot be used to clear a cell. Clearing an attached cell is refused in any case (<code>contracts/attachments.md</code>, <em>The topology rules an attachment imposes</em>).</li>
+</ul>
+<h3 id="values-a-widget-cannot-hold">Values a widget cannot hold</h3>
+<p>A widget may coerce what it is given — an <code>IntSlider</code> clamps to its range — or refuse it with a <code>TraitError</code>.</p>
+<ul>
+<li><strong>Through <code>link()</code>, a coerced value flows back.</strong> The hub takes the widget's coerced value, it is sensed, and the cell converges on what the widget can represent. A slider with <code>max=30</code> linked to a cell holding 50 sets the cell to 30.</li>
+<li><strong>Through <code>connect()</code>, nothing flows back.</strong> A one-way link never writes to the hub: the widget shows its coerced value, and the cell is unaffected.</li>
+<li><strong>A link whose target refuses the value is logged, and only that link is skipped.</strong> The delivery succeeds for the hub and for every other link; it is not a delivery error.</li>
+</ul>
+<h3 id="writing-to-the-hub-of-an-output">Writing to the hub of an output</h3>
+<p>Assigning <code>t.value</code> on a hub in mode <code>w</code> is a foreign change to an output the Context owns. It is <strong>reasserted</strong>: the cell's value is delivered again. Repeating it trips the oscillation detector, which latches a <code>ConflictError</code> on <code>t.error</code> and stops delivery until <code>t.clear_error()</code> (<code>contracts/attachments.md</code>, <em>The oscillation detector</em>). To set a cell from code, assign the cell.</p>
+<h2 id="threads-and-blocking">Threads and blocking</h2>
+<ul>
+<li><strong>Every public call is an ordinary public Context operation.</strong> <code>traitlet()</code>, <code>link()</code> when it upgrades, <code>destroy()</code>, <code>output()</code> and <code>clear_error()</code> block the caller, raise <code>ReentrantContextError</code> from the controller thread and <code>ClosedContextError</code> after <code>close()</code>.</li>
+<li><strong>Delivery callbacks to hub observers, and delivery updates of linked widgets, run on a transport worker thread</strong> — not on the thread that created the widget, and not on the Jupyter kernel's event loop. The immediate initial call from <code>observe()</code> runs on its caller's thread, as do notifications from a direct hub assignment and the initial update in <code>link()</code> or <code>connect()</code>. Setting an ipywidgets value from a worker thread is supported by ipywidgets; a handler that needs the kernel loop must hand over to it itself.</li>
+<li><strong>A delivery handler must not wait for its own attachment.</strong> It runs inside the delivery it was called for, so <code>ctx.mounts.sync()</code>, destroying that hub, or upgrading its link can wait on the same delivery and block until their timeout. Reading and assigning cells from a handler is fine.</li>
+<li><strong>Widget-side change handlers do no Seamless work.</strong> They arm the debounce and return, so a kernel that is busy in a blocking Context call still loses no widget change.</li>
+</ul>
+<h2 id="errors">Errors</h2>
+<p>The error model is that of <code>contracts/attachments.md</code>, <em>The three-way error model</em>. For a widget attachment:</p>
+<table>
+<thead>
+<tr>
+<th>Error</th>
+<th>Where</th>
+<th>When</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>sense error</td>
+<td>the <strong>cell</strong>: <code>failed</code>, <code>ctx.a.exception</code> a string</td>
+<td>the widget's value cannot be serialized as the cell's celltype</td>
+</tr>
+<tr>
+<td>delivery error</td>
+<td><code>t.error</code></td>
+<td>the cell's value cannot be resolved or deserialized — typically a result whose checksum arrived without its bytes. For a checksum update that required fingertipping, the missing buffer becomes a delivery error if recovery fails.</td>
+</tr>
+<tr>
+<td>conflict error</td>
+<td><code>t.error</code>, latched</td>
+<td>the detector tripped (<em>Writing to the hub of an output</em>)</td>
+</tr>
+</tbody>
+</table>
+<p>The <code>"&lt;path&gt;: &lt;reason&gt;"</code> prefix of a <code>MountError</code> carries the session's synthetic path, <code>widget-&lt;hex&gt;</code>. The hex part is not stable across sessions; match the <code>widget-</code> prefix only.</p>
+<p>Raised at the call:</p>
+<table>
+<thead>
+<tr>
+<th>Error</th>
+<th>Raised when</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>AttributeError("Widgets attach to whole Context cell nodes")</code></td>
+<td>a standalone <code>Cell</code>; a sub-path projection (<code>ctx.a.b</code>); a read-only handle, <strong>including a transformer's result, <code>ctx.tf.result</code></strong></td>
+</tr>
+<tr>
+<td><code>NodeError("Mounts require an existing whole cell node")</code></td>
+<td>the node does not exist or is not a cell</td>
+</tr>
+<tr>
+<td><code>ValueError("Cell is already mounted; unmount first")</code></td>
+<td>the widget slot is occupied by a different widget transport; an existing public hub is returned instead</td>
+</tr>
+<tr>
+<td><code>TypeError("Celltype '&lt;ct&gt;' is not mountable")</code></td>
+<td><code>checksum</code>, <code>deepcell</code>, <code>module</code></td>
+</tr>
+<tr>
+<td><code>AuthorityError</code></td>
+<td><code>link()</code> on a cell with an incoming edge; an incoming edge into a linked cell; clearing an attached cell</td>
+</tr>
+<tr>
+<td><code>ImportError</code></td>
+<td><code>traitlets</code>, or for <code>output()</code> <code>ipywidgets</code>, is not installed</td>
+</tr>
+</tbody>
+</table>
+<p>The remedy for every scope refusal is the usual one: <strong>attach a cell and connect it.</strong> <code>ctx.out = ctx.tf.result; display(output(ctx.out))</code> shows a transformer's result.</p>
+<h2 id="lifecycle">Lifecycle</h2>
+<ul>
+<li><strong>A widget attachment is never serialized.</strong> <code>get_graph()</code> writes no entry for it, and <code>set_graph()</code> restores none. After loading a graph, call <code>traitlet(...).link(...)</code> again.</li>
+<li><strong>Every detach destroys the hub.</strong> <code>t.destroy()</code>, deleting the node, an empty same-celltype builder, <code>set_graph()</code> and <code>ctx.close()</code> all end in the same detach (<code>contracts/attachments.md</code>, <em>Attach, detach, close</em>). The hub then drops all its links and becomes inert; its widgets keep the values they last showed and are no longer tied to anything.</li>
+<li><strong>Slot detach is independent.</strong> <code>t.destroy()</code> removes only the widget slot, and <code>del ctx.a.mount</code> removes only the file slot. Node deletion, an empty same-celltype builder, graph replacement and Context close detach all slots.</li>
+<li><strong>A later <code>traitlet(cell)</code> creates a fresh hub</strong>, in mode <code>w</code>, with no links.</li>
+<li><strong>A detached hub does not address a replacement attachment.</strong> Its <code>status</code> and <code>error</code> are <code>None</code>; repeating <code>destroy()</code> or <code>clear_error()</code> leaves any new hub or file mount alone.</li>
+<li><strong>The celltype is frozen and clearing is refused</strong> while the hub exists, as for any attachment.</li>
+</ul>
+<h2 id="the-output-widget">The output widget</h2>
+<p><code>output(cell, layout=None, mimetype=None)</code> returns an <code>OutputWidget</code>: an <code>ipywidgets.Output</code> that redraws whenever the cell's hub delivers a value. It attaches nothing of its own; it calls <code>traitlet(cell)</code> and observes it, so it works on a connected cell and coexists with links on the same hub.</p>
+<ul>
+<li><strong>Each delivery replaces the content;</strong> nothing is appended.</li>
+<li><strong>Nothing is drawn until the cell is <code>complete</code>,</strong> and the last rendering stays while the cell recomputes or fails (<em>Cell to widget</em>).</li>
+<li><code>display(out)</code> shows the underlying <code>Output</code>, available as <code>out.output_instance</code>; <code>layout</code> is passed to it.</li>
+</ul>
+<p>The display class follows the cell's celltype, unless <code>mimetype</code> names one:</p>
+<table>
+<thead>
+<tr>
+<th>Celltype</th>
+<th>Rendering</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>text</code>, <code>str</code>, <code>int</code>, <code>float</code>, <code>bool</code>, <code>yaml</code></td>
+<td>plain text</td>
+</tr>
+<tr>
+<td><code>plain</code></td>
+<td>the value as JSON text</td>
+</tr>
+<tr>
+<td><code>python</code>, <code>ipython</code></td>
+<td>syntax-highlighted code</td>
+</tr>
+<tr>
+<td><code>bytes</code>, <code>binary</code>, <code>mixed</code></td>
+<td>the <code>repr</code> of the value</td>
+</tr>
+</tbody>
+</table>
+<table>
+<thead>
+<tr>
+<th><code>mimetype</code></th>
+<th>Rendering</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>"text/plain"</code></td>
+<td>plain text</td>
+</tr>
+<tr>
+<td><code>"text/html"</code></td>
+<td>HTML</td>
+</tr>
+<tr>
+<td><code>"application/json"</code></td>
+<td>the value as JSON text</td>
+</tr>
+<tr>
+<td><code>"image/png"</code></td>
+<td>an image; the cell holds the PNG bytes</td>
+</tr>
+</tbody>
+</table>
+<p>Any other <code>mimetype</code> raises <code>ValueError</code>. Cells carry no mimetype of their own, so the argument is the only way to select one.</p>
+<h2 id="limits">Limits</h2>
+<p><strong>The numbers are current defaults, not contract:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Knob</th>
+<th>Current default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>debounce interval, widget to cell</td>
+<td>0.1 s</td>
+</tr>
+<tr>
+<td>delivery timeout</td>
+<td>60 s</td>
+</tr>
+<tr>
+<td>oscillation detector</td>
+<td>3 reasserts in 20 s (<code>contracts/mounts.md</code>, <em>Limits</em>)</td>
+</tr>
+</tbody>
+</table>
+<h2 id="porting-notes">Porting notes</h2>
+<p>Stated as current behaviour, with no claim about what any earlier version did:</p>
+<ul>
+<li><strong>The entry points are <code>traitlet(cell)</code> and <code>output(cell)</code>.</strong> There are no <code>Cell.traitlet()</code> and <code>Cell.output()</code> methods.</li>
+<li><strong>Only settled values are shown.</strong> A widget never sees a preliminary or intermediate value.</li>
+<li><strong>Connecting an upstream into a linked cell is refused</strong> with <code>AuthorityError</code>. A link is never dropped silently; destroy the hub first.</li>
+<li><strong>Handlers run on a worker thread.</strong></li>
+<li><strong>Links are runtime state.</strong> They are not in the graph and must be re-created after a load.</li>
+<li><strong>There is no polling <code>observe</code> on <code>Cell</code> or <code>Context</code>.</strong> Observe the hub.</li>
+<li><strong><code>ctx.compute()</code> does not wait for widgets.</strong> Use <code>ctx.mounts.sync()</code>.</li>
+</ul>
+<h2 id="current-limitations">Current limitations</h2>
+<ul>
+<li><strong>One file slot, one widget hub slot and one share slot per node.</strong> Several widgets share the same hub; additional file mounts are refused.</li>
+<li><strong><code>ctx.a.mount</code> addresses only the file slot.</strong> <code>.mount.spec</code>, <code>.mount.status</code> and <code>.mount.error</code> are <code>None</code> when no file slot exists, and <code>del ctx.a.mount</code> is then a no-op. Use <code>t.status</code>, <code>t.error</code>, <code>t.clear_error()</code> and <code>t.destroy()</code> for the widget slot.</li>
+<li><strong>The barrier is spelled <code>ctx.mounts</code>.</strong> <code>ctx.mounts.sync()</code> cuts every session, and its <code>SyncReport</code> and <code>ctx.mounts.errors</code> use <code>(node_path, driver)</code> keys for all entries, including file-only and widget-only nodes. A hub's key is <code>(("a",), "widget")</code> for <code>ctx.a</code>, in the <code>status</code> shape of <code>contracts/mounts.md</code>.</li>
+<li><strong>Idle delivery wakeups are Context-owned.</strong> A deadline timer wakes pending throttled deliveries and due retries without a user call.</li>
+<li><strong>The oscillation detector is per session.</strong> Cross-attachment loops are not detected as a node-wide loop.</li>
+<li><strong>The debounce interval is not a public parameter.</strong></li>
+<li><strong>Directory celltypes are unspecified.</strong> <code>folder</code> passes celltype admission and its hub value is the index; <code>deepfolder</code> is refused, because a hub attaches in mode <code>w</code>. Do not depend on either.</li>
+</ul>
+<h2 id="non-goals">Non-goals</h2>
+<ul>
+<li><strong>Sub-path, pin, code and standalone attachments.</strong> As for every attachment (<code>contracts/attachments.md</code>, <em>Non-goals</em>).</li>
+<li><strong>Showing node state in a widget.</strong> A widget shows values. <code>waiting</code>, <code>blocked</code> and <code>failed</code> are read from the cell handle.</li>
+<li><strong>Persisting links in the graph.</strong> A widget is a live object of one process; there is nothing to serialize it as.</li>
+<li><strong>Marshalling onto the kernel's event loop.</strong> The blocking Context calls wait for delivery acknowledgements, so a delivery that needed the kernel loop would deadlock every one of them when called from a notebook cell.</li>
+<li><strong>Clearing a cell from a widget.</strong> <code>None</code> is absence.</li>
+</ul>
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="shares.html" class="btn btn-neutral float-left" title="HTTP Shares"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="streaming.html" class="btn btn-neutral float-right" title="Streaming">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+    
+      <span><a href="shares.html" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="streaming.html" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script src="../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "..";</script>
+    <script src="../js/theme_extra.js"></script>
+    <script src="../js/theme.js"></script>
+      <script src="../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>

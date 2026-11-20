@@ -75,6 +75,14 @@
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../../contracts/mounts.html">File Mounts</a>
                   </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../contracts/shares.html">HTTP Shares</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../contracts/widgets.html">Jupyter Widgets</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../contracts/streaming.html">Streaming</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../contracts/transformation-logs.html">Transformation Logs</a>
+                  </li>
                   <li class="toctree-l1"><a class="reference internal" href="../../contracts/cancellation.html">Cancellation</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../../contracts/direct-delayed-and-transformation.html">direct/delayed/Transformation</a>
@@ -91,6 +99,8 @@
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../../contracts/execution-backends.html">Execution Backends</a>
                   </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../contracts/environments.html">Environments</a>
+                  </li>
                   <li class="toctree-l1"><a class="reference internal" href="../../contracts/execution-records.html">Execution Records</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../../contracts/service-management.html">Service Management</a>
@@ -102,6 +112,10 @@
                   <li class="toctree-l1"><a class="reference internal" href="../../contracts/compiled-pins.html">Compiled Pins</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../../contracts/seamless-signature-schema.html">seamless-signature Schema</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../contracts/handler-languages.html">Handler Languages</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../contracts/language-backends.html">Language Backends</a>
                   </li>
               </ul>
               <p class="caption"><span class="caption-text">API</span></p>
@@ -126,7 +140,15 @@
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#checksumfingertip">Checksum.fingertip</a>
     </li>
+    <li class="toctree-l2"><a class="reference internal" href="#checksumfingertip_folder">Checksum.fingertip_folder</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#checksumfingertip_folder_sync">Checksum.fingertip_folder_sync</a>
+    </li>
     <li class="toctree-l2"><a class="reference internal" href="#checksumfingertip_sync">Checksum.fingertip_sync</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#checksumhas_local_buffer">Checksum.has_local_buffer</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#checksumhas_local_folder_buffers">Checksum.has_local_folder_buffers</a>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#checksumhex">Checksum.hex</a>
     </li>
@@ -231,15 +253,39 @@ An URL info can be an URL string, or a dict with additional information.</p>
 <h2 id="checksumfingertip"><code>Checksum.fingertip</code></h2>
 <ul>
 <li>kind: <code>method</code></li>
-<li>signature: <code>fingertip(self, celltype)</code></li>
+<li>signature: <code>fingertip(self, celltype, *, _force_producer, _require_folder_members)</code></li>
 </ul>
 <p>Resolve locally, or report the highest failure encountered in recovery.</p>
+<h2 id="checksumfingertip_folder"><code>Checksum.fingertip_folder</code></h2>
+<ul>
+<li>kind: <code>method</code></li>
+<li>signature: <code>fingertip_folder(self)</code></li>
+</ul>
+<p>Recover this folder's index and any locally unavailable leaves.</p>
+<h2 id="checksumfingertip_folder_sync"><code>Checksum.fingertip_folder_sync</code></h2>
+<ul>
+<li>kind: <code>method</code></li>
+<li>signature: <code>fingertip_folder_sync(self)</code></li>
+</ul>
+<p>Synchronously recover a folder index and its non-null leaves.</p>
 <h2 id="checksumfingertip_sync"><code>Checksum.fingertip_sync</code></h2>
 <ul>
 <li>kind: <code>method</code></li>
 <li>signature: <code>fingertip_sync(self, celltype)</code></li>
 </ul>
 <p>Synchronously resolve or recompute the checksum buffer/value.</p>
+<h2 id="checksumhas_local_buffer"><code>Checksum.has_local_buffer</code></h2>
+<ul>
+<li>kind: <code>method</code></li>
+<li>signature: <code>has_local_buffer(self)</code></li>
+</ul>
+<p>Whether this checksum is available in memory or a local source.</p>
+<h2 id="checksumhas_local_folder_buffers"><code>Checksum.has_local_folder_buffers</code></h2>
+<ul>
+<li>kind: <code>method</code></li>
+<li>signature: <code>has_local_folder_buffers(self)</code></li>
+</ul>
+<p>Whether the folder index and each non-null leaf are locally available.</p>
 <h2 id="checksumhex"><code>Checksum.hex</code></h2>
 <ul>
 <li>kind: <code>method</code></li>

@@ -1,0 +1,725 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <link rel="shortcut icon" href="../img/favicon.ico" />
+    <title>Environments - Seamless — Agent Documentation</title>
+    <link rel="stylesheet" href="../css/theme.css" />
+    <link rel="stylesheet" href="../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "Environments";
+        var mkdocs_page_input_path = "contracts/environments.md";
+        var mkdocs_page_url = null;
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href="../index.html" class="icon icon-home"> Seamless — Agent Documentation
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../index.html">Home</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../overview.html">Agent Docs Overview</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../repos/index.html">Workspace Repos</a>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Contracts</span></p>
+              <ul class="current">
+                  <li class="toctree-l1"><a class="reference internal" href="identity-and-caching.html">Identity and Caching</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="celltypes-and-conversion.html">Celltypes, Null, and Conversion</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="hashtype.html">HashType</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="deep-celltypes.html">Deep Celltypes</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="expressions.html">Expressions</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="cells.html">Cells</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="pins.html">Pins</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="workflow-context.html">Workflow Context</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="node-state-lifecycle.html">Node State Lifecycle</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="attachments.html">Attachments</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="mounts.html">File Mounts</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="shares.html">HTTP Shares</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="widgets.html">Jupyter Widgets</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="streaming.html">Streaming</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="transformation-logs.html">Transformation Logs</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="cancellation.html">Cancellation</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="direct-delayed-and-transformation.html">direct/delayed/Transformation</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="modules-and-closures.html">Modules and Closures</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="scratch-witness-audit.html">Scratch/Witness/Audit</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="seamless-run-and-argtyping.html">seamless-run/Argtyping</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="cache-storage-and-limits.html">Cache Storage and Limits</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="content-addressed-files-and-dirs.html">Content-addressed Files and Dirs</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="execution-backends.html">Execution Backends</a>
+                  </li>
+                  <li class="toctree-l1 current"><a class="reference internal current" href="#">Environments</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#the-surface">The surface</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#what-an-environment-changes-and-what-it-does-not">What an environment changes, and what it does not</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#a-conda-environment">A conda environment</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#a-docker-image">A Docker image</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#identity-and-caching">Identity and caching</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#the-image-spec">The image spec</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#the-runtime-is-chosen-where-the-job-runs">The runtime is chosen where the job runs</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#required-binaries">Required binaries</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#failures">Failures</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#the-job-directory-on-disk">The job directory on disk</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#the-first-word-of-a-seamless-run-command">The first word of a seamless-run command</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#the-process-lock-nesting-and-cancellation">The process lock, nesting and cancellation</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#current-limitations">Current limitations</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#non-goals">Non-goals</a>
+    </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="execution-records.html">Execution Records</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="service-management.html">Service Management</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="compression.html">Compression</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="compiled-transformers.html">Compiled Transformers</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="compiled-pins.html">Compiled Pins</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="seamless-signature-schema.html">seamless-signature Schema</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="handler-languages.html">Handler Languages</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="language-backends.html">Language Backends</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">API</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/python/seamless.html">seamless</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/python/seamless.transformer.html">seamless.transformer</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/python/seamless.buffer_class.html">seamless.buffer_class</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/python/seamless.checksum_class.html">seamless.checksum_class</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/python/seamless_config.select.html">seamless_config.select</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/python/seamless_config.tools.html">seamless_config.tools</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/python/seamless_transformer.transformation_class.html">seamless_transformer.transformation_class</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/python/seamless_transformer.transformer_class.html">seamless_transformer.transformer_class</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">CLI</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/cli/seamless-run.html">seamless-run</a>
+                  </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Seamless — Agent Documentation</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../index.html" class="icon icon-home" aria-label="Docs"></a></li>
+          <li class="breadcrumb-item">Contracts</li>
+      <li class="breadcrumb-item active">Environments</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h1 id="environments-contract">Environments (Contract)</h1>
+<p>An <strong>environment</strong> says where the script of a CLI job runs: in a named conda
+environment, or in a container made from a Docker image. The script, its inputs
+and its result stay the same. Only the place changes.</p>
+<p>A <strong>CLI job</strong> is the way a bash transformation always runs, and the way a
+transformation in R, Julia or Python runs under its CLI backend (<a href="language-backends.html">Language
+backends</a>). In this page "the script" is the script of a
+bash transformation, or the launcher of an interpreter for another language.
+The wrapper is the same for all of them. An in-memory backend cannot enter an
+environment, and has a rule of its own (<a href="language-backends.html">Language
+backends</a>, <em>Environments</em>).</p>
+<p>The <a href="../../../plans/bash-docker-conda-transformers-plan.md">implementation plan</a>
+describes the launch mechanics and the phases, and the <a href="../../../plans/language-backends-plan.md">language backends
+plan</a> their generalization to every
+language.</p>
+<h2 id="the-surface">The surface</h2>
+<p><strong>Python face.</strong> Every Transformer has an <code>environment</code> object:</p>
+<pre><code class="language-python">tf = Transformer(&quot;bash&quot;, direct=True)
+tf.code = &quot;samtools --version &gt; RESULT&quot;
+
+tf.environment.set_conda_env(&quot;bio&quot;)                     # a named conda environment
+tf.environment.set_docker({&quot;name&quot;: &quot;ubuntu:22.04&quot;})     # or a Docker image
+</code></pre>
+<p><code>get_conda_env()</code> and <code>get_docker()</code> read the values back. Passing <code>None</code>
+clears one.</p>
+<p><strong>Unix face.</strong> <code>seamless-run --conda ENV …</code> and <code>seamless-run --docker IMAGE …</code>.
+<code>--conda-env</code> and <code>--conda-environment</code> are aliases of the first,
+<code>--docker-image</code> of the second.</p>
+<p><strong>Workflow Context.</strong> A node that is bound from a Transformer carries that
+Transformer's environment, and the graph file saves it. On the bound node,
+<code>environment</code> is a read-only copy.</p>
+<p><strong>Transformation dict.</strong> The environment travels as <code>__env__</code>. In it, the conda
+environment is the string <code>conda_environment</code> and the image is the mapping
+<code>docker</code> (<em>The image spec</em>).</p>
+<p>These rules hold on every face:</p>
+<ul>
+<li><strong>Every language can carry an environment, and what it does with it follows
+  from its language backend.</strong></li>
+<li>A CLI backend enters the environment: bash, and the CLI backends of R,
+    Julia and Python.</li>
+<li>An in-memory backend cannot. It runs only when its process is already in
+    exactly the conda environment that is asked for, and it fails for a Docker
+    image. This is the rule for compiled transformers, for Python in memory,
+    and for the in-memory backends of R and Julia.</li>
+</ul>
+<p><a href="language-backends.html">Language backends</a>, <em>Environments</em>, has the rules.
+  Building a Transformation with an environment never fails for this reason.
+  The check happens when the transformation runs.
+- <strong>A record probe is exempt.</strong> The probe that captures a job's surroundings
+  for a full execution record is a Python transformation that carries the
+  job's <code>__env__</code> (<a href="execution-records.html">Execution records</a>, <em>Probing is
+  manual</em>). It runs on the host and it does not fail for the conda environment
+  or the image that it carries. A full record can therefore be made for a bash
+  job that has an environment.
+- <strong>A conda environment and a Docker image together are an error.</strong> A
+  Transformer that has both builds, and the transformation fails when it is
+  dispatched, before anything is launched. The check is repeated before launch
+  on the executing host. <code>seamless-run</code> refuses the two flags together at
+  dispatch as well. The message says to pick one. A script that needs a conda
+  environment inside an image activates it itself.
+- <strong>Neither is ever ignored.</strong> A transformation with an environment runs in
+  that environment, or in an in-memory backend satisfies it as a requirement on
+  its process, or fails. It does not fall back to the plain host.</p>
+<h2 id="what-an-environment-changes-and-what-it-does-not">What an environment changes, and what it does not</h2>
+<p>Unchanged, with or without an environment, for a bash transformation
+(<a href="seamless-run-and-argtyping.html">seamless-run and argtyping</a>,
+<a href="pins.html">Pins</a>):</p>
+<ul>
+<li>the job directory: one file, link or directory per pin, and the script's
+  working directory;</li>
+<li>the pin variables that the script sees;</li>
+<li>the header <code>set -u -e</code>;</li>
+<li>the result: the file or directory <code>RESULT</code>;</li>
+<li>stdout and stderr: two separate streams, relayed while the script runs
+  (<a href="transformation-logs.html">Transformation logs</a>, <a href="streaming.html">Streaming</a>).</li>
+</ul>
+<h3 id="a-conda-environment">A conda environment</h3>
+<p>The script runs as under <code>conda run -n NAME</code>.</p>
+<ul>
+<li><strong>A name that contains <code>/</code> is the path of an environment</strong>, as for
+  <code>conda run -p</code>.</li>
+<li><strong>Activation happens before the script and outside its <code>set -u -e</code>.</strong> An
+  activation script that reads an unset variable does not abort the job.</li>
+<li><strong>The script inherits the environment variables of the process that runs
+  it</strong>, as a plain bash transformation does, plus what activation adds.</li>
+<li><strong>The environment must exist on the executing host</strong>, and so must a conda
+  launcher (<em>The runtime is chosen where the job runs</em>). Seamless does not
+  create environments.</li>
+<li><strong>Entering the environment takes time on every job.</strong> With <code>conda</code> as the
+  launcher that is in the order of a second. <code>mamba</code> and <code>micromamba</code> are much
+  faster. A site that runs many short jobs sets <code>SEAMLESS_CONDA_EXE</code>.</li>
+</ul>
+<h3 id="a-docker-image">A Docker image</h3>
+<p>The script runs inside a container made from the image.</p>
+<ul>
+<li><strong>The image must contain <code>bash</code>.</strong> A bash transformation requires nothing
+  else of it. A CLI backend of another language also needs its interpreter and
+  its packages (<a href="language-backends.html">Language backends</a>, <em>The CLI rule</em>).
+  Seamless does not need to be installed in it, except where the code itself
+  uses Seamless, or a Python CLI job carries a value that needs seamless-core.</li>
+<li><strong>The image's ENTRYPOINT is not used.</strong></li>
+<li><strong>The job directory is the working directory, at <code>/seamless-job</code>.</strong> That path
+  is the same on every run, so <code>$PWD</code> is too.</li>
+<li><strong>The container sees the job directory and nothing else of the host</strong>, with
+  one exception: the read-buffer directories of the executing process are
+  visible at their own paths, read-only. An input that Seamless provides as a
+  link into such a directory therefore resolves. Every other buffer in those
+  directories is readable by the image as well.</li>
+<li><strong>A link that the container cannot follow is not used.</strong> A buffer file in a
+  read-buffer directory can itself be a symlink to a file elsewhere, and that
+  target is not bound. Where the transformation will run in a container,
+  Seamless follows each buffer file before it links it, and treats one that
+  ends outside what the wrapper binds as a buffer that is not on disk. An
+  ordinary input and a <code>folder</code> member are then copied into the job directory.
+  Bash refuses <code>deepfolder</code> pins before launch; handler backends carry their
+  checksum objects without needing member files in the container (<a href="deep-celltypes.html">Deep
+  celltypes</a>, <em>How deep values reach a transformer</em>). What
+  the wrapper binds is the job directory and the
+  read-buffer directories. A bind that an operator adds with
+  <code>SEAMLESS_CONTAINER_ARGS</code> is not seen, so such a bind makes a copy that was
+  not needed.</li>
+<li><strong>The host's environment variables are not inherited.</strong> The pin variables
+  are set.</li>
+<li><strong><code>HOME</code> is <code>/seamless-job</code>, the working directory.</strong> It is a writable
+  directory owned by the user running the job, including when the image has no
+  passwd entry for that user. Apptainer maps the job directory there with
+  <code>--home</code>; its <code>--env</code> option cannot override <code>HOME</code>.</li>
+<li><strong>The script runs as the user that runs the job on the host.</strong> Files it
+  writes belong to that user. An image that only works as root or as a named
+  user of its own may fail.</li>
+<li><strong>Background processes of the script end with the container.</strong></li>
+<li><strong>The container is removed when the script ends</strong>, however it ends. Nothing
+  is kept from one job to the next, and what the script writes outside the job
+  directory is lost.</li>
+</ul>
+<h2 id="identity-and-caching">Identity and caching</h2>
+<p><strong>The environment is not part of the transformation's identity.</strong> It is carried
+in <code>__env__</code>, an orthogonal key
+(<a href="identity-and-caching.html">Identity and caching</a>, <em>Load-bearing vs orthogonal
+keys</em>). Two transformations that differ only in their conda environment or
+their image have the same checksum.</p>
+<ul>
+<li><strong>A result that is cached is returned whatever the environment says.</strong>
+  Nothing is launched, and none of the checks on this page run.</li>
+<li><strong>A tag that moves still gets a cache hit.</strong> <code>ubuntu:22.04</code> rebuilt upstream
+  changes nothing for a transformation that already has a result. Seamless
+  does not police mutable tags. For work that must be reproducible, name the
+  image by digest: <code>name@sha256:…</code>.</li>
+<li><strong>The container runtimes share one cache.</strong> A result computed under docker
+  is a cache hit for the same transformation on an apptainer host.</li>
+<li><strong>Fingertipping runs the environment where the buffer is wanted.</strong> A
+  fingertip is never dispatched
+  (<a href="scratch-witness-audit.html">Scratch, witness, audit</a>, <em>Fingertipping</em>). The
+  machine that asks needs the conda environment, or a container runtime and
+  the image. What the tag points to there decides what is recomputed.</li>
+<li><strong>Two submissions of one transformation with different environments latch on
+  to each other</strong>, unless <code>strict_dunder</code> is used
+  (<a href="identity-and-caching.html">Identity and caching</a>, <em>Concurrent submissions of
+  the same checksum</em>).</li>
+</ul>
+<h2 id="the-image-spec">The image spec</h2>
+<p><code>set_docker</code> takes a mapping. <code>seamless-run --docker</code> sets <code>name</code> only.</p>
+<table>
+<thead>
+<tr>
+<th>Key</th>
+<th>Type</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>name</code></td>
+<td>str, required</td>
+<td>A Docker image reference. A digest reference is allowed</td>
+</tr>
+<tr>
+<td><code>gpus</code></td>
+<td>bool, default false</td>
+<td>Give the container access to the host's NVIDIA GPUs</td>
+</tr>
+<tr>
+<td><code>shm_size</code></td>
+<td>str, such as <code>"1g"</code></td>
+<td>Size of <code>/dev/shm</code>. Ignored under apptainer</td>
+</tr>
+</tbody>
+</table>
+<p>Every other key is an error. It is checked when the transformation is
+dispatched, and again before launch on the executing host. Setting the spec,
+and building a Transformation, check nothing. For three legacy keys the
+message names the replacement:</p>
+<ul>
+<li><code>options</code>: use <code>gpus</code> and <code>shm_size</code>;</li>
+<li><code>version</code>, <code>checksum</code>: use <code>name@sha256:&lt;digest&gt;</code>.</li>
+</ul>
+<p><code>gpus</code> gives access to GPUs on the machine where the job runs, and it needs
+the runtime's NVIDIA support there. It does not send the job to a machine that
+has a GPU. That is done by choosing the stage
+(<a href="execution-backends.html">Execution backends</a>).</p>
+<h2 id="the-runtime-is-chosen-where-the-job-runs">The runtime is chosen where the job runs</h2>
+<p>A Docker image can be run by three container runtimes: <strong>docker</strong>, <strong>podman</strong>
+and <strong>apptainer</strong>. Which one runs a job is a property of the executing host,
+never of the transformation.</p>
+<table>
+<thead>
+<tr>
+<th>Setting on the executing host</th>
+<th>Values</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>SEAMLESS_CONTAINER_RUNTIME</code></td>
+<td><code>docker</code>, <code>podman</code>, <code>apptainer</code>, <code>none</code></td>
+<td>the first that works, in that order</td>
+</tr>
+<tr>
+<td><code>SEAMLESS_CONTAINER_PULL</code></td>
+<td><code>never</code>, <code>missing</code></td>
+<td><code>never</code></td>
+</tr>
+<tr>
+<td><code>SEAMLESS_APPTAINER_DIR</code></td>
+<td>a directory of SIF files</td>
+<td>none</td>
+</tr>
+<tr>
+<td><code>SEAMLESS_CONTAINER_ARGS</code></td>
+<td>extra arguments for the runtime's run command</td>
+<td>none</td>
+</tr>
+<tr>
+<td><code>SEAMLESS_CONDA_EXE</code></td>
+<td>the conda launcher: <code>conda</code>, <code>mamba</code> or <code>micromamba</code>, or a path to one</td>
+<td><code>$CONDA_EXE</code>, else <code>$CONDA_ROOT/bin/conda</code>, else <code>conda</code> on <code>PATH</code></td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li><strong>Without the setting, the runtime is detected.</strong> docker is taken when its
+  daemon answers, else podman, else apptainer. A process detects once and
+  keeps the answer.</li>
+<li><strong><code>none</code> refuses container jobs.</strong> An operator uses it on a host that has a
+  runtime installed but must not run containers. The failure says that the
+  host does not allow them.</li>
+<li><strong>With no working runtime the job fails.</strong> The failure names the image, the
+  host and the runtimes that were tried.</li>
+<li><strong>The runtime is chosen before the job directory is written.</strong> A host that
+  cannot run a container job refuses it in the same way on every backend.</li>
+<li><strong>By default nothing is pulled.</strong> An image that is not present on the
+  executing host is a failure. With <code>missing</code>, the runtime fetches it.</li>
+<li><strong>apptainer looks for <code>&lt;SEAMLESS_APPTAINER_DIR&gt;/&lt;name&gt;.sif</code></strong>, with the image
+  name used literally: <code>ubuntu:22.04</code> is the file <code>ubuntu:22.04.sif</code>, and
+  <code>biocontainers/samtools:1.19</code> is <code>samtools:1.19.sif</code> in the subdirectory
+  <code>biocontainers</code>. When the file is missing, the failure prints the
+  <code>apptainer pull</code> command that creates it. With <code>missing</code>, apptainer runs
+  <code>docker://&lt;name&gt;</code> from its own cache instead.</li>
+<li><strong><code>SEAMLESS_CONTAINER_ARGS</code> is the only way to pass further options to the
+  runtime</strong>, and it is per host. It is split into words as a shell does. A
+  site puts its SELinux label option, a network flag or an extra bind there.</li>
+<li><strong>A submitter chooses the image and nothing else.</strong> A transformation cannot
+  choose mounts, privileges, networks or limits.</li>
+<li><strong>With no conda launcher the job fails</strong>, and the failure says so.</li>
+<li><strong>The product that is still called Singularity is not supported.</strong> A
+  <code>singularity</code> command is not looked for, and the legacy variables
+  <code>SEAMLESS_SINGULARITY_DIR</code> and <code>SEAMLESS_DOCKER_DISABLED</code> and the legacy
+  <code>.simg</code> files are not read.</li>
+</ul>
+<p>Where the settings are read, per backend:</p>
+<table>
+<thead>
+<tr>
+<th>Backend</th>
+<th>Executing host</th>
+<th>Settings come from</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>process</code>, <code>spawn</code></td>
+<td>the submitting machine</td>
+<td>the environment of the submitting process</td>
+</tr>
+<tr>
+<td><code>remote: jobserver</code></td>
+<td>the jobserver host</td>
+<td>the environment the jobserver was started in</td>
+</tr>
+<tr>
+<td><code>remote: daskserver</code></td>
+<td>the Dask worker nodes</td>
+<td>the queue's <code>job_script_prologue</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>What a shared executing host exposes.</strong> Whoever can submit a bash
+transformation, or a CLI job of another language, to it can run any image that is present there, with GPUs if the
+spec asks for them, and that image can read the read-buffer directories. This
+adds little to a plain bash transformation, which already runs arbitrary code
+as the user of that host. With the pull policy <code>never</code>, the operator decides
+which images are present. <code>SEAMLESS_CONTAINER_RUNTIME=none</code> switches
+containers off.</p>
+<h2 id="required-binaries">Required binaries</h2>
+<p><code>tf.environment.set_which([...])</code> lists binaries that must exist.</p>
+<ul>
+<li><strong>For a CLI backend, of every language, they are looked up where the script
+  runs</strong>: after conda activation, or inside the image. A binary that exists
+  only in the environment satisfies the check, and one that exists only on the
+  host does not.</li>
+<li><strong>For an in-memory backend they are looked up on the <code>PATH</code> of the process
+  that runs the code.</strong> There is no environment to enter, so the host is where
+  the code runs (<a href="language-backends.html">Language backends</a>, <em>Required
+  binaries</em>).</li>
+<li><strong>A record probe that carries a conda environment or an image does not check
+  them.</strong> The probe runs on the host, where a binary of the environment need
+  not exist.</li>
+</ul>
+<h2 id="failures">Failures</h2>
+<p>Each of the following is a failure of the transformation, and failures are not
+cached.</p>
+<p><strong>Before anything is launched</strong>, a job is refused when:</p>
+<ul>
+<li>its spec is invalid: an unknown key in the image spec, or a conda
+  environment together with an image. Both are found at dispatch, and checked
+  again here;</li>
+<li>the executing host cannot run it: <code>SEAMLESS_CONTAINER_RUNTIME=none</code>, no
+  working runtime, no conda launcher, or a Docker daemon that is not local
+  (<em>Current limitations</em>).</li>
+</ul>
+<p><strong>After the launched process has exited</strong>, the outcome is classified in this
+order:</p>
+<ol>
+<li><strong>The environment was not entered.</strong> The script did not start: the conda
+   environment does not exist, the image is absent, or the image has no
+   <code>bash</code>. The failure names the environment (the conda environment, or the
+   runtime and the image), the exit code and the command that was run. What
+   the launcher printed is in the stdout and stderr trailers.</li>
+<li>Docker reported 125 for a runtime error, such as an absent image under
+     the pull policy <code>never</code>, and 127 when its init process could not find
+     <code>bash</code> in the image. Podman 4.9.3 reported 125 for a runtime error and 1
+     when catatonit could not exec <code>bash</code>; its stderr identifies that case.
+     The start marker distinguishes it from a script that itself exits 1.
+     Preserve the runtime's exit code rather than treating 1 alone as proof
+     that the environment was not entered.</li>
+<li>apptainer exits 255 in both cases. Only its stderr tells them apart.</li>
+<li>This class is what separates a missing conda environment, for which
+     <code>conda run</code> exits 1, from a script that exits 1.</li>
+<li>Without an environment, this class means that the script itself could not
+     be started.</li>
+<li><strong>A required binary is missing</strong> where the script runs. The text is
+   <code>Required environment binaries are unavailable: …</code>, followed by where they
+   were looked for.</li>
+<li><strong>The script exits with a non-zero code.</strong> This is the <em>Bash transformer
+   exception</em> report (<a href="transformation-logs.html">Transformation logs</a>, <em>The
+   failure text</em>), with one more line that names the environment. For a
+   container, exit code 137 adds a hint that the job was killed, possibly for
+   exceeding a memory limit.</li>
+<li><strong><code>RESULT</code> is missing or empty</strong>, as for a plain bash transformation.</li>
+</ol>
+<p>After a failing script, <code>conda run</code> adds a line of its own to stderr. It is
+part of the captured stderr.</p>
+<h2 id="the-job-directory-on-disk">The job directory on disk</h2>
+<p>Seamless materializes a job directory for every CLI job and runs
+<code>bash transform.sh</code> in it. <code>seamless-run --dry --write-remote-job DIR</code> writes
+that directory without running it
+(<a href="seamless-run-and-argtyping.html">seamless-run and argtyping</a>).</p>
+<ul>
+<li><strong>Only a bash transformation can be written instead of run.</strong> The other
+  CLI backends run their job and never write a directory for the user.</li>
+<li><strong><code>bash transform.sh</code> is the way to run it, with or without an environment.</strong>
+  What is written is what Seamless itself would have run.</li>
+<li><strong>Without an environment, <code>transform.sh</code> is the script.</strong></li>
+<li><strong>With an environment, <code>transform.sh</code> is a launcher</strong> of one command, and the
+  script is <code>transform-inner.sh</code> next to it. The launcher enters the conda
+  environment or starts the container, and runs the script there.</li>
+<li><strong>The script sets every pin variable itself.</strong> It does not rely on the
+  environment variables of the process that wrote it.</li>
+<li><strong>The script is run as a file.</strong> Its length is not limited by the size of a
+  command-line argument, <code>$0</code> is its file name, and bash's own error messages
+  start with <code>transform.sh: line N:</code> or <code>transform-inner.sh: line N:</code>.</li>
+<li><strong>The directory can be moved.</strong> The launcher refers to the directory it is
+  run from.</li>
+<li><strong>A container launcher names the runtime of the host that wrote the
+  directory.</strong> It is plain text and can be edited for another site.</li>
+<li><strong>File names that start with <code>.seamless-</code> are reserved</strong> in a job directory.
+  Seamless's part of the script writes two of them: <code>.seamless-started</code> when
+  the script starts, and <code>.seamless-missing</code> when a required binary is absent.
+  User code does not create or remove such files.</li>
+</ul>
+<h2 id="the-first-word-of-a-seamless-run-command">The first word of a <code>seamless-run</code> command</h2>
+<p>Without an environment, <code>seamless-run</code> looks the first word of a command up on
+the submitting machine's <code>PATH</code>, and uploads the program when it is found
+outside the standard tool directories
+(<a href="seamless-run-and-argtyping.html">seamless-run and argtyping</a>, <em>The first word
+of a command</em>). With <code>--conda</code> or <code>--docker</code>:</p>
+<ul>
+<li><strong><code>seamless-run</code> does not look.</strong> The first word is the name of a tool in
+  the environment, even when the submitting machine has a tool of that name.</li>
+<li><strong>A local file is still uploaded.</strong> <code>seamless-run --docker IMAGE ./analyze.sh
+  data.txt</code> uploads <code>analyze.sh</code>, as it uploads <code>data.txt</code>, and runs it inside
+  the image.</li>
+<li>A personal tool that is on the submitting machine's <code>PATH</code> must be given by
+  its path to be uploaded.</li>
+</ul>
+<h2 id="the-process-lock-nesting-and-cancellation">The process lock, nesting and cancellation</h2>
+<p><strong>A job with an environment is a bash body</strong>, and so is every CLI job. It
+takes the process lock of the process that runs it, like any other body, and
+holds it until the script ends
+(<a href="execution-backends.html">Execution backends</a>, <em>The process lock</em>). A long
+container job occupies its process for that time. <code>process_lock</code> false, or
+<code>seamless-run --no-process-lock</code>, lets it run next to others.</p>
+<ul>
+<li><strong>Under a conda environment, nested work is signalled as for plain bash.</strong>
+  A <code>seamless-run</code> that the script starts tells the body, and the body gives
+  the lock up (<a href="execution-backends.html">Execution backends</a>, <em>Bash bodies</em>).</li>
+<li><strong>Inside a container it is not.</strong> The signal does not cross the container
+  boundary. A containerized script that submits nested work must be declared a
+  driver, or have <code>process_lock</code> false.</li>
+</ul>
+<p><strong>A cancel that stops the run ends the environment too</strong>
+(<a href="cancellation.html">Cancellation</a>, <em>A bash run that is cancelled</em>).</p>
+<ul>
+<li><strong>The script is killed, with the processes it started.</strong> Under a conda
+  environment that includes <code>conda run</code>.</li>
+<li><strong>A container is removed.</strong> It does not keep running after its job was
+  cancelled.</li>
+<li><strong>There is no grace period.</strong> The script is not given time to clean up.</li>
+<li><strong>Hard cancellation tears down the environment in <code>process</code>, <code>spawn</code> and
+  <code>remote: jobserver</code>.</strong> It also did so in <code>remote: daskserver</code> in the measured
+  local harness; see <a href="cancellation.html">Cancellation</a>, <em>A bash run that is
+  cancelled</em>. A softcancel never stops a Dask run.</li>
+<li><strong>A docker or podman container that Seamless starts carries the label
+  <code>seamless.tf=&lt;tf_checksum&gt;</code></strong> for as long as it exists.
+  <code>docker ps --filter label=seamless.tf=&lt;tf_checksum&gt;</code> lists the container of a
+  running job, and nothing once the job has ended or was cancelled.</li>
+</ul>
+<h2 id="current-limitations">Current limitations</h2>
+<ul>
+<li><strong>A bound node's environment cannot be changed.</strong> It is set on the
+  Transformer before binding.</li>
+<li><strong>The execution record does not say which image ran.</strong> It identifies the
+  spec text, and a probe looks the image name up when the probe runs
+  (<a href="execution-records.html">Execution records</a>). A moved tag is not visible in
+  it afterwards. The record's <code>environment</code> bucket describes the process that
+  ran the job, not the conda environment or the image of the script.</li>
+<li><strong>A remote Docker daemon is not supported.</strong> A job fails before launch when
+  <code>DOCKER_HOST</code> or <code>CONTAINER_HOST</code> names anything but a local <code>unix://</code>
+  socket.</li>
+<li><strong>The daemon must see the job directory at the path Seamless sees it.</strong> A
+  Seamless process that itself runs in a container and uses the host's daemon
+  works only when those paths are shared. Otherwise the environment is not
+  entered, and the failure says what to suspect.</li>
+<li><strong>Under docker and podman, a path that contains a comma cannot be mounted.</strong>
+  A job whose job directory or read-buffer directory has such a path is
+  refused with a message.</li>
+<li><strong>docker and podman need their init helper on the executing host.</strong> Without
+  it the container does not start.</li>
+<li><strong>apptainer must be able to create mount points inside the image</strong>, which is
+  its default. A site that has disabled this cannot run container jobs under
+  apptainer.</li>
+<li><strong>Nested Seamless commands inside a container</strong> need Seamless in the image
+  and a route to the services. Neither is provided.</li>
+</ul>
+<h2 id="non-goals">Non-goals</h2>
+<ul>
+<li>Running compiled transformers in a container or in another conda
+  environment. A compiled call runs inside the worker process, which cannot be
+  wrapped.</li>
+<li>Creating a conda environment from a specification. <code>set_conda</code> stores one,
+  and execution does not act on it.</li>
+<li>Building images, or converting them to SIF files.</li>
+<li>Per-transformation container options beyond the image spec, and a
+  per-transformation choice of runtime.</li>
+<li>An allowlist of images.</li>
+</ul>
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="execution-backends.html" class="btn btn-neutral float-left" title="Execution Backends"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="execution-records.html" class="btn btn-neutral float-right" title="Execution Records">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+    
+      <span><a href="execution-backends.html" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="execution-records.html" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script src="../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "..";</script>
+    <script src="../js/theme_extra.js"></script>
+    <script src="../js/theme.js"></script>
+      <script src="../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>

@@ -99,6 +99,8 @@
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#permission-manager">Permission manager</a>
     </li>
+    <li class="toctree-l3"><a class="reference internal" href="#process-lock">Process lock</a>
+    </li>
     <li class="toctree-l3"><a class="reference internal" href="#dummy-scheduler">Dummy scheduler</a>
     </li>
         </ul>
@@ -224,6 +226,10 @@ transformation is submitted.</p>
 </ul>
 <h3 id="permission-manager">Permission manager</h3>
 <p>An anti-deadlock throttle that prevents the Dask cluster from over-committing. Tracks a capacity counter based on <code>TRANSFORMATION_THROTTLE × workers</code>. When at capacity, batches new requests per 10-second epoch and grants based on system load. This prevents nested transformations from starving the cluster.</p>
+<p>A transformation that is declared a driver (<code>driver = True</code>) skips the permission request, and so do the transformations that its code submits. The mark is not inherited: a transformation launched by a driver is an ordinary transformation, and what it submits in turn asks for permission again.</p>
+<h3 id="process-lock">Process lock</h3>
+<p>The permission manager bounds the transformations that wait for nested work. The process lock of <code>seamless-transformer</code> bounds the ones that work. Each Seamless worker process has one lock, and by default a transformation runs its code while holding it, so a worker process runs the code of one transformation at a time. A transformation gives the lock up when it submits nested work and never takes it again, so a parent that waits for its children never holds a lock. The two mechanisms therefore do not interfere: the lock is not a resource that waiting parents can exhaust.</p>
+<p>A transformation with <code>process_lock = False</code>, or a declared driver, does not take the lock. The full reasoning, and what the rule does not cover, is in <code>anti-deadlock.txt</code> in the <code>seamless-dask</code> repository.</p>
 <h3 id="dummy-scheduler">Dummy scheduler</h3>
 <p>An in-process Dask scheduler for development and testing. Creates a <code>Scheduler</code> + N <code>Worker</code> instances in a background thread, useful for local runs without a full cluster.</p>
 <hr />
@@ -311,7 +317,7 @@ transformation is submitted.</p>
 <h4 id="worker-parameters">Worker parameters</h4>
 <p>These control Seamless-specific behavior inside each Dask worker.</p>
 <ul>
-<li><strong><code>transformation_throttle</code></strong> — How many concurrent Seamless transformations each worker process handles. Exported as the environment variable <code>SEAMLESS_WORKER_TRANSFORMATION_THROTTLE</code> into worker job scripts. Also determines worker thread count (<code>cores × transformation_throttle</code>). Default: <code>3</code>.</li>
+<li><strong><code>transformation_throttle</code></strong> — How many Seamless transformations each worker process accepts at once. By default only one of them runs its code at a time (see <em>Process lock</em>); the other slots hold transformations that wait, for the lock or for nested work. Exported as the environment variable <code>SEAMLESS_WORKER_TRANSFORMATION_THROTTLE</code> into worker job scripts. Also determines worker thread count (<code>cores × transformation_throttle</code>). Default: <code>3</code>.</li>
 <li><strong><code>dask-resources</code></strong> — Custom Dask resource annotations for workers, passed to <code>distributed.worker.resources</code>. In exclusive mode, automatically includes <code>{"S": 1.0}</code> for resource-aware scheduling. The <code>"S"</code> resource value is also used as a scaling factor for adaptive target duration.</li>
 </ul>
 <h4 id="cluster-parameters">Cluster parameters</h4>
@@ -401,7 +407,7 @@ dask worker \
     --name worker-$SLURM_JOB_ID \
     tcp://&lt;scheduler_ip&gt;:&lt;scheduler_port&gt;
 </code></pre>
-<p>72 SLURM cores (<code>24 × 3</code>), 72 worker threads, lifetime rotation enabled (55 minutes = 60 min walltime − 4 min stagger − 1 min grace). The <code>SeamlessWorkerPlugin</code> running inside this worker will spawn 24 Seamless worker processes, each handling up to 3 transformations concurrently.</p>
+<p>72 SLURM cores (<code>24 × 3</code>), 72 worker threads, lifetime rotation enabled (55 minutes = 60 min walltime − 4 min stagger − 1 min grace). The <code>SeamlessWorkerPlugin</code> running inside this worker will spawn 24 Seamless worker processes, each accepting up to 3 transformations at once and, by default, running the code of one of them at a time.</p>
 <hr />
 <h2 id="installation">Installation</h2>
 <pre><code class="language-bash">pip install seamless-dask

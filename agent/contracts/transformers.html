@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <link rel="shortcut icon" href="../img/favicon.ico" />
+    <title>Transformers (Contract) - Seamless — Agent Documentation</title>
+    <link rel="stylesheet" href="../css/theme.css" />
+    <link rel="stylesheet" href="../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "Transformers (Contract)";
+        var mkdocs_page_input_path = "contracts/transformers.md";
+        var mkdocs_page_url = null;
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href="../index.html" class="icon icon-home"> Seamless — Agent Documentation
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../index.html">Home</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../overview.html">Agent Docs Overview</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../repos/index.html">Workspace Repos</a>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Contracts</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="identity-and-caching.html">Identity and Caching</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="celltypes-and-conversion.html">Celltypes, Null, and Conversion</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="hashtype.html">HashType</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="deep-celltypes.html">Deep Celltypes</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="expressions.html">Expressions</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="cells.html">Cells</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="pins.html">Pins</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="workflow-context.html">Workflow Context</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="node-state-lifecycle.html">Node State Lifecycle</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="attachments.html">Attachments</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="mounts.html">File Mounts</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="shares.html">HTTP Shares</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="widgets.html">Jupyter Widgets</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="streaming.html">Streaming</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="transformation-logs.html">Transformation Logs</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="cancellation.html">Cancellation</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="direct-delayed-and-transformation.html">direct/delayed/Transformation</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="modules-and-closures.html">Modules and Closures</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="scratch-witness-audit.html">Scratch/Witness/Audit</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="seamless-run-and-argtyping.html">seamless-run/Argtyping</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="cache-storage-and-limits.html">Cache Storage and Limits</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="content-addressed-files-and-dirs.html">Content-addressed Files and Dirs</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="execution-backends.html">Execution Backends</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="environments.html">Environments</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="execution-records.html">Execution Records</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="service-management.html">Service Management</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="compression.html">Compression</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="compiled-transformers.html">Compiled Transformers</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="compiled-pins.html">Compiled Pins</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="seamless-signature-schema.html">seamless-signature Schema</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="handler-languages.html">Handler Languages</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="language-backends.html">Language Backends</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">API</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/python/seamless.html">seamless</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/python/seamless.transformer.html">seamless.transformer</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/python/seamless.buffer_class.html">seamless.buffer_class</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/python/seamless.checksum_class.html">seamless.checksum_class</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/python/seamless_config.select.html">seamless_config.select</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/python/seamless_config.tools.html">seamless_config.tools</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/python/seamless_transformer.transformation_class.html">seamless_transformer.transformation_class</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/python/seamless_transformer.transformer_class.html">seamless_transformer.transformer_class</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">CLI</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/cli/seamless-run.html">seamless-run</a>
+                  </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Seamless — Agent Documentation</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../index.html" class="icon icon-home" aria-label="Docs"></a></li>
+      <li class="breadcrumb-item active">Transformers (Contract)</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h1 id="transformers-contract">Transformers (Contract)</h1>
+<p><strong>A Transformer is a mutable builder for immutable <code>Transformation</code> snapshots.</strong> A Transformer holds code and the configuration around that code. Building it closes the current configuration and inputs into a <code>Transformation</code>. The builder may then change without changing anything already built.</p>
+<p>Cell/Expression makes the same builder/snapshot distinction, but the two pairs are not structurally identical. A Cell recipe may span a chain of Expressions. One Transformer build produces exactly one Transformation, whose inputs may themselves be Expressions or Transformations.</p>
+<p>This page owns the Transformer as a <strong>builder and workflow handle</strong>. Other pages own the rest:</p>
+<ul>
+<li>pin behavior: <code>contracts/pins.md</code>;</li>
+<li>execution and the immutable Transformation handle: <code>contracts/direct-delayed-and-transformation.md</code>;</li>
+<li>Context assignment and reactive scheduling: <code>contracts/workflow-context.md</code>;</li>
+<li>compiled-language additions: <code>contracts/compiled-transformers.md</code>;</li>
+<li>handler languages, such as R and Julia: <code>contracts/handler-languages.md</code>;</li>
+<li>language backends (CLI and in-memory), <code>BACKEND</code>, and what a language does with an environment: <code>contracts/language-backends.md</code>.</li>
+</ul>
+<h2 id="canonical-construction-api">Canonical construction API</h2>
+<p>There are three canonical ways to construct a Transformer in Python:</p>
+<ul>
+<li>outside a workflow, <code>direct(function)</code> and <code>delayed(function)</code> construct Python Transformers;</li>
+<li>in a workflow, assigning a Python function (<code>ctx.tf = function</code>) constructs a bound Python Transformer;</li>
+<li>in any scenario, <code>Transformer(language="python", compiled=False, direct=False)</code> constructs a code-less builder that can be configured and optionally bound later.</li>
+</ul>
+<p><strong><code>direct</code> and <code>delayed</code> both return a Python Transformer.</strong> They take no <code>language</code> argument, do not return a Transformation and do not run the decorated function at decoration time. They differ only in the call mode they install (<em>Delayed and direct calls</em>). Their full contract is <code>contracts/direct-delayed-and-transformation.md</code>.</p>
+<p><code>Transformer</code> is a factory class:</p>
+<ul>
+<li>With <code>compiled=False</code>, <code>language</code> must be <code>"python"</code>, <code>"bash"</code> or a <strong>handler language</strong>. <code>"r"</code> and <code>"julia"</code> are the built-in handler languages, and <code>register_language_handler</code> adds more (<code>contracts/handler-languages.md</code>). The factory picks the delayed or direct implementation of that language according to <code>direct</code>.</li>
+<li>With <code>compiled=True</code>, the factory forwards <code>language</code> to the delayed or direct compiled implementation.</li>
+</ul>
+<p>So there are three kinds of language: native (Python and Bash), handler and compiled. A language name belongs to one kind. <code>available_languages()</code> in <code>seamless_transformer.languages</code> maps every <code>language</code> value that the factory accepts to its kind. Any other value raises, and the message names the three kinds.</p>
+<p>The concrete implementation classes are not public constructors. A builder's <code>language</code> is fixed at construction and read-only, for Python, Bash, handler-language and compiled builders alike.</p>
+<p>The factory is importable from <code>seamless_transformer</code>, <code>seamless.transformer</code> and <code>seamless.workflow</code>; all three names are the same class. <code>seamless.workflow</code> also exports <code>Context</code> and <code>Cell</code>.</p>
+<p>A code-less Bash builder declares its pins itself, because Bash code has no signature (<code>contracts/pins.md</code>, <em>Which pins exist</em>). Declare a pin by writing it through <code>tf.pins</code>:</p>
+<pre><code class="language-python">from seamless.workflow import Transformer
+
+tf = Transformer(&quot;bash&quot;, direct=True)
+tf.code = &quot;cat input &gt; RESULT&quot;
+tf.pins.input = &quot;hi&quot;   # declares the pin &quot;input&quot; and sets its value
+tf()                   # -&gt; &quot;hi\n&quot;
+</code></pre>
+<p>A call-time keyword argument does not declare a pin: <code>tf(input="hi")</code> on a builder with no <code>input</code> pin does not feed <code>input</code> to the Bash code. What happens to such an argument is specified in <code>contracts/pins.md</code>.</p>
+<p>A handler-language builder is code-less in the same way. Its code is source text in its language, and its pins are declared through <code>tf.pins</code>: Seamless reads no signature from R or Julia code.</p>
+<pre><code class="language-python">tf = Transformer(&quot;r&quot;, direct=True)
+tf.code = &quot;result &lt;- a + b&quot;
+tf.pins.a = 2
+tf.pins.b = 3
+tf()                   # -&gt; 5
+</code></pre>
+<h2 id="the-two-modes">The two modes</h2>
+<p>A Transformer exists in one of two modes:</p>
+<ul>
+<li><strong>standalone</strong>: its builder state is private to the Python object;</li>
+<li><strong>bound</strong>: a workflow Context node owns its builder state, and the Transformer is a view onto that node.</li>
+</ul>
+<p>Both modes share one public builder surface. They differ in ownership and liveness. A standalone Transformer describes a reusable family of snapshots. A bound Transformer describes a live node that the Context re-snapshots whenever its inputs change.</p>
+<h2 id="builder-state">Builder state</h2>
+<p>The common builder state comprises:</p>
+<ul>
+<li>code and language;</li>
+<li>the pin declarations, pin celltypes, optional-pin set and pre-bound pin inputs;</li>
+<li>the result celltype;</li>
+<li>modules and globals, where the language supports them;</li>
+<li>metadata, environment, scratch and placement settings. The environment names a conda environment or a Docker image. A CLI backend runs the code there, and an in-memory backend can only check that its process is already in the conda environment (<code>contracts/language-backends.md</code>, <em>Environments</em>). It is outside transformation identity (<code>contracts/environments.md</code>);</li>
+<li>the <code>process_lock</code> and <code>driver</code> flags, which are part of the metadata (<em><code>process_lock</code> and <code>driver</code></em>);</li>
+<li>the streaming flag, which is an interaction feature: it is copied onto each built Transformation, is never part of a snapshot's identity, and is not stored in the durable graph (<code>contracts/streaming.md</code>);</li>
+<li>the call mode: delayed or direct.</li>
+</ul>
+<p>Compiled Transformers add schema, header-derived state, compilation configuration, metavariables and additional objects. <code>contracts/compiled-transformers.md</code> alone specifies those additions, including which of them affect transformation identity.</p>
+<p>Handler-language Transformers add metavariables of their own: <code>tf.metavars</code> holds the settings of the language's handler, such as the <code>BACKEND</code> that runs R or Julia code. A Python Transformer has one metavariable, <code>BACKEND</code>, with the values <code>"mem"</code> (the default) and <code>"cli"</code>; it is part of the metadata only when it was set. They are part of the metadata and outside transformation identity. <code>contracts/handler-languages.md</code> specifies the handler settings, and <code>contracts/language-backends.md</code> specifies <code>BACKEND</code>, for Python too.</p>
+<p>The Transformer owns the pin collection, but <code>contracts/pins.md</code> alone specifies pin names, values, connections, conversion, nulls and optionality.</p>
+<p>Builder state is mutable. Mutating the builder after a build affects later snapshots only.</p>
+<h2 id="building-a-transformation">Building a Transformation</h2>
+<pre><code class="language-python">tr = tf.build(*args, **kwargs)
+tr2 = tf.transformation(*args, **kwargs)      # alias of build()
+tr3 = tf.get_transformation(*args, **kwargs)  # alias of build()
+</code></pre>
+<p><strong><code>build()</code> is the canonical snapshot operation, and it exists on every builder</strong>: ordinary and compiled, delayed and direct, standalone and bound. <code>transformation()</code> and <code>get_transformation()</code> are exact aliases. They take the same call arguments and have the same meaning. All three return an immutable <code>Transformation</code> and never execute it, whatever the call mode.</p>
+<p>A build:</p>
+<ol>
+<li>snapshots the current builder configuration;</li>
+<li>combines pre-bound pin inputs with the call arguments;</li>
+<li>serializes concrete inputs to checksums and performs the validation required at construction time;</li>
+<li>retains typed dependency inputs (Expressions, Transformations) as explicit dependencies, in the forms <code>contracts/pins.md</code> admits;</li>
+<li>returns a frozen Transformation definition with its own execution promise.</li>
+</ol>
+<p>So a build can raise for malformed call arguments or concrete inputs even though it runs no transformation code. The exception class for malformed arguments is unspecified (<em>Unspecified exception classes</em>). Mutating the builder, its configuration or the original input objects after the build does not alter the returned Transformation.</p>
+<p>For a bound Transformer, <code>build()</code> snapshots the node's current builder configuration and input bindings into a detached Transformation. It does not return the Context's transient run object, and it does not make that snapshot the node's new durable state.</p>
+<p><strong>Detached means detached in definition, not in lifetime.</strong> The detached Transformation claims what it was given directly, which is its code and modules. Its pins arrive as Expressions over the node's checksums, so they are dependencies, and it claims them only when it runs. It stays runnable only while the Context, or the hashserver, keeps those checksums. After replacement plus <code>prune()</code>, or after <code>close()</code>, and with no hashserver, <code>run()</code> raises <code>TransformationError</code>. To keep an input past its Context, capture its checksum into an owner. The rule is in <code>contracts/internal/checksum-reference-lifecycle.md</code>, §7, <em>One rule for owners</em>.</p>
+<p><strong><code>build()</code> is the semantic boundary.</strong> <code>__call__</code> and the standalone named work methods are layered on top of <code>build()</code>, never on <code>self()</code>, so a Transformer's call mode cannot change what they mean.</p>
+<h2 id="delayed-and-direct-calls">Delayed and direct calls</h2>
+<p>Delayed and direct Transformers are the same kind of builder. They differ only in <code>__call__</code>:</p>
+<pre><code class="language-python">delayed_tf(*args, **kwargs)  # == delayed_tf.build(*args, **kwargs)
+direct_tf(*args, **kwargs)   # == direct_tf.build(*args, **kwargs).run()
+</code></pre>
+<p>Directness changes nothing else: not the builder state, the binding, the pins, the snapshot identity, or the meaning of <code>build()</code> and the named work methods. Call-time behavior is specified in <code>contracts/direct-delayed-and-transformation.md</code>.</p>
+<h2 id="named-work-methods">Named work methods</h2>
+<p>The named methods never inherit direct-call sugar. A standalone Transformer applies them to a fresh <code>build()</code>. A bound Transformer applies them to the live node.</p>
+<table>
+<thead>
+<tr>
+<th>Operation</th>
+<th>Standalone Transformer</th>
+<th>Bound Transformer</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>build()</code> / <code>transformation()</code> / <code>get_transformation()</code></td>
+<td>return a detached immutable Transformation</td>
+<td>return a detached immutable snapshot of the current node definition</td>
+</tr>
+<tr>
+<td><code>compute()</code></td>
+<td>build, execute and return the result checksum</td>
+<td>demand the live node and wait on its Context barrier</td>
+</tr>
+<tr>
+<td><code>computation()</code></td>
+<td>asynchronous form of <code>compute()</code></td>
+<td>asynchronous Context barrier for the live node</td>
+</tr>
+<tr>
+<td><code>run()</code></td>
+<td>build, execute and materialize the result</td>
+<td>demand the live node and materialize its result</td>
+</tr>
+<tr>
+<td><code>task()</code></td>
+<td>build, and return an <code>asyncio.Task</code> for the Transformation</td>
+<td>return an <code>asyncio.Task</code> that operates through the live node</td>
+</tr>
+<tr>
+<td><code>prune()</code></td>
+<td>the attribute exists; calling it raises <code>AttributeError</code></td>
+<td>reclaim superseded work in the node's downstream cone</td>
+</tr>
+<tr>
+<td><code>clear_exception()</code></td>
+<td>the attribute exists; calling it raises <code>AttributeError</code></td>
+<td>clear the node failure according to the workflow lifecycle</td>
+</tr>
+</tbody>
+</table>
+<p>This table fixes only whether an operation targets a detached snapshot or the live bound node. Execution, cancellation and error behavior are specified by the Transformation, Context and node-lifecycle contracts.</p>
+<p><strong><code>compute()</code> reports a failure, and <code>run()</code> raises it</strong> (<code>contracts/cells.md</code>, <em>Failures</em>, <em>How a failure is delivered</em>). In both modes <code>compute()</code> / <code>computation()</code> return the result checksum, or <code>None</code> when there is none, and never raise for a failure or a node state. Standalone, that is <code>Transformation.compute()</code>, which sets <code>.exception</code> on the Transformation; <code>Transformation.run()</code> raises <code>TransformationError</code> (<code>contracts/direct-delayed-and-transformation.md</code>). Bound, <code>compute()</code> is the node barrier: it returns <code>None</code> when the node settles in <code>failed</code>, <code>unwired</code>, <code>miswired</code> or <code>blocked</code>, and <code>run()</code> re-raises the node's recorded exception or raises <code>NodeError</code> (<code>contracts/node-state-lifecycle.md</code>, <em>States as seen through barriers and handles</em>). A direct Transformer's call is <code>build().run()</code>, so it raises.</p>
+<p>The table holds for direct Transformers exactly as for delayed ones. On a direct Transformer, <code>build()</code> returns a Transformation, not a value, and <code>compute()</code>, <code>computation()</code>, <code>run()</code> and <code>task()</code> work in both modes. <em>Implementation:</em> <code>TransformerCore.build</code>, <code>.compute</code>, <code>.run</code>, <code>.task</code> and <code>.computation</code> use <code>self.build()</code>.</p>
+<h2 id="live-node-members">Live-node members</h2>
+<p><code>result</code>, <code>state</code>, <code>block_reason</code>, <code>exception</code> and <code>logs</code> describe a live workflow node, so only a bound Transformer has them. <strong>On a standalone Transformer, reading any of the five raises <code>AttributeError</code>.</strong> The corresponding facts for a detached computation live on the Transformation that <code>build()</code> returns.</p>
+<p><code>logs</code> is the node's failure text, or the captured output and execution time of its current run. Its contract is <code>contracts/transformation-logs.md</code>, <em>Bound Transformers</em>.</p>
+<p><code>prune()</code> and <code>clear_exception()</code> are different: they exist as attributes on a standalone Transformer, and only calling them raises <code>AttributeError</code> (<em>Named work methods</em>). So <code>hasattr(tf, "prune")</code> is <code>True</code> in both modes and cannot tell the modes apart.</p>
+<h2 id="binding">Binding</h2>
+<p>Assigning a standalone Transformer to a Context binds it:</p>
+<pre><code class="language-python">ctx.tf = tf
+</code></pre>
+<p><strong>Binding is a move, not a copy.</strong> The builder state moves into the transformer node, and the standalone private copy is abandoned. The node becomes the single source of truth, so mutations never need to be mirrored between two owners.</p>
+<p>Every later read of <code>ctx.tf</code> returns a fresh Transformer view onto that node. Handle identity carries no meaning: two views are interchangeable, and dependencies are recorded by node path and content, not by Python object identity. Deleting the node or closing the Context makes existing views stale or closed, as specified in <code>contracts/workflow-context.md</code>.</p>
+<p>The Context stores the node and its builder configuration, <strong>not a persistent Transformation object</strong>. When an input changes, the Context freezes the node's configuration into a private <code>FrozenTransformer</code>, builds a fresh immutable Transformation from it and submits it. The FrozenTransformers and the Transformations the Context fires are private runtime artifacts. An explicit <code>ctx.tf.build()</code> is a detached user snapshot (<em>Building a Transformation</em>).</p>
+<h2 id="pins-and-result">Pins and result</h2>
+<p><code>tf.pins</code> exposes the Transformer's input slots. The pin collection is part of builder state, but a Pin is a handle with its own contract: <code>contracts/pins.md</code>.</p>
+<p><code>tf.celltypes.result</code> configures the result celltype of every Transformation the builder produces.</p>
+<p>A bound Transformer also exposes <code>tf.result</code>, a read-only view of the node's output. A standalone Transformer has no live result endpoint, since its output belongs to each Transformation it builds; reading <code>tf.result</code> raises <code>AttributeError</code> (<em>Live-node members</em>).</p>
+<p><strong>A bound Transformer's result is never a producer target.</strong> A producer operation may target a pin but never the result. Any producer operation aimed at the result raises <code>ReadOnlyEndpointError</code>, and attribute assignment <code>ctx.tf.result = …</code> is one such operation. Context wiring is specified in <code>contracts/workflow-context.md</code>.</p>
+<h2 id="process_lock-and-driver"><code>process_lock</code> and <code>driver</code></h2>
+<p>Two boolean settings say how a transformation's code shares the process that runs it. Both are part of the Transformer's <code>meta</code>. A build copies them into the <code>__meta__</code> of the Transformation, which is outside transformation identity (<code>contracts/identity-and-caching.md</code>), so neither setting changes a <code>tf_checksum</code>.</p>
+<ul>
+<li><strong><code>process_lock</code></strong>, true by default. The transformation's code runs while holding the lock of its process, so that no two such transformations run their code at the same time in one process.</li>
+<li><strong><code>driver</code></strong>, false by default. It declares that the code mainly launches other transformations and waits for them. A driver never takes the lock.</li>
+</ul>
+<p>This page specifies the two settings: their values, how they are coupled, and where they are stored. What the lock does while a transformation runs is <code>contracts/execution-backends.md</code>, <em>The process lock</em>. That section also says when a transformation gives the lock up, what a driver's launches get, and how many transformations each backend runs at once.</p>
+<p>One kind of transformation cannot run with <code>process_lock</code> false: a handler-language transformation whose backend embeds an interpreter in the process. It fails when it runs, and that covers a driver too (<code>contracts/handler-languages.md</code>, <em>The process lock</em>). A Python or compiled body in memory has no such limit.</p>
+<table>
+<thead>
+<tr>
+<th><code>process_lock</code></th>
+<th><code>driver</code></th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>true</td>
+<td>false</td>
+<td>The default. The code waits for the lock, runs while holding it, and gives it up at its first nested submission</td>
+</tr>
+<tr>
+<td>false</td>
+<td>true</td>
+<td>A declared driver. The code never takes the lock</td>
+</tr>
+<tr>
+<td>false</td>
+<td>false</td>
+<td>Opt-out, for code that is safe to run next to other code in the same process, such as I/O-bound work</td>
+</tr>
+<tr>
+<td>true</td>
+<td>true</td>
+<td>Invalid</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Setting <code>driver</code> to true sets <code>process_lock</code> to false. Only an explicit assignment sets it back to true.</strong></p>
+<pre><code class="language-python">tf.process_lock          # True
+tf.driver                # False
+
+tf.driver = True         # process_lock is now False
+tf.process_lock = True   # raises: a driver does not take the lock
+
+tf.driver = False        # process_lock stays False
+tf.process_lock = True   # accepted
+</code></pre>
+<p>The two values can be written through three routes: the <code>driver</code> property, the <code>process_lock</code> property, and an assignment to <code>meta</code>. One rule covers all three:</p>
+<table>
+<thead>
+<tr>
+<th>Write</th>
+<th>Effect</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>driver = True</code>, or <code>meta = {"driver": True}</code></td>
+<td><code>driver</code> becomes true and <code>process_lock</code> becomes false</td>
+</tr>
+<tr>
+<td><code>driver = False</code> or <code>None</code>, or the same through <code>meta</code></td>
+<td><code>driver</code> is cleared, and <code>process_lock</code> keeps its value</td>
+</tr>
+<tr>
+<td><code>process_lock = False</code>, or <code>meta = {"process_lock": False}</code></td>
+<td><code>process_lock</code> becomes false</td>
+</tr>
+<tr>
+<td><code>process_lock = True</code> while <code>driver</code> is true, by either route</td>
+<td>raises</td>
+</tr>
+<tr>
+<td><code>meta = {"driver": True, "process_lock": True}</code></td>
+<td>raises</td>
+</tr>
+<tr>
+<td><code>meta = {"driver": False, "process_lock": True}</code> on a driver</td>
+<td>accepted: one assignment clears <code>driver</code> and sets <code>process_lock</code></td>
+</tr>
+<tr>
+<td>a value that is not a boolean, by any route (<code>driver</code> also accepts <code>None</code>)</td>
+<td>raises</td>
+</tr>
+</tbody>
+</table>
+<p>A refused write changes nothing: an assignment to <code>meta</code> that carries a refused value is refused as a whole.</p>
+<ul>
+<li><strong>A new Transformer has neither key in <code>meta</code>.</strong> <code>tf.process_lock</code> and <code>tf.driver</code> then report <code>True</code> and <code>False</code>, by the rule for absent keys below.</li>
+<li><strong>A build writes both values.</strong> Every Transformation that a Transformer builds carries <code>driver</code> and <code>process_lock</code> explicitly in its <code>meta</code>, whatever the Transformer's <code>meta</code> contained.</li>
+<li><strong>On a Transformation both values are read-only.</strong> They are read through <code>tr.meta</code>, which is immutable like the rest of the definition (<code>contracts/direct-delayed-and-transformation.md</code>, <em>Immutability</em>).</li>
+<li><strong><code>driver</code> is not inherited.</strong> A transformation that is built while a driver's code runs does not get <code>driver</code> in its own <code>meta</code>. In a transformation's <code>meta</code>, <code>driver</code> means that this transformation was itself declared a driver.</li>
+</ul>
+<h3 id="absent-keys-in-a-transformation-dict">Absent keys in a transformation dict</h3>
+<p>A transformation dict can lack one or both keys in its <code>__meta__</code>, and it can run with no <code>__meta__</code> at all, because <code>__meta__</code> is not part of the checksummed dict. This happens when:</p>
+<ul>
+<li>a fingertip recomputes a transformation from its checksum, in a process that holds no <code>__meta__</code> for it;</li>
+<li><code>seamless-run-transformation</code> runs a checksum without a dunder file;</li>
+<li>the dict or the workflow graph was written before these keys existed.</li>
+</ul>
+<p>Every reader of a dict applies one rule:</p>
+<ul>
+<li>an absent <code>driver</code> is false;</li>
+<li>an absent <code>process_lock</code> is the opposite of <code>driver</code>.</li>
+</ul>
+<p>So a dict that says only <code>driver: true</code> is a driver that does not take the lock. A transformation that arrives without <code>__meta__</code> takes the lock, even if it was built as a driver or with the lock off. That reading is safe: a transformation that holds the lock and then submits nested work gives the lock up (<code>contracts/execution-backends.md</code>, <em>The process lock</em>).</p>
+<p>Both values true, or a value that is not a boolean, makes the transformation invalid. A builder refuses to build it. An executor that receives such a dict fails the transformation before its code runs, with an error that names both keys.</p>
+<p>Code that passes an existing dict on, such as <code>seamless-run-transformation</code>, does not rewrite its <code>__meta__</code>.</p>
+<h3 id="bound-transformers">Bound Transformers</h3>
+<p><code>ctx.tf.process_lock</code>, <code>ctx.tf.driver</code> and <code>ctx.tf.meta</code> follow the rules above, with the same coupling. The two values belong to the workflow Context node:</p>
+<ul>
+<li>every view of <code>ctx.tf</code> reads and writes the one pair of values;</li>
+<li>binding a standalone Transformer moves its values into the node with the rest of its <code>meta</code> (<em>Binding</em>);</li>
+<li>the node keeps them in its <code>meta</code> mapping, and <code>ctx.get_graph()</code> saves that mapping. A graph whose transformer entry lacks a key loads by the rule for absent keys;</li>
+<li>a bound and a standalone Transformer with the same settings build Transformations with the same two values.</li>
+</ul>
+<p>In a Context without a hashserver, a bound Transformer fingertips its inputs whatever its <code>allow_input_fingertip</code> (<code>contracts/workflow-context.md</code>, <em>A Context without a hashserver</em>). The setting is outside the transformation identity, so this changes no checksum.</p>
+<p><strong><code>process_lock</code>, <code>driver</code> and <code>scratch</code> are operational features, and <code>streaming</code> is an interaction feature.</strong> A bound node treats the two kinds differently:</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>Operational: <code>process_lock</code>, <code>driver</code>, <code>scratch</code></th>
+<th>Interaction: <code>streaming</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>What it configures</td>
+<td>how the node's transformation is executed</td>
+<td>what this session sees of a run while it is in flight</td>
+</tr>
+<tr>
+<td>Saved by <code>ctx.get_graph()</code></td>
+<td>yes</td>
+<td>no</td>
+</tr>
+<tr>
+<td>Assigning it on a bound node</td>
+<td>changes the node's configuration, so the Context demands the node again</td>
+<td>never re-runs the node; it applies from the node's next run (<code>contracts/streaming.md</code>)</td>
+</tr>
+</tbody>
+</table>
+<p>A change of <code>process_lock</code> or <code>driver</code> does not run the node's code again when its result is recorded. The node's <code>tf_checksum</code> is the same, so the recorded result answers the new demand from the cache. A run of that <code>tf_checksum</code> that is still in flight is latched onto, and it keeps the settings it started with (<code>contracts/identity-and-caching.md</code>, <em>Concurrent submissions of the same checksum</em>). The rules for <code>scratch</code> are in <code>contracts/scratch-witness-audit.md</code>, <em>Scratch</em>.</p>
+<h2 id="ordinary-and-compiled-transformers">Ordinary and compiled Transformers</h2>
+<p>For Python, Bash and the handler languages, the factory returns ordinary builders: a Python builder takes a callable, and a Bash or handler-language builder takes source text. <code>Transformer(language, compiled=True, direct=...)</code> extends the same builder contract with compiled-language configuration.</p>
+<p>The rules on this page (modes, binding, pins, snapshots and named work methods) do not vary by language. The compiled contract owns schemas, native source, generated headers, marshalling, compilation, compiled objects and compiled result packaging, and this page does not repeat them. See <code>contracts/compiled-transformers.md</code>.</p>
+<p>The handler-language contract owns what a handler is and receives, how R and Julia code gets its pins and returns its result, the backends and their parity, and the handler's place in transformation identity. See <code>contracts/handler-languages.md</code>.</p>
+<p>The language-backends contract owns the two kinds of backend, the <code>BACKEND</code> setting, the environment rule of each kind and the Python CLI backend. See <code>contracts/language-backends.md</code>.</p>
+<h2 id="unspecified-exception-classes">Unspecified exception classes</h2>
+<p>The contract says that each of the following raises. It does not say which exception class, and the author has deferred the question. Tests assert only that an exception is raised. Do not rely on the class.</p>
+<ul>
+<li>passing a <code>language</code> to <code>direct()</code> or <code>delayed()</code>, as in <code>direct(f, language="bash")</code>;</li>
+<li>building with malformed call arguments: an unknown keyword, a missing required argument, or too many positional arguments;</li>
+<li>setting <code>language</code> on a builder.</li>
+</ul>
+<p>For information only, not contract: today these raise, respectively, <code>TypeError</code> (unexpected keyword argument), <code>TypeError</code>, and <code>AttributeError("transformer language is read-only")</code>.</p>
+<p>The refused writes of <em><code>process_lock</code> and <code>driver</code></em> are in the same position: setting <code>process_lock</code> to true on a driver, writing both values as true in one <code>meta</code> assignment, and writing a value that is not a boolean. Each raises, and the exception class is not specified. For information only, not contract: today the first two raise <code>ValueError</code> and the third raises <code>TypeError</code>.</p>
+<h2 id="implementation-status-and-current-limitations">Implementation status and current limitations</h2>
+<p>The code satisfies the contract on this page, including the bound task, read-only result assignment and signature-less call-time keywords. Focused plain tests in <code>seamless-workflow/tests/test_contract_transformer_bound.py</code> and <code>seamless-transformer/tests/test_contract_transformer_builder.py</code> cover them.</p>
+<h2 id="non-goals">Non-goals</h2>
+<ul>
+<li><strong>Transformation execution.</strong> Building freezes a definition. Execution backends, result promises, immutability after construction and cancellation belong to <code>contracts/direct-delayed-and-transformation.md</code> and its linked execution contracts.</li>
+<li><strong>The process lock at run time.</strong> This page owns the <code>process_lock</code> and <code>driver</code> settings. When the lock is taken and given up, what a driver's launches get, and how many transformations a backend runs at once belong to <code>contracts/execution-backends.md</code>.</li>
+<li><strong>Pin semantics.</strong> This page names pins as builder state but does not own their declarations, writes, conversions, null rules or failures (<code>contracts/pins.md</code>).</li>
+<li><strong>Context scheduling.</strong> Reactive invalidation, barriers, speculation and graph serialization belong to <code>contracts/workflow-context.md</code> and <code>contracts/node-state-lifecycle.md</code>.</li>
+<li><strong>Compiled-language semantics.</strong> They belong to <code>contracts/compiled-transformers.md</code> and its linked schema and compiled-pin contracts.</li>
+<li><strong>Handler-language semantics.</strong> Handlers, the R and Julia value rules, the tools that their backends run and their parity belong to <code>contracts/handler-languages.md</code>.</li>
+<li><strong>Language backends.</strong> The CLI and in-memory kinds, <code>BACKEND</code>, what an environment does under each, and the Python CLI backend belong to <code>contracts/language-backends.md</code>.</li>
+</ul>
+              
+            </div>
+          </div><footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+    
+    
+  </span>
+</div>
+    <script src="../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "..";</script>
+    <script src="../js/theme_extra.js"></script>
+    <script src="../js/theme.js"></script>
+      <script src="../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>

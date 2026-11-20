@@ -75,6 +75,14 @@
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="mounts.html">File Mounts</a>
                   </li>
+                  <li class="toctree-l1"><a class="reference internal" href="shares.html">HTTP Shares</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="widgets.html">Jupyter Widgets</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="streaming.html">Streaming</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="transformation-logs.html">Transformation Logs</a>
+                  </li>
                   <li class="toctree-l1"><a class="reference internal" href="cancellation.html">Cancellation</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="direct-delayed-and-transformation.html">direct/delayed/Transformation</a>
@@ -93,6 +101,10 @@
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#buffer-cache-local-memory-pressure">Buffer cache (local memory pressure)</a>
     </li>
+    <li class="toctree-l2"><a class="reference internal" href="#local-buffer-sources-outside-the-buffer-cache">Local buffer sources (outside the buffer cache)</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#without-a-hashserver">Without a hashserver</a>
+    </li>
     <li class="toctree-l2"><a class="reference internal" href="#remotepersistent-storage-where-bytes-live">Remote/persistent storage (where bytes live)</a>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#agent-checklist">Agent checklist</a>
@@ -102,6 +114,8 @@
                   <li class="toctree-l1"><a class="reference internal" href="content-addressed-files-and-dirs.html">Content-addressed Files and Dirs</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="execution-backends.html">Execution Backends</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="environments.html">Environments</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="execution-records.html">Execution Records</a>
                   </li>
@@ -114,6 +128,10 @@
                   <li class="toctree-l1"><a class="reference internal" href="compiled-pins.html">Compiled Pins</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="seamless-signature-schema.html">seamless-signature Schema</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="handler-languages.html">Handler Languages</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="language-backends.html">Language Backends</a>
                   </li>
               </ul>
               <p class="caption"><span class="caption-text">API</span></p>
@@ -179,14 +197,40 @@
 <li>If a result is marked scratch, Seamless may keep only the <strong>result checksum</strong> and not retain the bytes needed to materialize the value later.</li>
 <li>Scratch is appropriate for bulky intermediates that are cheap to recompute.</li>
 <li>Scratch is not only a storage policy. With input fingertipping, a missing scratch input is recomputed at the consumer's execution location, so scratch can keep large producer-consumer edges local to the consuming work.</li>
-<li>Input fingertipping must be enabled per consumer transformation. Use <code>allow_input_fingertip = True</code> on the downstream Python transformer/core before constructing the transformation, or <code>--fingertip</code> when executing a transformation checksum from the CLI.</li>
+<li>Input fingertipping must be enabled per consumer transformation. Use <code>allow_input_fingertip = True</code> on the downstream Python transformer/core before constructing the transformation, or <code>--fingertip</code> when executing a transformation checksum from the CLI. Without it, the consumer's pins hold their inputs non-scratch, which publishes a scratch producer's result (<code>contracts/pins.md</code>, <em>Scratch at the pin</em>).</li>
+<li>In a workflow Context without a hashserver, input fingertipping is always on for the transformations that the Context submits (<code>contracts/workflow-context.md</code>, <em>A Context without a hashserver</em>).</li>
 <li>Do not scratch meaning-bearing “witness” artifacts that you may need for audit/falsification or cross-environment comparison.</li>
 </ul>
 <h2 id="buffer-cache-local-memory-pressure">Buffer cache (local memory pressure)</h2>
 <p>Agents should assume there is a local buffer cache with:
 - a weak/strong caching strategy
 - soft/hard memory caps (eviction pressure)</p>
-<p>Practical implication: large runs can evict in-memory buffers; recomputation or remote fetch may be needed to materialize values again.</p>
+<p>Practical implication: large runs can evict in-memory buffers; a local buffer source, a remote fetch or recomputation may be needed to materialize values again.</p>
+<h2 id="local-buffer-sources-outside-the-buffer-cache">Local buffer sources (outside the buffer cache)</h2>
+<p>Besides the buffer cache, a process can have <strong>local buffer sources</strong>: stores on this process's file system that supply a buffer by checksum. They are kept in one process-wide registry in <code>seamless-core</code> (<code>seamless.caching.buffer_source</code>), which is internal: it is not an extension point. Two kinds are registered:</p>
+<ul>
+<li>the <strong>read-buffer directories</strong> configured through <code>seamless-remote</code>, including the directory of a hashserver that this process launched locally;</li>
+<li>for a workflow Context, the <strong>leaf files of an active <code>w</code>/<code>rw</code> directory mount</strong> (<code>contracts/mounts.md</code>, <em>Directory mounts</em>).</li>
+</ul>
+<p>Both are resolved in the same way. They differ only in lifetime: a read-buffer directory stays registered for as long as the <code>seamless-remote</code> activation that configured it, while a mount's leaf files are registered only while the mount is registered and its delivered index names them. Neither holds a reference claim.</p>
+<p><strong>Mount leaf files are an exception to where buffers ordinarily live.</strong> Ordinarily a buffer is resolvable from the buffer cache or from a hashserver, whether over HTTP or through the hashserver's directory used as a read-buffer directory. A directory write mount's leaf files are an extra source beside these: process-local, claim-free, and bounded by the mount's registration. <strong>Their use case is a configuration without a hashserver.</strong> There, the files of a <code>w</code>/<code>rw</code> directory mount are the only on-disk copy of the leaf buffers of the deep value it delivered, and serving them back to resolution keeps a leaf that was evicted from the buffer cache resolvable for as long as the mount lasts. The source is active with a hashserver configured too, and is then consulted before it. It originates in Context mounts, but it serves every resolution in the process, for standalone Cells and Expressions as well as for the Context.</p>
+<p>What an agent may assume:</p>
+<ul>
+<li><strong>Resolution order.</strong> <code>Checksum.resolve()</code> and <code>Checksum.resolution()</code> try the buffer cache, then the local buffer sources, then the remote buffer read servers, and raise <code>CacheMissError</code> when none has the buffer. The order among local buffer sources is unspecified. This holds for standalone Cells and Expressions and for a Context alike: a source registered by a Context's mount serves any resolution in the process.</li>
+<li><strong>Bytes are validated.</strong> A source serves a buffer only if its bytes hash to the requested checksum. A changed or missing file is a miss, and the next source is tried.</li>
+<li><strong>A source is not a claim.</strong> Registering one takes no reference claim, keeps nothing in memory, protects nothing from eviction and publishes nothing.</li>
+<li><strong>A source is process-local.</strong> Another process, including a jobserver or a Dask worker, does not see it.</li>
+<li><strong>Placement counts a source as local</strong> (<code>contracts/expressions.md</code>, <em>Placement</em>), and a value request counts a buffer in a source as reachable.</li>
+</ul>
+<p>Practical implication: after eviction, a buffer that a local buffer source still holds is read back from it, with no recomputation and no remote fetch.</p>
+<h2 id="without-a-hashserver">Without a hashserver</h2>
+<p>Without a hashserver, the buffer cache and the local buffer sources are the only places a buffer can be. A buffer that nothing claims is evicted once its tempref expires, but its checksum stays in the result caches. A later cache hit then yields a checksum whose buffer is nowhere. The common case is a value that goes X → Y → X: back at X, the transformer hits the cache, and X's result buffer expired while the value was Y.</p>
+<p>A workflow Context handles this in two ways (<code>contracts/workflow-context.md</code>, <em>A Context without a hashserver</em>):</p>
+<ul>
+<li><strong>Its transformations fingertip their inputs</strong>, so a missing input buffer is recomputed instead of failing the transformer.</li>
+<li><strong>A cell with a <code>w</code> file mount, a share or a widget hub waits for its buffer.</strong> If its new checksum's buffer is not in the buffer cache, the cell stays <code>waiting</code> while the Context fingertips the buffer. The share, the file and the widget see the new value only after that.</li>
+</ul>
+<p>Fingertipping does not make a buffer durable. A recovered buffer is held by the cell's claim and kept in memory only. It can expire again once nothing claims it.</p>
 <h2 id="remotepersistent-storage-where-bytes-live">Remote/persistent storage (where bytes live)</h2>
 <p>In remote/persistent setups, bytes/checksums are typically stored in dedicated services (e.g. hashserver/database layers), and the local process may:
 - push buffers it produces (unless scratch)

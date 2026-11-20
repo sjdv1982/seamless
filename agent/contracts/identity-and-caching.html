@@ -63,6 +63,10 @@
         <ul>
     <li class="toctree-l3"><a class="reference internal" href="#transformations-are-not-the-only-thing-cached">Transformations are not the only thing cached</a>
     </li>
+    <li class="toctree-l3"><a class="reference internal" href="#recording-identity-is-not-publishing">Recording identity is not publishing</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#fingertipping-under-remote-execution-two-cases">Fingertipping under remote execution: two cases</a>
+    </li>
     <li class="toctree-l3"><a class="reference internal" href="#caching-masks-accidental-nondeterminism">Caching masks accidental nondeterminism</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#concurrent-submissions-of-the-same-checksum">Concurrent submissions of the same checksum</a>
@@ -70,6 +74,10 @@
         </ul>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#load-bearing-vs-orthogonal-keys-in-a-transformation-dict">Load-bearing vs orthogonal keys in a transformation dict</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#handler-languages-__handler__-and-the-neutral-__format__-entry">Handler languages: __handler__ and the neutral __format__ entry</a>
+    </li>
+        </ul>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#forcing-recomputation-auditing">Forcing recomputation / auditing</a>
     </li>
@@ -95,6 +103,14 @@
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="mounts.html">File Mounts</a>
                   </li>
+                  <li class="toctree-l1"><a class="reference internal" href="shares.html">HTTP Shares</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="widgets.html">Jupyter Widgets</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="streaming.html">Streaming</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="transformation-logs.html">Transformation Logs</a>
+                  </li>
                   <li class="toctree-l1"><a class="reference internal" href="cancellation.html">Cancellation</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="direct-delayed-and-transformation.html">direct/delayed/Transformation</a>
@@ -111,6 +127,8 @@
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="execution-backends.html">Execution Backends</a>
                   </li>
+                  <li class="toctree-l1"><a class="reference internal" href="environments.html">Environments</a>
+                  </li>
                   <li class="toctree-l1"><a class="reference internal" href="execution-records.html">Execution Records</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="service-management.html">Service Management</a>
@@ -122,6 +140,10 @@
                   <li class="toctree-l1"><a class="reference internal" href="compiled-pins.html">Compiled Pins</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="seamless-signature-schema.html">seamless-signature Schema</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="handler-languages.html">Handler Languages</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="language-backends.html">Language Backends</a>
                   </li>
               </ul>
               <p class="caption"><span class="caption-text">API</span></p>
@@ -193,12 +215,13 @@
 </ul>
 <p>Identity is <em>not</em> affected by the orthogonal execution envelope — where/how the
 computation runs (<code>__meta__</code> including local-vs-remote placement, <code>__env__</code>,
-<code>__compilation__</code>, scratch policy, …). Those change execution, not the denoted
-result. If the platform allows environment-dependent semantics, it should record
-an <strong>environment signature</strong> as provenance (see <code>contracts/scratch-witness-audit.md</code>).</p>
+<code>__compilation__</code>, <code>__handler__</code>, scratch policy, …). Those change execution,
+not the denoted result. If the platform allows environment-dependent semantics,
+it should record an <strong>environment signature</strong> as provenance (see
+<code>contracts/scratch-witness-audit.md</code>).</p>
 <h2 id="checksums-values-and-celltypes">Checksums, values, and celltypes</h2>
 <ul>
-<li>The checksum is the identity; a deserialized value is not. One value may have several checksums (e.g. <code>b"true"</code> vs <code>b"true\n"</code>, compact vs indented JSON), and Seamless does not re-canonicalize a checksum by re-serializing its value — the only canonicalization is empty <code>bytes</code> → the canonical null <code>b"null\n"</code>.</li>
+<li>The checksum is the identity; a deserialized value is not. One value may have several checksums (e.g. <code>b"true"</code> vs <code>b"true\n"</code>, compact vs indented JSON), and Seamless does not re-canonicalize a checksum by re-serializing its value of its own accord — the only implicit canonicalization is empty <code>bytes</code> → the canonical null <code>b"null\n"</code>. File mounts canonicalize buffers upon write, while preserving the source node checksum: this changes the external representation, not graph identity. An <code>rw</code> mount also writes canonical bytes after adopting non-canonical file content, including initial adoption by an empty cell; read-only mounts leave external bytes untouched. Their acknowledged source/file checksum pair can be in sync despite different checksums (<code>contracts/mounts.md</code>, <em>Canonical bytes</em>). Canonical <code>plain</code> is asked for explicitly, with <code>plain → text → plain</code> (<code>contracts/celltypes-and-conversion.md</code>, <em>Canonicalizing a <code>plain</code> checksum</em>).</li>
 <li>A celltype is an interpretation of a checksum. The celltype hierarchy is a hierarchy of valid checksums: a checksum valid as a subtype is valid, unchanged, as its supertype, so such a conversion keeps the checksum (and hence cache identity).</li>
 <li>See <code>contracts/celltypes-and-conversion.md</code> (celltypes, null, parser, conversion engine) and <code>contracts/hashtype.md</code> (checksum-level classification used to reject impossible deserializations/conversions without buffers).</li>
 </ul>
@@ -212,35 +235,106 @@ an <strong>environment signature</strong> as provenance (see <code>contracts/scr
 <li>Compression (<code>.zst</code>, <code>.gz</code>) is a materialization detail — it does not affect identity or caching. A compressed and uncompressed form of the same buffer have the same checksum and are cache-equivalent. See <code>contracts/compression.md</code>.</li>
 </ul>
 <h3 id="transformations-are-not-the-only-thing-cached">Transformations are not the only thing cached</h3>
-<p>This page defines the <em>Transformation</em> identity and its cache. Three other kinds of entry are keyed and stored by their own identity, and none of them is a transformation-cache entry:</p>
+<p>This page defines the <em>Transformation</em> identity and its cache. Four other kinds of entry are keyed and stored by their own identity, and none of them is a transformation-cache entry:</p>
 <ul>
 <li><strong>Expression results.</strong> An Expression's identity is the 4-tuple <code>(input_checksum, path, input_celltype, celltype)</code>, and a successful result is recorded under it — in a process-global cache and in the database <code>expression</code> table, with <code>rev_expression</code> as its reverse index. Failures are <strong>not</strong> cached, deliberately, unlike a Transformation's exception. See <code>contracts/expressions.md</code>.</li>
+<li><strong>Cell join results.</strong> A cell join, the Expression behind a cell-level join, has an identity of its own: the pair <code>(celljoin checksum, celltype)</code>, where the celljoin checksum is that of the JSON dict of its input checksums. A successful result is recorded under that pair like any other Expression's, with a forward and a reverse row in the database, and failures are not cached. The JSON itself is stored on the hashserver only. See <code>contracts/expressions.md</code>, <em>Cell joins</em>.</li>
 <li><strong>Conversion results.</strong> A buffer-level celltype conversion that produces a new buffer is recorded as an <strong>empty-path Expression</strong>, so a later conversion between the same two celltypes for the same checksum is an Expression cache hit, not a second conversion. See <code>contracts/celltypes-and-conversion.md</code>.</li>
 <li><strong>HashType words.</strong> The checksum-level classification of a buffer is cached per checksum, locally and in the database <code>hash_type</code> table, and only ever tightens. It is metadata about a checksum, never a result. See <code>contracts/hashtype.md</code>.</li>
 </ul>
 <p>The local buffer cache, its strong/weak strategy and its eviction pressure are <code>contracts/cache-storage-and-limits.md</code>; which buffers may not be evicted at all is the checksum reference lifecycle (<code>contracts/internal/checksum-reference-lifecycle.md</code>).</p>
+<h3 id="recording-identity-is-not-publishing">Recording identity is not publishing</h3>
+<p>The caches above record <strong>identity</strong>: producer → result checksum. That is a separate act from <strong>publishing</strong> — writing the result <em>buffer</em> to the hashserver — and the two must not be conflated. The two words mean exactly that, everywhere, including <code>contracts/internal/checksum-reference-lifecycle.md</code>, which owns the reference side:</p>
+<ul>
+<li><strong>Evaluating</strong> a transformation or an Expression, or recovering a buffer by fingertipping, produces a buffer in the evaluating process's memory. That is all it does.</li>
+<li><strong>Recording identity</strong> stores the mapping. It must keep happening — it is what the reverse index that fingertipping walks is made of — and it says nothing about where any buffer is.</li>
+<li><strong>Publishing</strong> is writing the result buffer to the hashserver, and nothing more. It takes no claim and asserts nothing about who holds the result. A result is published in exactly two ways: an owner <strong>increfs</strong> it non-scratch (an act that also overturns any scratch status), or a <strong>non-scratch dispatch</strong> asks the executing side to write it. A scratch result is never published.</li>
+</ul>
+<p><strong>Neither evaluation nor fingertipping publishes of its own accord</strong>, at any site, so an evaluated result's persistence follows the scratch decision of <em>who holds it</em> or <em>who requested it</em>, never <em>who computed it</em> or <em>where</em>. Fingertipping has no exception to this: it always runs locally and never writes to the hashserver (<em>Fingertipping under remote execution</em>, below). A corollary worth keeping in mind when reading a cache: a recorded result checksum does not imply that its buffer exists anywhere. Across a dispatch the interest travels with the request (<code>scratch</code> is a request parameter, and the executing side publishes on the requester's behalf under the requester's decision), which preserves the rule across a process boundary rather than breaking it. Where the requester is a bare <code>Expression</code> and there is no owner to supply that decision, the entry point supplies it — asking for a checksum carries <code>scratch=True</code> and writes nothing, asking for a value carries <code>scratch=False</code> because the hashserver is the only channel by which the bytes can arrive (<code>contracts/expressions.md</code>, <em>The requester's scratch decision, and what a bare Expression carries</em>). See <code>contracts/scratch-witness-audit.md</code> and <code>contracts/internal/checksum-reference-lifecycle.md</code>, and, for where the code stands, <code>contracts/expressions.md</code>, <em>Status: publication and fingertipping</em>.</p>
+<h3 id="fingertipping-under-remote-execution-two-cases">Fingertipping under remote execution: two cases</h3>
+<p><strong>Fingertipping always runs locally and never writes to the hashserver.</strong> There is no exception: not for a manual fingertip, not inside a job, not at any site, and not for the end result of a chain.</p>
+<p>Fingertipping recovers an absent buffer (scratch, or evicted) by recomputing its producer chain. "Locally" means in the process that wants the buffer: nothing in a fingertip chain is ever dispatched. When a job server (jobserver or daskserver) is active, a fingertip happens in one of two cases. They differ in who asks and therefore in which process runs the chain. <strong>Neither writes anything to the hashserver.</strong></p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th><strong>Case 1: input fingertip inside a job</strong></th>
+<th><strong>Case 2: manual fingertip</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Typical use</strong></td>
+<td>The common case: a big scratch intermediate that exists only to feed a transformation</td>
+<td>Someone wants the bytes of a result marked scratch (or evicted)</td>
+</tr>
+<tr>
+<td><strong>Trigger</strong></td>
+<td>A dispatched transformation whose input buffer is absent, with input fingertipping enabled (<code>allow_input_fingertip = True</code>, <code>--fingertip</code>, or a transformation submitted by a workflow Context without a hashserver)</td>
+<td>An explicit request: <code>Checksum.fingertip()</code>, <code>Cell.fingertip()</code>, <code>Pin.fingertip()</code>, <code>Transformation.run()</code> (which fingertips its result) or the fingertip of an Expression's result in Python, or the <code>seamless-fingertip</code> CLI</td>
+</tr>
+<tr>
+<td><strong>Where the chain runs</strong></td>
+<td>Where the job runs. The transformation is dispatched like any other, and its input fingertip is <strong>local to that job</strong>: nothing in the chain is dispatched again. On a daskserver the recomputation may land on another Dask worker, but Dask moves that data between workers itself, outside Seamless</td>
+<td><strong>In the requesting process, as the norm, even while a job server is active.</strong> Nothing in the chain is dispatched: the chain is not sent to the job server, and neither are its individual links</td>
+</tr>
+<tr>
+<td><strong>Hashserver writes</strong></td>
+<td><strong>None.</strong> Neither the recovered input nor any intermediate is written</td>
+<td><strong>None</strong> from the fingertip itself. A bare <code>Checksum.fingertip()</code> leaves the buffer in local memory only. A fingertip through a non-scratch owner (Cell, Pin) persists the result, but through that owner's own incref, not because of the fingertip</td>
+</tr>
+<tr>
+<td><strong>Scratch status afterwards</strong></td>
+<td>Unchanged: the input stays unstored</td>
+<td>Unchanged, unless a non-scratch owner increfs the result</td>
+</tr>
+</tbody>
+</table>
+<p>In both cases the chain runs where the buffer is wanted, so the buffer is already in memory there and nothing has to travel through the hashserver. This is why the manual case stays local. A remote evaluation answers with a checksum only, so dispatching the chain would force a hashserver write of exactly the buffer that the scratch decision or eviction had kept out. The cost of staying local: the requester must be able to execute the chain's transformations itself (<code>contracts/expressions.md</code>, <em>Fingertipping is exempt from "where the data is"</em>).</p>
+<p><code>contracts/scratch-witness-audit.md</code> (<em>Where a fingertip chain runs, and what it leaves behind</em>) is the full statement; <code>contracts/expressions.md</code> covers the Expression side.</p>
 <h3 id="caching-masks-accidental-nondeterminism">Caching masks accidental nondeterminism</h3>
 <p>A direct consequence of “same <code>tf_checksum</code> ⇒ reuse the cached result”: Seamless <strong>does not, by default, observe</strong> accidental nondeterminism (wall-clock reads, unordered-set iteration, non-associative parallel reductions, data races). A transformation is computed <strong>once</strong>, its result is cached under its <code>tf_checksum</code>, and every later request is a <strong>cache hit</strong> — the code is never re-run, so a divergent result is never seen.</p>
 <p>Accidental nondeterminism therefore surfaces <strong>only when a result is recomputed</strong>:</p>
 <ul>
 <li><strong>deliberately</strong>, by forcing a recomputation for an audit (see “Forcing recomputation / auditing” below), or</li>
-<li><strong>incidentally</strong>, by <strong>fingertipping</strong> — when a requested buffer is <em>absent</em> (evicted from the store, <strong>or</strong> <code>scratch</code> and so never stored), Seamless regenerates it by recomputing its producer (recomputation-using-provenance). A non-reproducible producer then yields a <em>different</em> checksum on regeneration, breaking the consuming step's input identity. Note this is a property of fingertipping (the recompute), not of scratch as such — an evicted non-<code>scratch</code> buffer is exposed the same way (see <code>contracts/scratch-witness-audit.md</code>).</li>
+<li><strong>incidentally</strong>, by <strong>fingertipping</strong> — when a requested buffer is <em>absent</em> (evicted from the store, <strong>or</strong> <code>scratch</code> and so never stored), Seamless regenerates it by recomputing its producer (recomputation-using-provenance). A non-reproducible producer then yields a <em>different</em> checksum on regeneration, breaking the consuming step's input identity. Note this is a property of fingertipping (the recompute), not of scratch as such — an evicted non-<code>scratch</code> buffer is exposed the same way (see <code>contracts/scratch-witness-audit.md</code>). A fingertip chain is never dispatched, so the recomputation, and any divergence it exposes, happens in the environment of the process that wants the buffer: the job's for an input fingertip, the client's for a manual fingertip (see <em>Fingertipping under remote execution</em>).</li>
 </ul>
-<p>A <code>result_checksum</code> that differs for the same <code>tf_checksum</code> is a <strong>referential-transparency violation</strong>, not a Seamless feature; that is what <code>IrreproducibleTransformation</code> records (see <code>contracts/execution-records.md</code>). Determinism is a contract the user must uphold; Seamless's silence on a cache hit is not evidence of it.</p>
+<p>A <code>result_checksum</code> that differs for the same <code>tf_checksum</code> is a <strong>referential-transparency violation</strong>, not a Seamless feature; <code>IrreproducibleTransformation</code> records it in two modes (<code>contracts/execution-records.md</code>). An automatic observation leaves the canonical forward row present and records the divergent result separately. A manual quarantine removes the forward row and its reverse entry. Readers tell the modes apart by the forward row: present means automatic observations, absent means quarantined. Determinism is a contract the user must uphold; silence on a cache hit is not evidence of it.</p>
 <h3 id="concurrent-submissions-of-the-same-checksum">Concurrent submissions of the same checksum</h3>
-<p>Because orthogonal-only differences are cache-equivalent, a second submission of an already-running <code>tf_checksum</code> under a different orthogonal envelope does not start a second execution. By default it <strong>latches on</strong>: it attaches to the running submission, adopts that submission's envelope, and returns its result <em>value</em> (not the latcher's envelope side-effects, e.g. its own direct-print, placement, or record request). A caller that requires its own envelope to execute can opt into <code>strict</code> mode (<code>strict_dunder=True</code> in Python; <code>--strict</code> on <code>seamless-run-transformation</code>, which is the only CLI that offers it), which instead fails while a differently-dundered submission is active — the prior submission must finish or be canceled (<code>seamless-cancel &lt;tf_checksum&gt;</code>) first. This reflects a backend limitation — the same <code>tf_checksum</code> cannot execute concurrently under two different envelopes — not a property of the identity model.</p>
+<p>Because orthogonal-only differences are cache-equivalent, a second submission of an already-running <code>tf_checksum</code> under a different orthogonal envelope does not start a second execution. By default it <strong>latches on</strong>: it attaches to the running submission, adopts that submission's envelope, and returns its result <em>value</em> (not the latcher's envelope side-effects, e.g. its own placement or record request). A caller that requires its own envelope to execute can opt into <code>strict</code> mode (<code>strict_dunder=True</code> in Python; <code>--strict</code> on <code>seamless-run-transformation</code>, which is the only CLI that offers it), which instead fails while a differently-dundered submission is active — the prior submission must finish or be canceled (<code>seamless-cancel &lt;tf_checksum&gt;</code>) first. This reflects a backend limitation — the same <code>tf_checksum</code> cannot execute concurrently under two different envelopes — not a property of the identity model.</p>
 <h2 id="load-bearing-vs-orthogonal-keys-in-a-transformation-dict">Load-bearing vs orthogonal keys in a transformation dict</h2>
 <p>Internally, a transformation is represented as a dict. A dunder (double-underscore) key is <strong>not</strong> automatically excluded from the checksum — each key is classified as one of three kinds:</p>
 <p><strong>Load-bearing</strong> (determinant) — included in the transformation checksum (the cache key). Changing the value produces a different transformation identity and bypasses the cache. This is every plain pin (<code>code</code>, <code>arg1</code>, <code>objects</code>, …) <strong>and</strong> the load-bearing dunders: <code>__language__</code> (code interpretation/execution semantics), <code>__output__</code> (output name/celltype), <code>__as__</code> (pin namespace mapping, observable by code), <code>__format__</code> (pin materialization), and <code>__schema__</code> (compiled function ABI/signature; not derivable from <code>code</code>).</p>
-<p><strong>Orthogonal</strong> — frozen and carried with the transformation, but excluded from the checksum. Changing the value changes the execution envelope, not identity, and must not change the denoted result value. These include <code>__meta__</code> (incl. local-vs-remote placement and compiled <code>metavars</code>), <code>__env__</code>, <code>__compilation__</code>, <code>__record_probe__</code>, <code>__code_checksum__</code>, <code>__code_text__</code>, scratch policy, the legacy <code>__compilers__</code>/<code>__languages__</code>, and any <code>META__*</code> key.</p>
+<p><strong>Orthogonal</strong> — frozen and carried with the transformation, but excluded from the checksum. Changing the value changes the execution envelope, not identity, and must not change the denoted result value. These include <code>__meta__</code> (incl. local-vs-remote placement, and the <code>metavars</code> of compiled, Python and handler-language transformers), <code>__env__</code>, <code>__compilation__</code>, <code>__handler__</code> (the source of the Python function that runs a handler language), <code>__record_probe__</code>, <code>__code_checksum__</code>, <code>__code_text__</code>, scratch policy, the legacy <code>__compilers__</code>/<code>__languages__</code>, and any <code>META__*</code> key.</p>
 <p><strong>Derived/eliminable</strong> — not independent identity state; regenerated from load-bearing data, and only validated then discarded if a caller supplies them. These include <code>__header__</code> (generated from <code>__schema__</code> via <code>seamless-signature</code>), <code>__compiled__</code> (derived from the presence of compiled definition state), and <code>__deps__</code> (derived from the dependency graph).</p>
 <p>Practical consequence: two transformations that differ only in orthogonal values are cache-equivalent. For example:</p>
 <ul>
 <li>Compiler flags live in <code>__compilation__</code> (orthogonal) → switching from <code>-O3</code> to <code>-g</code> does not invalidate the cache.</li>
 <li>The conda environment name lives in <code>__env__</code> (orthogonal) → activating a different environment reuses a cached result if the code and inputs are unchanged.</li>
+<li>The Docker image of a transformation lives in <code>__env__</code> as well (orthogonal) → the same script and inputs under another image reuse the cached result, and so does an image tag that was rebuilt upstream. Which container runtime runs the image (docker, podman or apptainer) is not in the dict at all, because the executing host chooses it, so a result computed under one runtime is a cache hit under another. For work that must be reproducible, name the image by digest, <code>name@sha256:…</code> (<code>contracts/environments.md</code>, <em>Identity and caching</em>).</li>
 <li>Source code lives in the plain key <code>code</code>, and the code language lives in <code>__language__</code> (load-bearing) → changing either is a cache miss. The same <code>code</code> bytes interpreted as Python versus bash are <em>different computations</em> and must not alias to one cache key.</li>
+<li>The handler of a handler language lives in <code>__handler__</code>, and the backend it runs the code with lives in <code>__meta__</code> (both orthogonal) → R code that was run by the CLI backend and the same code run by the in-memory backend share one cached result.</li>
+<li>The language backend of a Python transformation, <code>BACKEND</code>, lives in <code>__meta__</code> as well (orthogonal), and only when it was set → the same Python function that was run in memory and run as a CLI job shares one cached result. That is valid because both backends give the same result when both succeed (<code>contracts/language-backends.md</code>, <em>Parity</em>).</li>
 </ul>
 <p>This split is the heart of the identity model: load-bearing keys capture the "what to run" identity, orthogonal keys capture the "how to run" envelope. An agent must not move load-bearing data into the orthogonal set to avoid cache misses — doing so corrupts the identity model by aliasing distinct computations to one key.</p>
+<h3 id="handler-languages-__handler__-and-the-neutral-__format__-entry">Handler languages: <code>__handler__</code> and the neutral <code>__format__</code> entry</h3>
+<p>A transformation in a handler language, such as R or Julia, is run by a <strong>handler</strong>: a Python function that receives the code and the pins (<code>contracts/handler-languages.md</code>). Such a transformation has two keys that the split above must place.</p>
+<p><strong><code>__handler__</code> is orthogonal.</strong> It holds the checksum of the handler's source text.</p>
+<ul>
+<li>It travels with the transformation, so a process that never registered the handler can run it.</li>
+<li>It is outside the checksum. Identity sees the language <em>name</em>, in <code>__language__</code>. Replacing a handler, or upgrading it, is not a cache miss.</li>
+<li>This puts an obligation on handlers: two handlers registered under one name must give the same result for the same code and inputs. Seamless does not check it.</li>
+<li>The handler's settings are orthogonal too. They are its metavars, in <code>__meta__</code>, and the <code>BACKEND</code> that selects how the code is run is one of them. The handler contract guarantees that both backends of a language give the same result bit for bit whenever both succeed (<code>contracts/handler-languages.md</code>, <em>Backend parity</em>). That guarantee is what makes the backend orthogonal rather than load-bearing.</li>
+</ul>
+<p><strong><code>__format__</code> gets a neutral entry.</strong> For every pin of celltype <code>mixed</code>, <code>plain</code>, <code>text</code>, <code>bytes</code> or <code>binary</code> of a handler language, the dict carries:</p>
+<pre><code class="language-json">{&quot;filesystem&quot;: {&quot;mode&quot;: &quot;file&quot;, &quot;optional&quot;: true}, &quot;celltype&quot;: &quot;&lt;the pin's celltype&gt;&quot;}
+</code></pre>
+<ul>
+<li>The entry says that the pin <em>may</em> be handed to the handler as a file. That happens when the pin's buffer is on file where the transformation runs. Otherwise the handler gets the value (<code>contracts/handler-languages.md</code>, <em>Pins on file</em>).</li>
+<li><code>__format__</code> is load-bearing, so the entry is in the checksum. It is <strong>neutral</strong>: every transformation of every handler language carries it for every such pin, whichever form is delivered and on whichever machine. It adds nothing to identity beyond the language and the pin celltypes, which are in the checksum already.</li>
+<li>Identity therefore does not depend on where a buffer is stored, and neither does the result: both forms hold the same bytes.</li>
+<li><strong>Only <code>folder</code> pins carry a directory entry.</strong> <code>seamless-run</code> writes one for each directory argument. A <code>deepfolder</code> pin carries checksum objects outside bash and is refused by bash, so it has no directory entry. <code>contracts/pins.md</code>, <em>Pins on file</em>, has the entry, who writes it and what the executing process does with it. A language backend does not change the pin form.</li>
+</ul>
 <h2 id="forcing-recomputation-auditing">Forcing recomputation / auditing</h2>
 <p>An agent should assume there is (or should be) a way to:</p>
 <ul>

@@ -47,6 +47,8 @@
               <ul class="current">
                   <li class="toctree-l1 current"><a class="reference internal current" href="#">Wrapping Python and bash</a>
     <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#canonical-transformer-constructors">Canonical Transformer constructors</a>
+    </li>
     <li class="toctree-l2"><a class="reference internal" href="#wrapping-python-with-direct-and-delayed">Wrapping Python with direct and delayed</a>
         <ul>
     <li class="toctree-l3"><a class="reference internal" href="#in-process-caching">In-process caching</a>
@@ -185,6 +187,18 @@
             <div class="section" itemprop="articleBody">
               
                 <h1 id="wrapping-python-and-bash">Wrapping Python and bash</h1>
+<h2 id="canonical-transformer-constructors">Canonical Transformer constructors</h2>
+<p>Use <code>direct</code> or <code>delayed</code> for standalone Python functions, assign a Python function directly to a workflow Context, and use the <code>Transformer</code> factory for every language/call-mode combination:</p>
+<pre><code class="language-python">from seamless.transformer import Transformer
+
+bash = Transformer(&quot;bash&quot;, direct=True)
+bash.code = &quot;cat input &gt; RESULT&quot;
+
+c = Transformer(&quot;c&quot;, compiled=True)
+c.schema = &quot;...&quot;
+c.code = &quot;...&quot;
+</code></pre>
+<p>The factory signature is <code>Transformer(language="python", compiled=False, direct=False)</code>. It returns a code-less builder. Without compilation, the language must be <code>"python"</code> or <code>"bash"</code>; Python and Bash languages are read-only. <code>direct</code> and <code>delayed</code> are Python-only and no longer accept a language argument.</p>
 <h2 id="wrapping-python-with-direct-and-delayed">Wrapping Python with <code>direct</code> and <code>delayed</code></h2>
 <pre><code class="language-python">from seamless.transformer import direct, delayed
 </code></pre>

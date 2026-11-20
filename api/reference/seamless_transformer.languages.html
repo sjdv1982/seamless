@@ -146,37 +146,37 @@
             <div class="section" itemprop="articleBody">
               
                 <h1 id="seamless_transformerlanguages">seamless_transformer.languages</h1>
-<p>Registry of compiled language definitions for seamless-transformer.</p>
-<p>Built-in languages (<code>c</code>, <code>cpp</code>, <code>fortran</code>, <code>rust</code>) are registered
-automatically on import. Additional languages can be registered at runtime
-with :func:<code>define_compiled_language</code>.</p>
-<p>Example — register a custom language::</p>
-<pre><code>from seamless_transformer.languages import define_compiled_language
-
-define_compiled_language(
-    name="mylang",
-    compilation={
-        "compiler": "mycc",
-        "mode": "object",
-        "options": ["-O2", "-fPIC"],
-        "debug_options": ["-g", "-fPIC"],
-        "profile_options": [],
-        "release_options": [],
-        "compile_flag": "-c",
-        "output_flag": "-o",
-        "language_flag": "",
-    },
-)
-</code></pre>
+<p>Registries and helpers for languages accepted by Seamless transformers.</p>
+<p><code>python</code> and <code>bash</code> are the built-in native languages. Register compiled
+languages with <code>define_compiled_language</code> and languages executed by Python
+handlers with <code>register_language_handler</code>. <code>available_languages()</code> returns
+each language accepted by the <code>Transformer</code> factory and its kind
+(<code>"native"</code>, <code>"compiled"</code> or <code>"handler"</code>). A language name belongs to
+one kind.</p>
+<p>Built-in compiled languages and the <code>r</code> and <code>julia</code> handlers register
+when this module is imported. Registration does not import or start R or Julia,
+or load <code>ryp</code> or <code>juliacall</code>.</p>
+<p><code>run_in_interpreter_thread()</code> runs a callable on one process-wide thread
+associated with its name, for embedded interpreters that need a stable calling
+thread. Calls from that thread run inline.</p>
 <h2 id="exports">Exports</h2>
 <p>This module primarily re-exports public primitives. Export list (<code>__all__</code>):</p>
 <ul>
 <li><code>CompilationConfig</code></li>
 <li><code>LanguageDefinition</code></li>
+<li><code>LanguageHandlerDefinition</code></li>
 <li><code>define_compiled_language</code></li>
 <li><code>get_language</code></li>
+<li><code>get_language_handler</code></li>
 <li><code>is_compiled_language</code></li>
+<li><code>is_handler_language</code></li>
+<li><code>available_languages</code></li>
+<li><code>check_in_memory_environment</code></li>
+<li><code>execute_cli</code></li>
+<li><code>register_language_handler</code></li>
+<li><code>run_in_interpreter_thread</code></li>
 <li><code>_registry</code></li>
+<li><code>_handler_registry</code></li>
 </ul>
 <p>For details, see the generated API pages for the underlying implementation modules.</p>
 <h2 id="compilationconfig"><code>CompilationConfig</code></h2>
@@ -191,6 +191,40 @@ define_compiled_language(
 <li>signature: <code>LanguageDefinition</code></li>
 </ul>
 <p><em>No docstring.</em></p>
+<h2 id="languagehandlerdefinition"><code>LanguageHandlerDefinition</code></h2>
+<ul>
+<li>kind: <code>class</code></li>
+<li>signature: <code>LanguageHandlerDefinition</code></li>
+</ul>
+<p>Registered source and defaults for a non-native transformer language.</p>
+<h2 id="_use_cli_execution_context"><code>_use_cli_execution_context</code></h2>
+<ul>
+<li>kind: <code>function</code></li>
+<li>signature: <code>_use_cli_execution_context(tf_checksum, should_abort)</code></li>
+</ul>
+<p><em>No docstring.</em></p>
+<h2 id="_validate_backend_value"><code>_validate_backend_value</code></h2>
+<ul>
+<li>kind: <code>function</code></li>
+<li>signature: <code>_validate_backend_value(value, language)</code></li>
+</ul>
+<p><em>No docstring.</em></p>
+<h2 id="available_languages"><code>available_languages</code></h2>
+<ul>
+<li>kind: <code>function</code></li>
+<li>signature: <code>available_languages()</code></li>
+</ul>
+<p>Return Transformer-constructible languages mapped to their kind.</p>
+<p>Each value is <code>"native"</code>, <code>"compiled"</code> or <code>"handler"</code>.</p>
+<h2 id="check_in_memory_environment"><code>check_in_memory_environment</code></h2>
+<ul>
+<li>kind: <code>function</code></li>
+<li>signature: <code>check_in_memory_environment(environment, language)</code></li>
+</ul>
+<p>Check an in-memory backend's conda, Docker, and required-binary rules.</p>
+<p>A conda setting is a requirement on the current process; this function
+never activates an environment. Docker is unsupported by in-memory
+backends. Required binaries are checked on this process's PATH.</p>
 <h2 id="define_compiled_language"><code>define_compiled_language</code></h2>
 <ul>
 <li>kind: <code>function</code></li>
@@ -216,7 +250,14 @@ define_compiled_language(
 <li><code>language_flag</code> (str): flag to tell the compiler which language to use
   (e.g. <code>"-x c"</code> for gcc); empty string if not needed.</li>
 </ul>
-<p>Raises <code>ValueError</code> if <code>mode</code> is not <code>"object"</code> or <code>"archive"</code>.</p>
+<p>Raises <code>ValueError</code> if <code>mode</code> is not <code>"object"</code>, <code>"archive"</code> or
+<code>"package"</code>.</p>
+<h2 id="execute_cli"><code>execute_cli</code></h2>
+<ul>
+<li>kind: <code>function</code></li>
+<li>signature: <code>execute_cli(command, pins_, PINS, FILESYSTEM, OUTPUTPIN, environment)</code></li>
+</ul>
+<p>Run a language command through the shared CLI job machinery.</p>
 <h2 id="get_language"><code>get_language</code></h2>
 <ul>
 <li>kind: <code>function</code></li>
@@ -224,12 +265,35 @@ define_compiled_language(
 </ul>
 <p>Look up a registered compiled language by name.</p>
 <p>Raises <code>KeyError</code> if the language has not been registered.</p>
+<h2 id="get_language_handler"><code>get_language_handler</code></h2>
+<ul>
+<li>kind: <code>function</code></li>
+<li>signature: <code>get_language_handler(name)</code></li>
+</ul>
+<p>Return the registered handler definition for <code>name</code>.</p>
+<p>Raises <code>KeyError</code> when no handler is registered for that name.</p>
 <h2 id="is_compiled_language"><code>is_compiled_language</code></h2>
 <ul>
 <li>kind: <code>function</code></li>
 <li>signature: <code>is_compiled_language(name)</code></li>
 </ul>
 <p>Return True if <code>name</code> is a registered compiled language.</p>
+<h2 id="is_handler_language"><code>is_handler_language</code></h2>
+<ul>
+<li>kind: <code>function</code></li>
+<li>signature: <code>is_handler_language(name)</code></li>
+</ul>
+<p>Return whether name has a registered language handler.</p>
+<h2 id="register_language_handler"><code>register_language_handler</code></h2>
+<ul>
+<li>kind: <code>function</code></li>
+<li>signature: <code>register_language_handler(name, handler, *, metavars)</code></li>
+</ul>
+<p>Register a Python function as the executor for a transformer language.</p>
+<p>The name must not be native or compiled. <code>handler</code> must be one named,
+source-retrievable function without a closure. Its supported parameters
+are passed by keyword. <code>metavars</code> maps setting names to their defaults.
+Registering the same handler language again replaces its registration.</p>
               
             </div>
           </div><footer>

@@ -75,6 +75,14 @@
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="mounts.html">File Mounts</a>
                   </li>
+                  <li class="toctree-l1"><a class="reference internal" href="shares.html">HTTP Shares</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="widgets.html">Jupyter Widgets</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="streaming.html">Streaming</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="transformation-logs.html">Transformation Logs</a>
+                  </li>
                   <li class="toctree-l1"><a class="reference internal" href="cancellation.html">Cancellation</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="direct-delayed-and-transformation.html">direct/delayed/Transformation</a>
@@ -90,6 +98,8 @@
                   <li class="toctree-l1"><a class="reference internal" href="content-addressed-files-and-dirs.html">Content-addressed Files and Dirs</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="execution-backends.html">Execution Backends</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="environments.html">Environments</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="execution-records.html">Execution Records</a>
                   </li>
@@ -113,7 +123,7 @@
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#cli-bash-face">CLI / bash face</a>
     </li>
-    <li class="toctree-l2"><a class="reference internal" href="#directory-deepfolder-pins">Directory (deepfolder) pins</a>
+    <li class="toctree-l2"><a class="reference internal" href="#directory-pins-folder">Directory pins: folder</a>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#read-buffer-materialization-worker-side">Read-buffer materialization (worker side)</a>
     </li>
@@ -138,6 +148,10 @@
                   <li class="toctree-l1"><a class="reference internal" href="compiled-pins.html">Compiled Pins</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="seamless-signature-schema.html">seamless-signature Schema</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="handler-languages.html">Handler Languages</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="language-backends.html">Language Backends</a>
                   </li>
               </ul>
               <p class="caption"><span class="caption-text">API</span></p>
@@ -225,6 +239,10 @@ done
 <td>No — always canonical names</td>
 </tr>
 <tr>
+<td>Checksum objects in a <code>deepfolder</code> pin</td>
+<td>No — the pin does not expose a member's stored form</td>
+</tr>
+<tr>
 <td>Storage path on disk</td>
 <td>Yes — <code>ab/abcd.zst</code> vs <code>ab/abcd</code></td>
 </tr>
@@ -288,21 +306,26 @@ base, suffix = strip_compression_suffix(&quot;file.npy&quot;)
 seamless-run --input file.npy.zst mycommand
 </code></pre>
 <p>Pin names carry the compression suffix. The worker reads the suffix from the pin name and materializes the buffer in the matching compression format.</p>
-<h2 id="directory-deepfolder-pins">Directory (deepfolder) pins</h2>
-<p>For directory-typed pins, the compression suffix on the <strong>pin name</strong> applies to all leaves:</p>
+<h2 id="directory-pins-folder">Directory pins: <code>folder</code></h2>
+<p>A bash transformer gets a <code>folder</code> pin as a new directory in its job directory, with one entry for each key of the index (<a href="deep-celltypes.html">Deep celltypes</a>, <em>How deep values reach a transformer</em>). Bash refuses <code>deepcell</code> and <code>deepfolder</code> pins.</p>
+<p><strong>A <code>folder</code> pin follows the suffix in the pin's name.</strong> The suffix applies to all entries:</p>
 <ul>
-<li>Pin <code>mydata.zst</code> → directory on disk is <code>mydata/</code>, each leaf <code>file.npy</code> is materialized as <code>mydata/file.npy.zst</code></li>
-<li>Pin <code>mydata</code> → each leaf is materialized uncompressed (or whatever stored form is available)</li>
+<li>Pin <code>mydata.zst</code> → directory on disk is <code>mydata/</code>, each member <code>file.npy</code> is materialized as <code>mydata/file.npy.zst</code></li>
+<li>Pin <code>mydata</code> → each member is materialized uncompressed, as <code>mydata/file.npy</code></li>
 </ul>
-<p>The <code>.INDEX</code> always uses canonical leaf names (no compression suffixes). The directory checksum is unaffected by which compression format is used for leaf storage.</p>
+<p>An entry is a symlink where the stored form fits the suffix, and a file that is written in the asked form where it does not (<em>Read-buffer materialization</em>).</p>
+<p><strong>Outside bash, a <code>deepfolder</code> pin gives a dict of checksum objects</strong>, like a <code>deepcell</code> pin. It does not expose stored paths or compression form. A <code>folder</code> pin there is a dict of contents, whatever their stored form.</p>
+<p><strong>The index always uses canonical keys</strong> (no compression suffixes). The directory checksum is unaffected by which compression format is used for member storage.</p>
 <h2 id="read-buffer-materialization-worker-side">Read-buffer materialization (worker side)</h2>
 <p>When materializing a pin from the read buffer folder:</p>
 <ol>
 <li><strong>Fast path</strong>: if the stored form matches the requested suffix, create a symlink.</li>
 <li><strong>Fallback</strong>: if only a non-matching form is available, read it, transcode (decompress and/or compress), and write the result to the pin path. No symlink.</li>
 </ol>
-<p>Agents should not assume that the fast path is always taken, but can assume that the resulting bytes at the pin path will always match what was uploaded (decompressed if needed).</p>
+<p>This holds for an ordinary pin and for the entries of a <code>folder</code> pin. A <code>deepfolder</code> pin does not expose entries or stored forms.</p>
+<p>Agents should not assume that the fast path is always taken, but can assume that the resulting bytes at the path of an ordinary pin or of a <code>folder</code> entry will always match what was uploaded (decompressed if needed).</p>
 <p>Decompression failures during materialization raise an error — there is no silent fallback to corrupt data.</p>
+<p><strong>A buffer file that is a link which the job's container cannot follow takes the fallback too.</strong> A buffer file can be a symlink to a file outside the read-buffer directory (<code>seamless-upload</code> has a symlink mode beside its hard-link mode). Where the job runs in a container, such a file is not linked: an ordinary pin and a <code>folder</code> entry are read through the link and written into the job directory, in the form that the pin's name asks for. A hard-linked buffer file is an ordinary file, in a container too. Bash refuses <code>deepfolder</code> pins before this lookup.</p>
 <h2 id="hashserver-http-protocol">Hashserver HTTP protocol</h2>
 <h3 id="put-upload">PUT (upload)</h3>
 <p>Send <code>Content-Encoding: zstd</code> or <code>Content-Encoding: gzip</code> with the compressed body. The URL checksum is always the canonical (decompressed) checksum:</p>
@@ -331,7 +354,7 @@ Content-Encoding: zstd
 <li>When processing GET responses, check <code>Content-Encoding</code> and decompress before use.</li>
 <li>Use <code>strip_compression_suffix</code> anywhere a filename may carry a compression suffix before calling <code>os.path.splitext</code> or deriving sidecar names.</li>
 <li>Do not assume a specific stored form exists — the client should handle both compressed and uncompressed responses from GET.</li>
-<li>The Python face (<code>transformer.compression.my_pin</code>) is deferred and not yet implemented; use the CLI face (suffix in the pin/filename) for now.</li>
+<li>The Python face (<code>transformer.compression.my_pin</code>) is deferred and not yet implemented; use the CLI face (suffix in the pin/filename) for now. A <code>deepfolder</code> pin gives checksum objects outside bash and is refused by bash, so it does not request or expose a stored form.</li>
 </ul>
               
             </div>

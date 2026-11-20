@@ -1,0 +1,1051 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <link rel="shortcut icon" href="../img/favicon.ico" />
+    <title>HTTP Shares - Seamless — Agent Documentation</title>
+    <link rel="stylesheet" href="../css/theme.css" />
+    <link rel="stylesheet" href="../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "HTTP Shares";
+        var mkdocs_page_input_path = "contracts/shares.md";
+        var mkdocs_page_url = null;
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href="../index.html" class="icon icon-home"> Seamless — Agent Documentation
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../index.html">Home</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../overview.html">Agent Docs Overview</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../repos/index.html">Workspace Repos</a>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Contracts</span></p>
+              <ul class="current">
+                  <li class="toctree-l1"><a class="reference internal" href="identity-and-caching.html">Identity and Caching</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="celltypes-and-conversion.html">Celltypes, Null, and Conversion</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="hashtype.html">HashType</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="deep-celltypes.html">Deep Celltypes</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="expressions.html">Expressions</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="cells.html">Cells</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="pins.html">Pins</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="workflow-context.html">Workflow Context</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="node-state-lifecycle.html">Node State Lifecycle</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="attachments.html">Attachments</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="mounts.html">File Mounts</a>
+                  </li>
+                  <li class="toctree-l1 current"><a class="reference internal current" href="#">HTTP Shares</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#the-api">The API</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#the-share-slot">The share slot</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#shareable-celltypes">Shareable celltypes</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#the-server">The server</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#namespaces">Namespaces</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#url-space">URL space</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#the-state-graph">The state graph</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#the-record-and-the-marker">The record and the marker</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#reading-get-and-head">Reading: GET and HEAD</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#content-types">Content types</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#writing-put">Writing: PUT</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#cell-to-share">Cell to share</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#the-initial-decision">The initial decision</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#downloads">Downloads</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#the-download-get">The download GET</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#the-websocket">The websocket</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#openapijson">openapi.json</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#seamless-clientjs">seamless-client.js</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#the-barrier">The barrier</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#threads-and-blocking">Threads and blocking</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#errors">Errors</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#graph-serialization">Graph serialization</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#serving-saved-graphs">Serving saved graphs</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#lifecycle">Lifecycle</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#the-hold-on-close">The hold on close</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#limits">Limits</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#porting-notes">Porting notes</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#implementation-status-and-current-limitations">Implementation status and current limitations</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#non-goals">Non-goals</a>
+    </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="widgets.html">Jupyter Widgets</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="streaming.html">Streaming</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="transformation-logs.html">Transformation Logs</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="cancellation.html">Cancellation</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="direct-delayed-and-transformation.html">direct/delayed/Transformation</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="modules-and-closures.html">Modules and Closures</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="scratch-witness-audit.html">Scratch/Witness/Audit</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="seamless-run-and-argtyping.html">seamless-run/Argtyping</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="cache-storage-and-limits.html">Cache Storage and Limits</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="content-addressed-files-and-dirs.html">Content-addressed Files and Dirs</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="execution-backends.html">Execution Backends</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="environments.html">Environments</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="execution-records.html">Execution Records</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="service-management.html">Service Management</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="compression.html">Compression</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="compiled-transformers.html">Compiled Transformers</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="compiled-pins.html">Compiled Pins</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="seamless-signature-schema.html">seamless-signature Schema</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="handler-languages.html">Handler Languages</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="language-backends.html">Language Backends</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">API</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/python/seamless.html">seamless</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/python/seamless.transformer.html">seamless.transformer</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/python/seamless.buffer_class.html">seamless.buffer_class</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/python/seamless.checksum_class.html">seamless.checksum_class</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/python/seamless_config.select.html">seamless_config.select</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/python/seamless_config.tools.html">seamless_config.tools</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/python/seamless_transformer.transformation_class.html">seamless_transformer.transformation_class</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/python/seamless_transformer.transformer_class.html">seamless_transformer.transformer_class</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">CLI</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/cli/seamless-run.html">seamless-run</a>
+                  </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Seamless — Agent Documentation</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../index.html" class="icon icon-home" aria-label="Docs"></a></li>
+          <li class="breadcrumb-item">Contracts</li>
+      <li class="breadcrumb-item active">HTTP Shares</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h1 id="http-shares-contract">HTTP shares (Contract)</h1>
+<p>A <strong>share</strong> is the attachment whose external resource is an HTTP endpoint served by this process. The cell's value is read with GET, written with PUT when the share is writable, and every change is announced over a websocket. <strong>The attachment contract of <code>contracts/attachments.md</code> applies in full</strong> — direction, scope, slots, spec versus session, the sense and actuate disciplines, delivery pacing, the cut barrier and the lifecycle. This page specializes it for values served over HTTP. It does not restate a rule from that page; each section says where the share driver makes a generic rule concrete.</p>
+<p>The same server also serves <strong>downloads</strong>: archives of cell buffers, each at one URL of the namespace, built when they are requested (<em>Downloads</em>). A download is not an attachment; it belongs to the Context, not to a cell.</p>
+<p>Shares exist on the <strong>workflow Context</strong> only. A standalone <code>Cell</code> and a <code>direct</code>/<code>delayed</code> transformer have no HTTP integration. The <code>seamless-serve-graph</code> command loads workflow Contexts with their declared shares and downloads (<em>Serving saved graphs</em> below). <strong>A share is unrelated to the <code>seamless-share</code> package</strong>, which inspects and exports cached buffers and transformations.</p>
+<p>Code locations:</p>
+<table>
+<thead>
+<tr>
+<th>Concern</th>
+<th>Module / symbol</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Public handles</td>
+<td><code>seamless_workflow.attachments.share.api</code> (<code>ShareHandle</code>, <code>ContextShares</code>)</td>
+</tr>
+<tr>
+<td>Server configuration</td>
+<td><code>seamless_workflow.shareserver</code> (<code>configure</code>, <code>host</code>, <code>port</code>, <code>url</code>, <code>openapi</code>, <code>close</code>)</td>
+</tr>
+<tr>
+<td>Durable spec, celltype admission</td>
+<td><code>seamless_workflow.attachments.share.spec</code> (<code>ShareSpec</code>, <code>DownloadSpec</code>, <code>validate_celltype</code>)</td>
+</tr>
+<tr>
+<td>Download cut</td>
+<td><code>seamless_workflow.attachments.runtime.AttachmentRuntime._download_cut</code></td>
+</tr>
+<tr>
+<td>Archive packing</td>
+<td><code>seamless_workflow.attachments.share.archive</code></td>
+</tr>
+<tr>
+<td>Transport</td>
+<td><code>seamless_workflow.attachments.share.driver.ShareDriver</code></td>
+</tr>
+<tr>
+<td>Server, records, namespaces, holds</td>
+<td><code>seamless_workflow.attachments.share.server</code> (<code>ShareServer</code>)</td>
+</tr>
+<tr>
+<td>Content types</td>
+<td><code>seamless_workflow.attachments.share.mime</code></td>
+</tr>
+<tr>
+<td>API description</td>
+<td><code>seamless_workflow.attachments.share.openapi</code></td>
+</tr>
+<tr>
+<td>Browser client</td>
+<td><code>seamless_workflow/attachments/share/static/seamless-client.js</code></td>
+</tr>
+<tr>
+<td>Cell handle</td>
+<td><code>seamless.cell_class.Cell.share</code> (property plus deleter, seamless-core)</td>
+</tr>
+<tr>
+<td>Session protocol, policy, barrier</td>
+<td>as in <code>contracts/attachments.md</code></td>
+</tr>
+</tbody>
+</table>
+<h2 id="the-api">The API</h2>
+<pre><code class="language-python">ctx.a.share(path=None, readonly=True, *, mimetype=None, toplevel=False)   # blocking; returns None
+del ctx.a.share                                                           # unshare
+
+ctx.a.share.spec            # the ShareSpec, or None
+ctx.a.share.url             # &quot;http://&lt;host&gt;:&lt;port&gt;/&lt;namespace&gt;/&lt;path&gt;&quot;, or None
+ctx.a.share.status          # the status dict, or None
+ctx.a.share.error           # delivery error, or None
+ctx.a.share.clear_error()
+
+ctx.shares.namespace        # &quot;ctx&quot;; settable while this Context has no shares
+ctx.shares.url              # &quot;http://&lt;host&gt;:&lt;port&gt;/&lt;namespace&gt;&quot;, or None before the server runs
+ctx.shares.openapi()        # the OpenAPI document for this Context's shares, a dict
+
+ctx.shares.add_download(cells, path=&quot;download&quot;, *, format=&quot;tar.gz&quot;)   # blocking; returns the URL
+ctx.shares.remove_download(path=&quot;download&quot;)
+ctx.shares.downloads        # {path: DownloadSpec}
+
+from seamless_workflow import shareserver
+shareserver.configure(host=&quot;0.0.0.0&quot;, port=5813)    # before the first share
+shareserver.host, shareserver.port, shareserver.url
+shareserver.openapi()       # the document for every namespace
+
+ctx.set_graph(graph, shares=True)
+</code></pre>
+<ul>
+<li><strong><code>share</code> is a class attribute of <code>Cell</code></strong> — a property with a deleter — so <code>del ctx.a.share</code> reaches the deleter and never sub-path deletion. It addresses the share slot only. A value key named <code>share</code> is reachable only as <code>ctx.a["share"]</code> (<code>contracts/cells.md</code>, <em>API-name arbitration</em>).</li>
+<li><strong><code>shares</code> is reserved on the Context.</strong> <code>ctx.shares = x</code> raises <code>AttributeError("shares is reserved for the Context share API")</code>, and a graph node at path <code>("shares",)</code> is refused with <code>PathError("shares is a reserved Context API name")</code>.</li>
+<li><strong><code>share()</code> blocks until the endpoint answers</strong>: through server start, and through the first delivery when the cell has a complete value. It raises only for an invalid <em>request</em> (<em>Errors</em>).</li>
+<li><strong><code>path</code> is the key inside the namespace.</strong> <code>None</code> means the node path joined with <code>/</code>: <code>ctx.sub.a.share()</code> is served at <code>/&lt;namespace&gt;/sub/a</code>. A key is a non-empty string of <code>/</code>-separated segments; an empty segment, <code>.</code>, <code>..</code>, <code>?</code>, <code>#</code> and control characters are refused with <code>ValueError</code>.</li>
+<li><strong><code>readonly=True</code> serves the value; <code>readonly=False</code> also accepts PUT</strong> (<em>The share slot</em>).</li>
+<li><strong><code>mimetype</code> selects the content type</strong> (<em>Content types</em>). Cells carry no mimetype of their own.</li>
+<li><strong><code>toplevel=True</code> serves at <code>/&lt;path&gt;</code> instead of <code>/&lt;namespace&gt;/&lt;path&gt;</code>.</strong> A top-level key has one segment.</li>
+<li><strong><code>status</code> has the keys of <code>contracts/mounts.md</code>, <em><code>status</code></em></strong>, with <code>disk_checksum</code> read as the served checksum.</li>
+<li><strong><code>url</code> uses <code>localhost</code> when the bind address is a wildcard.</strong></li>
+</ul>
+<h2 id="the-share-slot">The share slot</h2>
+<p>A node has one <strong>share</strong> slot, beside its file slot and its widget slot (<code>contracts/attachments.md</code>, <em>Scope</em>). They coexist in any combination: a mounted cell can be shared, and a shared cell can drive a widget.</p>
+<ul>
+<li><strong>A read-only share has mode <code>w</code>.</strong> It never writes to the cell, so it is legal on a <strong>connected</strong> cell — that is how a computed value is served.</li>
+<li><strong>A writable share has mode <code>rw</code>.</strong> It is a sensing attachment and therefore the node's producer: sharing a cell that has an incoming edge with <code>readonly=False</code> raises <code>AuthorityError</code>, and so does adding an incoming edge afterwards (<code>contracts/attachments.md</code>, <em>The topology rules an attachment imposes</em>).</li>
+<li><strong>The <code>authority</code> field is always <code>"cell"</code>.</strong></li>
+<li><strong>The celltype is frozen and clearing is refused</strong> while the share exists, as for any attachment.</li>
+<li><strong>With a sensing file mount on the same cell, the newest accepted write wins</strong>: a file edit is served and announced, and a PUT is written to the file.</li>
+</ul>
+<h3 id="shareable-celltypes">Shareable celltypes</h3>
+<p><code>text</code>, <code>python</code>, <code>ipython</code>, <code>yaml</code>, <code>plain</code>, <code>str</code>, <code>int</code>, <code>float</code>, <code>bool</code>, <code>bytes</code>, <code>binary</code>, <code>mixed</code>. Any other celltype — <code>folder</code>, <code>deepfolder</code>, <code>deepcell</code>, <code>checksum</code>, <code>module</code> — raises <code>TypeError("Celltype '&lt;ct&gt;' is not shareable")</code>.</p>
+<h2 id="the-server">The server</h2>
+<p><strong>One server per process serves every share of every Context, REST and websocket, on one port.</strong></p>
+<ul>
+<li><strong>It starts with the first share or download</strong> — a <code>share()</code> or <code>add_download()</code> call, or a <code>set_graph</code> that attaches shares or downloads — and stops at <code>seamless.close()</code>. A Context that closes leaves its shares served for a hold window, so that a new Context can take them over, and they go when the window ends (<em>The hold on close</em>); the server stays.</li>
+<li><strong>It runs on its own thread and its own event loop.</strong> It answers while user code blocks, in a script and under Jupyter, and it never runs on the caller's loop or the kernel's.</li>
+<li><strong>Defaults: host <code>0.0.0.0</code>, port <code>5813</code>.</strong> <code>shareserver.configure(host=, port=)</code> and the environment variables <code>SEAMLESS_SHARE_HOST</code> / <code>SEAMLESS_SHARE_PORT</code> override them; <code>port=0</code> asks the operating system for a free port, read back from <code>shareserver.port</code>. <code>configure()</code> after the server has started raises <code>RuntimeError</code>.</li>
+<li><strong>A busy port is an error.</strong> The <code>share()</code> that would have started the server raises <code>OSError</code>, and nothing is installed.</li>
+<li><strong>There is no authentication and no TLS.</strong> With the default bind address, every host that can reach the machine can read every share and PUT to every writable one. Bind to <code>127.0.0.1</code>, or put a reverse proxy in front, for anything else.</li>
+<li><strong>Cross-origin requests are allowed from any origin</strong>, without credentials. The exposed headers are <code>ETag</code> and <code>X-Seamless-Marker</code>.</li>
+</ul>
+<h3 id="namespaces">Namespaces</h3>
+<p><strong>Every Context serves under one namespace, <code>ctx.shares.namespace</code>, default <code>"ctx"</code></strong>.</p>
+<ul>
+<li>It is <strong>runtime state</strong>: not in the graph, and settable only while the Context has no shares and no downloads.</li>
+<li><strong>A namespace belongs to one live Context.</strong> The first share or download claims it; a second Context claiming a taken name raises <code>ValueError("Share namespace '&lt;name&gt;' is in use")</code>. <strong>Closing the Context holds it</strong>: the first Context that claims it inside the hold window takes it over, with its shares and its connections; otherwise it is released when the window ends (<em>The hold on close</em>).</li>
+<li>The same graph can therefore be loaded into several Contexts in one process, each under its own namespace.</li>
+</ul>
+<h2 id="url-space">URL space</h2>
+<table>
+<thead>
+<tr>
+<th>Request</th>
+<th>Answer</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>GET</code>, <code>HEAD</code> <code>/&lt;namespace&gt;/state-graph</code></td>
+<td>the Context node state graph</td>
+</tr>
+<tr>
+<td><code>GET</code>, <code>HEAD</code>, <code>PUT</code> <code>/&lt;namespace&gt;/&lt;path&gt;</code></td>
+<td>a share</td>
+</tr>
+<tr>
+<td><code>GET</code> <code>/&lt;namespace&gt;/&lt;path&gt;</code></td>
+<td>a download</td>
+</tr>
+<tr>
+<td><code>GET</code>, <code>HEAD</code>, <code>PUT</code> <code>/&lt;path&gt;</code></td>
+<td>a <code>toplevel</code> share</td>
+</tr>
+<tr>
+<td><code>GET /&lt;namespace&gt;</code> with a websocket upgrade</td>
+<td>the namespace's update stream</td>
+</tr>
+<tr>
+<td><code>GET /openapi.json</code></td>
+<td>the API description</td>
+</tr>
+<tr>
+<td><code>GET /seamless-client.js</code></td>
+<td>the browser client</td>
+</tr>
+<tr>
+<td><code>GET /</code></td>
+<td><code>302</code> to <code>/index.html</code> when such a top-level share exists, else <code>404</code></td>
+</tr>
+<tr>
+<td><code>GET /&lt;namespace&gt;/</code></td>
+<td><code>302</code> to <code>/&lt;namespace&gt;/index.html</code> when that share exists, else <code>404</code></td>
+</tr>
+<tr>
+<td><code>OPTIONS</code> anything</td>
+<td>the CORS preflight answer</td>
+</tr>
+</tbody>
+</table>
+<p><code>openapi.json</code>, <code>seamless-client.js</code> and every claimed or held namespace name are reserved top-level keys; a namespace cannot take the name of an existing top-level share. <code>state-graph</code> is a reserved namespace key: a non-top-level share with that exact path raises <code>ValueError</code>. A top-level share named <code>state-graph</code> remains legal. A key is matched whole: there is no access below a share. A download and a share are keys of the same namespace: they cannot have the same key.</p>
+<h2 id="the-state-graph">The state graph</h2>
+<p><strong>Once a Context has its first share, <code>GET /&lt;namespace&gt;/state-graph</code> serves its whole node state graph until the Context closes</strong>, including after its last share is removed, and serves its last publication through the hold that follows the close (<em>The hold on close</em>). Changing the namespace after final unshare releases the old namespace and its URL; the next share establishes the new one. A Context that never shared anything has no state-graph URL. Exposure is always on: every node's path, celltype or transformer language, state, checksum and error text is served to anyone who can reach the server, including nodes whose values are not shared.</p>
+<p>The JSON object has <code>nodes</code>, <code>anonymous_nodes</code> and <code>connections</code>. Each named node has <code>type</code>, <code>path</code>, <code>state</code>, <code>block_reason</code>, <code>exception</code> and <code>checksum</code>; cells additionally have <code>celltype</code>, transformers <code>language</code>. <code>state</code>, <code>block_reason</code> and <code>exception</code> match the bound handle's reporting. Checksums are hex strings or null. <code>connections</code> and <code>anonymous_nodes</code> have exactly the graph-format structure written by <code>get_graph()</code>, so node identities and anonymous source references can be resolved in the same way.</p>
+<pre><code class="language-json">{&quot;nodes&quot;:[{&quot;type&quot;:&quot;cell&quot;,&quot;path&quot;:[&quot;a&quot;],&quot;celltype&quot;:&quot;plain&quot;,&quot;state&quot;:&quot;complete&quot;,&quot;block_reason&quot;:null,&quot;exception&quot;:null,&quot;checksum&quot;:&quot;&lt;hex&gt;&quot;},{&quot;type&quot;:&quot;transformer&quot;,&quot;path&quot;:[&quot;add&quot;],&quot;language&quot;:&quot;python&quot;,&quot;state&quot;:&quot;blocked&quot;,&quot;block_reason&quot;:{&quot;a&quot;:&quot;blocked-by-error&quot;},&quot;exception&quot;:null,&quot;checksum&quot;:null}],&quot;anonymous_nodes&quot;:{},&quot;connections&quot;:[{&quot;type&quot;:&quot;connection&quot;,&quot;source&quot;:[&quot;a&quot;],&quot;target&quot;:[&quot;add&quot;,&quot;a&quot;]}]}
+</code></pre>
+<p>The payload omits transformer code and configuration, per-pin states and the run ledger (generation, hold deadlines and superseded runs). It never resolves values or buffers, performs derivation or computes a result.</p>
+<ul>
+<li><strong>The digest is the SHA-256 of canonical JSON</strong> (sorted keys, compact separators). It is a change token only; the body is not stored in the buffer cache or hashserver.</li>
+<li><strong>The marker increases only when the published digest changes.</strong> It is monotonic per namespace for the lifetime of the server: a Context that takes over a held namespace continues the sequence, and its first publication is announced only if its digest differs from the held one. A client resets its state-graph marker memory on reconnect (<em><code>seamless-client.js</code></em>).</li>
+<li><strong>GET and HEAD answer <code>200 application/json</code></strong>, with <code>ETag: "&lt;digest&gt;"</code>, <code>X-Seamless-Marker</code> and <code>Cache-Control: no-cache</code>. <code>If-None-Match</code> matching the digest answers <code>304</code>. HEAD omits the body. PUT answers <code>405</code>; an unavailable Context, or a namespace that is neither claimed nor held, answers <code>404</code>; a refresh timeout answers <code>503</code>. During a hold, GET and HEAD answer the closed Context's last publication, or <code>404</code> if it never published one.</li>
+<li><strong>At most one snapshot is built per half-second per Context</strong>, regardless of request rate. A snapshot may be up to one interval old. A GET reuses a publication younger than the interval, and refreshes an older dirty publication or the first publication. A connected namespace client requests a dirty refresh each interval; a clean Context returns the cached publication without a controller turn.</li>
+<li><strong>Without websocket clients or GET requests, no snapshot work runs.</strong> Snapshot reads run on the controller thread as read turns, and never poison the Context on failure. Standard graphs of a few hundred nodes require a single small pass over nodes and edges, without copying transformer configuration.</li>
+</ul>
+<h2 id="the-record-and-the-marker">The record and the marker</h2>
+<p>The served state of a share is a <strong>record</strong>: a checksum, or none, and a <strong>marker</strong>.</p>
+<ul>
+<li><strong>The marker is an integer that increases by one every time the served checksum changes</strong>, by a delivery from the cell or by an accepted PUT.</li>
+<li><strong>It is monotonic per URL for the lifetime of the server</strong>, across unshare, re-share and a hold. It restarts with the process, so a marker lower than one already seen at the same URL means that the server process restarted. The browser client relies on this (<em><code>seamless-client.js</code></em>).</li>
+<li><strong>The record holds a claim on the served checksum</strong>, so a value that was resolvable when it was announced stays resolvable while it is served, through a hold included.</li>
+</ul>
+<h2 id="reading-get-and-head">Reading: GET and HEAD</h2>
+<p><strong>The body is the buffer of the served checksum, byte for byte.</strong> There is no share-local serialization, so the SHA-256 of the body is the checksum in the <code>ETag</code>.</p>
+<table>
+<thead>
+<tr>
+<th>Status</th>
+<th>When</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>200</code></td>
+<td>the value; headers <code>Content-Type</code>, <code>ETag: "&lt;checksum hex&gt;"</code>, <code>X-Seamless-Marker: &lt;n&gt;</code>, <code>Cache-Control: no-cache</code></td>
+</tr>
+<tr>
+<td><code>204</code></td>
+<td>the value is <strong>null</strong>; <code>ETag</code> and <code>X-Seamless-Marker</code> as above, no body</td>
+</tr>
+<tr>
+<td><code>304</code></td>
+<td><code>If-None-Match</code> names the served checksum</td>
+</tr>
+<tr>
+<td><code>404</code></td>
+<td>no such share, or the share has no value yet; the JSON body says which</td>
+</tr>
+<tr>
+<td><code>503</code></td>
+<td>the value's bytes cannot be resolved</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li><strong><code>?mode=checksum</code></strong> returns the checksum hex as <code>text/plain</code> instead of the value.</li>
+<li><strong><code>HEAD</code> never resolves bytes</strong>; it answers from the record.</li>
+<li><strong>A GET resolves; it never computes.</strong> It has exactly the powers of <code>.buffer</code>: the local buffer cache, then this process's local buffer sources, then the remote buffer server. A value whose checksum arrived without its bytes — a remote result, a cache hit, a scratch result that was evicted — answers <code>503</code> until the bytes become resolvable (<code>contracts/attachments.md</code>, <em>A delivery resolves; it never computes</em>).</li>
+<li><strong>Without a hashserver, a shared cell does not take a checksum whose buffer is missing.</strong> A cache hit, typically after a value went X → Y → X and X's buffer expired, leaves the cell <code>waiting</code> while the Context fingertips the buffer. Until it is recovered, the share keeps serving its last value under its marker, and no <code>update</code> message is sent. Then the new checksum is served and announced as an ordinary update (<code>contracts/workflow-context.md</code>, <em>A Context without a hashserver</em>). The GET itself still never fingertips. It answers <code>503</code> for such a value only if the fingertip failed.</li>
+<li><strong>Only complete values are served.</strong> While the cell is <code>waiting</code>, <code>blocked</code> or <code>failed</code>, the share keeps answering with the last value it served, under the same marker. Before the first complete value it answers <code>404</code>, unless the share re-attached a held record: it then keeps answering with the held value, under the held marker (<em>The hold on close</em>). The node state graph reports the current state separately (<em>The state graph</em>).</li>
+</ul>
+<h3 id="content-types">Content types</h3>
+<p>The content type is the first of:</p>
+<ol>
+<li>the <code>mimetype</code> argument;</li>
+<li>for a <code>text</code> or <code>bytes</code> cell, the type guessed from the extension of the share path (<code>index.html</code>, <code>logo.png</code>);</li>
+<li>the celltype's default:</li>
+</ol>
+<table>
+<thead>
+<tr>
+<th>Celltype</th>
+<th>Content type</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>text</code></td>
+<td><code>text/plain</code></td>
+</tr>
+<tr>
+<td><code>python</code>, <code>ipython</code></td>
+<td><code>text/x-python</code></td>
+</tr>
+<tr>
+<td><code>yaml</code></td>
+<td><code>application/yaml</code></td>
+</tr>
+<tr>
+<td><code>plain</code>, <code>str</code>, <code>int</code>, <code>float</code>, <code>bool</code></td>
+<td><code>application/json</code></td>
+</tr>
+<tr>
+<td><code>bytes</code>, <code>binary</code>, <code>mixed</code></td>
+<td><code>application/octet-stream</code></td>
+</tr>
+</tbody>
+</table>
+<p><code>charset=utf-8</code> is added to <code>text/*</code>. A <code>str</code> cell serves a <strong>quoted</strong> JSON string; use <code>text</code> for raw text.</p>
+<h2 id="writing-put">Writing: PUT</h2>
+<p><strong>The request body is the value, in the cell's celltype</strong> — the bytes a file mount would read for the same cell.</p>
+<table>
+<thead>
+<tr>
+<th>Status</th>
+<th>When</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>200</code></td>
+<td>accepted; JSON <code>{"checksum": "&lt;hex&gt;", "marker": &lt;n&gt;}</code> — the record after the write</td>
+</tr>
+<tr>
+<td><code>400</code></td>
+<td>a malformed <code>marker</code> or <code>mode</code> parameter</td>
+</tr>
+<tr>
+<td><code>404</code></td>
+<td>no such share; or a held share whose hold window ended before it was re-attached (<em>The hold on close</em>)</td>
+</tr>
+<tr>
+<td><code>405</code></td>
+<td>the share is read-only; <code>Allow: GET, HEAD</code></td>
+</tr>
+<tr>
+<td><code>409</code></td>
+<td><code>?marker=n</code> does not equal the current marker; JSON <code>{"checksum", "marker"}</code> of the record</td>
+</tr>
+<tr>
+<td><code>413</code></td>
+<td>the body exceeds the request limit</td>
+</tr>
+<tr>
+<td><code>422</code></td>
+<td>the body is not a value of the celltype; JSON <code>{"error": "&lt;reason&gt;"}</code></td>
+</tr>
+<tr>
+<td><code>503</code></td>
+<td>the Context did not process the write within the wait limit (<em>Limits</em>); for a PUT to a held share, the wait for the re-attach counts</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li><strong>The body is canonicalized with <code>canon_T</code>, and checked exactly as a user assignment of the same value is checked</strong> — the rule of <code>contracts/mounts.md</code>, <em>Canonical bytes</em>, including that code celltypes get no syntax check. The cell holds the canonical bytes: a GET after a PUT of <code>{"a":1}</code> to a <code>plain</code> cell returns the canonical serialization.</li>
+<li><strong>An empty body, or <code>null</code>, writes null.</strong></li>
+<li><strong>An invalid body is refused and changes nothing.</strong> It is an invalid request, not an invalid resource: the cell keeps its value and its state. <strong>A share never puts a sense error on its cell.</strong></li>
+<li><strong><code>?marker=n</code> makes the write conditional</strong>: <code>n</code> is the marker the client last saw, and the PUT is accepted only if it still is the current one. <strong>Without the parameter the PUT is unconditional.</strong></li>
+<li><strong>A PUT of the value already served is accepted and changes nothing</strong>: <code>200</code>, with the unchanged marker.</li>
+<li><strong>An accepted PUT is a sensed write</strong> (<code>contracts/attachments.md</code>, <em>Sense</em>): a non-detaching authoritative write, with no privilege over a user assignment and none under it.</li>
+<li><strong>The <code>200</code> is sent after the write has been installed.</strong> A <code>ctx.a.checksum</code> read, or a <code>ctx.compute()</code>, that starts after the response sees the PUT value or a newer one.</li>
+<li><strong>A PUT to a held share waits until the share is re-attached</strong> (<em>The hold on close</em>), and is then processed as a PUT to the re-attached share, after that share's initial decision. If the decision changed the served value, a <code>?marker=</code> condition fails with <code>409</code>; if the share is now read-only, the answer is <code>405</code>; if the window ends first, <code>404</code>.</li>
+<li><strong>Every websocket client is told at acceptance</strong>, before the cell has taken the value, and without delivery pacing.</li>
+<li><strong>A PUT beats a delivery that is in flight.</strong> The delivery is acknowledged as a conflict, and the cell takes the PUT value.</li>
+</ul>
+<h2 id="cell-to-share">Cell to share</h2>
+<p>Delivery follows <code>contracts/attachments.md</code>, <em>Actuate</em>, without exception.</p>
+<ul>
+<li><strong>A delivery moves a checksum, never bytes.</strong> It updates the record and announces it; nothing is resolved until a client asks.</li>
+<li><strong>Intermediate values are not queued</strong>, and delivery starts are paced per session (<code>contracts/attachments.md</code>, <em>Actuate</em>): a rapidly changing cell is announced as its latest value.</li>
+<li><strong>A value sensed from a PUT is not delivered back.</strong> The record already holds it.</li>
+</ul>
+<h2 id="the-initial-decision">The initial decision</h2>
+<p>The initial decision is the table of <code>contracts/mounts.md</code>, <em>The initial decision table</em>, read with <strong>the served value in the place of the file</strong>, with <code>authority="cell"</code>, and with <strong>a new share as an absent file</strong>.</p>
+<table>
+<thead>
+<tr>
+<th>Share</th>
+<th>Cell</th>
+<th>Result</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>read-only</td>
+<td><code>complete</code>, value <em>N</em></td>
+<td><em>N</em> is served before <code>share()</code> returns</td>
+</tr>
+<tr>
+<td>read-only</td>
+<td>no complete value</td>
+<td>nothing is served until the cell completes</td>
+</tr>
+<tr>
+<td>writable</td>
+<td><code>complete</code>, value <em>N</em></td>
+<td><em>N</em> is served before <code>share()</code> returns</td>
+</tr>
+<tr>
+<td>writable</td>
+<td>no complete value</td>
+<td><strong>cell ← null</strong>, and null is served</td>
+</tr>
+</tbody>
+</table>
+<p>The last row is row 4 of the no-value table and not a share rule: an absent resource attached in a sensing mode to a cell without a value installs null. Give the cell a value before sharing it when null is not wanted.</p>
+<p><strong>A share that re-attaches to a held record makes the same decision</strong> (<em>The hold on close</em>): the held record counts as an absent file and never writes to the cell. It only gives the served side a starting point. A delivery of the held checksum therefore changes nothing — no marker bump, no <code>update</code> message — and a read-only share on a cell without a complete value keeps serving the held value until the cell completes. A writable share on a cell without a value still installs null, which is an ordinary update unless null was held.</p>
+<h2 id="downloads">Downloads</h2>
+<p><strong>A download is an archive of cell buffers, served at one URL of the namespace and built when it is requested.</strong> An archive has no canonical serialization, so it never gets a checksum: it is not a cell value, it never enters the buffer cache, and only a GET builds it. Its use case is a page button that downloads a section of the Context.</p>
+<pre><code class="language-python">url = ctx.shares.add_download([&quot;title&quot;, &quot;results/table&quot;], format=&quot;zip&quot;)
+# &quot;http://&lt;host&gt;:&lt;port&gt;/&lt;namespace&gt;/download&quot;
+</code></pre>
+<ul>
+<li><strong><code>add_download(cells, path="download", *, format="tar.gz")</code> blocks until the URL answers, and returns it.</strong> <code>path</code> is a key of the namespace under the rules of a share key (<em>The API</em>). A download is never top-level.</li>
+<li><strong><code>cells</code> names cells by path string, with <code>/</code> between path segments</strong>: <code>"results/table"</code> is <code>ctx.results.table</code>. In a list, each path string is also the name of its archive member; a dict <code>{member: cell}</code> names the members explicitly. Only cells are named: a subcontext path does not stand for the cells below it.</li>
+<li><strong>Before a GET, only syntax is checked.</strong> A cell path is a non-empty sequence of share-key segments whose first segment is not <code>shares</code>. Member names follow the same segment rule; they are distinct, and none is a directory prefix of another (<code>a</code> and <code>a/b</code>). Whether a path names a cell is decided by each GET, never before: a download does not follow the graph, and no graph edit changes or refuses a download.</li>
+<li><strong><code>format</code></strong> is <code>"tar"</code>, <code>"tar.gz"</code>, <code>"tar.xz"</code> or <code>"zip"</code>. It fixes the content type and the file name.</li>
+<li><strong><code>remove_download(path="download")</code> removes the URL at once.</strong> For a path without a download it is a no-op.</li>
+<li><strong><code>ctx.shares.downloads</code></strong> is this Context's <code>{path: DownloadSpec}</code>.</li>
+</ul>
+<p><strong>For the namespace, URL conflicts, the server start, the state graph and the hold, a download counts as a share</strong> (<em>Namespaces</em>, <em>URL space</em>, <em>The hold on close</em>).</p>
+<h3 id="the-download-get">The download GET</h3>
+<p><strong>A GET takes one consistent cut of the cells, then resolves and packs their buffers.</strong></p>
+<ol>
+<li><strong>The cut is one read turn of the Context.</strong> Every listed path is looked up in the same turn, so an archive never mixes two states of the graph. The turn reads checksums; it never computes, and it claims every checksum it read until the archive is built.</li>
+<li><strong>Every listed path must name a complete cell whose celltype is not deep.</strong> Otherwise the answer is <code>409</code>, with JSON <code>{"error": "&lt;message&gt;", "cells": {"&lt;cell path&gt;": "&lt;reason&gt;", …}}</code> that lists <strong>every</strong> failing path. The reasons are <code>missing</code> (no node and no subcontext at that path), <code>not-a-cell</code> (a transformer or a subcontext), <code>deep-celltype</code> (<code>deepcell</code>, <code>deepfolder</code>), and otherwise the node state: <code>unwired</code>, <code>miswired</code>, <code>blocked</code>, <code>waiting</code>, <code>computing</code> or <code>failed</code>.</li>
+<li><strong>Members are buffers.</strong> A member's bytes are the cell's buffer, byte for byte: the body a share GET would answer for that cell (<em>Reading: GET and HEAD</em>). A <code>folder</code> cell becomes a directory, with one member <code>&lt;member&gt;/&lt;key&gt;</code> per index entry, holding that leaf's buffer; an index key that is not a safe relative path fails the cut with the reason <code>unsafe-folder-key</code>. <strong>A cell whose value is null is left out</strong>, and so is a null folder leaf. Buffers are resolved with the powers of a share GET, never computed; a buffer that cannot be resolved answers <code>503</code>.</li>
+<li><strong>Packing is deterministic</strong>: members in sorted order, a fixed timestamp (tar: 0; zip: 1980-01-01 00:00), owner 0, mode <code>0644</code>, and a gzip header without file name or time. With a given compression library, two GETs of the same cut return the same bytes. The archive is still not content-addressed.</li>
+</ol>
+<table>
+<thead>
+<tr>
+<th>Status</th>
+<th>When</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>200</code></td>
+<td>the archive; headers <code>Content-Type</code> and <code>Content-Disposition: attachment; filename="&lt;name&gt;"</code> (<em>below</em>), <code>Cache-Control: no-cache</code></td>
+</tr>
+<tr>
+<td><code>404</code></td>
+<td>no such download; or a held download whose hold window ended before it was re-attached (<em>The hold on close</em>)</td>
+</tr>
+<tr>
+<td><code>405</code></td>
+<td>any method but <code>GET</code>; <code>Allow: GET, OPTIONS</code></td>
+</tr>
+<tr>
+<td><code>409</code></td>
+<td>the cut has failing paths; the JSON body lists every one with its reason</td>
+</tr>
+<tr>
+<td><code>503</code></td>
+<td>a buffer cannot be resolved; the Context did not answer the read; the build exceeded its time limit (<em>Limits</em>)</td>
+</tr>
+</tbody>
+</table>
+<table>
+<thead>
+<tr>
+<th><code>format</code></th>
+<th><code>Content-Type</code></th>
+<th>file name</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>tar</code></td>
+<td><code>application/x-tar</code></td>
+<td><code>&lt;last path segment&gt;.tar</code></td>
+</tr>
+<tr>
+<td><code>tar.gz</code></td>
+<td><code>application/gzip</code></td>
+<td><code>&lt;last path segment&gt;.tar.gz</code></td>
+</tr>
+<tr>
+<td><code>tar.xz</code></td>
+<td><code>application/x-xz</code></td>
+<td><code>&lt;last path segment&gt;.tar.xz</code></td>
+</tr>
+<tr>
+<td><code>zip</code></td>
+<td><code>application/zip</code></td>
+<td><code>&lt;last path segment&gt;.zip</code></td>
+</tr>
+</tbody>
+</table>
+<p>The extension is not added when the last path segment already ends with it: <code>path="report.zip"</code> is served as <code>report.zip</code>.</p>
+<ul>
+<li><strong>A download has no record.</strong> There is no <code>ETag</code>, no <code>X-Seamless-Marker</code> and no <code>?mode=checksum</code>, and the websocket never lists or announces a download.</li>
+<li><strong>Downloads are built on a worker pool of their own</strong>, so a slow build never delays a share GET or a state-graph read.</li>
+</ul>
+<h2 id="the-websocket">The websocket</h2>
+<p><code>GET /&lt;namespace&gt;</code> with a websocket upgrade opens the namespace's update stream. <strong>The server only sends; anything a client sends is ignored.</strong> Every message is a JSON array.</p>
+<ol>
+<li><code>["Seamless share update server", "1.0"]</code> — once, first.</li>
+<li><code>["shares", {&lt;key&gt;: {"url": "/ctx/a", "readonly": true, "content_type": "application/json", "binary": false, "checksum": "&lt;hex&gt;" | null, "marker": 3}, …}]</code> — the full state, after the handshake and again whenever a share is added to or removed from the namespace, or re-attached with a different <code>readonly</code>, <code>content_type</code> or <code>binary</code> (<em>The hold on close</em>). It includes the namespace's top-level shares.</li>
+<li><code>["update", [&lt;key&gt;, "&lt;checksum hex&gt;", &lt;marker&gt;]]</code> — on every change of a record.</li>
+<li>
+<p><code>["state-graph", ["&lt;digest&gt;", &lt;marker&gt;]]</code> — announces a state graph publication; GET the state-graph URL for its body.</p>
+</li>
+<li>
+<p><strong>A client needs no request to learn the current state</strong>: the first <code>shares</code> message carries every checksum and marker.</p>
+</li>
+<li><strong>Downloads are not listed</strong>: they have no record, so they have no <code>update</code> either. Adding or removing a download sends no <code>shares</code> message.</li>
+<li><strong>A new client receives its first state-graph announcement within one half-second interval after the initial share snapshot.</strong> Further announcements arrive at most once per interval and only when the published digest differs from the last digest sent to that client. Changes that return to the previously published graph inside one interval produce no announcement.</li>
+<li><strong><code>binary</code></strong> is <code>false</code> for <code>text/*</code>, <code>application/json</code>, <code>application/yaml</code>, <code>application/javascript</code>, <code>application/xml</code> and the <code>+json</code> / <code>+xml</code> types, and <code>true</code> otherwise.</li>
+<li>Liveness uses websocket ping frames, not a message.</li>
+<li><strong>A Context close does not close the connections.</strong> They are held with the namespace and pass to the Context that takes it over (<em>The hold on close</em>). They are closed with code <code>1001</code> when the namespace is released — at the end of a hold that no Context took over, or when its owner changes namespace after its final unshare — and when the server stops.</li>
+</ol>
+<h2 id="openapijson"><code>openapi.json</code></h2>
+<p><code>GET /openapi.json</code> returns an <strong>OpenAPI 3.1</strong> document generated from the shares that exist at the moment of the request, held shares included, for every namespace. <code>ctx.shares.openapi()</code> returns the same document restricted to one Context, and <code>shareserver.openapi()</code> the whole one, without a request.</p>
+<ul>
+<li><strong>One state-graph path item per claimed or held namespace</strong>, with GET and HEAD and the responses described in <em>The state graph</em>.</li>
+<li><strong>One path item per share</strong>, at its URL: <code>get</code> and <code>head</code> always, <code>put</code> when the share is writable, with the status codes of this page.</li>
+<li><strong>One path item per download</strong>, at its URL: <code>get</code> only, answering the archive content type, with <code>x-seamless-download</code> holding <code>{"format", "cells"}</code>.</li>
+<li><strong>Content type and schema follow the celltype:</strong></li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>Celltype</th>
+<th>Schema</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>int</code></td>
+<td><code>{"type": "integer"}</code></td>
+</tr>
+<tr>
+<td><code>float</code></td>
+<td><code>{"type": "number"}</code></td>
+</tr>
+<tr>
+<td><code>bool</code></td>
+<td><code>{"type": "boolean"}</code></td>
+</tr>
+<tr>
+<td><code>str</code></td>
+<td><code>{"type": "string"}</code></td>
+</tr>
+<tr>
+<td><code>plain</code></td>
+<td><code>{}</code> — any JSON</td>
+</tr>
+<tr>
+<td><code>text</code>, <code>python</code>, <code>ipython</code>, <code>yaml</code></td>
+<td><code>{"type": "string"}</code></td>
+</tr>
+<tr>
+<td><code>bytes</code>, <code>binary</code>, <code>mixed</code></td>
+<td>binary content, no schema</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li>PUT request schemas additionally accept null, and the request body is optional because an omitted or empty body writes null (<em>Writing: PUT</em>). GET value schemas remain as listed above; <code>mode=checksum</code> additionally returns <code>text/plain</code> checksum text.</li>
+<li>A <code>mimetype</code> argument replaces the content type; the schema is then a string for text types and binary otherwise.</li>
+<li>Each operation carries <code>x-seamless-celltype</code> and <code>x-seamless-node</code> (the node path).</li>
+<li>The websocket is described in <code>info.description</code> and by <code>x-seamless-updates</code> (<code>{"&lt;namespace&gt;": "/&lt;namespace&gt;"}</code>); OpenAPI itself cannot express it.</li>
+<li>Individual value endpoints describe only shared cells; the state-graph endpoint includes all named cells and transformers.</li>
+</ul>
+<h2 id="seamless-clientjs"><code>seamless-client.js</code></h2>
+<p><code>GET /seamless-client.js</code> serves a dependency-free browser client. It needs no share of its own.</p>
+<pre><code class="language-javascript">const ctx = connect_seamless()               // same origin, namespace &quot;ctx&quot;
+ctx.self.onsharelist = function (keys) {
+  ctx.a.onchange = function () { show(ctx.a.value) }
+}
+ctx.a.set(&quot;5&quot;)                               // PUT
+</code></pre>
+<ul>
+<li><strong><code>connect_seamless(update_server=null, rest_server=null, share_namespace="ctx")</code>.</strong> The first two arguments name the one server and are aliases; <code>null</code> means the page's own origin. Each accepts a port number or a URL. If both are given and differ, the second wins and a warning is logged.</li>
+<li><strong>One entry per share whose mapped property is distinct and is not <code>self</code></strong>, <code>ctx[&lt;key&gt;]</code> with <code>/</code> written as <code>__</code>: <code>value</code>, <code>checksum</code>, <code>marker</code>, <code>binary</code>, <code>content_type</code>, <code>readonly</code>, <code>auto_read</code>, <code>set(value)</code>, <code>oninput</code>, <code>onchange</code>. <code>ctx.self</code> holds <code>sharelist</code>, <code>onsharelist</code>, <code>oninput</code>, <code>onchange</code>, <code>get_value()</code>, <code>connect()</code>, <code>ws</code>, <code>server</code>, <code>share_namespace</code>, <code>stategraph</code> and <code>onstategraph</code>. The property-mapping limitation is listed under <em>Implementation status and current limitations</em>.</li>
+<li><strong><code>value</code> is text, or a <code>Blob</code> when the share is binary</strong>; <code>null</code> for a null value. JSON is not parsed for you.</li>
+<li><strong><code>auto_read</code></strong> is <code>false</code> for keys containing a <code>.</code> — pages, scripts, images — and <code>true</code> otherwise; only auto-read shares are fetched on change.</li>
+<li><strong><code>set()</code> sends one PUT per key at a time</strong>, conditional on the marker it last saw, and keeps only the latest value set meanwhile. On <code>409</code> the client drops the local change, adopts the record in the response and fetches the server's value. A record or value whose marker is lower than the client's own is adopted only once the client has concluded that the server restarted (below); before that, it is ignored.</li>
+<li><strong>Entries survive a new <code>shares</code> message</strong>: handlers stay attached, and only added and removed keys change.</li>
+<li><strong><code>ctx.self.onstategraph</code> enables state graph reads.</strong> When set, an announcement triggers a GET of <code>/&lt;namespace&gt;/state-graph</code>; the parsed object is stored in <code>ctx.self.stategraph</code>, then the handler is called. Responses older than the newest marker seen are dropped, and marker memory resets on reconnect. Pages without the handler do no extra reads.</li>
+<li><strong>A lost connection is retried with backoff.</strong> A Context close loses no connection: the connection is held and passes to the Context that takes over the namespace (<em>The hold on close</em>).</li>
+<li><strong>The first <code>shares</code> message after a reconnect tells a restarted server from the same one</strong> (<em>The record and the marker</em>):</li>
+<li><strong>Restarted</strong>: a server marker is lower than the client's, for a key the client holds, beyond <strong>one tolerated not-yet-processed PUT in total</strong>. The snapshot may predate the processing of a PUT whose response the client already has, because the HTTP response can overtake the websocket. So when exactly one key is lower, by exactly one, and the client's marker for that key comes from the response to its own PUT, that is no evidence of a restart; any other lower marker is. On a restart, the client adopts the server's marker for every key it holds and <strong>reads no value</strong>: its values and checksums stand, and no <code>oninput</code> or <code>onchange</code> is called. Mounted cells were restored from their files, so the page's own state is taken to be current; if it is not, the user reloads the page. Keys new to the client, and keys whose value it never read, are read as on a first connection. So is every key whose dropped change the client could not correct, because it ignored a <code>409</code> record with a lower marker (<code>set()</code> above).</li>
+<li><strong>Same server</strong>: no marker is lower beyond that tolerance. The client adopts every server marker and checksum that is not lower than its own, and re-reads every auto-read share. The <code>update</code> for a tolerated PUT follows on the websocket.</li>
+<li><strong>A write that reaches a restarted server before the client has adopted its markers</strong> carries a marker of the previous process and is normally refused with <code>409</code>, and the client drops the change. If it has not concluded the restart yet, it ignores the response's record and the value it then reads, both carrying a lower marker (<code>set()</code> above): the page keeps showing the dropped change until the reconnect, when the client concludes the restart and reads that key.</li>
+</ul>
+<h2 id="the-barrier">The barrier</h2>
+<ul>
+<li><strong><code>ctx.mounts.sync()</code> cuts share sessions like any other.</strong> A cut reports after every PUT accepted before it has been processed. Its <code>SyncReport</code> and <code>ctx.mounts.errors</code> carry an entry per share under the key <code>(node_path, "share")</code>.</li>
+<li><strong><code>ctx.compute()</code> stays graph-only</strong>, but because a PUT answers after its write is installed, a script that PUTs — from another thread or another process — and then computes needs no barrier in between.</li>
+</ul>
+<h2 id="threads-and-blocking">Threads and blocking</h2>
+<ul>
+<li><strong>Every public call is an ordinary public Context operation.</strong> <code>share()</code>, <code>del ctx.a.share</code>, <code>clear_error()</code>, <code>add_download()</code>, <code>remove_download()</code> and setting <code>ctx.shares.namespace</code> block the caller, raise <code>ReentrantContextError</code> from the controller thread and <code>ClosedContextError</code> after <code>close()</code>.</li>
+<li><strong>Request handlers run on the server thread.</strong> No user code runs in them. A download is built on a worker thread of the download pool; its cut is one read turn of the Context.</li>
+<li><strong>A blocking HTTP call from the thread that owns the Context is fine</strong>: the server does not need that thread.</li>
+</ul>
+<h2 id="errors">Errors</h2>
+<p>Raised at the call:</p>
+<table>
+<thead>
+<tr>
+<th>Error</th>
+<th>Raised when</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>AttributeError("share is only available for bound workflow cells")</code></td>
+<td>a standalone <code>Cell</code></td>
+</tr>
+<tr>
+<td><code>AttributeError("Only whole Context cell nodes can be shared")</code></td>
+<td>a sub-path projection (<code>ctx.a.b</code>); a read-only handle, <strong>including a transformer's result, <code>ctx.tf.result</code></strong></td>
+</tr>
+<tr>
+<td><code>NodeError("Shares require an existing whole cell node")</code></td>
+<td>the node does not exist or is not a cell</td>
+</tr>
+<tr>
+<td><code>ValueError("Cell is already shared; unshare first")</code></td>
+<td>the share slot is occupied</td>
+</tr>
+<tr>
+<td><code>ValueError("Share path '&lt;path&gt;' is in use")</code></td>
+<td>another share of the namespace, or another top-level share, has the key — a held top-level share included, for every Context but the one that takes over its namespace; or the key is reserved</td>
+</tr>
+<tr>
+<td><code>ValueError("Share namespace '&lt;name&gt;' is in use")</code></td>
+<td>another live Context has claimed the namespace</td>
+</tr>
+<tr>
+<td><code>ValueError</code></td>
+<td>an invalid key; an unparseable <code>mimetype</code>; a top-level key with more than one segment</td>
+</tr>
+<tr>
+<td><code>TypeError("Celltype '&lt;ct&gt;' is not shareable")</code></td>
+<td><em>Shareable celltypes</em></td>
+</tr>
+<tr>
+<td><code>AuthorityError("A writable share cannot have incoming edges; share it read-only")</code></td>
+<td><code>readonly=False</code> on a connected cell</td>
+</tr>
+<tr>
+<td><code>AuthorityError</code></td>
+<td>an incoming edge into a writably shared cell; clearing a shared cell</td>
+</tr>
+<tr>
+<td><code>OSError</code></td>
+<td>the server cannot bind</td>
+</tr>
+<tr>
+<td><code>ImportError</code></td>
+<td><code>aiohttp</code> is not installed (<code>seamless-workflow[share]</code>)</td>
+</tr>
+<tr>
+<td><code>ValueError</code></td>
+<td>for <code>add_download()</code>: an invalid download path, cell path or member name; two members with one name; a member name that is a directory prefix of another; an unknown <code>format</code>; a download path taken by a share or a download, as for a share</td>
+</tr>
+<tr>
+<td><code>TypeError</code></td>
+<td>for <code>add_download()</code>: <code>cells</code> is neither a list of strings nor a dict of strings</td>
+</tr>
+</tbody>
+</table>
+<p><code>add_download()</code> never raises because of the graph: a path that names no cell, or a cell that is not complete, is reported by the GET (<em>The download GET</em>).</p>
+<p>The remedy for every scope refusal is the usual one: <strong>share a cell and connect it.</strong> <code>ctx.out = ctx.tf.result; ctx.out.share()</code> serves a transformer's result.</p>
+<p>Of the three-way error model of <code>contracts/attachments.md</code>, a share has only the <strong>delivery error</strong>, on <code>ctx.a.share.error</code>: the server could not take the delivery. It is retried with the usual backoff. There is no sense error (<em>Writing: PUT</em>), and the oscillation detector cannot trip: a read-only share has no foreign writer, and a writable one never reasserts.</p>
+<h2 id="graph-serialization">Graph serialization</h2>
+<ul>
+<li><strong>Format <code>0.7</code></strong> adds the top-level <code>downloads</code> list; <strong><code>0.6</code></strong> added the <code>share</code> entry. <code>0.2</code> to <code>0.6</code> graphs load. A <code>share</code> entry in a graph below <code>0.6</code> raises <code>PathError("share entries require workflow graph version 0.6")</code>, and a <code>downloads</code> list in a graph below <code>0.7</code> raises <code>PathError("downloads require workflow graph version 0.7")</code>.</li>
+<li><strong>The share entry</strong> is <code>{"path", "readonly", "mimetype", "toplevel"}</code> on a cell entry — the spec after normalization, with the default key written out.</li>
+<li><strong>A download entry</strong> is <code>{"path", "cells", "format"}</code>, sorted by <code>path</code>. <code>cells</code> is a list when every member is named after its cell, else a <code>{member: cell}</code> dict. A graph without downloads has no <code>downloads</code> key.</li>
+<li><strong>Every share entry is validated by <code>prepare_graph</code></strong>, also with <code>shares=False</code>: unknown fields, an invalid key, an unshareable celltype, a share on a non-cell node, a connection into a writably shared node, and two shares with one URL are refused as <code>PathError("Invalid share spec: …")</code>. <strong>Every download entry is validated by the same syntax rules as <code>add_download()</code>, and no more</strong>: unknown fields, invalid paths or names, two downloads with one path, and a download with the key of a share are refused as <code>PathError("Invalid download spec: …")</code>. Cell paths are not checked against the graph.</li>
+<li><strong><code>shares=False</code> strips the (valid) share specs and downloads.</strong></li>
+<li><strong><code>shares=True</code> — the default — attaches every spec exactly as <code>share()</code> does, and registers every download exactly as <code>add_download()</code> does.</strong> It starts the server if needed, and it blocks through every first delivery, like <code>mounts=True</code>. A key or namespace that is taken raises, and the graph is not replaced. The downloads of the previous graph are removed, except where a new download or share takes over their key.</li>
+<li><strong>The namespace is not in the graph.</strong> Set <code>ctx.shares.namespace</code> before loading.</li>
+<li><strong>Loading a graph with shares or downloads opens a network endpoint.</strong> Graphs of unknown origin must be loaded with <code>shares=False</code>.</li>
+</ul>
+<h2 id="serving-saved-graphs">Serving saved graphs</h2>
+<p>The <code>seamless-suite</code> distribution installs <code>seamless-serve-graph</code>, whose entry point is <code>seamless_workflow.serve_graph:main</code>, and includes <code>seamless-workflow[share]</code>.</p>
+<pre><code class="language-bash">seamless-serve-graph graph.json
+</code></pre>
+<ul>
+<li><strong>The command takes exactly one local graph file.</strong> It reads UTF-8 JSON and passes it to the current workflow graph loader. The graph must use the current workflow serialization; the command does not convert an original legacy <code>__seamless__</code> export. Share entries require workflow graph version <code>0.6</code>.</li>
+<li><strong>The Context uses its default <code>ctx</code> namespace.</strong> Shares in the saved graph become URLs under <code>/ctx/</code>; top-level shares keep their declared paths. The runner restores shares and disables file mounts. It does not require the graph to declare a share.</li>
+<li><strong>Loading starts reactive derivation.</strong> The runner does not perform a buffer-availability preflight. Its share server uses the ordinary modern HTTP/websocket protocol and bind configuration from <code>seamless_workflow.shareserver</code>.</li>
+<li><strong>The runner owns shutdown.</strong> It waits for SIGINT or SIGTERM in the main thread, restores the previous signal handlers, closes the Context, and calls <code>seamless.close()</code>.</li>
+<li><strong>Remote storage and execution use <code>seamless-config</code>.</strong> Define the cluster and execution mode in the normal Seamless configuration files before launch. The runner loads configuration relative to its launch directory and has no remote-service flags. See <a href="../../main/cluster.md">Setting up a local cluster</a> and <a href="../../main/remote.md">Remote execution</a>.</li>
+</ul>
+<h2 id="lifecycle">Lifecycle</h2>
+<ul>
+<li><strong>Every detach removes the URL at once, except a Context close.</strong> <code>del ctx.a.share</code>, deleting the node, an empty same-celltype builder and <code>set_graph()</code> all end in the same detach (<code>contracts/attachments.md</code>, <em>Attach, detach, close</em>). Requests then answer <code>404</code>, and the namespace's clients get a new <code>shares</code> message.</li>
+<li><strong><code>remove_download()</code> and <code>set_graph()</code> remove a download's URL at once</strong>; requests then answer <code>404</code>. Deleting or changing a cell never touches a download.</li>
+<li><strong><code>ctx.close()</code> holds its shares</strong>, and removes at the end of the hold window those that no new Context re-attached (<em>The hold on close</em>).</li>
+<li><strong>Slot detach is independent.</strong> <code>del ctx.a.share</code> leaves a file mount and a widget hub in place.</li>
+<li><strong>A new share on the same URL continues its marker sequence.</strong></li>
+<li><strong>To change <code>path</code>, <code>readonly</code>, <code>mimetype</code> or <code>toplevel</code>, unshare and share again.</strong></li>
+<li><code>del ctx.a.share</code> on a cell without a share is a no-op, and <code>.spec</code>, <code>.url</code>, <code>.status</code> and <code>.error</code> answer <code>None</code>.</li>
+</ul>
+<h2 id="the-hold-on-close">The hold on close</h2>
+<p><strong><code>ctx.close()</code> does not remove its shares at once. The server holds them for a window, 10 s by default (<em>Limits</em>), and a Context that shares the same URLs inside the window takes them over.</strong> Re-running a serving script with <code>%run -i</code> — close the old Context, build a new one — is therefore invisible to clients for every value that did not change.</p>
+<ul>
+<li><strong>What is held is the namespace</strong>: every record of the closing Context, top-level ones included, each with its entry, checksum, marker and claim; its downloads; the websocket connections; and the last state-graph publication. A Context that never claimed a namespace holds nothing.</li>
+<li><strong>A held download is never built</strong>: the Context that defined it is closed. A GET to a held download waits until a share or download is re-attached at its URL, and is then answered by it, as a PUT to a held share is (<em>Writing: PUT</em>); if the window ends first, it answers <code>404</code>.</li>
+<li><strong>The hold starts when <code>close()</code> stops sensing</strong> (<code>contracts/attachments.md</code>, <em>Close</em>, step 1). The close flush still completes the deliveries already requested, as ordinary updates. After the flush, nothing the closing Context does changes a record or sends a message: its teardown is invisible. <strong>The window starts when <code>close()</code> returns</strong>; <code>close()</code> does not wait for it.</li>
+<li><strong>During the hold, held shares answer from their records.</strong> GET, HEAD and <code>?mode=checksum</code> answer as before, and the connections stay open. A client that connects gets the handshake, a <code>shares</code> message with the held records and, if there is one, an announcement of the held state-graph publication, which the state-graph URL serves. <code>/openapi.json</code> keeps describing the held shares and the namespace's state-graph endpoint. A PUT waits for its share to be re-attached (<em>Writing: PUT</em>).</li>
+<li><strong>The first Context that claims the namespace inside the window takes it over</strong> — by its first share, or by a <code>set_graph()</code> that attaches shares — instead of raising <code>ValueError("Share namespace '&lt;name&gt;' is in use")</code>. The connections, the held records and the state-graph marker sequence pass to it. The held top-level keys are refused to every other Context.</li>
+<li><strong>A share or download of that Context at the URL of a held record or download re-attaches to it</strong>, whatever its node, celltype, flags or kind. A download takes nothing from what it re-attaches to; a share that re-attaches to a held download starts as a new share. A <code>shares</code> message is sent when a share replaces a download or the reverse. Its initial decision is that of a new share, and the held record only gives the served side its starting point (<em>The initial decision</em>):</li>
+<li>a value equal to the held one is served under the held marker: no marker bump, no <code>update</code> message;</li>
+<li>a different value is one ordinary update;</li>
+<li>a read-only share on a cell without a complete value keeps serving the held value until the cell completes; a writable one installs null, which is an ordinary update unless null was held;</li>
+<li>a <code>shares</code> message is sent only if <code>readonly</code>, <code>content_type</code> or <code>binary</code> changed.</li>
+<li><strong>A held record that is not re-attached by the end of its window is removed</strong>, as by any detach: requests answer <code>404</code>, a waiting PUT answers <code>404</code>, and the namespace's clients get a new <code>shares</code> message. If no Context took the namespace over, the namespace is released with its records: its connections are closed with code <code>1001</code>, and its URLs, the state-graph URL included, answer <code>404</code>.</li>
+<li><strong>A Context that took over a namespace holds it again when it closes.</strong> Its own records, re-attached ones included, get a new window; records still held from the earlier close keep theirs.</li>
+<li><strong>Only <code>ctx.close()</code> holds.</strong> Every other detach removes the URL at once (<em>Lifecycle</em>). <code>seamless.close()</code> stops the server, which ends every hold.</li>
+<li><strong>A hold never feeds a Context.</strong> A value that a browser wrote into an unmounted cell does not reach the new Context, which starts from its own script. State that must survive a reload belongs in a file mount (<code>contracts/mounts.md</code>).</li>
+</ul>
+<h2 id="limits">Limits</h2>
+<p><strong>The numbers are current defaults, not contract:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Knob</th>
+<th>Current default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>request body limit</td>
+<td>1 GiB</td>
+</tr>
+<tr>
+<td>wait for a PUT to be installed</td>
+<td>60 s, then <code>503</code></td>
+</tr>
+<tr>
+<td>resolution timeout of a GET</td>
+<td>60 s, then <code>503</code></td>
+</tr>
+<tr>
+<td>websocket ping interval</td>
+<td>10 s</td>
+</tr>
+<tr>
+<td>hold window after <code>ctx.close()</code></td>
+<td>10 s</td>
+</tr>
+<tr>
+<td>time to build a download, cut included</td>
+<td>300 s, then <code>503</code></td>
+</tr>
+<tr>
+<td>download worker pool</td>
+<td>2 threads</td>
+</tr>
+<tr>
+<td>delivery pacing</td>
+<td><code>contracts/attachments.md</code>, <em>Actuate</em></td>
+</tr>
+</tbody>
+</table>
+<p>A value is held in memory in full for the duration of a request, and so is a download archive. There are no range requests.</p>
+<h2 id="porting-notes">Porting notes</h2>
+<p>Stated as current behaviour, with no claim about what any earlier version did:</p>
+<ul>
+<li><strong>There is one port</strong>, for REST and websocket.</li>
+<li><strong>Bodies are values.</strong> A PUT body is the value itself, and so is a GET body; there is no JSON envelope and no base64.</li>
+<li><strong><code>?marker=</code> is the marker you last saw</strong>, not the one you propose.</li>
+<li><strong>A websocket client gets the current state on connect.</strong></li>
+<li><strong>Null is <code>204</code>.</strong> <code>404</code> means there is no value.</li>
+<li><strong>A GET never recomputes a value.</strong></li>
+<li><strong><code>share()</code> returns <code>None</code>.</strong></li>
+<li><strong>The content type is an argument of <code>share()</code></strong>, or follows the path's extension or the celltype.</li>
+<li><strong>The namespace is set on the Context at run time</strong>, and a taken name raises.</li>
+<li><strong>A busy port raises.</strong></li>
+<li><strong>The client is served by the server</strong>, at <code>/seamless-client.js</code>.</li>
+<li><strong><code>ctx.compute()</code> does not wait for shares</strong>, and does not need to after a PUT has answered.</li>
+</ul>
+<h2 id="implementation-status-and-current-limitations">Implementation status and current limitations</h2>
+<p>The share API, HTTP/WebSocket server, persistence, OpenAPI description and browser client implement this contract. Focused tests in <code>seamless-workflow/tests/test_contract_shares.py</code>, <code>test_share_transport.py</code>, <code>test_share_client_js.py</code> and <code>test_share_downloads.py</code> pin the behavior. Browser acceptance passed against headless Chrome in <code>seamless-workflow/tests/test_share_browser.py</code>, including slider keyboard input, Python-to-browser updates, two-tab editing and mounted-page updates.</p>
+<ul>
+<li><strong>Topology refusals raised by generic code say "mount".</strong> An incoming edge into a writably shared cell raises <code>AuthorityError("Sensing mount is the producer; unmount first")</code>, and clearing raises <code>AuthorityError("Cannot clear a mounted cell; unmount first")</code>. The remedy is <code>del ctx.a.share</code>.</li>
+<li><strong>The barrier is spelled <code>ctx.mounts</code>.</strong></li>
+<li><strong>A writable share cannot be made on a cell that should stay empty</strong> (<em>The initial decision</em>).</li>
+<li><strong>The browser client's property mapping cannot represent every legal share key.</strong> <code>a/b</code> and <code>a__b</code> both map to <code>ctx.a__b</code>, and <code>self</code> collides with the client control API. These remain valid HTTP share paths. For a namespace containing such keys, choose distinct share paths or use the HTTP endpoints through a custom client.</li>
+</ul>
+<h2 id="non-goals">Non-goals</h2>
+<ul>
+<li><strong>Generating a web page or form from the graph.</strong> A page is a <code>text</code> cell that you write and share.</li>
+<li><strong>Access below a share</strong> (<code>/ctx/a/x</code>). Share a connected cell that holds the projection: <code>ctx.x = ctx.a.x; ctx.x.share()</code>.</li>
+<li><strong>PUT by checksum.</strong> Deferred with a named condition: it needs the check that <code>ctx.a.checksum = …</code> performs, which a transport cannot perform today.</li>
+<li><strong>Directory and deep shares.</strong> <code>folder</code>, <code>deepfolder</code> and <code>deepcell</code> cells are not shareable. A <code>folder</code> cell can be downloaded (<em>Downloads</em>); <code>deepfolder</code> and <code>deepcell</code> cells cannot.</li>
+<li><strong>Downloads of computed content.</strong> A download packs buffers of complete cells; it runs no user code. Content that must be computed for the archive, such as a manifest, belongs in a cell.</li>
+<li><strong>Computing on GET.</strong> A GET resolves and never fingertips. Without a hashserver, the Context fingertips a shared cell's missing buffer before the share receives the checksum, never during a request (<em>Reading: GET and HEAD</em>).</li>
+<li><strong>Authentication, TLS, sessions.</strong> Every client of a namespace edits the same graph. Use a reverse proxy for access control, and one Context per user for isolation.</li>
+<li><strong>Standalone, sub-path, pin and code shares.</strong> As for every attachment (<code>contracts/attachments.md</code>, <em>Non-goals</em>).</li>
+</ul>
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="mounts.html" class="btn btn-neutral float-left" title="File Mounts"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="widgets.html" class="btn btn-neutral float-right" title="Jupyter Widgets">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+    
+      <span><a href="mounts.html" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="widgets.html" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script src="../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "..";</script>
+    <script src="../js/theme_extra.js"></script>
+    <script src="../js/theme.js"></script>
+      <script src="../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>

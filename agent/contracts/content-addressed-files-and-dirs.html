@@ -75,6 +75,14 @@
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="mounts.html">File Mounts</a>
                   </li>
+                  <li class="toctree-l1"><a class="reference internal" href="shares.html">HTTP Shares</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="widgets.html">Jupyter Widgets</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="streaming.html">Streaming</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="transformation-logs.html">Transformation Logs</a>
+                  </li>
                   <li class="toctree-l1"><a class="reference internal" href="cancellation.html">Cancellation</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="direct-delayed-and-transformation.html">direct/delayed/Transformation</a>
@@ -103,6 +111,8 @@
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="execution-backends.html">Execution Backends</a>
                   </li>
+                  <li class="toctree-l1"><a class="reference internal" href="environments.html">Environments</a>
+                  </li>
                   <li class="toctree-l1"><a class="reference internal" href="execution-records.html">Execution Records</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="service-management.html">Service Management</a>
@@ -114,6 +124,10 @@
                   <li class="toctree-l1"><a class="reference internal" href="compiled-pins.html">Compiled Pins</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="seamless-signature-schema.html">seamless-signature Schema</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="handler-languages.html">Handler Languages</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="language-backends.html">Language Backends</a>
                   </li>
               </ul>
               <p class="caption"><span class="caption-text">API</span></p>
@@ -177,7 +191,7 @@
 <li>A directory is represented by a <strong>deep checksum</strong>: the checksum of an <strong>index</strong>, which is a <strong>flat</strong> JSON object mapping string keys to 64-character lowercase hex checksums, serialized and parsed by the <code>plain</code> rules. Nesting is not part of the contract, and the keys are opaque strings that routinely contain <code>/</code>.</li>
 <li>The index commits to the directory's contents by reference: a deep checksum can be held, compared and passed around <strong>without any child buffer being present</strong>, and holding it materializes nothing.</li>
 <li>The celltypes that carry this identity are <code>deepfolder</code> (the index; the contents stay by reference) and <code>folder</code> (the contents; the consumer wants the bytes), alongside <code>deepcell</code> for a keyed collection of Seamless values. A <code>folder</code> index buffer and a <code>deepfolder</code> index buffer of the same directory are <strong>byte-identical</strong>, so the conversion between them is free in both directions.</li>
-<li>The exact buffer format, the member typing of each celltype, the legal conversions, the one-string-item path rule, and the fact that <strong>none of it is enforced by the code yet</strong>, are all in <code>contracts/deep-celltypes.md</code>. Do not re-derive them here.</li>
+<li>The exact buffer format, the member typing of each celltype, the legal conversions, the one-string-item path rule and their implementation status are all in <code>contracts/deep-celltypes.md</code>. Do not re-derive them here.</li>
 </ul>
 <h2 id="practical-limitations-to-keep-in-mind">Practical limitations to keep in mind</h2>
 <ul>

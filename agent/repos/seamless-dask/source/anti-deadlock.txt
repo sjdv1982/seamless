@@ -46,6 +46,17 @@ marked driver=True themselves. This context is thread-safe (stored in threading.
 and is restored after each transformation finishes, so sequential tasks do not leak state.
 Note that the driver context does not automatically propagate to new threads spawned inside
 the transformation body.
+The driver context is not written into the nested transformation. A transformation that is
+built while a driver runs does not get driver=True in its own meta, so __meta__.driver=True
+always means "this transformation was itself declared a driver". Instead, each submission
+(Transformation.start, compute/run, computation, task) records whether it is made inside a
+driver body, and that boolean travels to the parent as driver_context in the delegation
+payload. Two consequences:
+- A transformation launched by a driver does not itself run in a driver context. The
+  transformations that it launches in turn (the driver's grandchildren) go through the
+  permission routine again, unless it was declared a driver too.
+- A transformation launched by a driver is deduplicated by the Dask client like any other
+  transformation. Only a declared driver skips the future cache and gets a fresh key.
 
 3. Whenever permission is given, increment S by one. As long as S is no larger than T * N,
 give permission instantly. This will make more and more of the Dask worker thread pool available.
@@ -76,3 +87,66 @@ It is hoped that this solution will eliminate the risk of deadlock, except in tr
 - Flooding (thousands of concurrent transformations within one process)
 - Very deep levels of nesting (10 or more)
 - Environment definitions that are incompatible with all Dask workers in the cluster.
+
+
+The process lock.
+
+Each process that runs transformation bodies has one process lock. The body is the user
+code of a transformation: the Python function, the bash script or the compiled call.
+A transformation with __meta__.process_lock=True, which is the default, waits for the lock
+of its process, runs its body while holding it, and releases it when the body ends.
+A Seamless worker therefore runs at most one lock-holding body at a time, although it
+accepts T requests. The lock is held around the body only, not around input resolution or
+result serialization. A transformation with process_lock=False never takes the lock.
+A declared driver has process_lock=False: driver=True together with process_lock=True is
+invalid, and fails the transformation before its body runs.
+
+Rule: a body that submits nested work drops the lock, if it holds it, and never takes it
+again. The drop is the first thing a submission does (Transformation.start, compute/run,
+computation, task, and a fingertip that recomputes a transformation). It therefore comes
+before the permission routine, and before it is known whether the nested result is cached.
+It applies to local and non-local nested transformations alike.
+
+Why the lock is not a resource that idle parents can exhaust. The analysis above is about
+idle-blocking parents: nesting transformations that occupy a Dask worker thread or a
+throttle slot while they wait, with no return guarantee. The lock would be one more such
+resource only if an idle parent could hold it. The rule excludes that: a parent has dropped
+the lock by the time it waits for nested work, so a lock holder is never an idle parent.
+A holder is a body that is doing its own work, and that work ends, or reaches its first
+nested submission, without waiting for any other transformation. So:
+- A transformation that waits for a lock waits for a working body, never for an idle one.
+- A nested transformation that runs in its parent's own process finds the lock free of its
+  parent. This is the case when it is dispatched to the worker that submitted it, when the
+  parent process refuses the delegation because all throttle slots are occupied, and in
+  the 10 % in-process fallback of point 4.
+- Throttle slots, the resource S and the permission routine are unchanged and still needed.
+  They bound the idle parents. The lock bounds the working bodies.
+
+What the rule does not cover:
+- A body that submits from a thread that it started itself. The drop is attributed through
+  the calling context, i.e. the body's own thread and the coroutines of its event loop.
+  A workflow Context created inside a body is such a case: it submits from its controller
+  thread. Such a body needs process_lock=False or driver=True. Otherwise a nested
+  transformation that lands in its process waits for a lock that its idle parent holds,
+  and the two hang silently.
+- A bash body whose script starts a nested seamless-run. There the drop is signalled, not
+  attributed: the script's environment contains SEAMLESS_PROCESS_LOCK_NOTIFY, the path of
+  a named pipe to which the nested command writes when it submits. The signal does not
+  cross ssh or a container boundary, and it needs a shared filesystem view. A bash
+  transformation that nests through one of those needs driver=True or process_lock=False.
+
+Interaction with the load figure of point 3: a transformation that waits for a lock
+occupies a throttle slot, and the permission routine reads slot occupancy as load.
+Waiting transformations therefore raise the load, and the routine will deny more often.
+
+Known gaps:
+- The dispatcher inside a worker pool does not know about the lock. It can give a second
+  and a third transformation to a Seamless worker whose lock is held, and they do not move
+  when another worker becomes free.
+- S is not exact. The permission routine raises S by one per granted nested submission,
+  whereas the number of dropped locks on a Dask worker is the exact number of idle parents
+  there.
+- A driver claims S: 1 like every base task and keeps it while idle. Nothing lends it back.
+
+Status (2026-10-11): the reasoning in this section is from the code. It has not been run
+on a Dask cluster, and the effect on the load figure has not been measured.

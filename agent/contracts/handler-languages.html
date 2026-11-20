@@ -1,0 +1,1467 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <link rel="shortcut icon" href="../img/favicon.ico" />
+    <title>Handler Languages - Seamless — Agent Documentation</title>
+    <link rel="stylesheet" href="../css/theme.css" />
+    <link rel="stylesheet" href="../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "Handler Languages";
+        var mkdocs_page_input_path = "contracts/handler-languages.md";
+        var mkdocs_page_url = null;
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href="../index.html" class="icon icon-home"> Seamless — Agent Documentation
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../index.html">Home</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../overview.html">Agent Docs Overview</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../repos/index.html">Workspace Repos</a>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Contracts</span></p>
+              <ul class="current">
+                  <li class="toctree-l1"><a class="reference internal" href="identity-and-caching.html">Identity and Caching</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="celltypes-and-conversion.html">Celltypes, Null, and Conversion</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="hashtype.html">HashType</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="deep-celltypes.html">Deep Celltypes</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="expressions.html">Expressions</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="cells.html">Cells</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="pins.html">Pins</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="workflow-context.html">Workflow Context</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="node-state-lifecycle.html">Node State Lifecycle</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="attachments.html">Attachments</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="mounts.html">File Mounts</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="shares.html">HTTP Shares</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="widgets.html">Jupyter Widgets</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="streaming.html">Streaming</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="transformation-logs.html">Transformation Logs</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="cancellation.html">Cancellation</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="direct-delayed-and-transformation.html">direct/delayed/Transformation</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="modules-and-closures.html">Modules and Closures</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="scratch-witness-audit.html">Scratch/Witness/Audit</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="seamless-run-and-argtyping.html">seamless-run/Argtyping</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="cache-storage-and-limits.html">Cache Storage and Limits</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="content-addressed-files-and-dirs.html">Content-addressed Files and Dirs</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="execution-backends.html">Execution Backends</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="environments.html">Environments</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="execution-records.html">Execution Records</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="service-management.html">Service Management</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="compression.html">Compression</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="compiled-transformers.html">Compiled Transformers</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="compiled-pins.html">Compiled Pins</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="seamless-signature-schema.html">seamless-signature Schema</a>
+                  </li>
+                  <li class="toctree-l1 current"><a class="reference internal current" href="#">Handler Languages</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#the-three-kinds-of-language">The three kinds of language</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#faces">Faces</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#r-and-julia-transformers">R and Julia transformers</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#the-two-code-styles">The two code styles</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#isolation-and-persistent-state">Isolation and persistent state</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#backends">Backends</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#cli-backends">CLI backends</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#in-memory-backends">In-memory backends</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#the-process-lock">The process lock</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#backend-parity">Backend parity</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#what-the-code-receives">What the code receives</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#what-the-code-returns">What the code returns</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#deep-celltypes-and-checksum-objects">Deep celltypes and checksum objects</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#checksum-classes">Checksum classes</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#array-rules">Array rules</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#pins-on-file">Pins on file</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#identity-and-caching">Identity and caching</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#writing-a-handler">Writing a handler</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#the-arguments">The arguments</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#honouring-the-environment">Honouring the environment</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#the-handler-travels-with-the-transformation">The handler travels with the transformation</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#threads-and-run_in_interpreter_thread">Threads, and run_in_interpreter_thread</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#logs-failures-and-cancellation">Logs, failures and cancellation</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#environments">Environments</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#current-limitations">Current limitations</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#non-goals">Non-goals</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#code-locations">Code locations</a>
+    </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="language-backends.html">Language Backends</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">API</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/python/seamless.html">seamless</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/python/seamless.transformer.html">seamless.transformer</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/python/seamless.buffer_class.html">seamless.buffer_class</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/python/seamless.checksum_class.html">seamless.checksum_class</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/python/seamless_config.select.html">seamless_config.select</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/python/seamless_config.tools.html">seamless_config.tools</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/python/seamless_transformer.transformation_class.html">seamless_transformer.transformation_class</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/python/seamless_transformer.transformer_class.html">seamless_transformer.transformer_class</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">CLI</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/cli/seamless-run.html">seamless-run</a>
+                  </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Seamless — Agent Documentation</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../index.html" class="icon icon-home" aria-label="Docs"></a></li>
+          <li class="breadcrumb-item">Contracts</li>
+      <li class="breadcrumb-item active">Handler Languages</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h1 id="handler-languages-contract">Handler languages (Contract)</h1>
+<p>A <strong>handler language</strong> is a transformation language whose code is run by a
+<strong>handler</strong>: a Python function that receives the code and the pins, runs the
+code in the other language, and returns the result. R (<code>language="r"</code>) and
+Julia (<code>language="julia"</code>) are the two built-in handler languages. The set is
+open: <code>register_language_handler</code> adds a language, and Seamless itself does
+not change for it.</p>
+<p><strong>This page is about the Python face and the workflow Context.</strong> A handler
+language is used through the <code>Transformer</code> factory. <code>direct</code> and <code>delayed</code>
+decorate Python functions only, and <code>seamless-run</code> wraps commands, as before
+(<em>Faces</em>).</p>
+<p>This page owns the handler API, what a handler receives, what R and Julia code
+sees and returns, what each backend of each language runs and needs and their
+parity, the checksum classes of R and Julia, and where the handler and the
+backend sit in transformation identity. Other pages own the rest:</p>
+<ul>
+<li>the two kinds of language backend, <code>BACKEND</code>, the environment rule and the
+  two public functions that carry it: <a href="language-backends.html">Language
+  backends</a>;</li>
+<li>
+<p>deep pins and deep results: <a href="deep-celltypes.html">Deep celltypes</a>;</p>
+</li>
+<li>
+<p>builder modes, building, binding and the named work methods:
+  <a href="transformers.html">Transformers</a>;</p>
+</li>
+<li>pin declarations, pin celltypes and the null rules: <a href="pins.html">Pins</a>;</li>
+<li>the identity model: <a href="identity-and-caching.html">Identity and caching</a>;</li>
+<li>the process lock: <a href="execution-backends.html">Execution backends</a>, <em>The process
+  lock</em>.</li>
+</ul>
+<p>The <a href="../../../plans/julia-r-support.md">implementation plan</a> describes the
+mechanics and the phases.</p>
+<h2 id="the-three-kinds-of-language">The three kinds of language</h2>
+<table>
+<thead>
+<tr>
+<th>Kind</th>
+<th>Languages</th>
+<th>Constructed with</th>
+<th>The code is run by</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>native</td>
+<td><code>python</code>, <code>bash</code></td>
+<td><code>Transformer(language)</code>. For Python also <code>direct</code>, <code>delayed</code> and <code>ctx.tf = function</code></td>
+<td>Seamless itself</td>
+</tr>
+<tr>
+<td>compiled</td>
+<td>the languages registered with <code>define_compiled_language</code>, such as <code>c</code>, <code>cpp</code>, <code>fortran</code> and <code>rust</code></td>
+<td><code>Transformer(language, compiled=True)</code></td>
+<td>a native call of the compiled <code>transform()</code> (<a href="compiled-transformers.html">Compiled transformers</a>)</td>
+</tr>
+<tr>
+<td>handler</td>
+<td><code>r</code>, <code>julia</code>, and what <code>register_language_handler</code> adds</td>
+<td><code>Transformer(language)</code></td>
+<td>the handler of the language</td>
+</tr>
+</tbody>
+</table>
+<pre><code class="language-python">from seamless_transformer.languages import available_languages
+
+available_languages()
+# {&quot;python&quot;: &quot;native&quot;, &quot;bash&quot;: &quot;native&quot;, &quot;c&quot;: &quot;compiled&quot;, ...,
+#  &quot;r&quot;: &quot;handler&quot;, &quot;julia&quot;: &quot;handler&quot;}
+</code></pre>
+<ul>
+<li><strong><code>available_languages()</code> maps every accepted <code>language</code> value to its
+  kind</strong>: <code>"native"</code>, <code>"compiled"</code> or <code>"handler"</code>. It lists the languages that
+  the factory can construct, and nothing else. A name that the factory does
+  not accept, such as <code>ipython</code>, is not in it.</li>
+<li><strong>A language name belongs to one kind.</strong> Registering a handler under a
+  native or compiled name raises.</li>
+<li><code>is_handler_language(name)</code> says whether a name has a handler.
+  <code>get_language_handler(name)</code> returns the registration of a handler language,
+  and raises for any other name.</li>
+<li><strong>The two built-in handlers are always registered.</strong>
+  <code>seamless_transformer.languages</code> registers them when it is imported. That
+  import loads neither R nor Julia, and neither <code>ryp</code> nor <code>juliacall</code>.</li>
+</ul>
+<h2 id="faces">Faces</h2>
+<table>
+<thead>
+<tr>
+<th>Face</th>
+<th>Handler languages</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Python: the <code>Transformer</code> factory</td>
+<td><code>Transformer("r")</code>, <code>Transformer("julia")</code>, with <code>direct=True</code> for an immediate call</td>
+</tr>
+<tr>
+<td>Python: <code>direct</code>, <code>delayed</code></td>
+<td>none. Both decorate Python functions only</td>
+</tr>
+<tr>
+<td>Workflow Context</td>
+<td>a handler-language builder is bound like any other: <code>ctx.tf = Transformer("julia")</code></td>
+</tr>
+<tr>
+<td>Unix: <code>seamless-run</code></td>
+<td>none</td>
+</tr>
+</tbody>
+</table>
+<p><code>seamless-run Rscript analysis.R data.csv</code> remains what it was: a bash
+transformation of a command that happens to start R. The script is an input
+file, the identity is that of the command and its files, and the result is a
+file or the command's output. Nothing on this page applies to it: there are no
+pins as variables, no <code>BACKEND</code> and no parity guarantee.</p>
+<h2 id="r-and-julia-transformers">R and Julia transformers</h2>
+<p>The code is ordinary R or Julia. It loads no input files, writes no result
+file and does not mention Seamless.</p>
+<pre><code class="language-python">from seamless.transformer import Transformer
+
+tf = Transformer(&quot;r&quot;, direct=True)
+tf.code = &quot;result &lt;- a + b&quot;
+tf.pins.a = 2
+tf.pins.b = 3
+tf()          # -&gt; 5
+</code></pre>
+<pre><code class="language-python">tf = Transformer(&quot;julia&quot;, direct=True)
+tf.code = &quot;&quot;&quot;
+function transform(a, b)
+    return a + b
+end
+&quot;&quot;&quot;
+tf.pins.a = 2
+tf.pins.b = 3
+tf()          # -&gt; 5
+</code></pre>
+<ul>
+<li><strong>The code is source text.</strong> <code>tf.code</code> takes a string. A new builder has no
+  code.</li>
+<li><strong>The pins are declared by the user</strong>, by writing through <code>tf.pins</code> or
+  <code>tf.celltypes</code>, as for Bash (<a href="pins.html">Pins</a>, <em>Which pins exist</em>). Seamless
+  does not read a signature from R or Julia code, not even from a <code>transform</code>
+  function. A declared pin has celltype <code>mixed</code> until it is given another.</li>
+<li><strong>There are no optional pins.</strong> They exist for Python only.</li>
+<li><strong>The output name is <code>result</code></strong>, and its celltype is <code>tf.celltypes.result</code>,
+  which is <code>mixed</code> by default.</li>
+<li><strong>Everything else is the common builder contract</strong>
+  (<a href="transformers.html">Transformers</a>): standalone and bound modes, <code>build()</code>,
+  the named work methods, <code>scratch</code>, <code>process_lock</code> and <code>driver</code>. A builder's
+  <code>language</code> is fixed at construction and read-only.</li>
+<li><strong>A handler-language builder also has <code>tf.metavars</code></strong>, which holds the
+  settings of its handler (<em>Backends</em>).</li>
+</ul>
+<h2 id="the-two-code-styles">The two code styles</h2>
+<p>The R and the Julia handler accept code in two styles.</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>Block</th>
+<th><code>transform()</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>The code is</td>
+<td>statements that run from top to bottom</td>
+<td>a definition of a function named <code>transform</code>, with whatever else it needs</td>
+</tr>
+<tr>
+<td>Recognized by</td>
+<td>no top-level definition of <code>transform</code></td>
+<td>a top-level definition of a function named <code>transform</code></td>
+</tr>
+<tr>
+<td>Pins</td>
+<td>each pin is a variable of its name</td>
+<td>each pin is passed as the argument of its name</td>
+</tr>
+<tr>
+<td>Result</td>
+<td>the value of the variable <code>result</code> when the code ends</td>
+<td>the return value of <code>transform</code></td>
+</tr>
+<tr>
+<td>Isolation</td>
+<td>a new one for every run</td>
+<td>built once, and reused (<em>Isolation and persistent state</em>)</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li><strong>The style is recognized by parsing the code in its own language</strong>, when
+  the transformation runs.</li>
+<li>R: a top-level assignment, with <code>&lt;-</code> or <code>=</code>, of a <code>function</code> to the name
+    <code>transform</code>.</li>
+<li>Julia: a top-level definition of a function named <code>transform</code>, in the long
+    form or the short form (<code>transform(a, b) = …</code>), also with a <code>where</code>
+    clause, a return type or a docstring.</li>
+<li><strong>Only the top level counts.</strong> A definition inside a block, or one that the
+  code produces by <code>source</code>, <code>include</code> or <code>eval</code>, does not make the code
+  <code>transform()</code> style.</li>
+<li><strong>Block code cannot have a top-level function named <code>transform</code>.</strong> It would
+  be read as the other style.</li>
+<li><strong>In the block style, the code must assign <code>result</code>.</strong> A run whose code ends
+  without it fails. A variable of that name outside the code's own isolation
+  does not count.</li>
+<li><strong>In the <code>transform()</code> style, the top-level code runs with no pins bound.</strong>
+  It defines things. Only <code>transform</code> receives the pins.</li>
+<li><strong>What happens when the pins and the parameters of <code>transform</code> do not match
+  is not specified.</strong> Declare one pin for each parameter.</li>
+</ul>
+<h2 id="isolation-and-persistent-state">Isolation and persistent state</h2>
+<p>An <strong>isolation</strong> is the scope in which the code runs: an environment in R, a
+module in Julia.</p>
+<ul>
+<li><strong>Block code gets a new isolation for every run.</strong></li>
+<li><strong><code>transform()</code> code gets one isolation per interpreter</strong>, for each
+  combination of code, output name and pin names. It is built at first use and
+  kept inside the interpreter. Later runs in that interpreter call the
+  function that is already defined.</li>
+<li><strong>Seamless keeps no cache of isolations.</strong> A worker process that is
+  restarted starts with none. Under a CLI backend every run starts a new
+  interpreter, so nothing is reused there.</li>
+</ul>
+<p><strong>An isolation separates names, not the process.</strong> Under an in-memory backend
+(<em>Backends</em>), these outlive a transformation and are seen by the next one in
+the same process:</p>
+<ul>
+<li>loaded packages and their state;</li>
+<li>options;</li>
+<li>explicit assignments to the global scope;</li>
+<li>in the <code>transform()</code> style, the top-level variables of the isolation;</li>
+<li>compiled Julia code.</li>
+</ul>
+<p><strong>The result must not depend on any of that.</strong> The constraint is the one that
+holds for compiled transformers
+(<a href="compiled-transformers.html">Compiled transformers</a>, <em>Referential transparency
+constraint</em>): code whose return value depends on state from an earlier call
+cannot be wrapped. Seamless does not detect a violation. The consequence is a
+cached result that is silently wrong, and a result that differs between the
+two backends.</p>
+<p><strong>Inputs are never writable through to Seamless.</strong> Code may modify a pin's
+value in place. The change stays inside that run, and the pin's checksum is
+unchanged.</p>
+<h2 id="backends">Backends</h2>
+<p>Each of the two languages has two <strong>backends</strong>: a CLI backend and an
+in-memory backend (<a href="language-backends.html">Language backends</a>). The
+metavariable <code>BACKEND</code> selects one, with the values <code>"cli"</code> and <code>"mem"</code>.</p>
+<table>
+<thead>
+<tr>
+<th>Language</th>
+<th><code>"cli"</code>, the default</th>
+<th><code>"mem"</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>r</code></td>
+<td>an <code>Rscript</code> process per run</td>
+<td>R embedded in the Python process, through <code>ryp</code></td>
+</tr>
+<tr>
+<td><code>julia</code></td>
+<td>a <code>julia</code> process per run</td>
+<td>Julia embedded in the Python process, through <code>juliacall</code></td>
+</tr>
+</tbody>
+</table>
+<pre><code class="language-python">tf = Transformer(&quot;r&quot;)
+tf.metavars.BACKEND          # &quot;cli&quot;
+tf.metavars.BACKEND = &quot;mem&quot;
+</code></pre>
+<ul>
+<li><strong><code>tf.metavars</code> has the names that the handler declared.</strong> Reading one gives
+  the value that was set, or else the handler's default. Any other name
+  raises, on read and on write. The exception class is not specified.</li>
+<li><strong><code>BACKEND</code> accepts <code>"cli"</code> and <code>"mem"</code>, and nothing else.</strong> Any other value
+  is refused when it is assigned, and nothing is stored. The names of the
+  tools, such as <code>"Rscript"</code> or <code>"juliacall"</code>, are not values. A value that
+  arrives in a transformation dict fails when the transformation runs.</li>
+<li><strong>A build writes every metavar into the Transformation</strong>, defaults included,
+  under <code>meta["metavars"]</code>.</li>
+<li><strong>The backend is not part of the transformation's identity</strong> (<em>Identity and
+  caching</em>).</li>
+<li><strong>Bound Transformers.</strong> <code>ctx.tf.metavars</code> behaves the same. The values
+  belong to the workflow Context node: every view of <code>ctx.tf</code> reads and writes
+  the one mapping, the node keeps it in its <code>meta</code>, and <code>ctx.get_graph()</code>
+  saves it. A node whose result is recorded does not run its code again after
+  a change of <code>BACKEND</code>, because its <code>tf_checksum</code> is the same.</li>
+</ul>
+<p>What a backend needs on the machine that runs the transformation:</p>
+<table>
+<thead>
+<tr>
+<th>Language</th>
+<th><code>"cli"</code> needs</th>
+<th><code>"mem"</code> needs</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>r</code></td>
+<td><code>Rscript</code> on the <code>PATH</code>; the R packages <code>RcppCNPy</code> and <code>jsonlite</code></td>
+<td>the Python package <code>ryp</code>, with R and the R package <code>arrow</code>; the R package <code>jsonlite</code></td>
+</tr>
+<tr>
+<td><code>julia</code></td>
+<td><code>julia</code> on the <code>PATH</code>; the Julia packages <code>NPZ</code> and <code>JSON</code> in the active project</td>
+<td>the Python package <code>juliacall</code>; the Julia package <code>JSON</code> in the project that <code>juliacall</code> uses</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li><strong>Seamless installs none of these.</strong> A tool or a package that is missing is
+  a failure of the transformation.</li>
+<li><strong>The machine that runs the transformation needs them, not the one that
+  builds it</strong>, unless they are the same. Which machine runs it follows from
+  the execution backend (<a href="execution-backends.html">Execution backends</a>).</li>
+<li><strong>Under a CLI backend with a Docker image, the image needs them.</strong> A
+  conda environment needs them too, where the transformer has one
+  (<em>Environments</em>).</li>
+</ul>
+<h3 id="cli-backends">CLI backends</h3>
+<ul>
+<li><strong>Every run starts a new interpreter process</strong>, in a job directory of its
+  own, on the machinery of bash transformations. What
+  <a href="execution-backends.html">Execution backends</a>, <em>Bash bodies</em>, says of a bash
+  body holds for it: the process that runs the transformation keeps its
+  working directory, and a nested <code>seamless-run</code> that the code starts is
+  signalled.</li>
+<li><strong>The interpreter does not read the user's startup files.</strong> The commands are
+  <code>Rscript --vanilla</code> and <code>julia --startup-file=no</code>.</li>
+<li><strong>The transformer's environment is entered first</strong>, when it has one: its
+  conda environment is activated, or the interpreter is started in a container
+  made from its Docker image (<em>Environments</em>).</li>
+<li><strong>One run at a time per process, by default</strong>, because the run takes the
+  process lock. With <code>tf.process_lock = False</code>, several run side by side in
+  one process. Each has its own interpreter process, so they share no
+  interpreter state.</li>
+</ul>
+<h3 id="in-memory-backends">In-memory backends</h3>
+<ul>
+<li><strong>The interpreter is embedded in the process that runs the transformation.</strong>
+  That is the calling process in <code>process</code> mode, and a worker process
+  otherwise. It starts at its first use and lives until the process ends.</li>
+<li><strong>There is one embedded interpreter per process</strong>, and one transformation
+  uses it at a time (<em>The process lock</em>).</li>
+<li><strong><code>transform()</code> isolations are reused</strong> from one run to the next (<em>Isolation
+  and persistent state</em>). That is what an in-memory backend is for: the
+  interpreter starts once, and definitions are evaluated once.</li>
+<li><strong>It cannot enter an environment.</strong> A conda environment must already be the
+  one of the process, and a Docker image is refused (<em>Environments</em>).</li>
+</ul>
+<h2 id="the-process-lock">The process lock</h2>
+<p>A handler-language transformation takes the process lock like any other
+(<a href="execution-backends.html">Execution backends</a>, <em>The process lock</em>). The handler
+receives whether it did (<em>Writing a handler</em>, <em>The arguments</em>).</p>
+<p><strong>An in-memory backend refuses to run without the process lock.</strong> A
+transformation that has <code>process_lock</code> false and an in-memory backend fails
+when it runs. The message names the CLI backend as the alternative.</p>
+<ul>
+<li><strong>A driver is refused too</strong>, because <code>driver</code> true means <code>process_lock</code>
+  false (<a href="transformers.html">Transformers</a>, <em><code>process_lock</code> and <code>driver</code></em>).</li>
+<li><strong>The process lock is the only lock around an embedded interpreter.</strong> Among
+  transformations that hold it, one runs at a time in a process, and that is
+  what keeps two transformations out of one interpreter.</li>
+<li><strong>The refusal happens when the transformation runs.</strong> Building succeeds. A
+  result that is already recorded is returned without the check.</li>
+<li><strong>An in-memory body holds the lock from its start to its end.</strong> The code has
+  no way to give it up: the nesting signal of a bash body does not exist here.
+  Code that submits nested work, for example by running <code>seamless-run</code>,
+  belongs under the CLI backend.</li>
+<li><strong>A transformation that arrives without its <code>__meta__</code> takes the lock and
+  runs under the default backend</strong>, which is the CLI
+  (<a href="transformers.html">Transformers</a>, <em>Absent keys in a transformation dict</em>).</li>
+</ul>
+<h2 id="backend-parity">Backend parity</h2>
+<p><strong>Both backends of a language give the same result, bit for bit, when both
+succeed.</strong></p>
+<ul>
+<li><strong>A backend may fail where the other succeeds. It may not succeed with a
+  different result.</strong></li>
+<li><strong>This is what lets the backend stay outside identity.</strong> A result that was
+  computed under one backend is served, from the cache, to a transformation
+  that names the other.</li>
+<li><strong>How it holds.</strong> Each language has one runtime, written in that language,
+  and both backends use it. The runtime recognizes the code style, builds the
+  isolation, turns each pin into a native value, runs the code, and classifies
+  and encodes the result. The backends differ only in how bytes travel.</li>
+<li><strong>JSON values cross as JSON text under both backends</strong>, and are parsed and
+  written by the same call. That is why <code>jsonlite</code> and <code>JSON</code> are needed by
+  the in-memory backends too.</li>
+<li><strong>There is no fallback encoding.</strong> A backend that cannot carry a value fails.
+  It never substitutes another representation.</li>
+<li><strong>A deep pin has the same form under both backends</strong>, and a deep result has
+  the same member rule (<em>Deep celltypes and checksum objects</em>). Code that
+  filters the keys of a <code>deepcell</code> pin and returns the rest gives the same
+  result under both.</li>
+<li><strong>A <code>deepfolder</code> pin is a dict of checksum objects under both backends.</strong>
+  Its form does not depend on where the member buffers are stored.</li>
+</ul>
+<p>Cases where one backend fails and the other succeeds:</p>
+<table>
+<thead>
+<tr>
+<th>Case</th>
+<th>CLI backend</th>
+<th>In-memory backend</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>A <code>mixed</code> pin whose value combines arrays and plain data: a buffer in the Seamless-mixed format (<a href="celltypes-and-conversion.html">Celltypes and conversion</a>)</td>
+<td>fails</td>
+<td>accepted</td>
+</tr>
+<tr>
+<td>R: a <code>float32</code> array, or an array with more than two dimensions (<em>Array rules</em>)</td>
+<td>fails</td>
+<td>accepts supported element types</td>
+</tr>
+<tr>
+<td>A conda environment that is not the one of the process that runs the transformation (<em>Environments</em>)</td>
+<td>runs, in that environment</td>
+<td>fails</td>
+</tr>
+<tr>
+<td>A Docker image (<em>Environments</em>)</td>
+<td>runs, in a container</td>
+<td>fails</td>
+</tr>
+</tbody>
+</table>
+<p><strong>The guarantee is about the handler, not about the code.</strong> Code that is not
+a pure function of its pins is not made reproducible by it (<em>Isolation and
+persistent state</em>). The text of a failure is not covered either: the two
+backends report the same failure in different words.</p>
+<h2 id="what-the-code-receives">What the code receives</h2>
+<table>
+<thead>
+<tr>
+<th>Pin celltype</th>
+<th>Native value in R</th>
+<th>Native value in Julia</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>text</code></td>
+<td>a character string, without the final newline</td>
+<td>a <code>String</code>, without the final newline</td>
+</tr>
+<tr>
+<td><code>plain</code>, and <code>mixed</code> whose buffer is JSON</td>
+<td>what <code>jsonlite::fromJSON</code> returns</td>
+<td>what <code>JSON.parse</code> returns</td>
+</tr>
+<tr>
+<td><code>bytes</code></td>
+<td>a raw vector</td>
+<td>a <code>Vector{UInt8}</code></td>
+</tr>
+<tr>
+<td><code>binary</code>, and <code>mixed</code> whose buffer is an array</td>
+<td>a double or logical vector or array (<em>Array rules</em>)</td>
+<td>an <code>Array</code> (<em>Array rules</em>)</td>
+</tr>
+<tr>
+<td><code>int</code>, <code>float</code>, <code>bool</code>, <code>str</code>, and every other celltype that is neither deep nor <code>checksum</code></td>
+<td>as <code>plain</code></td>
+<td>as <code>plain</code></td>
+</tr>
+<tr>
+<td><code>folder</code></td>
+<td>a named list of raw vectors, one for each member's bytes</td>
+<td>a <code>Dict{String, Vector{UInt8}}</code></td>
+</tr>
+<tr>
+<td><code>deepfolder</code></td>
+<td>a named list of checksum objects</td>
+<td>a <code>Dict{String, Checksum}</code></td>
+</tr>
+<tr>
+<td><code>deepcell</code></td>
+<td>a named list of checksum objects</td>
+<td>a <code>Dict{String, Checksum}</code></td>
+</tr>
+<tr>
+<td><code>checksum</code></td>
+<td>a checksum object</td>
+<td>a <code>Checksum</code></td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li><strong>A <code>mixed</code> pin is read by what its buffer is</strong>: an array, JSON, or a
+  Seamless-mixed buffer that holds both. The handler looks at the first
+  bytes of the buffer.</li>
+<li><strong>A Seamless-mixed buffer is accepted by the in-memory backends only.</strong>
+  Its plain parts follow the JSON rule, and its arrays the array rule.</li>
+<li><strong><code>text</code> and <code>str</code> differ.</strong> A <code>text</code> pin is the text itself. A <code>str</code> pin is
+  a JSON string, and reaches the code through the JSON parser.</li>
+<li><strong>A deep pin has the same form under both backends</strong> (<em>Deep celltypes and
+  checksum objects</em>). The code never sees a directory or a file for a <code>folder</code>
+  pin.</li>
+<li><strong>The value is the same whether the pin arrived as a value or as a file</strong>
+  (<em>Pins on file</em>).</li>
+</ul>
+<h2 id="what-the-code-returns">What the code returns</h2>
+<table>
+<thead>
+<tr>
+<th>Result</th>
+<th>Returned to Seamless as</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>anything, when the result celltype is <code>bytes</code></td>
+<td>raw bytes</td>
+</tr>
+<tr>
+<td>a numeric array, when the result celltype is <code>binary</code> or <code>mixed</code></td>
+<td>a C-contiguous NumPy array</td>
+</tr>
+<tr>
+<td>a named list or a <code>Dict</code> with string keys, when the result celltype is <code>deepcell</code> or <code>folder</code></td>
+<td>that dict, each member a value or a checksum object (<em>Deep celltypes and checksum objects</em>)</td>
+</tr>
+<tr>
+<td>a checksum object or a string of 64 hexadecimal characters, when the result celltype is <code>checksum</code></td>
+<td>that checksum</td>
+</tr>
+<tr>
+<td>anything else</td>
+<td>the value that Python parses from the runtime's JSON encoding of it</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li><strong>Seamless serializes the returned value under the result celltype</strong>, as it
+  does for the return value of a Python transformer. The null rules for
+  results apply (<a href="pins.html">Pins</a>, <em>Null, required pins, optional pins</em>).</li>
+<li><strong>In R, a vector of length one without dimensions is a scalar.</strong> It is not
+  an array of one element.</li>
+<li><strong>Arrays inside a list or a dictionary become nested JSON lists.</strong> Only a
+  result that is itself an array is returned as an array. The R and the Julia
+  handler never return a value that combines arrays and plain data.</li>
+<li><strong>A value that the runtime cannot encode fails the transformation.</strong></li>
+<li><strong>A checksum object is returned only as a member of a <code>deepcell</code> or <code>folder</code>
+  result, or as a <code>checksum</code> result.</strong> Returned under any other result
+  celltype it fails the transformation.</li>
+<li><strong>A <code>deepfolder</code> result is refused</strong>, as for every transformer
+  (<a href="deep-celltypes.html">Deep celltypes</a>, <em>The output side</em>).</li>
+</ul>
+<h2 id="deep-celltypes-and-checksum-objects">Deep celltypes and checksum objects</h2>
+<p>Deep pins and deep results are accepted under both backends. Their forms are
+those that every non-bash backend gives
+(<a href="deep-celltypes.html">Deep celltypes</a>, <em>How deep values reach a transformer</em>), in
+the forms of R and Julia:</p>
+<table>
+<thead>
+<tr>
+<th>Pin</th>
+<th>R</th>
+<th>Julia</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>folder</code></td>
+<td>a named list of raw vectors</td>
+<td>a <code>Dict{String, Vector{UInt8}}</code></td>
+</tr>
+<tr>
+<td><code>deepfolder</code></td>
+<td>a named list of checksum objects</td>
+<td>a <code>Dict{String, Checksum}</code></td>
+</tr>
+<tr>
+<td><code>deepcell</code></td>
+<td>a named list of checksum objects</td>
+<td>a <code>Dict{String, Checksum}</code></td>
+</tr>
+<tr>
+<td>a <code>deepfolder</code> or <code>deepcell</code> source, declared <code>plain</code></td>
+<td>a named list of 64-hex strings</td>
+<td>a <code>Dict{String, String}</code> of 64-hex strings</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li><strong>The keys are the keys of the index</strong>, which may contain <code>/</code>. An empty index
+  is an empty named list or <code>Dict</code>.</li>
+<li><strong>A <code>folder</code> pin holds every member's bytes in memory.</strong> The process that
+  runs the transformation resolves the members, from any buffer source, before
+  the code runs.</li>
+<li><strong>A <code>deepfolder</code> or <code>deepcell</code> pin resolves no member.</strong> Each is a dict of
+  checksum objects. The class of R and of Julia carries a checksum and has no
+  access to a buffer. These pins serve to select members and pass them on, for
+  example in a <code>deepcell</code> result.</li>
+<li><strong>Declaring the pin <code>plain</code></strong> hands the code the index as data: strings, not
+  objects. A string that is returned from it is a value (<em>Results</em>, below).</li>
+</ul>
+<p><strong>Results.</strong> The code returns the dict itself, and Seamless packs it into an
+index (<a href="deep-celltypes.html">Deep celltypes</a>, <em>The output side</em>).</p>
+<ul>
+<li><strong>A member is a value unless it is a checksum object.</strong> A string of 64
+  hexadecimal characters is a value, like any other string. Code that wants to
+  return a checksum wraps the string in the checksum class.</li>
+<li><strong>A member that is a value is classified as an ordinary result is</strong> in that
+  language: by the rule of a <code>mixed</code> result for a <code>deepcell</code>, and by the rule
+  of a <code>bytes</code> result for a <code>folder</code>.</li>
+<li><strong>A member that is a checksum object is inserted into the index as it is.</strong>
+  Nothing checks that the buffer exists.</li>
+</ul>
+<h3 id="checksum-classes">Checksum classes</h3>
+<p>Each language has a class that holds a checksum. It exists under both
+backends, and the runtime puts its functions in the scope of the code.</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>R</th>
+<th>Julia</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Make one from a string</td>
+<td><code>seamless_checksum("…")</code></td>
+<td><code>Checksum("…")</code></td>
+</tr>
+<tr>
+<td>Test for one</td>
+<td><code>is_seamless_checksum(x)</code></td>
+<td><code>x isa Checksum</code></td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li><strong>It is made from a string of 64 lowercase hexadecimal characters.</strong> Any
+  other value is an error.</li>
+<li><strong>It can be tested for, converted to its string, compared and printed.</strong> Two
+  objects with the same string are equal. It can be told from a plain string.</li>
+<li><strong>It cannot resolve.</strong> The class carries the checksum and no access to a
+  buffer. Python code has <code>Checksum.resolve()</code>, and R and Julia code has
+  nothing like it.</li>
+<li><strong>A <code>checksum</code> pin is one such object</strong>, and a <code>checksum</code> result accepts one,
+  or a string of 64 hexadecimal characters.</li>
+<li><strong>Plain data holds no objects.</strong> A <code>plain</code> pin that is a dict of checksums
+  holds strings.</li>
+</ul>
+<h2 id="array-rules">Array rules</h2>
+<p><strong>Array element types are normalized before the user code runs</strong>, including
+arrays inside an embedded Seamless-mixed pin:</p>
+<table>
+<thead>
+<tr>
+<th>NumPy input dtype</th>
+<th>Native R element type</th>
+<th>Native Julia element type</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>boolean</td>
+<td>logical</td>
+<td><code>Bool</code></td>
+</tr>
+<tr>
+<td>signed integer</td>
+<td>double</td>
+<td><code>Int64</code></td>
+</tr>
+<tr>
+<td>unsigned integer</td>
+<td>double</td>
+<td><code>UInt64</code></td>
+</tr>
+<tr>
+<td>floating point</td>
+<td>double</td>
+<td><code>Float64</code></td>
+</tr>
+</tbody>
+</table>
+<p>Other input array dtypes are refused. Integer values in R are subject to the
+precision of double: integers beyond the exact range of a double may be
+rounded. Both R backends apply the same conversion.</p>
+<ul>
+<li><strong>R dimensions:</strong> a one-dimensional input becomes a vector; an input with
+  two or more dimensions retains those dimensions. A returned vector of
+  length one without dimensions is a scalar.</li>
+<li><strong>R CLI backend restrictions:</strong> <code>float32</code> inputs and arrays with more than
+  two dimensions are refused. The R in-memory backend accepts them under the
+  normalization above.</li>
+<li><strong>Returned arrays:</strong> R numeric and integer arrays become NumPy <code>float64</code>,
+  and logical arrays become NumPy <code>bool</code>. Julia boolean, signed integer,
+  unsigned integer and floating arrays become NumPy <code>bool</code>, <code>int64</code>,
+  <code>uint64</code> and <code>float64</code>, respectively. Other array element types are refused
+  when an array result is required.</li>
+<li><strong>Shape and layout:</strong> returned arrays retain their shape and are
+  C-contiguous NumPy arrays. Input memory layout does not change their values.</li>
+<li><strong>Parity remains fixed:</strong> both backends of one language give the same
+  result when they succeed; a backend that cannot transport a value refuses
+  it.</li>
+</ul>
+<h2 id="pins-on-file">Pins on file</h2>
+<p><strong>A handler-language pin of celltype <code>mixed</code>, <code>plain</code>, <code>text</code>, <code>bytes</code> or
+<code>binary</code> reaches the handler as a file when one exists, and as a value
+otherwise.</strong> This holds for every handler language, the registered ones
+included.</p>
+<ul>
+<li><strong>As a file:</strong> when the pin's buffer is on file in a read-buffer directory
+  that is configured for the process that runs the transformation. The handler
+  receives the path, and nothing is read into memory for it.</li>
+<li><strong>As a value:</strong> in every other case. The handler receives the value, parsed
+  under the pin's celltype, as a Python transformer would.</li>
+</ul>
+<p>The file holds the buffer, byte for byte:</p>
+<table>
+<thead>
+<tr>
+<th>Celltype</th>
+<th>Bytes of the buffer</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>text</code></td>
+<td>the text and a final newline</td>
+</tr>
+<tr>
+<td><code>plain</code></td>
+<td>JSON</td>
+</tr>
+<tr>
+<td><code>bytes</code></td>
+<td>the bytes</td>
+</tr>
+<tr>
+<td><code>binary</code></td>
+<td>a NumPy <code>.npy</code> array</td>
+</tr>
+<tr>
+<td><code>mixed</code></td>
+<td><code>.npy</code> for an array, JSON for a plain value, the Seamless-mixed format for a value that combines both</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li><strong>The file can be compressed.</strong> Its path then ends in <code>.zst</code> or <code>.gz</code>, and
+  the handler decompresses (<a href="compression.html">Compression</a>).</li>
+<li><strong>Which form arrives is not part of identity.</strong> The transformation says that
+  the pin <em>may</em> be a file. That statement is the same for every transformation
+  of a handler language, and it does not depend on any machine (<em>Identity and
+  caching</em>).</li>
+<li><strong>The R and the Julia handler convert either form.</strong> The code sees the same
+  native value, and cannot tell the forms apart.</li>
+<li><strong>Other pins always arrive as values.</strong> <code>deepcell</code>, <code>deepfolder</code> and <code>folder</code>
+  pins arrive in the forms of <em>Deep celltypes and checksum objects</em>
+  (<a href="deep-celltypes.html">Deep celltypes</a>, <em>How deep values reach a
+  transformer</em>).</li>
+</ul>
+<h2 id="identity-and-caching">Identity and caching</h2>
+<table>
+<thead>
+<tr>
+<th>Part of the transformation</th>
+<th>Where it is carried</th>
+<th>In the checksum</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>the language name</td>
+<td><code>__language__</code></td>
+<td>yes</td>
+</tr>
+<tr>
+<td>the code text; each pin's checksum and celltype; the result celltype</td>
+<td>the pins, <code>__output__</code></td>
+<td>yes</td>
+</tr>
+<tr>
+<td>"this pin may be a file", for each pin of <em>Pins on file</em></td>
+<td><code>__format__</code></td>
+<td>yes, and the same for every transformation of a handler language</td>
+</tr>
+<tr>
+<td>the handler's source</td>
+<td><code>__handler__</code></td>
+<td>no</td>
+</tr>
+<tr>
+<td>the metavars, <code>BACKEND</code> included</td>
+<td><code>__meta__</code>, under <code>metavars</code></td>
+<td>no</td>
+</tr>
+<tr>
+<td>the conda environment</td>
+<td><code>__env__</code></td>
+<td>no</td>
+</tr>
+</tbody>
+</table>
+<p>The split is the one of <a href="identity-and-caching.html">Identity and caching</a>,
+<em>Load-bearing vs orthogonal keys</em>.</p>
+<ul>
+<li><strong>The same code text under <code>r</code> and under <code>julia</code> is two transformations.</strong></li>
+<li><strong>A cached result is returned whatever the backend and whatever the
+  handler.</strong> Nothing is launched, and neither R nor Julia needs to be
+  installed for a cache hit.</li>
+<li><strong>Two submissions of one transformation with different backends latch on to
+  each other</strong>, unless <code>strict_dunder</code> is used
+  (<a href="identity-and-caching.html">Identity and caching</a>, <em>Concurrent submissions of
+  the same checksum</em>).</li>
+<li><strong>A fingertip runs the code where the buffer is wanted.</strong> A fingertip is
+  never dispatched (<a href="scratch-witness-audit.html">Scratch, witness, audit</a>,
+  <em>Fingertipping</em>). The machine that asks needs the language's tools. When it
+  recomputes from the checksum alone, it uses its own registered handler and
+  the default backend.</li>
+<li><strong>A handler defines what its language name means.</strong> Because the handler is
+  outside the checksum, two handlers that are registered under one name must
+  give the same result for the same code and pins. A new version of a handler
+  is such a second handler. Seamless does not detect a violation, and the
+  cache then serves results of the old meaning.</li>
+<li><strong>A metavar must not change the result.</strong> It selects how the code is run.
+  The rule is the one for the metavars of a compiled transformer
+  (<a href="compiled-transformers.html">Compiled transformers</a>, <em>Output-only
+  wildcards</em>).</li>
+</ul>
+<h2 id="writing-a-handler">Writing a handler</h2>
+<pre><code class="language-python">from seamless.transformer import Transformer
+from seamless_transformer.languages import register_language_handler
+
+def template_handler(code, pins, filesystem):
+    import json                           # imports go inside the function
+
+    values = {}
+    for name, value in pins.items():
+        if filesystem.get(name, {}).get(&quot;filesystem&quot;):
+            with open(value) as f:        # a path: the file holds the buffer
+                value = json.load(f)      # (not handled here: .zst and .gz)
+        values[name] = value              # otherwise: the pin's value
+    return code.strip().format(**values)
+
+register_language_handler(&quot;template&quot;, template_handler)
+
+tf = Transformer(&quot;template&quot;, direct=True)
+tf.code = &quot;Hello, {who}!&quot;
+tf.celltypes.who = &quot;plain&quot;
+tf.pins.who = &quot;world&quot;
+tf()                                      # -&gt; &quot;Hello, world!&quot;
+</code></pre>
+<p><code>register_language_handler(name, handler, *, metavars=None)</code>:</p>
+<ul>
+<li><strong><code>handler</code> is one self-contained Python function.</strong> It is defined with
+  <code>def</code>. Its imports are inside its body. It has no closure and uses no global
+  of the module that defines it. This is the discipline of Python transformer
+  code, and for the same reason: the function travels as source text.
+  Decorators are not part of that source.</li>
+<li><strong>Its parameters choose what it receives.</strong> Each parameter name must be one
+  of the names under <em>The arguments</em>, and the handler is called with exactly
+  those, by keyword. A parameter of another name, a positional-only parameter,
+  <code>*args</code> and <code>**kwargs</code> are refused at registration.</li>
+<li><strong><code>metavars</code> maps each metavar that the handler understands to its
+  default.</strong> These names are the ones that <code>tf.metavars</code> accepts. A handler
+  that has both a CLI and an in-memory backend declares <code>BACKEND</code> among them,
+  with the default <code>"cli"</code> or <code>"mem"</code>. The builder refuses any other value of a
+  metavar of that name when it is assigned (<a href="language-backends.html">Language
+  backends</a>, <em>Selecting a backend</em>).</li>
+<li><strong><code>name</code> must not be a native or a compiled language.</strong></li>
+<li><strong>Registering a name again replaces its handler.</strong> Transformations that are
+  built afterwards carry the new one.</li>
+<li>A registration that is refused raises. The exception class is not specified.</li>
+</ul>
+<h3 id="the-arguments">The arguments</h3>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>code</code></td>
+<td>the source text of the transformation</td>
+</tr>
+<tr>
+<td><code>pins</code></td>
+<td>a dict: pin name to the pin's value, or to the path of a file (<em>Pins on file</em>)</td>
+</tr>
+<tr>
+<td><code>filesystem</code></td>
+<td>a dict: pin name to an entry, for the pins that may arrive as a file. <code>entry["filesystem"]</code> is true when <code>pins[name]</code> is a path. <code>entry["celltype"]</code> is the pin's celltype</td>
+</tr>
+<tr>
+<td><code>output_name</code></td>
+<td>the name of the result. For a Transformer it is <code>result</code></td>
+</tr>
+<tr>
+<td><code>output_celltype</code></td>
+<td>the result celltype</td>
+</tr>
+<tr>
+<td><code>metavars</code></td>
+<td>a dict of every declared metavar: the transformer's value, or else the registered default</td>
+</tr>
+<tr>
+<td><code>environment</code></td>
+<td>the transformer's environment, as a dict, with keys such as <code>conda_environment</code> and <code>docker</code>. It is empty when none is set. A handler honours it through one of the two public functions (<em>Honouring the environment</em>)</td>
+</tr>
+<tr>
+<td><code>process_lock</code></td>
+<td>a bool: whether this run took the process lock</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li><strong><code>pins</code> holds the input pins only.</strong> The code is not in it.</li>
+<li><strong>The handler runs in a namespace that holds its arguments and nothing
+  else.</strong> The pins are not visible as global variables.</li>
+<li><strong>The return value is the result.</strong> Seamless serializes it under the result
+  celltype, as it does for a Python transformer.</li>
+<li><strong>An exception that the handler raises is the failure of the
+  transformation.</strong></li>
+</ul>
+<h3 id="honouring-the-environment">Honouring the environment</h3>
+<p>A handler honours its <code>environment</code> argument, or the transformation does not
+honour it. Seamless offers two public functions, in
+<code>seamless_transformer.languages</code>
+(<a href="language-backends.html">Language backends</a>, <em>The two public functions</em>):</p>
+<table>
+<thead>
+<tr>
+<th>The handler runs the code</th>
+<th>It calls</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>in the Python process that runs the transformation, as an embedded interpreter</td>
+<td><code>check_in_memory_environment(environment, language)</code> before it runs the code</td>
+</tr>
+<tr>
+<td>as a process of its own</td>
+<td><code>execute_cli(command, pins_, PINS, FILESYSTEM, OUTPUTPIN, environment)</code> in place of starting the process itself</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li><strong><code>check_in_memory_environment</code> raises</strong> for a Docker image, and for a conda
+  environment that is not the one of the process. It also looks the names of
+  <code>set_which</code> up on the process's <code>PATH</code>.</li>
+<li><strong><code>execute_cli</code> wraps</strong> a conda environment and a Docker image, looks
+  <code>set_which</code> up inside the environment, and is cancelled and torn down with
+  the transformation. A handler that starts a process itself gets none of it.</li>
+<li><strong>A handler returns a Python value.</strong> For a deep result that is a dict whose
+  members are values or <code>seamless.Checksum</code> objects. Nothing else is asked of
+  it.</li>
+<li><strong>Both functions can be called outside a running transformation</strong>, for
+  example when a test calls the handler directly.</li>
+<li><strong>Nothing enforces it.</strong> A handler that calls neither function ignores the
+  environment, and gets no <code>which</code> check.</li>
+</ul>
+<h3 id="the-handler-travels-with-the-transformation">The handler travels with the transformation</h3>
+<ul>
+<li><strong>A build puts the handler's source into the Transformation.</strong> It is carried
+  in <code>__handler__</code>, outside the checksum.</li>
+<li><strong>The process that runs the transformation needs no registration.</strong> A
+  handler that is registered only in the script that builds the transformation
+  also runs in a worker process, on a jobserver and on a Dask worker. What the
+  handler imports, and the tools it starts, must exist there.</li>
+<li><strong>A transformation without <code>__handler__</code> uses the registry of the process
+  that runs it.</strong> This happens when a transformation is run from its checksum
+  alone: by a fingertip, or by <code>seamless-run-transformation</code> without a dunder
+  file. When that process has no handler for the language, the transformation
+  fails.</li>
+<li><strong>Building needs the registration.</strong> A builder for a registered language can
+  be constructed, and a Transformation can be built from it, only in a process
+  where that handler is registered. The two built-in handlers always are.</li>
+</ul>
+<h3 id="threads-and-run_in_interpreter_thread">Threads, and <code>run_in_interpreter_thread</code></h3>
+<ul>
+<li><strong>The process lock gives exclusion, not a fixed thread.</strong> A handler never
+  runs on the main thread of its process, and successive runs in one process
+  may run on different threads. In <code>process</code> mode the thread that ran one handler
+  may no longer exist when the next one runs.</li>
+<li><strong><code>run_in_interpreter_thread(name, func, /, *args, **kwargs)</code> gives a fixed
+  thread.</strong> It runs <code>func(*args, **kwargs)</code> on one thread per process and per
+  <code>name</code>, waits, and returns the result. An exception in <code>func</code> is raised in
+  the caller.</li>
+<li>The thread is created at the first call and lives until the process ends.</li>
+<li>A call from that thread itself runs <code>func</code> at once, on that thread.</li>
+<li>It takes no lock. Exclusion comes from the process lock.</li>
+<li><strong>The Julia in-memory backend runs Julia on its interpreter thread.</strong> Every
+  call into Julia goes through <code>run_in_interpreter_thread("juliacall", ...)</code>,
+  and so does Julia's exit hook when the process ends. Julia is never called
+  from another thread.</li>
+<li><strong>The R in-memory backend does not use it.</strong> Do not rely on which thread
+  runs R code.</li>
+<li><strong>Output that <code>func</code> prints on the interpreter thread is not in the
+  transformation's log.</strong> Capture belongs to the thread that runs the handler
+  (<a href="transformation-logs.html">Transformation logs</a>, <em>What is captured</em>). Return
+  the text, and write it from the handler.</li>
+<li><strong>A handler may hold Python's GIL for a long time.</strong> A worker pool checks
+  each of its processes about once a second. A worker that is running a
+  transformation is not restarted when it misses that check. It is restarted
+  only when its process exits or its connection closes. The Julia in-memory
+  backend (<code>juliacall</code>) runs the Julia code with the GIL released.</li>
+</ul>
+<h2 id="logs-failures-and-cancellation">Logs, failures and cancellation</h2>
+<ul>
+<li><strong>Output that the code prints is in the transformation's log, under both
+  backends</strong> (<a href="transformation-logs.html">Transformation logs</a>).</li>
+<li>CLI backend: stdout and stderr are two streams, relayed while the code
+    runs, as for a bash transformation. On <code>remote: daskserver</code> they can be
+    streamed (<a href="streaming.html">Streaming</a>).</li>
+<li>In-memory backend: the output may arrive only when the code has finished.</li>
+<li><strong>A failure of the code is a failure of the transformation</strong>, and failures
+  are not cached. The common ones: the code raises an error; block code never
+  assigns <code>result</code>; a tool or a package is missing; a value cannot be carried
+  by the backend; an in-memory backend runs without the process lock, or with
+  an environment that it cannot honour.</li>
+<li><strong>The failure text depends on the backend.</strong></li>
+<li>CLI backend: the <em>Bash transformer exception</em> report
+    (<a href="transformation-logs.html">Transformation logs</a>, <em>The failure text</em>). Its
+    command is the one that starts the interpreter, not the user's code. The
+    language's own error message is in the standard error trailer.</li>
+<li>In-memory backend: a Python traceback that carries the language's error
+    message.</li>
+<li><strong>Cancellation</strong> (<a href="cancellation.html">Cancellation</a>). A run under a CLI
+  backend is cancelled as a bash transformation is. Under an in-memory
+  backend, a cancel in a worker pool terminates the worker process, and its
+  interpreter with it. In <code>process</code> mode a cancel does not interrupt code that
+  is running in the embedded interpreter, as it does not interrupt Python
+  code.</li>
+</ul>
+<h2 id="environments">Environments</h2>
+<p>A transformer's environment (<a href="environments.html">Environments</a>) is honoured, or
+the transformation fails. It is never ignored. <a href="language-backends.html">Language
+backends</a>, <em>Environments</em>, has the rule. For R and
+Julia:</p>
+<table>
+<thead>
+<tr>
+<th>The transformer has</th>
+<th>CLI backend</th>
+<th>In-memory backend</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>a conda environment</td>
+<td>activates it, and starts the interpreter in it</td>
+<td>runs only when its process is already in exactly that environment. Otherwise the transformation fails</td>
+</tr>
+<tr>
+<td>a Docker image</td>
+<td>starts the interpreter in a container made from the image</td>
+<td>the transformation fails</td>
+</tr>
+<tr>
+<td>both</td>
+<td>refused at dispatch</td>
+<td>refused at dispatch</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li><strong>A CLI backend runs in the transformer's conda environment</strong>, when
+  <code>tf.environment.set_conda_env(...)</code> names one. The environment is activated
+  before the interpreter starts, as for a bash transformation. This is how a
+  transformer chooses its R or Julia installation.</li>
+<li><strong>A CLI backend runs in a container</strong>, when <code>tf.environment.set_docker(...)</code>
+  names an image. The image must hold the interpreter and the packages of the
+  backend (<em>What a backend needs</em>). The host does not need R or Julia. The
+  runtime, the image pull policy and the other settings are those of bash
+  transformations (<a href="environments.html">Environments</a>, <em>The runtime is chosen
+  where the job runs</em>).</li>
+<li><strong>An in-memory backend cannot enter an environment.</strong> Its interpreter is the
+  one embedded in the process that runs the transformation. A conda
+  environment is therefore a requirement on that process: the process must
+  already be running in exactly the environment that the transformer names. A
+  specification that contains <code>/</code> is a path, compared with the process's
+  <code>CONDA_PREFIX</code>. Any other specification is a name, compared with its
+  <code>CONDA_DEFAULT_ENV</code>. The calling process must be in it in <code>process</code> mode,
+  and the worker processes otherwise. When it is not, the transformation
+  fails.</li>
+<li><strong>An in-memory backend fails for a Docker image</strong>, always. The message names
+  <code>BACKEND="cli"</code> as the alternative.</li>
+<li><strong>The checks run when the transformation runs.</strong> A result that is already
+  recorded is returned without them, and building never fails for an
+  environment.</li>
+<li><strong>The Julia project of a CLI job</strong> is the tracked Seamless Julia project.
+  Seamless stages its <code>Project.toml</code> and <code>Manifest.toml</code> in the job directory
+  and starts Julia with <code>--project=.</code>. <code>JULIA_PROJECT</code> does not select another
+  project. The job uses a writable depot in its own directory first, followed
+  by the depots named by <code>JULIA_DEPOT_PATH</code>, the conda installation's packaged
+  depot when present, and the user's depot. In a container the image must name
+  its packaged depot with <code>JULIA_DEPOT_PATH</code>, readable by the host user who
+  runs the job. Its precompiled packages must be compatible with the executing
+  CPU. For <code>juliacall</code> the project is the one that <code>juliacall</code> uses in the
+  process.</li>
+<li><strong>The environment is not part of identity</strong>, here as everywhere.</li>
+<li><strong><code>tf.environment.set_which([...])</code> lists binaries that must exist.</strong> They
+  are looked up where the code runs. For a CLI backend that is inside the
+  environment, after it is entered: a binary that exists only in the
+  environment satisfies the check, and one that exists only on the host does
+  not. For an in-memory backend it is the <code>PATH</code> of the process that runs the
+  transformation.</li>
+</ul>
+<h2 id="current-limitations">Current limitations</h2>
+<ul>
+<li><strong>R and Julia code cannot resolve a checksum.</strong> A <code>deepcell</code> pin serves to
+  select and pass on members.</li>
+<li><strong>A <code>folder</code> pin holds every member in memory at once</strong>, under both
+  backends.</li>
+<li><strong>The CLI backends cannot take a Seamless-mixed pin.</strong> The R CLI backend
+  also refuses <code>float32</code> arrays and arrays with more than two dimensions
+  (<em>Array rules</em>).</li>
+<li><strong>Isolations are never dropped.</strong> An embedded interpreter keeps every
+  <code>transform()</code> isolation it has built, and Julia cannot unload a module. A
+  worker process that lives long and sees many different <code>transform()</code> codes
+  grows.</li>
+<li><strong>A failure under a CLI backend is titled <em>Bash transformer exception</em></strong>,
+  although the code is R or Julia.</li>
+<li><strong>The execution record reports the language kind of a handler-language
+  transformation as <code>python</code></strong> (<a href="execution-records.html">Execution records</a>).</li>
+<li><strong>A user-registered language cannot be built where it is not registered</strong>
+  (<em>The handler travels with the transformation</em>). A process that loads a
+  workflow graph with a node of that language must register the handler
+  first.</li>
+<li><strong>Writing a job directory instead of running it</strong> is for bash
+  transformations only.</li>
+</ul>
+<h2 id="non-goals">Non-goals</h2>
+<ul>
+<li>R or Julia through <code>seamless-run</code>, <code>direct</code> or <code>delayed</code> (<em>Faces</em>).</li>
+<li>Reading pin declarations from an R or a Julia signature, and optional pins.</li>
+<li>Installing R, Julia, their packages, <code>ryp</code> or <code>juliacall</code>.</li>
+<li>Compiled code. A language that compiles to a C-ABI <code>transform()</code> is a
+  compiled language (<a href="compiled-transformers.html">Compiled transformers</a>).</li>
+</ul>
+<h2 id="code-locations">Code locations</h2>
+<table>
+<thead>
+<tr>
+<th>Concern</th>
+<th>Module / symbol</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>The handler API and the registry</td>
+<td><code>seamless_transformer.languages</code> (<code>register_language_handler</code>, <code>get_language_handler</code>, <code>is_handler_language</code>, <code>available_languages</code>, <code>run_in_interpreter_thread</code>)</td>
+</tr>
+<tr>
+<td>The two functions that honour an environment</td>
+<td><code>seamless_transformer.languages</code> (<code>check_in_memory_environment</code>, <code>execute_cli</code>)</td>
+</tr>
+<tr>
+<td>The R and the Julia handler</td>
+<td><code>seamless_transformer.languages.handlers</code> (<code>r</code>, <code>julia</code>)</td>
+</tr>
+<tr>
+<td>Builders</td>
+<td><code>seamless_transformer.transformer_class</code> (<code>HandlerTransformer</code>, <code>DirectHandlerTransformer</code>); they are not public constructors</td>
+</tr>
+<tr>
+<td><code>__handler__</code> and the <code>__format__</code> entries</td>
+<td><code>seamless_transformer.pretransformation.direct_transformer_to_pretransformation</code></td>
+</tr>
+<tr>
+<td>Dispatch to the handler</td>
+<td><code>seamless_transformer.run.run_transformation_dict</code></td>
+</tr>
+<tr>
+<td>Bound builders</td>
+<td><code>seamless_workflow.context.Context._transformer_handle</code></td>
+</tr>
+</tbody>
+</table>
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="seamless-signature-schema.html" class="btn btn-neutral float-left" title="seamless-signature Schema"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="language-backends.html" class="btn btn-neutral float-right" title="Language Backends">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+    
+      <span><a href="seamless-signature-schema.html" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="language-backends.html" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script src="../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "..";</script>
+    <script src="../js/theme_extra.js"></script>
+    <script src="../js/theme.js"></script>
+      <script src="../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>

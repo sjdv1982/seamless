@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <link rel="shortcut icon" href="../img/favicon.ico" />
+    <title>Transformation Logs - Seamless — Agent Documentation</title>
+    <link rel="stylesheet" href="../css/theme.css" />
+    <link rel="stylesheet" href="../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "Transformation Logs";
+        var mkdocs_page_input_path = "contracts/transformation-logs.md";
+        var mkdocs_page_url = null;
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href="../index.html" class="icon icon-home"> Seamless — Agent Documentation
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../index.html">Home</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../overview.html">Agent Docs Overview</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../repos/index.html">Workspace Repos</a>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Contracts</span></p>
+              <ul class="current">
+                  <li class="toctree-l1"><a class="reference internal" href="identity-and-caching.html">Identity and Caching</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="celltypes-and-conversion.html">Celltypes, Null, and Conversion</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="hashtype.html">HashType</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="deep-celltypes.html">Deep Celltypes</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="expressions.html">Expressions</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="cells.html">Cells</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="pins.html">Pins</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="workflow-context.html">Workflow Context</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="node-state-lifecycle.html">Node State Lifecycle</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="attachments.html">Attachments</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="mounts.html">File Mounts</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="shares.html">HTTP Shares</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="widgets.html">Jupyter Widgets</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="streaming.html">Streaming</a>
+                  </li>
+                  <li class="toctree-l1 current"><a class="reference internal current" href="#">Transformation Logs</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#the-surface">The surface</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#what-logs-returns">What .logs returns</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#the-success-log">The success log</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#the-failure-text">The failure text</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#execution-time">Execution time</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#capture-per-backend">Capture, per backend</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#what-is-captured">What is captured</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#bash-transformations">Bash transformations</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#bash-transformations-with-an-environment">Bash transformations with an environment</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#compiled-transformers">Compiled transformers</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#nested-transformations">Nested transformations</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#bound-transformers">Bound Transformers</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#logs-and-streaming">Logs and streaming</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#non-goals">Non-goals</a>
+    </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="cancellation.html">Cancellation</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="direct-delayed-and-transformation.html">direct/delayed/Transformation</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="modules-and-closures.html">Modules and Closures</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="scratch-witness-audit.html">Scratch/Witness/Audit</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="seamless-run-and-argtyping.html">seamless-run/Argtyping</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="cache-storage-and-limits.html">Cache Storage and Limits</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="content-addressed-files-and-dirs.html">Content-addressed Files and Dirs</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="execution-backends.html">Execution Backends</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="environments.html">Environments</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="execution-records.html">Execution Records</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="service-management.html">Service Management</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="compression.html">Compression</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="compiled-transformers.html">Compiled Transformers</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="compiled-pins.html">Compiled Pins</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="seamless-signature-schema.html">seamless-signature Schema</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="handler-languages.html">Handler Languages</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="language-backends.html">Language Backends</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">API</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/python/seamless.html">seamless</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/python/seamless.transformer.html">seamless.transformer</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/python/seamless.buffer_class.html">seamless.buffer_class</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/python/seamless.checksum_class.html">seamless.checksum_class</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/python/seamless_config.select.html">seamless_config.select</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/python/seamless_config.tools.html">seamless_config.tools</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/python/seamless_transformer.transformation_class.html">seamless_transformer.transformation_class</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/python/seamless_transformer.transformer_class.html">seamless_transformer.transformer_class</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">CLI</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/cli/seamless-run.html">seamless-run</a>
+                  </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Seamless — Agent Documentation</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../index.html" class="icon icon-home" aria-label="Docs"></a></li>
+          <li class="breadcrumb-item">Contracts</li>
+      <li class="breadcrumb-item active">Transformation Logs</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h1 id="transformation-logs-contract">Transformation logs (Contract)</h1>
+<p><strong>A transformation's log is the standard output and standard error captured from one successful execution, followed by its execution time.</strong> <code>Transformation.logs</code> returns it, and so does <code>ctx.tf.logs</code> on a bound Transformer. After a failure the same attribute returns the failure text.</p>
+<p>A log is a diagnostic. The process that ran or submitted the transformation keeps it in memory. It is not part of the transformation's identity, it is not a result, and it is never written to the database or to the hashserver.</p>
+<p>This page owns the <code>.logs</code> surface, the layout of a log, and which output is captured on each backend. Other pages own the rest:</p>
+<ul>
+<li>live output while a transformation runs: <code>contracts/streaming.md</code>;</li>
+<li>how a failure is recorded and delivered: <code>contracts/direct-delayed-and-transformation.md</code>, and <code>contracts/cells.md</code>, <em>Failures</em>;</li>
+<li>the durable per-transformation record, which holds the same execution time: <code>contracts/execution-records.md</code>.</li>
+</ul>
+<h2 id="the-surface">The surface</h2>
+<pre><code class="language-python">from seamless.transformer import delayed
+
+@delayed
+def add(a, b):
+    print(&quot;adding&quot;, a, b)
+    return a + b
+
+t = add(1, 2)
+t.logs            # None: nothing has run
+t.compute()
+print(t.logs)
+</code></pre>
+<pre><code class="language-text">*************************************************
+* Standard output
+*************************************************
+adding 1 2
+
+*************************************************
+Execution time: 0.1 seconds
+*************************************************
+</code></pre>
+<ul>
+<li><strong><code>Transformation.logs</code> is a read-only property that returns a <code>str</code> or <code>None</code>.</strong></li>
+<li><strong>Reading it is passive.</strong> It never constructs the transformation, never executes it and never waits. It reads this process's memory only.</li>
+<li><strong>A bound Transformer has <code>ctx.tf.logs</code></strong>, with the same return type (<em>Bound Transformers</em>). On a standalone Transformer, reading <code>.logs</code> raises <code>AttributeError</code>, as <code>.exception</code> does (<code>contracts/transformers.md</code>, <em>Live-node members</em>). The log is on the Transformation that <code>build()</code> returns.</li>
+<li><strong>There is no separate <code>.stdout</code>, <code>.stderr</code> or <code>.execution_metadata</code>.</strong> The log is one string. Execution records stay "not a query target" (<code>contracts/execution-records.md</code>).</li>
+</ul>
+<h2 id="what-logs-returns">What <code>.logs</code> returns</h2>
+<p>The answer is decided in this order:</p>
+<ol>
+<li><strong>The handle failed:</strong> the same string as <code>.exception</code>.</li>
+<li><strong>The handle was canceled:</strong> <code>None</code>, whatever <code>.exception</code> holds.</li>
+<li><strong>Otherwise:</strong> the log that this process holds for the handle's <code>tf_checksum</code>, or <code>None</code> when it holds none.</li>
+</ol>
+<p>Step 3 reads a store. These rules govern it:</p>
+<ul>
+<li><strong>There is one store per process, keyed by <code>tf_checksum</code>.</strong> An entry holds the two captured streams and the execution time of one successful run. The log belongs to the <code>tf_checksum</code>, not to the handle. Every handle in the process with that <code>tf_checksum</code> reads the same entry. That includes a second handle built later, and a handle that joined a run already in flight.</li>
+<li><strong>A fresh execution replaces the entry.</strong> The entry is cleared when the execution is dispatched and set when it succeeds. In between, <code>.logs</code> is <code>None</code>.</li>
+<li><strong>Only a successful execution stores an entry.</strong> A failure is kept on the handle, as <code>.exception</code> is, and never in the store. A failed or canceled execution leaves its <code>tf_checksum</code> without a log, because the entry was cleared at dispatch.</li>
+<li><strong>A result that was not executed has no log.</strong> When the result comes from a cache or from the database, nothing ran. <code>.logs</code> is then <code>None</code>, unless an earlier run of the same <code>tf_checksum</code> left an entry in this process.</li>
+<li><strong>The store is bounded.</strong> It evicts its least recently used entries, and an evicted entry reads as <code>None</code>. The size of the bound is not part of the contract.</li>
+<li><strong>Nothing persists.</strong> A new process starts with an empty store. No database query, command-line tool or other process can recover a log.</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>Situation</th>
+<th><code>.logs</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>The handle failed</td>
+<td>the same string as <code>.exception</code></td>
+</tr>
+<tr>
+<td>The handle was canceled</td>
+<td><code>None</code></td>
+</tr>
+<tr>
+<td>A fresh execution of the <code>tf_checksum</code> is in flight</td>
+<td><code>None</code></td>
+</tr>
+<tr>
+<td>The process holds an entry: the <code>tf_checksum</code> executed successfully in this process, or on a remote backend that this process submitted it to, and the entry has not been evicted</td>
+<td>the success log</td>
+</tr>
+<tr>
+<td>The process holds no entry: nothing has run yet, the result came from a cache or the database, or the entry was evicted</td>
+<td><code>None</code></td>
+</tr>
+</tbody>
+</table>
+<p>The fourth row does not ask which handle ran. A handle that has executed nothing itself reads the log once its <code>tf_checksum</code> is known and the store has an entry for it. A handle whose <code>tf_checksum</code> is not known yet reports <code>None</code>, because reading <code>.logs</code> never constructs.</p>
+<p><strong><code>None</code> means "no log held", not "no output".</strong> A run that wrote nothing still has a log, which is the Execution time block alone (<em>The success log</em>).</p>
+<h2 id="the-success-log">The success log</h2>
+<pre><code class="language-text">*************************************************
+* Standard output
+*************************************************
+{stdout}
+*************************************************
+* Standard error
+*************************************************
+{stderr}
+*************************************************
+Execution time: {seconds:.1f} seconds
+*************************************************
+</code></pre>
+<ul>
+<li><strong>A stream's section appears only when that stream is non-empty.</strong> With both streams empty, the log is the Execution time block alone: the last three lines.</li>
+<li><strong>The separator is a line of 49 asterisks.</strong></li>
+<li><strong>A stream's text is inserted as captured, followed by one newline.</strong> Text that ends in a newline, as <code>print</code> output does, shows as a blank line before the next separator.</li>
+<li><strong>The log has no trailing newline.</strong></li>
+<li><strong>A long stream is truncated.</strong> A stream longer than 10,000 characters is cut to its first 4,960 characters, then <code>"\n...(skipped N characters)...\n"</code>, then its last 5,000 characters. <code>N</code> is the number of characters left out. Each stream is truncated on its own.</li>
+<li><strong>Truncation happens where the output is captured.</strong> A remote run therefore returns at most about 20,000 characters of log.</li>
+<li><strong>There is no result section.</strong> The result is read from the handle (<code>.result_checksum</code>, <code>.value</code>, <code>.run()</code>). The log never resolves the result buffer.</li>
+</ul>
+<h2 id="the-failure-text">The failure text</h2>
+<p>On a failed handle, <code>.logs</code> and <code>.exception</code> are the same string. That string is:</p>
+<ol>
+<li>the failure message. For Python code this is the pruned traceback. For bash it is the <em>Bash transformer exception</em> report, with the return code and the command. A bash transformation with an environment adds to this (<em>Bash transformations with an environment</em>);</li>
+<li>
+<p>a <code>* Standard output</code> trailer and a <code>* Standard error</code> trailer, each between separator lines, and each present only when that stream is non-empty.</p>
+</li>
+<li>
+<p><strong>The trailers are not truncated.</strong> They carry the full captured text of each stream.</p>
+</li>
+<li><strong>There is no execution-time line.</strong> Execution time is reported for successful runs only.</li>
+<li><strong>The text reads the same on every backend</strong>, <code>process</code> included.</li>
+<li>A failure that happens before the code runs, such as an input that cannot be resolved, has no captured output and so no trailers.</li>
+</ol>
+<h2 id="execution-time">Execution time</h2>
+<ul>
+<li><strong>The execution time is the dispatcher's measurement.</strong> It is the same number as <code>wall_time_seconds</code> in the transformation's execution record (<code>contracts/execution-records.md</code>), printed with one decimal.</li>
+<li><strong>The dispatcher is the process that hands the run to its executor:</strong> the calling process for <code>process</code> and <code>spawn</code>, the jobserver for <code>remote: jobserver</code>, and the Dask worker for <code>remote: daskserver</code>.</li>
+<li><strong>It includes queueing, inter-process transfer and input resolution</strong>, not only the time spent in the transformation's code. It is not a benchmark of the code. It is also not comparable to the execution time that legacy Seamless (0.x) reported, which was measured inside the executing process.</li>
+</ul>
+<h2 id="capture-per-backend">Capture, per backend</h2>
+<table>
+<thead>
+<tr>
+<th>Backend</th>
+<th>Streams in the success log</th>
+<th>Live output while the run is in flight</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>process</code></td>
+<td>captured by a tee in the caller's process</td>
+<td>on the caller's stdout and stderr</td>
+</tr>
+<tr>
+<td><code>spawn</code></td>
+<td>captured in the worker child</td>
+<td>none</td>
+</tr>
+<tr>
+<td><code>remote: jobserver</code></td>
+<td>captured in the worker child, returned in the jobserver's response</td>
+<td>none</td>
+</tr>
+<tr>
+<td><code>remote: daskserver</code></td>
+<td>captured in the worker child, returned to the client with the result</td>
+<td>only with <code>streaming</code> (<code>contracts/streaming.md</code>)</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li><strong>Every backend returns the log of a successful run</strong>, the remote ones included.</li>
+<li><strong><code>process</code> tees.</strong> The code runs in the caller's process. Its output still goes live to the caller's streams, and is also retained for the log.</li>
+<li><strong>A daskserver worker that answers from the database cache returns no log.</strong> That is a cache hit, and <code>.logs</code> is <code>None</code>.</li>
+<li><strong>A jobserver that returns no log with its result still yields one: the Execution time block alone.</strong> Against such a jobserver, a log without stream sections does not show that the run was silent.</li>
+</ul>
+<p>Backend semantics are <code>contracts/execution-backends.md</code>.</p>
+<h2 id="what-is-captured">What is captured</h2>
+<p><strong>Capture works on Python's <code>sys.stdout</code> and <code>sys.stderr</code>.</strong> Bash commands, the jobs of every other CLI backend (including a Python transformation under <code>BACKEND="cli"</code>) and compiled transformers get rules of their own, below.</p>
+<p><strong>Output is attributed to the transformation whose code wrote it.</strong></p>
+<p>In a worker child (<code>spawn</code>, <code>remote: jobserver</code>, <code>remote: daskserver</code>):</p>
+<ul>
+<li><strong>A child runs several requests at once, each on its own thread, and each write goes to the request that owns the writing thread.</strong> Overlapping requests in one child never share output and never lose it to each other.</li>
+<li><strong>A thread that transformation code starts inherits the route of the thread that started it.</strong> Its output is in the log.</li>
+<li><strong>A write from a thread that outlives its request is not captured.</strong> It goes to the child's own streams.</li>
+<li><strong>Limit: code that replaces <code>sys.stdout</code> or <code>sys.stderr</code> itself displaces the routing for the whole child.</strong> <code>contextlib.redirect_stdout</code> is the common case. While the replacement is active, output from every other request running in that child goes to the replacement and is missing from those requests' logs.</li>
+</ul>
+<p>In <code>process</code> mode:</p>
+<ul>
+<li><strong><code>sys.stdout</code> and <code>sys.stderr</code> are routing objects while at least one in-process transformation runs.</strong> Once none runs, they are the caller's original objects again.</li>
+<li><strong>Only the transformation's own thread is retained.</strong> Output from the caller's other threads passes through unchanged.</li>
+<li><strong>Output from threads that transformation code starts is live only.</strong> It reaches the caller's streams and is not in the log.</li>
+</ul>
+<p>Not captured on any backend: output that a Python transformation sends straight to file descriptors 1 and 2, bypassing <code>sys.stdout</code> and <code>sys.stderr</code>. Examples are a subprocess that inherits the descriptors and a C extension that calls <code>printf</code>.</p>
+<h3 id="bash-transformations">Bash transformations</h3>
+<p><strong>What follows holds for every CLI backend</strong>, not for bash only: the CLI backends of R, Julia and Python run their interpreter as a job of the same kind, so the output of the code is captured as the output of a bash script is (<code>contracts/language-backends.md</code>). The failure message of such a job is the <em>Bash transformer exception</em> report, whatever the language. Its command is the interpreter's.</p>
+<ul>
+<li><strong>A bash command's stdout and stderr are two separate streams.</strong> Stdout goes to the Standard output section and stderr to the Standard error section.</li>
+<li><strong>Both are read together while the command runs</strong>, and relayed line by line. A command that writes a large amount to stderr does not stall.</li>
+<li><strong>The log does not record how the two streams interleaved.</strong></li>
+<li><strong>Stderr is retained on success as well as on failure.</strong></li>
+</ul>
+<h3 id="bash-transformations-with-an-environment">Bash transformations with an environment</h3>
+<p>A bash transformation can run in a conda environment or in a container (<code>contracts/environments.md</code>), and so can every other CLI job. The rules above hold unchanged:</p>
+<ul>
+<li><strong>The script's stdout and stderr are captured as two streams and relayed line by line while it runs</strong>, under <code>conda run</code> and under docker, podman and apptainer alike.</li>
+<li><strong>The streams also hold what the launcher itself printed.</strong> After a failing script, <code>conda run</code> adds one line of its own to stderr. A container runtime that cannot start the container reports that on stderr.</li>
+</ul>
+<p>The failure message depends on how far the job came:</p>
+<table>
+<thead>
+<tr>
+<th>What happened</th>
+<th>The failure message</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>The environment was not entered: the conda environment does not exist, the image is absent, or the image has no <code>bash</code>. The script did not start</td>
+<td>names the environment (the conda environment, or the runtime and the image), the exit code and the command that was run. For docker and podman a hint from the exit code is added</td>
+</tr>
+<tr>
+<td>A required binary is missing where the script runs</td>
+<td><code>Required environment binaries are unavailable: …</code>, followed by where they were looked for</td>
+</tr>
+<tr>
+<td>The script exited with a non-zero code</td>
+<td>the <em>Bash transformer exception</em> report, with one more line that names the environment. For a container, exit code 137 adds a hint that the job was killed, possibly for exceeding a memory limit</td>
+</tr>
+<tr>
+<td><code>RESULT</code> is missing or empty</td>
+<td>the <em>Bash transformer exception</em> report, as without an environment</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li><strong>The trailers follow the message in every row.</strong> For a job that did not enter its environment, they hold what the launcher printed, which is where the cause is.</li>
+<li><strong>A job that was refused before anything was launched has no trailers.</strong> Examples are an invalid image spec and a host with no working container runtime.</li>
+</ul>
+<p><code>contracts/environments.md</code>, <em>Failures</em>, owns the classes and their order.</p>
+<h3 id="compiled-transformers">Compiled transformers</h3>
+<ul>
+<li><strong>In a worker child, a compiled transformer's C-level output is captured.</strong> This is whatever the native code writes to file descriptors 1 and 2, such as C <code>printf</code> or Fortran <code>print</code>. It is captured around the call and added to the request's stdout and stderr.</li>
+<li><strong>A worker child runs one compiled call at a time.</strong> Redirecting file descriptors affects the whole process, so correct attribution requires it. Other compiled requests in that child wait.</li>
+<li><strong>In <code>process</code> mode a compiled call is not redirected.</strong> Its C-level output goes to the process's own stdout and stderr, and is not in the log.</li>
+</ul>
+<h2 id="nested-transformations">Nested transformations</h2>
+<p>Transformation code may itself build and run transformations.</p>
+<ul>
+<li><strong>A nested transformation has a log of its own</strong>, read as <code>.logs</code> on the nested handle by the code that launched it.</li>
+<li><strong>This holds wherever the nested transformation ran.</strong> If the worker child ran it itself, the child stored the log. If the child delegated it to its parent, the log comes back with the result, when the parent holds one.</li>
+<li><strong>The outer log holds the outer code's own output only.</strong> A nested transformation's output is not repeated in the log of the transformation that launched it.</li>
+<li><strong>A worker child has a store of its own.</strong> The log of a nested transformation that the child ran itself stays in that child. It is not returned to the process that submitted the outer transformation.</li>
+</ul>
+<h2 id="bound-transformers">Bound Transformers</h2>
+<pre><code class="language-python">ctx.tf = add
+ctx.tf.pins.a = 1
+ctx.tf.pins.b = 2
+ctx.tf.compute()
+ctx.tf.logs
+</code></pre>
+<ul>
+<li><strong>On a <code>failed</code> node, <code>ctx.tf.logs</code> returns <code>ctx.tf.exception</code>.</strong></li>
+<li><strong>Otherwise it returns the stored log of the node's current run</strong>, looked up by that run's <code>tf_checksum</code> under the rules in <em>What <code>.logs</code> returns</em>.</li>
+<li><strong>A node with no current run reports <code>None</code>.</strong></li>
+<li><strong>It is passive</strong>, like <code>.state</code> and <code>.exception</code>. It never waits and never demands the node.</li>
+<li><strong>It follows the node's current run.</strong> An input or code change gives the node a new transformation identity. <code>ctx.tf.logs</code> is then <code>None</code> until the new run succeeds, unless this process already holds a log for the new identity.</li>
+<li><strong>It reports the node's own failure only.</strong> A node that is <code>blocked</code> by a failed pin or a failed upstream has no exception of its own and no run, so it reports <code>None</code>. Read the failing pin or node instead (<code>contracts/pins.md</code>, <em>Pin failures</em>; <code>contracts/node-state-lifecycle.md</code>).</li>
+<li><strong>The Context adds no rule.</strong> A Transformation that the Context fires is logged like one submitted by hand. A node whose result came from a cache therefore follows the rule above: nothing executed, so there is no log.</li>
+<li><strong><code>ctx.tf.result.logs</code> is not the log.</strong> <code>ctx.tf.result</code> is a Cell, and attribute access on a Cell is a projection (<code>contracts/cells.md</code>, <em>Projections</em>). Cells and Pins have no log.</li>
+</ul>
+<h2 id="logs-and-streaming">Logs and streaming</h2>
+<p>Streaming and the log are independent. Streaming delivers output while a <code>remote: daskserver</code> run is in flight. The log holds the output afterwards.</p>
+<ul>
+<li><strong>A streamed run's output is also retained.</strong> After success it is in <code>.logs</code>, and after a failure it is in the trailers of <code>.exception</code>.</li>
+<li><strong>Progress bars differ.</strong> With streaming on, <code>tqdm</code> bars travel as progress events and are not written to the captured stderr, so they are absent from the log. With streaming off, a bar's terminal output is ordinary stderr text and is in the log.</li>
+<li><strong>Neither is produced by a cache hit.</strong></li>
+</ul>
+<p>See <code>contracts/streaming.md</code>.</p>
+<h2 id="non-goals">Non-goals</h2>
+<ul>
+<li><strong>Persistence.</strong> A log lives in one process's memory. It is not stored with the result, the execution record or the workflow graph.</li>
+<li><strong>A result section.</strong> The result is read from the handle.</li>
+<li><strong>Stream interleaving.</strong> Stdout and stderr are kept apart, and their relative order is not recorded.</li>
+<li><strong>Execution time on failure.</strong></li>
+<li><strong>Live output outside streaming.</strong> <code>spawn</code> and <code>remote: jobserver</code> show nothing while a run is in flight. Their output appears in <code>.logs</code> after success and in <code>.exception</code> after a failure.</li>
+<li><strong>Identity.</strong> A log never affects <code>tf_checksum</code>, cache identity or the result.</li>
+</ul>
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="streaming.html" class="btn btn-neutral float-left" title="Streaming"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="cancellation.html" class="btn btn-neutral float-right" title="Cancellation">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+    
+      <span><a href="streaming.html" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="cancellation.html" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script src="../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "..";</script>
+    <script src="../js/theme_extra.js"></script>
+    <script src="../js/theme.js"></script>
+      <script src="../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>

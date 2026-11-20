@@ -196,9 +196,9 @@ define_compiled_language(
 <pre><code class="language-bash">pip install seamless-transformer[compiled]
 </code></pre>
 <h2 id="end-to-end-example-adding-two-integers-in-c">End-to-end example: adding two integers in C</h2>
-<pre><code class="language-python">from seamless_transformer import DirectCompiledTransformer
+<pre><code class="language-python">from seamless_transformer import Transformer
 
-tf = DirectCompiledTransformer(&quot;c&quot;)
+tf = Transformer(&quot;c&quot;, compiled=True, direct=True)
 
 tf.schema = &quot;&quot;&quot;
 inputs:
@@ -260,9 +260,9 @@ define_compiled_language(
 <p>To add a language at runtime (e.g. for prototyping): call <code>define_compiled_language()</code> before constructing the transformer.</p>
 <h2 id="multi-language-linking">Multi-language linking</h2>
 <p><code>tf.objects</code> holds additional compiled objects that are linked alongside the main source. Each object can use a different language:</p>
-<pre><code class="language-python">from seamless_transformer import DirectCompiledTransformer, CompiledObject
+<pre><code class="language-python">from seamless_transformer import CompiledObject, Transformer
 
-tf = DirectCompiledTransformer(&quot;c&quot;)
+tf = Transformer(&quot;c&quot;, compiled=True, direct=True)
 tf.schema = ...
 tf.code = main_c_code
 
@@ -271,15 +271,21 @@ obj.code = fortran_helper_code
 tf.objects.append(obj)
 </code></pre>
 <h2 id="compiler-and-environment-setup">Compiler and environment setup</h2>
-<p>Use <code>tf.environment</code> to control the execution environment:</p>
-<pre><code class="language-python">tf.environment.set_conda_env(&quot;myenv&quot;)       # activate a named conda environment
-tf.environment.set_which([&quot;gcc&quot;, &quot;gfortran&quot;])  # assert binaries are on PATH
+<p>Compiled code runs inside the worker process. Use <code>tf.environment</code> to check
+that required compiler tools are on the worker's path:</p>
+<pre><code class="language-python">tf.environment.set_which([&quot;gcc&quot;, &quot;gfortran&quot;])  # assert binaries are on PATH
 </code></pre>
+<p>Compiled transformers cannot enter a conda environment or a container. Set up
+the compiler and libraries in the worker's own environment. <code>set_conda_env</code>
+is a requirement on the worker process: the transformation runs only when the
+worker is already in exactly that conda environment, and fails otherwise.
+<code>set_docker</code> makes the transformation fail when it runs. Neither is checked
+when the transformation is built.</p>
 <p>See the <a href="api/reference/seamless_transformer.transformer_class.html">Environment API reference</a> for all options.</p>
 <h2 id="delayed-vs-direct">delayed vs direct</h2>
 <ul>
-<li><code>DirectCompiledTransformer(language)</code> — executes immediately and returns the value (like <code>direct</code>)</li>
-<li><code>CompiledTransformer(language)</code> — returns a <code>Transformation</code> handle for deferred execution (like <code>delayed</code>)</li>
+<li><code>Transformer(language, compiled=True, direct=True)</code> — executes immediately and returns the value (like <code>direct</code>)</li>
+<li><code>Transformer(language, compiled=True)</code> — returns a <code>Transformation</code> handle for deferred execution (like <code>delayed</code>)</li>
 </ul>
 <p>Both support the same attributes: <code>schema</code>, <code>code</code>, <code>header</code>, <code>metavars</code>, <code>objects</code>, <code>compilation</code>, <code>environment</code>.</p>
               

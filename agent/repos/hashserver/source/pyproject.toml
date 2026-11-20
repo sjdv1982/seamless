@@ -4,13 +4,14 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "hashserver"
-version = "1.1.0"
+version = "1.1.1"
 description = "Simple FastAPI-based hash server"
 readme = "README.md"
 license = "MIT"
 authors = [{name = "Sjoerd de Vries"}]
 requires-python = ">=3.10"
-dependencies = [    
+dependencies = [
+    "aiofiles",
     "fastapi",
     "uvicorn[standard]",
     "typing-extensions",

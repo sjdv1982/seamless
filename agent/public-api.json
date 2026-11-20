@@ -45,6 +45,10 @@
       {
         "module": "seamless_transformer.languages",
         "path": "seamless-transformer/seamless_transformer/languages/__init__.py"
+      },
+      {
+        "module": "seamless_transformer.languages.interpreter_thread",
+        "path": "seamless-transformer/seamless_transformer/languages/interpreter_thread.py"
       }
     ]
   },

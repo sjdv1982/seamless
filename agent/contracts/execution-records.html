@@ -75,6 +75,14 @@
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="mounts.html">File Mounts</a>
                   </li>
+                  <li class="toctree-l1"><a class="reference internal" href="shares.html">HTTP Shares</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="widgets.html">Jupyter Widgets</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="streaming.html">Streaming</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="transformation-logs.html">Transformation Logs</a>
+                  </li>
                   <li class="toctree-l1"><a class="reference internal" href="cancellation.html">Cancellation</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="direct-delayed-and-transformation.html">direct/delayed/Transformation</a>
@@ -90,6 +98,8 @@
                   <li class="toctree-l1"><a class="reference internal" href="content-addressed-files-and-dirs.html">Content-addressed Files and Dirs</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="execution-backends.html">Execution Backends</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="environments.html">Environments</a>
                   </li>
                   <li class="toctree-l1 current"><a class="reference internal current" href="#">Execution Records</a>
     <ul class="current">
@@ -128,6 +138,10 @@
                   <li class="toctree-l1"><a class="reference internal" href="compiled-pins.html">Compiled Pins</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="seamless-signature-schema.html">seamless-signature Schema</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="handler-languages.html">Handler Languages</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="language-backends.html">Language Backends</a>
                   </li>
               </ul>
               <p class="caption"><span class="caption-text">API</span></p>
@@ -185,7 +199,7 @@
 <p>Records exist for three concrete reasons:</p>
 <ol>
 <li><strong>Cache lifecycle decisions.</strong> Resource cost (CPU time, memory peak) feeds eviction policy.</li>
-<li><strong>Fingertipping diagnosis.</strong> When fingertipping fails or a result migrates to <code>IrreproducibleTransformation</code>, the record is the breadcrumb back to the original execution context.</li>
+<li><strong>Fingertipping diagnosis.</strong> When fingertipping fails, or an automatic observation or manual quarantine records a divergent result, the original execution record is the breadcrumb back to the original execution context.</li>
 <li><strong>Trust under sharing.</strong> When <code>seamless.db</code> is shared, the record lets a recipient inspect <em>in what context was this result produced</em> without trusting the publisher unconditionally.</li>
 </ol>
 <p>Records are <strong>not consulted for cache hits</strong> in normal operation. They are evidence preserved across the moment of execution.</p>
@@ -194,7 +208,7 @@
 <p>Execution records are <strong>evidence about the envelope</strong>, not part of the identity. They exist to make the optimistic null hypothesis (that scientifically meaningful results are invariant under environment variation) falsifiable later. Concretely:</p>
 <ul>
 <li>A metadata conflict is <strong>not</strong> automatically a cache-identity conflict. If two parties have the same <code>tf_checksum</code> and same <code>result_checksum</code> but different metadata bodies, that is <strong>evidence disagreement about the execution envelope</strong> — informative for audit, but it does not invalidate the cached result.</li>
-<li>A <code>result_checksum</code> mismatch for the same <code>tf_checksum</code>, on the other hand, <em>is</em> a referential-transparency violation. That is what <code>IrreproducibleTransformation</code> is for; metadata travels with the result on migration.</li>
+<li>A <code>result_checksum</code> mismatch for the same <code>tf_checksum</code> <em>is</em> a referential-transparency violation. An <strong>automatic</strong> <code>IrreproducibleTransformation</code> observation records the divergent result without replacing the forward result or moving metadata. A <strong>manual</strong> quarantine moves the normal result and its metadata into the irreproducible table and removes the forward row.</li>
 <li>During fingertipping, the goal is to <em>rematerialize</em> a checksum, not to author a new canonical execution record. Fingertip retries do not displace the original record.</li>
 </ul>
 <p>Treat records as a forensic substrate for human or agent investigators when something has gone wrong; do not treat them as a query target or a synchronization point in the normal cache path.</p>
@@ -291,12 +305,14 @@
 <p>The five record-mode environment buckets themselves have no equivalent auto-refresh; they remain manual-only. (Note: this exception lives in the launcher's <em>own</em> conda-discovery cache, which is reusable outside Seamless — so "record mode" is never named there; the principle and the exception are described here, on the Seamless side.)</p>
 <h2 id="database-protocol">Database protocol</h2>
 <ul>
-<li><strong>Protocol version: 2.1</strong></li>
+<li><strong>Protocol version: 2.3</strong></li>
 <li><strong><code>PUT metadata</code></strong> (request type): atomically creates <code>Transformation</code>, <code>RevTransformation</code>, and <code>MetaData</code> when missing. Validates identity (<code>tf_checksum</code> matches request, <code>result_checksum</code> matches request, <code>schema_version</code> integer, <code>checksum_fields</code> format if present). Identical duplicate is idempotent success; differing duplicate or result mismatch is rejected.</li>
+<li><strong><code>PUT transformation</code></strong>: inserts the forward result and ensures one reverse row. Repeating the same result is idempotent; a different result answers HTTP 409 and leaves both stored rows unchanged.</li>
 <li><strong><code>GET metadata</code></strong>: returns the canonical record body for a <code>tf_checksum</code>.</li>
 <li><strong><code>GET irreproducible</code></strong>: returns all rows for a <code>tf_checksum</code> (optionally filtered by <code>result</code>), each carrying <code>checksum</code>, <code>result</code>, and <code>metadata</code>.</li>
-<li><strong><code>PUT irreproducible</code></strong>: moves a normal entry into <code>IrreproducibleTransformation</code>, preserving the metadata body unchanged.</li>
-<li>Once <code>IrreproducibleTransformation</code> rows exist for a <code>tf_checksum</code>, <code>PUT metadata</code> for that checksum is <strong>rejected</strong> to avoid silently migrating it back.</li>
+<li><strong><code>PUT irreproducible</code>, manual mode</strong> (<code>mode</code> omitted or <code>"manual"</code>): moves the normal entry into <code>IrreproducibleTransformation</code>, preserving its metadata body and removing the forward and reverse rows. This is the explicit quarantine operation.</li>
+<li><strong><code>PUT irreproducible</code>, automatic mode</strong> (<code>mode: "automatic"</code>): requires a forward row with a <em>different</em> result, else answers 404 for no forward row or 409 for the same result. It adds one row for the divergent <code>(tf_checksum, result_checksum)</code> pair, with empty metadata, and skips duplicate reports. The forward, reverse, metadata, and original execution record remain unchanged. Automatic rows carry no execution record of their own; an investigator runs the candidate separately.</li>
+<li><code>PUT metadata</code> still refuses a checksum once any irreproducible row exists, including an automatic observation. Runtime recording writes metadata only for a newly inserted forward result, before any automatic observation; an identical result writes nothing. The refusal therefore remains observable to an external caller but is not reached by the normal automatic-report path.</li>
 </ul>
 <p>Schema upgrade: a fresh database creates the upgraded <code>meta_data</code> table directly. An empty legacy two-column table is dropped and recreated. A non-empty legacy table fails loudly (it must be migrated explicitly).</p>
 <h2 id="remote-client-api">Remote client API</h2>
@@ -305,6 +321,7 @@
 <li><code>set_execution_record(tf_checksum, result_checksum, record)</code> — write a record.</li>
 <li><code>get_execution_record(tf_checksum)</code> — read a record.</li>
 <li><code>get_irreproducible_records(tf_checksum, result_checksum=None)</code> — read irreproducible rows.</li>
+<li><code>report_irreproducible_result(tf_checksum, result_checksum)</code> — report a divergent result in automatic mode; a 404 or 409 returns <code>False</code>.</li>
 </ul>
 <p>Worker-side payloads carrying the record back from jobserver/daskserver are <strong>structured</strong> (typed dicts); the remote client tolerates legacy string responses for backwards compatibility but new code should expect structured payloads.</p>
 <h2 id="what-records-do-not-do">What records do not do</h2>
@@ -329,7 +346,7 @@
             </div>
           </div><footer>
     <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
-        <a href="execution-backends.html" class="btn btn-neutral float-left" title="Execution Backends"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="environments.html" class="btn btn-neutral float-left" title="Environments"><span class="icon icon-circle-arrow-left"></span> Previous</a>
         <a href="service-management.html" class="btn btn-neutral float-right" title="Service Management">Next <span class="icon icon-circle-arrow-right"></span></a>
     </div>
 
@@ -353,7 +370,7 @@
   <span class="rst-current-version" data-toggle="rst-current-version">
     
     
-      <span><a href="execution-backends.html" style="color: #fcfcfc">&laquo; Previous</a></span>
+      <span><a href="environments.html" style="color: #fcfcfc">&laquo; Previous</a></span>
     
     
       <span><a href="service-management.html" style="color: #fcfcfc">Next &raquo;</a></span>

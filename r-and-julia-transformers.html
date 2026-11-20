@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <link rel="shortcut icon" href="img/favicon.ico" />
+    <title>R and Julia transformers - Seamless</title>
+    <link rel="stylesheet" href="css/theme.css" />
+    <link rel="stylesheet" href="css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "R and Julia transformers";
+        var mkdocs_page_input_path = "r-and-julia-transformers.md";
+        var mkdocs_page_url = null;
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href="index.html" class="icon icon-home"> Seamless
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="./search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="index.html">Home</a>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Getting Started</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="getting-started.html">Wrapping Python and bash</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="cluster.html">Setting up a local cluster</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="seamless-mode.html">Seamless mode</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">How-To Guides</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="caching.html">Caching, identity, and sharing</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="composition.html">Composition</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="parallelism.html">Local parallelism</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="remote.html">Remote execution</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="hpc.html">HPC specifics</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="remote-launch.html">Remote job launching</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="sharing.html">Sharing in depth</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="compiled-transformers.html">Compiled transformers</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="compression.html">Compressed data</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="service-management.html">Service management</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Reference API</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="api/index.html">Overview</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="api/seamless-core.html">seamless-core</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="api/seamless-transformer.html">seamless-transformer</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="api/seamless-config.html">seamless-config</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="api/seamless-remote.html">seamless-remote</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="api/seamless-dask.html">seamless-dask</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="api/seamless-jobserver.html">seamless-jobserver</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="api/seamless-database.html">seamless-database</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="api/remote-http-launcher.html">remote-http-launcher</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Python docstrings</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="api/reference/seamless.html">seamless</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="api/reference/seamless.checksum_class.html">Checksum</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="api/reference/seamless.buffer_class.html">Buffer</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="api/reference/seamless.transformer.html">seamless.transformer</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="api/reference/seamless_transformer.transformation_class.html">Transformation</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="api/reference/seamless_transformer.transformer_class.html">Transformer properties</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="api/reference/seamless_config.select.html">seamless.config.select</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="api/reference/seamless_config.tools.html">seamless.config.tools</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >CLI docstrings</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="api/reference/seamless-run.html">seamless-run</a>
+                </li>
+    </ul>
+                  </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">Seamless</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="index.html" class="icon icon-home" aria-label="Docs"></a></li>
+      <li class="breadcrumb-item active">R and Julia transformers</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h1 id="r-and-julia-transformers">R and Julia transformers</h1>
+<p>R and Julia transformers run through Seamless's CLI backend by default. Each
+run starts <code>Rscript</code> or <code>julia</code> in a job directory. Seamless does not install
+either runtime or the packages your code needs. Install them on the machine
+that runs the job, or in the conda environment or container selected by the
+transformer.</p>
+<p>This guide sets up a local CLI run from the <code>seamless1</code> conda environment.
+For the backend and environment rules, see the
+<a href="../agent/contracts/language-backends.md">Language backends contract</a> and the
+<a href="../agent/contracts/handler-languages.md">Handler languages contract</a>.</p>
+<h2 id="install-julia">Install Julia</h2>
+<p>The <a href="https://julialang.org/downloads/">official Julia installer</a> recommends
+Juliaup. On Linux or macOS, install Juliaup and Julia with:</p>
+<pre><code class="language-sh">curl -fsSL https://install.julialang.org | sh
+</code></pre>
+<p>This repository's tracked Julia manifest was generated with Julia <strong>1.12.6</strong>.
+Install that release and make it the default <code>julia</code> command for this setup:</p>
+<pre><code class="language-sh">juliaup add 1.12.6
+juliaup default 1.12.6
+julia --version
+</code></pre>
+<p>On Windows, use the install method linked from the official
+<a href="https://docs.julialang.org/en/v1/manual/installation/">Julia installation manual</a>.
+For an installation other than Juliaup, download an official Julia binary and
+make its <code>bin</code> directory available on <code>PATH</code>.</p>
+<h3 id="install-the-cli-projects-julia-packages">Install the CLI project's Julia packages</h3>
+<p>The Seamless CLI backend requires the tracked files
+<a href="../../julia/Project.toml"><code>Project.toml</code></a> and
+<a href="../../julia/Manifest.toml"><code>Manifest.toml</code></a>. The project declares <code>JSON</code> and
+<code>NPZ</code>; its manifest pins their current versions to <code>JSON</code> <strong>1.10.0</strong> and
+<code>NPZ</code> <strong>0.4.3</strong> (and records Julia 1.12.6).</p>
+<p>From the repository root, instantiate that project with the <code>seamless1</code>
+environment's Julia depot first:</p>
+<pre><code class="language-sh">conda run --live-stream -n seamless1 bash -c 'export JULIA_DEPOT_PATH=&quot;$CONDA_PREFIX/share/julia:$HOME/.julia&quot;; julia --startup-file=no --project=seamless/julia -e &quot;using Pkg; Pkg.instantiate(); using JSON, NPZ; println(\&quot;Julia CLI packages ready\&quot;)&quot;'
+</code></pre>
+<p><code>Project.toml</code> and <code>Manifest.toml</code> are tracked with Seamless, so Julia's
+package manager restores the locked package graph. <code>JULIA_DEPOT_PATH</code> chooses
+where Julia stores and finds package sources, artifacts and caches: the first
+depot above is under the active <code>seamless1</code> prefix, with the user depot as a
+fallback. Conda does not own or lock these Julia packages; Julia's <code>Pkg</code> and
+the tracked manifest do. This is an environment-scoped depot, not a Conda
+package-lock entry.</p>
+<p>For each CLI job, Seamless stages both project files into the job directory
+and invokes Julia with <code>--project=.</code>. It also puts a writable job-local depot
+first, then adds the configured depots, including
+<code>$CONDA_PREFIX/share/julia</code> and <code>$HOME/.julia</code>. <strong>Do not set a global
+<code>JULIA_PROJECT</code></strong>: the handler selects its staged project explicitly, and a
+global override is neither needed nor used.</p>
+<p>The in-memory <code>juliacall</code> backend uses a separate project,
+<code>$CONDA_PREFIX/julia_env</code>. The tracked CLI project does not install packages
+for JuliaCall.</p>
+<h2 id="install-r">Install R</h2>
+<p>For a <code>seamless1</code> conda setup, install R and the packages used by the CLI
+handler from conda-forge:</p>
+<pre><code class="language-sh">conda install -n seamless1 -c conda-forge r-base r-jsonlite r-rcppcnpy
+</code></pre>
+<p>This provides <code>Rscript</code>, <code>jsonlite</code> and <code>RcppCNPy</code> in that environment. For a
+non-conda installation, install R from the official
+<a href="https://cran.r-project.org/doc/manuals/r-release/R-admin.html">CRAN installation resources</a>,
+then install the R packages into the library used by that <code>Rscript</code>:</p>
+<pre><code class="language-sh">Rscript --vanilla -e 'install.packages(c(&quot;jsonlite&quot;, &quot;RcppCNPy&quot;), repos=&quot;https://cloud.r-project.org&quot;)'
+</code></pre>
+<p>The R CLI runner uses <code>jsonlite</code> for its input and output protocol.
+<code>RcppCNPy</code> is needed when an array pin or result uses NumPy's <code>.npy</code> format.
+Install any additional packages imported by your R code into the same R
+installation. Seamless does not install R packages for a job.</p>
+<h2 id="configure-and-run-a-basic-transformer">Configure and run a basic transformer</h2>
+<p>Run Python from the activated <code>seamless1</code> environment so it can find Seamless,
+<code>Rscript</code>, and <code>julia</code>. From the repository root, change to
+<code>seamless-transformer</code> before running the Python smoke example; this is the
+repository that installs the <code>seamless</code> Python package:</p>
+<pre><code class="language-sh">conda activate seamless1
+cd seamless-transformer
+export JULIA_DEPOT_PATH=&quot;$CONDA_PREFIX/share/julia:$HOME/.julia&quot;
+</code></pre>
+<p><code>"cli"</code> is already the default for R and Julia; setting it explicitly makes
+the process choice clear. A direct Transformer call runs immediately:</p>
+<pre><code class="language-python">from seamless.transformer import Transformer
+
+r = Transformer(&quot;r&quot;, direct=True)
+r.metavars.BACKEND = &quot;cli&quot;
+r.code = &quot;result &lt;- value + 1&quot;
+r.pins.value = 41
+r.celltypes.value = &quot;plain&quot;
+r.celltypes.result = &quot;plain&quot;
+assert r() == 42
+
+julia = Transformer(&quot;julia&quot;, direct=True)
+julia.metavars.BACKEND = &quot;cli&quot;
+julia.code = &quot;result = value + 1&quot;
+julia.pins.value = 41
+julia.celltypes.value = &quot;plain&quot;
+julia.celltypes.result = &quot;plain&quot;
+assert julia() == 42
+</code></pre>
+<p>To have Seamless enter the environment for each CLI run, add
+<code>r.environment.set_conda_env("seamless1")</code> and
+<code>julia.environment.set_conda_env("seamless1")</code>. The runtimes must be on <code>PATH</code>
+after that environment is entered. With no environment set, the CLI process
+uses the runtime found on the executing process's <code>PATH</code>. A Docker image can be
+used instead; it must contain the runtime and package libraries, and Julia
+jobs need their depot readable by the host user.</p>
+<h2 id="smoke-checks">Smoke checks</h2>
+<p>Check the runtime and package installs without running a Seamless test suite:</p>
+<pre><code class="language-sh">conda run --live-stream -n seamless1 Rscript --vanilla -e 'stopifnot(requireNamespace(&quot;jsonlite&quot;, quietly=TRUE), requireNamespace(&quot;RcppCNPy&quot;, quietly=TRUE)); cat(&quot;R CLI packages ready\n&quot;)'
+conda run --live-stream -n seamless1 bash -c 'export JULIA_DEPOT_PATH=&quot;$CONDA_PREFIX/share/julia:$HOME/.julia&quot;; julia --startup-file=no --project=seamless/julia -e &quot;using JSON, NPZ; println(\&quot;Julia CLI packages ready\&quot;)&quot;'
+</code></pre>
+<p>The Transformer example above is the end-to-end smoke path: each CLI backend
+receives the plain pin <code>value = 41</code> and returns <code>42</code>.</p>
+              
+            </div>
+          </div><footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+    
+    
+  </span>
+</div>
+    <script src="js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = ".";</script>
+    <script src="js/theme_extra.js"></script>
+    <script src="js/theme.js"></script>
+      <script src="search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>

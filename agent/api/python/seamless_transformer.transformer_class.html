@@ -75,6 +75,14 @@
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../../contracts/mounts.html">File Mounts</a>
                   </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../contracts/shares.html">HTTP Shares</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../contracts/widgets.html">Jupyter Widgets</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../contracts/streaming.html">Streaming</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../contracts/transformation-logs.html">Transformation Logs</a>
+                  </li>
                   <li class="toctree-l1"><a class="reference internal" href="../../contracts/cancellation.html">Cancellation</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../../contracts/direct-delayed-and-transformation.html">direct/delayed/Transformation</a>
@@ -91,6 +99,8 @@
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../../contracts/execution-backends.html">Execution Backends</a>
                   </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../contracts/environments.html">Environments</a>
+                  </li>
                   <li class="toctree-l1"><a class="reference internal" href="../../contracts/execution-records.html">Execution Records</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../../contracts/service-management.html">Service Management</a>
@@ -102,6 +112,10 @@
                   <li class="toctree-l1"><a class="reference internal" href="../../contracts/compiled-pins.html">Compiled Pins</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../../contracts/seamless-signature-schema.html">seamless-signature Schema</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../contracts/handler-languages.html">Handler Languages</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../contracts/language-backends.html">Language Backends</a>
                   </li>
               </ul>
               <p class="caption"><span class="caption-text">API</span></p>
@@ -132,15 +146,31 @@
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#directcallmixin">DirectCallMixin</a>
     </li>
+    <li class="toctree-l2"><a class="reference internal" href="#directhandlertransformer">DirectHandlerTransformer</a>
+    </li>
     <li class="toctree-l2"><a class="reference internal" href="#directpythontransformer">DirectPythonTransformer</a>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#globalswrapper">GlobalsWrapper</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#handlermetavars">HandlerMetaVars</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#handlermetavarsto_dict">HandlerMetaVars.to_dict</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#handlertransformer">HandlerTransformer</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#handlertransformercode">HandlerTransformer.code</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#handlertransformermetavars">HandlerTransformer.metavars</a>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#moduleswrapper">ModulesWrapper</a>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#pythonbashbasetransformer">PythonBashBaseTransformer</a>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#pythonbashbasetransformerlanguage">PythonBashBaseTransformer.language</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#pythonmetavars">PythonMetaVars</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#pythonmetavarsto_dict">PythonMetaVars.to_dict</a>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#pythonmixin">PythonMixin</a>
     </li>
@@ -149,6 +179,8 @@
     <li class="toctree-l2"><a class="reference internal" href="#pythonmixinlanguage">PythonMixin.language</a>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#pythontransformer">PythonTransformer</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#pythontransformermetavars">PythonTransformer.metavars</a>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#transformer">Transformer</a>
     </li>
@@ -170,8 +202,6 @@
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#transformercorecompute">TransformerCore.compute</a>
     </li>
-    <li class="toctree-l2"><a class="reference internal" href="#transformercoredirect_print">TransformerCore.direct_print</a>
-    </li>
     <li class="toctree-l2"><a class="reference internal" href="#transformercoredriver">TransformerCore.driver</a>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#transformercoreenvironment">TransformerCore.environment</a>
@@ -184,6 +214,8 @@
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#transformercorelocal">TransformerCore.local</a>
     </li>
+    <li class="toctree-l2"><a class="reference internal" href="#transformercorelogs">TransformerCore.logs</a>
+    </li>
     <li class="toctree-l2"><a class="reference internal" href="#transformercoremeta">TransformerCore.meta</a>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#transformercoremodules">TransformerCore.modules</a>
@@ -191,6 +223,8 @@
     <li class="toctree-l2"><a class="reference internal" href="#transformercoreoptional_pins">TransformerCore.optional_pins</a>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#transformercorepins">TransformerCore.pins</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#transformercoreprocess_lock">TransformerCore.process_lock</a>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#transformercoreprune">TransformerCore.prune</a>
     </li>
@@ -201,6 +235,8 @@
     <li class="toctree-l2"><a class="reference internal" href="#transformercorescratch">TransformerCore.scratch</a>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#transformercorestate">TransformerCore.state</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#transformercorestreaming">TransformerCore.streaming</a>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#transformercoretask">TransformerCore.task</a>
     </li>
@@ -284,6 +320,12 @@
 <li>signature: <code>DirectCallMixin</code></li>
 </ul>
 <p>Call-mode mixin that computes a built Transformation immediately.</p>
+<h2 id="directhandlertransformer"><code>DirectHandlerTransformer</code></h2>
+<ul>
+<li>kind: <code>class</code></li>
+<li>signature: <code>DirectHandlerTransformer</code></li>
+</ul>
+<p>Direct-call transformer backed by a registered language handler.</p>
 <h2 id="directpythontransformer"><code>DirectPythonTransformer</code></h2>
 <ul>
 <li>kind: <code>class</code></li>
@@ -296,6 +338,36 @@
 <li>signature: <code>GlobalsWrapper</code></li>
 </ul>
 <p>Wrapper around an imperative transformer's global namespace.</p>
+<h2 id="handlermetavars"><code>HandlerMetaVars</code></h2>
+<ul>
+<li>kind: <code>class</code></li>
+<li>signature: <code>HandlerMetaVars</code></li>
+</ul>
+<p>Metavars declared by one registered handler.</p>
+<h2 id="handlermetavarsto_dict"><code>HandlerMetaVars.to_dict</code></h2>
+<ul>
+<li>kind: <code>method</code></li>
+<li>signature: <code>to_dict(self)</code></li>
+</ul>
+<p><em>No docstring.</em></p>
+<h2 id="handlertransformer"><code>HandlerTransformer</code></h2>
+<ul>
+<li>kind: <code>class</code></li>
+<li>signature: <code>HandlerTransformer</code></li>
+</ul>
+<p>Delayed transformer backed by a registered language handler.</p>
+<h2 id="handlertransformercode"><code>HandlerTransformer.code</code></h2>
+<ul>
+<li>kind: <code>method</code></li>
+<li>signature: <code>code(self, code)</code></li>
+</ul>
+<p><em>No docstring.</em></p>
+<h2 id="handlertransformermetavars"><code>HandlerTransformer.metavars</code></h2>
+<ul>
+<li>kind: <code>method</code></li>
+<li>signature: <code>metavars(self)</code></li>
+</ul>
+<p><em>No docstring.</em></p>
 <h2 id="moduleswrapper"><code>ModulesWrapper</code></h2>
 <ul>
 <li>kind: <code>class</code></li>
@@ -312,6 +384,18 @@
 <ul>
 <li>kind: <code>method</code></li>
 <li>signature: <code>language(self, _value)</code></li>
+</ul>
+<p><em>No docstring.</em></p>
+<h2 id="pythonmetavars"><code>PythonMetaVars</code></h2>
+<ul>
+<li>kind: <code>class</code></li>
+<li>signature: <code>PythonMetaVars</code></li>
+</ul>
+<p>Metavars available on an ordinary Python transformer.</p>
+<h2 id="pythonmetavarsto_dict"><code>PythonMetaVars.to_dict</code></h2>
+<ul>
+<li>kind: <code>method</code></li>
+<li>signature: <code>to_dict(self)</code></li>
 </ul>
 <p><em>No docstring.</em></p>
 <h2 id="pythonmixin"><code>PythonMixin</code></h2>
@@ -338,6 +422,12 @@
 <li>signature: <code>PythonTransformer</code></li>
 </ul>
 <p>Delayed Python transformer.</p>
+<h2 id="pythontransformermetavars"><code>PythonTransformer.metavars</code></h2>
+<ul>
+<li>kind: <code>method</code></li>
+<li>signature: <code>metavars(self)</code></li>
+</ul>
+<p><em>No docstring.</em></p>
 <h2 id="transformer"><code>Transformer</code></h2>
 <ul>
 <li>kind: <code>class</code></li>
@@ -402,12 +492,6 @@ Returns None for other states.</p>
 <li>signature: <code>compute(self, timeout)</code></li>
 </ul>
 <p><em>No docstring.</em></p>
-<h2 id="transformercoredirect_print"><code>TransformerCore.direct_print</code></h2>
-<ul>
-<li>kind: <code>method</code></li>
-<li>signature: <code>direct_print(self, value)</code></li>
-</ul>
-<p><em>No docstring.</em></p>
 <h2 id="transformercoredriver"><code>TransformerCore.driver</code></h2>
 <ul>
 <li>kind: <code>method</code></li>
@@ -444,6 +528,12 @@ Returns None for other states.</p>
 <li>signature: <code>local(self, value)</code></li>
 </ul>
 <p><em>No docstring.</em></p>
+<h2 id="transformercorelogs"><code>TransformerCore.logs</code></h2>
+<ul>
+<li>kind: <code>method</code></li>
+<li>signature: <code>logs(self)</code></li>
+</ul>
+<p>Return the log associated with a bound workflow transformer.</p>
 <h2 id="transformercoremeta"><code>TransformerCore.meta</code></h2>
 <ul>
 <li>kind: <code>method</code></li>
@@ -468,6 +558,12 @@ Returns None for other states.</p>
 <li>signature: <code>pins(self)</code></li>
 </ul>
 <p>Pre-bound transformer inputs.</p>
+<h2 id="transformercoreprocess_lock"><code>TransformerCore.process_lock</code></h2>
+<ul>
+<li>kind: <code>method</code></li>
+<li>signature: <code>process_lock(self, value)</code></li>
+</ul>
+<p><em>No docstring.</em></p>
 <h2 id="transformercoreprune"><code>TransformerCore.prune</code></h2>
 <ul>
 <li>kind: <code>method</code></li>
@@ -504,6 +600,12 @@ Returns None for other states.</p>
 the display string <code>status</code> used to return is gone, because it
 collapsed <code>waiting</code> and <code>computing</code> into one word.  For a summary,
 <code>repr</code> of the handle carries the state.</p>
+<h2 id="transformercorestreaming"><code>TransformerCore.streaming</code></h2>
+<ul>
+<li>kind: <code>method</code></li>
+<li>signature: <code>streaming(self, value)</code></li>
+</ul>
+<p><em>No docstring.</em></p>
 <h2 id="transformercoretask"><code>TransformerCore.task</code></h2>
 <ul>
 <li>kind: <code>method</code></li>

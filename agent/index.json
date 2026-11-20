@@ -1,5 +1,5 @@
 {
-  "generated_at": 1791205080,
+  "generated_at": 1795218319,
   "symbols": {
     "ArgsWrapper": {
       "anchor": "argswrapper",
@@ -133,8 +133,24 @@
       "anchor": "checksum-fingertip",
       "page": "api/python/seamless.checksum_class.md"
     },
+    "Checksum.fingertip_folder": {
+      "anchor": "checksum-fingertip-folder",
+      "page": "api/python/seamless.checksum_class.md"
+    },
+    "Checksum.fingertip_folder_sync": {
+      "anchor": "checksum-fingertip-folder-sync",
+      "page": "api/python/seamless.checksum_class.md"
+    },
     "Checksum.fingertip_sync": {
       "anchor": "checksum-fingertip-sync",
+      "page": "api/python/seamless.checksum_class.md"
+    },
+    "Checksum.has_local_buffer": {
+      "anchor": "checksum-has-local-buffer",
+      "page": "api/python/seamless.checksum_class.md"
+    },
+    "Checksum.has_local_folder_buffers": {
+      "anchor": "checksum-has-local-folder-buffers",
       "page": "api/python/seamless.checksum_class.md"
     },
     "Checksum.hex": {
@@ -273,6 +289,10 @@
       "anchor": "directcompiledtransformer",
       "page": "api/python/seamless_transformer.compiled_transformer.md"
     },
+    "DirectHandlerTransformer": {
+      "anchor": "directhandlertransformer",
+      "page": "api/python/seamless_transformer.transformer_class.md"
+    },
     "DirectPythonTransformer": {
       "anchor": "directpythontransformer",
       "page": "api/python/seamless_transformer.transformer_class.md"
@@ -293,10 +313,6 @@
       "anchor": "environment-get-docker",
       "page": "api/python/seamless_transformer.environment.md"
     },
-    "Environment.get_powers": {
-      "anchor": "environment-get-powers",
-      "page": "api/python/seamless_transformer.environment.md"
-    },
     "Environment.get_which": {
       "anchor": "environment-get-which",
       "page": "api/python/seamless_transformer.environment.md"
@@ -311,10 +327,6 @@
     },
     "Environment.set_docker": {
       "anchor": "environment-set-docker",
-      "page": "api/python/seamless_transformer.environment.md"
-    },
-    "Environment.set_powers": {
-      "anchor": "environment-set-powers",
       "page": "api/python/seamless_transformer.environment.md"
     },
     "Environment.set_which": {
@@ -337,8 +349,32 @@
       "anchor": "globalswrapper",
       "page": "api/python/seamless_transformer.transformer_class.md"
     },
+    "HandlerMetaVars": {
+      "anchor": "handlermetavars",
+      "page": "api/python/seamless_transformer.transformer_class.md"
+    },
+    "HandlerMetaVars.to_dict": {
+      "anchor": "handlermetavars-to-dict",
+      "page": "api/python/seamless_transformer.transformer_class.md"
+    },
+    "HandlerTransformer": {
+      "anchor": "handlertransformer",
+      "page": "api/python/seamless_transformer.transformer_class.md"
+    },
+    "HandlerTransformer.code": {
+      "anchor": "handlertransformer-code",
+      "page": "api/python/seamless_transformer.transformer_class.md"
+    },
+    "HandlerTransformer.metavars": {
+      "anchor": "handlertransformer-metavars",
+      "page": "api/python/seamless_transformer.transformer_class.md"
+    },
     "LanguageDefinition": {
       "anchor": "languagedefinition",
+      "page": "api/python/seamless_transformer.languages.md"
+    },
+    "LanguageHandlerDefinition": {
+      "anchor": "languagehandlerdefinition",
       "page": "api/python/seamless_transformer.languages.md"
     },
     "MetaVars": {
@@ -373,6 +409,14 @@
       "anchor": "pythonbashbasetransformer-language",
       "page": "api/python/seamless_transformer.transformer_class.md"
     },
+    "PythonMetaVars": {
+      "anchor": "pythonmetavars",
+      "page": "api/python/seamless_transformer.transformer_class.md"
+    },
+    "PythonMetaVars.to_dict": {
+      "anchor": "pythonmetavars-to-dict",
+      "page": "api/python/seamless_transformer.transformer_class.md"
+    },
     "PythonMixin": {
       "anchor": "pythonmixin",
       "page": "api/python/seamless_transformer.transformer_class.md"
@@ -387,6 +431,10 @@
     },
     "PythonTransformer": {
       "anchor": "pythontransformer",
+      "page": "api/python/seamless_transformer.transformer_class.md"
+    },
+    "PythonTransformer.metavars": {
+      "anchor": "pythontransformer-metavars",
       "page": "api/python/seamless_transformer.transformer_class.md"
     },
     "Transformation": {
@@ -473,6 +521,10 @@
       "anchor": "transformation-status",
       "page": "api/python/seamless_transformer.transformation_class.md"
     },
+    "Transformation.streaming": {
+      "anchor": "transformation-streaming",
+      "page": "api/python/seamless_transformer.transformation_class.md"
+    },
     "Transformation.task": {
       "anchor": "transformation-task",
       "page": "api/python/seamless_transformer.transformation_class.md"
@@ -529,10 +581,6 @@
       "anchor": "transformercore-compute",
       "page": "api/python/seamless_transformer.transformer_class.md"
     },
-    "TransformerCore.direct_print": {
-      "anchor": "transformercore-direct-print",
-      "page": "api/python/seamless_transformer.transformer_class.md"
-    },
     "TransformerCore.driver": {
       "anchor": "transformercore-driver",
       "page": "api/python/seamless_transformer.transformer_class.md"
@@ -557,6 +605,10 @@
       "anchor": "transformercore-local",
       "page": "api/python/seamless_transformer.transformer_class.md"
     },
+    "TransformerCore.logs": {
+      "anchor": "transformercore-logs",
+      "page": "api/python/seamless_transformer.transformer_class.md"
+    },
     "TransformerCore.meta": {
       "anchor": "transformercore-meta",
       "page": "api/python/seamless_transformer.transformer_class.md"
@@ -571,6 +623,10 @@
     },
     "TransformerCore.pins": {
       "anchor": "transformercore-pins",
+      "page": "api/python/seamless_transformer.transformer_class.md"
+    },
+    "TransformerCore.process_lock": {
+      "anchor": "transformercore-process-lock",
       "page": "api/python/seamless_transformer.transformer_class.md"
     },
     "TransformerCore.prune": {
@@ -593,6 +649,10 @@
       "anchor": "transformercore-state",
       "page": "api/python/seamless_transformer.transformer_class.md"
     },
+    "TransformerCore.streaming": {
+      "anchor": "transformercore-streaming",
+      "page": "api/python/seamless_transformer.transformer_class.md"
+    },
     "TransformerCore.task": {
       "anchor": "transformercore-task",
       "page": "api/python/seamless_transformer.transformer_class.md"
@@ -600,6 +660,10 @@
     "TransformerCore.transformation": {
       "anchor": "transformercore-transformation",
       "page": "api/python/seamless_transformer.transformer_class.md"
+    },
+    "__getattr__": {
+      "anchor": "getattr",
+      "page": "api/python/seamless.transformer.md"
     },
     "_as_plain": {
       "anchor": "as-plain",
@@ -641,6 +705,10 @@
       "anchor": "configure-tool",
       "page": "api/python/seamless_config.tools.md"
     },
+    "_create_task_on_loop": {
+      "anchor": "create-task-on-loop",
+      "page": "api/python/seamless_transformer.transformation_class.md"
+    },
     "_dask_available": {
       "anchor": "dask-available",
       "page": "api/python/seamless_transformer.transformation_class.md"
@@ -665,6 +733,10 @@
       "anchor": "dependency-result-checksum",
       "page": "api/python/seamless_transformer.transformation_class.md"
     },
+    "_driver_context_active": {
+      "anchor": "driver-context-active",
+      "page": "api/python/seamless_transformer.transformation_class.md"
+    },
     "_ensure_loop_running": {
       "anchor": "ensure-loop-running",
       "page": "api/python/seamless_transformer.transformation_class.md"
@@ -680,6 +752,10 @@
     "_freeze_modules": {
       "anchor": "freeze-modules",
       "page": "api/python/seamless_transformer.transformer_class.md"
+    },
+    "_get_executor": {
+      "anchor": "get-executor",
+      "page": "api/python/seamless_transformer.languages.interpreter_thread.md"
     },
     "_is_expression": {
       "anchor": "is-expression",
@@ -725,13 +801,33 @@
       "anchor": "thread-loop-is-running",
       "page": "api/python/seamless_transformer.transformation_class.md"
     },
+    "_use_cli_execution_context": {
+      "anchor": "use-cli-execution-context",
+      "page": "api/python/seamless_transformer.languages.md"
+    },
     "_validate": {
       "anchor": "validate",
       "page": "api/python/seamless_config.select.md"
     },
+    "_validate_backend_value": {
+      "anchor": "validate-backend-value",
+      "page": "api/python/seamless_transformer.languages.md"
+    },
     "_validate_derived_compiled_dunders": {
       "anchor": "validate-derived-compiled-dunders",
       "page": "api/python/seamless_transformer.compiled_transformer.md"
+    },
+    "_validate_environment_dispatch": {
+      "anchor": "validate-environment-dispatch",
+      "page": "api/python/seamless_transformer.environment.md"
+    },
+    "available_languages": {
+      "anchor": "available-languages",
+      "page": "api/python/seamless_transformer.languages.md"
+    },
+    "check_in_memory_environment": {
+      "anchor": "check-in-memory-environment",
+      "page": "api/python/seamless_transformer.languages.md"
     },
     "check_remote_redundancy": {
       "anchor": "check-remote-redundancy",
@@ -781,6 +877,10 @@
       "anchor": "ensure-open",
       "page": "api/python/seamless.md"
     },
+    "execute_cli": {
+      "anchor": "execute-cli",
+      "page": "api/python/seamless_transformer.languages.md"
+    },
     "execution_command_seen": {
       "anchor": "execution-command-seen",
       "page": "api/python/seamless_config.select.md"
@@ -799,6 +899,10 @@
     },
     "get_language": {
       "anchor": "get-language",
+      "page": "api/python/seamless_transformer.languages.md"
+    },
+    "get_language_handler": {
+      "anchor": "get-language-handler",
       "page": "api/python/seamless_transformer.languages.md"
     },
     "get_node": {
@@ -841,6 +945,10 @@
       "anchor": "is-compiled-language",
       "page": "api/python/seamless_transformer.languages.md"
     },
+    "is_handler_language": {
+      "anchor": "is-handler-language",
+      "page": "api/python/seamless_transformer.languages.md"
+    },
     "is_worker": {
       "anchor": "is-worker",
       "page": "api/python/seamless.md"
@@ -856,6 +964,10 @@
     "register_close_hook": {
       "anchor": "register-close-hook",
       "page": "api/python/seamless.md"
+    },
+    "register_language_handler": {
+      "anchor": "register-language-handler",
+      "page": "api/python/seamless_transformer.languages.md"
     },
     "reset_execution_before_load": {
       "anchor": "reset-execution-before-load",
@@ -880,6 +992,10 @@
     "reset_remote_before_load": {
       "anchor": "reset-remote-before-load",
       "page": "api/python/seamless_config.select.md"
+    },
+    "run_in_interpreter_thread": {
+      "anchor": "run-in-interpreter-thread",
+      "page": "api/python/seamless_transformer.languages.interpreter_thread.md"
     },
     "running_in_jupyter": {
       "anchor": "running-in-jupyter",
@@ -964,6 +1080,7 @@
       "seamless_transformer.compiled_transformer": "api/python/seamless_transformer.compiled_transformer.md",
       "seamless_transformer.environment": "api/python/seamless_transformer.environment.md",
       "seamless_transformer.languages": "api/python/seamless_transformer.languages.md",
+      "seamless_transformer.languages.interpreter_thread": "api/python/seamless_transformer.languages.interpreter_thread.md",
       "seamless_transformer.transformation_class": "api/python/seamless_transformer.transformation_class.md",
       "seamless_transformer.transformer_class": "api/python/seamless_transformer.transformer_class.md"
     },
@@ -979,11 +1096,14 @@
       "contracts/content-addressed-files-and-dirs.md",
       "contracts/deep-celltypes.md",
       "contracts/direct-delayed-and-transformation.md",
+      "contracts/environments.md",
       "contracts/execution-backends.md",
       "contracts/execution-records.md",
       "contracts/expressions.md",
+      "contracts/handler-languages.md",
       "contracts/hashtype.md",
       "contracts/identity-and-caching.md",
+      "contracts/language-backends.md",
       "contracts/modules-and-closures.md",
       "contracts/mounts.md",
       "contracts/node-state-lifecycle.md",
@@ -992,7 +1112,15 @@
       "contracts/seamless-run-and-argtyping.md",
       "contracts/seamless-signature-schema.md",
       "contracts/service-management.md",
+      "contracts/shares.md",
+      "contracts/streaming.md",
+      "contracts/transformation-logs.md",
+      "contracts/transformers.md",
+      "contracts/widgets.md",
       "contracts/workflow-context.md"
+    ],
+    "guides": [
+      "guides/seamless-web-server.md"
     ]
   },
   "version": 1

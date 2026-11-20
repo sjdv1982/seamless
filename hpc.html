@@ -79,6 +79,10 @@
     <li class="toctree-l2"><a class="reference internal" href="#oar-clusters">OAR clusters</a>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#pure-dask-mode">Pure Dask mode</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#cli-job-environments-on-compute-nodes">CLI job environments on compute nodes</a>
+    </li>
+        </ul>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#manual-hpc-execution">Manual HPC execution</a>
         <ul>
@@ -330,6 +334,27 @@ dask-only:
 </code></pre>
 <p>With <code>pure_dask: true</code>, the <code>distributed.Client</code> is available directly after <code>seamless.config.init()</code>. You submit Dask futures as normal, bypassing the Seamless transformation layer entirely. Caching, identity, and the <code>direct</code>/<code>delayed</code> API are not available in this mode.</p>
 <p>If you later want to adopt Seamless caching for specific steps, you can do so incrementally: remove <code>pure_dask: true</code> from the daskserver definition, add <code>seamless-dask</code> to the worker conda environment, and wrap those steps with <code>direct</code> or <code>delayed</code>.</p>
+<h3 id="cli-job-environments-on-compute-nodes">CLI job environments on compute nodes</h3>
+<p>A bash transformation, and a Python, R or Julia transformation with
+<code>tf.metavars.BACKEND = "cli"</code>, runs as a job of its own and can run in a conda
+environment or a container. For such a transformation submitted to
+<code>remote: daskserver</code>, the runtime and image must be available on the worker
+node. Load Apptainer and set its image
+directory in the queue's <code>job_script_prologue</code>:</p>
+<pre><code class="language-yaml">hpc:
+  queues:
+    standard:
+      job_script_prologue:
+        - module load apptainer
+        - export SEAMLESS_CONTAINER_RUNTIME=apptainer
+        - export SEAMLESS_APPTAINER_DIR=/scratch/seamless/apptainer
+</code></pre>
+<p>Then a bash transformer can use <code>tf.environment.set_docker({"name": "ubuntu:22.04"})</code>,
+or submit a command with <code>seamless-run --docker ubuntu:22.04 ...</code>. The image
+must already exist as a SIF file under <code>SEAMLESS_APPTAINER_DIR</code>; this setting
+does not build or download it. For a CLI backend of another language the image
+must also hold the interpreter and its packages. A transformation that runs in
+memory cannot enter an image, and fails for one.</p>
 <h2 id="manual-hpc-execution">Manual HPC execution</h2>
 <p>Sometimes full remote execution is the wrong abstraction.</p>
 <p>If you need to inspect the deployed job, load site-specific modules manually, or

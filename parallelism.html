@@ -60,6 +60,12 @@
                   </li>
                   <li class="toctree-l1 current"><a class="reference internal current" href="#">Local parallelism</a>
     <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#one-transformation-per-process-at-a-time">One transformation per process at a time</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#opting-out-process_lock-false">Opting out: process_lock = False</a>
+    </li>
+        </ul>
+    </li>
     <li class="toctree-l2"><a class="reference internal" href="#execution-spawn-local-worker-pool">execution: spawn — local worker pool</a>
         <ul>
     <li class="toctree-l3"><a class="reference internal" href="#spawnn-in-python">spawn(N) in Python</a>
@@ -168,8 +174,47 @@
               
                 <h1 id="local-parallelism">Local parallelism</h1>
 <p>Seamless provides three related mechanisms for parallel work: for Python transformations, there are worker processes and bounded batch draining of large transformation lists; for bash CLI workflows, there is a queue server .</p>
+<h2 id="one-transformation-per-process-at-a-time">One transformation per process at a time</h2>
+<p>By default, the code of a transformation has its process to itself while it runs. Every process has one lock, the <em>process lock</em>, and a transformation's code runs while holding it. This protects code that changes process-wide state, such as the working directory or environment variables. It also means that the number of processes is the number of transformations that run at once:</p>
+<table>
+<thead>
+<tr>
+<th>Execution</th>
+<th>Transformations that run their code at once</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>execution: process</code> (the current Python process; the default without a cluster)</td>
+<td>1</td>
+</tr>
+<tr>
+<td><code>execution: spawn</code>, or <code>spawn(N)</code>, with N workers</td>
+<td>N</td>
+</tr>
+</tbody>
+</table>
+<p>In <code>process</code> mode, twenty transformations that are started together therefore run one after the other. To run them in parallel, use a worker pool (below) or a remote backend.</p>
+<p>Only the code itself runs one at a time. Several transformations in one process still download their inputs and upload their results at the same time.</p>
+<h3 id="opting-out-process_lock-false">Opting out: <code>process_lock = False</code></h3>
+<p>Some code is safe to run next to other code in the same process, typically because it spends its time waiting: for I/O, or for an external program. Turn the lock off for such a transformer:</p>
+<pre><code class="language-python">from seamless.transformer import delayed
+
+@delayed
+def convert(data):
+    import subprocess
+    # the work happens in the external program; this code only waits for it
+    proc = subprocess.run([&quot;mytool&quot;], input=data, capture_output=True, check=True)
+    return proc.stdout
+
+convert.process_lock = False
+</code></pre>
+<p>For <code>seamless-run</code>, the flag is <code>--no-process-lock</code>.</p>
+<p>Transformations with the lock off run next to each other, and next to the one transformation that holds the lock. A worker process accepts up to three transformations at once, so <code>spawn(N)</code> runs up to 3N of them. In <code>process</code> mode the lock no longer limits them at all.</p>
+<p>The setting is not part of a transformation's checksum, so it has no effect on caching.</p>
+<p>A transformation that launches other transformations needs no setting: it gives up the lock by itself when it launches the first one. See <a href="composition.html">Composition</a>.</p>
 <h2 id="execution-spawn-local-worker-pool"><code>execution: spawn</code> — local worker pool</h2>
-<p>Setting <code>execution: spawn</code> in your configuration tells Seamless to run transformations in a pool of separate worker processes rather than in the current Python process. The number of workers defaults to the number of logical CPU cores.</p>
+<p>Setting <code>execution: spawn</code> in your configuration tells Seamless to run transformations in a pool of separate worker processes rather than in the current Python process. The number of workers defaults to the number of logical CPU cores. Each worker runs the code of one transformation at a time, unless the transformation has <code>process_lock = False</code>.</p>
 <p>In <code>seamless.yaml</code> or <code>seamless.profile.yaml</code>:</p>
 <pre><code class="language-yaml">- execution: spawn
 </code></pre>
@@ -222,6 +267,7 @@ results = [h.run() for h in handles]  # .run() blocks until done (cache hit if a
 
 seamless.config.set_nparallel(4)
 </code></pre>
+<p>The limit travels with transformations submitted to Dask: a transformation runs with the <code>nparallel</code> of the process that submitted it, so a <code>parallel()</code> call inside a nested (driver) transformation needs no configuration of its own. Calling <code>set_nparallel()</code> inside a transformation changes the limit for the transformations it submits in turn. The value is held per worker process, which runs several transformations at once; if they were submitted with different limits, the most recently started one determines the value.</p>
 <p>Synchronous usage:</p>
 <pre><code class="language-python">from seamless.transformer import delayed, parallel
 

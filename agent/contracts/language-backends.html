@@ -1,0 +1,842 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <link rel="shortcut icon" href="../img/favicon.ico" />
+    <title>Language Backends - Seamless — Agent Documentation</title>
+    <link rel="stylesheet" href="../css/theme.css" />
+    <link rel="stylesheet" href="../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "Language Backends";
+        var mkdocs_page_input_path = "contracts/language-backends.md";
+        var mkdocs_page_url = null;
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href="../index.html" class="icon icon-home"> Seamless — Agent Documentation
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../index.html">Home</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../overview.html">Agent Docs Overview</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../repos/index.html">Workspace Repos</a>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Contracts</span></p>
+              <ul class="current">
+                  <li class="toctree-l1"><a class="reference internal" href="identity-and-caching.html">Identity and Caching</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="celltypes-and-conversion.html">Celltypes, Null, and Conversion</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="hashtype.html">HashType</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="deep-celltypes.html">Deep Celltypes</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="expressions.html">Expressions</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="cells.html">Cells</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="pins.html">Pins</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="workflow-context.html">Workflow Context</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="node-state-lifecycle.html">Node State Lifecycle</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="attachments.html">Attachments</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="mounts.html">File Mounts</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="shares.html">HTTP Shares</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="widgets.html">Jupyter Widgets</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="streaming.html">Streaming</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="transformation-logs.html">Transformation Logs</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="cancellation.html">Cancellation</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="direct-delayed-and-transformation.html">direct/delayed/Transformation</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="modules-and-closures.html">Modules and Closures</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="scratch-witness-audit.html">Scratch/Witness/Audit</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="seamless-run-and-argtyping.html">seamless-run/Argtyping</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="cache-storage-and-limits.html">Cache Storage and Limits</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="content-addressed-files-and-dirs.html">Content-addressed Files and Dirs</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="execution-backends.html">Execution Backends</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="environments.html">Environments</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="execution-records.html">Execution Records</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="service-management.html">Service Management</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="compression.html">Compression</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="compiled-transformers.html">Compiled Transformers</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="compiled-pins.html">Compiled Pins</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="seamless-signature-schema.html">seamless-signature Schema</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="handler-languages.html">Handler Languages</a>
+                  </li>
+                  <li class="toctree-l1 current"><a class="reference internal current" href="#">Language Backends</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#the-languages-and-their-backends">The languages and their backends</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#selecting-a-backend">Selecting a backend</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#backend-and-identity">Backend and identity</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#every-backend-rule-applies-when-the-transformation-runs">Every backend rule applies when the transformation runs</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#environments">Environments</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#the-in-memory-rule">The in-memory rule</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#the-cli-rule">The CLI rule</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#docker-together-with-conda">Docker together with conda</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#the-check-happens-at-dispatch">The check happens at dispatch</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#required-binaries">Required binaries</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#a-record-probe-is-exempt">A record probe is exempt</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#the-two-public-functions">The two public functions</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#the-python-cli-backend">The Python CLI backend</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#what-stays-the-same">What stays the same</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#what-differs">What differs</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#packages-the-job-needs">Packages the job needs</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#results">Results</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#parity">Parity</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#the-process-lock-cancellation-and-failures">The process lock, cancellation and failures</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#drivers-and-nested-work">Drivers and nested work</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#deep-pins-and-results">Deep pins and results</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#failures">Failures</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#current-limitations">Current limitations</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#non-goals">Non-goals</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#code-locations">Code locations</a>
+    </li>
+    </ul>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">API</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/python/seamless.html">seamless</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/python/seamless.transformer.html">seamless.transformer</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/python/seamless.buffer_class.html">seamless.buffer_class</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/python/seamless.checksum_class.html">seamless.checksum_class</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/python/seamless_config.select.html">seamless_config.select</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/python/seamless_config.tools.html">seamless_config.tools</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/python/seamless_transformer.transformation_class.html">seamless_transformer.transformation_class</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/python/seamless_transformer.transformer_class.html">seamless_transformer.transformer_class</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">CLI</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/cli/seamless-run.html">seamless-run</a>
+                  </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Seamless — Agent Documentation</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../index.html" class="icon icon-home" aria-label="Docs"></a></li>
+          <li class="breadcrumb-item">Contracts</li>
+      <li class="breadcrumb-item active">Language Backends</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h1 id="language-backends-contract">Language backends (Contract)</h1>
+<p>The code of a transformation is run by a <strong>language backend</strong>. A language backend is either a <strong>CLI backend</strong> or an <strong>in-memory backend</strong>, and what it does with the transformer's <code>environment</code> follows from which of the two it is.</p>
+<ul>
+<li><strong>A language backend is not an execution backend.</strong> <code>process</code>, <code>spawn</code> and <code>remote</code> decide where a transformation runs (<a href="execution-backends.html">Execution backends</a>). A language backend decides how the code is run once the transformation is there. The two axes are independent.</li>
+<li><strong>A CLI backend</strong> starts a process for each run, in a job directory of its own, on the machinery of bash transformations. Its command is a script (bash) or an interpreter with a runner file (R, Julia, Python).</li>
+<li><strong>An in-memory backend</strong> runs the code inside the process that runs the transformation: the calling process in <code>process</code> mode, a worker process otherwise.</li>
+</ul>
+<p>This page owns the two kinds, their names, the setting that selects one, the environment rule of each kind, the rule that these rules apply when the transformation runs, the lookup of required binaries, the two public functions that carry the rules, and the Python CLI backend. Other pages own the rest:</p>
+<ul>
+<li>the wrapper that a CLI backend uses (conda, containers, the failure classes, the job directory): <a href="environments.html">Environments</a>;</li>
+<li>R, Julia and the handler API: <a href="handler-languages.html">Handler languages</a>;</li>
+<li>deep pins and deep results: <a href="deep-celltypes.html">Deep celltypes</a>;</li>
+<li>compiled transformers: <a href="compiled-transformers.html">Compiled transformers</a>;</li>
+<li>the builder, <code>process_lock</code> and <code>driver</code>: <a href="transformers.html">Transformers</a>;</li>
+<li>the process lock and nested work: <a href="execution-backends.html">Execution backends</a>.</li>
+</ul>
+<p>The <a href="../../../plans/language-backends-plan.md">implementation plan</a> describes the mechanics and the phases.</p>
+<h2 id="the-languages-and-their-backends">The languages and their backends</h2>
+<table>
+<thead>
+<tr>
+<th>Language</th>
+<th>CLI backend</th>
+<th>In-memory backend</th>
+<th><code>tf.metavars.BACKEND</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>bash</code></td>
+<td>the only one</td>
+<td>none</td>
+<td>none</td>
+</tr>
+<tr>
+<td><code>python</code></td>
+<td>a Python process per run</td>
+<td>today's execution, in the process</td>
+<td><code>"mem"</code> (default), <code>"cli"</code></td>
+</tr>
+<tr>
+<td>compiled (<code>c</code>, <code>cpp</code>, <code>fortran</code>, <code>rust</code>, …)</td>
+<td>none</td>
+<td>the only one</td>
+<td>none</td>
+</tr>
+<tr>
+<td><code>r</code></td>
+<td>an <code>Rscript</code> process per run</td>
+<td>R embedded in the Python process</td>
+<td><code>"cli"</code> (default), <code>"mem"</code></td>
+</tr>
+<tr>
+<td><code>julia</code></td>
+<td>a <code>julia</code> process per run</td>
+<td>Julia embedded in the Python process</td>
+<td><code>"cli"</code> (default), <code>"mem"</code></td>
+</tr>
+<tr>
+<td>a language added with <code>register_language_handler</code></td>
+<td>what its handler does</td>
+<td>what its handler does</td>
+<td>what its handler declares (<em>Selecting a backend</em>)</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li><strong>"In-memory backend" is the term for the kind whose <code>BACKEND</code> value is <code>"mem"</code></strong>, and "CLI backend" for the kind whose value is <code>"cli"</code>.</li>
+<li><strong>A language with one kind has no setting.</strong> A bash transformation always runs as a CLI job, and a compiled transformation always runs in memory.</li>
+<li><strong><code>seamless-run</code> makes bash transformations.</strong> It has no <code>BACKEND</code>, and it never runs a command in memory.</li>
+<li><strong>Compiled transformers have no CLI backend.</strong> A compiled call cannot be wrapped.</li>
+</ul>
+<h2 id="selecting-a-backend">Selecting a backend</h2>
+<p><code>BACKEND</code> is a metavariable of the transformer, on the Python face and on a bound node.</p>
+<pre><code class="language-python">tf = Transformer(&quot;python&quot;, direct=True)
+tf.metavars.BACKEND            # &quot;mem&quot;
+tf.metavars.BACKEND = &quot;cli&quot;
+</code></pre>
+<ul>
+<li><strong>The values are <code>"mem"</code> and <code>"cli"</code>, in every language.</strong> The names of the tools that a backend runs, such as <code>"Rscript"</code> or <code>"juliacall"</code>, are not values.</li>
+<li><strong>Any other value is refused when it is assigned</strong>, on the Python face and on a bound node. The refusal happens before anything is stored, and the builder keeps the value it had. The exception class is not specified.</li>
+<li><strong>A value that arrives in a transformation dict is not assigned by anyone.</strong> Such a transformation fails when it runs.</li>
+<li><strong>Every Python builder has <code>tf.metavars.BACKEND</code></strong>: <code>Transformer("python")</code>, a function decorated with <code>direct</code> or <code>delayed</code>, and a bound <code>ctx.tf</code>. The default is <code>"mem"</code>.</li>
+<li><strong><code>tf.metavars</code> of a Python builder has the one name <code>BACKEND</code>.</strong> Reading or writing any other name raises.</li>
+<li><strong>Bound Transformers.</strong> <code>ctx.tf.metavars.BACKEND</code> behaves the same. The value belongs to the workflow Context node: every view of <code>ctx.tf</code> reads and writes it, the node keeps it in its <code>meta</code>, and <code>ctx.get_graph()</code> saves it. A node whose result is recorded does not run its code again after a change of <code>BACKEND</code>.</li>
+<li><strong>Where the value is stored.</strong> A Python build writes <code>BACKEND</code> into the Transformation's <code>meta["metavars"]</code> only when it was set. A Python transformation without it runs in memory. A handler language writes every metavar, defaults included (<a href="handler-languages.html">Handler languages</a>, <em>Backends</em>).</li>
+<li><strong>A handler that has both kinds declares <code>BACKEND</code> among its metavars and uses the same two values.</strong> The builder checks the value of a metavar with that name for every handler language.</li>
+<li><strong>A compiled builder has no <code>BACKEND</code>.</strong> Its <code>tf.metavars</code> holds its output maxima (<a href="compiled-transformers.html">Compiled transformers</a>), and assigning <code>BACKEND</code> raises.</li>
+</ul>
+<h2 id="backend-and-identity">Backend and identity</h2>
+<p><strong><code>BACKEND</code> is not part of the transformation's identity.</strong> It is carried in <code>__meta__</code>, under <code>metavars</code>, which is outside the checksum (<a href="identity-and-caching.html">Identity and caching</a>, <em>Load-bearing vs orthogonal keys</em>).</p>
+<ul>
+<li><strong>A result computed under one backend is served, from the cache, to a transformation that names the other.</strong> That is valid only because of parity (<em>Parity</em>).</li>
+<li><strong>Two submissions of one transformation with different backends latch on to each other</strong>, unless <code>strict_dunder</code> is used.</li>
+<li><strong>A transformation that arrives without its <code>__meta__</code> runs under the default backend of its language.</strong> That is the in-memory backend for Python and the CLI backend for R and Julia.</li>
+<li><strong>A fingertip recomputes under the default backend</strong>, in the process that wants the buffer.</li>
+</ul>
+<h2 id="every-backend-rule-applies-when-the-transformation-runs">Every backend rule applies when the transformation runs</h2>
+<p><strong>A rule about a backend is checked when the transformation runs, and at no other moment.</strong> Building a Transformation checks none of them, and neither does setting an environment. A result that is already recorded is returned without any of them, so a recorded result is served on a machine that has neither the environment nor the interpreter.</p>
+<p>This holds for the rules about conda, Docker, required binaries, properly mixed pins and seamless-core in this page and in <a href="environments.html">Environments</a>.</p>
+<ul>
+<li><strong>The reason is that a result does not know which backend produced it.</strong> The environment and the backend are outside identity, so a cache hit runs nothing and needs nothing.</li>
+<li><strong>The check of <code>BACKEND</code> itself is not such a rule.</strong> It does not depend on where the transformation runs, and it happens at assignment (<em>Selecting a backend</em>).</li>
+<li><strong>A specification that could never work is refused at dispatch</strong>, not when it is set and not when the Transformation is built (<em>Environments</em>, below).</li>
+</ul>
+<h2 id="environments">Environments</h2>
+<p>A transformer's environment (<a href="environments.html">Environments</a>) is honoured, or the transformation fails. It is never ignored. What a backend can honour depends on its kind:</p>
+<table>
+<thead>
+<tr>
+<th>The environment has</th>
+<th>CLI backend</th>
+<th>In-memory backend</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>nothing</td>
+<td>runs</td>
+<td>runs</td>
+</tr>
+<tr>
+<td>a conda environment</td>
+<td>enters it, as a bash transformation does (<code>conda run</code>)</td>
+<td>runs only when its process is already in exactly that environment. Otherwise it fails</td>
+</tr>
+<tr>
+<td>a Docker image</td>
+<td>runs in a container, as a bash transformation does</td>
+<td>fails</td>
+</tr>
+<tr>
+<td>both</td>
+<td>refused at dispatch</td>
+<td>refused at dispatch</td>
+</tr>
+</tbody>
+</table>
+<h3 id="the-in-memory-rule">The in-memory rule</h3>
+<p>The rule is one rule for every in-memory backend: compiled transformers, Python in memory, and the in-memory backends of R, Julia and any other handler language.</p>
+<ul>
+<li><strong>An in-memory backend cannot enter an environment.</strong> The code runs in the process that runs the transformation. That process is the calling process in <code>process</code> mode, and a worker process of the pool, the jobserver or the Dask worker otherwise.</li>
+<li><strong>A Docker image always fails.</strong> The message names the language and, where the language has a CLI backend, says to use <code>BACKEND="cli"</code>.</li>
+<li><strong>A conda environment is a requirement on the process.</strong> The process must already be running in exactly that environment:</li>
+<li>a specification that contains <code>/</code> is a path. The real path of the process's <code>CONDA_PREFIX</code> must equal the real path of the specification, so a symlink to the environment matches;</li>
+<li>any other specification is a name. The process's <code>CONDA_DEFAULT_ENV</code> must equal it.</li>
+<li><strong>When they do not match, the transformation fails</strong>, and the message names both: what the transformer asks for and what the process has.</li>
+<li><strong>The requirement is on every process that can run the transformation.</strong> In a worker pool that means the pool's own processes, which have the environment that the pool was started in. Which process that is follows from the execution backend (<a href="execution-backends.html">Execution backends</a>).</li>
+<li><strong>The check happens before the body</strong>, so no code has run when it fails.</li>
+</ul>
+<h3 id="the-cli-rule">The CLI rule</h3>
+<ul>
+<li><strong>A CLI backend wraps both specifications properly</strong>, for every language: conda as <code>conda run</code>, and a Docker image as a container run by docker, podman or apptainer, chosen by the executing host. The bash, R, Julia and Python CLI backends do the same thing, on the same machinery (<a href="environments.html">Environments</a>).</li>
+<li><strong>What an environment needs from the executing host and from the image</strong> is in <a href="environments.html">Environments</a>, <em>A conda environment</em>, <em>A Docker image</em> and <em>The runtime is chosen where the job runs</em>.</li>
+<li><strong>A CLI backend inherits the bash transformer's behaviour for everything else</strong>:</li>
+<li>the interpreter runs after the environment is entered, from the launcher <code>transform.sh</code>;</li>
+<li>the executing host chooses the container runtime, and no image is pulled by default;</li>
+<li>in a container the job runs as the host user, in the job directory mounted at <code>/seamless-job</code>, which is also <code>HOME</code>;</li>
+<li>read-buffer directories are bound read-only at their own paths;</li>
+<li>the failure classes, and the teardown of a cancelled job and its container;</li>
+<li>the nesting signal under conda, and none in a container.</li>
+</ul>
+<p>What the image or the conda environment must hold, besides <code>bash</code> in an image:</p>
+<table>
+<thead>
+<tr>
+<th>CLI backend of</th>
+<th>Needs</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>R</td>
+<td><code>Rscript</code>; the R packages <code>RcppCNPy</code> and <code>jsonlite</code></td>
+</tr>
+<tr>
+<td>Julia</td>
+<td><code>julia</code>; the Julia packages <code>NPZ</code> and <code>JSON</code></td>
+</tr>
+<tr>
+<td>Python</td>
+<td><code>python3</code>; NumPy when an array crosses; seamless-core when a properly mixed value or a checksum crosses (<em>The Python CLI backend</em>)</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li><strong>Seamless does not install any of these.</strong> Something that is missing is a failure of the transformation.</li>
+<li><strong>In a container the host's environment variables are not inherited.</strong> The image supplies library and package depot paths. The Julia CLI backend uses the tracked Seamless Julia project staged in the job directory, regardless of <code>JULIA_PROJECT</code> (<a href="handler-languages.html">Handler languages</a>, <em>Environments</em>).</li>
+</ul>
+<h3 id="docker-together-with-conda">Docker together with conda</h3>
+<p><strong>A conda environment together with a Docker image is refused, for every language and both kinds of backend.</strong> A script that needs a conda environment inside an image activates it itself.</p>
+<h3 id="the-check-happens-at-dispatch">The check happens at dispatch</h3>
+<p><strong>Two things are checked at dispatch:</strong> a conda environment together with a Docker image, and the keys of the image spec (<a href="environments.html">Environments</a>, <em>The image spec</em>). Dispatch is the moment at which a transformation that has no recorded result is handed to an execution backend.</p>
+<ul>
+<li><strong>Setting an environment, and building a Transformation, check nothing.</strong> A Transformer that has both a conda environment and an image builds, and so does one whose image spec has an unknown key.</li>
+<li><strong>A recorded result is returned without the check.</strong> A submission that latches on to a running one dispatches nothing, and is not checked either.</li>
+<li><strong>The executing host validates again before launch.</strong> A transformation that is run from its checksum alone, or that arrives by another road, has no other check.</li>
+<li><strong><code>seamless-run</code> is covered</strong>: <code>--docker</code> together with <code>--conda</code> fails when the command is dispatched, not while its arguments are parsed.</li>
+<li><strong>Dispatch happens on the submitting side</strong> for <code>process</code>, <code>spawn</code>, <code>remote: jobserver</code> and <code>remote: daskserver</code> alike.</li>
+</ul>
+<h3 id="required-binaries">Required binaries</h3>
+<p><code>tf.environment.set_which([...])</code> lists binaries that must exist. They are looked up where the code runs.</p>
+<table>
+<thead>
+<tr>
+<th>Backend</th>
+<th>Looked up</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>CLI backend, every language</td>
+<td>in the script, after the conda environment is entered or inside the image. A binary that exists only in the environment satisfies the check, and one that exists only on the host does not</td>
+</tr>
+<tr>
+<td>in-memory backend</td>
+<td>on the <code>PATH</code> of the process that runs the code</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li><strong>A record probe checks nothing.</strong></li>
+<li><strong>The look-up is not done on the submitting machine</strong> for any language.</li>
+</ul>
+<h3 id="a-record-probe-is-exempt">A record probe is exempt</h3>
+<p>A record probe is a Python in-memory transformation that carries the <code>__env__</code> of the job whose surroundings it captures (<a href="execution-records.html">Execution records</a>). It runs on the host and is not checked against the environment that it carries: it does not fail for the conda environment or the image, and it does not check <code>which</code>.</p>
+<h2 id="the-two-public-functions">The two public functions</h2>
+<p>The two rules are carried by two functions of <code>seamless_transformer.languages</code>. They are public: a handler of any language honours its <code>environment</code> through one of them, or fails.</p>
+<pre><code class="language-python">from seamless_transformer.languages import (
+    check_in_memory_environment,
+    execute_cli,
+)
+
+check_in_memory_environment(environment, language)    # raises, or returns None
+execute_cli(command, pins_, PINS, FILESYSTEM, OUTPUTPIN, environment)
+</code></pre>
+<p><strong><code>check_in_memory_environment(environment, language)</code></strong> applies <em>The in-memory rule</em> and looks the names of <code>which</code> up on the <code>PATH</code> of the process.</p>
+<ul>
+<li><code>environment</code> is the transformer's environment as a dict, as the handler receives it (<em>Handler languages</em>, <em>The arguments</em>). It may be empty.</li>
+<li><code>language</code> is the language name. It is used in the message.</li>
+<li>It returns <code>None</code>, or raises. The exception class is not specified.</li>
+<li>It is a function of its arguments and of the process's environment. It needs no running transformation, so it can be called outside one.</li>
+</ul>
+<p><strong><code>execute_cli(command, pins_, PINS, FILESYSTEM, OUTPUTPIN, environment)</code></strong> runs a command as a CLI job and applies <em>The CLI rule</em>.</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>command</code></td>
+<td>the command that starts the interpreter, run by bash in the job directory</td>
+</tr>
+<tr>
+<td><code>pins_</code></td>
+<td>the names of the files and directories to write into the job directory</td>
+</tr>
+<tr>
+<td><code>PINS</code></td>
+<td>a dict from each of those names to its content: a <code>Buffer</code>, bytes, a dict of checksums, or the path of a file that exists on the executing host</td>
+</tr>
+<tr>
+<td><code>FILESYSTEM</code></td>
+<td>a dict from each name to its entry, as for a pin on file (<em>Handler languages</em>, <em>The arguments</em>)</td>
+</tr>
+<tr>
+<td><code>OUTPUTPIN</code></td>
+<td>the celltype in which the content of <code>RESULT</code> is read</td>
+</tr>
+<tr>
+<td><code>environment</code></td>
+<td>the transformer's environment, as a dict</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li><strong>It returns the content of <code>RESULT</code>.</strong> For <code>bytes</code>, <code>folder</code> and <code>deepfolder</code> as <code>OUTPUTPIN</code> the bytes. For any other celltype the file is parsed as an <code>.npy</code> array, then as JSON, then as text, and a content that is none of these is returned as a <code>uint8</code> array. A <code>RESULT</code> that is a directory gives a dict from each file's path in it to its content, in the same form.</li>
+<li><strong>It takes the transformation's checksum and its abort test from the running transformation.</strong> Inside one, a cancel finds the job and tears it down, and a docker or podman container carries the label <code>seamless.tf=&lt;tf_checksum&gt;</code>. Outside one, the launch works without them.</li>
+<li><strong>It wraps conda and Docker from <code>environment</code>.</strong> A handler cannot wrap one and forget the other.</li>
+<li><strong>It looks <code>which</code> up in the script.</strong></li>
+<li><strong>A handler passes <code>environment</code> as it received it.</strong> A handler that calls neither function gets no environment handling and no <code>which</code> check from Seamless. Nothing enforces it.</li>
+</ul>
+<h2 id="the-python-cli-backend">The Python CLI backend</h2>
+<p><code>BACKEND = "cli"</code> makes a Python transformation run as a CLI job: the code runs in a <code>python3</code> process of its own, in a job directory, on the machinery of bash transformations.</p>
+<p><strong>Faces.</strong> The Python face (<code>Transformer("python")</code>, <code>direct</code>, <code>delayed</code>) and the workflow Context (<code>ctx.tf = function</code>, a bound <code>ctx.tf</code>). <code>seamless-run</code> has no such setting.</p>
+<h3 id="what-stays-the-same">What stays the same</h3>
+<p>The code is the same code. The in-memory backend and the CLI backend give it the same names with the same values:</p>
+<ul>
+<li><strong>The code modes are the same</strong>: a block, a function, a lambda and an expression, recognized in the same way.</li>
+<li><strong>The pins are the same values.</strong> The process that runs the transformation parses each pin as the in-memory backend does, and the job gets it back unchanged. Plain data, text, arrays and <code>bytes</code> cross without Seamless in the job. A <code>bytes</code> pin is <code>bytes</code> under both backends (<a href="pins.html">Pins</a>, <em>A transformer's code receives</em>). A deep pin has the form of <em>How deep values reach a transformer</em> (<a href="deep-celltypes.html">Deep celltypes</a>) under both backends.</li>
+<li><strong>The result is what the code returns</strong>, or the variable of the output name for block code, serialized under the result celltype as the in-memory backend does it.</li>
+<li><strong><code>print</code> and the standard streams</strong> are relayed while the code runs, as two streams (<a href="transformation-logs.html">Transformation logs</a>, <a href="streaming.html">Streaming</a>).</li>
+<li><strong>The code is self-contained, as it always is</strong> (<a href="modules-and-closures.html">Modules and closures</a>).</li>
+</ul>
+<h3 id="what-differs">What differs</h3>
+<ul>
+<li><strong>The code runs in another process</strong>, with its own interpreter. Imports, global state and open files are not shared with the process that runs the transformation. Every run starts an interpreter, plus <code>conda run</code> or a container start.</li>
+<li><strong>The interpreter is <code>python3</code></strong> on the <code>PATH</code> where the job runs: in the conda environment or the image when there is one, otherwise the <code>PATH</code> of the executing process. It is not the interpreter of the submitting process.</li>
+<li><strong>The job needs what the code imports.</strong> The submitting process's packages do not exist there.</li>
+<li><strong>A transformation with modules or globals fails when it runs.</strong> The message says to use <code>BACKEND="mem"</code>.</li>
+</ul>
+<h3 id="packages-the-job-needs">Packages the job needs</h3>
+<table>
+<thead>
+<tr>
+<th>When</th>
+<th>The job needs</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>always</td>
+<td><code>python3</code></td>
+</tr>
+<tr>
+<td>an array is a pin or a result</td>
+<td>NumPy</td>
+</tr>
+<tr>
+<td>a properly mixed value is a pin or a result</td>
+<td>seamless-core, installed where the code runs</td>
+</tr>
+<tr>
+<td>a deepcell pin or a <code>checksum</code> pin</td>
+<td>seamless-core</td>
+</tr>
+<tr>
+<td>the code itself uses Seamless, for example for nested work</td>
+<td>Seamless</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li><strong>A properly mixed value</strong> is a <code>mixed</code> value whose buffer is in the Seamless-mixed format, which is a value that does not reduce to plain data or to an array (<a href="celltypes-and-conversion.html">Celltypes and conversion</a>). A pin or a result of that kind is carried to and from the job through seamless-core.</li>
+<li><strong>A checksum crossing into the job</strong> also needs seamless-core, whether the code only passes its members on or resolves them.</li>
+<li><strong>A job with none of these runs in an environment that has no Seamless.</strong></li>
+<li><strong>Nothing checks for seamless-core beforehand</strong> (<em>Every backend rule applies when the transformation runs</em>). When it is missing, the import fails inside the job, and the failure is the Python error in the standard error trailer.</li>
+</ul>
+<h3 id="results">Results</h3>
+<ul>
+<li><strong>A returned value is carried as plain data, an array, <code>bytes</code>, a properly mixed value, or, as a member of a deep result, a checksum object.</strong> The process that runs the transformation then serializes it under the result celltype, with the calls that the in-memory backend uses. No serialization rule exists twice.</li>
+<li><strong>There is no fallback encoding.</strong> A value that cannot be carried fails the transformation, and it never travels in a different representation.</li>
+<li><strong>A folder or deepcell result is the dict that the code returns.</strong> Each member is a value or a checksum object (<a href="deep-celltypes.html">Deep celltypes</a>, <em>The output side</em>).</li>
+<li><strong>Nothing that a job wrote is loaded as a pickle.</strong> The process that runs the transformation reads a job's result as data only.</li>
+</ul>
+<p>The host rebuilds each CLI result and uses the in-memory serialization call.
+For a <code>mixed</code> result and for a value member of a <code>deepcell</code> result, the CLI
+accepts the same values as the in-memory backend:</p>
+<table>
+<thead>
+<tr>
+<th>Returned value</th>
+<th>In-memory outcome</th>
+<th>Python CLI outcome</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>None</code>, booleans, integers, finite floats and strings</td>
+<td>Accepted as mixed values</td>
+<td>Accepted; carried as JSON, with the same result checksum</td>
+</tr>
+<tr>
+<td>Non-finite floats</td>
+<td>Accepted as mixed values using NumPy storage</td>
+<td>Accepted through <code>.mixed</code>, with the same result checksum</td>
+</tr>
+<tr>
+<td>Lists, tuples and dicts whose members are supported mixed values</td>
+<td>Accepted as mixed values</td>
+<td>Accepted as JSON where possible, otherwise <code>.mixed</code>, with the same result checksum</td>
+</tr>
+<tr>
+<td><code>bytes</code></td>
+<td>Accepted as a mixed value</td>
+<td>Accepted through <code>.bytes</code>; the host serializes it as mixed and gets the same result checksum</td>
+</tr>
+<tr>
+<td>A NumPy scalar or array with a supported dtype, including an aligned structured array without padding</td>
+<td>Accepted as a mixed value</td>
+<td>Accepted through <code>.mixed</code> or <code>.npy</code>; structured arrays use <code>.mixed</code> to preserve aligned-dtype metadata, with the same result checksum</td>
+</tr>
+<tr>
+<td>An aligned structured array with implicit padding and a supported structured dtype, directly or nested in a dict, list, or tuple result or deepcell value member</td>
+<td>Accepted as a mixed value</td>
+<td>Refused recursively because the NumPy mixed round trip can change padding bytes and the result checksum</td>
+</tr>
+<tr>
+<td>A structured subarray field whose base dtype has padding</td>
+<td>Fails; the in-memory mixed serializer does not support this dtype</td>
+<td>Refused by the recursive padding guard; both backends fail</td>
+</tr>
+<tr>
+<td>Another value accepted by <code>Buffer(value, "mixed")</code></td>
+<td>Accepted as a mixed value</td>
+<td>Accepted through <code>.mixed</code>, using <code>seamless-core</code> in the job, with the same result checksum</td>
+</tr>
+<tr>
+<td>A <code>Checksum</code> object as an ordinary result</td>
+<td>Refused for <code>mixed</code> (and other non-checksum result celltypes)</td>
+<td>Refused with the same rule</td>
+</tr>
+<tr>
+<td>A <code>Checksum</code> object as a direct deepcell member</td>
+<td>A checksum, not a value</td>
+<td>A checksum entry in the index; the host rebuilds the same checksum object</td>
+</tr>
+<tr>
+<td>A <code>Checksum</code> nested inside a deepcell value member</td>
+<td>Part of the value; mixed serialization treats it as its checksum string</td>
+<td>Part of the <code>.mixed</code> value; host serialization gives the same member checksum</td>
+</tr>
+<tr>
+<td>A 64-character lowercase hexadecimal string as a deepcell member</td>
+<td>A value serialized under <code>mixed</code></td>
+<td>A value, not a checksum; the same member checksum is produced</td>
+</tr>
+<tr>
+<td>A <code>set</code> or another value rejected by the in-memory serializer</td>
+<td>Fails</td>
+<td>Fails</td>
+</tr>
+</tbody>
+</table>
+<p>The same direct-member rule applies to a <code>folder</code> result: a <code>Checksum</code> object is
+a checksum, and any other member is a value. In particular, a checksum-looking
+string is never promoted to a checksum. A checksum nested inside a deepcell
+member follows the mixed-value serializer's recursive handling; only a direct
+<code>Checksum</code> member gets a checksum entry.</p>
+<h3 id="parity">Parity</h3>
+<p><strong>Both Python backends give the same result, bit for bit, when both succeed.</strong> A backend may fail where the other succeeds. It may not succeed with a different result.</p>
+<ul>
+<li><strong>This is what lets the backend stay outside identity.</strong></li>
+<li><strong>A result type is accepted by the CLI backend only when both backends give it the same result checksum.</strong> Every other type fails under the CLI backend.</li>
+<li><strong>One-sided failures</strong>:</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>Case</th>
+<th>CLI backend</th>
+<th>In-memory backend</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>modules or globals</td>
+<td>fails</td>
+<td>accepted</td>
+</tr>
+<tr>
+<td>a properly mixed or checksum value, with no seamless-core in the job</td>
+<td>fails</td>
+<td>accepted</td>
+</tr>
+<tr>
+<td>a conda environment other than the process's, or a Docker image</td>
+<td>runs, in that environment</td>
+<td>fails</td>
+</tr>
+<tr>
+<td>a <code>Decimal</code> result with output celltype <code>str</code></td>
+<td>fails because the runner cannot encode it</td>
+<td>accepted; the <code>str</code> celltype serializes <code>str(value)</code></td>
+</tr>
+<tr>
+<td>an aligned structured array with implicit padding and a supported structured dtype, directly or nested in a dict, list, or tuple <code>mixed</code> result or deepcell value member</td>
+<td>refused recursively because the NumPy mixed round trip cannot preserve the padding bytes and checksum</td>
+<td>accepted as a mixed value</td>
+</tr>
+<tr>
+<td><code>Checksum.resolve()</code> in the code, for a member of a deepcell pin</td>
+<td>works under <code>remote: daskserver</code> only</td>
+<td>works</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li><strong>The guarantee is about the backend, not about the code.</strong> Code that depends on the interpreter's state, the working directory, an environment variable or a file outside its pins is not covered, as for any transformation.</li>
+<li><strong>The text of a failure is not covered</strong>: the two backends report the same failure in different words.</li>
+</ul>
+<h3 id="the-process-lock-cancellation-and-failures">The process lock, cancellation and failures</h3>
+<ul>
+<li><strong>The run takes the process lock like a bash body</strong>, and may run without it (<code>process_lock</code> false, or a driver) (<a href="execution-backends.html">Execution backends</a>, <em>The process lock</em>).</li>
+<li><strong>A cancel tears the job down as it does for bash</strong>, and a container is removed (<a href="cancellation.html">Cancellation</a>, <em>A bash run that is cancelled</em>).</li>
+<li><strong>A failure is the <em>Bash transformer exception</em> report</strong> (<a href="transformation-logs.html">Transformation logs</a>, <em>The failure text</em>). Its command is the interpreter's, and the Python traceback is in the standard error trailer.</li>
+<li><strong>An in-memory Python body may run without the process lock</strong>, as it always has. The rule that an in-memory body must hold the lock is that of embedded interpreters (<a href="handler-languages.html">Handler languages</a>, <em>The process lock</em>), and it does not extend to Python or compiled bodies.</li>
+</ul>
+<h3 id="drivers-and-nested-work">Drivers and nested work</h3>
+<p>A Python CLI job is in the position of a bash job.</p>
+<ul>
+<li><strong>A driver never takes the lock</strong>, under either backend. That is decided before the body starts.</li>
+<li><strong>Code that is not a driver signals its parent at its first nested submission</strong>, as a bash body's <code>seamless-run</code> does, and the parent then gives the lock up (<a href="execution-backends.html">Execution backends</a>, <em>Bash bodies</em>). The signal exists without an environment and under conda. It does not cross a container boundary.</li>
+<li><strong>The job's process is configured from <code>SEAMLESS_REMOTE_CLIENTS</code></strong>, before the code runs, when that variable is set in the job's environment and Seamless can be imported there. Nested work then goes to the same cluster and shares its caches, as a nested <code>seamless-run</code> does.</li>
+<li><strong>Only the Dask worker exports the variable.</strong> Under <code>remote: daskserver</code> nested work therefore goes to the cluster. On the other execution backends nothing is exported, and a nested transformation runs inside the job's own process, with no cache and no dispatch. A nested <code>seamless-run</code> in a bash job fails there, for lack of a configuration, unless <code>SEAMLESS_CACHE</code> or <code>SEAMLESS_REMOTE_CLIENTS</code> is in the environment that the job inherits.</li>
+<li><strong>Submissions from the job's process skip the permission routine of Dask</strong>, driver or not. The mark of a driver is not what decides it (<a href="execution-backends.html">Execution backends</a>, <em>Drivers</em>).</li>
+<li><strong>The code needs Seamless where it runs</strong>, and inside a container nested work is not supported.</li>
+</ul>
+<h2 id="deep-pins-and-results">Deep pins and results</h2>
+<p>Deep celltypes follow the matrix of <a href="deep-celltypes.html">Deep celltypes</a>, <em>How deep values reach a transformer</em>. Bash has a column of its own, and every other backend, CLI and in-memory alike, follows the other.</p>
+<ul>
+<li><strong>A folder pin is a dict of contents under every backend but bash</strong>, and <code>deepcell</code> and <code>deepfolder</code> pins are dicts of checksum objects. Under a CLI backend a folder travels to the job as a directory that the runtime reads back into a dict. The code does not see that directory.</li>
+<li><strong>A deepcell or deepfolder pin uses the checksum class of its language</strong>: <code>seamless.Checksum</code> in Python, and the checksum class of the language in R and Julia (<a href="handler-languages.html">Handler languages</a>, <em>Checksum classes</em>).</li>
+<li><strong>A deep result is a dict under every backend but bash</strong>, and the <code>RESULT</code> directory in bash.</li>
+<li><strong>Both backends of a language give a deep pin the same form.</strong></li>
+<li><strong>A compiled transformer refuses a deep pin</strong>, as before.</li>
+</ul>
+<h2 id="failures">Failures</h2>
+<p>Each of the following is a failure of the transformation, and failures are not cached:</p>
+<ul>
+<li>an in-memory backend with a Docker image, or with a conda environment that is not its process's;</li>
+<li>a conda environment together with a Docker image, and an invalid image spec, at dispatch;</li>
+<li>a required binary that is missing where the code runs;</li>
+<li>a Python CLI job with modules or globals, with a value that it cannot carry, or without a package that it needs;</li>
+<li>every failure class of a CLI job (<a href="environments.html">Environments</a>, <em>Failures</em>).</li>
+</ul>
+<h2 id="current-limitations">Current limitations</h2>
+<ul>
+<li><strong>A third-party handler can ignore <code>environment</code>.</strong> The two functions make honouring it easy. Nothing enforces it.</li>
+<li><strong>A Python CLI job with a deepcell pin or a <code>checksum</code> pin needs seamless-core</strong>, also where its code only passes members on.</li>
+<li><strong>Code in a CLI job can resolve the members of a deepcell pin under <code>remote: daskserver</code> only.</strong> No Seamless configuration is exported to a job outside Dask. R and Julia code cannot resolve a checksum at all.</li>
+<li><strong>A properly mixed value is written by the seamless-core of the process that runs the transformation, and read by the one in the job</strong>, and back. Nothing checks that two versions agree on the format.</li>
+<li><strong>Every Python CLI run starts an interpreter</strong>, plus <code>conda run</code> (in the order of a second with <code>conda</code>) or a container start.</li>
+<li><strong>A failure under a CLI backend is titled <em>Bash transformer exception</em></strong>, whatever the language.</li>
+<li><strong>A job holds its process for as long as it runs</strong>, unless <code>process_lock</code> is false.</li>
+<li><strong>In a container, nested Seamless work is not supported.</strong></li>
+<li><strong>Writing a job directory instead of running it</strong> is for bash transformations only.</li>
+</ul>
+<h2 id="non-goals">Non-goals</h2>
+<ul>
+<li>A CLI backend for compiled transformers.</li>
+<li>A setting that lets a Python or compiled pin arrive as a file.</li>
+<li>Modules and globals under the Python CLI backend.</li>
+<li>Seamless installing an interpreter, a package or an environment on the executing host or in an image.</li>
+<li>A public format for what travels between a job and the process that runs the transformation. A handler returns a Python value to Seamless.</li>
+</ul>
+<h2 id="code-locations">Code locations</h2>
+<table>
+<thead>
+<tr>
+<th>Concern</th>
+<th>Module / symbol</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>The two public functions</td>
+<td><code>seamless_transformer.languages</code> (<code>check_in_memory_environment</code>, <code>execute_cli</code>)</td>
+</tr>
+<tr>
+<td>The CLI job launcher</td>
+<td><code>seamless_transformer.execute_bash</code> (<code>execute_bash</code>)</td>
+</tr>
+<tr>
+<td>Dispatch to a backend</td>
+<td><code>seamless_transformer.run.run_transformation_dict</code></td>
+</tr>
+<tr>
+<td><code>metavars</code> of Python builders</td>
+<td><code>seamless_transformer.transformer_class</code></td>
+</tr>
+<tr>
+<td>The check of the specification at dispatch</td>
+<td><code>seamless_transformer.transformation_cache</code></td>
+</tr>
+</tbody>
+</table>
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="handler-languages.html" class="btn btn-neutral float-left" title="Handler Languages"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../api/python/seamless.html" class="btn btn-neutral float-right" title="seamless">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+    
+      <span><a href="handler-languages.html" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="../api/python/seamless.html" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script src="../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "..";</script>
+    <script src="../js/theme_extra.js"></script>
+    <script src="../js/theme.js"></script>
+      <script src="../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>
