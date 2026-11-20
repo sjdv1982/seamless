@@ -10,10 +10,7 @@ Sharing works at two levels. The lightweight path is to exchange checksums: if t
 
 ## What about interactivity?
 
-This is Seamless 1.x, running on a new code architecture. Seamless 0.x offered an interactive, notebook-first workflow experience with reactive cells, Jupyter widget integration, filesystem mounting, and collaborative web interfaces. These
-features are being ported to the new architecture. If your work is primarily
-interactive/exploratory, you can use the [legacy version](https://sjdv1982.github.io/seamless/legacy/)
-today, or watch this space for updates.
+This is Seamless 1.x, running on a new code architecture. Seamless 1.5 is the first 1.x version on feature parity with legacy Seamless 0.x: the interactive workflow layer is back, with reactive cells, file mounts, Jupyter widgets and web interfaces over HTTP. Not carried over are macros, the standard library, Silk validation and sub-contexts.
 
 ## Installation
 

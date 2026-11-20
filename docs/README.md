@@ -2,9 +2,12 @@
 
 This repository builds a combined documentation site with:
 
-- New Seamless docs (MkDocs content from `docs/agent/`).
+- Main (human-facing) docs at `/` (MkDocs content from `docs/main/`, config `mkdocs-main.yml`).
+- Agent/contract docs at `/agent/` (MkDocs content from `docs/agent/`, config `mkdocs.yml`).
 - Workspace repo snapshots (generated into `docs/agent/repos/`).
-- Legacy Seamless docs (static HTML under `docs/legacy/`).
+
+Legacy Seamless (0.x) docs are no longer part of the site; they live in `docs/`
+on the `legacy-seamless0.x` branch.
 
 The final site is written to `_site/` by default.
 
@@ -27,11 +30,14 @@ bash tools/pages/build-site.sh /tmp/seamless-site
 
 `tools/pages/build-site.sh` performs these steps:
 
-1. Run `tools/pages/sync_repo_docs.sh`.
-2. Build MkDocs site from `mkdocs.yml` into `.pages-new/`.
-3. Copy MkDocs output into `_site/`.
-4. Copy legacy docs from `docs/legacy/` into `_site/legacy/`.
-5. Inject a deprecation banner into legacy HTML pages.
+1. Run `tools/pages/sync_repo_docs.sh` and `tools/pages/sync_main_api_docs.sh`.
+2. Generate the agent API reference from docstrings (`docs/agent/scripts/gen_agent_docs.py`)
+   and copy it into `docs/main/api/reference/`.
+3. Build the main site from `mkdocs-main.yml` into `.pages-main/`.
+4. Build the agent site from `mkdocs.yml` into `.pages-new/`.
+5. Assemble `_site/`: main docs at the root, agent docs under `_site/agent/`.
+6. If the output dir is the default `_site/` and `ghp-import` is installed,
+   force-push `_site/` to the `gh-pages` branch (`ghp-import -n -p -f`).
 
 ## Assumptions about sibling repos
 
@@ -79,11 +85,6 @@ It also generates:
 - `docs/agent/repos/<repo>/index.md` (per-repo file list)
 
 This is a snapshot copy at build time; no live cross-repo links are needed.
-
-## Legacy docs requirement
-
-Legacy docs must be present at `docs/legacy/`.  
-If missing, `tools/pages/build-site.sh` exits with an error.
 
 ## GitHub Actions note
 

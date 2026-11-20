@@ -295,7 +295,7 @@ From the contract pages (file in brackets):
 
 ### Legacy parity (Seamless 0.x versus 1.5)
 
-Legacy source: `seamless/docs/legacy/*.html`. "Complete" means the 0.x capability has a documented 1.5 equivalent with no known missing part. "Partial" lists what is missing.
+Legacy source: `docs/*.html` on the `legacy-seamless0.x` branch. "Complete" means the 0.x capability has a documented 1.5 equivalent with no known missing part. "Partial" lists what is missing.
 
 | 0.x capability | 1.5 equivalent | Status | Missing / different |
 |---|---|---|---|

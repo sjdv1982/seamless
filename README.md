@@ -6,7 +6,7 @@ Most computational pipelines are already reproducible — the same inputs produc
 
 Every step becomes a *transformation*, identified by the checksum of its code and inputs: identical work always has the same identity, whoever runs it and wherever.
 
-**Seamless 1.5 (pre-release)** is the first 1.x version on feature parity with legacy Seamless 0.x. The interactive workflow layer is back, on the new architecture: reactive cells, file mounts, Jupyter widgets and web interfaces over HTTP. Not carried over are macros, the standard library, Silk validation and sub-contexts. See the [release notes](https://github.com/sjdv1982/seamless/blob/main/RELEASE-NOTES.md).
+**Seamless 1.5** is the first 1.x version on feature parity with legacy Seamless 0.x. The interactive workflow layer is back, on the new architecture: reactive cells, file mounts, Jupyter widgets and web interfaces over HTTP. Not carried over are macros, the standard library, Silk validation and sub-contexts. See the [release notes](https://github.com/sjdv1982/seamless/blob/main/RELEASE-NOTES.md).
 
 ## Three faces
 
@@ -123,4 +123,4 @@ Seamless includes [skills](https://github.com/sjdv1982/seamless/tree/main/skills
 
 All source code is on GitHub: [seamless-core](https://github.com/sjdv1982/seamless-core), [seamless-transformer](https://github.com/sjdv1982/seamless-transformer), [seamless-workflow](https://github.com/sjdv1982/seamless-workflow), [seamless-config](https://github.com/sjdv1982/seamless-config), [seamless-remote](https://github.com/sjdv1982/seamless-remote), [seamless-database](https://github.com/sjdv1982/seamless-database), [hashserver](https://github.com/sjdv1982/hashserver), [seamless-jobserver](https://github.com/sjdv1982/seamless-jobserver), [seamless-dask](https://github.com/sjdv1982/seamless-dask), [seamless-signature](https://github.com/sjdv1982/seamless-signature), [remote-http-launcher](https://github.com/sjdv1982/remote-http-launcher)
 
-The previous, 0.x version is documented at [legacy](https://sjdv1982.github.io/seamless/legacy/).
+The previous, 0.x version (code and documentation) remains on the [legacy-seamless0.x branch](https://github.com/sjdv1982/seamless/tree/legacy-seamless0.x).

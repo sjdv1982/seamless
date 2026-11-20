@@ -1,6 +1,6 @@
 ## Porting a Seamless 0.x project to 1.5
 
-Seamless 1.5 brings the 0.x workflow layer back on a new architecture (package `seamless-workflow`). Most of the interactive model survives; the API is close but not identical, saved graphs are not converted, and several 0.x features are absent. Legacy docs: `seamless/docs/legacy/`. Behaviour of 1.5: the contracts named below (in `seamless/docs/agent/contracts/`).
+Seamless 1.5 brings the 0.x workflow layer back on a new architecture (package `seamless-workflow`). Most of the interactive model survives; the API is close but not identical, saved graphs are not converted, and several 0.x features are absent. Legacy docs: `docs/` on the `legacy-seamless0.x` branch of the seamless repo. Behaviour of 1.5: the contracts named below (in `seamless/docs/agent/contracts/`).
 
 ### First: check for absent features
 
