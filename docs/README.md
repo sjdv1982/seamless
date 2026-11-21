@@ -30,13 +30,19 @@ bash tools/pages/build-site.sh /tmp/seamless-site
 
 `tools/pages/build-site.sh` performs these steps:
 
-1. Run `tools/pages/sync_repo_docs.sh` and `tools/pages/sync_main_api_docs.sh`.
-2. Generate the agent API reference from docstrings (`docs/agent/scripts/gen_agent_docs.py`)
+1. Generate the home page `docs/main/index.md` from `README.md` plus the table of
+   contents in `docs/main-index-toc.md` (`tools/pages/gen_main_index.py`).
+   The page is tracked, so commit it after a build; but edit `README.md` or
+   `docs/main-index-toc.md`, never `index.md` itself.
+   Links to the site or to `docs/main/` become relative; paragraphs that point
+   to the site home are replaced by a lead-in to the table of contents.
+2. Run `tools/pages/sync_repo_docs.sh` and `tools/pages/sync_main_api_docs.sh`.
+3. Generate the agent API reference from docstrings (`docs/agent/scripts/gen_agent_docs.py`)
    and copy it into `docs/main/api/reference/`.
-3. Build the main site from `mkdocs-main.yml` into `.pages-main/`.
-4. Build the agent site from `mkdocs.yml` into `.pages-new/`.
-5. Assemble `_site/`: main docs at the root, agent docs under `_site/agent/`.
-6. If the output dir is the default `_site/` and `ghp-import` is installed,
+4. Build the main site from `mkdocs-main.yml` into `.pages-main/`.
+5. Build the agent site from `mkdocs.yml` into `.pages-new/`.
+6. Assemble `_site/`: main docs at the root, agent docs under `_site/agent/`.
+7. If the output dir is the default `_site/` and `ghp-import` is installed,
    force-push `_site/` to the `gh-pages` branch (`ghp-import -n -p -f`).
 
 ## Assumptions about sibling repos
