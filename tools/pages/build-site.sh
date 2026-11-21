@@ -11,6 +11,9 @@ if ! command -v mkdocs >/dev/null 2>&1; then
   exit 1
 fi
 
+# Generate the main docs home page from README.md
+python "${ROOT_DIR}/tools/pages/gen_main_index.py" "${ROOT_DIR}"
+
 # Sync subrepo content into agent docs and main API reference
 bash "${ROOT_DIR}/tools/pages/sync_repo_docs.sh"
 bash "${ROOT_DIR}/tools/pages/sync_main_api_docs.sh"

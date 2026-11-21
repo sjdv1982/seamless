@@ -20,6 +20,7 @@ nav:
       - Setting up a local cluster: cluster.md
       - Seamless mode: seamless-mode.md
   - How-To Guides:
+      - Running R and Julia transformers: r-and-julia-transformers.md
       - Caching, identity, and sharing: caching.md
       - Composition: composition.md
       - Local parallelism: parallelism.md
@@ -34,12 +35,15 @@ nav:
       - Overview: api/index.md
       - seamless-core: api/seamless-core.md
       - seamless-transformer: api/seamless-transformer.md
+      - seamless-workflow: api/seamless-workflow.md
       - seamless-config: api/seamless-config.md
       - seamless-remote: api/seamless-remote.md
       - seamless-dask: api/seamless-dask.md
       - seamless-jobserver: api/seamless-jobserver.md
       - seamless-database: api/seamless-database.md
+      - hashserver: api/hashserver.md
       - remote-http-launcher: api/remote-http-launcher.md
+      - seamless-signature: api/seamless-signature.md
       - Python docstrings:
           - seamless: api/reference/seamless.md
           - Checksum: api/reference/seamless.checksum_class.md
@@ -47,6 +51,10 @@ nav:
           - seamless.transformer: api/reference/seamless.transformer.md
           - Transformation: api/reference/seamless_transformer.transformation_class.md
           - Transformer properties: api/reference/seamless_transformer.transformer_class.md
+          - Compiled transformers: api/reference/seamless_transformer.compiled_transformer.md
+          - Environment: api/reference/seamless_transformer.environment.md
+          - Languages: api/reference/seamless_transformer.languages.md
+          - Interpreter thread: api/reference/seamless_transformer.languages.interpreter_thread.md
           - seamless.config.select: api/reference/seamless_config.select.md
           - seamless.config.tools: api/reference/seamless_config.tools.md
       - CLI docstrings:

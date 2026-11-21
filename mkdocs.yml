@@ -58,5 +58,9 @@ nav:
       - seamless_config.tools: api/python/seamless_config.tools.md
       - seamless_transformer.transformation_class: api/python/seamless_transformer.transformation_class.md
       - seamless_transformer.transformer_class: api/python/seamless_transformer.transformer_class.md
+      - seamless_transformer.compiled_transformer: api/python/seamless_transformer.compiled_transformer.md
+      - seamless_transformer.environment: api/python/seamless_transformer.environment.md
+      - seamless_transformer.languages: api/python/seamless_transformer.languages.md
+      - seamless_transformer.languages.interpreter_thread: api/python/seamless_transformer.languages.interpreter_thread.md
   - CLI:
       - seamless-run: api/cli/seamless-run.md
