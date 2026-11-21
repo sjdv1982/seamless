@@ -5,14 +5,14 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
       <link rel="shortcut icon" href="../img/favicon.ico" />
-    <title>Hashserver - Seamless</title>
+    <title>hashserver - Seamless</title>
     <link rel="stylesheet" href="../css/theme.css" />
     <link rel="stylesheet" href="../css/theme_extra.css" />
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
     
       <script>
         // Current page data
-        var mkdocs_page_name = "Hashserver";
+        var mkdocs_page_name = "hashserver";
         var mkdocs_page_input_path = "api/hashserver.md";
         var mkdocs_page_url = null;
       </script>
@@ -54,6 +54,8 @@
               </ul>
               <p class="caption"><span class="caption-text">How-To Guides</span></p>
               <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../r-and-julia-transformers.html">Running R and Julia transformers</a>
+                  </li>
                   <li class="toctree-l1"><a class="reference internal" href="../caching.html">Caching, identity, and sharing</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../composition.html">Composition</a>
@@ -76,12 +78,14 @@
                   </li>
               </ul>
               <p class="caption"><span class="caption-text">Reference API</span></p>
-              <ul>
+              <ul class="current">
                   <li class="toctree-l1"><a class="reference internal" href="index.html">Overview</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="seamless-core.html">seamless-core</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="seamless-transformer.html">seamless-transformer</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="seamless-workflow.html">seamless-workflow</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="seamless-config.html">seamless-config</a>
                   </li>
@@ -93,7 +97,59 @@
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="seamless-database.html">seamless-database</a>
                   </li>
+                  <li class="toctree-l1 current"><a class="reference internal current" href="#">hashserver</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#why-content-addressed-storage">Why content-addressed storage?</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#relationship-to-seamless">Relationship to Seamless</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#features">Features</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#installation">Installation</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#quick-start">Quick start</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#storing-and-retrieving-a-buffer">Storing and retrieving a buffer</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#status-file-protocol">Status-file protocol</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#api">API</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#retrieving-buffers">Retrieving buffers</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#storing-buffers">Storing buffers</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#querying-availability">Querying availability</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#health">Health</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#configuration">Configuration</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#cli-flags">CLI flags</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#environment-variables">Environment variables</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#docker-compose">Docker Compose</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#directory-layouts">Directory layouts</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#compression">Compression</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#running-tests">Running tests</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#license">License</a>
+    </li>
+    </ul>
+                  </li>
                   <li class="toctree-l1"><a class="reference internal" href="remote-http-launcher.html">remote-http-launcher</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="seamless-signature.html">seamless-signature</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" >Python docstrings</a>
     <ul>
@@ -108,6 +164,14 @@
                 <li class="toctree-l2"><a class="reference internal" href="reference/seamless_transformer.transformation_class.html">Transformation</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="reference/seamless_transformer.transformer_class.html">Transformer properties</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="reference/seamless_transformer.compiled_transformer.html">Compiled transformers</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="reference/seamless_transformer.environment.html">Environment</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="reference/seamless_transformer.languages.html">Languages</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="reference/seamless_transformer.languages.interpreter_thread.html">Interpreter thread</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="reference/seamless_config.select.html">seamless.config.select</a>
                 </li>
@@ -136,7 +200,8 @@
         <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
   <ul class="wy-breadcrumbs">
     <li><a href="../index.html" class="icon icon-home" aria-label="Docs"></a></li>
-      <li class="breadcrumb-item active">Hashserver</li>
+          <li class="breadcrumb-item">Reference API</li>
+      <li class="breadcrumb-item active">hashserver</li>
     <li class="wy-breadcrumbs-aside">
     </li>
   </ul>
@@ -348,6 +413,10 @@ pytest tests/
               
             </div>
           </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="seamless-database.html" class="btn btn-neutral float-left" title="seamless-database"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="remote-http-launcher.html" class="btn btn-neutral float-right" title="remote-http-launcher">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
 
   <hr/>
 
@@ -369,6 +438,10 @@ pytest tests/
   <span class="rst-current-version" data-toggle="rst-current-version">
     
     
+      <span><a href="seamless-database.html" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="remote-http-launcher.html" style="color: #fcfcfc">Next &raquo;</a></span>
     
   </span>
 </div>

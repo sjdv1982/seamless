@@ -42,23 +42,33 @@
               <ul class="current">
                 <li class="toctree-l1 current"><a class="reference internal current" href="#">Home</a>
     <ul class="current">
-    <li class="toctree-l2"><a class="reference internal" href="#what-about-interactivity">What about interactivity?</a>
-    </li>
-    <li class="toctree-l2"><a class="reference internal" href="#installation">Installation</a>
-    </li>
-    <li class="toctree-l2"><a class="reference internal" href="#quick-examples">Quick Examples</a>
+    <li class="toctree-l2"><a class="reference internal" href="#three-faces">Three faces</a>
         <ul>
-    <li class="toctree-l3"><a class="reference internal" href="#python-direct">Python: direct</a>
+    <li class="toctree-l3"><a class="reference internal" href="#python-face-direct">Python face: direct</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="#command-line-seamless-run">Command line: seamless-run</a>
+    <li class="toctree-l3"><a class="reference internal" href="#command-line-face-seamless-run">Command-line face: seamless-run</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#workflow-face-context">Workflow face: Context</a>
     </li>
         </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#what-makes-seamless-different">What makes Seamless different</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#sharing-results">Sharing results</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#installation">Installation</a>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#seamless-mode">Seamless mode</a>
         <ul>
     <li class="toctree-l3"><a class="reference internal" href="#automatically-wrap-the-bash-commands-you-type">Automatically wrap the bash commands you type</a>
     </li>
         </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#documentation">Documentation</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#agent-skills">Agent skills</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#source-code">Source code</a>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#in-this-documentation">In this documentation</a>
     </li>
@@ -76,6 +86,8 @@
               </ul>
               <p class="caption"><span class="caption-text">How-To Guides</span></p>
               <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="r-and-julia-transformers.html">Running R and Julia transformers</a>
+                  </li>
                   <li class="toctree-l1"><a class="reference internal" href="caching.html">Caching, identity, and sharing</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="composition.html">Composition</a>
@@ -105,6 +117,8 @@
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="api/seamless-transformer.html">seamless-transformer</a>
                   </li>
+                  <li class="toctree-l1"><a class="reference internal" href="api/seamless-workflow.html">seamless-workflow</a>
+                  </li>
                   <li class="toctree-l1"><a class="reference internal" href="api/seamless-config.html">seamless-config</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="api/seamless-remote.html">seamless-remote</a>
@@ -115,7 +129,11 @@
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="api/seamless-database.html">seamless-database</a>
                   </li>
+                  <li class="toctree-l1"><a class="reference internal" href="api/hashserver.html">hashserver</a>
+                  </li>
                   <li class="toctree-l1"><a class="reference internal" href="api/remote-http-launcher.html">remote-http-launcher</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="api/seamless-signature.html">seamless-signature</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" >Python docstrings</a>
     <ul>
@@ -130,6 +148,14 @@
                 <li class="toctree-l2"><a class="reference internal" href="api/reference/seamless_transformer.transformation_class.html">Transformation</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="api/reference/seamless_transformer.transformer_class.html">Transformer properties</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="api/reference/seamless_transformer.compiled_transformer.html">Compiled transformers</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="api/reference/seamless_transformer.environment.html">Environment</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="api/reference/seamless_transformer.languages.html">Languages</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="api/reference/seamless_transformer.languages.interpreter_thread.html">Interpreter thread</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="api/reference/seamless_config.select.html">seamless.config.select</a>
                 </li>
@@ -167,17 +193,71 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
             <div class="section" itemprop="articleBody">
               
-                <h1 id="seamless">Seamless</h1>
+                <!-- Generated from README.md by tools/pages/gen_main_index.py. Do not edit; edit README.md or docs/main-index-toc.md instead. -->
+
+<h1 id="seamless">Seamless</h1>
 <p><strong>Seamless: define your computation once — cache it, scale it, share it.</strong></p>
 <p>Most computational pipelines are already reproducible — the same inputs produce the same outputs. Wrap your code as a step with declared inputs and outputs, and Seamless gives you caching (never recompute what you've already computed) and remote deployment (run on a cluster without changing your code). Remote execution also acts as a reproducibility test: if your wrapped code runs on a clean worker and produces the same result, it is reproducible. If not, Seamless has helped you find the problem — whether it's a missing input, an undeclared dependency, or a sensitivity to platform or library versions.</p>
-<p>Seamless wraps both Python and command-line code. In Python, <code>direct</code> runs a function immediately; <code>delayed</code> records the function for deferred or remote execution. From the shell, <code>seamless-run</code> wraps any command as a Seamless transformation — no Python required. In both cases, the transformation is identified by the checksum of its code and inputs: identical work always produces the same identity.</p>
-<p>Sharing works at two levels. The lightweight path is to exchange checksums: if two researchers have computed the same transformation, they already have the same result — no data transfer needed. The concrete path is to share the <code>seamless.db</code> file, a portable SQLite database that maps transformation checksums to result checksums. Copy it to a colleague, a cluster, or a publication archive, and every cached result travels with it. Combined, these two paths let a lab build up a shared computation cache that grows over time and never recomputes what anyone has already computed.</p>
-<h2 id="what-about-interactivity">What about interactivity?</h2>
-<p>This is Seamless 1.x, running on a new code architecture. Seamless 1.5 is the first 1.x version on feature parity with legacy Seamless 0.x: the interactive workflow layer is back, with reactive cells, file mounts, Jupyter widgets and web interfaces over HTTP. Not carried over are macros, the standard library, Silk validation and sub-contexts.</p>
+<p>Every step becomes a <em>transformation</em>, identified by the checksum of its code and inputs: identical work always has the same identity, whoever runs it and wherever.</p>
+<p><strong>Seamless 1.5</strong> is the first 1.x version on feature parity with legacy Seamless 0.x. The interactive workflow layer is back, on the new architecture: reactive cells, file mounts, Jupyter widgets and web interfaces over HTTP. Not carried over are macros, the standard library, Silk validation and sub-contexts. See the <a href="https://github.com/sjdv1982/seamless/blob/main/RELEASE-NOTES.md">release notes</a>.</p>
+<h2 id="three-faces">Three faces</h2>
+<p>Seamless has three entry points, or <em>faces</em>. You can start with any of them and combine them later. They share one cache, because all three produce the same kind of transformation.</p>
+<ul>
+<li><strong>Python face</strong>: <code>direct</code> runs a function immediately; <code>delayed</code> records it for deferred or remote execution. Your program stays in charge.</li>
+<li><strong>Command-line face</strong>: <code>seamless-run</code> wraps any shell command. No Python required.</li>
+<li><strong>Workflow face</strong>: a <code>Context</code> is a reactive graph of cells and transformers, kept up to date as values change. Cells can be mounted to files, linked to Jupyter widgets, or served over HTTP.</li>
+</ul>
+<p>Transformers can be written in Python, bash, R, Julia or a compiled language (C, C++, Fortran, Rust). R, Julia and compiled code go through <code>Transformer(...)</code>, in Python or in a Context.</p>
+<h3 id="python-face-direct">Python face: <code>direct</code></h3>
+<pre><code class="language-python">from seamless.transformer import direct
+
+@direct
+def add(a, b):
+    return a + b
+
+add(2, 3)   # runs the function, returns 5
+add(2, 3)   # cache hit — returns 5 instantly
+</code></pre>
+<h3 id="command-line-face-seamless-run">Command-line face: <code>seamless-run</code></h3>
+<pre><code class="language-bash">export SEAMLESS_CACHE=~/.seamless/cache     # global persistent caching
+
+seamless-run 'seq 1 10 | tac &amp;&amp; sleep 5'    # runs, caches result
+seamless-run 'seq 1 10 | tac &amp;&amp; sleep 5'    # cache hit — instant
+</code></pre>
+<h3 id="workflow-face-context">Workflow face: <code>Context</code></h3>
+<pre><code class="language-python">from seamless.workflow import Context
+
+def add(a, b):
+    return a + b
+
+ctx = Context()
+ctx.a = 10
+ctx.b = 20
+ctx.add = add
+ctx.add.pins.a = ctx.a
+ctx.add.pins.b = ctx.b
+ctx.c = ctx.add.result
+ctx.compute()
+print(ctx.c.value)          # 30
+
+ctx.a.mount(&quot;a.json&quot;)       # edit a.json, and c follows
+ctx.c.share()               # http://localhost:5813/ctx/c (no authentication)
+</code></pre>
+<h2 id="what-makes-seamless-different">What makes Seamless different</h2>
+<p>Seamless is not the only tool that caches computations by content. What sets it apart is how it treats determinism: as a scientific claim that can be tested, rather than something guaranteed by a closed language or enforced by a sandbox.</p>
+<ul>
+<li><strong>A result is a claim that can be tested.</strong> "This transformation yields this result" is meant to hold wherever it is computed. The execution environment is deliberately <em>not</em> part of a transformation's identity, so recomputing a step on another machine, with other library versions, is a replication of the same computation, not a different one. When a recomputation gives a different result, the database keeps the original and records the divergence.</li>
+<li><strong>Checksums are first-class.</strong> A checksum can stand in for the data it identifies: a computation over a checksum has the same identity as the computation over the data itself. Identity is independent of where the data is stored, or whether it is present locally.</li>
+<li><strong>Results have identities, not just recipes.</strong> Downstream steps are keyed on the results they consume. If an upstream edit leaves a result unchanged, nothing downstream reruns.</li>
+<li><strong>Any file has an identity.</strong> Identity is the SHA-256 of the bytes, verifiable with standard tools. Types interpret data; they don't require converting it into a Seamless format first.</li>
+</ul>
+<p>Together, these let a result travel between machines, labs and publications with its identity intact: a portable scientific fact that others can build on or replicate. The trade-off is deliberate. Seamless is for deterministic computation; it is not designed for workflows whose purpose is side effects, such as sending notifications or querying live services. For the full argument, and how this compares to Make, Snakemake, Bazel, Nix and Unison, see the <a href="https://github.com/sjdv1982/seamless/blob/main/positioning-paper.md">positioning paper</a>.</p>
+<h2 id="sharing-results">Sharing results</h2>
+<p>The lightweight way is to exchange checksums: if two researchers have computed the same transformation, they already have the same result, so no data needs to be transferred. The concrete way is to share the <code>seamless.db</code> file, a portable SQLite database that maps transformation checksums to result checksums. Copy it to a colleague, a cluster or a publication archive, and every cached result travels with it.</p>
 <h2 id="installation">Installation</h2>
 <pre><code class="language-bash">pip install seamless-suite
 </code></pre>
-<p>This installs all standard Seamless components. For a minimal install, the core user-facing packages are:</p>
+<p>This installs all standard Seamless components, including Jupyter widget and HTTP share support. The core user-facing packages are:</p>
 <table>
 <thead>
 <tr>
@@ -190,17 +270,17 @@
 <tr>
 <td><code>seamless-core</code></td>
 <td><code>import seamless</code></td>
-<td><code>Checksum</code>, <code>Buffer</code>, cell types, buffer cache</td>
+<td><code>Checksum</code>, <code>Buffer</code>, <code>Cell</code>, <code>Expression</code>, celltypes, buffer cache</td>
 </tr>
 <tr>
 <td><code>seamless-transformer</code></td>
 <td><code>from seamless.transformer import Transformer, direct, delayed</code></td>
-<td><code>Transformer</code>, <code>direct</code>, <code>delayed</code>, <code>parallel</code>, <code>parallel_async</code>, <code>TransformationList</code>, <code>seamless-run</code>, <code>seamless-upload</code>, <code>seamless-download</code></td>
+<td><code>Transformer</code>, <code>direct</code>, <code>delayed</code>, <code>parallel</code>, <code>parallel_async</code>, <code>TransformationList</code>, <code>seamless-run</code>, <code>seamless-upload</code>, <code>seamless-download</code>, <code>seamless-cancel</code></td>
 </tr>
 <tr>
 <td><code>seamless-workflow</code></td>
 <td><code>from seamless.workflow import Context, Cell, Transformer</code></td>
-<td>reactive workflow Contexts and their canonical Cell/Transformer handles</td>
+<td>reactive Contexts, file mounts, Jupyter widgets, HTTP shares, <code>seamless-serve-graph</code></td>
 </tr>
 <tr>
 <td><code>seamless-config</code></td>
@@ -209,27 +289,26 @@
 </tr>
 </tbody>
 </table>
-<hr />
-<h2 id="quick-examples">Quick Examples</h2>
-<h3 id="python-direct">Python: <code>direct</code></h3>
-<pre><code class="language-python">from seamless.transformer import direct
-
-@direct
-def add(a, b):
-    return a + b
-
-add(2, 3)   # runs the function, returns 5
-add(2, 3)   # cache hit — returns 5 instantly
-</code></pre>
-<h3 id="command-line-seamless-run">Command line: <code>seamless-run</code></h3>
-<pre><code class="language-bash">export SEAMLESS_CACHE=~/.seamless/cache     # global persistent caching
-
-seamless-run 'seq 1 10 | tac &amp;&amp; sleep 5'    # runs, caches result
-seamless-run 'seq 1 10 | tac &amp;&amp; sleep 5'    # cache hit — instant
-</code></pre>
+<p>R and Julia transformers need their own runtimes (<code>Rscript</code>, <code>julia</code>); see the <a href="r-and-julia-transformers.html">setup notes</a>. The Julia command-line backend currently requires a source checkout.</p>
 <h2 id="seamless-mode">Seamless mode</h2>
+<p>When <code>seamless-suite</code> is installed in a Conda environment, activating that environment in interactive Bash loads the Seamless mode bindings automatically. For POSIX venvs, including uv environments, run <code>seamless-mode-venv-hook install</code> once after activating the environment. In Pixi, use <code>pixi run seamless-mode-shell</code>. Use <code>seamless-mode-on</code> and <code>seamless-mode-off</code> to enable and disable Seamless mode; <code>Ctrl-U U</code> toggles it. See the <a href="seamless-mode.html#setup">Seamless mode setup guide</a>.</p>
 <h3 id="automatically-wrap-the-bash-commands-you-type">Automatically wrap the bash commands you type</h3>
 <p><img alt="seamless-mode demo" src="seamless-mode.gif" /></p>
+<h2 id="documentation">Documentation</h2>
+<p>These pages cover the Python and command-line faces: getting started, caching, cluster setup, remote execution, compiled transformers and the reference API. See <a href="#in-this-documentation">In this documentation</a> below for the full list.</p>
+<p>The workflow face has no guide yet. Start with the <a href="https://github.com/sjdv1982/seamless-workflow/tree/main/examples">examples</a> (<code>basic-example.ipynb</code> first). The precise behaviour of every feature is specified in the <a href="https://github.com/sjdv1982/seamless/tree/main/docs/agent/contracts">contract pages</a>. They are written for AI agents, but readable; for the workflow face, start with <code>workflow-context.md</code>, <code>cells.md</code>, <code>mounts.md</code>, <code>shares.md</code> and <code>widgets.md</code>.</p>
+<p>For changes, see the <a href="https://github.com/sjdv1982/seamless/blob/main/RELEASE-NOTES.md">release notes</a> and, in more detail, the <a href="https://github.com/sjdv1982/seamless/blob/main/CHANGELOG.md">changelog</a>.</p>
+<h2 id="agent-skills">Agent skills</h2>
+<p>Seamless includes <a href="https://github.com/sjdv1982/seamless/tree/main/skills">skills</a> for AI coding assistants:</p>
+<ul>
+<li><code>seamless-adoption</code>: assess whether a codebase fits Seamless, and plan a port.</li>
+<li><code>seamless-porting</code>: carry out a port, or upgrade from Seamless 0.x or 1.4.</li>
+<li><code>seamless-workflow</code>: build, run and debug a reactive workflow <code>Context</code> (cells, mounts, shares, widgets).</li>
+<li><code>seamless-remote-debugging</code>: debug remote execution (hashserver, database, jobserver, daskserver).</li>
+</ul>
+<h2 id="source-code">Source code</h2>
+<p>All source code is on GitHub: <a href="https://github.com/sjdv1982/seamless-core">seamless-core</a>, <a href="https://github.com/sjdv1982/seamless-transformer">seamless-transformer</a>, <a href="https://github.com/sjdv1982/seamless-workflow">seamless-workflow</a>, <a href="https://github.com/sjdv1982/seamless-config">seamless-config</a>, <a href="https://github.com/sjdv1982/seamless-remote">seamless-remote</a>, <a href="https://github.com/sjdv1982/seamless-database">seamless-database</a>, <a href="https://github.com/sjdv1982/hashserver">hashserver</a>, <a href="https://github.com/sjdv1982/seamless-jobserver">seamless-jobserver</a>, <a href="https://github.com/sjdv1982/seamless-dask">seamless-dask</a>, <a href="https://github.com/sjdv1982/seamless-signature">seamless-signature</a>, <a href="https://github.com/sjdv1982/remote-http-launcher">remote-http-launcher</a></p>
+<p>The previous, 0.x version (code and documentation) remains on the <a href="https://github.com/sjdv1982/seamless/tree/legacy-seamless0.x">legacy-seamless0.x branch</a>.</p>
 <hr />
 <h2 id="in-this-documentation">In this documentation</h2>
 <p><strong>Getting started</strong></p>
@@ -255,14 +334,17 @@ seamless-run 'seq 1 10 | tac &amp;&amp; sleep 5'    # cache hit — instant
 <p><strong>Reference API</strong></p>
 <ul>
 <li><a href="api/index.html">Overview</a> — full API symbol classification</li>
-<li><a href="api/seamless-core.html">seamless-core</a> — <code>Checksum</code>, <code>Buffer</code>, cell types</li>
-<li><a href="api/seamless-transformer.html">seamless-transformer</a> — <code>direct</code>, <code>delayed</code>, <code>parallel</code>, <code>Transformation</code>, <code>spawn</code></li>
+<li><a href="api/seamless-core.html">seamless-core</a> — <code>Checksum</code>, <code>Buffer</code>, <code>Cell</code>, <code>Expression</code>, celltypes</li>
+<li><a href="api/seamless-transformer.html">seamless-transformer</a> — <code>Transformer</code>, <code>direct</code>, <code>delayed</code>, <code>parallel</code>, <code>Transformation</code>, <code>spawn</code></li>
+<li><a href="api/seamless-workflow.html">seamless-workflow</a> — reactive <code>Context</code>, file mounts, Jupyter widgets, HTTP shares</li>
 <li><a href="api/seamless-config.html">seamless-config</a> — <code>init()</code>, <code>set_stage()</code>, YAML command language, cluster definitions</li>
 <li><a href="api/seamless-remote.html">seamless-remote</a> — remote clients, <code>seamless-resolve</code>, <code>seamless-fingertip</code></li>
 <li><a href="api/seamless-dask.html">seamless-dask</a> — Dask integration, <code>seamless-dask-wrapper</code></li>
 <li><a href="api/seamless-jobserver.html">seamless-jobserver</a> — lightweight HTTP job dispatcher</li>
 <li><a href="api/seamless-database.html">seamless-database</a> — transformation result cache server</li>
+<li><a href="api/hashserver.html">hashserver</a> — content-addressed buffer server over HTTP</li>
 <li><a href="api/remote-http-launcher.html">remote-http-launcher</a> — service launcher and lifecycle manager</li>
+<li><a href="api/seamless-signature.html">seamless-signature</a> — YAML signature schemas for compiled transformers, with C header generation</li>
 </ul>
               
             </div>
@@ -312,5 +394,5 @@ seamless-run 'seq 1 10 | tac &amp;&amp; sleep 5'    # cache hit — instant
 
 <!--
 MkDocs version : 1.6.1
-Build Date UTC : 2026-11-20 23:50:52.212479+00:00
+Build Date UTC : 2026-11-21 00:20:01.061119+00:00
 -->

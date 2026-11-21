@@ -5,14 +5,14 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
       <link rel="shortcut icon" href="../../img/favicon.ico" />
-    <title>seamless_transformer.compiled_transformer - Seamless</title>
+    <title>Compiled transformers - Seamless</title>
     <link rel="stylesheet" href="../../css/theme.css" />
     <link rel="stylesheet" href="../../css/theme_extra.css" />
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
     
       <script>
         // Current page data
-        var mkdocs_page_name = "seamless_transformer.compiled_transformer";
+        var mkdocs_page_name = "Compiled transformers";
         var mkdocs_page_input_path = "api/reference/seamless_transformer.compiled_transformer.md";
         var mkdocs_page_url = null;
       </script>
@@ -54,6 +54,8 @@
               </ul>
               <p class="caption"><span class="caption-text">How-To Guides</span></p>
               <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../r-and-julia-transformers.html">Running R and Julia transformers</a>
+                  </li>
                   <li class="toctree-l1"><a class="reference internal" href="../../caching.html">Caching, identity, and sharing</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../../composition.html">Composition</a>
@@ -76,12 +78,14 @@
                   </li>
               </ul>
               <p class="caption"><span class="caption-text">Reference API</span></p>
-              <ul>
+              <ul class="current">
                   <li class="toctree-l1"><a class="reference internal" href="../index.html">Overview</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../seamless-core.html">seamless-core</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../seamless-transformer.html">seamless-transformer</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../seamless-workflow.html">seamless-workflow</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../seamless-config.html">seamless-config</a>
                   </li>
@@ -93,10 +97,14 @@
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../seamless-database.html">seamless-database</a>
                   </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../hashserver.html">hashserver</a>
+                  </li>
                   <li class="toctree-l1"><a class="reference internal" href="../remote-http-launcher.html">remote-http-launcher</a>
                   </li>
-                  <li class="toctree-l1"><a class="reference internal" >Python docstrings</a>
-    <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../seamless-signature.html">seamless-signature</a>
+                  </li>
+                  <li class="toctree-l1 current"><a class="reference internal current" >Python docstrings</a>
+    <ul class="current">
                 <li class="toctree-l2"><a class="reference internal" href="seamless.html">seamless</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="seamless.checksum_class.html">Checksum</a>
@@ -108,6 +116,88 @@
                 <li class="toctree-l2"><a class="reference internal" href="seamless_transformer.transformation_class.html">Transformation</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="seamless_transformer.transformer_class.html">Transformer properties</a>
+                </li>
+                <li class="toctree-l2 current"><a class="reference internal current" href="#">Compiled transformers</a>
+    <ul class="current">
+    <li class="toctree-l3"><a class="reference internal" href="#boundmetavars">BoundMetaVars</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#boundmetavarsis_complete">BoundMetaVars.is_complete</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#boundmetavarsto_dict">BoundMetaVars.to_dict</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#compiledcelltypeswrapper">CompiledCelltypesWrapper</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#compiledmixin">CompiledMixin</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#compiledmixinargs">CompiledMixin.args</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#compiledmixincelltypes">CompiledMixin.celltypes</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#compiledmixincode">CompiledMixin.code</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#compiledmixincompilation">CompiledMixin.compilation</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#compiledmixinglobals">CompiledMixin.globals</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#compiledmixinheader">CompiledMixin.header</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#compiledmixinlanguage">CompiledMixin.language</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#compiledmixinmetavars">CompiledMixin.metavars</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#compiledmixinmodules">CompiledMixin.modules</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#compiledmixinobjects">CompiledMixin.objects</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#compiledmixinschema">CompiledMixin.schema</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#compiledmixinschema_celltypes">CompiledMixin.schema_celltypes</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#compiledobject">CompiledObject</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#compiledobjectcode">CompiledObject.code</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#compiledobjectlanguage">CompiledObject.language</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#compiledobjectto_compilation_payload">CompiledObject.to_compilation_payload</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#compiledobjectto_object_payload">CompiledObject.to_object_payload</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#compiledtransformer">CompiledTransformer</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#directcompiledtransformer">DirectCompiledTransformer</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#metavars">MetaVars</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#metavarsis_complete">MetaVars.is_complete</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#metavarsto_dict">MetaVars.to_dict</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#objectlist">ObjectList</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#objectlistappend">ObjectList.append</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#_as_plain">_as_plain</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#_checksum_hex">_checksum_hex</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#_compose_post_prepare_async_hooks">_compose_post_prepare_async_hooks</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#_compose_post_prepare_hooks">_compose_post_prepare_hooks</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#_deferred_validation_hooks">_deferred_validation_hooks</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#_require_signature_package">_require_signature_package</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#_validate_derived_compiled_dunders">_validate_derived_compiled_dunders</a>
+    </li>
+    </ul>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="seamless_transformer.environment.html">Environment</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="seamless_transformer.languages.html">Languages</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="seamless_transformer.languages.interpreter_thread.html">Interpreter thread</a>
                 </li>
                 <li class="toctree-l2"><a class="reference internal" href="seamless_config.select.html">seamless.config.select</a>
                 </li>
@@ -136,7 +226,9 @@
         <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
   <ul class="wy-breadcrumbs">
     <li><a href="../../index.html" class="icon icon-home" aria-label="Docs"></a></li>
-      <li class="breadcrumb-item active">seamless_transformer.compiled_transformer</li>
+          <li class="breadcrumb-item">Reference API</li>
+          <li class="breadcrumb-item">Python docstrings</li>
+      <li class="breadcrumb-item active">Compiled transformers</li>
     <li class="wy-breadcrumbs-aside">
     </li>
   </ul>
@@ -453,6 +545,10 @@ compiled state before they are discarded from the immutable definition.</p>
               
             </div>
           </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="seamless_transformer.transformer_class.html" class="btn btn-neutral float-left" title="Transformer properties"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="seamless_transformer.environment.html" class="btn btn-neutral float-right" title="Environment">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
 
   <hr/>
 
@@ -474,6 +570,10 @@ compiled state before they are discarded from the immutable definition.</p>
   <span class="rst-current-version" data-toggle="rst-current-version">
     
     
+      <span><a href="seamless_transformer.transformer_class.html" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="seamless_transformer.environment.html" style="color: #fcfcfc">Next &raquo;</a></span>
     
   </span>
 </div>
