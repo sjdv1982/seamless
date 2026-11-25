@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "seamless-suite"
-version = "1.5.1"
+version = "1.5.2"
 description = "Seamless umbrella distribution (all components by default)"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -12,7 +12,7 @@ license = "MIT"
 license-files = ["LICENSE.txt"]
 authors = [{name = "Sjoerd de Vries"}]
 dependencies = [
-    "seamless-core>=0.3.1",
+    "seamless-core>=0.3.2",
     "seamless-config>=0.3.3",
     "seamless-remote>=0.6.1",
     "seamless-transformer[compiled]>=0.8.3",
